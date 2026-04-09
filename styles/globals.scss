@@ -1,0 +1,26 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+}
+
+body {
+  font-family: var(--font-body), sans-serif;
+  min-height: 100dvh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading), cursive;
+}

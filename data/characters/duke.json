@@ -1,0 +1,57 @@
+{
+  "id": "duke",
+  "name": "Duke",
+  "color": "blue",
+  "atk": 200,
+  "def": 60,
+  "hp": 1200,
+  "skills": [
+    {
+      "skillName": "Fist of Flowing Ruin : Slide",
+      "characterId": "duke",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [150, 180, 270],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "pierce",
+          "value": 20
+        }
+      ]
+    },
+    {
+      "skillName": "Fist of Flowing Ruin : Weaken",
+      "characterId": "duke",
+      "type": "debuff",
+      "statMultiplier": "atk",
+      "damageRanked": [110, 145, 190]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Fist of Flowing Ruin : Water",
+    "characterId": "duke",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 350
+  },
+  "passive": {
+    "name": "Flowing Ruin",
+    "description": "After using a skill, gain 1 Flowing Ruin stack. At 3 stacks, the next skill will consume all stacks to deal 50% more damage and apply a debuff that reduces the target's ATK by 20% for 2 turns.",
+    "trigger": "afterSkill",
+    "mechanics": [
+      {
+        "type": "buff",
+        "name": "Flowing Ruin Stack",
+        "description": "Grants 1 Flowing Ruin stack. Max 3 stacks."
+      },
+      {
+        "type": "conditionalBuff",
+        "name": "Flowing Ruin Empowerment",
+        "description": "At 3 stacks, the next skill consumes all stacks to deal 50% more damage and applies a debuff that reduces the target's ATK by 20% for 2 turns."
+      }
+    ]
+  }
+}
