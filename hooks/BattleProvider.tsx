@@ -1,9 +1,7 @@
 "use client";
 
 import { BattleCharacter } from "@/types/character";
-import { BattlePhase, Mechanic } from "@/types/mechanic";
-import { SkillCard } from "@/types/skillCard";
-import { UltimateCard } from "@/types/ultimateCard";
+import { BattlePhase } from "@/types/mechanic";
 import React, { useEffect } from "react";
 import { useMechanicContext } from "./MechanicProvider";
 import { useGameStore } from "@/store/gameStore";
@@ -11,12 +9,13 @@ import { TurnActions, Action } from "@/types/action";
 import { executeSkill } from "@/lib/game/combat";
 import { getAIMoves } from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
+import Deck from "@/components/game/Deck";
 
 interface BattleContextType {
   advancePhase: () => void;
   startDukeTest: () => void;
   startFullTest: () => void;
-  resolveplayerTurnWrapper: (actions: TurnActions) => void;
+  resolveplayerTurnWrapper: () => void;
   resolveEnemyTurnWrapper: () => void;
 }
 
@@ -41,7 +40,9 @@ export default function BattleProvider({
   const {
     playerTeam, enemyTeam, battlePhase,
     updateTeams, setBattlePhase, setCurrentTurn,
-    setPlayerTurns, setEnemyTurns, resetBattle, addToBattleLog
+    setPlayerTurns, setEnemyTurns, resetBattle, addToBattleLog,
+    initializeDeck, drawCards, actionQueue, clearActionQueue,
+    removeDeadCharacterCards
   } = store;
 
   const phaseRef = React.useRef(battlePhase);
@@ -91,6 +92,10 @@ export default function BattleProvider({
 
       if (automatedPhases.includes(battlePhase)) {
         let currentTeams = { playerTeam, enemyTeam };
+
+        if (battlePhase === "OnBattleStart") {
+          initializeDeck();
+        }
 
         // System Ticks (Buff/Debuff durations, DoT/HoT)
         if (battlePhase === "OnPlayerTurnStart" || battlePhase === "OnEnemyTurnStart") {
@@ -146,6 +151,14 @@ export default function BattleProvider({
           addToBattleLog
         );
 
+        // Check for deaths during system ticks or queue evaluation and clean deck
+        const allChars = [...updatedTeams.playerTeam, ...updatedTeams.enemyTeam];
+        allChars.forEach(c => {
+          if (c.currentHP <= 0 && c.team === "player") {
+            removeDeadCharacterCards(c.instanceId);
+          }
+        });
+
         // Sync modified states to Zustand
         updateTeams(updatedTeams.playerTeam, updatedTeams.enemyTeam);
 
@@ -163,6 +176,10 @@ export default function BattleProvider({
           return;
         }
 
+        if (battlePhase === "OnPlayerTurnEnd" || battlePhase === "OnEnemyTurnEnd") {
+          drawCards();
+        }
+
         setTimeout(() => advancePhase(), 500);
       }
     }
@@ -171,18 +188,28 @@ export default function BattleProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [battlePhase]);
 
-  function resolveplayerTurnWrapper(playerActions: TurnActions) {
+  function resolveplayerTurnWrapper() {
     if (battlePhase !== "PlayerAction") return;
 
     let currentTeams = { playerTeam, enemyTeam };
 
-    playerActions.forEach((action, index) => {
+    const actions: TurnActions = actionQueue.map(card => ({
+      sourceInstanceId: card.sourceInstanceId,
+      skill: card.skill,
+      targetInstanceId: card.targetInstanceId || ""
+    }));
+
+    actions.forEach((action, index) => {
       if (action) {
         currentTeams = executeSkill(action, currentTeams, addToBattleLog, index);
+        // Clean up dead characters immediately from deck mid-action
+        const deadChars = currentTeams.playerTeam.filter(c => c.currentHP <= 0);
+        deadChars.forEach(c => removeDeadCharacterCards(c.instanceId));
       }
     });
 
     updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
+    clearActionQueue();
     setPlayerTurns((prev) => prev + 1);
     advancePhase();
   }
@@ -196,6 +223,8 @@ export default function BattleProvider({
     enemyActions.forEach((action, index) => {
       if (action) {
         currentTeams = executeSkill(action, currentTeams, addToBattleLog, index);
+        const deadChars = currentTeams.playerTeam.filter(c => c.currentHP <= 0);
+        deadChars.forEach(c => removeDeadCharacterCards(c.instanceId));
       }
     });
 
@@ -204,12 +233,11 @@ export default function BattleProvider({
     advancePhase();
   }
 
-  // Helper to load raw JSON
   const loadChar = (id: string) => require(`@/data/characters/${id}.json`);
 
   const startFullTest = () => {
     resetBattle();
-    
+
     const dukeRaw = loadChar("duke");
     const lyraRaw = loadChar("lyra");
     const taoRaw = loadChar("master_tao");
@@ -237,34 +265,41 @@ export default function BattleProvider({
 
     updateTeams([pDuke, pLyra], [eTao]);
 
-    addToBattleLog("--- 2v1 EVENT LOOP TEST STARTED ---");
+    addToBattleLog("--- 2v1 DECK EVENT LOOP TEST STARTED ---");
     setTimeout(() => {
       setBattlePhase("OnBattleStart");
     }, 500);
   };
 
-  const startDukeTest = () => {
-     // Kept for fallback, but full test is preferred
-     startFullTest();
-  };
+  const startDukeTest = () => startFullTest();
 
-  // Safe fallback for UI actions to prevent crashing if empty
-  const defaultPlayerAction: Action = {
-    sourceInstanceId: playerTeam[0]?.instanceId || "",
-    skill: playerTeam[0]?.skills[0] || { skillName: "Missing", statMultiplier: "atk", damageRanked: [0, 0, 0], characterId: "none", type: "attack" },
-    targetInstanceId: enemyTeam[0]?.instanceId || ""
-  };
+  const renderCharStats = (c: BattleCharacter) => {
+    const isEnemy = c.team === "enemy";
+    const isMarked = isEnemy && store.selectedEnemyMarker === c.instanceId;
 
-  const renderCharStats = (c: BattleCharacter) => (
-    <div key={c.instanceId} style={{ border: '1px solid #444', padding: '5px', marginBottom: '5px', fontSize: '11px', background: 'rgba(20,20,20,0.8)' }}>
-      <strong>{c.name} ({c.team})</strong><br/>
-      HP: {c.currentHP}/{c.hp} | ATK: {c.currentAttack} | DEF: {c.currentDefense}<br/>
-      {c.passive && <span>Passive: {c.passive.name} <br/></span>}
-      State: {JSON.stringify(c.passiveState)}<br/>
-      Buffs: {c.buffs.map(b=>b.type).join(', ') || 'None'} <br/>
-      Debuffs: {c.debuffs.map(d=>`${d.type}(${d.stacks || 1})`).join(', ') || 'None'}
-    </div>
-  );
+    return (
+      <div
+        key={c.instanceId}
+        onClick={() => isEnemy && store.setEnemyMarker(c.instanceId)}
+        style={{
+          border: isMarked ? '2px solid red' : '1px solid #444',
+          padding: '5px',
+          marginBottom: '5px',
+          fontSize: '11px',
+          background: 'rgba(20,20,20,0.8)',
+          cursor: isEnemy ? 'crosshair' : 'default'
+        }}
+      >
+        <strong>{c.name} {isMarked ? "🎯" : ""}</strong><br />
+        HP: {c.currentHP}/{c.hp} | ATK: {c.currentAttack} | DEF: {c.currentDefense}<br />
+        Ult Gauge: {c.ultGauge}/5<br />
+        {c.passive && <span>Passive: {c.passive.name} <br /></span>}
+        State: {JSON.stringify(c.passiveState)}<br />
+        Buffs: {c.buffs.map(b => b.type).join(', ') || 'None'} <br />
+        Debuffs: {c.debuffs.map(d => `${d.type}(${d.stacks || 1})`).join(', ') || 'None'}
+      </div>
+    );
+  };
 
   return (
     <BattleContext.Provider
@@ -276,47 +311,8 @@ export default function BattleProvider({
         resolveEnemyTurnWrapper
       }}
     >
-      <div style={{ position: 'fixed', bottom: 10, right: 10, background: '#111', color: 'white', padding: '10px', zIndex: 999, display: 'flex', gap: '10px', alignItems: 'flex-end', maxWidth: '100vw', overflowX: 'auto' }}>
-        
-        {/* Teams Status */}
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <div>
-            <div style={{fontWeight: 'bold', marginBottom: '5px'}}>Player Team</div>
-            {playerTeam.map(renderCharStats)}
-          </div>
-          <div>
-            <div style={{fontWeight: 'bold', marginBottom: '5px'}}>Enemy Team</div>
-            {enemyTeam.map(renderCharStats)}
-          </div>
-        </div>
 
-        {/* Controls */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', minWidth: '150px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 'bold' }}>Phase: {store.battlePhase}</div>
-          <button onClick={startFullTest} style={{ padding: '5px', background: '#333', color: 'white', border: '1px solid #555' }}>Start Test</button>
-          <button
-            onClick={() => resolveplayerTurnWrapper([defaultPlayerAction])}
-            disabled={store.battlePhase !== "PlayerAction" || playerTeam.length === 0}
-            style={{ padding: '5px', background: store.battlePhase === "PlayerAction" ? '#006600' : '#333', color: 'white', border: '1px solid #555' }}
-          >
-            End Player Action
-          </button>
-          <button
-            onClick={resolveEnemyTurnWrapper}
-            disabled={store.battlePhase !== "EnemyAction"}
-            style={{ padding: '5px', background: store.battlePhase === "EnemyAction" ? '#660000' : '#333', color: 'white', border: '1px solid #555' }}
-          >
-            End Enemy Action
-          </button>
-        </div>
-
-        {/* Logs */}
-        <div style={{ background: 'rgba(0,0,0,0.8)', color: 'lime', padding: '10px', maxHeight: '200px', overflowY: 'auto', width: '300px', fontSize: '11px', border: '1px solid #444' }}>
-          <div style={{fontWeight: 'bold', marginBottom: '5px'}}>Battle Log</div>
-          {store.battleLog.slice(-20).map((l, i) => <div key={i}>{l}</div>)}
-        </div>
-
-      </div>
+      <Deck />
 
       {children}
     </BattleContext.Provider>
