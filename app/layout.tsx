@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   description: "A card battle game",
 };
 
+import BattleProvider from "@/hooks/BattleProvider";
+import MechanicProvider from "@/hooks/MechanicProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,7 +29,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${bangers.variable} ${rajdhani.variable}`}>
-      <body>{children}</body>
+      <body>
+        <MechanicProvider>
+          <BattleProvider>{children}</BattleProvider>
+        </MechanicProvider>
+      </body>
     </html>
   );
 }

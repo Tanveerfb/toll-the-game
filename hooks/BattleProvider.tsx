@@ -1,3 +1,5 @@
+"use client";
+
 import { Character } from "@/types/character";
 import { Mechanic } from "@/types/mechanic";
 import { SkillCard } from "@/types/skillCard";
