@@ -11,7 +11,11 @@
       "characterId": "duke",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [150, 180, 270],
+      "damageRanked": [
+        150,
+        180,
+        270
+      ],
       "mechanics": [
         {
           "type": "aoe"
@@ -27,7 +31,11 @@
       "characterId": "duke",
       "type": "debuff",
       "statMultiplier": "atk",
-      "damageRanked": [110, 145, 190]
+      "damageRanked": [
+        110,
+        145,
+        190
+      ]
     }
   ],
   "ultimate": {

@@ -1,5 +1,6 @@
 import type { SkillType } from "./skillType";
 import type { StatMultiplier } from "./statMultiplier";
+import type { Mechanic } from "./mechanic";
 
 export interface SkillCard {
   skillName: string;

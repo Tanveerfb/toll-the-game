@@ -1,0 +1,89 @@
+{
+  "id": "lyra",
+  "name": "Lyra",
+  "color": "red",
+  "lore": "She is a bow user who can also do some hand-to-hand combat when needed. Her true power lies in her usage of Red Ice—a unique, volatile mix of ice and lava that freezes enemies on contact and burns fiercely if broken.",
+  "atk": 250,
+  "def": 50,
+  "hp": 950,
+  "skills": [
+    {
+      "skillName": "Red Ice: Volcanic Frost",
+      "description": "Fires an arrow of Red Ice, dealing ATK damage to one enemy and applying Decay. Decay causes the target to take 10% of the inflicted skill damage for 2 turns.",
+      "characterId": "lyra",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        130,
+        145,
+        170
+      ],
+      "mechanics": [
+        {
+          "type": "decay",
+          "stacksRanked": [
+            1,
+            1,
+            3
+          ],
+          "duration": 2,
+          "damagePercent": 10
+        }
+      ]
+    },
+    {
+      "skillName": "Red Ice: Magma Shaft",
+      "description": "Concentrates the lava within the Red Ice to pierce enemy armor, ignoring a portion of their defense and dealing ATK damage to a single enemy.",
+      "characterId": "lyra",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        100,
+        120,
+        150
+      ],
+      "mechanics": [
+        {
+          "type": "pierce",
+          "valueRanked": [
+            20,
+            30,
+            50
+          ]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Red Ice: Absolute Zero Ignition",
+    "description": "Unleashes a barrage of Red Ice arrows that shatter upon impact, ignoring 50% of enemy defense and dealing massive ATK damage to all enemies.",
+    "characterId": "lyra",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 170,
+    "mechanics": [
+      {
+        "type": "aoe"
+      },
+      {
+        "type": "pierce",
+        "value": 50
+      }
+    ]
+  },
+  "passive": {
+    "name": "First Action: Unbreakable Ice",
+    "description": "When Lyra's card is used as the first action in a turn, she gains a 50% defense boost for 1 turn. This effect cannot be stacked or cancelled.",
+    "trigger": "onFirstAction",
+    "mechanics": [
+      {
+        "type": "buff",
+        "stat": "def",
+        "valuePercent": 50,
+        "duration": 1,
+        "unstackable": true,
+        "uncancellable": true
+      }
+    ]
+  }
+}

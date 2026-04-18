@@ -6,28 +6,21 @@ import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
 import React, { useEffect } from "react";
 import { useMechanicContext } from "./MechanicProvider";
+import { useGameStore } from "@/store/gameStore";
+import { TurnActions, Action } from "@/types/action";
+import { executeSkill } from "@/lib/game/combat";
+import { getAIMoves } from "@/lib/game/ai";
+import { registerCharacterPassives } from "@/lib/game/passive";
 
-interface BattleState {
-  playerTeam: BattleCharacter[];
-  enemyTeam: BattleCharacter[];
-  currentTurn: number;
-  playerTurns: number;
-  enemyTurns: number;
-  battleLog: string[];
-  addToBattleLog: (entry: string) => void;
-  resetBattle: () => void;
-  battlePhase: BattlePhase;
+interface BattleContextType {
   advancePhase: () => void;
   startDukeTest: () => void;
+  startFullTest: () => void;
+  resolveplayerTurnWrapper: (actions: TurnActions) => void;
+  resolveEnemyTurnWrapper: () => void;
 }
 
-interface TurnActions {
-  action1: SkillCard | UltimateCard | null;
-  action2: SkillCard | UltimateCard | null;
-  action3: SkillCard | UltimateCard | null;
-}
-
-const BattleContext = React.createContext<BattleState | undefined>(undefined);
+const BattleContext = React.createContext<BattleContextType | undefined>(undefined);
 
 export function useBattleContext() {
   const context = React.useContext(BattleContext);
@@ -43,32 +36,16 @@ export default function BattleProvider({
   children: React.ReactNode;
 }) {
   const { processQueue, registerToQueue } = useMechanicContext();
-  const [playerTeam, setPlayerTeam] = React.useState<BattleCharacter[]>([]);
-  const [enemyTeam, setEnemyTeam] = React.useState<BattleCharacter[]>([]);
-  const [currentTurn, setCurrentTurn] = React.useState(0);
-  const [playerTurns, setPlayerTurns] = React.useState(0);
-  const [enemyTurns, setEnemyTurns] = React.useState(0);
-  const [battleLog, setBattleLog] = React.useState<string[]>([]);
-  const [battlePhase, setBattlePhase] = React.useState<BattlePhase>("initializing");
 
-  // Track if we are currently looping automated phases so we don't double trigger
+  const store = useGameStore();
+  const {
+    playerTeam, enemyTeam, battlePhase,
+    updateTeams, setBattlePhase, setCurrentTurn,
+    setPlayerTurns, setEnemyTurns, resetBattle, addToBattleLog
+  } = store;
+
   const phaseRef = React.useRef(battlePhase);
   phaseRef.current = battlePhase;
-
-  function addToBattleLog(entry: string) {
-    console.log("[BattleLog]", entry);
-    setBattleLog((prevLog) => [...prevLog, entry]);
-  }
-
-  function resetBattle() {
-    setPlayerTeam([]);
-    setEnemyTeam([]);
-    setCurrentTurn(0);
-    setPlayerTurns(0);
-    setEnemyTurns(0);
-    setBattleLog([]);
-    setBattlePhase("initializing");
-  }
 
   const advancePhase = () => {
     switch (phaseRef.current) {
@@ -79,7 +56,7 @@ export default function BattleProvider({
         setBattlePhase("OnPlayerTurnStart");
         break;
       case "OnPlayerTurnStart":
-        setBattlePhase("PlayerAction"); // Stops processing queues, waits for players
+        setBattlePhase("PlayerAction");
         break;
       case "PlayerAction":
         setBattlePhase("OnPlayerTurnEnd");
@@ -88,14 +65,14 @@ export default function BattleProvider({
         setBattlePhase("OnEnemyTurnStart");
         break;
       case "OnEnemyTurnStart":
-        setBattlePhase("EnemyAction"); // Stops processing queues, waits for AI
+        setBattlePhase("EnemyAction");
         break;
       case "EnemyAction":
         setBattlePhase("OnEnemyTurnEnd");
         break;
       case "OnEnemyTurnEnd":
         setCurrentTurn((prev) => prev + 1);
-        setBattlePhase("OnPlayerTurnStart"); // Loops endlessly until battle stops
+        setBattlePhase("OnPlayerTurnStart");
         break;
       default:
         break;
@@ -104,7 +81,6 @@ export default function BattleProvider({
 
   useEffect(() => {
     async function handlePhase() {
-      // Auto-running phases: queues activate, and we skip straight to the next phase after queue is clear.
       const automatedPhases: BattlePhase[] = [
         "OnBattleStart",
         "OnPlayerTurnStart",
@@ -114,130 +90,232 @@ export default function BattleProvider({
       ];
 
       if (automatedPhases.includes(battlePhase)) {
+        let currentTeams = { playerTeam, enemyTeam };
+
+        // System Ticks (Buff/Debuff durations, DoT/HoT)
+        if (battlePhase === "OnPlayerTurnStart" || battlePhase === "OnEnemyTurnStart") {
+          const teamKey = battlePhase === "OnPlayerTurnStart" ? "playerTeam" : "enemyTeam";
+          const teamToTick = [...currentTeams[teamKey]];
+
+          for (let i = 0; i < teamToTick.length; i++) {
+            let char = { ...teamToTick[i] };
+            if (char.currentHP <= 0) continue;
+
+            // Reset action-specific passive flags
+            char.passiveState.firstActionTriggeredThisTurn = false;
+
+            // Apply DoT
+            const dotEffects = char.debuffs.filter(d => d.type === "damageOverTime" || d.type === "decay");
+            let totalDot = 0;
+            dotEffects.forEach(dot => {
+              if (dot.type === "decay" && dot.capturedDamage) {
+                totalDot += dot.capturedDamage;
+              } else if (dot.value) {
+                totalDot += dot.value;
+              }
+            });
+            if (totalDot > 0) {
+              char.currentHP = Math.max(0, char.currentHP - totalDot);
+              addToBattleLog(`[System] ${char.name} takes ${totalDot} damage from DoT.`);
+            }
+
+            // Apply HoT
+            const hotEffects = char.buffs.filter(b => b.type === "healOverTime");
+            let totalHot = 0;
+            hotEffects.forEach(hot => {
+              if (hot.value) totalHot += hot.value;
+            });
+            if (totalHot > 0) {
+              char.currentHP = Math.min(char.hp, char.currentHP + totalHot);
+              addToBattleLog(`[System] ${char.name} heals ${totalHot} HP from HoT.`);
+            }
+
+            // Tick down durations
+            char.buffs = char.buffs.map(b => ({ ...b, buffDuration: b.buffDuration ? b.buffDuration - 1 : undefined })).filter(b => b.buffDuration === undefined || b.buffDuration > 0);
+            char.debuffs = char.debuffs.map(d => ({ ...d, debuffDuration: d.debuffDuration ? d.debuffDuration - 1 : undefined })).filter(d => d.debuffDuration === undefined || d.debuffDuration > 0);
+
+            teamToTick[i] = char;
+          }
+          currentTeams = { ...currentTeams, [teamKey]: teamToTick };
+        }
+
         // Run any registered events for this phase
         const updatedTeams = await processQueue(
           battlePhase,
-          { playerTeam, enemyTeam },
+          currentTeams,
           addToBattleLog
         );
-        
-        // Sync modified states
-        setPlayerTeam(updatedTeams.playerTeam);
-        setEnemyTeam(updatedTeams.enemyTeam);
-        
-        // We add artificial UI delay so state update renders before next phase starts processing
+
+        // Sync modified states to Zustand
+        updateTeams(updatedTeams.playerTeam, updatedTeams.enemyTeam);
+
+        // Check for victory/defeat
+        const allEnemiesDead = updatedTeams.enemyTeam.every(e => e.currentHP <= 0);
+        const allPlayersDead = updatedTeams.playerTeam.every(p => p.currentHP <= 0);
+
+        if (allEnemiesDead && updatedTeams.enemyTeam.length > 0) {
+          setBattlePhase("victory");
+          addToBattleLog("VICTORY!");
+          return;
+        } else if (allPlayersDead && updatedTeams.playerTeam.length > 0) {
+          setBattlePhase("defeat");
+          addToBattleLog("DEFEAT...");
+          return;
+        }
+
         setTimeout(() => advancePhase(), 500);
       }
     }
 
     handlePhase();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [battlePhase]);
 
   function resolveplayerTurnWrapper(playerActions: TurnActions) {
     if (battlePhase !== "PlayerAction") return;
-    Object.values(playerActions).forEach((action) => {
+
+    let currentTeams = { playerTeam, enemyTeam };
+
+    playerActions.forEach((action, index) => {
       if (action) {
-        addToBattleLog(`Player used ${action.skillName}`);
+        currentTeams = executeSkill(action, currentTeams, addToBattleLog, index);
       }
     });
+
+    updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
     setPlayerTurns((prev) => prev + 1);
-    advancePhase(); // Action complete, let mechanics resume (OnPlayerTurnEnd)
+    advancePhase();
   }
 
-  function resolveEnemyTurnWrapper(actionName: string) {
+  function resolveEnemyTurnWrapper() {
     if (battlePhase !== "EnemyAction") return;
-    addToBattleLog(`Enemy used ${actionName}`);
+
+    const enemyActions = getAIMoves(enemyTeam, playerTeam);
+    let currentTeams = { playerTeam, enemyTeam };
+
+    enemyActions.forEach((action, index) => {
+      if (action) {
+        currentTeams = executeSkill(action, currentTeams, addToBattleLog, index);
+      }
+    });
+
+    updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
     setEnemyTurns((prev) => prev + 1);
     advancePhase();
   }
 
-  const registerDukePassive = (character: BattleCharacter, phase: BattlePhase) => {
-    registerToQueue({
-      id: `${character.instanceId}_passive`,
-      phase: phase,
-      sourceInstanceId: character.instanceId,
-      mechanicId: "duke_all_stats_up",
-      action: async (source, teams, log) => {
-        const teamKey = source.team === "player" ? "playerTeam" : "enemyTeam";
-        const mutateTeam = [...teams[teamKey]];
-        const targetIdx = mutateTeam.findIndex(c => c.instanceId === source.instanceId);
-        
-        if (targetIdx !== -1) {
-          const t = { ...mutateTeam[targetIdx] };
-          t.currentAttack = Math.floor(t.currentAttack * 1.1);
-          t.currentDefense = Math.floor(t.currentDefense * 1.1);
-          t.currentHP = Math.floor(t.currentHP * 1.1);
-          mutateTeam[targetIdx] = t;
-          log(`Duke (${source.team}) passive triggered! Stats grew by 10%. (ATK: ${t.currentAttack}, DEF: ${t.currentDefense}, HP: ${t.currentHP})`);
-        }
+  // Helper to load raw JSON
+  const loadChar = (id: string) => require(`@/data/characters/${id}.json`);
 
-        return { ...teams, [teamKey]: mutateTeam };
-      }
-    });
-  }
-
-  const startDukeTest = () => {
+  const startFullTest = () => {
     resetBattle();
-    const createDuke = (team: "player" | "enemy", id: string): BattleCharacter => ({
-      id: "duke_base",
-      instanceId: id,
-      name: "Duke",
-      color: "light",
-      atk: 100,
-      def: 50,
-      hp: 1000,
-      currentAttack: 100,
-      currentDefense: 50,
-      currentHP: 1000,
-      skills: [
-        { skillName: "Strike", statMultiplier: "atk", damageRanked: [10, 20, 30], characterId: "duke", type: "attack" },
-        { skillName: "Guard", statMultiplier: "def", damageRanked: [5, 10, 15], characterId: "duke", type: "buff" }
-      ],
+    
+    const dukeRaw = loadChar("duke");
+    const lyraRaw = loadChar("lyra");
+    const taoRaw = loadChar("master_tao");
+
+    const buildBattleChar = (raw: any, team: "player" | "enemy", instanceId: string): BattleCharacter => ({
+      ...raw,
+      instanceId,
+      currentAttack: raw.atk,
+      currentDefense: raw.def,
+      currentHP: raw.hp,
+      ultGauge: 0,
       buffs: [],
       debuffs: [],
       passiveState: {},
       team
     });
 
-    const playerDuke = createDuke("player", "p1_duke");
-    const enemyDuke = createDuke("enemy", "e1_duke");
+    const pDuke = buildBattleChar(dukeRaw, "player", "p1_duke");
+    const pLyra = buildBattleChar(lyraRaw, "player", "p2_lyra");
+    const eTao = buildBattleChar(taoRaw, "enemy", "e1_tao");
 
-    setPlayerTeam([playerDuke]);
-    setEnemyTeam([enemyDuke]);
-    
-    // As per instruction, Duke passive triggers at the END of his respective turn
-    registerDukePassive(playerDuke, "OnPlayerTurnEnd");
-    registerDukePassive(enemyDuke, "OnEnemyTurnEnd");
+    registerCharacterPassives(pDuke, registerToQueue);
+    registerCharacterPassives(pLyra, registerToQueue);
+    registerCharacterPassives(eTao, registerToQueue);
 
-    addToBattleLog("--- DUKE 1v1 EVENT LOOP TEST STARTED ---");
+    updateTeams([pDuke, pLyra], [eTao]);
+
+    addToBattleLog("--- 2v1 EVENT LOOP TEST STARTED ---");
     setTimeout(() => {
-        setBattlePhase("OnBattleStart");
+      setBattlePhase("OnBattleStart");
     }, 500);
   };
+
+  const startDukeTest = () => {
+     // Kept for fallback, but full test is preferred
+     startFullTest();
+  };
+
+  // Safe fallback for UI actions to prevent crashing if empty
+  const defaultPlayerAction: Action = {
+    sourceInstanceId: playerTeam[0]?.instanceId || "",
+    skill: playerTeam[0]?.skills[0] || { skillName: "Missing", statMultiplier: "atk", damageRanked: [0, 0, 0], characterId: "none", type: "attack" },
+    targetInstanceId: enemyTeam[0]?.instanceId || ""
+  };
+
+  const renderCharStats = (c: BattleCharacter) => (
+    <div key={c.instanceId} style={{ border: '1px solid #444', padding: '5px', marginBottom: '5px', fontSize: '11px', background: 'rgba(20,20,20,0.8)' }}>
+      <strong>{c.name} ({c.team})</strong><br/>
+      HP: {c.currentHP}/{c.hp} | ATK: {c.currentAttack} | DEF: {c.currentDefense}<br/>
+      {c.passive && <span>Passive: {c.passive.name} <br/></span>}
+      State: {JSON.stringify(c.passiveState)}<br/>
+      Buffs: {c.buffs.map(b=>b.type).join(', ') || 'None'} <br/>
+      Debuffs: {c.debuffs.map(d=>`${d.type}(${d.stacks || 1})`).join(', ') || 'None'}
+    </div>
+  );
 
   return (
     <BattleContext.Provider
       value={{
-        playerTeam,
-        enemyTeam,
-        currentTurn,
-        playerTurns,
-        enemyTurns,
-        battleLog,
-        addToBattleLog,
-        resetBattle,
-        battlePhase,
         advancePhase,
         startDukeTest,
+        startFullTest,
+        resolveplayerTurnWrapper,
+        resolveEnemyTurnWrapper
       }}
     >
-      {/* Test Buttons - can be removed later */}
-      <div style={{ position: 'fixed', bottom: 10, right: 10, background: '#111', color: 'white', padding: 10, zIndex: 999 }}>
-        <p>Phase: {battlePhase}</p>
-        <button onClick={startDukeTest} style={{marginRight: '5px'}}>Start Duke Test</button>
-        <button onClick={() => resolveplayerTurnWrapper({action1: {skillName: 'Test', statMultiplier: "atk", damageRanked: [0,0,0], characterId: "none", type: "attack"}, action2: null, action3: null})} disabled={battlePhase !== "PlayerAction"}>End Player Action</button>
-        <button onClick={() => resolveEnemyTurnWrapper('Test')} disabled={battlePhase !== "EnemyAction"}>End Enemy Action</button>
+      <div style={{ position: 'fixed', bottom: 10, right: 10, background: '#111', color: 'white', padding: '10px', zIndex: 999, display: 'flex', gap: '10px', alignItems: 'flex-end', maxWidth: '100vw', overflowX: 'auto' }}>
+        
+        {/* Teams Status */}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <div>
+            <div style={{fontWeight: 'bold', marginBottom: '5px'}}>Player Team</div>
+            {playerTeam.map(renderCharStats)}
+          </div>
+          <div>
+            <div style={{fontWeight: 'bold', marginBottom: '5px'}}>Enemy Team</div>
+            {enemyTeam.map(renderCharStats)}
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', minWidth: '150px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 'bold' }}>Phase: {store.battlePhase}</div>
+          <button onClick={startFullTest} style={{ padding: '5px', background: '#333', color: 'white', border: '1px solid #555' }}>Start Test</button>
+          <button
+            onClick={() => resolveplayerTurnWrapper([defaultPlayerAction])}
+            disabled={store.battlePhase !== "PlayerAction" || playerTeam.length === 0}
+            style={{ padding: '5px', background: store.battlePhase === "PlayerAction" ? '#006600' : '#333', color: 'white', border: '1px solid #555' }}
+          >
+            End Player Action
+          </button>
+          <button
+            onClick={resolveEnemyTurnWrapper}
+            disabled={store.battlePhase !== "EnemyAction"}
+            style={{ padding: '5px', background: store.battlePhase === "EnemyAction" ? '#660000' : '#333', color: 'white', border: '1px solid #555' }}
+          >
+            End Enemy Action
+          </button>
+        </div>
+
+        {/* Logs */}
+        <div style={{ background: 'rgba(0,0,0,0.8)', color: 'lime', padding: '10px', maxHeight: '200px', overflowY: 'auto', width: '300px', fontSize: '11px', border: '1px solid #444' }}>
+          <div style={{fontWeight: 'bold', marginBottom: '5px'}}>Battle Log</div>
+          {store.battleLog.slice(-20).map((l, i) => <div key={i}>{l}</div>)}
+        </div>
+
       </div>
 
       {children}

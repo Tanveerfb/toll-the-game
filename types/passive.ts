@@ -1,3 +1,5 @@
+import { Mechanic } from "./mechanic";
+
 type PassiveTrigger =
   | "onBattleStart"
   | "onAllyTurn"
