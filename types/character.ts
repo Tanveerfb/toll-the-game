@@ -1,6 +1,7 @@
 import type { Color } from "./color";
 import type { SkillCard } from "./skillCard";
 import type { UltimateCard } from "./ultimateCard";
+import type { Mechanic } from "./mechanic";
 
 export interface Character {
   id: string;
@@ -12,5 +13,17 @@ export interface Character {
   /** Exactly 2 skill cards */
   skills: [SkillCard, SkillCard];
   ultimate?: UltimateCard;
-  passive?: Passive; // most characters have 1, optional for NPCs
+  passive?: any; // most characters have 1, optional for NPCs
+}
+
+export interface BattleCharacter extends Character {
+  instanceId: string; // To differentiate copies of same character
+  currentHP: number;
+  currentAttack: number;
+  currentDefense: number;
+  ultGauge: number; // For Detonate checking
+  buffs: Mechanic[];
+  debuffs: Mechanic[];
+  passiveState: Record<string, unknown>;
+  team: "player" | "enemy";
 }

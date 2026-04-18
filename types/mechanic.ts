@@ -1,4 +1,16 @@
-type MechanicType =
+export type BattlePhase =
+  | "initializing"
+  | "OnBattleStart"
+  | "OnPlayerTurnStart"
+  | "PlayerAction"
+  | "OnPlayerTurnEnd"
+  | "OnEnemyTurnStart"
+  | "EnemyAction"
+  | "OnEnemyTurnEnd"
+  | "victory"
+  | "defeat";
+
+export type MechanicType =
   | "aoe"
   | "pierce"
   | "weakpoint"

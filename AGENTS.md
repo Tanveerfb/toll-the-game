@@ -145,19 +145,30 @@ Represents a character's ultimate skill. Unlike `SkillCard`, `damage` is a singl
 
 ---
 
+## Architecture Providers (`/hooks`)
+
+To cleanly segregate state storage from logic crunching, the global App wrapper applies:
+
+### `MechanicProvider.tsx`
+The computational wrapping parent. Responsible for handling async `processQueue()` iterations. Registers and maps contextual effects (like Character Passives or mechanics) and parses them seamlessly behind the scenes.
+
+### `BattleProvider.tsx`
+The nested primary event loop state machine. Drives all `battlePhase` sequences (`OnBattleStart` -> `OnPlayerTurnStart` -> `PlayerAction` -> `OnPlayerTurnEnd`...). Automatically halts loop for Player/AI turn inputs, and offloads heavy queue digestion back upstream to the `MechanicProvider`.
+
+---
+
 ## Game Logic Files (`/lib/game`)
 
 ### `damage.ts`
 
 Handles all damage calculations during battle.
 
-- Base damage formula using `statMultiplier` (atk/hp/def)
-- Modifier effects:
-  - **Ignite**: damage-over-time multiplier applied each turn
-  - **Detonate**: burst damage triggered by combining status effects
-  - **Weakpoint**: bonus damage multiplier when hitting an exposed weakness
+- Calculates an `effectiveBaseDamage` early by strictly subtracting target `defense` bounds.
+- Modifier effects scale off `effectiveBaseDamage`:
+  - **Ignite**: +10% extra damage per stack. This applies globally to ALL incoming attacks impacting an ignited entity. 
+  - **Detonate**: +20% burst damage per target's current `ultGauge` if the attacker utilizes the explicitly tagged detonate skill mechanic.
+  - **Weakpoint**: x3 bonus damage multiplier when hitting an exposed weakness (target possesses >= 1 debuff).
 - Will export pure functions only (no side effects); results fed into Zustand store externally
-
 ### `gacha.ts`
 
 Handles the banner/pull system for acquiring characters and cards.
