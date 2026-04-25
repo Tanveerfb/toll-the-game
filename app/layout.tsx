@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 
 import BattleProvider from "@/hooks/BattleProvider";
 import MechanicProvider from "@/hooks/MechanicProvider";
+import { AuthProvider } from "@/hooks/AuthProvider";
 
 export default function RootLayout({
   children,
@@ -30,9 +31,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${bangers.variable} ${rajdhani.variable}`}>
       <body>
-        <MechanicProvider>
-          <BattleProvider>{children}</BattleProvider>
-        </MechanicProvider>
+        <AuthProvider>
+          <MechanicProvider>
+            <BattleProvider>{children}</BattleProvider>
+          </MechanicProvider>
+        </AuthProvider>
       </body>
     </html>
   );

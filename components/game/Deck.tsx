@@ -51,18 +51,20 @@ export default function Deck() {
         {deck.map((card) => {
           const char = playerTeam.find(c => c.instanceId === card.sourceInstanceId);
           const isUlt = card.skill.type === "ultimate";
+          const isStunned = char?.debuffs.some(d => d.type === "stun");
           return (
             <div 
               key={card.id}
-              onClick={() => isPlayerActionPhase && selectCard(card.id)}
+              onClick={() => isPlayerActionPhase && !isStunned && selectCard(card.id)}
               style={{
                 width: '90px', height: '130px', background: isUlt ? '#4a3f00' : '#222', border: `1px solid ${isUlt ? 'gold' : '#666'}`, borderRadius: '6px',
-                cursor: isPlayerActionPhase ? 'pointer' : 'not-allowed',
+                cursor: isPlayerActionPhase && !isStunned ? 'pointer' : 'not-allowed',
                 display: 'flex', flexDirection: 'column', padding: '5px',
-                opacity: isPlayerActionPhase ? 1 : 0.5,
+                opacity: isPlayerActionPhase && !isStunned ? 1 : 0.5,
                 position: 'relative',
+                filter: isStunned ? 'grayscale(100%) brightness(0.5)' : 'none'
               }}
-              title={`${card.skill.skillName}\nType: ${card.skill.type}\nMultiplier: ${card.skill.type === 'ultimate' ? card.skill.damage : card.skill.damageRanked?.[0] || 0}%\n\n${card.skill.description || ''}`}
+              title={`${isStunned ? 'STUNNED\n' : ''}${card.skill.skillName}\nType: ${card.skill.type}\nMultiplier: ${card.skill.type === 'ultimate' ? card.skill.damage : card.skill.damageRanked?.[0] || 0}%\n\n${card.skill.description || ''}`}
             >
               <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#aaa' }}>{char?.name}</div>
               <div style={{ fontSize: '10px', marginTop: 'auto', color: isUlt ? 'gold' : 'white' }}>{card.skill.skillName}</div>

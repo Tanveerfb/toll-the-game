@@ -4,10 +4,10 @@ import { BattlePhase } from "@/types/mechanic";
 
 type RegisterFn = (item: QueueItem) => void;
 
-// Helper to map passive triggers to BattlePhases
 function mapTriggerToPhase(trigger: string): BattlePhase | null {
   const map: Record<string, BattlePhase> = {
     "onBattleStart": "OnBattleStart",
+    "aura": "OnBattleStart",
     "OnPlayerTurnEnd": "OnPlayerTurnEnd",
     "OnEnemyTurnEnd": "OnEnemyTurnEnd",
     "OnPlayerTurnStart": "OnPlayerTurnStart",
@@ -21,7 +21,6 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
 
   const phase = mapTriggerToPhase(character.passive.trigger);
 
-  // If it maps to a BattlePhase, register it to the MechanicProvider queue
   if (phase) {
     registerToQueue({
       id: `${character.instanceId}_passive_${character.passive.name}`,
@@ -29,24 +28,74 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
       sourceInstanceId: character.instanceId,
       mechanicId: character.passive.name,
       action: async (source, teams, log) => {
-        log(`${source.name}'s passive '${source.passive.name}' triggered via queue!`);
         
-        // Implement the actual passive mechanic execution here
-        // For Duke test, it was stats * 1.1. Let's do a hardcoded check for the test
-        if (source.passive.name === "Duke's Resolve") {
-            const teamKey = source.team === "player" ? "playerTeam" : "enemyTeam";
-            const mutateTeam = [...teams[teamKey]];
-            const targetIdx = mutateTeam.findIndex(c => c.instanceId === source.instanceId);
-            if (targetIdx !== -1) {
-                const t = { ...mutateTeam[targetIdx] };
-                t.currentAttack = Math.floor(t.currentAttack * 1.1);
-                t.currentDefense = Math.floor(t.currentDefense * 1.1);
-                t.currentHP = Math.floor(t.currentHP * 1.1);
-                mutateTeam[targetIdx] = t;
-            }
-            return { ...teams, [teamKey]: mutateTeam };
-        }
+        const teamKey = source.team === "player" ? "playerTeam" : "enemyTeam";
+        const mutateTeam = [...teams[teamKey]];
+        let changed = false;
 
+        source.passive?.mechanics?.forEach((mech: any) => {
+          if (mech.type === "synergy") {
+            const count = mech.conditionTags ? mutateTeam.filter(c => c.tags?.some(t => mech.conditionTags.includes(t))).length : 1;
+            
+            mutateTeam.forEach((ally, idx) => {
+              let applies = false;
+              if (mech.conditionColors && mech.conditionColors.includes(ally.color)) applies = true;
+              if (mech.conditionTags && ally.tags?.some(t => mech.conditionTags.includes(t))) applies = true;
+              
+              if (applies) {
+                const multiplier = mech.conditionTags ? count : 1;
+                const totalPercent = mech.valuePercent * multiplier;
+                
+                const buff = {
+                  type: (mech.stat === "damageDealt" ? "amplify" : "buff") as any,
+                  stat: mech.stat,
+                  valuePercent: totalPercent,
+                  uncancellable: true,
+                  name: `${source.passive!.name}`
+                } as any;
+                
+                const t = { ...mutateTeam[idx], buffs: [...mutateTeam[idx].buffs, buff] };
+                if (mech.stat === "all") {
+                  t.currentAttack += Math.floor(t.atk * (totalPercent/100));
+                  t.currentDefense += Math.floor(t.def * (totalPercent/100));
+                  const hpBoost = Math.floor(t.hp * (totalPercent/100));
+                  t.hp += hpBoost;
+                  t.currentHP += hpBoost;
+                } else if (mech.stat === "def") {
+                  t.currentDefense += Math.floor(t.def * (totalPercent/100));
+                } else if (mech.stat === "hp") {
+                  const hpBoost = Math.floor(t.hp * (totalPercent/100));
+                  t.hp += hpBoost;
+                  t.currentHP += hpBoost;
+                }
+                mutateTeam[idx] = t;
+                changed = true;
+                log(`${ally.name} gained ${totalPercent}% ${mech.stat} from ${source.name}'s ${source.passive!.name}!`);
+              }
+            });
+          }
+
+          if (mech.type === "aura" && mech.conditionNoDeadAllies) {
+            mutateTeam.forEach((ally, idx) => {
+              const buff = {
+                type: "buff" as any, stat: mech.stat, valuePercent: mech.valuePercent, uncancellable: true, name: source.passive!.name
+              } as any;
+              const t = { ...mutateTeam[idx], buffs: [...mutateTeam[idx].buffs, buff] };
+              if (mech.stat === "hp") {
+                const hpBoost = Math.floor(t.hp * (mech.valuePercent/100));
+                t.hp += hpBoost;
+                t.currentHP += hpBoost;
+              }
+              mutateTeam[idx] = t;
+              changed = true;
+              log(`${ally.name} gained ${mech.valuePercent}% ${mech.stat} from ${source.name}'s Aura!`);
+            });
+          }
+        });
+
+        if (changed) {
+          return { ...teams, [teamKey]: mutateTeam };
+        }
         return teams;
       }
     });

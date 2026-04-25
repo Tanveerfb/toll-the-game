@@ -1,0 +1,78 @@
+{
+  "id": "gabrist",
+  "name": "Gabrist",
+  "color": "blue",
+  "lore": "Artist, friend of Batra, ledger exam participant, calm and cool.",
+  "atk": 55,
+  "def": 70,
+  "hp": 1300,
+  "skills": [
+    {
+      "skillName": "Ink Slash",
+      "description": "Deals ATK damage and lowers target's ATK.",
+      "characterId": "gabrist",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [170, 195, 220],
+      "mechanics": [
+        {
+          "type": "debuff",
+          "stat": "atk",
+          "valueRanked": [15, 25, 40],
+          "durationRanked": [1, 1, 2]
+        }
+      ]
+    },
+    {
+      "skillName": "Erase",
+      "description": "Cancels stances and deals ATK damage to 1 enemy.",
+      "characterId": "gabrist",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [180, 210, 250],
+      "mechanics": [
+        {
+          "type": "cancelStances"
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Masterpiece Unveiled",
+    "description": "Deals ATK damage to all enemies and lowers their ATK & DEF by 30% for 2 turns.",
+    "characterId": "gabrist",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 350,
+    "mechanics": [
+      {
+        "type": "aoe"
+      },
+      {
+        "type": "debuff",
+        "stat": "atk",
+        "valuePercent": 30,
+        "duration": 2
+      },
+      {
+        "type": "debuff",
+        "stat": "def",
+        "valuePercent": 30,
+        "duration": 2
+      }
+    ]
+  },
+  "passive": {
+    "name": "Flawless Canvas",
+    "description": "Allies gain +20% Max HP if there are no dead allies.",
+    "trigger": "aura",
+    "mechanics": [
+      {
+        "type": "aura",
+        "conditionNoDeadAllies": true,
+        "stat": "hp",
+        "valuePercent": 20
+      }
+    ]
+  }
+}

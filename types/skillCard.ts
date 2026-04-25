@@ -4,6 +4,7 @@ import type { Mechanic } from "./mechanic";
 
 export interface SkillCard {
   skillName: string;
+  description?: string;
   url?: string;
   statMultiplier: StatMultiplier;
   /** Damage values ranked [low, mid, high] */

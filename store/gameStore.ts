@@ -136,13 +136,16 @@ export const useGameStore = create<BattleState>((set, get) => ({
   },
 
   selectCard: (cardId: string) => {
-    const { deck, actionQueue, enemyTeam, selectedEnemyMarker } = get();
+    const { deck, actionQueue, enemyTeam, playerTeam, selectedEnemyMarker } = get();
     if (actionQueue.length >= 3) return;
 
     const cardIndex = deck.findIndex(c => c.id === cardId);
     if (cardIndex === -1) return;
 
     const card = deck[cardIndex];
+    const char = playerTeam.find(c => c.instanceId === card.sourceInstanceId);
+    if (char && char.debuffs.some(d => d.type === "stun")) return;
+
     const aliveEnemies = enemyTeam.filter(e => e.currentHP > 0);
     
     let targetId = selectedEnemyMarker;
@@ -157,7 +160,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
 
     set({
       deck: newDeck,
-      actionQueue: [...actionQueue, { ...card, targetInstanceId: targetId }]
+      actionQueue: [...actionQueue, { ...card, targetInstanceId: targetId || undefined }]
     });
   },
 

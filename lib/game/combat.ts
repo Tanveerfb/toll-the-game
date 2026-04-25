@@ -9,20 +9,15 @@ function getSkillDamageMultiplier(skill: SkillCard | UltimateCard): number {
   if (skill.type === "ultimate") {
     return (skill as UltimateCard).damage / 100;
   } else {
-    // Defaulting to rank 1 (index 0) for now. Future: accept rank in Action.
     return (skill as SkillCard).damageRanked[0] / 100;
   }
 }
 
-// Helper to normalize ranked mechanics values
 function normalizeMechanic(mechanic: any, rankIndex: number = 0): Mechanic {
   const norm = { ...mechanic } as Mechanic;
-  if (norm.valueRanked) {
-    norm.value = norm.valueRanked[rankIndex];
-  }
-  if (norm.stacksRanked) {
-    norm.stacks = norm.stacksRanked[rankIndex];
-  }
+  if (norm.valueRanked) norm.value = norm.valueRanked[rankIndex];
+  if (norm.stacksRanked) norm.stacks = norm.stacksRanked[rankIndex];
+  if (norm.durationRanked) norm.duration = norm.durationRanked[rankIndex];
   return norm;
 }
 
@@ -51,37 +46,80 @@ export function executeSkill(
 
   const updatedSource = getUpdatedChar(source.instanceId)!;
   
+  // -- STUN CHECK
+  if (updatedSource.debuffs.some(d => d.type === "stun")) {
+    log(`${updatedSource.name} is stunned and skips their action!`);
+    return updatedTeams;
+  }
+
+  // -- PRE-SKILL PASSIVES (Batra's HP consume)
+  if (updatedSource.passive && updatedSource.passive.trigger === "beforeSkill") {
+    const consumeMech = updatedSource.passive.mechanics?.find((m: any) => m.type === "consumeHpPercent");
+    if (consumeMech) {
+      const consumeAmt = Math.floor(updatedSource.hp * (consumeMech.valuePercent / 100));
+      updatedSource.currentHP = Math.max(1, updatedSource.currentHP - consumeAmt);
+      log(`${updatedSource.name} consumes ${consumeAmt} HP for their skill!`);
+    }
+  }
+
   // -- PASSIVE TRIGGER: onFirstAction (Lyra)
   if (updatedSource.passive && updatedSource.passive.trigger === "onFirstAction") {
     if (actionIndex === 0 && !updatedSource.passiveState.firstActionTriggeredThisTurn) {
       log(`${updatedSource.name}'s passive '${updatedSource.passive.name}' triggered!`);
       updatedSource.buffs.push({
-        type: "buff",
-        stat: "def",
-        valuePercent: 50,
-        buffDuration: 1,
-        unstackable: true,
-        uncancellable: true
+        type: "buff", stat: "def", valuePercent: 50, buffDuration: 1, unstackable: true, uncancellable: true
       });
       updatedSource.passiveState.firstActionTriggeredThisTurn = true;
     }
   }
 
+  // -- ALLY SKILL USE TRACKER (Yalina Momentum)
+  const sourceTeam = source.team === "player" ? updatedTeams.playerTeam : updatedTeams.enemyTeam;
+  sourceTeam.forEach(ally => {
+    if (ally.instanceId !== updatedSource.instanceId && ally.passive?.trigger === "onAllySkill") {
+      const mech = ally.passive.mechanics?.find((m: any) => m.type === "momentumStacks");
+      if (mech) {
+        const currentStacks = (ally.passiveState.momentumStacks as number) || 0;
+        if (currentStacks < mech.maxStacks) {
+          ally.passiveState.momentumStacks = currentStacks + 1;
+          log(`${ally.name} gains Momentum! (${ally.passiveState.momentumStacks}/${mech.maxStacks})`);
+        }
+      }
+    }
+  });
+
   const skillMechanics = (action.skill as any).mechanics 
     ? ((action.skill as any).mechanics as any[]).map(m => normalizeMechanic(m, 0)) 
     : [];
 
-  const isAoe = skillMechanics.some(m => m.type === "aoe");
-  
+  const isAoe = skillMechanics.some(m => m.type === "aoe" || m.type === "aoeRanked" && m.ranks?.[0]);
+  const isAttack = action.skill.type === "attack" || action.skill.type === "ultimate";
+  const isHealOrBuff = action.skill.type === "heal" || action.skill.type === "buff" || action.skill.type === "stance";
+
   // Determine targets
   let targets: BattleCharacter[] = [];
+  const enemyTeamForSource = source.team === "player" ? updatedTeams.enemyTeam : updatedTeams.playerTeam;
+  const alliedTeamForSource = source.team === "player" ? updatedTeams.playerTeam : updatedTeams.enemyTeam;
+
   if (isAoe) {
-     targets = source.team === "player" ? updatedTeams.enemyTeam : updatedTeams.playerTeam;
+     targets = isHealOrBuff ? alliedTeamForSource : enemyTeamForSource;
      targets = targets.filter(t => t.currentHP > 0);
      log(`${source.name} uses ${action.skill.skillName} (AoE)!`);
   } else {
-     targets = [getUpdatedChar(primaryTarget.instanceId)!];
-     log(`${source.name} uses ${action.skill.skillName} on ${primaryTarget.name}!`);
+     let actualTarget = getUpdatedChar(primaryTarget.instanceId)!;
+     // Taunt override for single-target attacks
+     if (isAttack) {
+       const tauntedBy = updatedSource.debuffs.find(d => d.type === "taunt" && d.sourceId);
+       if (tauntedBy) {
+         const tauntTarget = getUpdatedChar(tauntedBy.sourceId);
+         if (tauntTarget && tauntTarget.currentHP > 0) {
+           actualTarget = tauntTarget;
+           log(`${updatedSource.name} is Taunted and forced to attack ${tauntTarget.name}!`);
+         }
+       }
+     }
+     targets = [actualTarget];
+     log(`${source.name} uses ${action.skill.skillName} on ${actualTarget.name}!`);
   }
 
   // Pre-calculate base stat
@@ -89,12 +127,54 @@ export function executeSkill(
   let baseStat = 0;
   if (statMulti === 'atk') baseStat = updatedSource.currentAttack;
   else if (statMulti === 'def') baseStat = updatedSource.currentDefense;
-  else if (statMulti === 'hp') baseStat = updatedSource.currentHP;
+  else if (statMulti === 'hp') baseStat = updatedSource.hp; // Max HP scaling per user comment
   
   const skillMultiplier = getSkillDamageMultiplier(action.skill);
   let baseDamage = baseStat * skillMultiplier;
 
-  // -- PASSIVE TRIGGER & MECHANICS PRE-ATTACK (Consume Ignite for Tao)
+  // -- DYNAMIC DAMAGE MULTIPLIERS
+  const spiteMech = skillMechanics.find(m => m.type === "spite");
+  if (spiteMech && isAttack) {
+    const missingHpPercent = 100 - ((updatedSource.currentHP / updatedSource.hp) * 100);
+    const multiplier = 1 + ((missingHpPercent * 2) / 100);
+    baseDamage *= multiplier;
+    log(`${updatedSource.name} deals ${Math.floor((multiplier-1)*100)}% bonus Spite damage!`);
+  }
+
+  const concentrateMech = skillMechanics.find(m => m.type === "concentrate");
+  if (concentrateMech && isAttack && isAoe) {
+    const aliveEnemies = targets.length;
+    let multiplier = 1.0;
+    if (aliveEnemies === 1) multiplier = 1.5;
+    else if (aliveEnemies === 2) multiplier = 1.2;
+    else if (aliveEnemies === 3) multiplier = 1.1;
+    baseDamage *= multiplier;
+    log(`${updatedSource.name} concentrates attack (+${Math.floor((multiplier-1)*100)}% dmg)!`);
+  }
+
+  const amplifyMech = skillMechanics.find(m => m.type === "amplify");
+  if (amplifyMech && isAttack) {
+    const buffCount = updatedSource.buffs.length;
+    const multiplier = 1 + (buffCount * (amplifyMech.valuePercent || 10) / 100);
+    baseDamage *= multiplier;
+    log(`${updatedSource.name} amplifies attack (+${Math.floor((multiplier-1)*100)}% dmg)!`);
+  }
+
+  // Yalina Momentum passive damage boost
+  if (updatedSource.passive && updatedSource.passive.trigger === "onAllySkill" && isAttack) {
+    const stacks = (updatedSource.passiveState.momentumStacks as number) || 0;
+    if (stacks > 0) {
+      const mech = updatedSource.passive.mechanics?.find((m: any) => m.type === "momentumStacks");
+      if (mech) {
+        const bonus = stacks * mech.valuePercent;
+        baseDamage *= (1 + (bonus / 100));
+        log(`${updatedSource.name} uses Momentum for +${bonus}% damage!`);
+        updatedSource.passiveState.momentumStacks = 0; // Clear stacks
+      }
+    }
+  }
+
+  // -- CONSUME IGNITE (Tao)
   const consumeIgniteMech = skillMechanics.find(m => m.type === "consumeIgnite");
   if (consumeIgniteMech) {
     let totalIgnitesConsumed = 0;
@@ -114,46 +194,12 @@ export function executeSkill(
          log(`${updatedSource.name} gained ${buffAmount}% ATK!`);
          if (statMulti === 'atk') baseDamage = updatedSource.currentAttack * skillMultiplier;
       }
-
-      // Check Master Tao's passive
-      if (updatedSource.passive && updatedSource.passive.trigger === "onIgniteConsume") {
-         const passiveMech = updatedSource.passive.mechanics?.find((m: any) => m.type === "heal");
-         if (passiveMech) {
-            const currentCumulated = (updatedSource.passiveState.cumulatedIgnites as number) || 0;
-            const newCumulated = currentCumulated + totalIgnitesConsumed;
-            const triggerCount = Math.floor(newCumulated / passiveMech.conditionStacks);
-            const remainder = newCumulated % passiveMech.conditionStacks;
-            updatedSource.passiveState.cumulatedIgnites = remainder;
-
-            let pastTriggers = (updatedSource.passiveState.healTriggers as number) || 0;
-            for (let i=0; i<triggerCount; i++) {
-               if (pastTriggers < passiveMech.maxTriggers) {
-                 const healAmount = Math.floor(updatedSource.hp * (passiveMech.valuePercent / 100));
-                 updatedSource.currentHP = Math.min(updatedSource.hp, updatedSource.currentHP + healAmount);
-                 pastTriggers++;
-                 log(`Healing Flames triggers! ${updatedSource.name} restores ${healAmount} HP! (${pastTriggers}/${passiveMech.maxTriggers})`);
-               }
-            }
-            updatedSource.passiveState.healTriggers = pastTriggers;
-         }
-      }
     }
   }
 
-  // Check Duke's Passive Empowerment BEFORE attack
-  if (updatedSource.passive && updatedSource.passive.trigger === "afterSkill") {
-    const ruinStacks = (updatedSource.passiveState.flowingRuinStacks as number) || 0;
-    if (ruinStacks >= 3) {
-      log(`${updatedSource.name} consumes Flowing Ruin empowerment! Damage increased by 50%!`);
-      baseDamage = baseDamage * 1.5;
-      updatedSource.passiveState.empowermentActive = true;
-      updatedSource.passiveState.flowingRuinStacks = 0; // Consume
-    }
-  }
+  // Process attack/ultimate/heal/buff
+  let totalDamageDealt = 0;
 
-  // Process attack/ultimate
-  const isAttack = action.skill.type === "attack" || action.skill.type === "ultimate";
-  
   targets.forEach(updatedTarget => {
     if (updatedTarget.currentHP <= 0) return;
 
@@ -165,66 +211,111 @@ export function executeSkill(
       });
 
       const finalDamage = Math.floor(damage);
-      updatedTarget.currentHP = Math.max(0, updatedTarget.currentHP - finalDamage);
+      totalDamageDealt += finalDamage;
+      
+      const newHp = updatedTarget.currentHP - finalDamage;
+
+      // -- LETHAL DAMAGE SURVIVAL (Sara)
+      if (newHp <= 0 && updatedTarget.passive && updatedTarget.passive.trigger === "onLethalDamage") {
+        if (!updatedTarget.passiveState.lethalSurvived && updatedTarget.currentHP >= (updatedTarget.hp * 0.3)) {
+          const healMech = updatedTarget.passive.mechanics?.find((m: any) => m.type === "surviveLethal");
+          if (healMech) {
+            const healAmount = Math.floor(finalDamage * (healMech.healDamagePercent / 100));
+            updatedTarget.currentHP = Math.max(1, healAmount);
+            updatedTarget.passiveState.lethalSurvived = true;
+            log(`${updatedTarget.name}'s Nine Lives activates! Survives and heals ${healAmount} HP!`);
+          } else {
+            updatedTarget.currentHP = 0;
+          }
+        } else {
+          updatedTarget.currentHP = 0;
+        }
+      } else {
+        updatedTarget.currentHP = Math.max(0, newHp);
+      }
+      
       log(`${updatedTarget.name} takes ${finalDamage} damage!`);
 
-      // Apply skill mechanics (Debuffs like Decay, Ignite)
+      // Apply skill mechanics (Debuffs)
       skillMechanics.forEach(mech => {
         if (mech.type === "decay") {
           const decayDmg = Math.floor(finalDamage * ((mech.damagePercent || 10) / 100));
-          updatedTarget.debuffs.push({
-            type: "decay",
-            stacks: mech.stacks,
-            debuffDuration: mech.duration,
-            capturedDamage: decayDmg
-          });
-          log(`${updatedTarget.name} is afflicted with Decay! (${decayDmg} dmg/turn)`);
+          updatedTarget.debuffs.push({ type: "decay", stacks: mech.stacks, debuffDuration: mech.duration, capturedDamage: decayDmg });
+          log(`${updatedTarget.name} is afflicted with Decay!`);
         }
         if (mech.type === "ignite") {
           const existing = updatedTarget.debuffs.find(d => d.type === "ignite");
-          if (existing) {
-             existing.stacks = (existing.stacks || 1) + (mech.stacks || 1);
-          } else {
-             updatedTarget.debuffs.push({
-               type: "ignite",
-               stacks: mech.stacks,
-               debuffDuration: 3 // assumed default
-             });
-          }
+          if (existing) existing.stacks = (existing.stacks || 1) + (mech.stacks || 1);
+          else updatedTarget.debuffs.push({ type: "ignite", stacks: mech.stacks, debuffDuration: mech.duration || 3 });
           log(`${updatedTarget.name} is Ignited!`);
+        }
+        if (mech.type === "lowerUltGauge") {
+          updatedTarget.ultGauge = Math.max(0, updatedTarget.ultGauge - (mech.value || 1));
+          log(`${updatedTarget.name}'s Ultimate Gauge was reduced!`);
+        }
+        if (mech.type === "stun") {
+          updatedTarget.debuffs.push({ type: "stun", debuffDuration: mech.duration || 1 });
+          log(`${updatedTarget.name} is Stunned!`);
+        }
+        if (mech.type === "cancelBuffs") {
+          updatedTarget.buffs = [];
+          log(`${updatedTarget.name}'s buffs were cancelled!`);
+        }
+        if (mech.type === "cancelStances") {
+          updatedTarget.buffs = updatedTarget.buffs.filter(b => b.type !== "stance");
+          log(`${updatedTarget.name}'s stances were cancelled!`);
+        }
+        if (mech.type === "debuff") {
+          updatedTarget.debuffs.push({ type: "debuff", stat: mech.stat, valuePercent: mech.valuePercent || mech.value, debuffDuration: mech.duration });
+          log(`${updatedTarget.name}'s ${mech.stat} was lowered!`);
+        }
+        if (mech.type === "taunt") {
+          // Applied to enemy, overriding their target
+          updatedTarget.debuffs.push({ type: "taunt", debuffDuration: mech.duration, sourceId: updatedSource.instanceId });
+          log(`${updatedTarget.name} is Taunted by ${updatedSource.name}!`);
         }
       });
 
-      // Apply Duke's empowerment debuff
-      if (updatedSource.passiveState.empowermentActive) {
-         updatedTarget.debuffs.push({
-           type: "debuff",
-           stat: "atk",
-           valuePercent: -20,
-           debuffDuration: 2
-         });
-         log(`${updatedTarget.name}'s ATK reduced by Flowing Ruin!`);
-      }
+      if (updatedTarget.currentHP === 0) log(`${updatedTarget.name} has been defeated!`);
 
-      if (updatedTarget.currentHP === 0) {
-        log(`${updatedTarget.name} has been defeated!`);
-      }
     } else if (action.skill.type === "heal") {
       const healAmount = Math.floor(baseDamage);
       updatedTarget.currentHP = Math.min(updatedTarget.hp, updatedTarget.currentHP + healAmount);
       log(`${updatedTarget.name} heals for ${healAmount} HP!`);
     }
+
+    // Friendly buffs/cleanses applied even if it's an attack (if targetSelf is true or targets are allies)
+    skillMechanics.forEach(mech => {
+       if (mech.type === "cleanse" && isHealOrBuff) {
+          updatedTarget.debuffs = [];
+          log(`${updatedTarget.name} was cleansed of all debuffs!`);
+       }
+       if ((mech.type === "buff" || mech.type === "stance") && (!mech.targetSelf || updatedTarget.instanceId === updatedSource.instanceId)) {
+          updatedTarget.buffs.push({
+             type: mech.type,
+             stat: mech.stat,
+             valuePercent: mech.valuePercent || mech.value,
+             buffDuration: mech.duration
+          });
+          log(`${updatedTarget.name} gained a ${mech.stat} buff!`);
+       }
+    });
   });
 
-  // -- PASSIVE TRIGGER: afterSkill (Duke)
+  // -- POST-DAMAGE PASSIVES
+  if (totalDamageDealt > 0 && updatedSource.passive && updatedSource.passive.trigger === "onDamageDealt") {
+    const lifestealMech = updatedSource.passive.mechanics?.find((m: any) => m.type === "healLifesteal");
+    if (lifestealMech && updatedSource.currentHP < (updatedSource.hp * (lifestealMech.hpConditionPercent / 100))) {
+      const heal = Math.floor(totalDamageDealt * (lifestealMech.lifestealPercent / 100));
+      updatedSource.currentHP = Math.min(updatedSource.hp, updatedSource.currentHP + heal);
+      log(`${updatedSource.name}'s Vampiric Roots restores ${heal} HP!`);
+    }
+  }
+
+  // Duke empowerment
   if (updatedSource.passive && updatedSource.passive.trigger === "afterSkill") {
-     if (updatedSource.passiveState.empowermentActive) {
-         updatedSource.passiveState.empowermentActive = false; // reset
-     } else {
-         const currentStacks = (updatedSource.passiveState.flowingRuinStacks as number) || 0;
-         updatedSource.passiveState.flowingRuinStacks = currentStacks + 1;
-         log(`${updatedSource.name} gains a Flowing Ruin stack! (${updatedSource.passiveState.flowingRuinStacks}/3)`);
-     }
+    const currentStacks = (updatedSource.passiveState.flowingRuinStacks as number) || 0;
+    updatedSource.passiveState.flowingRuinStacks = currentStacks + 1;
   }
 
   return updatedTeams;

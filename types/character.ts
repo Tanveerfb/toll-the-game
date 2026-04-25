@@ -10,6 +10,7 @@ export interface Character {
   atk: number;
   def: number;
   hp: number;
+  tags?: string[]; // E.g. [FEMALE], [KHALSA]
   /** Exactly 2 skill cards */
   skills: [SkillCard, SkillCard];
   ultimate?: UltimateCard;

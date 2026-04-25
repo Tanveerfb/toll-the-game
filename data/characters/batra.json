@@ -1,0 +1,77 @@
+{
+  "id": "batra",
+  "name": "Batra",
+  "color": "blue",
+  "tags": ["KHALSA"],
+  "lore": "Ledger exam participant, Sikh, turban, lion-themed attacks.",
+  "atk": 85,
+  "def": 70,
+  "hp": 1120,
+  "skills": [
+    {
+      "skillName": "Lion's Charge",
+      "description": "Deals ATK damage to 1 enemy, ignoring a portion of their defense.",
+      "characterId": "batra",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [180, 220, 260],
+      "mechanics": [
+        {
+          "type": "pierce",
+          "valueRanked": [20, 30, 50]
+        }
+      ]
+    },
+    {
+      "skillName": "Roar of Spite",
+      "description": "Deals Spite damage to all enemies (+2% damage per 1% HP missing).",
+      "characterId": "batra",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [120, 150, 180],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "spite"
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Khalsa Flame",
+    "description": "Applies 3x Ignite and deals massive Spite damage to 1 enemy.",
+    "characterId": "batra",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 400,
+    "mechanics": [
+      {
+        "type": "ignite",
+        "stacks": 3,
+        "duration": 2
+      },
+      {
+        "type": "spite"
+      }
+    ]
+  },
+  "passive": {
+    "name": "Fierce Dedication",
+    "description": "Consumes 5% Max HP when using skills (cannot die from this). Grants KHALSA synergy (+10% stats per KHALSA ally).",
+    "trigger": "beforeSkill",
+    "mechanics": [
+      {
+        "type": "consumeHpPercent",
+        "valuePercent": 5
+      },
+      {
+        "type": "synergy",
+        "conditionTags": ["KHALSA"],
+        "stat": "all",
+        "valuePercent": 10
+      }
+    ]
+  }
+}

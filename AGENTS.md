@@ -195,9 +195,10 @@ Controls enemy decision-making during battle.
 
 ## Data Storage
 
-- **All game data** (characters, cards, battle state, gacha pulls) is stored **locally** using Zustand (in-memory) and `localStorage` for persistence
-- **Firebase** is used **only for authentication** (sign in / sign up / session management)
-- No game data is written to Firebase or any remote database
+- **Battle state** is stored locally in-memory using Zustand.
+- **Player data** (owned characters, pulls, pity counters) is stored in **Firebase Firestore** for logged-in users to persist progress.
+- **Firebase Auth** is used for email/password and Google sign-ins.
+- For users not logged in, `localStorage` is used as a fallback for trial/demo experiences.
 
 ---
 

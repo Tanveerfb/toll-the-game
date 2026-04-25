@@ -1,0 +1,74 @@
+{
+  "id": "mustafa",
+  "name": "Mustafa",
+  "color": "green",
+  "lore": "South Asian male, ledger exam participant, likes to drink tea, India-themed attacks.",
+  "atk": 65,
+  "def": 90,
+  "hp": 800,
+  "skills": [
+    {
+      "skillName": "Earth Stance: Fortress",
+      "description": "Adopts a defensive stance, granting Damage Reduction to the entire team.",
+      "characterId": "mustafa",
+      "type": "buff",
+      "statMultiplier": "def",
+      "damageRanked": [0, 0, 0],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "stance",
+          "stat": "damageReduction",
+          "valueRanked": [20, 30, 50],
+          "durationRanked": [1, 1, 2]
+        }
+      ]
+    },
+    {
+      "skillName": "Earth Shatter",
+      "description": "Deals DEF-scaling damage to one enemy and lowers their ultimate gauge.",
+      "characterId": "mustafa",
+      "type": "attack",
+      "statMultiplier": "def",
+      "damageRanked": [130, 155, 200],
+      "mechanics": [
+        {
+          "type": "lowerUltGauge",
+          "valueRanked": [1, 1, 3]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Tea Time Tremor",
+    "description": "Raises own DEF by 20%, then deals massive DEF-scaling damage to 1 enemy.",
+    "characterId": "mustafa",
+    "type": "ultimate",
+    "statMultiplier": "def",
+    "damage": 500,
+    "mechanics": [
+      {
+        "type": "buff",
+        "stat": "def",
+        "valuePercent": 20,
+        "duration": 2,
+        "targetSelf": true
+      }
+    ]
+  },
+  "passive": {
+    "name": "Earthen Resolve",
+    "description": "Red or Green allies gain +50% DEF for the battle.",
+    "trigger": "onBattleStart",
+    "mechanics": [
+      {
+        "type": "synergy",
+        "conditionColors": ["red", "green"],
+        "stat": "def",
+        "valuePercent": 50
+      }
+    ]
+  }
+}

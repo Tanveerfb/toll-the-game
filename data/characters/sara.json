@@ -1,0 +1,72 @@
+{
+  "id": "sara",
+  "name": "Sara",
+  "color": "red",
+  "tags": ["FEMALE"],
+  "lore": "Ledger exam examinee, girl, animal control theme.",
+  "atk": 34,
+  "def": 68,
+  "hp": 1616,
+  "skills": [
+    {
+      "skillName": "Animal Strike",
+      "description": "Deals Max HP-scaling damage to 1 enemy.",
+      "characterId": "sara",
+      "type": "attack",
+      "statMultiplier": "hp",
+      "damageRanked": [10, 15, 25],
+      "mechanics": []
+    },
+    {
+      "skillName": "Stampede Concentrate",
+      "description": "Deals Max HP-scaling damage to all enemies. Damage increases if there are fewer enemies.",
+      "characterId": "sara",
+      "type": "attack",
+      "statMultiplier": "hp",
+      "damageRanked": [7.5, 9, 12],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "concentrate"
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Beast Master's Fury",
+    "description": "Raises HP by 20% for 1 turn, then deals 30% HP damage to 1 enemy.",
+    "characterId": "sara",
+    "type": "ultimate",
+    "statMultiplier": "hp",
+    "damage": 30,
+    "mechanics": [
+      {
+        "type": "buff",
+        "stat": "hp",
+        "valuePercent": 20,
+        "duration": 1,
+        "targetSelf": true
+      }
+    ]
+  },
+  "passive": {
+    "name": "Nine Lives",
+    "description": "When taking lethal damage at 30%+ HP, survives and heals 50% of the entire incoming damage. Once per battle. Also grants FEMALE synergy.",
+    "trigger": "onLethalDamage",
+    "mechanics": [
+      {
+        "type": "surviveLethal",
+        "hpConditionPercent": 30,
+        "healDamagePercent": 50
+      },
+      {
+        "type": "synergy",
+        "conditionTags": ["FEMALE"],
+        "stat": "damageDealt",
+        "valuePercent": 5
+      }
+    ]
+  }
+}

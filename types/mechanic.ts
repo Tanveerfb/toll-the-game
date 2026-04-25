@@ -12,6 +12,7 @@ export type BattlePhase =
 
 export type MechanicType =
   | "aoe"
+  | "aoeRanked"
   | "pierce"
   | "weakpoint"
   | "ignite"
@@ -24,12 +25,26 @@ export type MechanicType =
   | "consumeIgnite"
   | "buff"
   | "debuff"
-  | "heal";
+  | "heal"
+  | "stance"
+  | "stun"
+  | "taunt"
+  | "cleanse"
+  | "cancelBuffs"
+  | "cancelStances"
+  | "lowerUltGauge"
+  | "spite"
+  | "concentrate"
+  | "amplify";
 
 export interface Mechanic {
   type: MechanicType;
   valueRanked?: [number, number, number];
   stacksRanked?: [number, number, number];
+  durationRanked?: [number, number, number];
+  ranks?: boolean[];
+  sourceId?: string;
+  targetSelf?: boolean;
   stacks?: number;
   value?: number;
   targethasBuff?: boolean;

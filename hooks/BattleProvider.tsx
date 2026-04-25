@@ -238,9 +238,15 @@ export default function BattleProvider({
   const startFullTest = () => {
     resetBattle();
 
-    const dukeRaw = loadChar("duke");
-    const lyraRaw = loadChar("lyra");
+    const mustafaRaw = loadChar("mustafa");
+    const batraRaw = loadChar("batra");
+    const saraRaw = loadChar("sara");
+    const yalinaRaw = loadChar("yalina");
+
+    const siddiqRaw = loadChar("siddiq");
+    const gabristRaw = loadChar("gabrist");
     const taoRaw = loadChar("master_tao");
+    const dukeRaw = loadChar("duke");
 
     const buildBattleChar = (raw: any, team: "player" | "enemy", instanceId: string): BattleCharacter => ({
       ...raw,
@@ -255,17 +261,21 @@ export default function BattleProvider({
       team
     });
 
-    const pDuke = buildBattleChar(dukeRaw, "player", "p1_duke");
-    const pLyra = buildBattleChar(lyraRaw, "player", "p2_lyra");
-    const eTao = buildBattleChar(taoRaw, "enemy", "e1_tao");
+    const p1 = buildBattleChar(mustafaRaw, "player", "p1_mustafa");
+    const p2 = buildBattleChar(batraRaw, "player", "p2_batra");
+    const p3 = buildBattleChar(saraRaw, "player", "p3_sara");
+    const p4 = buildBattleChar(yalinaRaw, "player", "p4_yalina");
 
-    registerCharacterPassives(pDuke, registerToQueue);
-    registerCharacterPassives(pLyra, registerToQueue);
-    registerCharacterPassives(eTao, registerToQueue);
+    const e1 = buildBattleChar(siddiqRaw, "enemy", "e1_siddiq");
+    const e2 = buildBattleChar(gabristRaw, "enemy", "e2_gabrist");
+    const e3 = buildBattleChar(taoRaw, "enemy", "e3_tao");
+    const e4 = buildBattleChar(dukeRaw, "enemy", "e4_duke");
 
-    updateTeams([pDuke, pLyra], [eTao]);
+    [p1, p2, p3, p4, e1, e2, e3, e4].forEach(c => registerCharacterPassives(c, registerToQueue));
 
-    addToBattleLog("--- 2v1 DECK EVENT LOOP TEST STARTED ---");
+    updateTeams([p1, p2, p3, p4], [e1, e2, e3, e4]);
+
+    addToBattleLog("--- 4v4 NEW CHARACTERS TEST STARTED ---");
     setTimeout(() => {
       setBattlePhase("OnBattleStart");
     }, 500);

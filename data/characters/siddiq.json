@@ -1,0 +1,66 @@
+{
+  "id": "siddiq",
+  "name": "Siddiq",
+  "color": "red",
+  "lore": "Friend of Mustafa, ledger exam participant, India-themed attacks, nature powers.",
+  "atk": 82,
+  "def": 75,
+  "hp": 850,
+  "skills": [
+    {
+      "skillName": "Nature's Strike",
+      "description": "Deals ATK damage to 1 enemy.",
+      "characterId": "siddiq",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [180, 225, 300],
+      "mechanics": []
+    },
+    {
+      "skillName": "Cleansing Bloom",
+      "description": "Removes debuffs and heals. Rank 1 targets 1 ally, Rank 2/3 target the whole team.",
+      "characterId": "siddiq",
+      "type": "heal",
+      "statMultiplier": "atk",
+      "damageRanked": [75, 105, 130],
+      "mechanics": [
+        {
+          "type": "cleanse"
+        },
+        {
+          "type": "aoeRanked",
+          "ranks": [false, true, true]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Wrath of the Wild",
+    "description": "Cancels enemy buffs and stances, deals ATK damage, and Stuns them for 2 turns.",
+    "characterId": "siddiq",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 300,
+    "mechanics": [
+      {
+        "type": "cancelBuffs"
+      },
+      {
+        "type": "stun",
+        "duration": 2
+      }
+    ]
+  },
+  "passive": {
+    "name": "Vampiric Roots",
+    "description": "When below 50% HP, heals self for 30% of damage dealt.",
+    "trigger": "onDamageDealt",
+    "mechanics": [
+      {
+        "type": "healLifesteal",
+        "hpConditionPercent": 50,
+        "lifestealPercent": 30
+      }
+    ]
+  }
+}
