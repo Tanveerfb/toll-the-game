@@ -103,7 +103,7 @@ export default function BattleProvider({
           const teamToTick = [...currentTeams[teamKey]];
 
           for (let i = 0; i < teamToTick.length; i++) {
-            let char = { ...teamToTick[i] };
+            const char = { ...teamToTick[i] };
             if (char.currentHP <= 0) continue;
 
             // Reset action-specific passive flags
@@ -322,7 +322,7 @@ export default function BattleProvider({
       }}
     >
 
-      <Deck />
+      {battlePhase !== "initializing" && <Deck />}
 
       {children}
     </BattleContext.Provider>

@@ -105,8 +105,8 @@ export const useGameStore = create<BattleState>((set, get) => ({
 
     if (currentSpaces <= 0) return;
 
-    let pool: { charId: string, skill: any }[] = [];
-    let guaranteedUlts: { charId: string, skill: any }[] = [];
+    const pool: { charId: string, skill: any }[] = [];
+    const guaranteedUlts: { charId: string, skill: any }[] = [];
 
     livingChars.forEach(c => {
       if (c.ultGauge >= 5 && c.ultimate) {

@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { calculateDamage } from '@/lib/game/damage';
 import { BattleCharacter } from '@/types/character';
 import { MechanicType } from '@/types/mechanic';
+import { Card, TextField, Label, Input } from '@heroui/react';
 
 export default function BattleTester() {
   const [baseDamage, setBaseDamage] = useState(100);
@@ -85,54 +86,58 @@ export default function BattleTester() {
   }, [baseDamage, enemyDefense]);
 
   return (
-    <div style={{ padding: '2rem', background: '#111', color: 'white', borderRadius: '1rem', width: '100%', maxWidth: '800px', margin: '0 auto', border: '1px solid #333' }}>
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', color: '#fff', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
-        🧪 Mechanic Damage Visualizer
-      </h2>
+    <Card className="p-8 bg-zinc-900 text-white rounded-2xl w-full max-w-3xl mx-auto border border-zinc-800 shadow-2xl">
+      <Card.Header className="border-b border-zinc-800 pb-4 mb-6">
+        <Card.Title className="text-2xl font-heading tracking-wider">
+          🧪 Mechanic Damage Visualizer
+        </Card.Title>
+      </Card.Header>
       
-      <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <label style={{ fontSize: '0.9rem', color: '#aaa' }}>Base Skill Damage</label>
-          <input 
-            type="number" 
-            value={baseDamage} 
-            onChange={e => setBaseDamage(Number(e.target.value))}
-            style={{ padding: '0.5rem', borderRadius: '6px', background: '#222', color: 'white', border: '1px solid #444', fontSize: '1.1rem' }}
-          />
+      <Card.Content>
+        <div className="flex gap-8 mb-8">
+          <TextField className="flex flex-col gap-2 flex-1">
+            <Label className="text-sm text-zinc-500 font-semibold uppercase tracking-tighter">Base Skill Damage</Label>
+            <Input 
+              type="number" 
+              value={baseDamage.toString()} 
+              onChange={(e: any) => setBaseDamage(Number(e.target.value))}
+              className="bg-zinc-800 border-zinc-700 p-2 rounded-lg"
+            />
+          </TextField>
+          <TextField className="flex flex-col gap-2 flex-1">
+            <Label className="text-sm text-zinc-500 font-semibold uppercase tracking-tighter">Target Defense</Label>
+            <Input 
+              type="number" 
+              value={enemyDefense.toString()} 
+              onChange={(e: any) => setEnemyDefense(Number(e.target.value))}
+              className="bg-zinc-800 border-zinc-700 p-2 rounded-lg"
+            />
+          </TextField>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <label style={{ fontSize: '0.9rem', color: '#aaa' }}>Target Defense</label>
-          <input 
-            type="number" 
-            value={enemyDefense} 
-            onChange={e => setEnemyDefense(Number(e.target.value))}
-            style={{ padding: '0.5rem', borderRadius: '6px', background: '#222', color: 'white', border: '1px solid #444', fontSize: '1.1rem' }}
-          />
-        </div>
-      </div>
 
-      <div style={{ width: '100%', height: 400, marginTop: '2rem' }}>
-        <ResponsiveContainer>
-          <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 25 }}>
-            <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
-            <XAxis 
-              dataKey="name" 
-              stroke="#888" 
-              tick={{ fill: '#ccc', fontSize: 12 }} 
-              angle={-15} 
-              textAnchor="end"
-              height={50}
-            />
-            <YAxis stroke="#888" tick={{ fill: '#ccc' }} />
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff', borderRadius: '8px' }} 
-              itemStyle={{ color: '#fff' }}
-              cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-            />
-            <Bar dataKey="damage" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+        <div className="w-full h-[400px] mt-8 bg-black/20 rounded-xl p-4">
+          <ResponsiveContainer>
+            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 25 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
+              <XAxis 
+                dataKey="name" 
+                stroke="#666" 
+                tick={{ fill: '#888', fontSize: 10 }} 
+                angle={-15} 
+                textAnchor="end"
+                height={60}
+              />
+              <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 10 }} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff', borderRadius: '8px', fontSize: '12px' }} 
+                itemStyle={{ color: '#fff' }}
+                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+              />
+              <Bar dataKey="damage" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card.Content>
+    </Card>
   );
 }
