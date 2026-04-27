@@ -19,7 +19,9 @@ interface BattleContextType {
   resolveEnemyTurnWrapper: () => void;
 }
 
-const BattleContext = React.createContext<BattleContextType | undefined>(undefined);
+const BattleContext = React.createContext<BattleContextType | undefined>(
+  undefined,
+);
 
 export function useBattleContext() {
   const context = React.useContext(BattleContext);
@@ -38,11 +40,21 @@ export default function BattleProvider({
 
   const store = useGameStore();
   const {
-    playerTeam, enemyTeam, battlePhase,
-    updateTeams, setBattlePhase, setCurrentTurn,
-    setPlayerTurns, setEnemyTurns, resetBattle, addToBattleLog,
-    initializeDeck, drawCards, actionQueue, clearActionQueue,
-    removeDeadCharacterCards
+    playerTeam,
+    enemyTeam,
+    battlePhase,
+    updateTeams,
+    setBattlePhase,
+    setCurrentTurn,
+    setPlayerTurns,
+    setEnemyTurns,
+    resetBattle,
+    addToBattleLog,
+    initializeDeck,
+    drawCards,
+    actionQueue,
+    clearActionQueue,
+    removeDeadCharacterCards,
   } = store;
 
   const phaseRef = React.useRef(battlePhase);
@@ -87,7 +99,7 @@ export default function BattleProvider({
         "OnPlayerTurnStart",
         "OnPlayerTurnEnd",
         "OnEnemyTurnStart",
-        "OnEnemyTurnEnd"
+        "OnEnemyTurnEnd",
       ];
 
       if (automatedPhases.includes(battlePhase)) {
@@ -98,8 +110,12 @@ export default function BattleProvider({
         }
 
         // System Ticks (Buff/Debuff durations, DoT/HoT)
-        if (battlePhase === "OnPlayerTurnStart" || battlePhase === "OnEnemyTurnStart") {
-          const teamKey = battlePhase === "OnPlayerTurnStart" ? "playerTeam" : "enemyTeam";
+        if (
+          battlePhase === "OnPlayerTurnStart" ||
+          battlePhase === "OnEnemyTurnStart"
+        ) {
+          const teamKey =
+            battlePhase === "OnPlayerTurnStart" ? "playerTeam" : "enemyTeam";
           const teamToTick = [...currentTeams[teamKey]];
 
           for (let i = 0; i < teamToTick.length; i++) {
@@ -110,9 +126,11 @@ export default function BattleProvider({
             char.passiveState.firstActionTriggeredThisTurn = false;
 
             // Apply DoT
-            const dotEffects = char.debuffs.filter(d => d.type === "damageOverTime" || d.type === "decay");
+            const dotEffects = char.debuffs.filter(
+              (d) => d.type === "damageOverTime" || d.type === "decay",
+            );
             let totalDot = 0;
-            dotEffects.forEach(dot => {
+            dotEffects.forEach((dot) => {
               if (dot.type === "decay" && dot.capturedDamage) {
                 totalDot += dot.capturedDamage;
               } else if (dot.value) {
@@ -121,23 +139,45 @@ export default function BattleProvider({
             });
             if (totalDot > 0) {
               char.currentHP = Math.max(0, char.currentHP - totalDot);
-              addToBattleLog(`[System] ${char.name} takes ${totalDot} damage from DoT.`);
+              addToBattleLog(
+                `[System] ${char.name} takes ${totalDot} damage from DoT.`,
+              );
             }
 
             // Apply HoT
-            const hotEffects = char.buffs.filter(b => b.type === "healOverTime");
+            const hotEffects = char.buffs.filter(
+              (b) => b.type === "healOverTime",
+            );
             let totalHot = 0;
-            hotEffects.forEach(hot => {
+            hotEffects.forEach((hot) => {
               if (hot.value) totalHot += hot.value;
             });
             if (totalHot > 0) {
               char.currentHP = Math.min(char.hp, char.currentHP + totalHot);
-              addToBattleLog(`[System] ${char.name} heals ${totalHot} HP from HoT.`);
+              addToBattleLog(
+                `[System] ${char.name} heals ${totalHot} HP from HoT.`,
+              );
             }
 
             // Tick down durations
-            char.buffs = char.buffs.map(b => ({ ...b, buffDuration: b.buffDuration ? b.buffDuration - 1 : undefined })).filter(b => b.buffDuration === undefined || b.buffDuration > 0);
-            char.debuffs = char.debuffs.map(d => ({ ...d, debuffDuration: d.debuffDuration ? d.debuffDuration - 1 : undefined })).filter(d => d.debuffDuration === undefined || d.debuffDuration > 0);
+            char.buffs = char.buffs
+              .map((b) => ({
+                ...b,
+                buffDuration: b.buffDuration ? b.buffDuration - 1 : undefined,
+              }))
+              .filter(
+                (b) => b.buffDuration === undefined || b.buffDuration > 0,
+              );
+            char.debuffs = char.debuffs
+              .map((d) => ({
+                ...d,
+                debuffDuration: d.debuffDuration
+                  ? d.debuffDuration - 1
+                  : undefined,
+              }))
+              .filter(
+                (d) => d.debuffDuration === undefined || d.debuffDuration > 0,
+              );
 
             teamToTick[i] = char;
           }
@@ -148,12 +188,15 @@ export default function BattleProvider({
         const updatedTeams = await processQueue(
           battlePhase,
           currentTeams,
-          addToBattleLog
+          addToBattleLog,
         );
 
         // Check for deaths during system ticks or queue evaluation and clean deck
-        const allChars = [...updatedTeams.playerTeam, ...updatedTeams.enemyTeam];
-        allChars.forEach(c => {
+        const allChars = [
+          ...updatedTeams.playerTeam,
+          ...updatedTeams.enemyTeam,
+        ];
+        allChars.forEach((c) => {
           if (c.currentHP <= 0 && c.team === "player") {
             removeDeadCharacterCards(c.instanceId);
           }
@@ -163,8 +206,12 @@ export default function BattleProvider({
         updateTeams(updatedTeams.playerTeam, updatedTeams.enemyTeam);
 
         // Check for victory/defeat
-        const allEnemiesDead = updatedTeams.enemyTeam.every(e => e.currentHP <= 0);
-        const allPlayersDead = updatedTeams.playerTeam.every(p => p.currentHP <= 0);
+        const allEnemiesDead = updatedTeams.enemyTeam.every(
+          (e) => e.currentHP <= 0,
+        );
+        const allPlayersDead = updatedTeams.playerTeam.every(
+          (p) => p.currentHP <= 0,
+        );
 
         if (allEnemiesDead && updatedTeams.enemyTeam.length > 0) {
           setBattlePhase("victory");
@@ -176,7 +223,10 @@ export default function BattleProvider({
           return;
         }
 
-        if (battlePhase === "OnPlayerTurnEnd" || battlePhase === "OnEnemyTurnEnd") {
+        if (
+          battlePhase === "OnPlayerTurnEnd" ||
+          battlePhase === "OnEnemyTurnEnd"
+        ) {
           drawCards();
         }
 
@@ -193,18 +243,25 @@ export default function BattleProvider({
 
     let currentTeams = { playerTeam, enemyTeam };
 
-    const actions: TurnActions = actionQueue.map(card => ({
+    const actions: TurnActions = actionQueue.map((card) => ({
       sourceInstanceId: card.sourceInstanceId,
       skill: card.skill,
-      targetInstanceId: card.targetInstanceId || ""
+      targetInstanceId: card.targetInstanceId || "",
     }));
 
     actions.forEach((action, index) => {
       if (action) {
-        currentTeams = executeSkill(action, currentTeams, addToBattleLog, index);
+        currentTeams = executeSkill(
+          action,
+          currentTeams,
+          addToBattleLog,
+          index,
+        );
         // Clean up dead characters immediately from deck mid-action
-        const deadChars = currentTeams.playerTeam.filter(c => c.currentHP <= 0);
-        deadChars.forEach(c => removeDeadCharacterCards(c.instanceId));
+        const deadChars = currentTeams.playerTeam.filter(
+          (c) => c.currentHP <= 0,
+        );
+        deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
       }
     });
 
@@ -222,9 +279,16 @@ export default function BattleProvider({
 
     enemyActions.forEach((action, index) => {
       if (action) {
-        currentTeams = executeSkill(action, currentTeams, addToBattleLog, index);
-        const deadChars = currentTeams.playerTeam.filter(c => c.currentHP <= 0);
-        deadChars.forEach(c => removeDeadCharacterCards(c.instanceId));
+        currentTeams = executeSkill(
+          action,
+          currentTeams,
+          addToBattleLog,
+          index,
+        );
+        const deadChars = currentTeams.playerTeam.filter(
+          (c) => c.currentHP <= 0,
+        );
+        deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
       }
     });
 
@@ -248,7 +312,11 @@ export default function BattleProvider({
     const taoRaw = loadChar("master_tao");
     const dukeRaw = loadChar("duke");
 
-    const buildBattleChar = (raw: any, team: "player" | "enemy", instanceId: string): BattleCharacter => ({
+    const buildBattleChar = (
+      raw: any,
+      team: "player" | "enemy",
+      instanceId: string,
+    ): BattleCharacter => ({
       ...raw,
       instanceId,
       currentAttack: raw.atk,
@@ -258,7 +326,7 @@ export default function BattleProvider({
       buffs: [],
       debuffs: [],
       passiveState: {},
-      team
+      team,
     });
 
     const p1 = buildBattleChar(mustafaRaw, "player", "p1_mustafa");
@@ -271,7 +339,9 @@ export default function BattleProvider({
     const e3 = buildBattleChar(taoRaw, "enemy", "e3_tao");
     const e4 = buildBattleChar(dukeRaw, "enemy", "e4_duke");
 
-    [p1, p2, p3, p4, e1, e2, e3, e4].forEach(c => registerCharacterPassives(c, registerToQueue));
+    [p1, p2, p3, p4, e1, e2, e3, e4].forEach((c) =>
+      registerCharacterPassives(c, registerToQueue),
+    );
 
     updateTeams([p1, p2, p3, p4], [e1, e2, e3, e4]);
 
@@ -292,21 +362,34 @@ export default function BattleProvider({
         key={c.instanceId}
         onClick={() => isEnemy && store.setEnemyMarker(c.instanceId)}
         style={{
-          border: isMarked ? '2px solid red' : '1px solid #444',
-          padding: '5px',
-          marginBottom: '5px',
-          fontSize: '11px',
-          background: 'rgba(20,20,20,0.8)',
-          cursor: isEnemy ? 'crosshair' : 'default'
+          border: isMarked ? "2px solid red" : "1px solid #444",
+          padding: "5px",
+          marginBottom: "5px",
+          fontSize: "11px",
+          background: "rgba(20,20,20,0.8)",
+          cursor: isEnemy ? "crosshair" : "default",
         }}
       >
-        <strong>{c.name} {isMarked ? "🎯" : ""}</strong><br />
-        HP: {c.currentHP}/{c.hp} | ATK: {c.currentAttack} | DEF: {c.currentDefense}<br />
-        Ult Gauge: {c.ultGauge}/5<br />
-        {c.passive && <span>Passive: {c.passive.name} <br /></span>}
-        State: {JSON.stringify(c.passiveState)}<br />
-        Buffs: {c.buffs.map(b => b.type).join(', ') || 'None'} <br />
-        Debuffs: {c.debuffs.map(d => `${d.type}(${d.stacks || 1})`).join(', ') || 'None'}
+        <strong>
+          {c.name} {isMarked ? "🎯" : ""}
+        </strong>
+        <br />
+        HP: {c.currentHP}/{c.hp} | ATK: {c.currentAttack} | DEF:{" "}
+        {c.currentDefense}
+        <br />
+        Ult Gauge: {c.ultGauge}/5
+        <br />
+        {c.passive && (
+          <span>
+            Passive: {c.passive.name} <br />
+          </span>
+        )}
+        State: {JSON.stringify(c.passiveState)}
+        <br />
+        Buffs: {c.buffs.map((b) => b.type).join(", ") || "None"} <br />
+        Debuffs:{" "}
+        {c.debuffs.map((d) => `${d.type}(${d.stacks || 1})`).join(", ") ||
+          "None"}
       </div>
     );
   };
@@ -318,10 +401,9 @@ export default function BattleProvider({
         startDukeTest,
         startFullTest,
         resolveplayerTurnWrapper,
-        resolveEnemyTurnWrapper
+        resolveEnemyTurnWrapper,
       }}
     >
-
       {battlePhase !== "initializing" && <Deck />}
 
       {children}
