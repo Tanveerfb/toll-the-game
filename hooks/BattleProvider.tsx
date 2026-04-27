@@ -9,7 +9,6 @@ import { TurnActions, Action } from "@/types/action";
 import { executeSkill } from "@/lib/game/combat";
 import { getAIMoves } from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
-import Deck from "@/components/game/Deck";
 
 interface BattleContextType {
   advancePhase: () => void;
@@ -245,7 +244,17 @@ export default function BattleProvider({
 
     const actions: TurnActions = actionQueue.map((card) => ({
       sourceInstanceId: card.sourceInstanceId,
-      skill: card.skill,
+      skill:
+        card.skill.type === "ultimate"
+          ? card.skill
+          : {
+              ...card.skill,
+              damageRanked: [
+                card.skill.damageRanked[card.rank - 1],
+                card.skill.damageRanked[card.rank - 1],
+                card.skill.damageRanked[card.rank - 1],
+              ] as [number, number, number],
+            },
       targetInstanceId: card.targetInstanceId || "",
     }));
 
@@ -262,6 +271,13 @@ export default function BattleProvider({
           (c) => c.currentHP <= 0,
         );
         deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
+
+        // Using a queued card grants +1 ult gauge for that source character.
+        currentTeams.playerTeam = currentTeams.playerTeam.map((char) =>
+          char.instanceId === action.sourceInstanceId
+            ? { ...char, ultGauge: Math.min(5, char.ultGauge + 1) }
+            : char,
+        );
       }
     });
 
@@ -353,47 +369,6 @@ export default function BattleProvider({
 
   const startDukeTest = () => startFullTest();
 
-  const renderCharStats = (c: BattleCharacter) => {
-    const isEnemy = c.team === "enemy";
-    const isMarked = isEnemy && store.selectedEnemyMarker === c.instanceId;
-
-    return (
-      <div
-        key={c.instanceId}
-        onClick={() => isEnemy && store.setEnemyMarker(c.instanceId)}
-        style={{
-          border: isMarked ? "2px solid red" : "1px solid #444",
-          padding: "5px",
-          marginBottom: "5px",
-          fontSize: "11px",
-          background: "rgba(20,20,20,0.8)",
-          cursor: isEnemy ? "crosshair" : "default",
-        }}
-      >
-        <strong>
-          {c.name} {isMarked ? "🎯" : ""}
-        </strong>
-        <br />
-        HP: {c.currentHP}/{c.hp} | ATK: {c.currentAttack} | DEF:{" "}
-        {c.currentDefense}
-        <br />
-        Ult Gauge: {c.ultGauge}/5
-        <br />
-        {c.passive && (
-          <span>
-            Passive: {c.passive.name} <br />
-          </span>
-        )}
-        State: {JSON.stringify(c.passiveState)}
-        <br />
-        Buffs: {c.buffs.map((b) => b.type).join(", ") || "None"} <br />
-        Debuffs:{" "}
-        {c.debuffs.map((d) => `${d.type}(${d.stacks || 1})`).join(", ") ||
-          "None"}
-      </div>
-    );
-  };
-
   return (
     <BattleContext.Provider
       value={{
@@ -404,8 +379,6 @@ export default function BattleProvider({
         resolveEnemyTurnWrapper,
       }}
     >
-      {battlePhase !== "initializing" && <Deck />}
-
       {children}
     </BattleContext.Provider>
   );

@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/AuthProvider";
 import { useGameStore } from "@/store/gameStore";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import { useRouter } from "next/navigation";
-import Deck from "@/components/game/Deck";
+import BattleArena from "@/components/game/BattleArena";
 
 export default function Home() {
   const { user } = useAuth();
@@ -18,29 +18,7 @@ export default function Home() {
   const authRoute = user ? "/profile" : "/login";
 
   if (battlePhase !== "initializing") {
-    return (
-      <main
-        className="relative min-h-screen overflow-hidden"
-        style={{
-          backgroundImage:
-            "radial-gradient(60% 45% at 50% 15%, rgba(217,119,6,0.25), transparent 70%), linear-gradient(120deg, #0c0a09 0%, #111827 55%, #1f2937 100%)",
-        }}
-      >
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-size-[36px_36px] opacity-20" />
-        <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-8 md:px-10">
-          <div className="mb-8 border-2 border-zinc-700 bg-black/40 px-6 py-4 backdrop-blur-sm">
-            <p className="font-heading text-xl tracking-[0.18em] text-zinc-100 md:text-2xl">
-              BATTLE IN PROGRESS
-            </p>
-            <p className="mt-2 font-body text-sm uppercase tracking-[0.16em] text-zinc-400">
-              Queue skills from the deck below to continue the encounter.
-            </p>
-          </div>
-          <div className="flex-1" />
-          <Deck />
-        </section>
-      </main>
-    );
+    return <BattleArena />;
   }
 
   return (

@@ -8,6 +8,7 @@ interface KeyworkHighlighterProps {
   text: string;
   className?: string;
   glossary?: Record<string, string>;
+  keywordClassName?: string;
 }
 
 function escapeRegex(input: string): string {
@@ -18,6 +19,7 @@ export default function KeyworkHighlighter({
   text,
   className,
   glossary,
+  keywordClassName,
 }: KeyworkHighlighterProps): React.JSX.Element {
   const dictionary = glossary ?? mechanicGlossary;
   const keywords = React.useMemo(
@@ -50,7 +52,10 @@ export default function KeyworkHighlighter({
         return (
           <Tooltip key={`${part}-${index}`} delay={0}>
             <Tooltip.Trigger
-              className="cursor-help underline decoration-dotted underline-offset-3 text-foreground"
+              className={
+                keywordClassName ??
+                "cursor-help underline decoration-dotted underline-offset-3 text-foreground"
+              }
               render={(props) => <span {...props} />}
             >
               {part}
