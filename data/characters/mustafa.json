@@ -9,15 +9,12 @@
   "skills": [
     {
       "skillName": "Earth Stance: Fortress",
-      "description": "Adopts a defensive stance, granting Damage Reduction to the entire team.",
+      "description": "Applies a stance that grants allies [stance.value]% damage reduction for [stance.duration] turns.",
       "characterId": "mustafa",
       "type": "buff",
       "statMultiplier": "def",
       "damageRanked": [0, 0, 0],
       "mechanics": [
-        {
-          "type": "aoe"
-        },
         {
           "type": "stance",
           "stat": "damageReduction",
@@ -28,7 +25,7 @@
     },
     {
       "skillName": "Earth Shatter",
-      "description": "Deals DEF-scaling damage to one enemy and lowers their ultimate gauge.",
+      "description": "Does DEF-scaled damage to one enemy and reduces [lowerUltGauge.value] ultimate gauge",
       "characterId": "mustafa",
       "type": "attack",
       "statMultiplier": "def",
@@ -43,11 +40,11 @@
   ],
   "ultimate": {
     "skillName": "Tea Time Tremor",
-    "description": "Raises own DEF by 20%, then deals massive DEF-scaling damage to 1 enemy.",
+    "description": "Raises own DEF by 20% for [buff.duration] turns, then does DEF-scaled damage to one enemy.",
     "characterId": "mustafa",
     "type": "ultimate",
     "statMultiplier": "def",
-    "damage": 500,
+    "damage": 450,
     "mechanics": [
       {
         "type": "buff",
@@ -60,7 +57,7 @@
   },
   "passive": {
     "name": "Earthen Resolve",
-    "description": "Red or Green allies gain +50% DEF for the battle.",
+    "description": "Red and Green allies gain +50% DEF for the battle.",
     "trigger": "onBattleStart",
     "mechanics": [
       {

@@ -10,11 +10,11 @@
   "skills": [
     {
       "skillName": "Lion's Charge",
-      "description": "Deals ATK damage to 1 enemy, ignoring a portion of their defense.",
+      "description": "Does [x-ranked]% pierce damage equal to ATK-scaled to one enemy.",
       "characterId": "batra",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [180, 220, 260],
+      "damageRanked": [180, 220, 275],
       "mechanics": [
         {
           "type": "pierce",
@@ -24,11 +24,11 @@
     },
     {
       "skillName": "Roar of Spite",
-      "description": "Deals Spite damage to all enemies (+2% damage per 1% HP missing).",
+      "description": "Does [x-ranked] Spite damage equal to ATK-scaled to all enemies.",
       "characterId": "batra",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [120, 150, 180],
+      "damageRanked": [120, 150, 200],
       "mechanics": [
         {
           "type": "aoe"
@@ -41,7 +41,7 @@
   ],
   "ultimate": {
     "skillName": "Khalsa Flame",
-    "description": "Applies 3x Ignite and deals massive Spite damage to 1 enemy.",
+    "description": "Applies 3 Ignite stacks, then does Spite damage equal to ATK-scaled.",
     "characterId": "batra",
     "type": "ultimate",
     "statMultiplier": "atk",
@@ -59,7 +59,7 @@
   },
   "passive": {
     "name": "Fierce Dedication",
-    "description": "Consumes 5% Max HP when using skills (cannot die from this). Grants KHALSA synergy (+10% stats per KHALSA ally).",
+    "description": "Before using a skill, consumes 5% max HP (cannot reduce self below 1 HP).",
     "trigger": "beforeSkill",
     "mechanics": [
       {

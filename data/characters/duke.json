@@ -8,38 +8,33 @@
   "skills": [
     {
       "skillName": "Fist of Flowing Ruin : Slide",
+      "description": "Does ATK-scaled damage to all enemies and pierces [pierce.value]% DEF.",
       "characterId": "duke",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [
-        150,
-        180,
-        270
-      ],
+      "damageRanked": [150, 180, 235],
       "mechanics": [
         {
           "type": "aoe"
         },
         {
           "type": "pierce",
-          "value": 20
+          "value": 30
         }
       ]
     },
     {
       "skillName": "Fist of Flowing Ruin : Weaken",
+      "description": "Does ATK-scaled damage to one enemy and lowers ATK for 2 turns.",
       "characterId": "duke",
       "type": "debuff",
       "statMultiplier": "atk",
-      "damageRanked": [
-        110,
-        145,
-        190
-      ]
+      "damageRanked": [110, 145, 205]
     }
   ],
   "ultimate": {
     "skillName": "Fist of Flowing Ruin : Water",
+    "description": "Does ATK-scaled damage to one enemy.",
     "characterId": "duke",
     "type": "ultimate",
     "statMultiplier": "atk",
@@ -47,18 +42,20 @@
   },
   "passive": {
     "name": "Flowing Ruin",
-    "description": "After using a skill, gain 1 Flowing Ruin stack. At 3 stacks, the next skill will consume all stacks to deal 50% more damage and apply a debuff that reduces the target's ATK by 20% for 2 turns.",
+    "description": "After using a skill, gains 1 Flowing Ruin stack. At 3 stacks, the next skill consumes all stacks, deals 50% more damage, and lowers target ATK by 20% for 2 turns.",
     "trigger": "afterSkill",
     "mechanics": [
       {
         "type": "buff",
         "name": "Flowing Ruin Stack",
-        "description": "Grants 1 Flowing Ruin stack. Max 3 stacks."
+        "triggerText": "After each skill used by this character",
+        "description": "Gains 1 Flowing Ruin stack (max 3)."
       },
       {
         "type": "conditionalBuff",
         "name": "Flowing Ruin Empowerment",
-        "description": "At 3 stacks, the next skill consumes all stacks to deal 50% more damage and applies a debuff that reduces the target's ATK by 20% for 2 turns."
+        "triggerText": "When there are 3 stacks of Flowing Ruin",
+        "description": "At 3 stacks, the next skill consumes all stacks, deals 50% more damage, and lowers target ATK by 20% for 2 turns."
       }
     ]
   }

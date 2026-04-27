@@ -9,11 +9,11 @@
   "skills": [
     {
       "skillName": "Flaming Palm",
-      "description": "Strikes the enemy with a palm wreathed in flames, dealing ATK damage and applying Ignite.",
+      "description": "Does ATK-scaled damage to one enemy and applies [ignite.stacks] Ignite.",
       "characterId": "master_tao",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [120, 140, 170],
+      "damageRanked": [120, 140, 175],
       "mechanics": [
         {
           "type": "ignite",
@@ -23,11 +23,11 @@
     },
     {
       "skillName": "Inferno Consumption",
-      "description": "Consumes all Ignite stacks from the enemy, increasing his attack by 20% for each stack consumed, and dealing devastating ATK damage to a single enemy.",
+      "description": "Does Combustion damage equal to ATK-scaled to one enemy.",
       "characterId": "master_tao",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [130, 155, 180],
+      "damageRanked": [120, 140, 170],
       "mechanics": [
         {
           "type": "consumeIgnite",
@@ -39,11 +39,11 @@
   ],
   "ultimate": {
     "skillName": "Wrath of the Fire Sage",
-    "description": "Unleashes a massive wave of fire, applying 3 Ignite stacks to all enemies and dealing ATK damage to all enemies.",
+    "description": "Applies 3 Ignite stacks to all enemies, then does ATK-scaled damage to all enemies.",
     "characterId": "master_tao",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 160,
+    "damage": 280,
     "mechanics": [
       {
         "type": "aoe"

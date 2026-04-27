@@ -3,33 +3,33 @@
   "name": "Gabrist",
   "color": "blue",
   "lore": "Artist, friend of Batra, ledger exam participant, calm and cool.",
-  "atk": 55,
+  "atk": 110,
   "def": 70,
   "hp": 1300,
   "skills": [
     {
       "skillName": "Ink Slash",
-      "description": "Deals ATK damage and lowers target's ATK.",
+      "description": "Does ATK-scaled damage to one enemy and lowers ATK for 2 turns",
       "characterId": "gabrist",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [170, 195, 220],
+      "damageRanked": [170, 195, 240],
       "mechanics": [
         {
           "type": "debuff",
           "stat": "atk",
-          "valueRanked": [15, 25, 40],
-          "durationRanked": [1, 1, 2]
+          "value": 20,
+          "duration": 2
         }
       ]
     },
     {
       "skillName": "Erase",
-      "description": "Cancels stances and deals ATK damage to 1 enemy.",
+      "description": "Cancels stances and does ATK-scaled damage to one enemy.",
       "characterId": "gabrist",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [180, 210, 250],
+      "damageRanked": [180, 210, 265],
       "mechanics": [
         {
           "type": "cancelStances"
@@ -39,11 +39,11 @@
   ],
   "ultimate": {
     "skillName": "Masterpiece Unveiled",
-    "description": "Deals ATK damage to all enemies and lowers their ATK & DEF by 30% for 2 turns.",
+    "description": "Does ATK-scaled damage to all enemies and greatly lowers ATK and DEF for 2 turns.",
     "characterId": "gabrist",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 350,
+    "damage": 375,
     "mechanics": [
       {
         "type": "aoe"
@@ -51,26 +51,26 @@
       {
         "type": "debuff",
         "stat": "atk",
-        "valuePercent": 30,
+        "valuePercent": 50,
         "duration": 2
       },
       {
         "type": "debuff",
         "stat": "def",
-        "valuePercent": 30,
+        "valuePercent": 50,
         "duration": 2
       }
     ]
   },
   "passive": {
     "name": "Flawless Canvas",
-    "description": "Allies gain +20% Max HP if there are no dead allies.",
+    "description": "All allies gain +20% DEF while no ally is defeated.",
     "trigger": "aura",
     "mechanics": [
       {
         "type": "aura",
         "conditionNoDeadAllies": true,
-        "stat": "hp",
+        "stat": "def",
         "valuePercent": 20
       }
     ]

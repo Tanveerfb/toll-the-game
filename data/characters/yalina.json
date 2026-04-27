@@ -10,15 +10,12 @@
   "skills": [
     {
       "skillName": "Draw Fire",
-      "description": "Taunts all enemies and reduces damage taken.",
+      "description": "Taunts all enemies and gains [buff.value]% damage reduction for [buff.duration] turns.",
       "characterId": "yalina",
       "type": "debuff",
       "statMultiplier": "def",
       "damageRanked": [0, 0, 0],
       "mechanics": [
-        {
-          "type": "aoe"
-        },
         {
           "type": "taunt",
           "durationRanked": [1, 1, 2]
@@ -26,7 +23,7 @@
         {
           "type": "buff",
           "stat": "damageReduction",
-          "valueRanked": [30, 50, 80],
+          "valueRanked": [25, 40, 60],
           "durationRanked": [1, 1, 2],
           "targetSelf": true
         }
@@ -34,11 +31,11 @@
     },
     {
       "skillName": "Amplified Strike",
-      "description": "Deals HP-scaling damage to 1 enemy. Damage increases by +10% for each buff on self.",
+      "description": "Does Amplify damage equal to HP-scaled to one enemy.",
       "characterId": "yalina",
       "type": "attack",
       "statMultiplier": "hp",
-      "damageRanked": [5, 7, 10],
+      "damageRanked": [7, 10, 15],
       "mechanics": [
         {
           "type": "amplify",
@@ -49,16 +46,21 @@
   ],
   "ultimate": {
     "skillName": "Devastating Blow",
-    "description": "Deals 25% HP damage to 1 enemy.",
+    "description": "Does Amplify damage equal to HP-Scaled to one enemy.",
     "characterId": "yalina",
     "type": "ultimate",
     "statMultiplier": "hp",
     "damage": 25,
-    "mechanics": []
+    "mechanics": [
+      {
+        "type": "amplify",
+        "valuePercent": 10
+      }
+    ]
   },
   "passive": {
     "name": "Momentum",
-    "description": "Gains +20% damage for each ally skill use (Max 5). Removes all stacks when dealing damage.",
+    "description": "Gains a buff that increases damage by 20% (max 5 stacks). Consumes all stacks after dealing damage.",
     "trigger": "onAllySkill",
     "mechanics": [
       {

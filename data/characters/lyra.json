@@ -9,23 +9,15 @@
   "skills": [
     {
       "skillName": "Red Ice: Volcanic Frost",
-      "description": "Fires an arrow of Red Ice, dealing ATK damage to one enemy and applying Decay. Decay causes the target to take 10% of the inflicted skill damage for 2 turns.",
+      "description": "Does ATK-scaled damage to one enemy and applies [decay.stacks] Decay for [decay.duration] turns.",
       "characterId": "lyra",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [
-        130,
-        145,
-        170
-      ],
+      "damageRanked": [130, 145, 175],
       "mechanics": [
         {
           "type": "decay",
-          "stacksRanked": [
-            1,
-            1,
-            3
-          ],
+          "stacksRanked": [1, 1, 3],
           "duration": 2,
           "damagePercent": 10
         }
@@ -33,34 +25,26 @@
     },
     {
       "skillName": "Red Ice: Magma Shaft",
-      "description": "Concentrates the lava within the Red Ice to pierce enemy armor, ignoring a portion of their defense and dealing ATK damage to a single enemy.",
+      "description": "Does ATK-scaled as [pierce.value]% pierce damage to one enemy",
       "characterId": "lyra",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [
-        100,
-        120,
-        150
-      ],
+      "damageRanked": [100, 120, 155],
       "mechanics": [
         {
           "type": "pierce",
-          "valueRanked": [
-            20,
-            30,
-            50
-          ]
+          "valueRanked": [20, 30, 50]
         }
       ]
     }
   ],
   "ultimate": {
     "skillName": "Red Ice: Absolute Zero Ignition",
-    "description": "Unleashes a barrage of Red Ice arrows that shatter upon impact, ignoring 50% of enemy defense and dealing massive ATK damage to all enemies.",
+    "description": "Does ATK-scaled damage to all enemies and pierces [pierce.value]% DEF.",
     "characterId": "lyra",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 170,
+    "damage": 300,
     "mechanics": [
       {
         "type": "aoe"
@@ -73,7 +57,7 @@
   },
   "passive": {
     "name": "First Action: Unbreakable Ice",
-    "description": "When Lyra's card is used as the first action in a turn, she gains a 50% defense boost for 1 turn. This effect cannot be stacked or cancelled.",
+    "description": "When Lyra acts first in a turn, gains +50% DEF for 1 turn. This buff is unstackable and uncancellable.",
     "trigger": "onFirstAction",
     "mechanics": [
       {

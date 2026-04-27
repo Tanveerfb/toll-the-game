@@ -15,7 +15,7 @@ const rajdhani = Rajdhani({
 });
 
 export const metadata: Metadata = {
-  title: "Toll the Game",
+  title: "Toll The Game",
   description: "A card battle game",
 };
 

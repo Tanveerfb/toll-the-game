@@ -10,20 +10,20 @@
   "skills": [
     {
       "skillName": "Animal Strike",
-      "description": "Deals Max HP-scaling damage to 1 enemy.",
+      "description": "Does HP-scaled damage to one enemy.",
       "characterId": "sara",
       "type": "attack",
       "statMultiplier": "hp",
-      "damageRanked": [10, 15, 25],
+      "damageRanked": [10, 15, 24],
       "mechanics": []
     },
     {
       "skillName": "Stampede Concentrate",
-      "description": "Deals Max HP-scaling damage to all enemies. Damage increases if there are fewer enemies.",
+      "description": "Does HP-scaled of concentrate damage to all enemies. ",
       "characterId": "sara",
       "type": "attack",
       "statMultiplier": "hp",
-      "damageRanked": [7.5, 9, 12],
+      "damageRanked": [7, 9, 12.5],
       "mechanics": [
         {
           "type": "aoe"
@@ -36,7 +36,7 @@
   ],
   "ultimate": {
     "skillName": "Beast Master's Fury",
-    "description": "Raises HP by 20% for 1 turn, then deals 30% HP damage to 1 enemy.",
+    "description": "Raises own HP by 20% for 1 turn, then does HP-scaled damage to one enemy.",
     "characterId": "sara",
     "type": "ultimate",
     "statMultiplier": "hp",
@@ -53,7 +53,7 @@
   },
   "passive": {
     "name": "Nine Lives",
-    "description": "When taking lethal damage at 30%+ HP, survives and heals 50% of the entire incoming damage. Once per battle. Also grants FEMALE synergy.",
+    "description": "When receiving lethal damage at 30%+ HP, survives and heals 50% of incoming damage. Triggers once per battle.",
     "trigger": "onLethalDamage",
     "mechanics": [
       {
