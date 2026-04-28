@@ -4,14 +4,13 @@ import { Button, Card } from "@heroui/react";
 import React from "react";
 import { useAuth } from "@/hooks/AuthProvider";
 import { useGameStore } from "@/store/gameStore";
-import { useBattleContext } from "@/hooks/BattleProvider";
 import { useRouter } from "next/navigation";
 import BattleArena from "@/components/game/BattleArena";
 
 export default function Home() {
   const { user } = useAuth();
   const { battlePhase } = useGameStore();
-  const { startFullTest } = useBattleContext();
+  // startFullTest is no longer used on this page; navigation goes to the practice page.
   const router = useRouter();
 
   const authLabel = user ? "PROFILE" : "LOGIN";
@@ -66,7 +65,7 @@ export default function Home() {
 
             <Button
               variant="primary"
-              onPress={startFullTest}
+              onPress={() => router.push("/practice")}
               className="h-20 rounded-none border-2 border-amber-300 bg-[linear-gradient(90deg,#b45309_0%,#d97706_38%,#f59e0b_70%,#facc15_100%)] px-8 text-left font-heading text-2xl tracking-[0.14em] text-zinc-950 shadow-[0_10px_30px_rgba(245,158,11,0.35)] transition-all hover:brightness-110 md:h-24 md:text-3xl"
             >
               PRACTICE

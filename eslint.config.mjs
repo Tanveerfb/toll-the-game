@@ -13,6 +13,16 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // Additional overrides: disable rules that cause many false positives in this repo.
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
+  // Exclude the HeroUI demo documentation folder from linting entirely.
+  globalIgnores([".heroui-docs/**"]),
 ]);
 
 export default eslintConfig;

@@ -3,6 +3,7 @@
 import React from "react";
 import { useGameStore } from "@/store/gameStore";
 import { Button, Card } from "@heroui/react";
+import { useBattleContext } from "@/hooks/BattleProvider";
 import type { ActionCard } from "@/types/action";
 import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
 import type { CharacterSkillData } from "@/lib/game/characterCatalog";
@@ -107,12 +108,22 @@ export default function Deck() {
     battlePhase,
     mergeDeckCard,
     reorderDeckCard,
+    initializeDeck,
   } = useGameStore();
 
   const isPlayerActionPhase = battlePhase === "PlayerAction";
 
+  // Auto‑execute when the queue reaches its maximum size (3 actions).
+  const { resolveplayerTurnWrapper } = useBattleContext();
+  React.useEffect(() => {
+    if (actionQueue.length === 3 && isPlayerActionPhase) {
+      resolveplayerTurnWrapper();
+    }
+  }, [actionQueue.length, isPlayerActionPhase, resolveplayerTurnWrapper]);
+
   const [previewCard, setPreviewCard] = React.useState<ActionCard | null>(null);
   const [draggedCardId, setDraggedCardId] = React.useState<string | null>(null);
+  const [isDockExpanded, setIsDockExpanded] = React.useState(false);
   const previewShowTimerRef = React.useRef<number | null>(null);
   const previewHideTimerRef = React.useRef<number | null>(null);
 
@@ -239,56 +250,98 @@ export default function Deck() {
       ) : null}
 
       {/* Action Queue */}
-      <div className="mb-3 flex min-h-30 gap-3 overflow-x-auto pb-1">
-        {actionQueue.map((card, i) => {
-          const char = playerTeam.find(
-            (c) => c.instanceId === card.sourceInstanceId,
-          );
-          return (
-            <Card
-              key={card.id}
-              onClick={() => isPlayerActionPhase && deselectCard(card.id)}
-              onMouseEnter={() => beginPreview(card)}
-              onMouseLeave={endPreview}
-              onFocus={() => beginPreview(card)}
-              onBlur={endPreview}
-              className={`h-35 w-25 shrink-0 -translate-y-1 cursor-pointer select-none flex flex-col border-2 p-2 transition-transform ${getColorTokenClasses(char?.color)}`}
-            >
-              <div className="flex items-start justify-between gap-1">
-                <div className="text-[10px] text-zinc-300">Action {i + 1}</div>
-                <div className="text-[11px] leading-none tracking-tight text-zinc-100">
-                  {getRankStars(card.rank)}
-                </div>
-              </div>
-              <div className="font-bold text-[12px] mt-1 text-white truncate">
-                {char?.name}
-              </div>
-              <div className="my-auto text-center font-heading text-3xl leading-none text-white/90 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
-                {getCharacterInitial(char?.name)}
-              </div>
-              <div
-                className={`text-[11px] mt-auto font-semibold ${card.skill.type === "ultimate" ? "text-amber-400" : "text-zinc-200"}`}
+      {isDockExpanded ? (
+        <div className="mb-3 flex min-h-30 gap-3 overflow-x-auto pb-1">
+          {actionQueue.map((card, i) => {
+            const char = playerTeam.find(
+              (c) => c.instanceId === card.sourceInstanceId,
+            );
+            const isUlt = card.skill.type === "ultimate";
+            return (
+              <Card
+                key={card.id}
+                onClick={() => isPlayerActionPhase && deselectCard(card.id)}
+                onMouseEnter={() => beginPreview(card)}
+                onMouseLeave={endPreview}
+                onFocus={() => beginPreview(card)}
+                onBlur={endPreview}
+                className={`h-35 w-25 shrink-0 -translate-y-1 cursor-pointer select-none flex flex-col border-2 p-2 transition-transform ${getColorTokenClasses(char?.color)} ${isUlt ? "ring-2 ring-amber-400/80 shadow-[0_0_14px_rgba(251,191,36,0.55)]" : ""}`}
               >
-                {card.skill.skillName}
+                <div className="flex items-start justify-between gap-1">
+                  <div className="text-[10px] text-zinc-300">
+                    Action {i + 1}
+                  </div>
+                  <div className="text-[11px] leading-none tracking-tight">
+                    {isUlt ? (
+                      <span className="font-bold text-[9px] uppercase tracking-widest text-amber-300">
+                        ULT
+                      </span>
+                    ) : (
+                      <span className="text-zinc-100">
+                        {getRankStars(card.rank)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="font-bold text-[12px] mt-1 text-white truncate">
+                  {char?.name}
+                </div>
+                <div className="my-auto text-center font-heading text-3xl leading-none text-white/90 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
+                  {getCharacterInitial(char?.name)}
+                </div>
+                <div
+                  className={`text-[11px] mt-auto font-semibold ${card.skill.type === "ultimate" ? "text-amber-400" : "text-zinc-200"}`}
+                >
+                  {card.skill.skillName}
+                </div>
+              </Card>
+            );
+          })}
+          {/* Placeholder for remaining actions */}
+          {Array.from({ length: Math.max(0, 3 - actionQueue.length) }).map(
+            (_, i) => (
+              <div
+                key={`empty-${i}`}
+                className="h-35 w-25 shrink-0 flex items-center justify-center rounded-xl border-2 border-dashed border-zinc-700 font-bold text-zinc-700"
+              >
+                {actionQueue.length + i + 1}
               </div>
-            </Card>
-          );
-        })}
-        {/* Placeholder for remaining actions */}
-        {Array.from({ length: Math.max(0, 3 - actionQueue.length) }).map(
-          (_, i) => (
-            <div
-              key={`empty-${i}`}
-              className="h-35 w-25 shrink-0 flex items-center justify-center rounded-xl border-2 border-dashed border-zinc-700 font-bold text-zinc-700"
-            >
-              {actionQueue.length + i + 1}
-            </div>
-          ),
-        )}
+            ),
+          )}
+        </div>
+      ) : null}
+
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onPress={() => setIsDockExpanded((prev) => !prev)}
+          className="border border-zinc-700 rounded-none px-2 text-[11px] uppercase tracking-widest text-zinc-300"
+        >
+          {isDockExpanded ? "Collapse Deck" : "Expand Deck"}
+        </Button>
+
+        <Button
+          variant="secondary"
+          onPress={initializeDeck}
+          isDisabled={!isPlayerActionPhase}
+        >
+          Reset Deck
+        </Button>
       </div>
+      {!isDockExpanded ? (
+        <div className="flex w-full items-center justify-between gap-2 border border-zinc-800 bg-black/65 px-3 py-2 font-body text-xs uppercase tracking-[0.12em] text-zinc-400">
+          <span>Deck hidden to keep arena clear</span>
+          <span>
+            Queue {actionQueue.length}/3 • {deck.length} cards ready
+          </span>
+        </div>
+      ) : null}
 
       {/* Main Deck Dock */}
-      <div className="flex w-full gap-2 overflow-x-auto border border-zinc-800 bg-black/80 p-3 shadow-2xl">
+      <div
+        className={`${isDockExpanded ? "flex" : "hidden"} w-full gap-2 overflow-x-auto border border-zinc-800 bg-black/80 p-3 shadow-2xl`}
+      >
         {deck.map((card) => {
           const char = playerTeam.find(
             (c) => c.instanceId === card.sourceInstanceId,
@@ -333,6 +386,7 @@ export default function Deck() {
               className={`
                 h-32.5 w-22.5! relative shrink-0 select-none flex flex-col p-2 transition-all
                 ${colorTokenClass}
+                ${isUlt ? "ring-2 ring-amber-400/80 shadow-[0_0_14px_rgba(251,191,36,0.55)]" : ""}
                 ${isPlayerActionPhase ? "cursor-pointer hover:-translate-y-2 hover:shadow-lg" : "cursor-not-allowed opacity-50"}
                 ${isStunned ? "grayscale brightness-50" : ""}
                 ${missingTarget ? "ring-1 ring-red-400/70" : ""}
@@ -345,8 +399,16 @@ export default function Deck() {
                 <div className="font-bold text-[10px] text-zinc-100 truncate">
                   {char?.name}
                 </div>
-                <div className="text-[11px] leading-none tracking-tight text-zinc-100">
-                  {getRankStars(card.rank)}
+                <div className="text-[11px] leading-none tracking-tight">
+                  {isUlt ? (
+                    <span className="font-bold text-[9px] uppercase tracking-widest text-amber-300">
+                      ULT
+                    </span>
+                  ) : (
+                    <span className="text-zinc-100">
+                      {getRankStars(card.rank)}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="my-auto text-center font-heading text-3xl leading-none text-white/90 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">

@@ -7,7 +7,6 @@ import { useGameStore } from "@/store/gameStore";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import type { BattleCharacter } from "@/types/character";
 import BattleEffectsOverlay from "@/components/game/BattleEffectsOverlay";
-import Deck from "@/components/game/Deck";
 
 function formatPhaseLabel(phase: string): string {
   return phase
@@ -38,12 +37,14 @@ function TeamUnitCard({
   isMarked,
   queuedHits,
   onMark,
+  onViewDetails,
 }: {
   unit: BattleCharacter;
   isEnemy: boolean;
   isMarked: boolean;
   queuedHits: number;
   onMark: (instanceId: string) => void;
+  onViewDetails: (unit: BattleCharacter) => void;
 }): React.JSX.Element {
   const hpPercent =
     unit.hp > 0 ? Math.max(0, (unit.currentHP / unit.hp) * 100) : 0;
@@ -53,16 +54,16 @@ function TeamUnitCard({
     <div data-battle-instance={unit.instanceId} className="relative">
       <Card
         variant="secondary"
-        className={`rounded-none border ${isMarked ? "border-amber-300" : getUnitBorderClass(unit.color)} bg-black/55`}
+        className={`w-full rounded-none border ${isMarked ? "border-amber-300" : getUnitBorderClass(unit.color)} bg-black/55`}
         onClick={() => {
           if (isEnemy && !isDead) {
             onMark(unit.instanceId);
           }
         }}
       >
-        <Card.Header className="flex items-start justify-between gap-3 border-b border-zinc-800 px-4 py-3">
+        <Card.Header className="flex items-start justify-between gap-2 border-b border-zinc-800 px-3 py-2">
           <div>
-            <Card.Title className="font-heading text-xl tracking-[0.08em] text-zinc-100">
+            <Card.Title className="font-heading text-base tracking-[0.06em] text-zinc-100">
               {unit.name}
             </Card.Title>
             <Card.Description className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
@@ -70,34 +71,47 @@ function TeamUnitCard({
             </Card.Description>
           </div>
 
-          {isMarked ? (
-            <Chip
-              variant="secondary"
-              className="rounded-none border border-amber-300 bg-amber-300/10"
-            >
-              <Chip.Label className="font-body text-[11px] uppercase tracking-[0.12em] text-amber-200">
-                Targeted
-              </Chip.Label>
-            </Chip>
-          ) : null}
-
-          {queuedHits > 0 ? (
-            <Chip
-              variant="secondary"
-              className="rounded-none border border-sky-300 bg-sky-500/15"
-            >
-              <Chip.Label className="font-body text-[11px] uppercase tracking-[0.12em] text-sky-100">
-                {queuedHits} queued
-              </Chip.Label>
-            </Chip>
-          ) : null}
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => {
+              onViewDetails(unit);
+            }}
+            className="rounded-none border border-zinc-600 px-2 text-[10px] uppercase tracking-widest text-zinc-200"
+          >
+            Details
+          </Button>
         </Card.Header>
 
         <Card.Content
-          className={`space-y-3 px-4 py-4 ${isDead ? "opacity-55" : ""}`}
+          className={`space-y-2 px-3 py-2 ${isDead ? "opacity-55" : ""}`}
         >
+          <div className="flex flex-wrap items-center gap-1">
+            {isMarked ? (
+              <Chip
+                variant="secondary"
+                className="rounded-none border border-amber-300 bg-amber-300/10"
+              >
+                <Chip.Label className="font-body text-[10px] uppercase tracking-[0.12em] text-amber-200">
+                  Targeted
+                </Chip.Label>
+              </Chip>
+            ) : null}
+
+            {queuedHits > 0 ? (
+              <Chip
+                variant="secondary"
+                className="rounded-none border border-sky-300 bg-sky-500/15"
+              >
+                <Chip.Label className="font-body text-[10px] uppercase tracking-[0.12em] text-sky-100">
+                  {queuedHits} queued
+                </Chip.Label>
+              </Chip>
+            ) : null}
+          </div>
+
           <div>
-            <div className="mb-1 flex items-center justify-between font-body text-xs uppercase tracking-[0.12em] text-zinc-400">
+            <div className="mb-1 flex items-center justify-between font-body text-[11px] uppercase tracking-[0.12em] text-zinc-400">
               <span>HP</span>
               <span>
                 {unit.currentHP}/{unit.hp}
@@ -110,20 +124,20 @@ function TeamUnitCard({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-2 font-body text-xs uppercase tracking-widest text-zinc-300">
-            <div className="border border-zinc-800 bg-zinc-900/60 px-2 py-1 text-center">
+          <div className="grid grid-cols-3 gap-1.5 font-body text-[10px] uppercase tracking-widest text-zinc-300">
+            <div className="border border-zinc-800 bg-zinc-900/60 px-1.5 py-1 text-center">
               <span className="block text-zinc-500">ATK</span>
               <span className="font-semibold text-zinc-200">
                 {unit.currentAttack}
               </span>
             </div>
-            <div className="border border-zinc-800 bg-zinc-900/60 px-2 py-1 text-center">
+            <div className="border border-zinc-800 bg-zinc-900/60 px-1.5 py-1 text-center">
               <span className="block text-zinc-500">DEF</span>
               <span className="font-semibold text-zinc-200">
                 {unit.currentDefense}
               </span>
             </div>
-            <div className="border border-zinc-800 bg-zinc-900/60 px-2 py-1 text-center">
+            <div className="border border-zinc-800 bg-zinc-900/60 px-1.5 py-1 text-center">
               <span className="block text-zinc-500">ULT</span>
               <span className="font-semibold text-zinc-200">
                 {unit.ultGauge}/5
@@ -131,13 +145,12 @@ function TeamUnitCard({
             </div>
           </div>
 
-          <div className="space-y-1 font-body text-[11px] uppercase tracking-widest text-zinc-400">
-            <p>Buffs: {unit.buffs.map((b) => b.type).join(", ") || "None"}</p>
-            <p>
-              Debuffs:{" "}
-              {unit.debuffs
-                .map((d) => `${d.type}${d.stacks ? `(${d.stacks})` : ""}`)
-                .join(", ") || "None"}
+          <div className="grid grid-cols-2 gap-1 font-body text-[10px] uppercase tracking-widest text-zinc-400">
+            <p className="border border-zinc-800 bg-zinc-900/40 px-1.5 py-1 text-center">
+              Buffs: {unit.buffs.length}
+            </p>
+            <p className="border border-zinc-800 bg-zinc-900/40 px-1.5 py-1 text-center">
+              Debuffs: {unit.debuffs.length}
             </p>
           </div>
         </Card.Content>
@@ -159,12 +172,10 @@ export default function BattleArena(): React.JSX.Element {
     interactionNotice,
     setEnemyMarker,
     clearInteractionNotice,
-    clearActionQueue,
     actionQueue,
   } = useGameStore();
 
-  const { resolveEnemyTurnWrapper, resolveplayerTurnWrapper } =
-    useBattleContext();
+  const { resolveEnemyTurnWrapper } = useBattleContext();
 
   React.useEffect(() => {
     if (battlePhase !== "EnemyAction") return;
@@ -176,9 +187,10 @@ export default function BattleArena(): React.JSX.Element {
     return () => window.clearTimeout(timer);
   }, [battlePhase, resolveEnemyTurnWrapper]);
 
-  const isPlayerActionPhase = battlePhase === "PlayerAction";
-  const isBattleEnd = battlePhase === "victory" || battlePhase === "defeat";
   const phaseLabel = formatPhaseLabel(battlePhase);
+  const [detailUnit, setDetailUnit] = React.useState<BattleCharacter | null>(
+    null,
+  );
 
   const phaseOrder = [
     "OnBattleStart",
@@ -208,6 +220,35 @@ export default function BattleArena(): React.JSX.Element {
     });
     return counts;
   }, [actionQueue]);
+
+  const actionLog = React.useMemo(
+    () => battleLog.filter((entry) => entry.startsWith("[Action] ")),
+    [battleLog],
+  );
+
+  const describeEffect = React.useCallback(
+    (effect: BattleCharacter["buffs"][number]) => {
+      const stacksText = effect.stacks
+        ? `, ${effect.stacks} stack${effect.stacks > 1 ? "s" : ""}`
+        : "";
+      const valueText =
+        effect.valuePercent !== undefined
+          ? `${effect.valuePercent}%`
+          : effect.value !== undefined
+            ? `${effect.value}`
+            : "";
+      const statText = effect.stat ? ` ${effect.stat}` : "";
+      const duration = effect.buffDuration ?? effect.debuffDuration;
+      const durationText = duration
+        ? `, ${duration} turn${duration > 1 ? "s" : ""}`
+        : "";
+      const payload = `${valueText}${statText}`.trim();
+      return payload.length > 0
+        ? `${effect.type} (${payload}${stacksText}${durationText})`
+        : `${effect.type} (${`no numeric value${stacksText}${durationText}`.trim()})`;
+    },
+    [],
+  );
 
   return (
     <main
@@ -276,153 +317,217 @@ export default function BattleArena(): React.JSX.Element {
           </Card.Content>
         </Card>
 
-        <section className="grid flex-1 gap-5 lg:grid-cols-2">
-          <Card
-            variant="secondary"
-            className="rounded-none border border-zinc-700 bg-black/45"
-          >
-            <Card.Header className="border-b border-zinc-800 px-5 py-4">
-              <Card.Title className="font-heading text-2xl tracking-widest text-zinc-100">
-                Enemy Team
-              </Card.Title>
-              <Card.Description className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                Select a target for queued attacks
-              </Card.Description>
-            </Card.Header>
-            <Card.Content className="grid gap-3 p-4 sm:grid-cols-2">
-              {enemyTeam.map((unit) => (
-                <TeamUnitCard
-                  key={unit.instanceId}
-                  unit={unit}
-                  isEnemy
-                  isMarked={selectedEnemyMarker === unit.instanceId}
-                  queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
-                  onMark={setEnemyMarker}
-                />
-              ))}
-            </Card.Content>
-          </Card>
-
-          <Card
-            variant="secondary"
-            className="rounded-none border border-zinc-700 bg-black/45"
-          >
-            <Card.Header className="border-b border-zinc-800 px-5 py-4">
-              <Card.Title className="font-heading text-2xl tracking-widest text-zinc-100">
-                Player Team
-              </Card.Title>
-              <Card.Description className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                Monitor allies, statuses, and ultimate gauges
-              </Card.Description>
-            </Card.Header>
-            <Card.Content className="grid gap-3 p-4 sm:grid-cols-2">
-              {playerTeam.map((unit) => (
-                <TeamUnitCard
-                  key={unit.instanceId}
-                  unit={unit}
-                  isEnemy={false}
-                  isMarked={false}
-                  queuedHits={0}
-                  onMark={setEnemyMarker}
-                />
-              ))}
-            </Card.Content>
-          </Card>
-        </section>
-
-        <Card
-          variant="secondary"
-          className="rounded-none border border-zinc-700 bg-black/45"
-        >
-          <Card.Header className="flex flex-col items-start gap-3 border-b border-zinc-800 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <Card.Title className="font-heading text-2xl tracking-widest text-zinc-100">
-                Action Console
-              </Card.Title>
-              <Card.Description className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                Queue up to three cards and execute during Player Action
-              </Card.Description>
-            </div>
-
-            <Button
-              variant="primary"
-              onPress={resolveplayerTurnWrapper}
-              isDisabled={
-                !isPlayerActionPhase || actionQueue.length === 0 || isBattleEnd
-              }
-              className="rounded-none border border-amber-200 bg-amber-400/85 px-6 font-heading text-lg tracking-[0.08em] text-zinc-900 disabled:opacity-45"
-            >
-              Execute Queue
-            </Button>
-
-            <Button
+        <section className="grid flex-1 gap-5 lg:grid-cols-[1fr_330px]">
+          <div className="grid gap-5">
+            <Card
               variant="secondary"
-              onPress={clearActionQueue}
-              isDisabled={actionQueue.length === 0 || isBattleEnd}
-              className="rounded-none border border-zinc-500 px-6 font-heading text-lg tracking-[0.08em] text-zinc-100 disabled:opacity-45"
+              className="rounded-none border border-zinc-700 bg-black/45"
             >
-              Clear Queue
-            </Button>
-          </Card.Header>
-
-          <Card.Content className="grid gap-4 p-4 lg:grid-cols-2">
-            <div className="border border-zinc-800 bg-zinc-950/45 p-3">
-              {interactionNotice ? (
-                <div className="mb-3 flex items-center justify-between gap-2 border border-red-400/60 bg-red-900/35 px-3 py-2">
-                  <p className="font-body text-xs uppercase tracking-[0.12em] text-red-100">
-                    {interactionNotice}
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onPress={clearInteractionNotice}
-                    className="rounded-none border border-red-300/70 px-2 text-[11px] uppercase tracking-widest text-red-100"
-                  >
-                    Dismiss
-                  </Button>
-                </div>
-              ) : null}
-
-              <p className="mb-2 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                Recent Battle Events
-              </p>
-              <div className="max-h-36 space-y-1 overflow-y-auto pr-1 font-body text-sm text-zinc-200">
-                {(battleLog.length > 0
-                  ? battleLog.slice(-8).reverse()
-                  : ["No battle events yet."]
-                ).map((entry, idx) => (
-                  <p
-                    key={`${entry}-${idx}`}
-                    className="border-b border-zinc-900 pb-1 last:border-b-0"
-                  >
-                    {entry}
-                  </p>
+              <Card.Header className="border-b border-zinc-800 px-5 py-4">
+                <Card.Title className="font-heading text-2xl tracking-widest text-zinc-100">
+                  Enemy Team
+                </Card.Title>
+                <Card.Description className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                  Select a target for queued attacks
+                </Card.Description>
+              </Card.Header>
+              <Card.Content className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
+                {enemyTeam.map((unit) => (
+                  <TeamUnitCard
+                    key={unit.instanceId}
+                    unit={unit}
+                    isEnemy
+                    isMarked={selectedEnemyMarker === unit.instanceId}
+                    queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
+                    onMark={setEnemyMarker}
+                    onViewDetails={setDetailUnit}
+                  />
                 ))}
-              </div>
-            </div>
+              </Card.Content>
+            </Card>
 
-            <div className="border border-zinc-800 bg-zinc-950/45 p-3">
-              <p className="mb-2 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                Turn Guidance
-              </p>
-              <ul className="space-y-1 font-body text-sm text-zinc-200">
-                <li>1. Mark an enemy target from the enemy panel.</li>
-                <li>
-                  2. Click cards in the deck dock to fill the 3 action slots.
-                </li>
-                <li>3. Press Execute Queue during Player Action.</li>
-                <li>
-                  4. Attack/debuff/disable/ultimate cards require a marked
-                  target.
-                </li>
-                <li>5. Enemy turn resolves automatically after your turn.</li>
-              </ul>
-            </div>
-          </Card.Content>
-        </Card>
+            <Card
+              variant="secondary"
+              className="rounded-none border border-zinc-700 bg-black/45"
+            >
+              <Card.Header className="border-b border-zinc-800 px-5 py-4">
+                <Card.Title className="font-heading text-2xl tracking-widest text-zinc-100">
+                  Player Team
+                </Card.Title>
+                <Card.Description className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                  Monitor allies, statuses, and ultimate gauges
+                </Card.Description>
+              </Card.Header>
+              <Card.Content className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
+                {playerTeam.map((unit) => (
+                  <TeamUnitCard
+                    key={unit.instanceId}
+                    unit={unit}
+                    isEnemy={false}
+                    isMarked={false}
+                    queuedHits={0}
+                    onMark={setEnemyMarker}
+                    onViewDetails={setDetailUnit}
+                  />
+                ))}
+              </Card.Content>
+            </Card>
+          </div>
 
-        <Deck />
+          <aside className="grid content-start gap-5 lg:sticky lg:top-5">
+            <Card
+              variant="secondary"
+              className="rounded-none border border-zinc-700 bg-black/45"
+            >
+              <Card.Header className="flex flex-col items-start gap-3 border-b border-zinc-800 px-5 py-4">
+                <div>
+                  <Card.Title className="font-heading text-2xl tracking-widest text-zinc-100">
+                    Action Console
+                  </Card.Title>
+                  <Card.Description className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                    Standardized action feed.
+                  </Card.Description>
+                </div>
+              </Card.Header>
+
+              <Card.Content className="grid gap-4 p-4">
+                <div className="border border-zinc-800 bg-zinc-950/45 p-3">
+                  {interactionNotice ? (
+                    <div className="mb-3 flex items-center justify-between gap-2 border border-red-400/60 bg-red-900/35 px-3 py-2">
+                      <p className="font-body text-xs uppercase tracking-[0.12em] text-red-100">
+                        {interactionNotice}
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onPress={clearInteractionNotice}
+                        className="rounded-none border border-red-300/70 px-2 text-[11px] uppercase tracking-widest text-red-100"
+                      >
+                        Dismiss
+                      </Button>
+                    </div>
+                  ) : null}
+
+                  <p className="mb-2 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                    Recent Battle Events
+                  </p>
+                  <div className="max-h-65 space-y-1 overflow-y-auto pr-1 font-body text-sm text-zinc-200">
+                    {(actionLog.length > 0
+                      ? actionLog
+                          .slice(-14)
+                          .reverse()
+                          .map((entry) => entry.replace(/^\[Action\]\s*/, ""))
+                      : ["No battle events yet."]
+                    ).map((entry, idx) => (
+                      <p
+                        key={`${entry}-${idx}`}
+                        className="border-b border-zinc-900 pb-1 last:border-b-0"
+                      >
+                        {entry}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </Card.Content>
+            </Card>
+          </aside>
+        </section>
       </section>
+
+      {detailUnit ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <Card
+            variant="secondary"
+            className="w-full max-w-2xl rounded-none border border-zinc-600 bg-zinc-950/95"
+          >
+            <Card.Header className="flex items-start justify-between gap-3 border-b border-zinc-800 px-5 py-4">
+              <div>
+                <Card.Title className="font-heading text-2xl tracking-[0.08em] text-zinc-100">
+                  {detailUnit.name}
+                </Card.Title>
+                <Card.Description className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                  Full active status details
+                </Card.Description>
+              </div>
+              <Button
+                variant="ghost"
+                onPress={() => setDetailUnit(null)}
+                className="rounded-none border border-zinc-600 text-xs uppercase tracking-widest"
+              >
+                Close
+              </Button>
+            </Card.Header>
+
+            <Card.Content className="grid gap-4 px-5 py-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <p className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                  Stats Snapshot
+                </p>
+                <div className="grid grid-cols-2 gap-2 font-body text-xs uppercase tracking-widest text-zinc-300">
+                  <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1">
+                    HP: {detailUnit.currentHP}/{detailUnit.hp}
+                  </div>
+                  <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1">
+                    ULT: {detailUnit.ultGauge}/5
+                  </div>
+                  <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1">
+                    ATK: {detailUnit.currentAttack}
+                  </div>
+                  <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1">
+                    DEF: {detailUnit.currentDefense}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <p className="mb-1 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                    Active Buffs
+                  </p>
+                  <div className="max-h-36 space-y-1 overflow-y-auto pr-1">
+                    {detailUnit.buffs.length > 0 ? (
+                      detailUnit.buffs.map((effect, idx) => (
+                        <p
+                          key={`buff-${effect.type}-${idx}`}
+                          className="border border-emerald-700/60 bg-emerald-950/30 px-2 py-1 font-body text-xs text-emerald-100"
+                        >
+                          {describeEffect(effect)}
+                        </p>
+                      ))
+                    ) : (
+                      <p className="font-body text-xs text-zinc-400">
+                        No active buffs.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-1 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                    Active Debuffs
+                  </p>
+                  <div className="max-h-36 space-y-1 overflow-y-auto pr-1">
+                    {detailUnit.debuffs.length > 0 ? (
+                      detailUnit.debuffs.map((effect, idx) => (
+                        <p
+                          key={`debuff-${effect.type}-${idx}`}
+                          className="border border-rose-700/60 bg-rose-950/30 px-2 py-1 font-body text-xs text-rose-100"
+                        >
+                          {describeEffect(effect)}
+                        </p>
+                      ))
+                    ) : (
+                      <p className="font-body text-xs text-zinc-400">
+                        No active debuffs.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Card.Content>
+          </Card>
+        </div>
+      ) : null}
     </main>
   );
 }

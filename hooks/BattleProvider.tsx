@@ -5,7 +5,7 @@ import { BattlePhase } from "@/types/mechanic";
 import React, { useEffect } from "react";
 import { useMechanicContext } from "./MechanicProvider";
 import { useGameStore } from "@/store/gameStore";
-import { TurnActions, Action } from "@/types/action";
+import { TurnActions } from "@/types/action";
 import { executeSkill } from "@/lib/game/combat";
 import { getAIMoves } from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
@@ -52,15 +52,16 @@ export default function BattleProvider({
     initializeDeck,
     drawCards,
     actionQueue,
-    clearActionQueue,
+    // clearActionQueue is no longer needed; actions are resolved one by one.
     removeDeadCharacterCards,
+    setActionQueue,
   } = store;
 
-  const phaseRef = React.useRef(battlePhase);
-  phaseRef.current = battlePhase;
-
+  // Removed phaseRef - accessing refs during render caused lint errors.
+  // Instead we read the latest battlePhase from the Zustand store API.
   const advancePhase = () => {
-    switch (phaseRef.current) {
+    const currentPhase = useGameStore.getState().battlePhase;
+    switch (currentPhase) {
       case "initializing":
         setBattlePhase("OnBattleStart");
         break;
@@ -108,79 +109,84 @@ export default function BattleProvider({
           initializeDeck();
         }
 
-        // System Ticks (Buff/Debuff durations, DoT/HoT)
+        // System Ticks (Buff/Debuff durations, DoT/HoT) for BOTH teams
         if (
           battlePhase === "OnPlayerTurnStart" ||
           battlePhase === "OnEnemyTurnStart"
         ) {
-          const teamKey =
-            battlePhase === "OnPlayerTurnStart" ? "playerTeam" : "enemyTeam";
-          const teamToTick = [...currentTeams[teamKey]];
+          // Process player team first, then enemy team – identical logic applied to each.
+          const teamKeys: ("playerTeam" | "enemyTeam")[] = [
+            "playerTeam",
+            "enemyTeam",
+          ];
+          teamKeys.forEach((teamKey) => {
+            const teamToTick = [...currentTeams[teamKey]];
+            for (let i = 0; i < teamToTick.length; i++) {
+              const char = { ...teamToTick[i] };
+              if (char.currentHP <= 0) continue;
 
-          for (let i = 0; i < teamToTick.length; i++) {
-            const char = { ...teamToTick[i] };
-            if (char.currentHP <= 0) continue;
+              // Reset action‑specific passive flags each turn start
+              char.passiveState.firstActionTriggeredThisTurn = false;
 
-            // Reset action-specific passive flags
-            char.passiveState.firstActionTriggeredThisTurn = false;
-
-            // Apply DoT
-            const dotEffects = char.debuffs.filter(
-              (d) => d.type === "damageOverTime" || d.type === "decay",
-            );
-            let totalDot = 0;
-            dotEffects.forEach((dot) => {
-              if (dot.type === "decay" && dot.capturedDamage) {
-                totalDot += dot.capturedDamage;
-              } else if (dot.value) {
-                totalDot += dot.value;
+              // Apply Damage‑over‑Time (DoT) and Decay effects
+              const dotEffects = char.debuffs.filter(
+                (d) => d.type === "damageOverTime" || d.type === "decay",
+              );
+              let totalDot = 0;
+              dotEffects.forEach((dot) => {
+                if (dot.type === "decay" && dot.capturedDamage) {
+                  totalDot += dot.capturedDamage;
+                } else if (dot.value) {
+                  totalDot += dot.value;
+                }
+              });
+              if (totalDot > 0) {
+                char.currentHP = Math.max(0, char.currentHP - totalDot);
+                addToBattleLog(
+                  `[System] ${char.name} takes ${totalDot} damage from DoT.`,
+                );
               }
-            });
-            if (totalDot > 0) {
-              char.currentHP = Math.max(0, char.currentHP - totalDot);
-              addToBattleLog(
-                `[System] ${char.name} takes ${totalDot} damage from DoT.`,
+
+              // Apply Heal‑over‑Time (HoT) effects
+              const hotEffects = char.buffs.filter(
+                (b) => b.type === "healOverTime",
               );
+              let totalHot = 0;
+              hotEffects.forEach((hot) => {
+                if (hot.value) totalHot += hot.value;
+              });
+              if (totalHot > 0) {
+                char.currentHP = Math.min(char.hp, char.currentHP + totalHot);
+                addToBattleLog(
+                  `[System] ${char.name} heals ${totalHot} HP from HoT.`,
+                );
+              }
+
+              // Tick down buff and debuff durations
+              char.buffs = char.buffs
+                .map((b) => ({
+                  ...b,
+                  buffDuration: b.buffDuration ? b.buffDuration - 1 : undefined,
+                }))
+                .filter(
+                  (b) => b.buffDuration === undefined || b.buffDuration > 0,
+                );
+              char.debuffs = char.debuffs
+                .map((d) => ({
+                  ...d,
+                  debuffDuration: d.debuffDuration
+                    ? d.debuffDuration - 1
+                    : undefined,
+                }))
+                .filter(
+                  (d) => d.debuffDuration === undefined || d.debuffDuration > 0,
+                );
+
+              teamToTick[i] = char;
             }
-
-            // Apply HoT
-            const hotEffects = char.buffs.filter(
-              (b) => b.type === "healOverTime",
-            );
-            let totalHot = 0;
-            hotEffects.forEach((hot) => {
-              if (hot.value) totalHot += hot.value;
-            });
-            if (totalHot > 0) {
-              char.currentHP = Math.min(char.hp, char.currentHP + totalHot);
-              addToBattleLog(
-                `[System] ${char.name} heals ${totalHot} HP from HoT.`,
-              );
-            }
-
-            // Tick down durations
-            char.buffs = char.buffs
-              .map((b) => ({
-                ...b,
-                buffDuration: b.buffDuration ? b.buffDuration - 1 : undefined,
-              }))
-              .filter(
-                (b) => b.buffDuration === undefined || b.buffDuration > 0,
-              );
-            char.debuffs = char.debuffs
-              .map((d) => ({
-                ...d,
-                debuffDuration: d.debuffDuration
-                  ? d.debuffDuration - 1
-                  : undefined,
-              }))
-              .filter(
-                (d) => d.debuffDuration === undefined || d.debuffDuration > 0,
-              );
-
-            teamToTick[i] = char;
-          }
-          currentTeams = { ...currentTeams, [teamKey]: teamToTick };
+            // Write back the updated team slice
+            currentTeams = { ...currentTeams, [teamKey]: teamToTick };
+          });
         }
 
         // Run any registered events for this phase
@@ -240,50 +246,57 @@ export default function BattleProvider({
   function resolveplayerTurnWrapper() {
     if (battlePhase !== "PlayerAction") return;
 
+    // Process the entire action queue sequentially.
     let currentTeams = { playerTeam, enemyTeam };
+    const remainingQueue = [...actionQueue];
 
-    const actions: TurnActions = actionQueue.map((card) => ({
-      sourceInstanceId: card.sourceInstanceId,
-      skill:
-        card.skill.type === "ultimate"
-          ? card.skill
-          : {
-              ...card.skill,
-              damageRanked: [
-                card.skill.damageRanked[card.rank - 1],
-                card.skill.damageRanked[card.rank - 1],
-                card.skill.damageRanked[card.rank - 1],
-              ] as [number, number, number],
-            },
-      targetInstanceId: card.targetInstanceId || "",
-    }));
+    while (remainingQueue.length > 0) {
+      const card = remainingQueue[0];
+      const action: TurnActions[0] = {
+        sourceInstanceId: card.sourceInstanceId,
+        skill:
+          card.skill.type === "ultimate"
+            ? card.skill
+            : {
+                ...card.skill,
+                damageRanked: [
+                  card.skill.damageRanked[card.rank - 1],
+                  card.skill.damageRanked[card.rank - 1],
+                  card.skill.damageRanked[card.rank - 1],
+                ] as [number, number, number],
+              },
+        targetInstanceId: card.targetInstanceId || "",
+      };
 
-    actions.forEach((action, index) => {
-      if (action) {
-        currentTeams = executeSkill(
-          action,
-          currentTeams,
-          addToBattleLog,
-          index,
-        );
-        // Clean up dead characters immediately from deck mid-action
-        const deadChars = currentTeams.playerTeam.filter(
-          (c) => c.currentHP <= 0,
-        );
-        deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
+      // Execute the action
+      currentTeams = executeSkill(action, currentTeams, addToBattleLog, 0);
 
-        // Using a queued card grants +1 ult gauge for that source character.
-        currentTeams.playerTeam = currentTeams.playerTeam.map((char) =>
-          char.instanceId === action.sourceInstanceId
-            ? { ...char, ultGauge: Math.min(5, char.ultGauge + 1) }
-            : char,
-        );
-      }
-    });
+      // Remove dead player characters immediately
+      const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
+      deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
 
+      // Grant ult gauge for the source character
+      currentTeams.playerTeam = currentTeams.playerTeam.map((char) =>
+        char.instanceId === action.sourceInstanceId
+          ? {
+              ...char,
+              ultGauge:
+                action.skill.type === "ultimate"
+                  ? 0
+                  : Math.min(5, char.ultGauge + 1),
+            }
+          : char,
+      );
+
+      // Remove processed card from the temporary queue
+      remainingQueue.shift();
+    }
+
+    // Update store with final state and clear the action queue
     updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
-    clearActionQueue();
+    setActionQueue([]);
     setPlayerTurns((prev) => prev + 1);
+    // Advance to the next phase after all actions are resolved
     advancePhase();
   }
 
@@ -291,25 +304,31 @@ export default function BattleProvider({
     if (battlePhase !== "EnemyAction") return;
 
     const enemyActions = getAIMoves(enemyTeam, playerTeam);
+    const firstAction = enemyActions[0];
+    if (!firstAction) return;
+
     let currentTeams = { playerTeam, enemyTeam };
 
-    enemyActions.forEach((action, index) => {
-      if (action) {
-        currentTeams = executeSkill(
-          action,
-          currentTeams,
-          addToBattleLog,
-          index,
-        );
-        const deadChars = currentTeams.playerTeam.filter(
-          (c) => c.currentHP <= 0,
-        );
-        deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
-      }
-    });
+    // Execute only the first AI action for step‑by‑step resolution
+    currentTeams = executeSkill(firstAction, currentTeams, addToBattleLog, 0);
+    const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
+    deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
+
+    currentTeams.enemyTeam = currentTeams.enemyTeam.map((char) =>
+      char.instanceId === firstAction.sourceInstanceId
+        ? {
+            ...char,
+            ultGauge:
+              firstAction.skill.type === "ultimate"
+                ? 0
+                : Math.min(5, char.ultGauge + 1),
+          }
+        : char,
+    );
 
     updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
     setEnemyTurns((prev) => prev + 1);
+    // Advance phase after the single action
     advancePhase();
   }
 

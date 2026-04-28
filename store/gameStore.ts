@@ -122,6 +122,7 @@ interface BattleState {
   mergeDeckCard: (cardId: string) => void;
   removeDeadCharacterCards: (instanceId: string) => void;
   clearActionQueue: () => void;
+  setActionQueue: (queue: ActionCard[]) => void;
 }
 
 export const useGameStore = create<BattleState>((set, get) => ({
@@ -176,6 +177,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
   setInteractionNotice: (message) => set({ interactionNotice: message }),
   clearInteractionNotice: () => set({ interactionNotice: null }),
 
+  setActionQueue: (queue) => set({ actionQueue: queue }),
   initializeDeck: () => {
     const { playerTeam } = get();
     const living = playerTeam.filter((c) => c.currentHP > 0);
@@ -418,6 +420,4 @@ export const useGameStore = create<BattleState>((set, get) => ({
       actionQueue: actionQueue.filter((c) => c.sourceInstanceId !== instanceId),
     });
   },
-
-  clearActionQueue: () => set({ actionQueue: [], interactionNotice: null }),
 }));

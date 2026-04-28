@@ -158,9 +158,11 @@ export default function CharacterBrowser({
     Math.ceil(filteredCharacters.length / pageSize),
   );
 
+  // Ensure we never set state synchronously during render. Adjust page if out of bounds.
   React.useEffect(() => {
     if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
+      // Defer state update to next tick to avoid React warning.
+      setTimeout(() => setCurrentPage(totalPages), 0);
     }
   }, [currentPage, totalPages]);
 
