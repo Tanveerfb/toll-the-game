@@ -115,7 +115,6 @@ export default function Deck() {
     battlePhase,
     mergeDeckCard,
     reorderDeckCard,
-    initializeDeck,
   } = useGameStore();
 
   const isPlayerActionPhase = battlePhase === "PlayerAction";
@@ -333,13 +332,10 @@ export default function Deck() {
           {isDockExpanded ? "Collapse Deck" : "Expand Deck"}
         </Button>
 
-        <Button
-          variant="secondary"
-          onClick={initializeDeck}
-          disabled={!isPlayerActionPhase}
-        >
-          Reset Deck
-        </Button>
+        <span className="font-body text-[11px] uppercase tracking-[0.12em] text-zinc-500">
+          {isPlayerActionPhase ? "Your turn" : "Waiting…"} • Queue{" "}
+          {actionQueue.length}/3
+        </span>
       </div>
       {!isDockExpanded ? (
         <div className="flex w-full items-center justify-between gap-2 border border-zinc-800 bg-black/65 px-3 py-2 font-body text-xs uppercase tracking-[0.12em] text-zinc-400">

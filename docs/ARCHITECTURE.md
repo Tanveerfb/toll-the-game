@@ -58,9 +58,10 @@ Battle format sets the field cap: **4v4** = all four on field, **3v3** = three o
 ## Deck / Card System (`store/gameStore.ts`)
 
 - **Init:** each living on-field team member contributes their 2 skills as rank-1 `ActionCard`s.
-- **Hand capacity:** 4/5/7/8 cards for 1/2/3/4 field characters. Refilled on both turn-end phases.
-- **Draw:** random from living characters' skills. If a character's `ultGauge ≥ 5`, their ultimate is guaranteed-drawn (one copy in hand max).
-- **Merging:** two cards, same character + same skill + same rank → one card of rank+1 (max 3). Two paths: explicit merge and auto-merge when dragged adjacent. Each merge grants +1 ult gauge to the card's owner.
+- **Hand capacity:** 4/5/7/8 cards for 1/2/3/4 field characters.
+- **Draw (7DS GC behavior):** the hand is never reset — leftover cards persist. New cards are drawn **one at a time, purely at random** from living field units' skill pools at turn-end phases (and a turn-start top-up for freshly promoted subs), **auto-merging** adjacent identical cards as they land (+1 ult gauge per merge), until the hand is full. If a character's `ultGauge ≥ 5`, their ultimate is guaranteed-drawn (one copy in hand max) — including mid-draw when a merge fills the gauge.
+- **Merging:** two cards, same character + same skill + same rank → one card of rank+1 (max 3). Three paths: explicit merge button, auto-merge when dragged adjacent, and auto-merge on draw. Each merge grants +1 ult gauge to the card's owner.
+- **Interaction lock:** the deck can only be touched (select/merge/drag) during `PlayerAction`.
 - **Action queue:** up to 3 cards queued per player turn. Enemy-targeting card types (`attack`, `debuff`, `disable`, `ultimate`) require a marked enemy target at selection time. Stunned characters' cards can't be queued.
 - **Rank effect:** on resolution, `BattleProvider` substitutes `damageRanked[rank-1]` as the damage multiplier. (Mechanic `*Ranked` values currently do not scale — see STATUS.md.)
 

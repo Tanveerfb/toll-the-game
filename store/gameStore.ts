@@ -207,52 +207,86 @@ export const useGameStore = create<BattleState>((set, get) => ({
     // Max amount is 4/5/7/8 for 1/2/3/4 field characters
     const maxCapacityMap = [0, 4, 5, 7, 8];
     const maxCapacity = maxCapacityMap[fieldCount] || 8;
-    const currentSpaces = maxCapacity - deck.length;
 
-    if (currentSpaces <= 0) return;
+    if (deck.length >= maxCapacity || livingChars.length === 0) return;
+
+    // The hand is never reset: leftover cards persist and new cards are
+    // drawn purely at random from the living field units' skill pools,
+    // one at a time, auto-merging adjacent identical cards as they land
+    // (7DS GC behavior; each merge grants that character +1 ult gauge)
+    // until the hand is full.
+    let currentDeck = [...deck];
+    let updatedTeam = playerTeam;
+    const notices: string[] = [];
+    let totalMerges = 0;
 
     const pool: { charId: string; skill: any }[] = [];
-    const guaranteedUlts: { charId: string; skill: any }[] = [];
-
     livingChars.forEach((c) => {
-      if (c.ultGauge >= 5 && c.ultimate) {
-        const hasUltInHand = [...deck, ...actionQueue].some(
-          (card) =>
-            card.sourceInstanceId === c.instanceId &&
-            card.skill.type === "ultimate",
-        );
-        if (!hasUltInHand) {
-          guaranteedUlts.push({ charId: c.instanceId, skill: c.ultimate });
-        }
-      }
       c.skills.forEach((s) => {
         pool.push({ charId: c.instanceId, skill: s });
       });
     });
+    if (pool.length === 0) return;
 
-    const newCards: ActionCard[] = [];
-    while (guaranteedUlts.length > 0 && newCards.length < currentSpaces) {
-      const u = guaranteedUlts.shift()!;
-      newCards.push({
-        id: Math.random().toString(36).substring(2, 9),
-        sourceInstanceId: u.charId,
-        skill: u.skill,
-        rank: 1,
-      });
-    }
-
-    while (newCards.length < currentSpaces && pool.length > 0) {
-      const randIdx = Math.floor(Math.random() * pool.length);
-      const picked = pool[randIdx];
-      newCards.push({
+    const nextCard = (): ActionCard => {
+      // A full ult gauge guarantees that character's ultimate is drawn
+      // (one copy in hand/queue at a time)
+      const ultReady = updatedTeam.find(
+        (c) =>
+          c.currentHP > 0 &&
+          !c.isSub &&
+          c.ultGauge >= 5 &&
+          c.ultimate &&
+          ![...currentDeck, ...actionQueue].some(
+            (card) =>
+              card.sourceInstanceId === c.instanceId &&
+              card.skill.type === "ultimate",
+          ),
+      );
+      if (ultReady) {
+        return {
+          id: Math.random().toString(36).substring(2, 9),
+          sourceInstanceId: ultReady.instanceId,
+          skill: ultReady.ultimate!,
+          rank: 1,
+        };
+      }
+      const picked = pool[Math.floor(Math.random() * pool.length)];
+      return {
         id: Math.random().toString(36).substring(2, 9),
         sourceInstanceId: picked.charId,
         skill: picked.skill,
         rank: 1,
-      });
+      };
+    };
+
+    while (currentDeck.length < maxCapacity) {
+      currentDeck.push(nextCard());
+
+      const mergeResult = applyAdjacentMerges(currentDeck);
+      currentDeck = mergeResult.deck;
+
+      if (mergeResult.mergeCount > 0) {
+        totalMerges += mergeResult.mergeCount;
+        notices.push(...mergeResult.notices);
+        updatedTeam = updatedTeam.map((char) => {
+          const gains = mergeResult.mergeSourceIds.filter(
+            (sourceId) => sourceId === char.instanceId,
+          ).length;
+          if (gains <= 0) return char;
+          return { ...char, ultGauge: Math.min(5, char.ultGauge + gains) };
+        });
+      }
     }
 
-    set({ deck: [...deck, ...newCards] });
+    set({
+      deck: currentDeck,
+      playerTeam: updatedTeam,
+      interactionNotice:
+        totalMerges > 0
+          ? `${notices.join(" ")} +${totalMerges} Ult Gauge.`
+          : get().interactionNotice,
+    });
   },
 
   selectCard: (cardId: string) => {
