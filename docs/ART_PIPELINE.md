@@ -36,21 +36,24 @@ photorealistic, 3d, busy background, multiple characters
 
 **Color-bleed rule:** when a costume color leaks into hair or effects, add the wrong combination to the negative prompt with weight ≥1.3 and raise the correct token's weight. (Duke's magenta robe turned his hair pink until `(dark blue spiky hair:1.3)` + negative `(pink hair:1.4)`.)
 
-## Current Set (v1 — 2026-07-07)
+## Current Set (v2 — 2026-07-07)
 
-| Character | Seed | Notes |
-|---|---|---|
-| duke | 777001 | magenta changpao, blue water fx; hair/robe bleed solved per rule above |
-| lyra | 777002 | recurve bow, red ice crystals, white skirt |
-| master_tao | 777003 | white gi, fire fists; wraps rendered white not black (acceptable) |
-| mustafa | 777004 | design NOT locked in lore — invented: olive kurta, stone gauntlets |
-| siddiq | 777005 | design NOT locked — invented: red tunic w/ gold leaf, vine arms |
-| batra | 777006 | saffron turban, blue+gold armor, lion flame |
-| gabrist | 777007 | indigo coat, giant calligraphy brush, ink ribbons |
-| sara | 777008 | twin braids, cat-ear band, red overall dress, spectral cats |
-| yalina | 777009 | design NOT locked — invented: green bob, bandaged fists |
+Locked design sheets live in `docs/design/characters/*.md` — they are the source of truth for appearance and override old lore descriptions.
 
-Full prompts recoverable from ComfyUI history / git log of this file's introduction commit.
+| Character | Seed | Design source | Notes |
+|---|---|---|---|
+| duke | 777001 | lore (locked) | magenta changpao, blue water fx; hair/robe bleed solved per rule above |
+| lyra | 888001 | design sheet | lavender-silver side ponytail, crimson combat qipao, red ice bow |
+| master_tao | 888002 | design sheet | serious mode: max-power bulk, tank shirt, tidy beard, fire fists |
+| sara | 888003 | design sheet | platinum pigtails + black ribbons, cat-ear hoodie, spectral paws |
+| yalina | 888004 | design sheet | Pakistani, warm brown skin, emerald kurta + dupatta, fist charge |
+| seras | 888035 | design sheet | villain true form: pointed ears, light-red eyes, kimono-armor, lightning polearm. Horn-like hair tufts didn't render (crown/horn artifacts on earlier attempts — "crown" is a trigger word, keep it out of prompts); acceptable v1, revisit later |
+| mustafa | 777004 | AI-invented | awaiting Tanveer's design sheet |
+| siddiq | 777005 | AI-invented | awaiting Tanveer's design sheet |
+| batra | 777006 | AI-invented (lore hints: Sikh, turban, KHALSA, lion) | Tanveer may still lock a sheet |
+| gabrist | 777007 | AI-invented (lore hints: artist, ink) | Tanveer may still lock a sheet |
+
+Full prompts recoverable from ComfyUI history / git log.
 
 ## Adding a New Character
 

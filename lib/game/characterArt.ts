@@ -12,6 +12,7 @@ const CHARACTERS_WITH_ART = new Set([
   "gabrist",
   "sara",
   "yalina",
+  "seras", // villain — art ready ahead of her kit landing in data/characters
 ]);
 
 export function getCharacterArt(id: string): string | null {
