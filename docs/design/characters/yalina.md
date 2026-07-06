@@ -6,11 +6,13 @@ A Pakistani girl whose strength is built on heart-led instinct and quiet enduran
 ---
 
 ## Physical Appearance
-*(based on movie-Yalina, Dhurandhar)*
-- **Hair & eyes:** Dark hair, dark brown eyes — realistic, no stylization.
+*(based on movie-Yalina, Dhurandhar — redesign locked 2026-07-07 to `refs/yalina-ref.png`)*
+- **Hair:** Long dark-brown **curly** hair, worn in a loose side braid over one shoulder, curly fringe framing the face, fine gold hair chain woven into the braid.
+- **Eyes:** Dark brown, soft but knowing gaze. Realistic, no stylization.
 - **Skin tone:** Warm brown.
 - **Build:** Average height, youthful build.
-- **Style:** Blends traditional elegance with modern, natural simplicity — rich fabrics, fine jewelry, and lehenga/kurta-style formal pieces for her composed, high-status side; softer, simpler everyday wear for her more vulnerable, unguarded moments. No hijab, matching the source look.
+- **Outfit (card look):** Deep pink / magenta shalwar kameez with heavy gold embroidered borders (collar, placket, cuffs, shoulders), matching sheer dupatta with gold speckle, delicate gold jewelry — rings, earrings, thin necklace. Traditional elegance, high-status composed side.
+- Softer, simpler everyday wear for her more vulnerable, unguarded moments. No hijab, matching the source look.
 
 ---
 

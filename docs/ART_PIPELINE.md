@@ -36,22 +36,30 @@ photorealistic, 3d, busy background, multiple characters
 
 **Color-bleed rule:** when a costume color leaks into hair or effects, add the wrong combination to the negative prompt with weight ≥1.3 and raise the correct token's weight. (Duke's magenta robe turned his hair pink until `(dark blue spiky hair:1.3)` + negative `(pink hair:1.4)`.)
 
-## Current Set (v2 — 2026-07-07)
+**Trigger-word rule:** some ordinary words summon literal objects regardless of context — and putting them in the NEGATIVE prompt can leak the concept in too. Keep these words out of both prompts entirely and paraphrase:
 
-Locked design sheets live in `docs/design/characters/*.md` — they are the source of truth for appearance and override old lore descriptions.
+| Word | Summons | Paraphrase |
+|---|---|---|
+| crown ("at the crown") | literal gold crown | "top of head" |
+| cuffs ("collar and cuffs") | handcuffs + wrist chains | "sleeve borders" |
+| chain ("hair chain") | wrist/neck chains | drop it |
+
+## Current Set (v3 — 2026-07-07)
+
+Locked design sheets live in `docs/design/characters/*.md` — they are the source of truth for appearance and override old lore descriptions. Reference photos in `docs/design/characters/refs/`.
 
 | Character | Seed | Design source | Notes |
 |---|---|---|---|
-| duke | 777001 | lore (locked) | magenta changpao, blue water fx; hair/robe bleed solved per rule above |
+| duke | 777012 | design sheet (duke.md) | v3: bulkier MC redesign — DBZ-spiky quiff + taper fade, navy gi with magenta trim/sash over combat bodysuit, water vortex fists |
 | lyra | 888001 | design sheet | lavender-silver side ponytail, crimson combat qipao, red ice bow |
 | master_tao | 888002 | design sheet | serious mode: max-power bulk, tank shirt, tidy beard, fire fists |
 | sara | 888003 | design sheet | platinum pigtails + black ribbons, cat-ear hoodie, spectral paws |
-| yalina | 888004 | design sheet | Pakistani, warm brown skin, emerald kurta + dupatta, fist charge |
-| seras | 888035 | design sheet | villain true form: pointed ears, light-red eyes, kimono-armor, lightning polearm. Horn-like hair tufts didn't render (crown/horn artifacts on earlier attempts — "crown" is a trigger word, keep it out of prompts); acceptable v1, revisit later |
+| yalina | 888043 | design sheet + ref photo | v2 redesign: dark-brown curly hair, deep pink shalwar kameez + gold embroidery, green energy fist. Literal side braid won't render at this style weight — loose side curls accepted. "cuffs"/"chain" are trigger words (see rule above) |
+| seras | 888035 | design sheet | villain true form: pointed ears, light-red eyes, kimono-armor, lightning polearm. Horn-like hair tufts didn't render; acceptable v1, revisit later |
 | mustafa | 777004 | AI-invented | awaiting Tanveer's design sheet |
 | siddiq | 777005 | AI-invented | awaiting Tanveer's design sheet |
 | batra | 777006 | AI-invented (lore hints: Sikh, turban, KHALSA, lion) | Tanveer may still lock a sheet |
-| gabrist | 777007 | AI-invented (lore hints: artist, ink) | Tanveer may still lock a sheet |
+| gabrist | 777019 | hair/face locked (ref photo) + AI ink-artist theme | jet-black shoulder-length waves, full beard, calligraphy brush + ink strokes |
 
 Full prompts recoverable from ComfyUI history / git log.
 

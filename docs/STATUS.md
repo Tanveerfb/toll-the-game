@@ -20,8 +20,8 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 | 6 | Ultimates have no rank while skills rank up — confirmed intended for now; Tanveer may add an ult level-up system later | `types/ultimateCard.ts` | Design note |
 | 7 | `Character.passive: any` and `as any` casts around mechanics — type safety hole | `types/character.ts` | Medium (refactor) |
 | 11 | 4 MB legacy background PNG | `public/bg-images/` | Cosmetic |
-| 13 | Art nitpicks: Duke's arm wraps pinkish; Seras's horn-like hair tufts didn't render (crown/horn trigger-word issue) | `public/characters/` | Cosmetic (re-roll) |
-| 14 | Mustafa + Siddiq designs still AI-invented (Batra/Gabrist invented from lore hints) — regenerate when Tanveer supplies sheets. Lyra/Tao/Sara/Yalina/Seras regenerated from his locked design sheets (`docs/design/characters/`) 2026-07-07 | `docs/ART_PIPELINE.md` | Pending input |
+| 13 | Art nitpicks: Seras's horn-like hair tufts didn't render; Yalina's side braid renders as loose side curls (trigger-word/style limits — see ART_PIPELINE trigger-word table) | `public/characters/` | Cosmetic (re-roll) |
+| 14 | Mustafa + Siddiq designs still AI-invented (Batra invented from lore hints) — regenerate when Tanveer supplies sheets. Duke/Gabrist/Yalina redesigned per his direction + ref photos 2026-07-07; Lyra/Tao/Sara/Seras from his locked sheets (`docs/design/characters/`) | `docs/ART_PIPELINE.md` | Pending input |
 
 ## Not Built Yet
 
