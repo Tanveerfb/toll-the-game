@@ -13,6 +13,8 @@ export interface Action {
   sourceInstanceId: string;
   skill: SkillCard | UltimateCard;
   targetInstanceId: string;
+  /** Card rank at resolution time. Absent (AI/legacy) means rank 1. Ultimates ignore it. */
+  rank?: 1 | 2 | 3;
 }
 
 export type TurnActions = (Action | null)[];

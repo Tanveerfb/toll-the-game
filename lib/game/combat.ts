@@ -5,11 +5,14 @@ import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
 import { Mechanic } from "@/types/mechanic";
 
-function getSkillDamageMultiplier(skill: SkillCard | UltimateCard): number {
+function getSkillDamageMultiplier(
+  skill: SkillCard | UltimateCard,
+  rankIndex: number,
+): number {
   if (skill.type === "ultimate") {
     return (skill as UltimateCard).damage / 100;
   } else {
-    return (skill as SkillCard).damageRanked[0] / 100;
+    return (skill as SkillCard).damageRanked[rankIndex] / 100;
   }
 }
 
@@ -143,14 +146,15 @@ export function executeSkill(
     }
   });
 
+  const rankIndex = (action.rank ?? 1) - 1;
   const skillMechanics = (action.skill as any).mechanics
     ? ((action.skill as any).mechanics as any[]).map((m) =>
-        normalizeMechanic(m, 0),
+        normalizeMechanic(m, rankIndex),
       )
     : [];
 
   const isAoe = skillMechanics.some(
-    (m) => m.type === "aoe" || (m.type === "aoeRanked" && m.ranks?.[0]),
+    (m) => m.type === "aoe" || (m.type === "aoeRanked" && m.ranks?.[rankIndex]),
   );
   const isAttack =
     action.skill.type === "attack" || action.skill.type === "ultimate";
@@ -196,7 +200,7 @@ export function executeSkill(
   else if (statMulti === "def") baseStat = updatedSource.currentDefense;
   else if (statMulti === "hp") baseStat = updatedSource.hp; // Max HP scaling per user comment
 
-  const skillMultiplier = getSkillDamageMultiplier(action.skill);
+  const skillMultiplier = getSkillDamageMultiplier(action.skill, rankIndex);
   let baseDamage = baseStat * skillMultiplier;
 
   // -- DYNAMIC DAMAGE MULTIPLIERS

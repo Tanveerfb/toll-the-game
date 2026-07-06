@@ -254,18 +254,9 @@ export default function BattleProvider({
       const card = remainingQueue[0];
       const action: TurnActions[0] = {
         sourceInstanceId: card.sourceInstanceId,
-        skill:
-          card.skill.type === "ultimate"
-            ? card.skill
-            : {
-                ...card.skill,
-                damageRanked: [
-                  card.skill.damageRanked[card.rank - 1],
-                  card.skill.damageRanked[card.rank - 1],
-                  card.skill.damageRanked[card.rank - 1],
-                ] as [number, number, number],
-              },
+        skill: card.skill,
         targetInstanceId: card.targetInstanceId || "",
+        rank: card.rank,
       };
 
       // Execute the action
