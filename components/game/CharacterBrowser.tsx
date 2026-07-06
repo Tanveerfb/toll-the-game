@@ -1,16 +1,26 @@
 "use client";
 
-import {
-  Card,
-  Label,
-  Link,
-  ListBox,
-  Pagination,
-  SearchField,
-  Select,
-  Table,
-} from "@heroui/react";
 import React from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type CharacterColor = "light" | "red" | "blue" | "green" | "dark";
 
@@ -39,42 +49,20 @@ const COLOR_OPTIONS: Array<{ id: "all" | CharacterColor; label: string }> = [
 ];
 
 const TABLE_COLUMNS = [
-  {
-    id: "character",
-    label: "Character",
-    className: "text-muted",
-    isRowHeader: true,
-  },
-  { id: "id", label: "Id", className: "text-muted", isRowHeader: false },
-  { id: "color", label: "Color", className: "text-muted", isRowHeader: false },
-  {
-    id: "atk",
-    label: "ATK",
-    className: "text-right text-muted",
-    isRowHeader: false,
-  },
-  {
-    id: "def",
-    label: "DEF",
-    className: "text-right text-muted",
-    isRowHeader: false,
-  },
-  {
-    id: "hp",
-    label: "HP",
-    className: "text-right text-muted",
-    isRowHeader: false,
-  },
+  { id: "character", label: "Character", className: "" },
+  { id: "id", label: "Id", className: "" },
+  { id: "color", label: "Color", className: "" },
+  { id: "atk", label: "ATK", className: "text-right" },
+  { id: "def", label: "DEF", className: "text-right" },
+  { id: "hp", label: "HP", className: "text-right" },
 ] as const;
 
 const UI = {
-  labelMuted: "font-body text-xs uppercase tracking-[0.16em] text-muted",
-  smallMuted: "font-body text-xs uppercase tracking-[0.14em] text-muted",
-  controlSurface: "rounded-none border-2 border-border bg-surface-secondary",
-  selectValue: "text-foreground data-[placeholder=true]:text-muted",
-  popover: "border border-border bg-surface text-foreground",
-  listItem: "text-foreground hover:bg-surface-secondary",
-  paginationText: "text-foreground",
+  labelMuted:
+    "font-body text-xs uppercase tracking-[0.16em] text-muted-foreground",
+  smallMuted:
+    "font-body text-xs uppercase tracking-[0.14em] text-muted-foreground",
+  controlSurface: "rounded-none border-2 border-border bg-muted/30",
   statValue: "font-heading text-xl text-foreground",
 } as const;
 
@@ -178,219 +166,179 @@ export default function CharacterBrowser({
   return (
     <section className="space-y-6">
       <div className="grid gap-3 md:grid-cols-3">
-        <SearchField
-          name="characterSearch"
-          value={searchValue}
-          onChange={(value) => {
-            setSearchValue(value);
-            setCurrentPage(1);
-          }}
-          className="text-foreground md:col-span-2"
-        >
-          <Label className={UI.labelMuted}>Search</Label>
-          <SearchField.Group className={UI.controlSurface}>
-            <SearchField.SearchIcon className="text-muted" />
-            <SearchField.Input
-              placeholder="Search by name or id"
-              className="text-foreground placeholder:text-muted"
-            />
-            <SearchField.ClearButton className="text-muted hover:bg-surface" />
-          </SearchField.Group>
-        </SearchField>
+        <div className="flex flex-col gap-2 md:col-span-2">
+          <Label htmlFor="characterSearch" className={UI.labelMuted}>
+            Search
+          </Label>
+          <Input
+            id="characterSearch"
+            name="characterSearch"
+            value={searchValue}
+            onChange={(event) => {
+              setSearchValue(event.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Search by name or id"
+            className={`${UI.controlSurface} text-foreground placeholder:text-muted-foreground`}
+          />
+        </div>
 
-        <Select
-          variant="secondary"
-          value={selectedColor}
-          onChange={(value) => {
-            if (typeof value === "string") {
+        <div className="flex flex-col gap-2">
+          <Label className={UI.labelMuted}>Filter</Label>
+          <Select
+            value={selectedColor}
+            onValueChange={(value) => {
               setSelectedColor(value as "all" | CharacterColor);
               setCurrentPage(1);
-            }
-          }}
-          placeholder="Filter"
-        >
-          <Label className={UI.labelMuted}>Filter</Label>
-          <Select.Trigger className={UI.controlSurface}>
-            <Select.Value className={UI.selectValue} />
-            <Select.Indicator className="text-muted" />
-          </Select.Trigger>
-          <Select.Popover className={UI.popover}>
-            <ListBox className="text-foreground">
+            }}
+          >
+            <SelectTrigger className={`${UI.controlSurface} w-full`}>
+              <SelectValue placeholder="Filter" />
+            </SelectTrigger>
+            <SelectContent>
               {COLOR_OPTIONS.map((option) => (
-                <ListBox.Item
-                  key={option.id}
-                  id={option.id}
-                  textValue={option.label}
-                  className={UI.listItem}
-                >
+                <SelectItem key={option.id} value={option.id}>
                   {option.label}
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
+                </SelectItem>
               ))}
-            </ListBox>
-          </Select.Popover>
-        </Select>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <Card
-        variant="secondary"
-        className="rounded-none border-2 border-border bg-surface"
-      >
-        <Card.Content className="p-0">
-          <Table variant="secondary" className="rounded-none">
-            <Table.ScrollContainer>
-              <Table.Content
-                aria-label="Character browser"
-                className="min-w-215 text-foreground"
-              >
-                <Table.Header className="bg-surface-secondary">
-                  {TABLE_COLUMNS.map((column) => (
-                    <Table.Column
-                      key={column.id}
-                      isRowHeader={column.isRowHeader}
-                      className={column.className}
-                    >
-                      {column.label}
-                    </Table.Column>
-                  ))}
-                </Table.Header>
+      <Card className="rounded-none border-2 border-border bg-card ring-0">
+        <CardContent className="p-0">
+          <Table className="min-w-215 text-foreground">
+            <TableHeader className="bg-muted/30">
+              <TableRow>
+                {TABLE_COLUMNS.map((column) => (
+                  <TableHead
+                    key={column.id}
+                    className={`text-muted-foreground ${column.className}`}
+                  >
+                    {column.label}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
 
-                <Table.Body>
-                  {pagedCharacters.length === 0 ? (
-                    <Table.Row id="no-results">
-                      <Table.Cell colSpan={6} className="py-8 text-center">
-                        <span className="font-body text-sm uppercase tracking-[0.14em] text-muted">
-                          No characters found.
+            <TableBody>
+              {pagedCharacters.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-8 text-center">
+                    <span className="font-body text-sm uppercase tracking-[0.14em] text-muted-foreground">
+                      No characters found.
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                pagedCharacters.map((character) => (
+                  <TableRow key={character.id}>
+                    <TableCell>
+                      <Link
+                        href={`/archive/${character.id}`}
+                        className="font-heading text-2xl tracking-[0.06em] text-foreground no-underline hover:underline hover:underline-offset-3"
+                      >
+                        {character.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <span className={UI.smallMuted}>{character.id}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`h-4 w-4 rounded-none border border-border ${colorSwatchClass(character.color)}`}
+                        />
+                        <span className={UI.smallMuted}>
+                          {formatColor(character.color)}
                         </span>
-                      </Table.Cell>
-                    </Table.Row>
-                  ) : (
-                    pagedCharacters.map((character) => (
-                      <Table.Row key={character.id} id={character.id}>
-                        <Table.Cell>
-                          <Link
-                            href={`/archive/${character.id}`}
-                            className="font-heading text-2xl tracking-[0.06em] text-foreground no-underline hover:underline hover:underline-offset-3"
-                          >
-                            {character.name}
-                            <Link.Icon className="size-3" />
-                          </Link>
-                        </Table.Cell>
-                        <Table.Cell>
-                          <span className={UI.smallMuted}>{character.id}</span>
-                        </Table.Cell>
-                        <Table.Cell>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`h-4 w-4 rounded-none border border-border ${colorSwatchClass(character.color)}`}
-                            />
-                            <span className={UI.smallMuted}>
-                              {formatColor(character.color)}
-                            </span>
-                          </div>
-                        </Table.Cell>
-                        <Table.Cell className="text-right">
-                          <span className={UI.statValue}>{character.atk}</span>
-                        </Table.Cell>
-                        <Table.Cell className="text-right">
-                          <span className={UI.statValue}>{character.def}</span>
-                        </Table.Cell>
-                        <Table.Cell className="text-right">
-                          <span className={UI.statValue}>{character.hp}</span>
-                        </Table.Cell>
-                      </Table.Row>
-                    ))
-                  )}
-                </Table.Body>
-              </Table.Content>
-            </Table.ScrollContainer>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className={UI.statValue}>{character.atk}</span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className={UI.statValue}>{character.def}</span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className={UI.statValue}>{character.hp}</span>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
           </Table>
-        </Card.Content>
+        </CardContent>
       </Card>
 
       <div className="flex flex-col gap-3 border-t border-border pt-4 md:flex-row md:items-end md:justify-between">
-        <Select
-          variant="secondary"
-          value={String(pageSize)}
-          onChange={(value) => {
-            if (typeof value === "string") {
+        <div className="flex w-full flex-col gap-2 md:max-w-45">
+          <Label className={UI.labelMuted}>Page Size</Label>
+          <Select
+            value={String(pageSize)}
+            onValueChange={(value) => {
               setPageSize(Number(value));
               setCurrentPage(1);
-            }
-          }}
-          placeholder="Page Size"
-          className="w-full md:max-w-45"
-        >
-          <Label className={UI.labelMuted}>Page Size</Label>
-          <Select.Trigger className={UI.controlSurface}>
-            <Select.Value className={UI.selectValue} />
-            <Select.Indicator className="text-muted" />
-          </Select.Trigger>
-          <Select.Popover className={UI.popover}>
-            <ListBox className="text-foreground">
+            }}
+          >
+            <SelectTrigger className={`${UI.controlSurface} w-full`}>
+              <SelectValue placeholder="Page Size" />
+            </SelectTrigger>
+            <SelectContent>
               {PAGE_SIZE_OPTIONS.map((size) => (
-                <ListBox.Item
-                  key={size}
-                  id={String(size)}
-                  textValue={String(size)}
-                  className={UI.listItem}
-                >
+                <SelectItem key={size} value={String(size)}>
                   {size}
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
+                </SelectItem>
               ))}
-            </ListBox>
-          </Select.Popover>
-        </Select>
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Pagination className="w-full md:w-auto" size="md">
-          <Pagination.Summary>
-            <span className={UI.labelMuted}>
-              Showing {startItem}-{endItem} of {filteredCharacters.length}
-            </span>
-          </Pagination.Summary>
-          <Pagination.Content>
-            <Pagination.Item>
-              <Pagination.Previous
-                isDisabled={currentPage === 1}
-                className={UI.paginationText}
-                onPress={() => setCurrentPage((page) => page - 1)}
-              >
-                <Pagination.PreviousIcon />
-                <span className={UI.paginationText}>Previous</span>
-              </Pagination.Previous>
-            </Pagination.Item>
+        <div className="flex w-full flex-col gap-2 md:w-auto md:items-end">
+          <span className={UI.labelMuted}>
+            Showing {startItem}-{endItem} of {filteredCharacters.length}
+          </span>
+          <div className="flex flex-wrap items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((page) => page - 1)}
+            >
+              Previous
+            </Button>
 
             {paginationItems.map((page, index) =>
               page === "ellipsis" ? (
-                <Pagination.Item key={`ellipsis-${index}`}>
-                  <Pagination.Ellipsis />
-                </Pagination.Item>
+                <span
+                  key={`ellipsis-${index}`}
+                  className="px-2 text-muted-foreground"
+                >
+                  …
+                </span>
               ) : (
-                <Pagination.Item key={page}>
-                  <Pagination.Link
-                    isActive={page === currentPage}
-                    className={UI.paginationText}
-                    onPress={() => setCurrentPage(page)}
-                  >
-                    <span className={UI.paginationText}>{page}</span>
-                  </Pagination.Link>
-                </Pagination.Item>
+                <Button
+                  key={page}
+                  variant={page === currentPage ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </Button>
               ),
             )}
 
-            <Pagination.Item>
-              <Pagination.Next
-                isDisabled={currentPage === totalPages}
-                className={UI.paginationText}
-                onPress={() => setCurrentPage((page) => page + 1)}
-              >
-                <span className={UI.paginationText}>Next</span>
-                <Pagination.NextIcon />
-              </Pagination.Next>
-            </Pagination.Item>
-          </Pagination.Content>
-        </Pagination>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((page) => page + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       </div>
     </section>
   );

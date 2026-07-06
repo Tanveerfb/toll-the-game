@@ -1,7 +1,22 @@
-import { Card, Chip, Table } from "@heroui/react";
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   characterIds,
   getCharacterById,
@@ -42,7 +57,8 @@ interface CharacterPassiveView {
 }
 
 const UI = {
-  fieldLabel: "font-body text-xs uppercase tracking-[0.14em] text-muted",
+  fieldLabel:
+    "font-body text-xs uppercase tracking-[0.14em] text-muted-foreground",
   textValue: "font-body text-sm text-foreground",
   statValue: "font-heading text-3xl text-foreground",
   sectionTitle: "font-heading text-2xl tracking-[0.08em] text-foreground",
@@ -80,15 +96,13 @@ function MechanicsTags({ skill }: { skill: CharacterSkillData }): ReactNode {
   return (
     <div className="flex flex-wrap gap-2">
       {types.map((type) => (
-        <Chip
+        <Badge
           key={`${skill.skillName}-${type}`}
           variant="secondary"
-          className="rounded-none"
+          className="rounded-none text-foreground"
         >
-          <Chip.Label className="text-foreground">
-            {toTitleCase(type)}
-          </Chip.Label>
-        </Chip>
+          {toTitleCase(type)}
+        </Badge>
       ))}
     </div>
   );
@@ -100,26 +114,22 @@ function SkillRanksSection({
   skills: CharacterSkillData[];
 }): ReactNode {
   return (
-    <Card
-      variant="secondary"
-      className="rounded-none border border-border bg-surface-secondary"
-    >
-      <Card.Header className="border-b border-border px-5 py-4">
-        <Card.Title className="font-heading text-2xl tracking-[0.08em] text-foreground">
+    <Card className="rounded-none border border-border bg-muted/30 ring-0">
+      <CardHeader className="border-b border-border px-5 py-4">
+        <CardTitle className="font-heading text-2xl tracking-[0.08em] text-foreground">
           Skills
-        </Card.Title>
-      </Card.Header>
-      <Card.Content className="space-y-4 p-5">
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 p-5">
         {skills.map((skill) => {
           const rankedLines = buildRankedSkillDescriptions(skill);
 
           return (
             <Card
               key={skill.skillName}
-              variant="secondary"
-              className="rounded-none border border-border bg-surface"
+              className="rounded-none border border-border bg-card ring-0"
             >
-              <Card.Content className="space-y-3 p-4">
+              <CardContent className="space-y-3 p-4">
                 <p className="font-heading text-xl tracking-[0.06em] text-foreground">
                   {skill.skillName}
                 </p>
@@ -142,11 +152,11 @@ function SkillRanksSection({
                     </p>
                   ))}
                 </div>
-              </Card.Content>
+              </CardContent>
             </Card>
           );
         })}
-      </Card.Content>
+      </CardContent>
     </Card>
   );
 }
@@ -157,23 +167,17 @@ function UltimateSection({
   ultimate?: CharacterSkillData;
 }): ReactNode {
   return (
-    <Card
-      variant="secondary"
-      className="rounded-none border border-border bg-surface-secondary"
-    >
-      <Card.Header className="border-b border-border px-5 py-4">
-        <Card.Title className={UI.sectionTitle}>Ultimate</Card.Title>
-      </Card.Header>
+    <Card className="rounded-none border border-border bg-muted/30 ring-0">
+      <CardHeader className="border-b border-border px-5 py-4">
+        <CardTitle className={UI.sectionTitle}>Ultimate</CardTitle>
+      </CardHeader>
 
-      <Card.Content className="space-y-3 p-5">
+      <CardContent className="space-y-3 p-5">
         {!ultimate ? (
           <p className={UI.textValue}>To be added</p>
         ) : (
-          <Card
-            variant="secondary"
-            className="rounded-none border border-border bg-surface"
-          >
-            <Card.Content className="space-y-3 p-4">
+          <Card className="rounded-none border border-border bg-card ring-0">
+            <CardContent className="space-y-3 p-4">
               <p className="font-heading text-xl tracking-[0.06em] text-foreground">
                 {ultimate.skillName}
               </p>
@@ -184,10 +188,10 @@ function UltimateSection({
                   className={UI.textValue}
                 />
               </p>
-            </Card.Content>
+            </CardContent>
           </Card>
         )}
-      </Card.Content>
+      </CardContent>
     </Card>
   );
 }
@@ -297,20 +301,14 @@ function PassiveSection({
   const synergyBlocks = getSynergyBlocks(passive);
 
   return (
-    <Card
-      variant="secondary"
-      className="rounded-none border border-border bg-surface-secondary"
-    >
-      <Card.Header className="border-b border-border px-5 py-4">
-        <Card.Title className={UI.sectionTitle}>Passive</Card.Title>
-      </Card.Header>
+    <Card className="rounded-none border border-border bg-muted/30 ring-0">
+      <CardHeader className="border-b border-border px-5 py-4">
+        <CardTitle className={UI.sectionTitle}>Passive</CardTitle>
+      </CardHeader>
 
-      <Card.Content className="p-5">
-        <Card
-          variant="secondary"
-          className="rounded-none border border-border bg-surface"
-        >
-          <Card.Content className="space-y-4 p-4">
+      <CardContent className="p-5">
+        <Card className="rounded-none border border-border bg-card ring-0">
+          <CardContent className="space-y-4 p-4">
             {passiveBlocks.map((block, index) => (
               <div
                 key={`passive-block-${index}`}
@@ -323,7 +321,7 @@ function PassiveSection({
                 }
               >
                 {block.isConditional ? (
-                  <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted">
+                  <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
                     if condition met {"{"}
                   </p>
                 ) : null}
@@ -345,7 +343,7 @@ function PassiveSection({
                 </p>
 
                 {block.isConditional ? (
-                  <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted">
+                  <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
                     {"}"}
                   </p>
                 ) : null}
@@ -368,9 +366,9 @@ function PassiveSection({
                 </div>
               </div>
             ) : null}
-          </Card.Content>
+          </CardContent>
         </Card>
-      </Card.Content>
+      </CardContent>
     </Card>
   );
 }
@@ -385,75 +383,70 @@ function DamagePreviewSection({
   const previewRows = buildCharacterDamagePreview(character);
 
   return (
-    <Card
-      variant="secondary"
-      className="rounded-none border border-border bg-surface-secondary"
-    >
-      <Card.Header className="border-b border-border px-5 py-4">
-        <Card.Title className={UI.sectionTitle}>Damage Preview</Card.Title>
-        <Card.Description className="mt-2 font-body text-sm text-muted">
+    <Card className="rounded-none border border-border bg-muted/30 ring-0">
+      <CardHeader className="border-b border-border px-5 py-4">
+        <CardTitle className={UI.sectionTitle}>Damage Preview</CardTitle>
+        <CardDescription className="mt-2 font-body text-sm text-muted-foreground">
           Dummy enemy baseline: {DAMAGE_PREVIEW_DUMMY.atk} ATK /{" "}
           {DAMAGE_PREVIEW_DUMMY.def} DEF / {DAMAGE_PREVIEW_DUMMY.hp} HP.
-        </Card.Description>
-      </Card.Header>
+        </CardDescription>
+      </CardHeader>
 
-      <Card.Content className="space-y-4 p-5">
+      <CardContent className="space-y-4 p-5">
         <p className={UI.textValue}>
           This table uses each character&apos;s current skill multipliers,
           passive hooks, and mechanic-specific scenarios to show sample output.
         </p>
 
-        <Table
-          variant="secondary"
-          className="rounded-none border border-border"
-        >
-          <Table.ScrollContainer>
-            <Table.Content
-              aria-label={`${character.name} damage preview`}
-              className="min-w-245 text-foreground"
-            >
-              <Table.Header className="bg-surface">
-                <Table.Column isRowHeader className="text-muted">
+        <div className="rounded-none border border-border">
+          <Table className="min-w-245 text-foreground">
+            <TableHeader className="bg-card">
+              <TableRow>
+                <TableHead className="text-muted-foreground">
                   Ability
-                </Table.Column>
-                <Table.Column className="text-muted">Tier</Table.Column>
-                <Table.Column className="text-muted">Multiplier</Table.Column>
-                <Table.Column className="text-muted">Scenario</Table.Column>
-                <Table.Column className="text-muted">Result</Table.Column>
-                <Table.Column className="text-muted">Notes</Table.Column>
-              </Table.Header>
+                </TableHead>
+                <TableHead className="text-muted-foreground">Tier</TableHead>
+                <TableHead className="text-muted-foreground">
+                  Multiplier
+                </TableHead>
+                <TableHead className="text-muted-foreground">
+                  Scenario
+                </TableHead>
+                <TableHead className="text-muted-foreground">Result</TableHead>
+                <TableHead className="text-muted-foreground">Notes</TableHead>
+              </TableRow>
+            </TableHeader>
 
-              <Table.Body>
-                {previewRows.map((row) => (
-                  <Table.Row key={row.id} id={row.id}>
-                    <Table.Cell className="align-top font-heading text-sm tracking-wider text-foreground">
-                      {row.abilityName}
-                    </Table.Cell>
-                    <Table.Cell className="align-top font-body text-sm text-foreground">
-                      {row.rankLabel}
-                    </Table.Cell>
-                    <Table.Cell className="align-top font-body text-sm text-foreground">
-                      {row.multiplierLabel}
-                    </Table.Cell>
-                    <Table.Cell className="align-top font-body text-sm text-foreground">
-                      {row.scenarioLabel}
-                    </Table.Cell>
-                    <Table.Cell className="align-top font-body text-sm font-semibold text-foreground">
-                      {row.resultLabel}
-                    </Table.Cell>
-                    <Table.Cell className="align-top">
-                      <KeyworkHighlighter
-                        text={row.notes || "No additional modifiers."}
-                        className={`${UI.textValue} leading-6`}
-                      />
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
-              </Table.Body>
-            </Table.Content>
-          </Table.ScrollContainer>
-        </Table>
-      </Card.Content>
+            <TableBody>
+              {previewRows.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell className="align-top font-heading text-sm tracking-wider text-foreground">
+                    {row.abilityName}
+                  </TableCell>
+                  <TableCell className="align-top font-body text-sm text-foreground">
+                    {row.rankLabel}
+                  </TableCell>
+                  <TableCell className="align-top font-body text-sm text-foreground">
+                    {row.multiplierLabel}
+                  </TableCell>
+                  <TableCell className="align-top font-body text-sm text-foreground">
+                    {row.scenarioLabel}
+                  </TableCell>
+                  <TableCell className="align-top font-body text-sm font-semibold text-foreground">
+                    {row.resultLabel}
+                  </TableCell>
+                  <TableCell className="align-top whitespace-normal">
+                    <KeyworkHighlighter
+                      text={row.notes || "No additional modifiers."}
+                      className={`${UI.textValue} leading-6`}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
     </Card>
   );
 }
@@ -483,30 +476,24 @@ export default async function CharacterDetailPage({
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-size-[38px_38px] opacity-25" />
 
       <section className="relative z-10 mx-auto w-full max-w-6xl space-y-6 px-6 py-8 md:px-10 md:py-10">
-        <Card
-          variant="tertiary"
-          className="rounded-none border-2 border-border bg-surface"
-        >
-          <Card.Header className="border-b border-border px-6 py-6">
+        <Card className="rounded-none border-2 border-border bg-card/80 ring-0 backdrop-blur-sm">
+          <CardHeader className="border-b border-border px-6 py-6">
             <p className={UI.fieldLabel}>Name</p>
-            <Card.Title className="mt-1 font-heading text-5xl tracking-[0.12em] text-foreground md:text-6xl">
+            <CardTitle className="mt-1 font-heading text-5xl tracking-[0.12em] text-foreground md:text-6xl">
               {character.name}
-            </Card.Title>
-            <Card.Description className="mt-1 font-body text-sm uppercase tracking-[0.16em] text-muted">
+            </CardTitle>
+            <CardDescription className="mt-1 font-body text-sm uppercase tracking-[0.16em] text-muted-foreground">
               {character.id}
-            </Card.Description>
-          </Card.Header>
+            </CardDescription>
+          </CardHeader>
 
-          <Card.Content className="space-y-6 p-6">
+          <CardContent className="space-y-6 p-6">
             <div>
-              <Card
-                variant="secondary"
-                className="rounded-none border border-border bg-surface-secondary"
-              >
-                <Card.Header className="border-b border-border px-5 py-4">
-                  <Card.Title className={UI.sectionTitle}>Stats</Card.Title>
-                </Card.Header>
-                <Card.Content className="grid grid-cols-3 gap-4 p-5 text-center">
+              <Card className="rounded-none border border-border bg-muted/30 ring-0">
+                <CardHeader className="border-b border-border px-5 py-4">
+                  <CardTitle className={UI.sectionTitle}>Stats</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-3 gap-4 p-5 text-center">
                   <div>
                     <p className={UI.fieldLabel}>ATK</p>
                     <p className={UI.statValue}>{character.atk}</p>
@@ -519,33 +506,30 @@ export default async function CharacterDetailPage({
                     <p className={UI.fieldLabel}>HP</p>
                     <p className={UI.statValue}>{character.hp}</p>
                   </div>
-                </Card.Content>
+                </CardContent>
               </Card>
             </div>
 
-            <Card
-              variant="secondary"
-              className="rounded-none border border-border bg-surface-secondary"
-            >
-              <Card.Header className="border-b border-border px-5 py-4">
-                <Card.Title className={UI.sectionTitle}>Overview</Card.Title>
-              </Card.Header>
+            <Card className="rounded-none border border-border bg-muted/30 ring-0">
+              <CardHeader className="border-b border-border px-5 py-4">
+                <CardTitle className={UI.sectionTitle}>Overview</CardTitle>
+              </CardHeader>
 
-              <Card.Content className="p-5">
+              <CardContent className="p-5">
                 <p className={UI.textValue}>
                   <KeyworkHighlighter
                     text={character.lore?.trim() || "To be added"}
                     className={UI.textValue}
                   />
                 </p>
-              </Card.Content>
+              </CardContent>
             </Card>
 
             <SkillRanksSection skills={character.skills} />
             <UltimateSection ultimate={character.ultimate} />
             <PassiveSection passive={character.passive} />
             <DamagePreviewSection character={character} />
-          </Card.Content>
+          </CardContent>
         </Card>
       </section>
     </main>

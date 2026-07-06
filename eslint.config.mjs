@@ -21,8 +21,6 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-require-imports": "off",
     },
   },
-  // Exclude the HeroUI demo documentation folder from linting entirely.
-  globalIgnores([".heroui-docs/**"]),
 ]);
 
 export default eslintConfig;

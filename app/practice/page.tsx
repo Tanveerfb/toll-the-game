@@ -5,7 +5,7 @@ import { useGameStore } from "@/store/gameStore";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import Deck from "@/components/game/Deck";
 import BattleArena from "@/components/game/BattleArena";
-import { Button } from "@heroui/react";
+import { Button } from "@/components/ui/button";
 
 export default function Practice() {
   const { battlePhase } = useGameStore();
@@ -18,9 +18,7 @@ export default function Practice() {
       {/* Controls for initializing */}
       {isInitializing ? (
         <div className="flex items-center gap-4">
-          <Button variant="primary" onPress={startFullTest}>
-            Start Practice Battle
-          </Button>
+          <Button onClick={startFullTest}>Start Practice Battle</Button>
         </div>
       ) : (
         <>

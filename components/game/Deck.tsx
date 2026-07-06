@@ -2,7 +2,14 @@
 
 import React from "react";
 import { useGameStore } from "@/store/gameStore";
-import { Button, Card } from "@heroui/react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import type { ActionCard } from "@/types/action";
 import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
@@ -197,27 +204,24 @@ export default function Deck() {
     <div className="sticky bottom-0 z-30 mt-4 w-full border-t border-zinc-800 bg-linear-to-t from-black/95 to-black/60 p-4 backdrop-blur-md">
       {previewCard ? (
         <div className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-3 w-full max-w-xl -translate-x-1/2">
-          <Card
-            variant="secondary"
-            className="w-full rounded-none border border-zinc-700 bg-zinc-950/95"
-          >
-            <Card.Header className="border-b border-zinc-800 px-4 py-3">
+          <Card className="w-full rounded-none border border-zinc-700 bg-zinc-950/95 ring-0">
+            <CardHeader className="border-b border-zinc-800 px-4 py-3">
               <div className="flex w-full items-start justify-between gap-3">
                 <div>
-                  <Card.Title className="font-heading text-xl tracking-[0.08em] text-zinc-100">
+                  <CardTitle className="font-heading text-xl tracking-[0.08em] text-zinc-100">
                     {previewCard.skill.skillName}
-                  </Card.Title>
-                  <Card.Description className="font-body text-xs uppercase tracking-[0.12em] text-zinc-400">
+                  </CardTitle>
+                  <CardDescription className="font-body text-xs uppercase tracking-[0.12em] text-zinc-400">
                     {previewCard.skill.type} • Rank {previewCard.rank} •{" "}
                     {getSkillPowerText(previewCard)}
-                  </Card.Description>
+                  </CardDescription>
                 </div>
                 <span className="rounded border border-amber-300/70 bg-amber-400/15 px-2 py-0.5 font-body text-xs uppercase tracking-[0.12em] text-amber-100">
                   R{previewCard.rank}
                 </span>
               </div>
-            </Card.Header>
-            <Card.Content className="px-4 py-3">
+            </CardHeader>
+            <CardContent className="px-4 py-3">
               <p className="font-body text-sm text-zinc-200">
                 <KeyworkHighlighter
                   text={previewDescription}
@@ -244,7 +248,7 @@ export default function Deck() {
                   </div>
                 </>
               ) : null}
-            </Card.Content>
+            </CardContent>
           </Card>
         </div>
       ) : null}
@@ -315,7 +319,7 @@ export default function Deck() {
         <Button
           variant="ghost"
           size="sm"
-          onPress={() => setIsDockExpanded((prev) => !prev)}
+          onClick={() => setIsDockExpanded((prev) => !prev)}
           className="border border-zinc-700 rounded-none px-2 text-[11px] uppercase tracking-widest text-zinc-300"
         >
           {isDockExpanded ? "Collapse Deck" : "Expand Deck"}
@@ -323,8 +327,8 @@ export default function Deck() {
 
         <Button
           variant="secondary"
-          onPress={initializeDeck}
-          isDisabled={!isPlayerActionPhase}
+          onClick={initializeDeck}
+          disabled={!isPlayerActionPhase}
         >
           Reset Deck
         </Button>
@@ -424,10 +428,11 @@ export default function Deck() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onPress={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     mergeDeckCard(card.id);
                   }}
-                  className="absolute bottom-1 right-1 h-5 rounded border border-sky-300/70 bg-sky-900/70 px-1 text-[9px] uppercase tracking-[0.08em] text-sky-100"
+                  className="absolute bottom-1 right-1 h-5 rounded border border-sky-300/70 bg-sky-900/70 px-1 text-[9px] uppercase tracking-[0.08em] text-sky-100 hover:bg-sky-800/70"
                 >
                   Merge
                 </Button>

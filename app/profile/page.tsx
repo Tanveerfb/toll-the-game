@@ -1,6 +1,12 @@
 "use client";
 
-import { Button, Card } from "@heroui/react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/AuthProvider";
@@ -17,17 +23,14 @@ export default function ProfilePage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-zinc-950">
       <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-xl items-center justify-center px-6 py-10">
-        <Card
-          variant="tertiary"
-          className="w-full rounded-none border-2 border-zinc-700 bg-black/55 backdrop-blur-sm"
-        >
-          <Card.Header className="border-b border-zinc-700 px-6 py-6">
-            <Card.Title className="font-heading text-4xl tracking-[0.14em] text-zinc-100">
+        <Card className="w-full rounded-none border-2 border-zinc-700 bg-black/55 ring-0 backdrop-blur-sm">
+          <CardHeader className="border-b border-zinc-700 px-6 py-6">
+            <CardTitle className="font-heading text-4xl tracking-[0.14em] text-zinc-100">
               PROFILE
-            </Card.Title>
-          </Card.Header>
+            </CardTitle>
+          </CardHeader>
 
-          <Card.Content className="flex flex-col gap-4 px-6 py-8">
+          <CardContent className="flex flex-col gap-4 px-6 py-8">
             {loading ? (
               <p className="font-body text-sm text-zinc-400">Loading…</p>
             ) : (
@@ -43,11 +46,11 @@ export default function ProfilePage() {
 
                 <Button
                   variant="outline"
-                  onPress={async () => {
+                  onClick={async () => {
                     await logout();
                     router.replace("/");
                   }}
-                  className="h-12 rounded-none border-2 border-red-400 font-heading tracking-[0.14em] text-red-200"
+                  className="h-12 rounded-none border-2 border-red-400 bg-transparent font-heading tracking-[0.14em] text-red-200 hover:text-red-100"
                 >
                   LOGOUT
                 </Button>
@@ -55,13 +58,13 @@ export default function ProfilePage() {
             )}
 
             <Button
-              variant="tertiary"
-              onPress={() => router.push("/")}
+              variant="ghost"
+              onClick={() => router.push("/")}
               className="h-12 rounded-none border-2 border-zinc-700 font-heading tracking-[0.14em] text-zinc-300"
             >
               BACK TO MENU
             </Button>
-          </Card.Content>
+          </CardContent>
         </Card>
       </section>
     </main>

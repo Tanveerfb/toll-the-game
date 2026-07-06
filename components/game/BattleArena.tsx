@@ -1,7 +1,16 @@
 "use client";
 
 import React from "react";
-import { Button, Card, Chip, ProgressBar } from "@heroui/react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { useGameStore } from "@/store/gameStore";
 import { useBattleContext } from "@/hooks/BattleProvider";
@@ -53,60 +62,56 @@ function TeamUnitCard({
   return (
     <div data-battle-instance={unit.instanceId} className="relative">
       <Card
-        variant="secondary"
-        className={`w-full rounded-none border ${isMarked ? "border-amber-300" : getUnitBorderClass(unit.color)} bg-black/55`}
+        className={`w-full rounded-none border ${isMarked ? "border-amber-300" : getUnitBorderClass(unit.color)} bg-black/55 ring-0`}
         onClick={() => {
           if (isEnemy && !isDead) {
             onMark(unit.instanceId);
           }
         }}
       >
-        <Card.Header className="flex items-start justify-between gap-2 border-b border-zinc-800 px-3 py-2">
+        <CardHeader className="flex items-start justify-between gap-2 border-b border-zinc-800 px-3 py-2">
           <div>
-            <Card.Title className="font-heading text-base tracking-[0.06em] text-zinc-100">
+            <CardTitle className="font-heading text-base tracking-[0.06em] text-zinc-100">
               {unit.name}
-            </Card.Title>
-            <Card.Description className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+            </CardTitle>
+            <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
               {isEnemy ? "Enemy" : "Ally"} • {unit.color}
-            </Card.Description>
+            </CardDescription>
           </div>
 
           <Button
             variant="ghost"
             size="sm"
-            onPress={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               onViewDetails(unit);
             }}
             className="rounded-none border border-zinc-600 px-2 text-[10px] uppercase tracking-widest text-zinc-200"
           >
             Details
           </Button>
-        </Card.Header>
+        </CardHeader>
 
-        <Card.Content
+        <CardContent
           className={`space-y-2 px-3 py-2 ${isDead ? "opacity-55" : ""}`}
         >
           <div className="flex flex-wrap items-center gap-1">
             {isMarked ? (
-              <Chip
-                variant="secondary"
-                className="rounded-none border border-amber-300 bg-amber-300/10"
+              <Badge
+                variant="outline"
+                className="rounded-none border-amber-300 bg-amber-300/10 font-body text-[10px] uppercase tracking-[0.12em] text-amber-200"
               >
-                <Chip.Label className="font-body text-[10px] uppercase tracking-[0.12em] text-amber-200">
-                  Targeted
-                </Chip.Label>
-              </Chip>
+                Targeted
+              </Badge>
             ) : null}
 
             {queuedHits > 0 ? (
-              <Chip
-                variant="secondary"
-                className="rounded-none border border-sky-300 bg-sky-500/15"
+              <Badge
+                variant="outline"
+                className="rounded-none border-sky-300 bg-sky-500/15 font-body text-[10px] uppercase tracking-[0.12em] text-sky-100"
               >
-                <Chip.Label className="font-body text-[10px] uppercase tracking-[0.12em] text-sky-100">
-                  {queuedHits} queued
-                </Chip.Label>
-              </Chip>
+                {queuedHits} queued
+              </Badge>
             ) : null}
           </div>
 
@@ -117,10 +122,13 @@ function TeamUnitCard({
                 {unit.currentHP}/{unit.hp}
               </span>
             </div>
-            <ProgressBar
+            <Progress
               value={hpPercent}
-              maxValue={100}
-              color={isDead ? "danger" : hpPercent < 30 ? "danger" : "success"}
+              className={
+                isDead || hpPercent < 30
+                  ? "**:data-[slot=progress-indicator]:bg-red-500"
+                  : "**:data-[slot=progress-indicator]:bg-emerald-500"
+              }
             />
           </div>
 
@@ -153,7 +161,7 @@ function TeamUnitCard({
               Debuffs: {unit.debuffs.length}
             </p>
           </div>
-        </Card.Content>
+        </CardContent>
       </Card>
     </div>
   );
@@ -269,11 +277,8 @@ export default function BattleArena(): React.JSX.Element {
       />
 
       <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 md:px-8 md:py-6">
-        <Card
-          variant="tertiary"
-          className="rounded-none border-2 border-zinc-700 bg-black/45"
-        >
-          <Card.Content className="grid gap-4 px-5 py-4 md:grid-cols-4 md:items-end">
+        <Card className="rounded-none border-2 border-zinc-700 bg-black/45 ring-0">
+          <CardContent className="grid gap-4 px-5 py-4 md:grid-cols-4 md:items-end">
             <div className="md:col-span-2">
               <p className="font-body text-xs uppercase tracking-[0.16em] text-zinc-400">
                 Battle Phase
@@ -314,24 +319,21 @@ export default function BattleArena(): React.JSX.Element {
                 </span>
               </div>
             </div>
-          </Card.Content>
+          </CardContent>
         </Card>
 
         <section className="grid flex-1 gap-5 lg:grid-cols-[1fr_330px]">
           <div className="grid gap-5">
-            <Card
-              variant="secondary"
-              className="rounded-none border border-zinc-700 bg-black/45"
-            >
-              <Card.Header className="border-b border-zinc-800 px-5 py-4">
-                <Card.Title className="font-heading text-2xl tracking-widest text-zinc-100">
+            <Card className="rounded-none border border-zinc-700 bg-black/45 ring-0">
+              <CardHeader className="border-b border-zinc-800 px-5 py-4">
+                <CardTitle className="font-heading text-2xl tracking-widest text-zinc-100">
                   Enemy Team
-                </Card.Title>
-                <Card.Description className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                </CardTitle>
+                <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
                   Select a target for queued attacks
-                </Card.Description>
-              </Card.Header>
-              <Card.Content className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
                 {enemyTeam.map((unit) => (
                   <TeamUnitCard
                     key={unit.instanceId}
@@ -343,22 +345,19 @@ export default function BattleArena(): React.JSX.Element {
                     onViewDetails={setDetailUnit}
                   />
                 ))}
-              </Card.Content>
+              </CardContent>
             </Card>
 
-            <Card
-              variant="secondary"
-              className="rounded-none border border-zinc-700 bg-black/45"
-            >
-              <Card.Header className="border-b border-zinc-800 px-5 py-4">
-                <Card.Title className="font-heading text-2xl tracking-widest text-zinc-100">
+            <Card className="rounded-none border border-zinc-700 bg-black/45 ring-0">
+              <CardHeader className="border-b border-zinc-800 px-5 py-4">
+                <CardTitle className="font-heading text-2xl tracking-widest text-zinc-100">
                   Player Team
-                </Card.Title>
-                <Card.Description className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                </CardTitle>
+                <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
                   Monitor allies, statuses, and ultimate gauges
-                </Card.Description>
-              </Card.Header>
-              <Card.Content className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
                 {playerTeam.map((unit) => (
                   <TeamUnitCard
                     key={unit.instanceId}
@@ -370,27 +369,24 @@ export default function BattleArena(): React.JSX.Element {
                     onViewDetails={setDetailUnit}
                   />
                 ))}
-              </Card.Content>
+              </CardContent>
             </Card>
           </div>
 
           <aside className="grid content-start gap-5 lg:sticky lg:top-5">
-            <Card
-              variant="secondary"
-              className="rounded-none border border-zinc-700 bg-black/45"
-            >
-              <Card.Header className="flex flex-col items-start gap-3 border-b border-zinc-800 px-5 py-4">
+            <Card className="rounded-none border border-zinc-700 bg-black/45 ring-0">
+              <CardHeader className="flex flex-col items-start gap-3 border-b border-zinc-800 px-5 py-4">
                 <div>
-                  <Card.Title className="font-heading text-2xl tracking-widest text-zinc-100">
+                  <CardTitle className="font-heading text-2xl tracking-widest text-zinc-100">
                     Action Console
-                  </Card.Title>
-                  <Card.Description className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                  </CardTitle>
+                  <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
                     Standardized action feed.
-                  </Card.Description>
+                  </CardDescription>
                 </div>
-              </Card.Header>
+              </CardHeader>
 
-              <Card.Content className="grid gap-4 p-4">
+              <CardContent className="grid gap-4 p-4">
                 <div className="border border-zinc-800 bg-zinc-950/45 p-3">
                   {interactionNotice ? (
                     <div className="mb-3 flex items-center justify-between gap-2 border border-red-400/60 bg-red-900/35 px-3 py-2">
@@ -400,7 +396,7 @@ export default function BattleArena(): React.JSX.Element {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onPress={clearInteractionNotice}
+                        onClick={clearInteractionNotice}
                         className="rounded-none border border-red-300/70 px-2 text-[11px] uppercase tracking-widest text-red-100"
                       >
                         Dismiss
@@ -428,7 +424,7 @@ export default function BattleArena(): React.JSX.Element {
                     ))}
                   </div>
                 </div>
-              </Card.Content>
+              </CardContent>
             </Card>
           </aside>
         </section>
@@ -436,29 +432,26 @@ export default function BattleArena(): React.JSX.Element {
 
       {detailUnit ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <Card
-            variant="secondary"
-            className="w-full max-w-2xl rounded-none border border-zinc-600 bg-zinc-950/95"
-          >
-            <Card.Header className="flex items-start justify-between gap-3 border-b border-zinc-800 px-5 py-4">
+          <Card className="w-full max-w-2xl rounded-none border border-zinc-600 bg-zinc-950/95 ring-0">
+            <CardHeader className="flex items-start justify-between gap-3 border-b border-zinc-800 px-5 py-4">
               <div>
-                <Card.Title className="font-heading text-2xl tracking-[0.08em] text-zinc-100">
+                <CardTitle className="font-heading text-2xl tracking-[0.08em] text-zinc-100">
                   {detailUnit.name}
-                </Card.Title>
-                <Card.Description className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                </CardTitle>
+                <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
                   Full active status details
-                </Card.Description>
+                </CardDescription>
               </div>
               <Button
                 variant="ghost"
-                onPress={() => setDetailUnit(null)}
+                onClick={() => setDetailUnit(null)}
                 className="rounded-none border border-zinc-600 text-xs uppercase tracking-widest"
               >
                 Close
               </Button>
-            </Card.Header>
+            </CardHeader>
 
-            <Card.Content className="grid gap-4 px-5 py-4 md:grid-cols-2">
+            <CardContent className="grid gap-4 px-5 py-4 md:grid-cols-2">
               <div className="space-y-2">
                 <p className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
                   Stats Snapshot
@@ -524,7 +517,7 @@ export default function BattleArena(): React.JSX.Element {
                   </div>
                 </div>
               </div>
-            </Card.Content>
+            </CardContent>
           </Card>
         </div>
       ) : null}

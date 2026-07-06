@@ -22,6 +22,8 @@ export const metadata: Metadata = {
 import BattleProvider from "@/hooks/BattleProvider";
 import MechanicProvider from "@/hooks/MechanicProvider";
 import { AuthProvider } from "@/hooks/AuthProvider";
+import { cn } from "@/lib/utils";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function RootLayout({
   children,
@@ -29,13 +31,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${bangers.variable} ${rajdhani.variable}`}>
+    <html
+      lang="en"
+      className={cn("dark font-sans", bangers.variable, rajdhani.variable)}
+    >
       <body>
-        <AuthProvider>
-          <MechanicProvider>
-            <BattleProvider>{children}</BattleProvider>
-          </MechanicProvider>
-        </AuthProvider>
+        <TooltipProvider>
+          <AuthProvider>
+            <MechanicProvider>
+              <BattleProvider>{children}</BattleProvider>
+            </MechanicProvider>
+          </AuthProvider>
+        </TooltipProvider>
       </body>
     </html>
   );
