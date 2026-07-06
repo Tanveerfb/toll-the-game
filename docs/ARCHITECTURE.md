@@ -47,14 +47,13 @@ initializing → OnBattleStart → OnPlayerTurnStart → PlayerAction
 
 ## Sub (Bench) Units — `lib/game/sub.ts`
 
-Teams can run 4 on field, or field units + one designated **sub** (e.g. 3+1):
+Battle format sets the field cap: **4v4** = all four on field, **3v3** = three on field and a 4th team member is the **sub automatically**. Teams may be any size 1–4; teams smaller than the cap are all-field. `ensureFieldUnit` guarantees at least one field unit (a lone sub auto-converts).
 
 - A sub's **passive stays active** from the bench (phase-queue and inline passives both run).
 - A sub contributes **no cards** to the deck, takes no AI actions, and **cannot be targeted** (single-target or AoE, damage or heal).
-- When an on-field teammate dies, `promoteSubs` moves the sub onto the field (one promotion per death; dead subs never promote). Its cards then enter the draw pool on the next draw.
+- Subs enter the field **only at the start of a new turn** (`OnPlayerTurnStart` / `OnEnemyTurnStart`): mid-turn deaths leave the slot open for the rest of that turn. One promotion per death; dead subs never promote. A promoted player sub's cards are drawn immediately via the turn-start top-up draw.
+- If the whole player field dies mid-turn while a sub waits, the Deck auto-passes the empty hand so the battle proceeds to the promotion.
 - Defeat still requires the **whole team** dead, subs included.
-
-`promoteSubs` is called after every death opportunity: each player action, each enemy AI action, and the turn-start tick/passive phases in `BattleProvider`.
 
 ## Deck / Card System (`store/gameStore.ts`)
 

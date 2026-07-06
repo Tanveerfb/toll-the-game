@@ -10,7 +10,7 @@ import { executeSkill } from "@/lib/game/combat";
 import { ENEMY_ACTIONS_PER_TURN, getAIMove } from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
 import { tickTeamEffects } from "@/lib/game/tick";
-import { promoteSubs } from "@/lib/game/sub";
+import { ensureFieldUnit, promoteSubs } from "@/lib/game/sub";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 
 export interface TeamPick {
@@ -149,15 +149,21 @@ export default function BattleProvider({
           }
         });
 
-        // Bench units take the field when an on-field teammate died
-        updatedTeams.playerTeam = promoteSubs(
-          updatedTeams.playerTeam,
-          addToBattleLog,
-        );
-        updatedTeams.enemyTeam = promoteSubs(
-          updatedTeams.enemyTeam,
-          addToBattleLog,
-        );
+        // Bench units take the field only at the start of a new turn —
+        // mid-turn deaths leave the slot open until the next turn begins
+        if (
+          battlePhase === "OnPlayerTurnStart" ||
+          battlePhase === "OnEnemyTurnStart"
+        ) {
+          updatedTeams.playerTeam = promoteSubs(
+            updatedTeams.playerTeam,
+            addToBattleLog,
+          );
+          updatedTeams.enemyTeam = promoteSubs(
+            updatedTeams.enemyTeam,
+            addToBattleLog,
+          );
+        }
 
         // Sync modified states to Zustand
         updateTeams(updatedTeams.playerTeam, updatedTeams.enemyTeam);
@@ -182,7 +188,10 @@ export default function BattleProvider({
 
         if (
           battlePhase === "OnPlayerTurnEnd" ||
-          battlePhase === "OnEnemyTurnEnd"
+          battlePhase === "OnEnemyTurnEnd" ||
+          // Top-up at player turn start so a freshly promoted sub's cards
+          // are playable the same turn (no-op when the hand is full)
+          battlePhase === "OnPlayerTurnStart"
         ) {
           drawCards();
         }
@@ -214,19 +223,9 @@ export default function BattleProvider({
       // Execute the action
       currentTeams = executeSkill(action, currentTeams, addToBattleLog, 0);
 
-      // Remove dead player characters immediately
+      // Remove dead player characters immediately (subs promote at turn start)
       const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
       deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
-
-      // Promote bench units on either side after deaths
-      currentTeams.playerTeam = promoteSubs(
-        currentTeams.playerTeam,
-        addToBattleLog,
-      );
-      currentTeams.enemyTeam = promoteSubs(
-        currentTeams.enemyTeam,
-        addToBattleLog,
-      );
 
       // Grant ult gauge for the source character
       currentTeams.playerTeam = currentTeams.playerTeam.map((char) =>
@@ -269,16 +268,6 @@ export default function BattleProvider({
       const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
       deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
 
-      // Promote bench units on either side after deaths
-      currentTeams.playerTeam = promoteSubs(
-        currentTeams.playerTeam,
-        addToBattleLog,
-      );
-      currentTeams.enemyTeam = promoteSubs(
-        currentTeams.enemyTeam,
-        addToBattleLog,
-      );
-
       currentTeams.enemyTeam = currentTeams.enemyTeam.map((char) =>
         char.instanceId === action.sourceInstanceId
           ? {
@@ -314,9 +303,13 @@ export default function BattleProvider({
   } | null>(null);
 
   const startCustomBattle = (
-    playerPicks: TeamPick[],
-    enemyPicks: TeamPick[],
+    rawPlayerPicks: TeamPick[],
+    rawEnemyPicks: TeamPick[],
   ) => {
+    // A lone sub (or all-sub team) auto-converts to a field unit
+    const playerPicks = ensureFieldUnit(rawPlayerPicks);
+    const enemyPicks = ensureFieldUnit(rawEnemyPicks);
+
     resetBattle();
     clearQueue();
 

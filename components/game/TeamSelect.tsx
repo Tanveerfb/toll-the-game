@@ -18,12 +18,18 @@ import {
 
 const MAX_TEAM_SIZE = 4;
 
-type Side = "player" | "enemy";
+/** Battle format sets the field cap; members beyond it become subs. */
+const FORMATS = {
+  "4v4": { fieldCap: 4, label: "4v4", hint: "All four units on the field" },
+  "3v3": {
+    fieldCap: 3,
+    label: "3v3",
+    hint: "Three on the field — a 4th unit is the sub automatically",
+  },
+} as const;
 
-interface SlotPick {
-  character: CharacterData;
-  isSub: boolean;
-}
+type BattleFormat = keyof typeof FORMATS;
+type Side = "player" | "enemy";
 
 function colorSwatchClass(color: string): string {
   switch (color) {
@@ -45,15 +51,16 @@ function colorSwatchClass(color: string): string {
 function TeamSlots({
   side,
   team,
+  fieldCap,
   onRemove,
-  onToggleSub,
 }: {
   side: Side;
-  team: SlotPick[];
+  team: CharacterData[];
+  fieldCap: number;
   onRemove: (side: Side, index: number) => void;
-  onToggleSub: (side: Side, index: number) => void;
 }): React.JSX.Element {
-  const subCount = team.filter((p) => p.isSub).length;
+  const fieldCount = Math.min(team.length, fieldCap);
+  const subCount = Math.max(0, team.length - fieldCap);
 
   return (
     <Card
@@ -67,61 +74,63 @@ function TeamSlots({
             {side === "player" ? "PLAYER TEAM" : "ENEMY TEAM"}
           </CardTitle>
           <span className="font-body text-xs uppercase tracking-[0.14em] text-zinc-500">
-            {team.filter((p) => !p.isSub).length} field
-            {subCount > 0 ? ` + ${subCount} sub` : ""}
+            {fieldCount} field{subCount > 0 ? ` + ${subCount} sub` : ""}
           </span>
         </div>
       </CardHeader>
       <CardContent className="grid grid-cols-4 gap-2 p-3">
         {Array.from({ length: MAX_TEAM_SIZE }).map((_, index) => {
-          const pick = team[index];
-          if (!pick) {
+          const character = team[index];
+          const isSubSlot = index >= fieldCap;
+
+          if (!character) {
             return (
               <div
                 key={`empty-${index}`}
-                className="flex h-24 items-center justify-center border-2 border-dashed border-zinc-700 font-heading text-2xl text-zinc-700"
+                className={`flex h-24 flex-col items-center justify-center border-2 border-dashed font-heading text-2xl ${
+                  isSubSlot
+                    ? "border-amber-800/60 text-amber-900"
+                    : "border-zinc-700 text-zinc-700"
+                }`}
               >
-                {index + 1}
+                {isSubSlot ? (
+                  <span className="font-body text-[10px] uppercase tracking-widest">
+                    Sub
+                  </span>
+                ) : (
+                  index + 1
+                )}
               </div>
             );
           }
+
           return (
-            <div
-              key={`${pick.character.id}-${index}`}
-              className={`flex h-24 flex-col border-2 ${pick.isSub ? "border-amber-400/70 bg-amber-950/20" : "border-zinc-600 bg-zinc-900/70"}`}
+            <button
+              key={`${character.id}-${index}`}
+              type="button"
+              onClick={() => onRemove(side, index)}
+              title="Remove from team"
+              className={`group flex h-24 flex-col items-center justify-center gap-1 border-2 ${
+                isSubSlot
+                  ? "border-amber-400/70 bg-amber-950/20"
+                  : "border-zinc-600 bg-zinc-900/70"
+              }`}
             >
-              <button
-                type="button"
-                onClick={() => onRemove(side, index)}
-                className="group flex flex-1 flex-col items-center justify-center gap-1"
-                title="Remove from team"
-              >
-                <span
-                  className={`h-3 w-3 border border-border ${colorSwatchClass(pick.character.color)}`}
-                />
-                <span className="px-1 font-heading text-sm tracking-[0.06em] text-zinc-100 group-hover:hidden">
-                  {pick.character.name}
+              <span
+                className={`h-3 w-3 border border-border ${colorSwatchClass(character.color)}`}
+              />
+              <span className="px-1 font-heading text-sm tracking-[0.06em] text-zinc-100 group-hover:hidden">
+                {character.name}
+              </span>
+              <span className="hidden px-1 font-body text-[10px] uppercase tracking-widest text-red-300 group-hover:block">
+                Remove
+              </span>
+              {isSubSlot ? (
+                <span className="font-body text-[9px] uppercase tracking-widest text-amber-300">
+                  SUB ★
                 </span>
-                <span className="hidden px-1 font-body text-[10px] uppercase tracking-widest text-red-300 group-hover:block">
-                  Remove
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onToggleSub(side, index)}
-                disabled={!pick.isSub && subCount >= 1}
-                className={`border-t px-1 py-0.5 font-body text-[9px] uppercase tracking-widest transition-colors ${
-                  pick.isSub
-                    ? "border-amber-400/60 bg-amber-400/15 text-amber-200"
-                    : subCount >= 1
-                      ? "border-zinc-800 text-zinc-700"
-                      : "border-zinc-700 text-zinc-400 hover:text-zinc-200"
-                }`}
-                title="A sub's passive stays active, but it only takes the field when a teammate falls"
-              >
-                {pick.isSub ? "SUB ★" : "Set Sub"}
-              </button>
-            </div>
+              ) : null}
+            </button>
           );
         })}
       </CardContent>
@@ -135,17 +144,19 @@ export default function TeamSelect({
   onStart: (playerPicks: TeamPick[], enemyPicks: TeamPick[]) => void;
 }): React.JSX.Element {
   const roster = React.useMemo(() => getAllCharacters(), []);
-  const [playerTeam, setPlayerTeam] = React.useState<SlotPick[]>([]);
-  const [enemyTeam, setEnemyTeam] = React.useState<SlotPick[]>([]);
+  const [format, setFormat] = React.useState<BattleFormat>("4v4");
+  const [playerTeam, setPlayerTeam] = React.useState<CharacterData[]>([]);
+  const [enemyTeam, setEnemyTeam] = React.useState<CharacterData[]>([]);
+
+  const fieldCap = FORMATS[format].fieldCap;
 
   const setTeam = (side: Side) =>
     side === "player" ? setPlayerTeam : setEnemyTeam;
 
   const addTo = (side: Side, character: CharacterData) => {
     setTeam(side)((team) =>
-      team.length < MAX_TEAM_SIZE &&
-      !team.some((p) => p.character.id === character.id)
-        ? [...team, { character, isSub: false }]
+      team.length < MAX_TEAM_SIZE && !team.some((c) => c.id === character.id)
+        ? [...team, character]
         : team,
     );
   };
@@ -154,21 +165,14 @@ export default function TeamSelect({
     setTeam(side)((team) => team.filter((_, i) => i !== index));
   };
 
-  const toggleSub = (side: Side, index: number) => {
-    setTeam(side)((team) =>
-      team.map((pick, i) =>
-        i === index ? { ...pick, isSub: !pick.isSub } : pick,
-      ),
-    );
-  };
+  // Any combination of 1-4 units is a valid team
+  const canStart = playerTeam.length > 0 && enemyTeam.length > 0;
 
-  // A team needs at least one FIELD unit; a lone sub can't fight
-  const validTeam = (team: SlotPick[]) =>
-    team.some((p) => !p.isSub) && team.length > 0;
-  const canStart = validTeam(playerTeam) && validTeam(enemyTeam);
-
-  const toPicks = (team: SlotPick[]): TeamPick[] =>
-    team.map((p) => ({ id: p.character.id, isSub: p.isSub || undefined }));
+  const toPicks = (team: CharacterData[]): TeamPick[] =>
+    team.map((c, index) => ({
+      id: c.id,
+      isSub: index >= fieldCap || undefined,
+    }));
 
   return (
     <section className="mx-auto w-full max-w-6xl space-y-4 px-4 py-6 md:px-8">
@@ -178,11 +182,28 @@ export default function TeamSelect({
             TEAM SELECT
           </h1>
           <p className="mt-1 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-            Sandbox — build both teams. Mark one unit per team as SUB: its
-            passive works from the bench, and it enters when a teammate falls.
+            Sandbox — pick 1–4 units per side. {FORMATS[format].hint}. A
+            sub&apos;s passive works from the bench; it enters at the start of
+            a new turn after a teammate falls.
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex border-2 border-zinc-700">
+            {(Object.keys(FORMATS) as BattleFormat[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setFormat(key)}
+                className={`px-4 py-2 font-heading text-sm tracking-[0.12em] transition-colors ${
+                  format === key
+                    ? "bg-amber-300/15 text-amber-200"
+                    : "text-zinc-500 hover:text-zinc-200"
+                }`}
+              >
+                {FORMATS[key].label}
+              </button>
+            ))}
+          </div>
           <Button
             variant="ghost"
             disabled={playerTeam.length === 0 && enemyTeam.length === 0}
@@ -209,14 +230,14 @@ export default function TeamSelect({
         <TeamSlots
           side="player"
           team={playerTeam}
+          fieldCap={fieldCap}
           onRemove={removeAt}
-          onToggleSub={toggleSub}
         />
         <TeamSlots
           side="enemy"
           team={enemyTeam}
+          fieldCap={fieldCap}
           onRemove={removeAt}
-          onToggleSub={toggleSub}
         />
       </div>
 
@@ -233,12 +254,8 @@ export default function TeamSelect({
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3">
           {roster.map((character) => {
-            const onPlayer = playerTeam.some(
-              (p) => p.character.id === character.id,
-            );
-            const onEnemy = enemyTeam.some(
-              (p) => p.character.id === character.id,
-            );
+            const onPlayer = playerTeam.some((c) => c.id === character.id);
+            const onEnemy = enemyTeam.some((c) => c.id === character.id);
             return (
               <div
                 key={character.id}

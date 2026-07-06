@@ -120,13 +120,21 @@ export default function Deck() {
 
   const isPlayerActionPhase = battlePhase === "PlayerAction";
 
-  // Auto‑execute when the queue reaches its maximum size (3 actions).
+  // Auto-execute when the queue reaches its maximum size (3 actions), and
+  // auto-pass when there are no cards left to play (e.g. the whole field
+  // died and a sub is waiting for the next turn to enter).
   const { resolveplayerTurnWrapper } = useBattleContext();
   React.useEffect(() => {
-    if (actionQueue.length === 3 && isPlayerActionPhase) {
+    if (!isPlayerActionPhase) return;
+    if (actionQueue.length === 3 || deck.length === 0) {
       resolveplayerTurnWrapper();
     }
-  }, [actionQueue.length, isPlayerActionPhase, resolveplayerTurnWrapper]);
+  }, [
+    actionQueue.length,
+    deck.length,
+    isPlayerActionPhase,
+    resolveplayerTurnWrapper,
+  ]);
 
   const [previewCard, setPreviewCard] = React.useState<ActionCard | null>(null);
   const [draggedCardId, setDraggedCardId] = React.useState<string | null>(null);

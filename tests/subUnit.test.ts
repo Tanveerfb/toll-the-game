@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { promoteSubs, isOnField } from "@/lib/game/sub";
+import { ensureFieldUnit, promoteSubs, isOnField } from "@/lib/game/sub";
 import { executeSkill } from "@/lib/game/combat";
 import { getAIMove } from "@/lib/game/ai";
 import type { BattleCharacter } from "@/types/character";
@@ -143,6 +143,27 @@ describe("sub units", () => {
       expect(action?.sourceInstanceId).toBe("eField");
       expect(action?.targetInstanceId).toBe("pField");
     }
+  });
+
+  it("ensureFieldUnit converts a lone sub (or all-sub team) to a field unit", () => {
+    expect(ensureFieldUnit([{ id: "a", isSub: true }])).toEqual([
+      { id: "a", isSub: false },
+    ]);
+    expect(
+      ensureFieldUnit([
+        { id: "a", isSub: true },
+        { id: "b", isSub: true },
+      ]),
+    ).toEqual([
+      { id: "a", isSub: false },
+      { id: "b", isSub: true },
+    ]);
+  });
+
+  it("ensureFieldUnit leaves teams with a field unit untouched", () => {
+    const picks = [{ id: "a" }, { id: "b", isSub: true }];
+    expect(ensureFieldUnit(picks)).toBe(picks);
+    expect(ensureFieldUnit([])).toEqual([]);
   });
 
   it("battle is lost only when subs are dead too (whole team)", () => {

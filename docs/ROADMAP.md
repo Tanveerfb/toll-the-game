@@ -32,7 +32,7 @@ Solo dev + AI tooling. Ordered so every phase ends with something runnable. Mech
 - [x] Team selection screen — sandbox: player picks BOTH teams (1–4 each, per Tanveer's ruling), feeds `/practice` via `startCustomBattle` (2026-07-06)
 - [x] Battle end screen — victory/defeat overlay with Rematch (same teams), Change Teams, Main Menu (2026-07-06)
 - [x] MechanicProvider queue now clears between battles (stale passive registrations fixed)
-- [x] Sub-unit system (2026-07-06, per Tanveer's spec): one bench slot per team — passive active from bench, no cards, untargetable, promoted to field when a teammate dies. Team select has a per-slot SUB toggle
+- [x] Sub-unit system (2026-07-06, per Tanveer's spec): one bench slot per team — passive active from bench, no cards, untargetable; promoted to field at the START of a new turn after a teammate dies. Battle format selector (4v4 = all field / 3v3 = 4th unit auto-sub); teams may be any 1–4 units; lone subs auto-convert to field
 - [x] Frontend redesign pass (2026-07-06, dokkaninfo.com as reference): archive index → filterable unit-tile grid; archive detail → two-column layout (sticky identity panel + flattened kit sections); battle arena unit cards compacted; team select toolbar layout. Portrait tiles are placeholders for future card art
 - [ ] Card art integration — character portraits on cards/arena (`D:\Projects\element_clash_assets`)
 - [ ] Basic sound hooks (optional, cheap with framer-motion already present)

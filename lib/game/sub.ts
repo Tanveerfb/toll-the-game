@@ -1,5 +1,17 @@
 import { BattleCharacter } from "@/types/character";
 
+/**
+ * A team must always start with at least one field unit. If every pick is
+ * marked sub (e.g. a lone unit set to the sub slot), the first one is
+ * auto-promoted to the field.
+ */
+export function ensureFieldUnit<T extends { isSub?: boolean }>(
+  picks: T[],
+): T[] {
+  if (picks.length === 0 || picks.some((p) => !p.isSub)) return picks;
+  return picks.map((p, i) => (i === 0 ? { ...p, isSub: false } : p));
+}
+
 /** A unit is actively on the field: not a sub and still alive. */
 export function isOnField(character: BattleCharacter): boolean {
   return !character.isSub && character.currentHP > 0;
