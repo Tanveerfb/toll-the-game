@@ -22,6 +22,7 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 | 11 | 4 MB legacy background PNG | `public/bg-images/` | Cosmetic |
 | 13 | Art nitpicks: Seras's horn-like hair tufts didn't render; Yalina's side braid renders as loose side curls (trigger-word/style limits — see ART_PIPELINE trigger-word table) | `public/characters/` | Cosmetic (re-roll) |
 | 14 | Mustafa + Siddiq designs still AI-invented (Batra invented from lore hints) — regenerate when Tanveer supplies sheets. Duke/Gabrist/Yalina redesigned per his direction + ref photos 2026-07-07; Lyra/Tao/Sara/Seras from his locked sheets (`docs/design/characters/`) | `docs/ART_PIPELINE.md` | Pending input |
+| 15 | Console `FirebaseError: Missing or insufficient permissions` on page load — a Firestore read is denied by security rules (likely guest/unauthenticated). Harmless to gameplay but noisy; fix rules or gate the read when Firebase persistence work starts (Phase 4) | Firebase / stores | Low |
 
 ## Not Built Yet
 
