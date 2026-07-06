@@ -1,46 +1,39 @@
-# Status Audit — 2026-07-06
+# Status — 2026-07-07
 
-Snapshot of where the codebase actually is, from a full code survey. Repo was "decommissioned" in commit `027843f` (2026-05-04): package.json, lockfile, tsconfig, next/postcss/eslint configs, README, AGENTS.md removed. **All source code survived** (49 tracked files). Configs are being restored from `5bce3ad` (the last working commit).
+Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @ `c3040f7`).
 
-## What Works (implemented and coherent)
+## Working (implemented, tested, browser-verified)
 
-- **Battle phase engine** — full state machine with automated tick phases, win/loss detection, 4v4 test battle from `/practice`.
-- **Deck system** — draw with per-team-size hand caps, guaranteed ultimate draws at full gauge, card merging (manual + drag-adjacent auto-merge), rank 1–3, ult gauge economy, dead-character card cleanup.
-- **Combat resolution** — targeting (single/AoE/taunt redirect), stat-scaled damage with rank substitution, pierce/ignite/detonate/weakpoint damage formula, on-hit mechanics (stun, decay, ignite stacks, gauge drain, cancels, stat debuffs), heals/buffs/stances/cleanses.
-- **Dynamic damage styles** — spite, concentrate, amplify, momentum (Yalina), consumeIgnite (Tao).
-- **Passives** — battle-start synergies/auras (KHALSA, FEMALE, Gabrist aura), beforeSkill HP consume (Batra), onFirstAction (Lyra), onLethalDamage survive (Sara), onDamageDealt lifesteal (Siddiq).
-- **9 character kits** in JSON, matching `_dev/new_chars_DONE.md` specs.
-- **UI** — main menu, battle arena, deck with previews and translated descriptions, character archive.
-- **Enemy AI** — priority-based skill selection with taunt respect.
+- **Battle engine** — full phase state machine, 3-actions-per-turn enemy AI (random living field enemy each action, decisions from live state), win/loss detection.
+- **Rank system** — card rank drives damage multiplier, `*Ranked` mechanic values, and `aoeRanked` activation; flat mechanic values stay flat; ultimates rank-immune.
+- **Deck (7DS GC rules)** — hand never resets; pure-random one-at-a-time refill with auto-merge on adjacent identical cards (+1 ult gauge per merge); ult guaranteed only if gauge was full BEFORE the refill; deck locked outside `PlayerAction`; empty-hand auto-pass.
+- **Sub units** — battle format 4v4 (all field) or 3v3 (4th member auto-sub); sub passive active from bench, no cards, untargetable; promoted at new-turn start after a teammate dies; lone subs auto-convert to field.
+- **Character kits** — 9 JSON kits incl. Duke's full Flowing Ruin (3-stack consume, +50% dmg, ATK-down all targets, skills+ult both build/consume) and Weaken (damage + ranked ATK-down); debuff-type skills deal their damageRanked damage.
+- **UI (shadcn/ui + Tailwind 4)** — main menu, team select (format toggle, 1–4 units, art slots), battle arena (compact unit cards, sub badges, victory/defeat overlay with rematch), deck dock with hover previews and rank-aware descriptions, archive tile grid + Dokkan-style detail pages, login/profile (Firebase optional → guest mode).
+- **Character art** — full roster AI-generated (ComfyUI + Animagine XL 4.0, Dokkan × 7DSGC style); pipeline in `docs/ART_PIPELINE.md`.
+- **Tests** — 50 across combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow.
 
-## Known Gaps / Issues (found in survey, not yet fixed)
+## Open Issues
 
 | # | Issue | Where | Severity |
 |---|---|---|---|
-| 1 | ~~Mechanic values don't scale with card rank~~ **FIXED 2026-07-06** — `Action.rank` now drives damage multiplier, `*Ranked` mechanic values, and `aoeRanked` activation (tests in `tests/combat.rank.test.ts`) | `lib/game/combat.ts` | Done |
-| 2 | ~~Duke's Flowing Ruin passive incomplete~~ **FIXED 2026-07-06** — 3-stack consume implemented per Tanveer's ruling: skills AND ultimate gain stacks (max 3) and can consume; +50% damage and 20% ATK-down (2 turns) hit every target of the empowered action; consumed-then-gained leaves 1 stack (tests in `tests/flowingRuin.test.ts`) | `lib/game/combat.ts` | Done |
-| 3 | ~~Enemy turn resolves only one action~~ **FIXED 2026-07-06** — per Tanveer's ruling: enemy side takes 3 actions per turn, any living enemy in any order (same enemy may act repeatedly), each decision made from post-previous-action state | `hooks/BattleProvider.tsx`, `lib/game/ai.ts` | Done |
-| 4 | ~~`/login` and `/profile` 404~~ **FIXED 2026-07-06** — both pages built; login shows a guest-mode notice when Firebase env is absent | `app/login`, `app/profile` | Done |
-| 12 | ~~Duke's "Weaken" did nothing~~ **FIXED 2026-07-06** — per Tanveer's rulings: any non-heal skill with damageRanked > 0 deals damage regardless of type; Weaken applies ATK-down [15/25/40]% for 2 turns. Also fixed in the same pass: hostile mechanics now apply for 0-damage offensive skills (Draw Fire taunts all enemies — `aoe` added to its JSON), `targetSelf` buffs land on the source even when the skill targets enemies, and a float bug that turned 205% damage into 204 (tests in `tests/debuffSkills.test.ts`) | `lib/game/combat.ts`, `duke.json`, `yalina.json` | Done |
-| 5 | ~~`require()` for character JSON~~ **FIXED 2026-07-06** — BattleProvider loads via `characterCatalog` static imports | `hooks/BattleProvider.tsx` | Done |
-| 6 | Ultimates have no rank (always full value) while skills rank up — consistent with `UltimateCard` type, but worth confirming intended | `types/ultimateCard.ts` | Low (design question) |
-| 7 | `Character.passive: any` and pervasive `as any` casts around mechanics — type safety hole across the engine | `types/character.ts:17` | Medium (refactor) |
-| 8 | ~~No tests~~ **FIXED 2026-07-06** — vitest, 35 tests across combat rank, Flowing Ruin, AI, debuff skills, damage formula, system ticks | `tests/` | Done |
-| 9 | ~~Verify stun tick semantics~~ **VERIFIED 2026-07-06** — tick logic extracted to `lib/game/tick.ts` and tested: duration N survives N−1 ticks; a 2-turn stun applied mid-turn blocks exactly one of the victim's turns | `lib/game/tick.ts` | Done |
-| 10 | ~~`mergeDeckCard` dead ternary~~ **FIXED 2026-07-06** | `store/gameStore.ts` | Done |
-| 11 | 4 MB background PNG shipped raw | `public/bg-images/` | Cosmetic |
+| 6 | Ultimates have no rank while skills rank up — confirmed intended for now; Tanveer may add an ult level-up system later | `types/ultimateCard.ts` | Design note |
+| 7 | `Character.passive: any` and `as any` casts around mechanics — type safety hole | `types/character.ts` | Medium (refactor) |
+| 11 | 4 MB legacy background PNG | `public/bg-images/` | Cosmetic |
+| 13 | Art nitpicks: Tao's wraps rendered white (should be black), Duke's arm wraps pinkish, Sara's cats read as flames | `public/characters/` | Cosmetic (re-roll) |
+| 14 | Mustafa, Siddiq, Yalina visual designs were AI-invented — awaiting Tanveer's locked designs/blueprints, then regenerate | `docs/ART_PIPELINE.md` | Pending input |
 
-## Not Built Yet (product scope)
+## Not Built Yet
 
-- Team selection (practice battle uses hard-coded 4v4 roster)
-- Story mode (menu button disabled)
-- Player progression/collection (playerStore is a stub; profile page shows account only)
-- Card art integration (Leonardo pipeline assets exist in `element_clash_assets`)
-- Deployment (no hosting configured; `.vercel`/`.open-next` dirs exist from past experiments)
+- Story mode (menu button disabled) — needs Tanveer's enemy kits + stage design
+- Player progression/collection (playerStore is a stub; profile shows account only)
+- ~10 additional characters (Tanveer adds when game is in working order)
+- Mobile layout pass, sound
+- Deployment (Vercel target; Firebase project `toll-the-game` exists for auth/Firestore)
 
-## Environment Notes
+## Environment
 
-- Node 24 local. Deps updated 2026-07-06 (see ROADMAP Phase 0). Known remaining `npm audit` finding: postcss <8.5.10 nested inside `next` — upstream issue, wait for a Next.js patch release.
-- Firebase config in `.env.local` (gitignored); app runs in guest mode without it.
-- `.next` build cache exists; safe to delete.
-- `data/index/characters.json` lists the roster for the archive browser.
+- Node 24, Next.js 16.2.10, React 19.2.7. Majors deliberately held: TypeScript 5.9 (not 6), ESLint 9 (not 10) — Next 16 support unconfirmed.
+- Known `npm audit` leftover: postcss <8.5.10 nested inside `next` — upstream.
+- Firebase env in `.env.local` (gitignored); pullable via Firebase MCP from project `toll-the-game`. App runs guest-mode without it.
+- ComfyUI portable @ `E:\Installed\ComfyUI_windows_portable` for art generation.

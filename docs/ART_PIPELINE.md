@@ -54,7 +54,9 @@ Full prompts recoverable from ComfyUI history / git log of this file's introduct
 
 ## Adding a New Character
 
-1. Write the positive prompt from the template using the character's locked design (or invent one consistent with lore and note it here).
+**Workflow (agreed 2026-07-07):** Tanveer supplies the locked design — or at least a blueprint/idea — for any character without one. Generate from that. The three AI-invented designs below (Mustafa, Siddiq, Yalina) are placeholders to be regenerated once he provides theirs.
+
+1. Write the positive prompt from the template using the character's locked design (or Tanveer's blueprint; only invent as a stopgap and note it here).
 2. Generate, inspect at full size, fix color bleed per the rule, re-roll seed if pose is weak.
 3. Copy to `public/characters/<id>.png`, add id to `lib/game/characterArt.ts`, add a row to the table above.
 

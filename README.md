@@ -49,9 +49,11 @@ _dev/                Design notes (character kits)
 
 ## Documentation
 
+- [docs/HANDOFF.md](docs/HANDOFF.md) — **start here if you're an agent/new contributor**: context, design rulings, working style
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how the battle engine works end to end
-- [docs/STATUS.md](docs/STATUS.md) — current state audit: what works, known gaps
-- [docs/ROADMAP.md](docs/ROADMAP.md) — step-by-step plan to a shippable game
+- [docs/STATUS.md](docs/STATUS.md) — living snapshot: what works, open issues
+- [docs/ROADMAP.md](docs/ROADMAP.md) — phased plan with completion history
+- [docs/ART_PIPELINE.md](docs/ART_PIPELINE.md) — AI character art generation (ComfyUI)
 
 ## Design Ownership
 
