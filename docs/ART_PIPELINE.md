@@ -51,7 +51,7 @@ Locked design sheets live in `docs/design/characters/*.md` — they are the sour
 | Character | Seed | Design source | Notes |
 |---|---|---|---|
 | duke | 777012 | design sheet (duke.md) | v3: bulkier MC redesign — DBZ-spiky quiff + taper fade, navy gi with magenta trim/sash over combat bodysuit, water vortex fists |
-| lyra | 888001 | design sheet | lavender-silver side ponytail, crimson combat qipao, red ice bow |
+| lyra | 888051 | design sheet + Tanveer's concept art (refs/lyra-concept-*) | v2: dark blue high ponytail + red tie, crimson frilled top, bronze sash/bracers, white pleated skirt, red fingerless gloves, ribboned bow |
 | master_tao | 888002 | design sheet | serious mode: max-power bulk, tank shirt, tidy beard, fire fists |
 | sara | 888003 | design sheet | platinum pigtails + black ribbons, cat-ear hoodie, spectral paws |
 | yalina | 888043 | design sheet + ref photo | v2 redesign: dark-brown curly hair, deep pink shalwar kameez + gold embroidery, green energy fist. Literal side braid won't render at this style weight — loose side curls accepted. "cuffs"/"chain" are trigger words (see rule above) |

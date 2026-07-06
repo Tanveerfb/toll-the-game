@@ -3,6 +3,14 @@
 ## Concept
 An original character built by blending specific physical traits and one personality thread from three existing characters: Ganyu (Genshin Impact), Kefla base form (Dragon Ball Super), and Jericho (The Seven Deadly Sins).
 
+## v2 Visual Lock (2026-07-07 — Tanveer's concept art)
+Supersedes the trait-blend below for the card look. Source images: `refs/lyra-concept-1.png`, `refs/lyra-concept-2.jpg`.
+- **Hair:** Dark blue/indigo, swept into a **high ponytail with a red hair tie**, loose strands framing the face.
+- **Eyes:** Light red/crimson-brown, narrow and stern — composed, unimpressed default.
+- **Skin:** Pale.
+- **Outfit:** Crimson/burgundy frill-necked top with short sleeves; **woven bronze/gold waist sash**; white/grey skirt (pleated) with a **long crimson back-drape/overskirt**; bronze forearm bracers; red fingerless gloves; burgundy boots.
+- **Weapon:** Recurve **bow** trailing red ribbons; red shard/petal particles around her.
+
 ---
 
 ## Physical Appearance
