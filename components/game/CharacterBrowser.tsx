@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { getCharacterArt } from "@/lib/game/characterArt";
 
 type CharacterColor = "light" | "red" | "blue" | "green" | "dark";
 
@@ -129,13 +131,22 @@ export default function CharacterBrowser({
                 href={`/archive/${character.id}`}
                 className={`group flex flex-col border-2 ${style.frame} bg-zinc-950/80 transition-transform hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,0,0,0.6)]`}
               >
-                {/* Portrait placeholder — swap for card art later */}
                 <div
-                  className={`relative flex aspect-square items-center justify-center bg-linear-to-b ${style.gradient}`}
+                  className={`relative flex aspect-square items-center justify-center overflow-hidden bg-linear-to-b ${style.gradient}`}
                 >
-                  <span className="font-heading text-6xl text-white/85 drop-shadow-[0_0_12px_rgba(255,255,255,0.25)]">
-                    {character.name.charAt(0)}
-                  </span>
+                  {getCharacterArt(character.id) ? (
+                    <Image
+                      src={getCharacterArt(character.id)!}
+                      alt={character.name}
+                      width={512}
+                      height={512}
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                    />
+                  ) : (
+                    <span className="font-heading text-6xl text-white/85 drop-shadow-[0_0_12px_rgba(255,255,255,0.25)]">
+                      {character.name.charAt(0)}
+                    </span>
+                  )}
                   <span
                     className={`absolute left-1.5 top-1.5 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-widest ${style.chip}`}
                   >

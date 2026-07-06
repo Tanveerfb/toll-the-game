@@ -35,7 +35,7 @@ Solo dev + AI tooling. Ordered so every phase ends with something runnable. Mech
 - [x] Sub-unit system (2026-07-06, per Tanveer's spec): one bench slot per team — passive active from bench, no cards, untargetable; promoted to field at the START of a new turn after a teammate dies. Battle format selector (4v4 = all field / 3v3 = 4th unit auto-sub); teams may be any 1–4 units; lone subs auto-convert to field
 - [x] Frontend redesign pass (2026-07-06, dokkaninfo.com as reference): archive index → filterable unit-tile grid; archive detail → two-column layout (sticky identity panel + flattened kit sections); battle arena unit cards compacted; team select toolbar layout. Portrait tiles are placeholders for future card art
 - [x] Deck flow per 7DS GC ruling (2026-07-07): hand never resets; pure-random one-at-a-time refill with auto-merge on adjacent identical draws (+1 gauge per merge); fill-to-cap covers a promoted sub after a field wipe; Reset Deck button removed
-- [ ] Card art integration — character portraits on cards/arena (`D:\Projects\element_clash_assets`)
+- [x] Card art v1 (2026-07-07): fully AI-generated locally (ComfyUI + Animagine XL 4.0, Dokkan × 7DSGC style, per Tanveer's direction) — all 9 characters, wired into archive tiles, character detail, team select slots/roster, deck cards, and arena avatars. Pipeline + prompts documented in `docs/ART_PIPELINE.md`
 - [ ] Basic sound hooks (optional, cheap with framer-motion already present)
 - [ ] Mobile layout pass
 

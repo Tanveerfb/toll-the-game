@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
+import { getCharacterArt } from "@/lib/game/characterArt";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -104,32 +106,39 @@ function TeamSlots({
             );
           }
 
+          const art = getCharacterArt(character.id);
           return (
             <button
               key={`${character.id}-${index}`}
               type="button"
               onClick={() => onRemove(side, index)}
               title="Remove from team"
-              className={`group flex h-24 flex-col items-center justify-center gap-1 border-2 ${
+              className={`group relative flex h-24 flex-col items-center justify-end overflow-hidden border-2 ${
                 isSubSlot
                   ? "border-amber-400/70 bg-amber-950/20"
                   : "border-zinc-600 bg-zinc-900/70"
               }`}
             >
-              <span
-                className={`h-3 w-3 border border-border ${colorSwatchClass(character.color)}`}
-              />
-              <span className="px-1 font-heading text-sm tracking-[0.06em] text-zinc-100 group-hover:hidden">
+              {art ? (
+                <Image
+                  src={art}
+                  alt={character.name}
+                  width={256}
+                  height={256}
+                  className="absolute inset-0 h-full w-full object-cover object-top opacity-90 transition-opacity group-hover:opacity-40"
+                />
+              ) : null}
+              <span className="relative z-10 w-full bg-black/60 px-1 py-0.5 text-center font-heading text-xs tracking-[0.06em] text-zinc-100 group-hover:hidden">
                 {character.name}
+                {isSubSlot ? (
+                  <span className="ml-1 font-body text-[9px] uppercase tracking-widest text-amber-300">
+                    SUB★
+                  </span>
+                ) : null}
               </span>
-              <span className="hidden px-1 font-body text-[10px] uppercase tracking-widest text-red-300 group-hover:block">
+              <span className="relative z-10 hidden w-full bg-black/70 px-1 py-0.5 text-center font-body text-[10px] uppercase tracking-widest text-red-300 group-hover:block">
                 Remove
               </span>
-              {isSubSlot ? (
-                <span className="font-body text-[9px] uppercase tracking-widest text-amber-300">
-                  SUB ★
-                </span>
-              ) : null}
             </button>
           );
         })}
@@ -261,34 +270,44 @@ export default function TeamSelect({
                 key={character.id}
                 className="flex items-center justify-between gap-2 border border-zinc-700 bg-zinc-900/50 px-3 py-2"
               >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`h-3 w-3 shrink-0 border border-border ${colorSwatchClass(character.color)}`}
+                <div className="flex min-w-0 items-center gap-2">
+                  {getCharacterArt(character.id) ? (
+                    <Image
+                      src={getCharacterArt(character.id)!}
+                      alt={character.name}
+                      width={80}
+                      height={80}
+                      className="h-10 w-10 shrink-0 border border-zinc-700 object-cover object-top"
                     />
-                    <span className="truncate font-heading text-lg tracking-[0.06em] text-zinc-100">
+                  ) : (
+                    <span
+                      className={`h-10 w-10 shrink-0 border border-border ${colorSwatchClass(character.color)}`}
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate font-heading text-lg tracking-[0.06em] text-zinc-100">
                       {character.name}
-                    </span>
-                  </div>
-                  <div className="mt-0.5 flex gap-1">
-                    <Badge
-                      variant="secondary"
-                      className="rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest"
-                    >
-                      ATK {character.atk}
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className="rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest"
-                    >
-                      DEF {character.def}
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className="rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest"
-                    >
-                      HP {character.hp}
-                    </Badge>
+                    </p>
+                    <div className="mt-0.5 flex gap-1">
+                      <Badge
+                        variant="secondary"
+                        className="rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest"
+                      >
+                        ATK {character.atk}
+                      </Badge>
+                      <Badge
+                        variant="secondary"
+                        className="rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest"
+                      >
+                        DEF {character.def}
+                      </Badge>
+                      <Badge
+                        variant="secondary"
+                        className="rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest"
+                      >
+                        HP {character.hp}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-1">

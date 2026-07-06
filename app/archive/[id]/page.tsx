@@ -1,4 +1,5 @@
 ﻿import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
@@ -25,6 +26,7 @@ import {
   buildCharacterDamagePreview,
   DAMAGE_PREVIEW_DUMMY,
 } from "@/lib/game/damagePreview";
+import { getCharacterArt } from "@/lib/game/characterArt";
 
 interface CharacterPageProps {
   params: Promise<{ id: string }>;
@@ -328,13 +330,23 @@ export default async function CharacterDetailPage({
           {/* Identity panel */}
           <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
             <div className={`border-2 ${style.frame} bg-zinc-950/85`}>
-              {/* Portrait placeholder — swap for card art later */}
               <div
-                className={`relative flex aspect-square items-center justify-center bg-linear-to-b ${style.gradient}`}
+                className={`relative flex aspect-square items-center justify-center overflow-hidden bg-linear-to-b ${style.gradient}`}
               >
-                <span className="font-heading text-8xl text-white/85 drop-shadow-[0_0_16px_rgba(255,255,255,0.25)]">
-                  {character.name.charAt(0)}
-                </span>
+                {getCharacterArt(character.id) ? (
+                  <Image
+                    src={getCharacterArt(character.id)!}
+                    alt={character.name}
+                    width={1024}
+                    height={1024}
+                    priority
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="font-heading text-8xl text-white/85 drop-shadow-[0_0_16px_rgba(255,255,255,0.25)]">
+                    {character.name.charAt(0)}
+                  </span>
+                )}
                 <span
                   className={`absolute left-2 top-2 px-2 py-0.5 font-body text-[10px] font-bold uppercase tracking-widest ${style.chip}`}
                 >

@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { useGameStore } from "@/store/gameStore";
+import { getCharacterArt } from "@/lib/game/characterArt";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -297,8 +299,20 @@ export default function Deck() {
                 <div className="font-bold text-[12px] mt-1 text-white truncate">
                   {char?.name}
                 </div>
-                <div className="my-auto text-center font-heading text-3xl leading-none text-white/90 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
-                  {getCharacterInitial(char?.name)}
+                <div className="relative my-auto flex flex-1 items-center justify-center overflow-hidden">
+                  {char && getCharacterArt(char.id) ? (
+                    <Image
+                      src={getCharacterArt(char.id)!}
+                      alt={char.name}
+                      width={160}
+                      height={160}
+                      className="h-full w-full object-cover object-top"
+                    />
+                  ) : (
+                    <span className="text-center font-heading text-3xl leading-none text-white/90 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
+                      {getCharacterInitial(char?.name)}
+                    </span>
+                  )}
                 </div>
                 <div
                   className={`text-[11px] mt-auto font-semibold ${card.skill.type === "ultimate" ? "text-amber-400" : "text-zinc-200"}`}
@@ -419,8 +433,20 @@ export default function Deck() {
                   )}
                 </div>
               </div>
-              <div className="my-auto text-center font-heading text-3xl leading-none text-white/90 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
-                {getCharacterInitial(char?.name)}
+              <div className="relative my-auto flex flex-1 items-center justify-center overflow-hidden">
+                {char && getCharacterArt(char.id) ? (
+                  <Image
+                    src={getCharacterArt(char.id)!}
+                    alt={char.name}
+                    width={160}
+                    height={160}
+                    className="h-full w-full object-cover object-top"
+                  />
+                ) : (
+                  <span className="text-center font-heading text-3xl leading-none text-white/90 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
+                    {getCharacterInitial(char?.name)}
+                  </span>
+                )}
               </div>
               <div
                 className={`text-[10px] mt-auto font-medium ${isUlt ? "text-amber-400" : "text-white"}`}

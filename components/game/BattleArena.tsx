@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
+import { getCharacterArt } from "@/lib/game/characterArt";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -73,6 +75,15 @@ function TeamUnitCard({
       >
         <CardHeader className="flex items-center justify-between gap-2 border-b border-zinc-800 px-2.5 py-1.5">
           <div className="flex min-w-0 items-center gap-1.5">
+            {getCharacterArt(unit.id) ? (
+              <Image
+                src={getCharacterArt(unit.id)!}
+                alt={unit.name}
+                width={48}
+                height={48}
+                className={`h-7 w-7 shrink-0 border border-zinc-700 object-cover object-top ${isDead ? "grayscale" : ""}`}
+              />
+            ) : null}
             <CardTitle className="truncate font-heading text-base tracking-[0.06em] text-zinc-100">
               {unit.name}
             </CardTitle>
