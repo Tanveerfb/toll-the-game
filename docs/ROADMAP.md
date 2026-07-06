@@ -28,8 +28,10 @@ Solo dev + AI tooling. Ordered so every phase ends with something runnable. Mech
 
 ## Phase 2 — Game Shell (playable product, not tech demo)
 
-- [ ] Team selection screen (pick 4 from roster) feeding `/practice`
-- [ ] Battle end screen (rewards later; for now results + rematch/menu)
+- [x] UI migrated from HeroUI to shadcn/ui + Tailwind 4 (2026-07-06, design decision)
+- [x] Team selection screen — sandbox: player picks BOTH teams (1–4 each, per Tanveer's ruling), feeds `/practice` via `startCustomBattle` (2026-07-06)
+- [x] Battle end screen — victory/defeat overlay with Rematch (same teams), Change Teams, Main Menu (2026-07-06)
+- [x] MechanicProvider queue now clears between battles (stale passive registrations fixed)
 - [ ] Card art integration — character portraits on cards/arena (`D:\Projects\element_clash_assets`)
 - [ ] Basic sound hooks (optional, cheap with framer-motion already present)
 - [ ] Mobile layout pass

@@ -16,6 +16,8 @@ interface BattleContextType {
   advancePhase: () => void;
   startDukeTest: () => void;
   startFullTest: () => void;
+  startCustomBattle: (playerIds: string[], enemyIds: string[]) => void;
+  lastBattleConfig: { playerIds: string[]; enemyIds: string[] } | null;
   resolveplayerTurnWrapper: () => void;
   resolveEnemyTurnWrapper: () => void;
 }
@@ -37,7 +39,7 @@ export default function BattleProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { processQueue, registerToQueue } = useMechanicContext();
+  const { processQueue, registerToQueue, clearQueue } = useMechanicContext();
 
   const store = useGameStore();
   const {
@@ -269,18 +271,14 @@ export default function BattleProvider({
     return data;
   };
 
-  const startFullTest = () => {
+  const [lastBattleConfig, setLastBattleConfig] = React.useState<{
+    playerIds: string[];
+    enemyIds: string[];
+  } | null>(null);
+
+  const startCustomBattle = (playerIds: string[], enemyIds: string[]) => {
     resetBattle();
-
-    const mustafaRaw = loadChar("mustafa");
-    const batraRaw = loadChar("batra");
-    const saraRaw = loadChar("sara");
-    const yalinaRaw = loadChar("yalina");
-
-    const siddiqRaw = loadChar("siddiq");
-    const gabristRaw = loadChar("gabrist");
-    const taoRaw = loadChar("master_tao");
-    const dukeRaw = loadChar("duke");
+    clearQueue();
 
     const buildBattleChar = (
       raw: any,
@@ -299,27 +297,33 @@ export default function BattleProvider({
       team,
     });
 
-    const p1 = buildBattleChar(mustafaRaw, "player", "p1_mustafa");
-    const p2 = buildBattleChar(batraRaw, "player", "p2_batra");
-    const p3 = buildBattleChar(saraRaw, "player", "p3_sara");
-    const p4 = buildBattleChar(yalinaRaw, "player", "p4_yalina");
+    const players = playerIds.map((id, i) =>
+      buildBattleChar(loadChar(id), "player", `p${i + 1}_${id}`),
+    );
+    const enemies = enemyIds.map((id, i) =>
+      buildBattleChar(loadChar(id), "enemy", `e${i + 1}_${id}`),
+    );
 
-    const e1 = buildBattleChar(siddiqRaw, "enemy", "e1_siddiq");
-    const e2 = buildBattleChar(gabristRaw, "enemy", "e2_gabrist");
-    const e3 = buildBattleChar(taoRaw, "enemy", "e3_tao");
-    const e4 = buildBattleChar(dukeRaw, "enemy", "e4_duke");
-
-    [p1, p2, p3, p4, e1, e2, e3, e4].forEach((c) =>
+    [...players, ...enemies].forEach((c) =>
       registerCharacterPassives(c, registerToQueue),
     );
 
-    updateTeams([p1, p2, p3, p4], [e1, e2, e3, e4]);
+    updateTeams(players, enemies);
+    setLastBattleConfig({ playerIds, enemyIds });
 
-    addToBattleLog("--- 4v4 NEW CHARACTERS TEST STARTED ---");
+    addToBattleLog(
+      `--- BATTLE STARTED: ${players.length}v${enemies.length} ---`,
+    );
     setTimeout(() => {
       setBattlePhase("OnBattleStart");
     }, 500);
   };
+
+  const startFullTest = () =>
+    startCustomBattle(
+      ["mustafa", "batra", "sara", "yalina"],
+      ["siddiq", "gabrist", "master_tao", "duke"],
+    );
 
   const startDukeTest = () => startFullTest();
 
@@ -329,6 +333,8 @@ export default function BattleProvider({
         advancePhase,
         startDukeTest,
         startFullTest,
+        startCustomBattle,
+        lastBattleConfig,
         resolveplayerTurnWrapper,
         resolveEnemyTurnWrapper,
       }}

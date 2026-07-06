@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import type { BattleCharacter } from "@/types/character";
@@ -181,9 +182,13 @@ export default function BattleArena(): React.JSX.Element {
     setEnemyMarker,
     clearInteractionNotice,
     actionQueue,
+    resetBattle,
   } = useGameStore();
 
-  const { resolveEnemyTurnWrapper } = useBattleContext();
+  const { resolveEnemyTurnWrapper, startCustomBattle, lastBattleConfig } =
+    useBattleContext();
+  const router = useRouter();
+  const isBattleOver = battlePhase === "victory" || battlePhase === "defeat";
 
   React.useEffect(() => {
     if (battlePhase !== "EnemyAction") return;
@@ -429,6 +434,58 @@ export default function BattleArena(): React.JSX.Element {
           </aside>
         </section>
       </section>
+
+      {isBattleOver ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
+          <Card
+            className={`w-full max-w-md rounded-none border-2 ${battlePhase === "victory" ? "border-amber-300" : "border-red-500"} bg-zinc-950/95 ring-0`}
+          >
+            <CardHeader className="border-b border-zinc-800 px-6 py-6 text-center">
+              <CardTitle
+                className={`font-heading text-6xl tracking-[0.16em] ${battlePhase === "victory" ? "text-amber-300" : "text-red-400"}`}
+              >
+                {battlePhase === "victory" ? "VICTORY" : "DEFEAT"}
+              </CardTitle>
+              <CardDescription className="mt-2 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                Turn {currentTurn + 1} • {playerTurns} player /{" "}
+                {enemyTurns} enemy actions resolved
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3 px-6 py-6">
+              {lastBattleConfig ? (
+                <Button
+                  onClick={() =>
+                    startCustomBattle(
+                      lastBattleConfig.playerIds,
+                      lastBattleConfig.enemyIds,
+                    )
+                  }
+                  className="h-12 rounded-none border-2 border-amber-300 font-heading text-lg tracking-[0.14em]"
+                >
+                  REMATCH
+                </Button>
+              ) : null}
+              <Button
+                variant="outline"
+                onClick={resetBattle}
+                className="h-12 rounded-none border-2 border-zinc-400 bg-transparent font-heading text-lg tracking-[0.14em] text-zinc-100"
+              >
+                CHANGE TEAMS
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  resetBattle();
+                  router.push("/");
+                }}
+                className="h-12 rounded-none border-2 border-zinc-700 font-heading text-lg tracking-[0.14em] text-zinc-300"
+              >
+                MAIN MENU
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
 
       {detailUnit ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">

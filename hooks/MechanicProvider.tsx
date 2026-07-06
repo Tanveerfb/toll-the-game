@@ -21,6 +21,7 @@ export interface QueueItem {
 interface MechanicState {
   registerToQueue: (item: QueueItem) => void;
   removeFromQueue: (id: string) => void;
+  clearQueue: () => void;
   processQueue: (
     phase: BattlePhase,
     teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
@@ -56,6 +57,10 @@ export default function MechanicProvider({
     queueRef.current = queueRef.current.filter((q) => q.id !== id);
   };
 
+  const clearQueue = () => {
+    queueRef.current = [];
+  };
+
   const processQueue = async (
     phase: BattlePhase,
     teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
@@ -89,6 +94,7 @@ export default function MechanicProvider({
       value={{
         registerToQueue,
         removeFromQueue,
+        clearQueue,
         processQueue,
       }}
     >
