@@ -20,22 +20,21 @@ Snapshot of where the codebase actually is, from a full code survey. Repo was "d
 | 1 | ~~Mechanic values don't scale with card rank~~ **FIXED 2026-07-06** — `Action.rank` now drives damage multiplier, `*Ranked` mechanic values, and `aoeRanked` activation (tests in `tests/combat.rank.test.ts`) | `lib/game/combat.ts` | Done |
 | 2 | ~~Duke's Flowing Ruin passive incomplete~~ **FIXED 2026-07-06** — 3-stack consume implemented per Tanveer's ruling: skills AND ultimate gain stacks (max 3) and can consume; +50% damage and 20% ATK-down (2 turns) hit every target of the empowered action; consumed-then-gained leaves 1 stack (tests in `tests/flowingRuin.test.ts`) | `lib/game/combat.ts` | Done |
 | 3 | ~~Enemy turn resolves only one action~~ **FIXED 2026-07-06** — per Tanveer's ruling: enemy side takes 3 actions per turn, any living enemy in any order (same enemy may act repeatedly), each decision made from post-previous-action state | `hooks/BattleProvider.tsx`, `lib/game/ai.ts` | Done |
-| 4 | Menu links to `/login` and `/profile` — routes don't exist, 404 | `app/page.tsx:17` | Medium |
+| 4 | ~~`/login` and `/profile` 404~~ **FIXED 2026-07-06** — both pages built; login shows a guest-mode notice when Firebase env is absent | `app/login`, `app/profile` | Done |
 | 12 | ~~Duke's "Weaken" did nothing~~ **FIXED 2026-07-06** — per Tanveer's rulings: any non-heal skill with damageRanked > 0 deals damage regardless of type; Weaken applies ATK-down [15/25/40]% for 2 turns. Also fixed in the same pass: hostile mechanics now apply for 0-damage offensive skills (Draw Fire taunts all enemies — `aoe` added to its JSON), `targetSelf` buffs land on the source even when the skill targets enemies, and a float bug that turned 205% damage into 204 (tests in `tests/debuffSkills.test.ts`) | `lib/game/combat.ts`, `duke.json`, `yalina.json` | Done |
-| 5 | `require()` for character JSON inside client component — brittle under Turbopack/App Router | `hooks/BattleProvider.tsx:335` | Medium |
+| 5 | ~~`require()` for character JSON~~ **FIXED 2026-07-06** — BattleProvider loads via `characterCatalog` static imports | `hooks/BattleProvider.tsx` | Done |
 | 6 | Ultimates have no rank (always full value) while skills rank up — consistent with `UltimateCard` type, but worth confirming intended | `types/ultimateCard.ts` | Low (design question) |
 | 7 | `Character.passive: any` and pervasive `as any` casts around mechanics — type safety hole across the engine | `types/character.ts:17` | Medium (refactor) |
-| 8 | No tests of any kind. Combat engine is pure-functional and highly testable | — | Medium |
-| 9 | Stun ticks down on turn start — a "2 turn" stun applied during player action decays at next turn start; verify durations behave as designed | `hooks/BattleProvider.tsx:174-183` | Low (verify) |
-| 10 | `mergeDeckCard` removal-index ternary has identical branches (harmless, works correctly) | `store/gameStore.ts:399-400` | Cosmetic |
+| 8 | ~~No tests~~ **FIXED 2026-07-06** — vitest, 35 tests across combat rank, Flowing Ruin, AI, debuff skills, damage formula, system ticks | `tests/` | Done |
+| 9 | ~~Verify stun tick semantics~~ **VERIFIED 2026-07-06** — tick logic extracted to `lib/game/tick.ts` and tested: duration N survives N−1 ticks; a 2-turn stun applied mid-turn blocks exactly one of the victim's turns | `lib/game/tick.ts` | Done |
+| 10 | ~~`mergeDeckCard` dead ternary~~ **FIXED 2026-07-06** | `store/gameStore.ts` | Done |
 | 11 | 4 MB background PNG shipped raw | `public/bg-images/` | Cosmetic |
 
 ## Not Built Yet (product scope)
 
 - Team selection (practice battle uses hard-coded 4v4 roster)
 - Story mode (menu button disabled)
-- Login/profile pages (Firebase auth context exists, no UI)
-- Player progression/collection (playerStore is a stub)
+- Player progression/collection (playerStore is a stub; profile page shows account only)
 - Card art integration (Leonardo pipeline assets exist in `element_clash_assets`)
 - Deployment (no hosting configured; `.vercel`/`.open-next` dirs exist from past experiments)
 

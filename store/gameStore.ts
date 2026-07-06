@@ -395,9 +395,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
     };
     mergedDeck[cardIndex] = updatedBase;
 
-    const removalIndex =
-      materialIndex > cardIndex ? materialIndex : materialIndex;
-    mergedDeck.splice(removalIndex, 1);
+    mergedDeck.splice(materialIndex, 1);
 
     const updatedPlayerTeam = playerTeam.map((char) =>
       char.instanceId === baseCard.sourceInstanceId

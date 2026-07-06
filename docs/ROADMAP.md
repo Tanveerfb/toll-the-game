@@ -19,10 +19,12 @@ Solo dev + AI tooling. Ordered so every phase ends with something runnable. Mech
 - [x] Resolve #3: enemy side takes 3 actions per turn, random living enemy each, no fixed pattern (2026-07-06)
 - [x] Vitest added; 18 tests across rank scaling, Flowing Ruin, and AI selection
 - [x] Fix #12: Weaken deals damage + ATK-down [15/25/40]%; damageRanked > 0 always deals damage; Draw Fire taunts all; targetSelf buffs fixed (2026-07-06)
-- [ ] Fix #4: stub or build `/login` + `/profile` (or hide buttons until auth phase)
-- [ ] Replace `require()` with static imports (#5)
-- [ ] Unit tests for `damage.ts` (pure function — cheap win)
-- [ ] Verify stun/duration tick semantics (#9) with a test
+- [x] Fix #4: `/login` (email + Google, guest-mode fallback) and `/profile` (info + logout) built (2026-07-06)
+- [x] Replace `require()` with static imports via characterCatalog (#5) (2026-07-06)
+- [x] Unit tests for `damage.ts` — pierce, ignite, detonate, weakpoint stacking (2026-07-06)
+- [x] Verify stun/duration tick semantics (#9) — tick logic extracted to `lib/game/tick.ts` + tested; a 2-turn stun blocks exactly one turn (2026-07-06)
+
+**Phase 1 complete — 35 tests passing.**
 
 ## Phase 2 — Game Shell (playable product, not tech demo)
 

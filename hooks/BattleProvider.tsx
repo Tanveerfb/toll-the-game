@@ -9,6 +9,8 @@ import { TurnActions } from "@/types/action";
 import { executeSkill } from "@/lib/game/combat";
 import { ENEMY_ACTIONS_PER_TURN, getAIMove } from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
+import { tickTeamEffects } from "@/lib/game/tick";
+import { getCharacterById } from "@/lib/game/characterCatalog";
 
 interface BattleContextType {
   advancePhase: () => void;
@@ -114,79 +116,10 @@ export default function BattleProvider({
           battlePhase === "OnPlayerTurnStart" ||
           battlePhase === "OnEnemyTurnStart"
         ) {
-          // Process player team first, then enemy team – identical logic applied to each.
-          const teamKeys: ("playerTeam" | "enemyTeam")[] = [
-            "playerTeam",
-            "enemyTeam",
-          ];
-          teamKeys.forEach((teamKey) => {
-            const teamToTick = [...currentTeams[teamKey]];
-            for (let i = 0; i < teamToTick.length; i++) {
-              const char = { ...teamToTick[i] };
-              if (char.currentHP <= 0) continue;
-
-              // Reset action‑specific passive flags each turn start
-              char.passiveState.firstActionTriggeredThisTurn = false;
-
-              // Apply Damage‑over‑Time (DoT) and Decay effects
-              const dotEffects = char.debuffs.filter(
-                (d) => d.type === "damageOverTime" || d.type === "decay",
-              );
-              let totalDot = 0;
-              dotEffects.forEach((dot) => {
-                if (dot.type === "decay" && dot.capturedDamage) {
-                  totalDot += dot.capturedDamage;
-                } else if (dot.value) {
-                  totalDot += dot.value;
-                }
-              });
-              if (totalDot > 0) {
-                char.currentHP = Math.max(0, char.currentHP - totalDot);
-                addToBattleLog(
-                  `[System] ${char.name} takes ${totalDot} damage from DoT.`,
-                );
-              }
-
-              // Apply Heal‑over‑Time (HoT) effects
-              const hotEffects = char.buffs.filter(
-                (b) => b.type === "healOverTime",
-              );
-              let totalHot = 0;
-              hotEffects.forEach((hot) => {
-                if (hot.value) totalHot += hot.value;
-              });
-              if (totalHot > 0) {
-                char.currentHP = Math.min(char.hp, char.currentHP + totalHot);
-                addToBattleLog(
-                  `[System] ${char.name} heals ${totalHot} HP from HoT.`,
-                );
-              }
-
-              // Tick down buff and debuff durations
-              char.buffs = char.buffs
-                .map((b) => ({
-                  ...b,
-                  buffDuration: b.buffDuration ? b.buffDuration - 1 : undefined,
-                }))
-                .filter(
-                  (b) => b.buffDuration === undefined || b.buffDuration > 0,
-                );
-              char.debuffs = char.debuffs
-                .map((d) => ({
-                  ...d,
-                  debuffDuration: d.debuffDuration
-                    ? d.debuffDuration - 1
-                    : undefined,
-                }))
-                .filter(
-                  (d) => d.debuffDuration === undefined || d.debuffDuration > 0,
-                );
-
-              teamToTick[i] = char;
-            }
-            // Write back the updated team slice
-            currentTeams = { ...currentTeams, [teamKey]: teamToTick };
-          });
+          currentTeams = {
+            playerTeam: tickTeamEffects(currentTeams.playerTeam, addToBattleLog),
+            enemyTeam: tickTeamEffects(currentTeams.enemyTeam, addToBattleLog),
+          };
         }
 
         // Run any registered events for this phase
@@ -330,7 +263,11 @@ export default function BattleProvider({
     advancePhase();
   }
 
-  const loadChar = (id: string) => require(`@/data/characters/${id}.json`);
+  const loadChar = (id: string) => {
+    const data = getCharacterById(id);
+    if (!data) throw new Error(`Unknown character id: ${id}`);
+    return data;
+  };
 
   const startFullTest = () => {
     resetBattle();
