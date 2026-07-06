@@ -228,26 +228,37 @@ export const useGameStore = create<BattleState>((set, get) => ({
     });
     if (pool.length === 0) return;
 
+    // Ult eligibility is snapshotted BEFORE this refill: a gauge filled by
+    // merges during the refill guarantees the ultimate on the NEXT turn's
+    // draw, never in the same refill.
+    const ultEligible = new Set(
+      livingChars
+        .filter(
+          (c) =>
+            c.ultGauge >= 5 &&
+            c.ultimate &&
+            ![...deck, ...actionQueue].some(
+              (card) =>
+                card.sourceInstanceId === c.instanceId &&
+                card.skill.type === "ultimate",
+            ),
+        )
+        .map((c) => c.instanceId),
+    );
+
     const nextCard = (): ActionCard => {
-      // A full ult gauge guarantees that character's ultimate is drawn
+      // A pre-refill full gauge guarantees that character's ultimate
       // (one copy in hand/queue at a time)
-      const ultReady = updatedTeam.find(
-        (c) =>
-          c.currentHP > 0 &&
-          !c.isSub &&
-          c.ultGauge >= 5 &&
-          c.ultimate &&
-          ![...currentDeck, ...actionQueue].some(
-            (card) =>
-              card.sourceInstanceId === c.instanceId &&
-              card.skill.type === "ultimate",
-          ),
-      );
-      if (ultReady) {
+      const ultReadyId = livingChars.find((c) =>
+        ultEligible.has(c.instanceId),
+      )?.instanceId;
+      if (ultReadyId) {
+        ultEligible.delete(ultReadyId);
+        const owner = livingChars.find((c) => c.instanceId === ultReadyId)!;
         return {
           id: Math.random().toString(36).substring(2, 9),
-          sourceInstanceId: ultReady.instanceId,
-          skill: ultReady.ultimate!,
+          sourceInstanceId: owner.instanceId,
+          skill: owner.ultimate!,
           rank: 1,
         };
       }

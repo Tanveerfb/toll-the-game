@@ -107,6 +107,23 @@ describe("deck flow (7DS GC draw behavior)", () => {
     expect(state.playerTeam[0].ultGauge).toBeGreaterThan(0); // gauge granted
   });
 
+  it("a gauge filled by mid-refill merges does NOT draw the ultimate in the same refill", () => {
+    // Every random pick is skill A → merges cascade and fill the gauge
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const unit = makeChar({
+      instanceId: "unit",
+      ultGauge: 4, // one merge away from full
+      ultimate: ult,
+    });
+    useGameStore.setState({ playerTeam: [unit], deck: [] });
+    useGameStore.getState().drawCards();
+
+    const state = useGameStore.getState();
+    expect(state.playerTeam[0].ultGauge).toBe(5); // merges filled it
+    // ...but the ultimate only becomes guaranteed on the NEXT turn's draw
+    expect(state.deck.some((c) => c.skill.type === "ultimate")).toBe(false);
+  });
+
   it("guarantees the ultimate card when gauge is full (one copy max)", () => {
     const unit = makeChar({ instanceId: "unit", ultGauge: 5, ultimate: ult });
     useGameStore.setState({ playerTeam: [unit], deck: [] });
