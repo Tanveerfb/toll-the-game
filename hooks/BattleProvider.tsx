@@ -10,14 +10,21 @@ import { executeSkill } from "@/lib/game/combat";
 import { ENEMY_ACTIONS_PER_TURN, getAIMove } from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
 import { tickTeamEffects } from "@/lib/game/tick";
+import { promoteSubs } from "@/lib/game/sub";
 import { getCharacterById } from "@/lib/game/characterCatalog";
+
+export interface TeamPick {
+  id: string;
+  /** Bench slot: passive active, no cards, enters field when a teammate dies */
+  isSub?: boolean;
+}
 
 interface BattleContextType {
   advancePhase: () => void;
   startDukeTest: () => void;
   startFullTest: () => void;
-  startCustomBattle: (playerIds: string[], enemyIds: string[]) => void;
-  lastBattleConfig: { playerIds: string[]; enemyIds: string[] } | null;
+  startCustomBattle: (playerPicks: TeamPick[], enemyPicks: TeamPick[]) => void;
+  lastBattleConfig: { playerPicks: TeamPick[]; enemyPicks: TeamPick[] } | null;
   resolveplayerTurnWrapper: () => void;
   resolveEnemyTurnWrapper: () => void;
 }
@@ -142,6 +149,16 @@ export default function BattleProvider({
           }
         });
 
+        // Bench units take the field when an on-field teammate died
+        updatedTeams.playerTeam = promoteSubs(
+          updatedTeams.playerTeam,
+          addToBattleLog,
+        );
+        updatedTeams.enemyTeam = promoteSubs(
+          updatedTeams.enemyTeam,
+          addToBattleLog,
+        );
+
         // Sync modified states to Zustand
         updateTeams(updatedTeams.playerTeam, updatedTeams.enemyTeam);
 
@@ -201,6 +218,16 @@ export default function BattleProvider({
       const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
       deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
 
+      // Promote bench units on either side after deaths
+      currentTeams.playerTeam = promoteSubs(
+        currentTeams.playerTeam,
+        addToBattleLog,
+      );
+      currentTeams.enemyTeam = promoteSubs(
+        currentTeams.enemyTeam,
+        addToBattleLog,
+      );
+
       // Grant ult gauge for the source character
       currentTeams.playerTeam = currentTeams.playerTeam.map((char) =>
         char.instanceId === action.sourceInstanceId
@@ -242,6 +269,16 @@ export default function BattleProvider({
       const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
       deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
 
+      // Promote bench units on either side after deaths
+      currentTeams.playerTeam = promoteSubs(
+        currentTeams.playerTeam,
+        addToBattleLog,
+      );
+      currentTeams.enemyTeam = promoteSubs(
+        currentTeams.enemyTeam,
+        addToBattleLog,
+      );
+
       currentTeams.enemyTeam = currentTeams.enemyTeam.map((char) =>
         char.instanceId === action.sourceInstanceId
           ? {
@@ -272,11 +309,14 @@ export default function BattleProvider({
   };
 
   const [lastBattleConfig, setLastBattleConfig] = React.useState<{
-    playerIds: string[];
-    enemyIds: string[];
+    playerPicks: TeamPick[];
+    enemyPicks: TeamPick[];
   } | null>(null);
 
-  const startCustomBattle = (playerIds: string[], enemyIds: string[]) => {
+  const startCustomBattle = (
+    playerPicks: TeamPick[],
+    enemyPicks: TeamPick[],
+  ) => {
     resetBattle();
     clearQueue();
 
@@ -284,6 +324,7 @@ export default function BattleProvider({
       raw: any,
       team: "player" | "enemy",
       instanceId: string,
+      isSub: boolean,
     ): BattleCharacter => ({
       ...raw,
       instanceId,
@@ -295,21 +336,33 @@ export default function BattleProvider({
       debuffs: [],
       passiveState: {},
       team,
+      isSub,
     });
 
-    const players = playerIds.map((id, i) =>
-      buildBattleChar(loadChar(id), "player", `p${i + 1}_${id}`),
+    const players = playerPicks.map((pick, i) =>
+      buildBattleChar(
+        loadChar(pick.id),
+        "player",
+        `p${i + 1}_${pick.id}`,
+        pick.isSub === true,
+      ),
     );
-    const enemies = enemyIds.map((id, i) =>
-      buildBattleChar(loadChar(id), "enemy", `e${i + 1}_${id}`),
+    const enemies = enemyPicks.map((pick, i) =>
+      buildBattleChar(
+        loadChar(pick.id),
+        "enemy",
+        `e${i + 1}_${pick.id}`,
+        pick.isSub === true,
+      ),
     );
 
+    // Passives register for subs too — they work from the bench
     [...players, ...enemies].forEach((c) =>
       registerCharacterPassives(c, registerToQueue),
     );
 
     updateTeams(players, enemies);
-    setLastBattleConfig({ playerIds, enemyIds });
+    setLastBattleConfig({ playerPicks, enemyPicks });
 
     addToBattleLog(
       `--- BATTLE STARTED: ${players.length}v${enemies.length} ---`,
@@ -321,8 +374,18 @@ export default function BattleProvider({
 
   const startFullTest = () =>
     startCustomBattle(
-      ["mustafa", "batra", "sara", "yalina"],
-      ["siddiq", "gabrist", "master_tao", "duke"],
+      [
+        { id: "mustafa" },
+        { id: "batra" },
+        { id: "sara" },
+        { id: "yalina" },
+      ],
+      [
+        { id: "siddiq" },
+        { id: "gabrist" },
+        { id: "master_tao" },
+        { id: "duke" },
+      ],
     );
 
   const startDukeTest = () => startFullTest();

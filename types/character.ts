@@ -27,4 +27,10 @@ export interface BattleCharacter extends Character {
   debuffs: Mechanic[];
   passiveState: Record<string, unknown>;
   team: "player" | "enemy";
+  /**
+   * Sub (bench) unit: passives stay active, but the unit contributes no
+   * cards, takes no AI actions, and cannot be targeted. Promoted to the
+   * field when an on-field teammate dies. Absent/false = on field.
+   */
+  isSub?: boolean;
 }

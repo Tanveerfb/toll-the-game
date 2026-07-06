@@ -59,65 +59,64 @@ function TeamUnitCard({
   const hpPercent =
     unit.hp > 0 ? Math.max(0, (unit.currentHP / unit.hp) * 100) : 0;
   const isDead = unit.currentHP <= 0;
+  const isBenched = unit.isSub === true;
 
   return (
     <div data-battle-instance={unit.instanceId} className="relative">
       <Card
-        className={`w-full rounded-none border ${isMarked ? "border-amber-300" : getUnitBorderClass(unit.color)} bg-black/55 ring-0`}
+        className={`w-full rounded-none border ${isMarked ? "border-amber-300" : getUnitBorderClass(unit.color)} bg-black/55 ring-0 ${isBenched ? "opacity-60" : ""}`}
         onClick={() => {
-          if (isEnemy && !isDead) {
+          if (isEnemy && !isDead && !isBenched) {
             onMark(unit.instanceId);
           }
         }}
       >
-        <CardHeader className="flex items-start justify-between gap-2 border-b border-zinc-800 px-3 py-2">
-          <div>
-            <CardTitle className="font-heading text-base tracking-[0.06em] text-zinc-100">
+        <CardHeader className="flex items-center justify-between gap-2 border-b border-zinc-800 px-2.5 py-1.5">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <CardTitle className="truncate font-heading text-base tracking-[0.06em] text-zinc-100">
               {unit.name}
             </CardTitle>
-            <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-              {isEnemy ? "Enemy" : "Ally"} • {unit.color}
-            </CardDescription>
+            {isBenched ? (
+              <Badge className="rounded-none bg-amber-300 px-1 py-0 font-body text-[9px] font-bold uppercase tracking-widest text-zinc-950">
+                Sub
+              </Badge>
+            ) : null}
+            {isMarked ? (
+              <Badge
+                variant="outline"
+                className="rounded-none border-amber-300 bg-amber-300/10 px-1 py-0 font-body text-[9px] uppercase tracking-widest text-amber-200"
+              >
+                Target
+              </Badge>
+            ) : null}
+            {queuedHits > 0 ? (
+              <Badge
+                variant="outline"
+                className="rounded-none border-sky-300 bg-sky-500/15 px-1 py-0 font-body text-[9px] uppercase tracking-widest text-sky-100"
+              >
+                {queuedHits}×
+              </Badge>
+            ) : null}
           </div>
 
           <Button
             variant="ghost"
-            size="sm"
+            size="xs"
             onClick={(e) => {
               e.stopPropagation();
               onViewDetails(unit);
             }}
-            className="rounded-none border border-zinc-600 px-2 text-[10px] uppercase tracking-widest text-zinc-200"
+            className="shrink-0 rounded-none border border-zinc-700 px-1.5 text-[9px] uppercase tracking-widest text-zinc-300"
           >
-            Details
+            Info
           </Button>
         </CardHeader>
 
         <CardContent
-          className={`space-y-2 px-3 py-2 ${isDead ? "opacity-55" : ""}`}
+          className={`space-y-1.5 px-2.5 py-2 ${isDead ? "opacity-55" : ""}`}
         >
-          <div className="flex flex-wrap items-center gap-1">
-            {isMarked ? (
-              <Badge
-                variant="outline"
-                className="rounded-none border-amber-300 bg-amber-300/10 font-body text-[10px] uppercase tracking-[0.12em] text-amber-200"
-              >
-                Targeted
-              </Badge>
-            ) : null}
-
-            {queuedHits > 0 ? (
-              <Badge
-                variant="outline"
-                className="rounded-none border-sky-300 bg-sky-500/15 font-body text-[10px] uppercase tracking-[0.12em] text-sky-100"
-              >
-                {queuedHits} queued
-              </Badge>
-            ) : null}
-          </div>
-
           <div>
-            <div className="mb-1 flex items-center justify-between font-body text-[11px] uppercase tracking-[0.12em] text-zinc-400">
+            <div className="mb-0.5 flex items-center justify-between font-body text-[10px] uppercase tracking-[0.1em] text-zinc-400">
               <span>HP</span>
               <span>
                 {unit.currentHP}/{unit.hp}
@@ -133,34 +132,31 @@ function TeamUnitCard({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5 font-body text-[10px] uppercase tracking-widest text-zinc-300">
-            <div className="border border-zinc-800 bg-zinc-900/60 px-1.5 py-1 text-center">
-              <span className="block text-zinc-500">ATK</span>
+          <div className="flex items-center justify-between gap-1 font-body text-[10px] uppercase tracking-wider text-zinc-400">
+            <span>
+              <span className="text-zinc-600">ATK </span>
               <span className="font-semibold text-zinc-200">
                 {unit.currentAttack}
               </span>
-            </div>
-            <div className="border border-zinc-800 bg-zinc-900/60 px-1.5 py-1 text-center">
-              <span className="block text-zinc-500">DEF</span>
+            </span>
+            <span>
+              <span className="text-zinc-600">DEF </span>
               <span className="font-semibold text-zinc-200">
                 {unit.currentDefense}
               </span>
-            </div>
-            <div className="border border-zinc-800 bg-zinc-900/60 px-1.5 py-1 text-center">
-              <span className="block text-zinc-500">ULT</span>
-              <span className="font-semibold text-zinc-200">
+            </span>
+            <span>
+              <span className="text-zinc-600">ULT </span>
+              <span
+                className={`font-semibold ${unit.ultGauge >= 5 ? "text-amber-300" : "text-zinc-200"}`}
+              >
                 {unit.ultGauge}/5
               </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-1 font-body text-[10px] uppercase tracking-widest text-zinc-400">
-            <p className="border border-zinc-800 bg-zinc-900/40 px-1.5 py-1 text-center">
-              Buffs: {unit.buffs.length}
-            </p>
-            <p className="border border-zinc-800 bg-zinc-900/40 px-1.5 py-1 text-center">
-              Debuffs: {unit.debuffs.length}
-            </p>
+            </span>
+            <span>
+              <span className="text-emerald-500">▲{unit.buffs.length}</span>{" "}
+              <span className="text-rose-500">▼{unit.debuffs.length}</span>
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -456,8 +452,8 @@ export default function BattleArena(): React.JSX.Element {
                 <Button
                   onClick={() =>
                     startCustomBattle(
-                      lastBattleConfig.playerIds,
-                      lastBattleConfig.enemyIds,
+                      lastBattleConfig.playerPicks,
+                      lastBattleConfig.enemyPicks,
                     )
                   }
                   className="h-12 rounded-none border-2 border-amber-300 font-heading text-lg tracking-[0.14em]"

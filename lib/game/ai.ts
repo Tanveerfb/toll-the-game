@@ -15,11 +15,15 @@ export function getAIMove(
   enemyTeam: BattleCharacter[],
   playerTeam: BattleCharacter[],
 ): Action | null {
-  const alivePlayers = playerTeam.filter((p) => p.currentHP > 0);
+  // Subs cannot act or be targeted
+  const alivePlayers = playerTeam.filter((p) => p.currentHP > 0 && !p.isSub);
   if (alivePlayers.length === 0) return null;
 
   const actingPool = enemyTeam.filter(
-    (e) => e.currentHP > 0 && !e.debuffs.some((d) => d.type === "stun"),
+    (e) =>
+      e.currentHP > 0 &&
+      !e.isSub &&
+      !e.debuffs.some((d) => d.type === "stun"),
   );
   if (actingPool.length === 0) return null;
 
@@ -59,9 +63,9 @@ export function getAIMove(
     const healSkill = getSkillOfType("heal") || getSkillOfType("cleanse");
     if (healSkill) {
       chosenSkill = healSkill;
-      // Target the ally that needs heal most
+      // Target the on-field ally that needs heal most
       actualTarget = enemyTeam
-        .filter((e) => e.currentHP > 0)
+        .filter((e) => e.currentHP > 0 && !e.isSub)
         .reduce((lowest, current) =>
           current.currentHP < lowest.currentHP ? current : lowest,
         );

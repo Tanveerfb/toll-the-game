@@ -1,14 +1,8 @@
 ﻿import { notFound } from "next/navigation";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -51,6 +45,7 @@ interface PassiveMechanicEntry {
 }
 
 interface CharacterPassiveView {
+  name?: string;
   trigger?: string;
   description?: string;
   mechanics?: PassiveMechanicEntry[];
@@ -58,11 +53,40 @@ interface CharacterPassiveView {
 
 const UI = {
   fieldLabel:
-    "font-body text-xs uppercase tracking-[0.14em] text-muted-foreground",
-  textValue: "font-body text-sm text-foreground",
-  statValue: "font-heading text-3xl text-foreground",
-  sectionTitle: "font-heading text-2xl tracking-[0.08em] text-foreground",
+    "font-body text-[10px] uppercase tracking-[0.16em] text-zinc-500",
+  textValue: "font-body text-sm text-zinc-200",
 } as const;
+
+const COLOR_STYLES: Record<
+  string,
+  { frame: string; gradient: string; chip: string }
+> = {
+  light: {
+    frame: "border-amber-200/70",
+    gradient: "from-amber-200/25 to-transparent",
+    chip: "bg-amber-200 text-zinc-900",
+  },
+  red: {
+    frame: "border-red-500/70",
+    gradient: "from-red-600/30 to-transparent",
+    chip: "bg-red-500 text-zinc-950",
+  },
+  blue: {
+    frame: "border-sky-500/70",
+    gradient: "from-sky-600/30 to-transparent",
+    chip: "bg-sky-500 text-zinc-950",
+  },
+  green: {
+    frame: "border-emerald-500/70",
+    gradient: "from-emerald-600/30 to-transparent",
+    chip: "bg-emerald-500 text-zinc-950",
+  },
+  dark: {
+    frame: "border-violet-500/70",
+    gradient: "from-violet-600/30 to-transparent",
+    chip: "bg-violet-500 text-zinc-950",
+  },
+};
 
 const TRIGGER_EXPLANATIONS: Record<string, string> = {
   afterSkill: "After each skill used by this character",
@@ -86,20 +110,39 @@ function toTitleCase(value: string): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function Section({
+  title,
+  children,
+  subtitle,
+}: {
+  title: string;
+  subtitle?: ReactNode;
+  children: ReactNode;
+}): ReactNode {
+  return (
+    <section className="border-2 border-zinc-800 bg-black/45">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-zinc-800 bg-zinc-900/50 px-4 py-2.5">
+        <h2 className="font-heading text-xl tracking-[0.1em] text-zinc-100">
+          {title}
+        </h2>
+        {subtitle}
+      </div>
+      <div className="p-4">{children}</div>
+    </section>
+  );
+}
+
 function MechanicsTags({ skill }: { skill: CharacterSkillData }): ReactNode {
   const types = getMechanicTypes(skill);
-
-  if (types.length === 0) {
-    return null;
-  }
+  if (types.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-1">
       {types.map((type) => (
         <Badge
           key={`${skill.skillName}-${type}`}
           variant="secondary"
-          className="rounded-none text-foreground"
+          className="rounded-none px-1.5 py-0 font-body text-[10px] uppercase tracking-widest text-zinc-200"
         >
           {toTitleCase(type)}
         </Badge>
@@ -108,91 +151,53 @@ function MechanicsTags({ skill }: { skill: CharacterSkillData }): ReactNode {
   );
 }
 
-function SkillRanksSection({
-  skills,
+function SkillBlock({
+  skill,
+  tag,
 }: {
-  skills: CharacterSkillData[];
+  skill: CharacterSkillData;
+  tag: string;
 }): ReactNode {
-  return (
-    <Card className="rounded-none border border-border bg-muted/30 ring-0">
-      <CardHeader className="border-b border-border px-5 py-4">
-        <CardTitle className="font-heading text-2xl tracking-[0.08em] text-foreground">
-          Skills
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 p-5">
-        {skills.map((skill) => {
-          const rankedLines = buildRankedSkillDescriptions(skill);
+  const rankedLines =
+    skill.type === "ultimate" ? null : buildRankedSkillDescriptions(skill);
 
-          return (
-            <Card
-              key={skill.skillName}
-              className="rounded-none border border-border bg-card ring-0"
+  return (
+    <div className="border border-zinc-800 bg-zinc-950/60">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/70 px-3 py-2">
+        <div className="flex items-center gap-2">
+          <span
+            className={`px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-widest ${tag === "ULT" ? "bg-amber-300 text-zinc-950" : "bg-zinc-700 text-zinc-200"}`}
+          >
+            {tag}
+          </span>
+          <p className="font-heading text-lg tracking-[0.05em] text-zinc-100">
+            {skill.skillName}
+          </p>
+        </div>
+        <MechanicsTags skill={skill} />
+      </div>
+
+      <div className="space-y-1.5 px-3 py-2.5">
+        {rankedLines ? (
+          rankedLines.map((line, index) => (
+            <div
+              key={`${skill.skillName}-rank-${index + 1}`}
+              className="grid grid-cols-[44px_1fr] items-baseline gap-2"
             >
-              <CardContent className="space-y-3 p-4">
-                <p className="font-heading text-xl tracking-[0.06em] text-foreground">
-                  {skill.skillName}
-                </p>
-
-                <MechanicsTags skill={skill} />
-
-                <div className="space-y-2">
-                  {rankedLines.map((line, index) => (
-                    <p
-                      key={`${skill.skillName}-rank-${index + 1}`}
-                      className={UI.textValue}
-                    >
-                      <span className="mr-2 font-semibold text-foreground">
-                        Rank {index + 1} -
-                      </span>
-                      <KeyworkHighlighter
-                        text={line}
-                        className={UI.textValue}
-                      />
-                    </p>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </CardContent>
-    </Card>
-  );
-}
-
-function UltimateSection({
-  ultimate,
-}: {
-  ultimate?: CharacterSkillData;
-}): ReactNode {
-  return (
-    <Card className="rounded-none border border-border bg-muted/30 ring-0">
-      <CardHeader className="border-b border-border px-5 py-4">
-        <CardTitle className={UI.sectionTitle}>Ultimate</CardTitle>
-      </CardHeader>
-
-      <CardContent className="space-y-3 p-5">
-        {!ultimate ? (
-          <p className={UI.textValue}>To be added</p>
+              <span className="font-body text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                R{index + 1}
+              </span>
+              <KeyworkHighlighter text={line} className={UI.textValue} />
+            </div>
+          ))
         ) : (
-          <Card className="rounded-none border border-border bg-card ring-0">
-            <CardContent className="space-y-3 p-4">
-              <p className="font-heading text-xl tracking-[0.06em] text-foreground">
-                {ultimate.skillName}
-              </p>
-              <MechanicsTags skill={ultimate} />
-              <p className={UI.textValue}>
-                <KeyworkHighlighter
-                  text={buildSingleDescription(ultimate)}
-                  className={UI.textValue}
-                />
-              </p>
-            </CardContent>
-          </Card>
+          <KeyworkHighlighter
+            text={buildSingleDescription(skill)}
+            className={UI.textValue}
+          />
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -252,25 +257,14 @@ function getPassiveBlocks(passive?: CharacterPassiveView): Array<{
 }
 
 function formatSynergyStat(stat?: string): string {
-  if (!stat) {
-    return "stats";
-  }
-
-  if (stat.toLowerCase() === "all") {
-    return "all stats";
-  }
-
-  if (stat.toLowerCase() === "damagedealt") {
-    return "damage dealt";
-  }
-
+  if (!stat) return "stats";
+  if (stat.toLowerCase() === "all") return "all stats";
+  if (stat.toLowerCase() === "damagedealt") return "damage dealt";
   return stat.toUpperCase();
 }
 
 function getSynergyBlocks(passive?: CharacterPassiveView): string[] {
-  if (!Array.isArray(passive?.mechanics)) {
-    return [];
-  }
+  if (!Array.isArray(passive?.mechanics)) return [];
 
   return passive.mechanics
     .filter((entry) => entry.type === "synergy")
@@ -292,165 +286,6 @@ function getSynergyBlocks(passive?: CharacterPassiveView): string[] {
     });
 }
 
-function PassiveSection({
-  passive,
-}: {
-  passive?: CharacterPassiveView;
-}): ReactNode {
-  const passiveBlocks = getPassiveBlocks(passive);
-  const synergyBlocks = getSynergyBlocks(passive);
-
-  return (
-    <Card className="rounded-none border border-border bg-muted/30 ring-0">
-      <CardHeader className="border-b border-border px-5 py-4">
-        <CardTitle className={UI.sectionTitle}>Passive</CardTitle>
-      </CardHeader>
-
-      <CardContent className="p-5">
-        <Card className="rounded-none border border-border bg-card ring-0">
-          <CardContent className="space-y-4 p-4">
-            {passiveBlocks.map((block, index) => (
-              <div
-                key={`passive-block-${index}`}
-                className={
-                  block.isConditional
-                    ? "ml-4 border-l border-border pl-4"
-                    : index > 0
-                      ? "border-t border-border pt-4"
-                      : ""
-                }
-              >
-                {block.isConditional ? (
-                  <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-                    if condition met {"{"}
-                  </p>
-                ) : null}
-
-                <p className={UI.fieldLabel}>Trigger Condition</p>
-                <p className={UI.textValue}>
-                  <KeyworkHighlighter
-                    text={block.trigger}
-                    className={UI.textValue}
-                  />
-                </p>
-
-                <p className={`${UI.fieldLabel} mt-3`}>Description</p>
-                <p className={UI.textValue}>
-                  <KeyworkHighlighter
-                    text={block.description}
-                    className={UI.textValue}
-                  />
-                </p>
-
-                {block.isConditional ? (
-                  <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-                    {"}"}
-                  </p>
-                ) : null}
-              </div>
-            ))}
-
-            {synergyBlocks.length > 0 ? (
-              <div className="border-t border-border pt-4">
-                <p className={UI.fieldLabel}>Synergy</p>
-
-                <div className="mt-3 space-y-2">
-                  {synergyBlocks.map((synergyLine, index) => (
-                    <p key={`synergy-${index}`} className={UI.textValue}>
-                      <KeyworkHighlighter
-                        text={synergyLine}
-                        className={UI.textValue}
-                      />
-                    </p>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-      </CardContent>
-    </Card>
-  );
-}
-
-function DamagePreviewSection({
-  character,
-}: {
-  character: ReturnType<typeof getCharacterById> extends infer T
-    ? Exclude<T, undefined>
-    : never;
-}): ReactNode {
-  const previewRows = buildCharacterDamagePreview(character);
-
-  return (
-    <Card className="rounded-none border border-border bg-muted/30 ring-0">
-      <CardHeader className="border-b border-border px-5 py-4">
-        <CardTitle className={UI.sectionTitle}>Damage Preview</CardTitle>
-        <CardDescription className="mt-2 font-body text-sm text-muted-foreground">
-          Dummy enemy baseline: {DAMAGE_PREVIEW_DUMMY.atk} ATK /{" "}
-          {DAMAGE_PREVIEW_DUMMY.def} DEF / {DAMAGE_PREVIEW_DUMMY.hp} HP.
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="space-y-4 p-5">
-        <p className={UI.textValue}>
-          This table uses each character&apos;s current skill multipliers,
-          passive hooks, and mechanic-specific scenarios to show sample output.
-        </p>
-
-        <div className="rounded-none border border-border">
-          <Table className="min-w-245 text-foreground">
-            <TableHeader className="bg-card">
-              <TableRow>
-                <TableHead className="text-muted-foreground">
-                  Ability
-                </TableHead>
-                <TableHead className="text-muted-foreground">Tier</TableHead>
-                <TableHead className="text-muted-foreground">
-                  Multiplier
-                </TableHead>
-                <TableHead className="text-muted-foreground">
-                  Scenario
-                </TableHead>
-                <TableHead className="text-muted-foreground">Result</TableHead>
-                <TableHead className="text-muted-foreground">Notes</TableHead>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {previewRows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="align-top font-heading text-sm tracking-wider text-foreground">
-                    {row.abilityName}
-                  </TableCell>
-                  <TableCell className="align-top font-body text-sm text-foreground">
-                    {row.rankLabel}
-                  </TableCell>
-                  <TableCell className="align-top font-body text-sm text-foreground">
-                    {row.multiplierLabel}
-                  </TableCell>
-                  <TableCell className="align-top font-body text-sm text-foreground">
-                    {row.scenarioLabel}
-                  </TableCell>
-                  <TableCell className="align-top font-body text-sm font-semibold text-foreground">
-                    {row.resultLabel}
-                  </TableCell>
-                  <TableCell className="align-top whitespace-normal">
-                    <KeyworkHighlighter
-                      text={row.notes || "No additional modifiers."}
-                      className={`${UI.textValue} leading-6`}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 export function generateStaticParams(): Array<{ id: string }> {
   return characterIds.map((id) => ({ id }));
 }
@@ -465,6 +300,12 @@ export default async function CharacterDetailPage({
     notFound();
   }
 
+  const style = COLOR_STYLES[character.color] ?? COLOR_STYLES.light;
+  const passive = character.passive as CharacterPassiveView | undefined;
+  const passiveBlocks = getPassiveBlocks(passive);
+  const synergyBlocks = getSynergyBlocks(passive);
+  const previewRows = buildCharacterDamagePreview(character);
+
   return (
     <main
       className="relative min-h-screen overflow-hidden bg-zinc-950"
@@ -475,63 +316,205 @@ export default async function CharacterDetailPage({
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-size-[38px_38px] opacity-25" />
 
-      <section className="relative z-10 mx-auto w-full max-w-6xl space-y-6 px-6 py-8 md:px-10 md:py-10">
-        <Card className="rounded-none border-2 border-border bg-card/80 ring-0 backdrop-blur-sm">
-          <CardHeader className="border-b border-border px-6 py-6">
-            <p className={UI.fieldLabel}>Name</p>
-            <CardTitle className="mt-1 font-heading text-5xl tracking-[0.12em] text-foreground md:text-6xl">
-              {character.name}
-            </CardTitle>
-            <CardDescription className="mt-1 font-body text-sm uppercase tracking-[0.16em] text-muted-foreground">
-              {character.id}
-            </CardDescription>
-          </CardHeader>
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-6 md:px-8">
+        <Link
+          href="/archive"
+          className="font-body text-xs uppercase tracking-[0.16em] text-zinc-400 hover:text-amber-200"
+        >
+          ← Character Archive
+        </Link>
 
-          <CardContent className="space-y-6 p-6">
-            <div>
-              <Card className="rounded-none border border-border bg-muted/30 ring-0">
-                <CardHeader className="border-b border-border px-5 py-4">
-                  <CardTitle className={UI.sectionTitle}>Stats</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-3 gap-4 p-5 text-center">
-                  <div>
-                    <p className={UI.fieldLabel}>ATK</p>
-                    <p className={UI.statValue}>{character.atk}</p>
+        <div className="mt-3 grid gap-4 lg:grid-cols-[300px_1fr]">
+          {/* Identity panel */}
+          <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+            <div className={`border-2 ${style.frame} bg-zinc-950/85`}>
+              {/* Portrait placeholder — swap for card art later */}
+              <div
+                className={`relative flex aspect-square items-center justify-center bg-linear-to-b ${style.gradient}`}
+              >
+                <span className="font-heading text-8xl text-white/85 drop-shadow-[0_0_16px_rgba(255,255,255,0.25)]">
+                  {character.name.charAt(0)}
+                </span>
+                <span
+                  className={`absolute left-2 top-2 px-2 py-0.5 font-body text-[10px] font-bold uppercase tracking-widest ${style.chip}`}
+                >
+                  {character.color}
+                </span>
+              </div>
+
+              <div className="border-t border-zinc-800 px-4 py-3">
+                <h1 className="font-heading text-4xl tracking-[0.08em] text-zinc-100">
+                  {character.name}
+                </h1>
+                <p className="font-body text-xs uppercase tracking-[0.16em] text-zinc-500">
+                  {character.id}
+                </p>
+                {Array.isArray(character.tags) && character.tags.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {character.tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="rounded-none border-zinc-600 px-1.5 py-0 font-body text-[10px] uppercase tracking-widest text-zinc-300"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
                   </div>
-                  <div>
-                    <p className={UI.fieldLabel}>DEF</p>
-                    <p className={UI.statValue}>{character.def}</p>
+                ) : null}
+              </div>
+
+              <div className="grid grid-cols-3 border-t border-zinc-800 text-center">
+                {(
+                  [
+                    ["ATK", character.atk],
+                    ["DEF", character.def],
+                    ["HP", character.hp],
+                  ] as const
+                ).map(([label, value], i) => (
+                  <div
+                    key={label}
+                    className={`py-2.5 ${i > 0 ? "border-l border-zinc-800" : ""}`}
+                  >
+                    <p className={UI.fieldLabel}>{label}</p>
+                    <p className="font-heading text-2xl text-zinc-100">
+                      {value}
+                    </p>
                   </div>
-                  <div>
-                    <p className={UI.fieldLabel}>HP</p>
-                    <p className={UI.statValue}>{character.hp}</p>
-                  </div>
-                </CardContent>
-              </Card>
+                ))}
+              </div>
             </div>
 
-            <Card className="rounded-none border border-border bg-muted/30 ring-0">
-              <CardHeader className="border-b border-border px-5 py-4">
-                <CardTitle className={UI.sectionTitle}>Overview</CardTitle>
-              </CardHeader>
-
-              <CardContent className="p-5">
-                <p className={UI.textValue}>
-                  <KeyworkHighlighter
-                    text={character.lore?.trim() || "To be added"}
-                    className={UI.textValue}
-                  />
+            {character.lore ? (
+              <div className="border-2 border-zinc-800 bg-black/45 px-4 py-3">
+                <p className={UI.fieldLabel}>Lore</p>
+                <p className="mt-1 font-body text-sm leading-relaxed text-zinc-300">
+                  {character.lore}
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            ) : null}
+          </aside>
 
-            <SkillRanksSection skills={character.skills} />
-            <UltimateSection ultimate={character.ultimate} />
-            <PassiveSection passive={character.passive} />
-            <DamagePreviewSection character={character} />
-          </CardContent>
-        </Card>
-      </section>
+          {/* Kit details */}
+          <div className="space-y-4">
+            <Section title="Skills">
+              <div className="space-y-3">
+                {character.skills.map((skill, index) => (
+                  <SkillBlock
+                    key={skill.skillName}
+                    skill={skill}
+                    tag={`S${index + 1}`}
+                  />
+                ))}
+                {character.ultimate ? (
+                  <SkillBlock skill={character.ultimate} tag="ULT" />
+                ) : null}
+              </div>
+            </Section>
+
+            <Section
+              title="Passive"
+              subtitle={
+                passive?.name ? (
+                  <span className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                    {passive.name}
+                  </span>
+                ) : undefined
+              }
+            >
+              <div className="space-y-3">
+                {passiveBlocks.map((block, index) => (
+                  <div
+                    key={`passive-block-${index}`}
+                    className={`border border-zinc-800 bg-zinc-950/60 px-3 py-2.5 ${block.isConditional ? "ml-4 border-l-2 border-l-amber-400/50" : ""}`}
+                  >
+                    <p className={UI.fieldLabel}>
+                      {block.isConditional ? "Conditional — " : ""}
+                      Trigger
+                    </p>
+                    <KeyworkHighlighter
+                      text={block.trigger}
+                      className={UI.textValue}
+                    />
+                    <p className={`${UI.fieldLabel} mt-2`}>Effect</p>
+                    <KeyworkHighlighter
+                      text={block.description}
+                      className={UI.textValue}
+                    />
+                  </div>
+                ))}
+
+                {synergyBlocks.length > 0 ? (
+                  <div className="border border-zinc-800 bg-zinc-950/60 px-3 py-2.5">
+                    <p className={UI.fieldLabel}>Synergy</p>
+                    <div className="mt-1 space-y-1">
+                      {synergyBlocks.map((line, index) => (
+                        <KeyworkHighlighter
+                          key={`synergy-${index}`}
+                          text={line}
+                          className={`${UI.textValue} block`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </Section>
+
+            <Section
+              title="Damage Preview"
+              subtitle={
+                <span className="font-body text-xs uppercase tracking-[0.14em] text-zinc-500">
+                  vs dummy: {DAMAGE_PREVIEW_DUMMY.atk} ATK /{" "}
+                  {DAMAGE_PREVIEW_DUMMY.def} DEF / {DAMAGE_PREVIEW_DUMMY.hp} HP
+                </span>
+              }
+            >
+              <div className="border border-zinc-800">
+                <Table className="text-zinc-200">
+                  <TableHeader className="bg-zinc-900/60">
+                    <TableRow>
+                      <TableHead className="text-zinc-500">Ability</TableHead>
+                      <TableHead className="text-zinc-500">Tier</TableHead>
+                      <TableHead className="text-zinc-500">Mult</TableHead>
+                      <TableHead className="text-zinc-500">Scenario</TableHead>
+                      <TableHead className="text-zinc-500">Result</TableHead>
+                      <TableHead className="text-zinc-500">Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {previewRows.map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell className="align-top font-heading text-sm tracking-wider text-zinc-100">
+                          {row.abilityName}
+                        </TableCell>
+                        <TableCell className="align-top font-body text-sm">
+                          {row.rankLabel}
+                        </TableCell>
+                        <TableCell className="align-top font-body text-sm">
+                          {row.multiplierLabel}
+                        </TableCell>
+                        <TableCell className="align-top font-body text-sm">
+                          {row.scenarioLabel}
+                        </TableCell>
+                        <TableCell className="align-top font-body text-sm font-semibold text-amber-200">
+                          {row.resultLabel}
+                        </TableCell>
+                        <TableCell className="max-w-70 align-top whitespace-normal">
+                          <KeyworkHighlighter
+                            text={row.notes || "No additional modifiers."}
+                            className="font-body text-xs leading-5 text-zinc-400"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </Section>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

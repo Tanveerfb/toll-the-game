@@ -56,6 +56,7 @@ tests/                Vitest unit tests for the battle engine
 - Any non-heal skill with damageRanked > 0 deals damage regardless of skill type.
 - Enemy side takes 3 actions per enemy turn — any living enemy, any order.
 - Effect durations: duration N survives N−1 turn-start ticks.
+- Sub (bench) units (`BattleCharacter.isSub`): passive active, no cards, untargetable, can't act; promoted to field when a teammate dies (`lib/game/sub.ts`).
 
 ## Design Ownership
 

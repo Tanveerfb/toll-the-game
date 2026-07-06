@@ -45,10 +45,21 @@ initializing → OnBattleStart → OnPlayerTurnStart → PlayerAction
 2. Apply DoT (`damageOverTime`, `decay` with captured damage) and HoT.
 3. Tick down `buffDuration` / `debuffDuration`; drop expired effects. Durationless effects persist.
 
+## Sub (Bench) Units — `lib/game/sub.ts`
+
+Teams can run 4 on field, or field units + one designated **sub** (e.g. 3+1):
+
+- A sub's **passive stays active** from the bench (phase-queue and inline passives both run).
+- A sub contributes **no cards** to the deck, takes no AI actions, and **cannot be targeted** (single-target or AoE, damage or heal).
+- When an on-field teammate dies, `promoteSubs` moves the sub onto the field (one promotion per death; dead subs never promote). Its cards then enter the draw pool on the next draw.
+- Defeat still requires the **whole team** dead, subs included.
+
+`promoteSubs` is called after every death opportunity: each player action, each enemy AI action, and the turn-start tick/passive phases in `BattleProvider`.
+
 ## Deck / Card System (`store/gameStore.ts`)
 
-- **Init:** each living team member contributes their 2 skills as rank-1 `ActionCard`s.
-- **Hand capacity:** 4/5/7/8 cards for team size 1/2/3/4. Refilled on both turn-end phases.
+- **Init:** each living on-field team member contributes their 2 skills as rank-1 `ActionCard`s.
+- **Hand capacity:** 4/5/7/8 cards for 1/2/3/4 field characters. Refilled on both turn-end phases.
 - **Draw:** random from living characters' skills. If a character's `ultGauge ≥ 5`, their ultimate is guaranteed-drawn (one copy in hand max).
 - **Merging:** two cards, same character + same skill + same rank → one card of rank+1 (max 3). Two paths: explicit merge and auto-merge when dragged adjacent. Each merge grants +1 ult gauge to the card's owner.
 - **Action queue:** up to 3 cards queued per player turn. Enemy-targeting card types (`attack`, `debuff`, `disable`, `ultimate`) require a marked enemy target at selection time. Stunned characters' cards can't be queued.

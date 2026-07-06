@@ -179,7 +179,8 @@ export const useGameStore = create<BattleState>((set, get) => ({
   setActionQueue: (queue) => set({ actionQueue: queue }),
   initializeDeck: () => {
     const { playerTeam } = get();
-    const living = playerTeam.filter((c) => c.currentHP > 0);
+    // Subs contribute no cards until promoted to the field
+    const living = playerTeam.filter((c) => c.currentHP > 0 && !c.isSub);
     const initialCards: ActionCard[] = [];
 
     living.forEach((c) => {
@@ -199,11 +200,13 @@ export const useGameStore = create<BattleState>((set, get) => ({
 
   drawCards: () => {
     const { playerTeam, deck, actionQueue } = get();
-    const livingChars = playerTeam.filter((c) => c.currentHP > 0);
+    // Subs contribute no cards until promoted to the field
+    const livingChars = playerTeam.filter((c) => c.currentHP > 0 && !c.isSub);
+    const fieldCount = playerTeam.filter((c) => !c.isSub).length;
 
-    // Max amount is 4/5/7/8 for 1/2/3/4 characters
+    // Max amount is 4/5/7/8 for 1/2/3/4 field characters
     const maxCapacityMap = [0, 4, 5, 7, 8];
-    const maxCapacity = maxCapacityMap[playerTeam.length] || 8;
+    const maxCapacity = maxCapacityMap[fieldCount] || 8;
     const currentSpaces = maxCapacity - deck.length;
 
     if (currentSpaces <= 0) return;

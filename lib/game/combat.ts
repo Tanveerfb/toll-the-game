@@ -187,7 +187,8 @@ export function executeSkill(
 
   if (isAoe) {
     targets = isHealOrBuff ? alliedTeamForSource : enemyTeamForSource;
-    targets = targets.filter((t) => t.currentHP > 0);
+    // Sub (bench) units cannot be targeted
+    targets = targets.filter((t) => t.currentHP > 0 && !t.isSub);
   } else {
     let actualTarget = getUpdatedChar(primaryTarget.instanceId)!;
     // Taunt override for single-target offensive skills
