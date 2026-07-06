@@ -5,14 +5,17 @@ import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
 import { Mechanic } from "@/types/mechanic";
 
-function getSkillDamageMultiplier(
+// Returns the damage percent (e.g. 205 for 205%). Callers multiply the stat
+// first, then divide by 100 — dividing first introduces float error
+// (100 * (205/100) === 204.999…, which floors to 204).
+function getSkillDamagePercent(
   skill: SkillCard | UltimateCard,
   rankIndex: number,
 ): number {
   if (skill.type === "ultimate") {
-    return (skill as UltimateCard).damage / 100;
+    return (skill as UltimateCard).damage;
   } else {
-    return (skill as SkillCard).damageRanked[rankIndex] / 100;
+    return (skill as SkillCard).damageRanked[rankIndex];
   }
 }
 
@@ -156,12 +159,24 @@ export function executeSkill(
   const isAoe = skillMechanics.some(
     (m) => m.type === "aoe" || (m.type === "aoeRanked" && m.ranks?.[rankIndex]),
   );
-  const isAttack =
-    action.skill.type === "attack" || action.skill.type === "ultimate";
   const isHealOrBuff =
     action.skill.type === "heal" ||
     action.skill.type === "buff" ||
     action.skill.type === "stance";
+  // A skill deals damage whenever its numbers say so, regardless of type —
+  // e.g. debuff-type skills with damageRanked > 0 hit AND debuff. Heal-type
+  // skills reuse damageRanked as the heal amount, so they are excluded.
+  const isAttack =
+    action.skill.type === "attack" ||
+    action.skill.type === "ultimate" ||
+    (!isHealOrBuff &&
+      getSkillDamagePercent(action.skill, (action.rank ?? 1) - 1) > 0);
+  // Offensive skills apply their hostile mechanics even when damage is 0
+  // (e.g. Draw Fire: 0 damage, taunts all enemies).
+  const isOffensive =
+    isAttack ||
+    action.skill.type === "debuff" ||
+    action.skill.type === "disable";
 
   // Determine targets
   let targets: BattleCharacter[] = [];
@@ -175,8 +190,8 @@ export function executeSkill(
     targets = targets.filter((t) => t.currentHP > 0);
   } else {
     let actualTarget = getUpdatedChar(primaryTarget.instanceId)!;
-    // Taunt override for single-target attacks
-    if (isAttack) {
+    // Taunt override for single-target offensive skills
+    if (isOffensive) {
       const tauntedBy = updatedSource.debuffs.find(
         (d) => d.type === "taunt" && d.sourceId,
       );
@@ -200,8 +215,8 @@ export function executeSkill(
   else if (statMulti === "def") baseStat = updatedSource.currentDefense;
   else if (statMulti === "hp") baseStat = updatedSource.hp; // Max HP scaling per user comment
 
-  const skillMultiplier = getSkillDamageMultiplier(action.skill, rankIndex);
-  let baseDamage = baseStat * skillMultiplier;
+  const skillDamagePercent = getSkillDamagePercent(action.skill, rankIndex);
+  let baseDamage = (baseStat * skillDamagePercent) / 100;
 
   // -- DYNAMIC DAMAGE MULTIPLIERS
   const spiteMech = skillMechanics.find((m) => m.type === "spite");
@@ -304,7 +319,8 @@ export function executeSkill(
         );
         log(`${updatedSource.name} gained ${buffAmount}% ATK!`);
         if (statMulti === "atk")
-          baseDamage = updatedSource.currentAttack * skillMultiplier;
+          baseDamage =
+            (updatedSource.currentAttack * skillDamagePercent) / 100;
       }
     }
   }
@@ -363,12 +379,22 @@ export function executeSkill(
       } else {
         updatedTarget.currentHP = Math.max(0, newHp);
       }
+    } else if (action.skill.type === "heal") {
+      const healAmount = Math.floor(baseDamage);
+      healedAmount = healAmount;
+      updatedTarget.currentHP = Math.min(
+        updatedTarget.hp,
+        updatedTarget.currentHP + healAmount,
+      );
+    }
 
+    // Hostile mechanics apply for offensive skills even at 0 damage
+    if (isOffensive) {
       // Apply skill mechanics (Debuffs)
       skillMechanics.forEach((mech) => {
         if (mech.type === "decay") {
           const decayDmg = Math.floor(
-            finalDamage * ((mech.damagePercent || 10) / 100),
+            dealtDamage * ((mech.damagePercent || 10) / 100),
           );
           updatedTarget.debuffs.push({
             type: "decay",
@@ -453,16 +479,9 @@ export function executeSkill(
         );
       }
 
-      if (updatedTarget.currentHP === 0) {
+      if (isAttack && updatedTarget.currentHP === 0) {
         targetEffects.push("defeated");
       }
-    } else if (action.skill.type === "heal") {
-      const healAmount = Math.floor(baseDamage);
-      healedAmount = healAmount;
-      updatedTarget.currentHP = Math.min(
-        updatedTarget.hp,
-        updatedTarget.currentHP + healAmount,
-      );
     }
 
     // Friendly buffs/cleanses applied even if it's an attack (if targetSelf is true or targets are allies)
@@ -471,11 +490,7 @@ export function executeSkill(
         updatedTarget.debuffs = [];
         targetEffects.push("cleansed all debuffs");
       }
-      if (
-        (mech.type === "buff" || mech.type === "stance") &&
-        (!mech.targetSelf ||
-          updatedTarget.instanceId === updatedSource.instanceId)
-      ) {
+      if ((mech.type === "buff" || mech.type === "stance") && !mech.targetSelf) {
         updatedTarget.buffs.push({
           type: mech.type,
           stat: mech.stat,
@@ -499,6 +514,23 @@ export function executeSkill(
     } else {
       log(
         `[Action] ${updatedSource.name} used ${action.skill.skillName} on ${updatedTarget.name}${targetEffects.length > 0 ? ` causing ${targetEffects.join(", ")}` : "."}`,
+      );
+    }
+  });
+
+  // Self-targeted buffs apply to the source regardless of who the skill
+  // targets (e.g. Draw Fire taunts enemies while buffing Yalina herself)
+  skillMechanics.forEach((mech) => {
+    if ((mech.type === "buff" || mech.type === "stance") && mech.targetSelf) {
+      updatedSource.buffs.push({
+        type: mech.type,
+        stat: mech.stat,
+        valuePercent: mech.valuePercent || mech.value,
+        buffDuration: mech.duration,
+      });
+      log(
+        `[Action] ${updatedSource.name} gained ${mech.type} to ${mech.stat || "stat"} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim() +
+          ".",
       );
     }
   });

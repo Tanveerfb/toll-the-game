@@ -18,7 +18,7 @@ Solo dev + AI tooling. Ordered so every phase ends with something runnable. Mech
 - [x] Fix #2: Duke's Flowing Ruin consume — skills + ultimate gain/consume, all targets debuffed (2026-07-06)
 - [x] Resolve #3: enemy side takes 3 actions per turn, random living enemy each, no fixed pattern (2026-07-06)
 - [x] Vitest added; 18 tests across rank scaling, Flowing Ruin, and AI selection
-- [ ] Fix #12: Duke's "Weaken" does nothing — **[Tanveer]** ATK-down values + damage-dealing rule for `debuff`-type skills
+- [x] Fix #12: Weaken deals damage + ATK-down [15/25/40]%; damageRanked > 0 always deals damage; Draw Fire taunts all; targetSelf buffs fixed (2026-07-06)
 - [ ] Fix #4: stub or build `/login` + `/profile` (or hide buttons until auth phase)
 - [ ] Replace `require()` with static imports (#5)
 - [ ] Unit tests for `damage.ts` (pure function — cheap win)

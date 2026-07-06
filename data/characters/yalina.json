@@ -17,6 +17,9 @@
       "damageRanked": [0, 0, 0],
       "mechanics": [
         {
+          "type": "aoe"
+        },
+        {
           "type": "taunt",
           "durationRanked": [1, 1, 2]
         },
