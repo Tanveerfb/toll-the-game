@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, firebaseEnabled } from "@/lib/firebase";
 import { 
   onAuthStateChanged, 
   signInWithPopup, 
@@ -34,16 +34,19 @@ export const useAuth = () => {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Without Firebase config there is nothing to wait for — start resolved.
+  const [loading, setLoading] = useState(firebaseEnabled);
   const { setPlayerState, resetPlayerState } = usePlayerStore();
 
   useEffect(() => {
+    if (!auth || !db) return;
+    const firestore = db;
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      
+
       if (currentUser) {
         try {
-          const docRef = doc(db, "users", currentUser.uid);
+          const docRef = doc(firestore, "users", currentUser.uid);
           const docSnap = await getDoc(docRef);
           
           if (docSnap.exists()) {
@@ -77,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [setPlayerState, resetPlayerState]);
 
   const saveToCloud = async (state: Partial<PlayerState>) => {
-    if (!user) return;
+    if (!user || !db) return;
     try {
       const docRef = doc(db, "users", user.uid);
       const { roster, inventory, pity } = { ...usePlayerStore.getState(), ...state };
@@ -87,20 +90,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const requireAuth = () => {
+    if (!auth) throw new Error("Firebase auth is not configured (missing NEXT_PUBLIC_FIREBASE_* env vars).");
+    return auth;
+  };
+
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    await signInWithPopup(requireAuth(), provider);
   };
 
   const loginWithEmail = async (e: string, p: string) => {
-    await signInWithEmailAndPassword(auth, e, p);
+    await signInWithEmailAndPassword(requireAuth(), e, p);
   };
 
   const signupWithEmail = async (e: string, p: string) => {
-    await createUserWithEmailAndPassword(auth, e, p);
+    await createUserWithEmailAndPassword(requireAuth(), e, p);
   };
 
   const logout = async () => {
+    if (!auth) return;
     await signOut(auth);
   };
 

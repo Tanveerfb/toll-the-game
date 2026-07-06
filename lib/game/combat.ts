@@ -176,7 +176,7 @@ export function executeSkill(
       const tauntedBy = updatedSource.debuffs.find(
         (d) => d.type === "taunt" && d.sourceId,
       );
-      if (tauntedBy) {
+      if (tauntedBy?.sourceId) {
         const tauntTarget = getUpdatedChar(tauntedBy.sourceId);
         if (tauntTarget && tauntTarget.currentHP > 0) {
           actualTarget = tauntTarget;

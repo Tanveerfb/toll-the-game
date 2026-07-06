@@ -121,7 +121,6 @@ interface BattleState {
   reorderDeckCard: (draggedCardId: string, targetCardId: string) => void;
   mergeDeckCard: (cardId: string) => void;
   removeDeadCharacterCards: (instanceId: string) => void;
-  clearActionQueue: () => void;
   setActionQueue: (queue: ActionCard[]) => void;
 }
 

@@ -21,7 +21,7 @@ export default function KeyworkHighlighter({
   glossary,
   keywordClassName,
 }: KeyworkHighlighterProps): React.JSX.Element {
-  const dictionary = glossary ?? mechanicGlossary;
+  const dictionary: Record<string, string> = glossary ?? mechanicGlossary;
   const keywords = React.useMemo(
     () => Object.keys(dictionary).sort((a, b) => b.length - a.length),
     [dictionary],

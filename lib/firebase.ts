@@ -1,6 +1,6 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,7 +11,14 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+// Auth is optional: without NEXT_PUBLIC_FIREBASE_* env vars the game still
+// runs (guest mode), and initializeApp would otherwise crash prerendering.
+export const firebaseEnabled = Boolean(firebaseConfig.apiKey);
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+let app: FirebaseApp | null = null;
+if (firebaseEnabled) {
+  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+}
+
+export const auth: Auth | null = app ? getAuth(app) : null;
+export const db: Firestore | null = app ? getFirestore(app) : null;
