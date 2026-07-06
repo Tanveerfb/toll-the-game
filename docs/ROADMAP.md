@@ -14,12 +14,14 @@ Solo dev + AI tooling. Ordered so every phase ends with something runnable. Mech
 
 ## Phase 1 — Correctness (engine trustworthy)
 
-- [ ] Fix STATUS.md #1: pass card rank into `executeSkill` so `valueRanked`/`stacksRanked`/`durationRanked` scale with rank
-- [ ] Fix #2: implement Duke's 3-stack Flowing Ruin consume (spec already written in `duke.json` description) — **[Tanveer]** confirms numbers
-- [ ] Resolve #3: enemy turn acts with full team or confirmed single action — **[Tanveer]** design call
+- [x] Fix STATUS.md #1: card rank drives damage, `*Ranked` mechanic values, and `aoeRanked` (2026-07-06)
+- [x] Fix #2: Duke's Flowing Ruin consume — skills + ultimate gain/consume, all targets debuffed (2026-07-06)
+- [x] Resolve #3: enemy side takes 3 actions per turn, random living enemy each, no fixed pattern (2026-07-06)
+- [x] Vitest added; 18 tests across rank scaling, Flowing Ruin, and AI selection
+- [ ] Fix #12: Duke's "Weaken" does nothing — **[Tanveer]** ATK-down values + damage-dealing rule for `debuff`-type skills
 - [ ] Fix #4: stub or build `/login` + `/profile` (or hide buttons until auth phase)
 - [ ] Replace `require()` with static imports (#5)
-- [ ] Unit tests for `damage.ts` and `executeSkill` (pure functions — cheap wins); add `vitest`
+- [ ] Unit tests for `damage.ts` (pure function — cheap win)
 - [ ] Verify stun/duration tick semantics (#9) with a test
 
 ## Phase 2 — Game Shell (playable product, not tech demo)

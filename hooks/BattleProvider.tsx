@@ -7,7 +7,7 @@ import { useMechanicContext } from "./MechanicProvider";
 import { useGameStore } from "@/store/gameStore";
 import { TurnActions } from "@/types/action";
 import { executeSkill } from "@/lib/game/combat";
-import { getAIMoves } from "@/lib/game/ai";
+import { ENEMY_ACTIONS_PER_TURN, getAIMove } from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
 
 interface BattleContextType {
@@ -294,32 +294,39 @@ export default function BattleProvider({
   function resolveEnemyTurnWrapper() {
     if (battlePhase !== "EnemyAction") return;
 
-    const enemyActions = getAIMoves(enemyTeam, playerTeam);
-    const firstAction = enemyActions[0];
-    if (!firstAction) return;
-
     let currentTeams = { playerTeam, enemyTeam };
 
-    // Execute only the first AI action for step‑by‑step resolution
-    currentTeams = executeSkill(firstAction, currentTeams, addToBattleLog, 0);
-    const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
-    deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
+    // Enemy side takes ENEMY_ACTIONS_PER_TURN actions — any living enemy,
+    // any order. Each decision is made from the post-previous-action state.
+    for (let i = 0; i < ENEMY_ACTIONS_PER_TURN; i++) {
+      const action = getAIMove(currentTeams.enemyTeam, currentTeams.playerTeam);
+      if (!action) break;
 
-    currentTeams.enemyTeam = currentTeams.enemyTeam.map((char) =>
-      char.instanceId === firstAction.sourceInstanceId
-        ? {
-            ...char,
-            ultGauge:
-              firstAction.skill.type === "ultimate"
-                ? 0
-                : Math.min(5, char.ultGauge + 1),
-          }
-        : char,
-    );
+      currentTeams = executeSkill(action, currentTeams, addToBattleLog, i);
+
+      const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
+      deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
+
+      currentTeams.enemyTeam = currentTeams.enemyTeam.map((char) =>
+        char.instanceId === action.sourceInstanceId
+          ? {
+              ...char,
+              ultGauge:
+                action.skill.type === "ultimate"
+                  ? 0
+                  : Math.min(5, char.ultGauge + 1),
+            }
+          : char,
+      );
+
+      const allPlayersDead = currentTeams.playerTeam.every(
+        (p) => p.currentHP <= 0,
+      );
+      if (allPlayersDead) break;
+    }
 
     updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
     setEnemyTurns((prev) => prev + 1);
-    // Advance phase after the single action
     advancePhase();
   }
 

@@ -49,13 +49,18 @@
         "type": "buff",
         "name": "Flowing Ruin Stack",
         "triggerText": "After each skill used by this character",
-        "description": "Gains 1 Flowing Ruin stack (max 3)."
+        "description": "Gains 1 Flowing Ruin stack (max 3).",
+        "maxStacks": 3
       },
       {
         "type": "conditionalBuff",
         "name": "Flowing Ruin Empowerment",
         "triggerText": "When there are 3 stacks of Flowing Ruin",
-        "description": "At 3 stacks, the next skill consumes all stacks, deals 50% more damage, and lowers target ATK by 20% for 2 turns."
+        "description": "At 3 stacks, the next skill consumes all stacks, deals 50% more damage, and lowers target ATK by 20% for 2 turns.",
+        "conditionStacks": 3,
+        "damageBonusPercent": 50,
+        "atkDownPercent": 20,
+        "atkDownDuration": 2
       }
     ]
   }

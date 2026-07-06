@@ -65,6 +65,10 @@ export interface Mechanic {
   uncancellable?: boolean;
   conditionStacks?: number;
   maxTriggers?: number;
+  maxStacks?: number;
+  damageBonusPercent?: number;
+  atkDownPercent?: number;
+  atkDownDuration?: number;
   
   // Runtime calculated fields
   capturedDamage?: number; 

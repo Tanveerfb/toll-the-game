@@ -17,10 +17,11 @@ Snapshot of where the codebase actually is, from a full code survey. Repo was "d
 
 | # | Issue | Where | Severity |
 |---|---|---|---|
-| 1 | Mechanic values don't scale with card rank — `normalizeMechanic(m, 0)` always uses rank index 0; only `damageRanked` gets rank substitution (in `BattleProvider`) | `lib/game/combat.ts:146-150` | High — rank system half-wired |
-| 2 | Duke's passive incomplete — Flowing Ruin stacks accumulate (`afterSkill`) but the 3-stack consume/empower/ATK-debuff effect is never applied | `lib/game/combat.ts:496-500` | High |
-| 3 | Enemy turn resolves only the FIRST AI action, then advances phase — with 4 enemies, 3 never act | `hooks/BattleProvider.tsx:303-333` | High (unless intentional 1-action-per-round design — Tanveer to confirm) |
+| 1 | ~~Mechanic values don't scale with card rank~~ **FIXED 2026-07-06** — `Action.rank` now drives damage multiplier, `*Ranked` mechanic values, and `aoeRanked` activation (tests in `tests/combat.rank.test.ts`) | `lib/game/combat.ts` | Done |
+| 2 | ~~Duke's Flowing Ruin passive incomplete~~ **FIXED 2026-07-06** — 3-stack consume implemented per Tanveer's ruling: skills AND ultimate gain stacks (max 3) and can consume; +50% damage and 20% ATK-down (2 turns) hit every target of the empowered action; consumed-then-gained leaves 1 stack (tests in `tests/flowingRuin.test.ts`) | `lib/game/combat.ts` | Done |
+| 3 | ~~Enemy turn resolves only one action~~ **FIXED 2026-07-06** — per Tanveer's ruling: enemy side takes 3 actions per turn, any living enemy in any order (same enemy may act repeatedly), each decision made from post-previous-action state | `hooks/BattleProvider.tsx`, `lib/game/ai.ts` | Done |
 | 4 | Menu links to `/login` and `/profile` — routes don't exist, 404 | `app/page.tsx:17` | Medium |
+| 12 | Duke's Skill 2 "Weaken" (type `debuff`) deals NO damage and applies NO debuff — engine only deals damage for `attack`/`ultimate` types, and the skill JSON has no `mechanics` array. Needs Tanveer: ATK-down values per rank + whether `debuff`-type skills with damageRanked > 0 should also deal damage (Yalina's Draw Fire suggests yes, hers is deliberately `[0,0,0]`) | `data/characters/duke.json`, `lib/game/combat.ts:155` | High — kit decision pending |
 | 5 | `require()` for character JSON inside client component — brittle under Turbopack/App Router | `hooks/BattleProvider.tsx:335` | Medium |
 | 6 | Ultimates have no rank (always full value) while skills rank up — consistent with `UltimateCard` type, but worth confirming intended | `types/ultimateCard.ts` | Low (design question) |
 | 7 | `Character.passive: any` and pervasive `as any` casts around mechanics — type safety hole across the engine | `types/character.ts:17` | Medium (refactor) |

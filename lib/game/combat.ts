@@ -258,6 +258,26 @@ export function executeSkill(
     }
   }
 
+  // -- FLOWING RUIN CONSUME (Duke) — at conditionStacks, this action consumes
+  // all stacks for bonus damage and applies an ATK debuff to every target hit
+  let flowingRuinMech: Mechanic | undefined;
+  if (updatedSource.passive?.trigger === "afterSkill" && isAttack) {
+    const mech = updatedSource.passive.mechanics?.find(
+      (m: any) => m.type === "conditionalBuff" && m.conditionStacks,
+    );
+    const stacks =
+      (updatedSource.passiveState.flowingRuinStacks as number) || 0;
+    if (mech && stacks >= mech.conditionStacks) {
+      flowingRuinMech = mech;
+      updatedSource.passiveState.flowingRuinStacks = 0;
+      const bonus = mech.damageBonusPercent ?? 50;
+      baseDamage *= 1 + bonus / 100;
+      log(
+        `${updatedSource.name}'s ${updatedSource.passive.name} empowers this attack (+${bonus}% damage)!`,
+      );
+    }
+  }
+
   // -- CONSUME IGNITE (Tao)
   const consumeIgniteMech = skillMechanics.find(
     (m) => m.type === "consumeIgnite",
@@ -421,6 +441,18 @@ export function executeSkill(
         }
       });
 
+      if (flowingRuinMech) {
+        updatedTarget.debuffs.push({
+          type: "debuff",
+          stat: "atk",
+          valuePercent: flowingRuinMech.atkDownPercent ?? 20,
+          debuffDuration: flowingRuinMech.atkDownDuration ?? 2,
+        });
+        targetEffects.push(
+          `lowered atk by ${flowingRuinMech.atkDownPercent ?? 20}%${formatTurns(flowingRuinMech.atkDownDuration ?? 2)}`,
+        );
+      }
+
       if (updatedTarget.currentHP === 0) {
         targetEffects.push("defeated");
       }
@@ -496,11 +528,20 @@ export function executeSkill(
     }
   }
 
-  // Duke empowerment
+  // Flowing Ruin stack gain — every action (skills and ultimate) grants one
   if (updatedSource.passive && updatedSource.passive.trigger === "afterSkill") {
+    const stackMech = updatedSource.passive.mechanics?.find(
+      (m: any) => m.type === "buff" && m.maxStacks,
+    );
+    const maxStacks = stackMech?.maxStacks ?? 3;
     const currentStacks =
       (updatedSource.passiveState.flowingRuinStacks as number) || 0;
-    updatedSource.passiveState.flowingRuinStacks = currentStacks + 1;
+    if (currentStacks < maxStacks) {
+      updatedSource.passiveState.flowingRuinStacks = currentStacks + 1;
+      log(
+        `${updatedSource.name} gains a ${updatedSource.passive.name} stack (${currentStacks + 1}/${maxStacks}).`,
+      );
+    }
   }
 
   return updatedTeams;
