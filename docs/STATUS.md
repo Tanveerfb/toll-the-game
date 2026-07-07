@@ -8,7 +8,9 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 - **Rank system** — card rank drives damage multiplier, `*Ranked` mechanic values, and `aoeRanked` activation; flat mechanic values stay flat; ultimates rank-immune.
 - **Deck (7DS GC rules)** — hand never resets; pure-random one-at-a-time refill with auto-merge on adjacent identical cards (+1 ult gauge per merge); ult guaranteed only if gauge was full BEFORE the refill; deck locked outside `PlayerAction`; empty-hand auto-pass.
 - **Sub units** — battle format 4v4 (all field) or 3v3 (4th member auto-sub); sub passive active from bench, no cards, untargetable; promoted at new-turn start after a teammate dies; lone subs auto-convert to field.
-- **Character kits** — 9 JSON kits incl. Duke's full Flowing Ruin (3-stack consume, +50% dmg, ATK-down all targets, skills+ult both build/consume) and Weaken (damage + ranked ATK-down); debuff-type skills deal their damageRanked damage.
+- **Character kits** — 10 JSON kits incl. Duke's full Flowing Ruin (3-stack consume, +50% dmg, ATK-down all targets, skills+ult both build/consume) and Seras (Shock DoT, CRITICAL ult, Charged evade passive, Powerful Opponent synergy); debuff-type skills deal their damageRanked damage.
+- **Type advantage** — Dark<>Light mutual, Red>Green>Blue>Red; +20%/−10%/0; CRITICAL ignores it.
+- **Evade system** — base 0% for everyone; Charged stacks grant +5% each; evaded attacks deal nothing but still feed Charged.
 - **UI (shadcn/ui + Tailwind 4)** — main menu, team select (format toggle, 1–4 units, art slots), battle arena (compact unit cards, sub badges, victory/defeat overlay with rematch), deck dock with hover previews and rank-aware descriptions, archive tile grid + Dokkan-style detail pages, login/profile (Firebase optional → guest mode).
 - **Character art** — full roster AI-generated (ComfyUI + Animagine XL 4.0, Dokkan × 7DSGC style); pipeline in `docs/ART_PIPELINE.md`.
 - **Tests** — 50 across combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow.

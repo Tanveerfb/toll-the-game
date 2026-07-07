@@ -79,7 +79,8 @@ function makeEnemy(instanceId: string): BattleCharacter {
   return {
     id: instanceId,
     name: instanceId,
-    color: "red",
+    // same color as Duke = type-neutral, keeps damage numbers round
+    color: "blue",
     atk: 50,
     def: 0,
     hp: 1000,

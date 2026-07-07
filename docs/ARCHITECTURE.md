@@ -84,20 +84,42 @@ Teams are deep-copied per action — `executeSkill` is pure with respect to its 
 ## Damage Formula (`lib/game/damage.ts`)
 
 ```
-effectiveDefense = target.def × (1 − pierce%/100)
+effectiveDefense = target.def × (1 − pierce%/100) × (1 − criticalIgnore%/100)
 base             = max(1, baseDamage − effectiveDefense)
 extra            = base × 0.10 × igniteStacks          (always, if target ignited)
                  + base × 0.20 × target.ultGauge        (if skill has detonate)
                  + base × 2.0                           (if skill has weakpoint AND target has any debuff)
-final            = base + extra
+subtotal         = base + extra
+final            = subtotal × typeModifier              (normal attacks)
+                 = subtotal × (1 + criticalBonus%/100)  (critical attacks — type ignored)
 ```
+
+### Type advantage (`lib/game/typeAdvantage.ts`)
+
+Dark > Light > Dark (mutual advantage, never disadvantage); Red > Green > Blue > Red.
+Advantage ×1.2, disadvantage ×0.9, neutral/same/cross-group ×1.0. Applies to every
+attack via `executeSkill`; `critical` mechanics skip it in both directions.
+
+### Evade (`lib/game/evade.ts`)
+
+Rolled per target before damage, only for attacks from the opposing team. Base evade
+is **0% for every unit**; sources add to it (Charged stacks ×5%, future `stat: "evade"`
+buffs). An evaded attack deals no damage and applies none of its effects, but still
+counts as "receiving an attack" for Charged-style passives. `executeSkill` takes an
+injectable `rng` (last param) so tests are deterministic.
+
+### Shock
+
+`{ type: "shock", damagePercent, duration }` on an attack pushes an independent
+`damageOverTime` debuff per application (named "Shock"), valued at `damagePercent`
+of that hit's dealt damage. Cleansable like any debuff; ticks via `tick.ts`.
 
 ## Passives
 
 Two delivery mechanisms:
 
-1. **Phase-queue passives** (`lib/game/passive.ts` + `MechanicProvider`): triggers that map to a battle phase — currently battle-start `synergy` (tag/color-conditional team stat buffs, e.g. KHALSA, FEMALE) and `aura` (e.g. team HP if no dead allies). Registered per character at battle setup, processed when the phase runs.
-2. **Inline combat passives** (hard-coded checks in `combat.ts` keyed on `passive.trigger`): `beforeSkill`, `onFirstAction`, `onAllySkill`, `onLethalDamage`, `onDamageDealt`, `afterSkill`.
+1. **Phase-queue passives** (`lib/game/passive.ts` + `MechanicProvider`): triggers that map to a battle phase — currently battle-start `synergy` (tag/color-conditional team stat buffs, e.g. KHALSA, Powerful Opponent) and `aura` (e.g. team HP if no dead allies). Registered per character at battle setup, processed when the phase runs. A passive whose main trigger is combat-time still gets its `synergy`/`aura` mechanics registered at `OnBattleStart` (fallback in `registerCharacterPassives`). Synergy scales per tag carrier by default (Batra); `flatBonus: true` applies the flat percent instead (Seras).
+2. **Inline combat passives** (hard-coded checks in `combat.ts` keyed on `passive.trigger`): `beforeSkill`, `onFirstAction`, `onAllySkill`, `onLethalDamage`, `onDamageDealt`, `afterSkill`, `onAttackReceived` (Charged stacks: +ATK/DEF applied to current stats on gain, evade via `evade.ts`).
 
 `passiveState: Record<string, unknown>` on each `BattleCharacter` carries per-battle counters (momentum stacks, lethal-survival used, etc.).
 
@@ -109,7 +131,7 @@ Per living enemy, priority order: heal/cleanse if an ally ≤50% HP or debuffed 
 
 Each character: `id, name, color, atk, def, hp, tags?, skills[2], ultimate?, passive?`. Skills carry `damageRanked [R1, R2, R3]` and a `mechanics[]` array typed by `MechanicType` (24 types — see `types/mechanic.ts`). Rank-scalable mechanic fields use `valueRanked` / `stacksRanked` / `durationRanked`.
 
-Roster (9): Duke, Lyra, Master Tao (story cast) + Mustafa, Siddiq, Batra, Gabrist, Sara, Yalina (exam-arc side cast; kit specs in `_dev/new_chars_DONE.md`).
+Roster (10): Duke, Lyra, Master Tao (story cast) + Mustafa, Siddiq, Batra, Gabrist, Sara, Yalina (exam-arc side cast; kit specs in `_dev/new_chars_DONE.md`) + Seras (villain, first `newchars.md`-template kit). New kits arrive via the template at the top of `newchars.md` and are removed from it once implemented.
 
 ## Supporting Pieces
 

@@ -1,9 +1,34 @@
 import { BattleCharacter } from "@/types/character";
 import { Action } from "@/types/action";
 import { calculateDamage } from "./damage";
+import { getEvadeChance } from "./evade";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
 import { Mechanic } from "@/types/mechanic";
+
+// Charged-style passive (Seras): the unit gains a stack whenever it receives
+// or evades an attack; each stack adds ATK/DEF now and evade chance via
+// getEvadeChance.
+function gainChargedStack(char: BattleCharacter, log: (e: string) => void) {
+  if (char.passive?.trigger !== "onAttackReceived") return;
+  const mech = char.passive.mechanics?.find(
+    (m: any) => m.type === "chargedStacks",
+  );
+  if (!mech) return;
+  const maxStacks = mech.maxStacks ?? 5;
+  const current = (char.passiveState.chargedStacks as number) || 0;
+  if (current >= maxStacks) return;
+  char.passiveState.chargedStacks = current + 1;
+  char.currentAttack += Math.floor(
+    char.atk * ((mech.atkPerStackPercent ?? 5) / 100),
+  );
+  char.currentDefense += Math.floor(
+    char.def * ((mech.defPerStackPercent ?? 5) / 100),
+  );
+  log(
+    `${char.name} gains a Charged stack (${current + 1}/${maxStacks})!`,
+  );
+}
 
 // Returns the damage percent (e.g. 205 for 205%). Callers multiply the stat
 // first, then divide by 100 — dividing first introduces float error
@@ -42,6 +67,8 @@ export function executeSkill(
   teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
   log: (entry: string) => void,
   actionIndex: number = 0,
+  // Injectable randomness so evade rolls are deterministic in tests
+  rng: () => number = Math.random,
 ): { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] } {
   const allCharacters = [...teams.playerTeam, ...teams.enemyTeam];
   const source = allCharacters.find(
@@ -332,6 +359,20 @@ export function executeSkill(
   targets.forEach((updatedTarget) => {
     if (updatedTarget.currentHP <= 0) return;
 
+    // -- EVADE ROLL — an evaded attack deals no damage and applies none of
+    // its hostile effects; evading still counts as "receiving an attack"
+    // for Charged-style passives
+    if (isAttack && updatedTarget.team !== updatedSource.team) {
+      const evadeChance = getEvadeChance(updatedTarget);
+      if (evadeChance > 0 && rng() * 100 < evadeChance) {
+        log(
+          `[Action] ${updatedTarget.name} evaded ${updatedSource.name}'s ${action.skill.skillName}!`,
+        );
+        gainChargedStack(updatedTarget, log);
+        return;
+      }
+    }
+
     const targetEffects: string[] = [];
     let dealtDamage = 0;
     let healedAmount = 0;
@@ -341,6 +382,7 @@ export function executeSkill(
         baseDamage,
         skillMechanics,
         target: updatedTarget,
+        attackerColor: updatedSource.color,
       });
 
       const finalDamage = Math.floor(damage);
@@ -380,6 +422,11 @@ export function executeSkill(
       } else {
         updatedTarget.currentHP = Math.max(0, newHp);
       }
+
+      // Receiving an attack (and surviving it) grants a Charged stack
+      if (updatedTarget.currentHP > 0) {
+        gainChargedStack(updatedTarget, log);
+      }
     } else if (action.skill.type === "heal") {
       const healAmount = Math.floor(baseDamage);
       healedAmount = healAmount;
@@ -393,6 +440,24 @@ export function executeSkill(
     if (isOffensive) {
       // Apply skill mechanics (Debuffs)
       skillMechanics.forEach((mech) => {
+        if (mech.type === "shock") {
+          // Independent DoT per application, valued off THIS hit's damage
+          // (e.g. 100 dealt -> 30 per turn for 4 turns). Removable debuff.
+          const shockDmg = Math.floor(
+            dealtDamage * ((mech.damagePercent || 30) / 100),
+          );
+          if (shockDmg > 0) {
+            updatedTarget.debuffs.push({
+              type: "damageOverTime",
+              name: "Shock",
+              value: shockDmg,
+              debuffDuration: mech.duration || 4,
+            });
+            targetEffects.push(
+              `applied Shock (${shockDmg}/turn)${formatTurns(mech.duration || 4)}`,
+            );
+          }
+        }
         if (mech.type === "decay") {
           const decayDmg = Math.floor(
             dealtDamage * ((mech.damagePercent || 10) / 100),

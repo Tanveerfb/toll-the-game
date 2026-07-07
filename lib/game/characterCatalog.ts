@@ -5,6 +5,7 @@ import lyra from "@/data/characters/lyra.json";
 import masterTao from "@/data/characters/master_tao.json";
 import mustafa from "@/data/characters/mustafa.json";
 import sara from "@/data/characters/sara.json";
+import seras from "@/data/characters/seras.json";
 import siddiq from "@/data/characters/siddiq.json";
 import yalina from "@/data/characters/yalina.json";
 
@@ -53,6 +54,7 @@ const characters = [
   masterTao,
   mustafa,
   sara,
+  seras,
   siddiq,
   yalina,
 ] as CharacterData[];

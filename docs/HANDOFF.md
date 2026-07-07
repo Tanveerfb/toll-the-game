@@ -32,7 +32,12 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 7. Subs: passive active from bench; no cards; untargetable; enter the field **only at the start of a new turn** after a teammate died.
 8. Deck: loads field units' cards at battle start; **never resets**; refills one random card at a time with **auto-merge on adjacent identical cards** (+1 gauge per merge) until full; no deck interaction outside the player's turn; a gauge filled mid-refill guarantees the ult **next turn**, never the same refill.
 9. UI stack is **shadcn/ui + Tailwind 4** (HeroUI removed — never reintroduce).
-10. Art is **fully AI-generated** (no salvaged assets), style = Dokkan card art × 7DSGC renders. Tanveer supplies locked designs or blueprints for characters that lack one; generate from those via `docs/ART_PIPELINE.md`. Three current arts (Mustafa, Siddiq, Yalina) are AI-invented placeholders awaiting his designs.
+10. Art is **fully AI-generated** (no salvaged assets), style = Dokkan card art × 7DSGC renders. Tanveer supplies locked designs or blueprints for characters that lack one; generate from those via `docs/ART_PIPELINE.md`. Mustafa + Siddiq arts are AI-invented placeholders awaiting his designs.
+11. **Type advantage** (2026-07-07): Dark > Light > Dark (mutual); Red > Green > Blue > Red. Advantage +20% damage, disadvantage −10%, neutral ±0. Applies to all attacks; CRITICAL attacks ignore it both ways.
+12. **Evade** (= dodge, same thing): base 0% for **everyone**; only passives/buffs add it. An evaded attack deals no damage and applies no effects. More evade characters may come.
+13. **Shock**: each application is an independent, cleansable DoT worth 30% of the damage dealt by the applying hit, 4 turns.
+14. **Synergy scope**: tag-based synergies (e.g. Seras's [Powerful Opponent] +10% all stats) apply to *every* teammate carrying the tag; Seras's is flat (not per-carrier scaling like Batra's KHALSA).
+15. New character kits arrive via the template at the top of `newchars.md`; once implemented, the kit is removed from that file (`data/characters/*.json` becomes the source of truth).
 
 ## Working Style He Expects
 
@@ -45,7 +50,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
 ```bash
 npm run dev     # localhost:3000 (kill stale servers on 3000 first)
-npm run test    # vitest, tests/ — 50 tests, keep green
+npm run test    # vitest, tests/ — keep green
 npm run lint    # eslint 9
 npm run build   # must pass before commit
 ```

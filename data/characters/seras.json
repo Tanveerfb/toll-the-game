@@ -1,0 +1,79 @@
+{
+  "id": "seras",
+  "name": "Seras",
+  "color": "light",
+  "tags": ["Female", "Powerful Opponent"],
+  "lore": "Hybrid of fairy and human, wielding lightning. A villain who fights as a Powerful Opponent.",
+  "atk": 135,
+  "def": 65,
+  "hp": 1450,
+  "skills": [
+    {
+      "skillName": "Static Lance",
+      "description": "Does ATK-scaled damage to one enemy and applies Shock for 4 turns. Shock deals DoT equal to 30% of the damage dealt; each application stacks independently and can be cleansed.",
+      "characterId": "seras",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [150, 180, 250],
+      "mechanics": [
+        {
+          "type": "shock",
+          "damagePercent": 30,
+          "duration": 4
+        }
+      ]
+    },
+    {
+      "skillName": "Chain Tempest",
+      "description": "Does Weakpoint ATK-scaled damage to all enemies. Weakpoint deals 3x damage against debuffed enemies.",
+      "characterId": "seras",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [130, 150, 200],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "weakpoint"
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Heavenfall Bolt",
+    "description": "CRITICAL: does 500% ATK damage to one enemy. Critical ignores 50% of the target's defense, ignores type advantage/disadvantage, and increases damage by 50%.",
+    "characterId": "seras",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 500,
+    "mechanics": [
+      {
+        "type": "critical",
+        "ignoreDefensePercent": 50,
+        "damageBonusPercent": 50
+      }
+    ]
+  },
+  "passive": {
+    "name": "Charged",
+    "description": "Gains a Charged stack every time Seras receives or evades an attack (max 5). Each stack raises ATK, DEF and evade chance by 5%. Teammates tagged [Powerful Opponent] gain +10% to all stats in battle.",
+    "trigger": "onAttackReceived",
+    "mechanics": [
+      {
+        "type": "chargedStacks",
+        "maxStacks": 5,
+        "atkPerStackPercent": 5,
+        "defPerStackPercent": 5,
+        "evadePerStackPercent": 5
+      },
+      {
+        "type": "synergy",
+        "conditionTags": ["Powerful Opponent"],
+        "stat": "all",
+        "valuePercent": 10,
+        "flatBonus": true
+      }
+    ]
+  }
+}

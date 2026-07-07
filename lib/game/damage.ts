@@ -1,14 +1,20 @@
 import { BattleCharacter } from "../../types/character";
 import { Mechanic } from "../../types/mechanic";
+import type { Color } from "../../types/color";
+import { getTypeModifier } from "./typeAdvantage";
 
 export interface DamageCalculationParams {
   baseDamage: number; // Pre-calculated (e.g. source.currentAttack * skill multiplier)
   skillMechanics: Mechanic[]; // Mechanics provided by the active skill/attack
   target: BattleCharacter;
+  attackerColor?: Color; // Enables the type-advantage modifier when provided
 }
 
-export function calculateDamage({ baseDamage, skillMechanics, target }: DamageCalculationParams) {
+export function calculateDamage({ baseDamage, skillMechanics, target, attackerColor }: DamageCalculationParams) {
   let effectiveDefense = target.currentDefense;
+
+  // CRITICAL (Seras ult): ignores X% defense, ignores type matchups, +X% damage
+  const criticalMechanic = skillMechanics.find(m => m.type === "critical");
 
   // Pierce Calculation (ignores X% of enemy defense)
   const pierceMechanic = skillMechanics.find(m => m.type === "pierce");
@@ -16,13 +22,17 @@ export function calculateDamage({ baseDamage, skillMechanics, target }: DamageCa
     const piercePercent = pierceMechanic.value || 0;
     effectiveDefense = effectiveDefense * (1 - piercePercent / 100);
   }
+  if (criticalMechanic) {
+    const ignorePercent = criticalMechanic.ignoreDefensePercent ?? 50;
+    effectiveDefense = effectiveDefense * (1 - ignorePercent / 100);
+  }
 
   // 1. Calculate Effective Base Damage (shielded by target Defense)
   const effectiveBaseDamage = Math.max(1, baseDamage - effectiveDefense);
 
   let extraDamage = 0;
 
-  // Ignite Calculation (+10% extra damage per ignite stack) 
+  // Ignite Calculation (+10% extra damage per ignite stack)
   // Automatically applies to ALL attacks against ignited enemies
   const igniteDebuff = target.debuffs.find(d => d.type === "ignite");
   if (igniteDebuff) {
@@ -47,7 +57,15 @@ export function calculateDamage({ baseDamage, skillMechanics, target }: DamageCa
   }
 
   // Final sum resolves after all extra damages are dynamically stacked off the effective base
-  const damageTaken = effectiveBaseDamage + extraDamage;
+  let damageTaken = effectiveBaseDamage + extraDamage;
+
+  // Type advantage: +20% advantage / -10% disadvantage / neutral 0.
+  // CRITICAL attacks ignore the matchup entirely (both directions).
+  if (!criticalMechanic) {
+    damageTaken *= getTypeModifier(attackerColor, target.color);
+  } else {
+    damageTaken *= 1 + (criticalMechanic.damageBonusPercent ?? 50) / 100;
+  }
 
   return damageTaken;
 }

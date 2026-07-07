@@ -35,7 +35,11 @@ export type MechanicType =
   | "lowerUltGauge"
   | "spite"
   | "concentrate"
-  | "amplify";
+  | "amplify"
+  | "shock"
+  | "critical"
+  | "synergy"
+  | "chargedStacks";
 
 export interface Mechanic {
   type: MechanicType;
@@ -69,7 +73,14 @@ export interface Mechanic {
   damageBonusPercent?: number;
   atkDownPercent?: number;
   atkDownDuration?: number;
-  
+  name?: string;
+  ignoreDefensePercent?: number; // critical: % of DEF ignored
+  evadePerStackPercent?: number; // chargedStacks: evade chance per stack
+  atkPerStackPercent?: number; // chargedStacks: ATK per stack
+  defPerStackPercent?: number; // chargedStacks: DEF per stack
+  conditionTags?: string[]; // synergy: tags that receive the bonus
+  flatBonus?: boolean; // synergy: true = flat %, not scaled per tag carrier
+
   // Runtime calculated fields
   capturedDamage?: number; 
 }

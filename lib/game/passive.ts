@@ -19,7 +19,15 @@ function mapTriggerToPhase(trigger: string): BattlePhase | null {
 export function registerCharacterPassives(character: BattleCharacter, registerToQueue: RegisterFn) {
   if (!character.passive) return;
 
-  const phase = mapTriggerToPhase(character.passive.trigger);
+  // Synergy/aura mechanics are battle-start effects even when the passive's
+  // main trigger is combat-time (e.g. Batra's beforeSkill HP consume, Seras's
+  // onAttackReceived Charged) — without this fallback they never register.
+  const hasBattleStartMechanics = character.passive.mechanics?.some(
+    (m: any) => m.type === "synergy" || m.type === "aura",
+  );
+  const phase =
+    mapTriggerToPhase(character.passive.trigger) ??
+    (hasBattleStartMechanics ? "OnBattleStart" : null);
 
   if (phase) {
     registerToQueue({
@@ -43,7 +51,10 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
               if (mech.conditionTags && ally.tags?.some(t => mech.conditionTags.includes(t))) applies = true;
               
               if (applies) {
-                const multiplier = mech.conditionTags ? count : 1;
+                // flatBonus: fixed % per carrier (Seras). Default: scales
+                // with the number of tag carriers on the team (Batra).
+                const multiplier =
+                  mech.conditionTags && !mech.flatBonus ? count : 1;
                 const totalPercent = mech.valuePercent * multiplier;
                 
                 const buff = {
