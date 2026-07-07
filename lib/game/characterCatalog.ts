@@ -1,8 +1,11 @@
+import ban from "@/data/characters/ban.json";
 import batra from "@/data/characters/batra.json";
+import diane from "@/data/characters/diane.json";
 import duke from "@/data/characters/duke.json";
 import gabrist from "@/data/characters/gabrist.json";
 import lyra from "@/data/characters/lyra.json";
 import masterTao from "@/data/characters/master_tao.json";
+import meliodas from "@/data/characters/meliodas.json";
 import mustafa from "@/data/characters/mustafa.json";
 import sara from "@/data/characters/sara.json";
 import seras from "@/data/characters/seras.json";
@@ -47,11 +50,14 @@ export interface CharacterData {
 }
 
 const characters = [
+  ban,
   batra,
+  diane,
   duke,
   gabrist,
   lyra,
   masterTao,
+  meliodas,
   mustafa,
   sara,
   seras,

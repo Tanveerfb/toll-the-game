@@ -60,6 +60,9 @@ Locked design sheets live in `docs/design/characters/*.md` — they are the sour
 | siddiq | 777005 | AI-invented | awaiting Tanveer's design sheet |
 | batra | 777006 | AI-invented (lore hints: Sikh, turban, KHALSA, lion) | Tanveer may still lock a sheet |
 | gabrist | 777019 | hair/face locked (ref photo) + AI ink-artist theme | jet-black shoulder-length waves, full beard, calligraphy brush + ink strokes |
+| meliodas | 777020 | canon (7DS collab) | danbooru character tag `meliodas \(nanatsu no taizai\)` — model knows the design natively |
+| ban | 777021 | canon (7DS collab) | pale spiky hair, cheek scar, nunchaku, green soul wisps |
+| diane | 777022 | canon (7DS collab) | twin pigtails, orange leotard, giant gauntlet, rock shards |
 
 Full prompts recoverable from ComfyUI history / git log.
 

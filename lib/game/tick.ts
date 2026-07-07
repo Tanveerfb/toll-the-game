@@ -37,6 +37,8 @@ export function tickTeamEffects(
     });
     if (totalDot > 0) {
       char.currentHP = Math.max(0, char.currentHP - totalDot);
+      // DoT counts as taking damage (matters for Extort Life-style passives)
+      char.passiveState.tookDamageThisRound = true;
       log(`[System] ${char.name} takes ${totalDot} damage from DoT.`);
     }
 

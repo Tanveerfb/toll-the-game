@@ -1,0 +1,78 @@
+{
+  "id": "diane",
+  "name": "Diane",
+  "color": "blue",
+  "tags": ["Collab", "Giant", "Seven Deadly Sins"],
+  "lore": "Serpent Sin of Envy. A giant commanding the earth itself. Collab unit.",
+  "atk": 110,
+  "def": 90,
+  "hp": 1250,
+  "skills": [
+    {
+      "skillName": "Ground Gladius",
+      "description": "Does Rupture ATK-scaled damage to all enemies. Rupture deals 2x damage against buffed enemies.",
+      "characterId": "diane",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [200, 250, 350],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "rupture"
+        }
+      ]
+    },
+    {
+      "skillName": "Rush Rock",
+      "description": "Does ATK-scaled damage to one enemy. At rank 2 or higher, seals the target's attack skills (ultimates and damaging debuff skills are unaffected).",
+      "characterId": "diane",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [250, 310, 420],
+      "mechanics": [
+        {
+          "type": "seal",
+          "sealType": "attack",
+          "durationRanked": [0, 1, 2]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Mother Earth Catastrophe",
+    "description": "Does 600% Rupture ATK-scaled damage to all enemies. Rupture deals 2x damage against buffed enemies.",
+    "characterId": "diane",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 600,
+    "mechanics": [
+      {
+        "type": "aoe"
+      },
+      {
+        "type": "rupture"
+      }
+    ]
+  },
+  "passive": {
+    "name": "Giant's Will",
+    "description": "ATK rises by 15% of base for each turn passed (max 5 stacks, uncancellable). Teammates tagged [Giant] gain +5% all stats in battle.",
+    "trigger": "onNewTurn",
+    "mechanics": [
+      {
+        "type": "turnRamp",
+        "valuePercent": 15,
+        "maxStacks": 5
+      },
+      {
+        "type": "synergy",
+        "conditionTags": ["Giant"],
+        "stat": "all",
+        "valuePercent": 5,
+        "flatBonus": true
+      }
+    ]
+  }
+}

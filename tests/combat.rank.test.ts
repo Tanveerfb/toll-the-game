@@ -112,8 +112,9 @@ describe("card rank in executeSkill", () => {
       { playerTeam: [attacker], enemyTeam: [target] },
       noopLog,
     );
-    // 1 buff × flat 10% amplify → 110 damage regardless of rank
-    expect(result.enemyTeam[0].currentHP).toBe(1000 - 110);
+    // ATK buff is real now: 100 × 1.05 = 105 effective; 1 buff × flat 10%
+    // amplify → 115.5 → 115, regardless of rank
+    expect(result.enemyTeam[0].currentHP).toBe(1000 - 115);
   });
 
   it("activates aoeRanked only at ranks flagged true", () => {

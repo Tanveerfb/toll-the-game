@@ -48,8 +48,15 @@ export function getAIMove(
   let chosenSkill: SkillCard | UltimateCard | null = null;
   let actualTarget = target;
 
+  // Attack Seal blocks attack-type skills (ultimates and damaging
+  // debuff-type skills stay legal)
+  const attackSealed = enemy.debuffs.some(
+    (d) => d.type === "seal" && d.sealType === "attack",
+  );
   const getSkillOfType = (type: string) =>
-    enemy.skills.find((s) => s.type === type);
+    enemy.skills.find(
+      (s) => s.type === type && !(attackSealed && s.type === "attack"),
+    );
 
   // Priority 1: Heal / Cleanse
   const needsHeal = enemyTeam.some(
@@ -105,8 +112,14 @@ export function getAIMove(
     }
   }
 
-  // Fallback
-  if (!chosenSkill) chosenSkill = enemy.skills[0];
+  // Fallback — first skill that isn't sealed, else skill 0 (executeSkill
+  // fizzles sealed casts safely)
+  if (!chosenSkill) {
+    chosenSkill =
+      enemy.skills.find(
+        (s) => !(attackSealed && s.type === "attack"),
+      ) || enemy.skills[0];
+  }
 
   return {
     sourceInstanceId: enemy.instanceId,

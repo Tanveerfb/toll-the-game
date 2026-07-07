@@ -6,6 +6,7 @@ import type { Mechanic } from "@/types/mechanic";
 function makeTarget(overrides: Partial<BattleCharacter> = {}): BattleCharacter {
   return {
     currentDefense: 50,
+    buffs: [],
     debuffs: [],
     ultGauge: 0,
     ...overrides,

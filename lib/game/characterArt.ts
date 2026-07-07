@@ -8,6 +8,9 @@
 const ART_VERSION = 4;
 
 const CHARACTERS_WITH_ART = new Set([
+  "ban",
+  "diane",
+  "meliodas",
   "duke",
   "lyra",
   "master_tao",

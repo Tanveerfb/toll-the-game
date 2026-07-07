@@ -39,7 +39,15 @@ export type MechanicType =
   | "shock"
   | "critical"
   | "synergy"
-  | "chargedStacks";
+  | "chargedStacks"
+  | "lifesteal"
+  | "extort"
+  | "rupture"
+  | "seal"
+  | "counterStance"
+  | "deathblow"
+  | "maxHpShred"
+  | "turnRamp";
 
 export interface Mechanic {
   type: MechanicType;
@@ -80,6 +88,13 @@ export interface Mechanic {
   defPerStackPercent?: number; // chargedStacks: DEF per stack
   conditionTags?: string[]; // synergy: tags that receive the bonus
   flatBonus?: boolean; // synergy: true = flat %, not scaled per tag carrier
+  preApplied?: boolean; // display badge for a gain already baked into current stats
+  counterDamagePercent?: number; // counterStance: % of ATK dealt back to attackers
+  counterDamagePercentRanked?: [number, number, number];
+  sealType?: string; // seal: which skill type is sealed (e.g. "attack")
+  atkStolen?: number; // extort runtime: flat ATK points taken
+  defStolen?: number; // extort runtime: flat DEF points taken
+  flatValue?: number; // buff/debuff: flat stat points instead of a percent
 
   // Runtime calculated fields
   capturedDamage?: number; 

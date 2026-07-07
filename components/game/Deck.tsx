@@ -370,6 +370,11 @@ export default function Deck() {
           );
           const isUlt = card.skill.type === "ultimate";
           const isStunned = char?.debuffs.some((d) => d.type === "stun");
+          const isSealed =
+            card.skill.type === "attack" &&
+            char?.debuffs.some(
+              (d) => d.type === "seal" && d.sealType === "attack",
+            );
           const requiresEnemyTarget = [
             "attack",
             "debuff",
@@ -410,7 +415,7 @@ export default function Deck() {
                 ${colorTokenClass}
                 ${isUlt ? "ring-2 ring-amber-400/80 shadow-[0_0_14px_rgba(251,191,36,0.55)]" : ""}
                 ${isPlayerActionPhase ? "cursor-pointer hover:-translate-y-2 hover:shadow-lg" : "cursor-not-allowed opacity-50"}
-                ${isStunned ? "grayscale brightness-50" : ""}
+                ${isStunned || isSealed ? "grayscale brightness-50" : ""}
                 ${missingTarget ? "ring-1 ring-red-400/70" : ""}
                 ${queueFull ? "opacity-70" : ""}
                 ${draggedCardId === card.id ? "opacity-40" : ""}

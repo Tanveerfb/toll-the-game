@@ -1,0 +1,81 @@
+{
+  "id": "ban",
+  "name": "Ban",
+  "color": "green",
+  "tags": ["Collab", "Human", "Seven Deadly Sins"],
+  "lore": "Fox Sin of Greed. An undying human who takes what he wants — including your stats. Collab unit.",
+  "atk": 40,
+  "def": 20,
+  "hp": 1505,
+  "skills": [
+    {
+      "skillName": "Drain",
+      "description": "Does ATK-scaled damage to all enemies with Lifesteal, recovering HP equal to 30% of the damage dealt.",
+      "characterId": "ban",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [200, 250, 400],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "lifesteal",
+          "valuePercent": 30
+        }
+      ]
+    },
+    {
+      "skillName": "Snatch",
+      "description": "Extorts ATK and DEF from all enemies. Extort lowers each enemy's ATK and DEF and adds the stolen points to Ban's own stats for the duration. Recasting refreshes — it never stacks.",
+      "characterId": "ban",
+      "type": "debuff",
+      "statMultiplier": "atk",
+      "damageRanked": [0, 0, 0],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "extort",
+          "valueRanked": [20, 30, 50],
+          "durationRanked": [1, 1, 2]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Fox Hunt",
+    "description": "Does 600% ATK damage to one enemy and Extorts 50% of their ATK and DEF for 2 turns.",
+    "characterId": "ban",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 600,
+    "mechanics": [
+      {
+        "type": "extort",
+        "value": 50,
+        "duration": 2
+      }
+    ]
+  },
+  "passive": {
+    "name": "Extort Life",
+    "description": "Whenever Ban ends a full round without taking damage, all enemies' max HP falls by 8% (max 5 stacks, uncancellable). Taking any damage — including DoT and counters — fully restores enemy max HP and resets the stacks. Teammates tagged [Human] gain +5% all stats in battle.",
+    "trigger": "onRoundEnd",
+    "mechanics": [
+      {
+        "type": "maxHpShred",
+        "valuePercent": 8,
+        "maxStacks": 5
+      },
+      {
+        "type": "synergy",
+        "conditionTags": ["Human"],
+        "stat": "all",
+        "valuePercent": 5,
+        "flatBonus": true
+      }
+    ]
+  }
+}

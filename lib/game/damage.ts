@@ -2,6 +2,7 @@ import { BattleCharacter } from "../../types/character";
 import { Mechanic } from "../../types/mechanic";
 import type { Color } from "../../types/color";
 import { getTypeModifier } from "./typeAdvantage";
+import { getEffectiveDefense } from "./stats";
 
 export interface DamageCalculationParams {
   baseDamage: number; // Pre-calculated (e.g. source.currentAttack * skill multiplier)
@@ -11,7 +12,8 @@ export interface DamageCalculationParams {
 }
 
 export function calculateDamage({ baseDamage, skillMechanics, target, attackerColor }: DamageCalculationParams) {
-  let effectiveDefense = target.currentDefense;
+  // Effective defense honors DEF buffs/debuffs (stances, Weaken, Extort)
+  let effectiveDefense = getEffectiveDefense(target);
 
   // CRITICAL (Seras ult): ignores X% defense, ignores type matchups, +X% damage
   const criticalMechanic = skillMechanics.find(m => m.type === "critical");
@@ -53,6 +55,15 @@ export function calculateDamage({ baseDamage, skillMechanics, target, attackerCo
     const hasDebuff = target.debuffs.length > 0;
     if (hasDebuff) {
       extraDamage += effectiveBaseDamage * 2.0; // Base(1x) + Extra(2x) = 3x total
+    }
+  }
+
+  // Rupture Calculation (x2 total damage if target has >= 1 buff)
+  // Only applies if the attacker's skill possesses "rupture"
+  if (skillMechanics.find(m => m.type === "rupture")) {
+    const hasBuff = target.buffs.length > 0;
+    if (hasBuff) {
+      extraDamage += effectiveBaseDamage * 1.0; // Base(1x) + Extra(1x) = 2x total
     }
   }
 

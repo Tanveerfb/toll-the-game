@@ -1,0 +1,80 @@
+{
+  "id": "meliodas",
+  "name": "Meliodas",
+  "color": "red",
+  "tags": ["Collab", "Demon", "Seven Deadly Sins"],
+  "lore": "Captain of the Seven Deadly Sins. A demon wielding dark purgatory energy. Collab unit.",
+  "atk": 180,
+  "def": 80,
+  "hp": 1150,
+  "skills": [
+    {
+      "skillName": "Triple Strike",
+      "description": "Does Weakpoint ATK-scaled damage to one enemy. Weakpoint deals 3x damage against debuffed enemies.",
+      "characterId": "meliodas",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [150, 210, 300],
+      "mechanics": [
+        {
+          "type": "weakpoint"
+        }
+      ]
+    },
+    {
+      "skillName": "Full Counter",
+      "description": "Takes a counter stance. While it lasts, every attack received is countered with ATK-scaled damage to the attacker. Meliodas still takes the incoming damage, and a lethal hit is not countered.",
+      "characterId": "meliodas",
+      "type": "stance",
+      "statMultiplier": "atk",
+      "damageRanked": [0, 0, 0],
+      "mechanics": [
+        {
+          "type": "stance",
+          "targetSelf": true,
+          "name": "Full Counter",
+          "counterDamagePercentRanked": [250, 300, 400],
+          "durationRanked": [1, 1, 2]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Evil Spirit",
+    "description": "Cancels the target's stances and buffs, then does 700% ATK damage to one enemy and stuns for 2 turns.",
+    "characterId": "meliodas",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 700,
+    "mechanics": [
+      {
+        "type": "cancelBuffs"
+      },
+      {
+        "type": "stun",
+        "duration": 2
+      }
+    ]
+  },
+  "passive": {
+    "name": "Deathblow",
+    "description": "Damage and crit chance rise by 2% for every 3% of max HP lost. A crit applies Critical: ignores 50% defense and type matchups, +50% damage. Inactive from the sub position. Teammates tagged [Demon] gain +5% all stats in battle.",
+    "trigger": "always",
+    "worksFromSub": false,
+    "mechanics": [
+      {
+        "type": "deathblow",
+        "hpStepPercent": 3,
+        "damagePerStepPercent": 2,
+        "critPerStepPercent": 2
+      },
+      {
+        "type": "synergy",
+        "conditionTags": ["Demon"],
+        "stat": "all",
+        "valuePercent": 5,
+        "flatBonus": true
+      }
+    ]
+  }
+}

@@ -2,9 +2,27 @@ import { BattleCharacter } from "@/types/character";
 import { Action } from "@/types/action";
 import { calculateDamage } from "./damage";
 import { getEvadeChance } from "./evade";
+import { getEffectiveAttack, getEffectiveDefense } from "./stats";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
 import { Mechanic } from "@/types/mechanic";
+
+// Crit chance in percent — base 0 for everyone (same rule as evade). A crit
+// applies the full CRITICAL package (50% DEF ignore, type-immune, +50% dmg).
+// Currently sourced from Deathblow-style passives: +critPerStepPercent per
+// hpStepPercent of max HP lost.
+export function getCritChance(char: BattleCharacter): number {
+  let chance = 0;
+  const deathblow = char.passive?.mechanics?.find(
+    (m: any) => m.type === "deathblow",
+  );
+  if (deathblow && !char.isSub) {
+    const lostPercent = (1 - char.currentHP / char.hp) * 100;
+    const steps = Math.floor(lostPercent / (deathblow.hpStepPercent ?? 3));
+    chance += steps * (deathblow.critPerStepPercent ?? 2);
+  }
+  return chance;
+}
 
 // Charged-style passive (Seras): the unit gains a stack whenever it receives
 // or evades an attack; each stack adds ATK/DEF now and evade chance via
@@ -49,6 +67,8 @@ function normalizeMechanic(mechanic: any, rankIndex: number = 0): Mechanic {
   if (norm.valueRanked) norm.value = norm.valueRanked[rankIndex];
   if (norm.stacksRanked) norm.stacks = norm.stacksRanked[rankIndex];
   if (norm.durationRanked) norm.duration = norm.durationRanked[rankIndex];
+  if (mechanic.counterDamagePercentRanked)
+    norm.counterDamagePercent = mechanic.counterDamagePercentRanked[rankIndex];
   return norm;
 }
 
@@ -106,6 +126,21 @@ export function executeSkill(
   // -- STUN CHECK
   if (updatedSource.debuffs.some((d) => d.type === "stun")) {
     log(`[Action] ${updatedSource.name} could not act due to stun.`);
+    return updatedTeams;
+  }
+
+  // -- SEAL CHECK (defense in depth — the UI/AI should not offer sealed
+  // skills, but never let one through). Attack Seal blocks attack-type
+  // skills only; ultimates and damaging debuff skills stay usable.
+  if (
+    action.skill.type === "attack" &&
+    updatedSource.debuffs.some(
+      (d) => d.type === "seal" && d.sealType === "attack",
+    )
+  ) {
+    log(
+      `[Action] ${updatedSource.name}'s attack skills are sealed — ${action.skill.skillName} fizzles.`,
+    );
     return updatedTeams;
   }
 
@@ -236,11 +271,11 @@ export function executeSkill(
     targets = [actualTarget];
   }
 
-  // Pre-calculate base stat
+  // Pre-calculate base stat — effective values honor stat buffs/debuffs
   const statMulti = action.skill.statMultiplier;
   let baseStat = 0;
-  if (statMulti === "atk") baseStat = updatedSource.currentAttack;
-  else if (statMulti === "def") baseStat = updatedSource.currentDefense;
+  if (statMulti === "atk") baseStat = getEffectiveAttack(updatedSource);
+  else if (statMulti === "def") baseStat = getEffectiveDefense(updatedSource);
   else if (statMulti === "hp") baseStat = updatedSource.hp; // Max HP scaling per user comment
 
   const skillDamagePercent = getSkillDamagePercent(action.skill, rankIndex);
@@ -269,6 +304,22 @@ export function executeSkill(
     log(
       `${updatedSource.name} concentrates attack (+${Math.floor((multiplier - 1) * 100)}% dmg)!`,
     );
+  }
+
+  // Deathblow (Meliodas): +damagePerStepPercent per hpStepPercent of max HP
+  // lost. Inactive from the sub position by design.
+  const deathblowMech = updatedSource.passive?.mechanics?.find(
+    (m: any) => m.type === "deathblow",
+  );
+  if (deathblowMech && !updatedSource.isSub && isAttack) {
+    const lostPercent =
+      (1 - updatedSource.currentHP / updatedSource.hp) * 100;
+    const steps = Math.floor(lostPercent / (deathblowMech.hpStepPercent ?? 3));
+    const bonus = steps * (deathblowMech.damagePerStepPercent ?? 2);
+    if (bonus > 0) {
+      baseDamage *= 1 + bonus / 100;
+      log(`${updatedSource.name}'s Deathblow adds +${bonus}% damage!`);
+    }
   }
 
   const amplifyMech = skillMechanics.find((m) => m.type === "amplify");
@@ -355,6 +406,9 @@ export function executeSkill(
 
   // Process attack/ultimate/heal/buff
   let totalDamageDealt = 0;
+  // Extort accumulates flat steals across all targets, applied once after
+  // the loop (refresh semantics — never stacks with a previous Extort)
+  const extortGains = { atk: 0, def: 0, duration: undefined as number | undefined };
 
   targets.forEach((updatedTarget) => {
     if (updatedTarget.currentHP <= 0) return;
@@ -377,10 +431,38 @@ export function executeSkill(
     let dealtDamage = 0;
     let healedAmount = 0;
 
+    // Cancels resolve BEFORE damage (Evil Spirit order: strip stances and
+    // buffs, then hit) — canceling a counter stance prevents the counter.
+    // Uncancellable effects (synergy badges, ramp stacks) survive.
+    if (isOffensive) {
+      if (skillMechanics.some((m) => m.type === "cancelBuffs")) {
+        updatedTarget.buffs = updatedTarget.buffs.filter(
+          (b) => b.uncancellable,
+        );
+        targetEffects.push("cancelled buffs");
+      } else if (skillMechanics.some((m) => m.type === "cancelStances")) {
+        updatedTarget.buffs = updatedTarget.buffs.filter(
+          (b) => b.type !== "stance" || b.uncancellable,
+        );
+        targetEffects.push("cancelled stances");
+      }
+    }
+
     if (isAttack) {
+      // Crit roll — a proc applies the full CRITICAL package. Skills that
+      // are already CRITICAL don't double-dip.
+      const critChance = getCritChance(updatedSource);
+      const didCrit =
+        critChance > 0 &&
+        !skillMechanics.some((m) => m.type === "critical") &&
+        rng() * 100 < critChance;
+      if (didCrit) targetEffects.push("a CRITICAL hit");
+
       const damage = calculateDamage({
         baseDamage,
-        skillMechanics,
+        skillMechanics: didCrit
+          ? [...skillMechanics, { type: "critical" } as Mechanic]
+          : skillMechanics,
         target: updatedTarget,
         attackerColor: updatedSource.color,
       });
@@ -426,6 +508,11 @@ export function executeSkill(
       // Receiving an attack (and surviving it) grants a Charged stack
       if (updatedTarget.currentHP > 0) {
         gainChargedStack(updatedTarget, log);
+      }
+
+      // Damage-taken bookkeeping (Extort Life reset is resolved at round end)
+      if (dealtDamage > 0) {
+        updatedTarget.passiveState.tookDamageThisRound = true;
       }
     } else if (action.skill.type === "heal") {
       const healAmount = Math.floor(baseDamage);
@@ -501,15 +588,64 @@ export function executeSkill(
           });
           targetEffects.push(`applied stun${formatTurns(mech.duration || 1)}`);
         }
-        if (mech.type === "cancelBuffs") {
-          updatedTarget.buffs = [];
-          targetEffects.push("cancelled buffs");
-        }
-        if (mech.type === "cancelStances") {
-          updatedTarget.buffs = updatedTarget.buffs.filter(
-            (b) => b.type !== "stance",
+        // (cancelBuffs / cancelStances resolve pre-damage, above)
+        if (mech.type === "lifesteal" && dealtDamage > 0) {
+          const heal = Math.floor(
+            dealtDamage * ((mech.valuePercent || mech.value || 30) / 100),
           );
-          targetEffects.push("cancelled stances");
+          if (heal > 0) {
+            updatedSource.currentHP = Math.min(
+              updatedSource.hp,
+              updatedSource.currentHP + heal,
+            );
+            targetEffects.push(`drained ${heal} HP`);
+          }
+        }
+        if (mech.type === "seal") {
+          // Rank-conditional via durationRanked (e.g. [0,1,2]): 0 = inactive
+          const sealDuration = mech.duration || 0;
+          if (sealDuration > 0) {
+            updatedTarget.debuffs.push({
+              type: "seal",
+              sealType: mech.sealType || "attack",
+              debuffDuration: sealDuration,
+              name: "Attack Seal",
+            });
+            targetEffects.push(
+              `sealed ${mech.sealType || "attack"} skills${formatTurns(sealDuration)}`,
+            );
+          }
+        }
+        if (mech.type === "extort") {
+          const pct = mech.value || mech.valuePercent || 0;
+          if (pct > 0) {
+            const atkStolen = Math.floor(
+              (getEffectiveAttack(updatedTarget) * pct) / 100,
+            );
+            const defStolen = Math.floor(
+              (getEffectiveDefense(updatedTarget) * pct) / 100,
+            );
+            updatedTarget.debuffs.push({
+              type: "debuff",
+              stat: "atk",
+              valuePercent: pct,
+              debuffDuration: mech.duration,
+              name: "Extort",
+            });
+            updatedTarget.debuffs.push({
+              type: "debuff",
+              stat: "def",
+              valuePercent: pct,
+              debuffDuration: mech.duration,
+              name: "Extort",
+            });
+            extortGains.atk += atkStolen;
+            extortGains.def += defStolen;
+            extortGains.duration = mech.duration;
+            targetEffects.push(
+              `extorted ${pct}% ATK/DEF${formatTurns(mech.duration)}`,
+            );
+          }
         }
         if (mech.type === "debuff") {
           updatedTarget.debuffs.push({
@@ -582,7 +718,70 @@ export function executeSkill(
         `[Action] ${updatedSource.name} used ${action.skill.skillName} on ${updatedTarget.name}${targetEffects.length > 0 ? ` causing ${targetEffects.join(", ")}` : "."}`,
       );
     }
+
+    // -- COUNTER STANCE (Full Counter): a surviving target with an active
+    // counter stance strikes the attacker back. A unit killed by the hit
+    // does not counter (Tanveer ruling). Counters don't chain.
+    if (
+      isAttack &&
+      updatedTarget.currentHP > 0 &&
+      updatedTarget.team !== updatedSource.team
+    ) {
+      const counterStance = updatedTarget.buffs.find(
+        (b) => b.type === "stance" && b.counterDamagePercent,
+      );
+      if (counterStance && updatedSource.currentHP > 0) {
+        const counterBase =
+          (getEffectiveAttack(updatedTarget) *
+            (counterStance.counterDamagePercent || 0)) /
+          100;
+        const counterDamage = Math.floor(
+          calculateDamage({
+            baseDamage: counterBase,
+            skillMechanics: [],
+            target: updatedSource,
+            attackerColor: updatedTarget.color,
+          }),
+        );
+        updatedSource.currentHP = Math.max(
+          0,
+          updatedSource.currentHP - counterDamage,
+        );
+        if (counterDamage > 0) {
+          updatedSource.passiveState.tookDamageThisRound = true;
+        }
+        log(
+          `[Action] ${updatedTarget.name} counters ${updatedSource.name} for ${counterDamage} damage${updatedSource.currentHP === 0 ? " — defeated" : ""}!`,
+        );
+      }
+    }
   });
+
+  // -- EXTORT SELF-GAIN (Ban): per-stat mapping, flat points stolen from
+  // every target hit; recasting refreshes (removes the previous Extort
+  // buffs) rather than stacking
+  if (extortGains.atk > 0 || extortGains.def > 0) {
+    updatedSource.buffs = updatedSource.buffs.filter(
+      (b) => b.name !== "Extort",
+    );
+    updatedSource.buffs.push({
+      type: "buff",
+      stat: "atk",
+      flatValue: extortGains.atk,
+      buffDuration: extortGains.duration,
+      name: "Extort",
+    });
+    updatedSource.buffs.push({
+      type: "buff",
+      stat: "def",
+      flatValue: extortGains.def,
+      buffDuration: extortGains.duration,
+      name: "Extort",
+    });
+    log(
+      `[Action] ${updatedSource.name} extorts +${extortGains.atk} ATK and +${extortGains.def} DEF${formatTurns(extortGains.duration)}!`,
+    );
+  }
 
   // Self-targeted buffs apply to the source regardless of who the skill
   // targets (e.g. Draw Fire taunts enemies while buffing Yalina herself)
@@ -591,7 +790,13 @@ export function executeSkill(
       updatedSource.buffs.push({
         type: mech.type,
         stat: mech.stat,
-        valuePercent: mech.valuePercent || mech.value,
+        // Counter stances carry no stat percent — their number is the
+        // counter damage, not a stat modifier
+        valuePercent: mech.counterDamagePercent
+          ? undefined
+          : mech.valuePercent || mech.value,
+        counterDamagePercent: mech.counterDamagePercent,
+        name: mech.name,
         buffDuration: mech.duration,
       });
       log(
