@@ -1,8 +1,8 @@
-{
+﻿{
   "id": "seras",
   "name": "Seras",
   "color": "light",
-  "tags": ["Female", "Powerful Opponent"],
+  "tags": ["Human", "Fairy", "Hybrid", "Female", "Powerful Opponent"],
   "lore": "Hybrid of fairy and human, wielding lightning. A villain who fights as a Powerful Opponent.",
   "atk": 135,
   "def": 65,

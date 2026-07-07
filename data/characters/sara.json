@@ -1,8 +1,8 @@
-{
+﻿{
   "id": "sara",
   "name": "Sara",
   "color": "red",
-  "tags": ["FEMALE"],
+  "tags": ["Human", "Female"],
   "lore": "Ledger exam examinee, girl, animal control theme.",
   "atk": 34,
   "def": 68,
@@ -63,7 +63,7 @@
       },
       {
         "type": "synergy",
-        "conditionTags": ["FEMALE"],
+        "conditionTags": ["Female"],
         "stat": "damageDealt",
         "valuePercent": 5
       }

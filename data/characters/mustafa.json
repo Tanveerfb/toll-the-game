@@ -1,7 +1,8 @@
-{
+﻿{
   "id": "mustafa",
   "name": "Mustafa",
   "color": "green",
+  "tags": ["Human"],
   "lore": "South Asian male, ledger exam participant, likes to drink tea, India-themed attacks.",
   "atk": 65,
   "def": 90,

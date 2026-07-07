@@ -1,7 +1,8 @@
-{
+﻿{
   "id": "gabrist",
   "name": "Gabrist",
   "color": "blue",
+  "tags": ["Human"],
   "lore": "Artist, friend of Batra, ledger exam participant, calm and cool.",
   "atk": 110,
   "def": 70,

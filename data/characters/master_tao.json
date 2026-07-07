@@ -1,7 +1,8 @@
-{
+﻿{
   "id": "master_tao",
   "name": "Master Tao",
   "color": "green",
+  "tags": ["Human"],
   "lore": "An old man in his late 50s and a master of Toll. He is the examiner Duke and Lyra face in phase 1 of the ledger exam. He is an expert in using flame attacks and is feared among other ledgers for his immense power. However, he also has a surprisingly charming side when he is not serious or in battle.",
   "atk": 275,
   "def": 75,

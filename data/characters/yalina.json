@@ -1,8 +1,8 @@
-{
+﻿{
   "id": "yalina",
   "name": "Yalina",
   "color": "green",
-  "tags": ["FEMALE"],
+  "tags": ["Human", "Female"],
   "lore": "Ledger exam examinee, teammate and friend of Sara.",
   "atk": 30,
   "def": 59,

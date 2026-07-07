@@ -1,7 +1,8 @@
-{
+﻿{
   "id": "siddiq",
   "name": "Siddiq",
   "color": "red",
+  "tags": ["Human"],
   "lore": "Friend of Mustafa, ledger exam participant, India-themed attacks, nature powers.",
   "atk": 82,
   "def": 75,

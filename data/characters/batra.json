@@ -1,8 +1,8 @@
-{
+﻿{
   "id": "batra",
   "name": "Batra",
   "color": "blue",
-  "tags": ["KHALSA"],
+  "tags": ["Human", "KHALSA"],
   "lore": "Ledger exam participant, Sikh, turban, lion-themed attacks.",
   "atk": 85,
   "def": 70,
