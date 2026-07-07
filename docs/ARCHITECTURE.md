@@ -131,7 +131,7 @@ Per living enemy, priority order: heal/cleanse if an ally ≤50% HP or debuffed 
 
 Each character: `id, name, color, atk, def, hp, tags?, skills[2], ultimate?, passive?`. Skills carry `damageRanked [R1, R2, R3]` and a `mechanics[]` array typed by `MechanicType` (24 types — see `types/mechanic.ts`). Rank-scalable mechanic fields use `valueRanked` / `stacksRanked` / `durationRanked`.
 
-Roster (10): Duke, Lyra, Master Tao (story cast) + Mustafa, Siddiq, Batra, Gabrist, Sara, Yalina (exam-arc side cast; kit specs in `_dev/new_chars_DONE.md`) + Seras (villain, first `newchars.md`-template kit). New kits arrive via the template at the top of `newchars.md` and are removed from it once implemented.
+Roster (13): Duke, Lyra, Master Tao (story cast) + Mustafa, Siddiq, Batra, Gabrist, Sara, Yalina (exam-arc side cast; kit specs in `_dev/new_chars_DONE.md`) + Seras (villain) + Meliodas, Ban, Diane (7DS collab). New kits arrive via the template at the top of `newchars.md` and are removed from it once implemented. Tags: everyone is [Human] except the collab units; Seras adds [Fairy]/[Hybrid]; synergy tag matching is exact-string ("Female", not "FEMALE").
 
 ## Supporting Pieces
 

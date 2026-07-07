@@ -36,15 +36,20 @@ Solo dev + AI tooling. Ordered so every phase ends with something runnable. Mech
 - [x] Frontend redesign pass (2026-07-06, dokkaninfo.com as reference): archive index → filterable unit-tile grid; archive detail → two-column layout (sticky identity panel + flattened kit sections); battle arena unit cards compacted; team select toolbar layout. Portrait tiles are placeholders for future card art
 - [x] Deck flow per 7DS GC ruling (2026-07-07): hand never resets; pure-random one-at-a-time refill with auto-merge on adjacent identical draws (+1 gauge per merge); fill-to-cap covers a promoted sub after a field wipe; Reset Deck button removed
 - [x] Card art v1 (2026-07-07): fully AI-generated locally (ComfyUI + Animagine XL 4.0, Dokkan × 7DSGC style, per Tanveer's direction) — all 9 characters, wired into archive tiles, character detail, team select slots/roster, deck cards, and arena avatars. Pipeline + prompts documented in `docs/ART_PIPELINE.md`
+- [x] Card art v2/v3 (2026-07-07): Duke/Gabrist/Yalina/Lyra redesigned from Tanveer's direction, ref photos, and concept art (`docs/design/characters/refs/`); image cache-busting via `?v=ART_VERSION` + `images.localPatterns`
 - [ ] Basic sound hooks (optional, cheap with framer-motion already present)
 - [ ] Mobile layout pass
 
 ## Phase 3 — Content & Story Mode
 
+- [x] Kit intake pipeline (2026-07-07): template at top of `newchars.md`; implemented kits move to `data/characters/*.json` and leave the file
+- [x] Seras kit (2026-07-07) + new systems: type advantage chart, evade, Shock, CRITICAL
+- [x] 7DS collab trio Meliodas/Ban/Diane (2026-07-07) + new systems: crit chance, counter stances, Extort, Extort Life max-HP shred, Attack Seal, Giant's Will ramp, Rupture, lifesteal; effective-stats fix (buffs/debuffs now real)
+- [x] Species/synergy tags across the full roster (2026-07-07)
 - [ ] Story mode skeleton: linear stage list (Dokkan-style stages)
 - [ ] Stage = scripted enemy team + dialogue intro/outro
 - [ ] Additional enemy kits — **[Tanveer]** designs kits, code implements
-- [ ] Difficulty/stat tuning — **[Tanveer]**
+- [ ] Difficulty/stat tuning — **[Tanveer]** (Ban's ATK 40 glass stat-thief statline is intentional; roster-wide numbers may shift in playtesting)
 
 ## Phase 4 — Accounts & Ship
 
