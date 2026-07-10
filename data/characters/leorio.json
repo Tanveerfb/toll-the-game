@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Member of the Zodiac",
-      "description": "Raises allies' ATK and DEF by [buff.value]% for [buff.duration] turn(s). Targets one ally at rank 1, all allies at rank 2+.",
+      "description": "[aoeRanked? Targets all allies and increases their : Targets one chosen ally and increases that ally's] ATK and DEF by [buff.value]% for [buff.duration] turn(s).",
       "characterId": "leorio",
       "type": "buff",
       "statMultiplier": "atk",

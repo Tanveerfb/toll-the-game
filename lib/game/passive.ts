@@ -136,7 +136,11 @@ function registerCharacterSynergy(
   const requiredIds: string[] = mech.requiredCharacterIds ?? [];
   const basePercent = mech.valuePercent ?? 10;
   const extraPercent = mech.bothAliveBonusPercent ?? 0;
-  const extraName = `${passiveName}+`;
+  // Distinct badge names — the passive's synergy mechanic already pushes
+  // buffs named after the passive itself, which would trip the
+  // already-applied check here (found live: base bonus never applied).
+  const baseName = `${passiveName} (bond)`;
+  const extraName = `${passiveName} (bond+)`;
 
   const applyPercentToTeam = (
     team: BattleCharacter[],
@@ -202,7 +206,7 @@ function registerCharacterSynergy(
       const boosted = applyPercentToTeam(
         team,
         basePercent,
-        passiveName,
+        baseName,
         log,
         `gains +${basePercent}% all stats from ${source.name}'s ${passiveName}!`,
       );

@@ -66,9 +66,9 @@ function TeamUnitCard({
   return (
     <div data-battle-instance={unit.instanceId} className="relative">
       <Card
-        className={`w-full rounded-none border ${isMarked ? "border-amber-300" : getUnitBorderClass(unit.color)} bg-black/55 ring-0 ${isBenched ? "opacity-60" : ""}`}
+        className={`w-full rounded-none border ${isMarked ? (isEnemy ? "border-amber-300" : "border-emerald-300") : getUnitBorderClass(unit.color)} bg-black/55 ring-0 ${isBenched ? "opacity-60" : ""}`}
         onClick={() => {
-          if (isEnemy && !isDead && !isBenched) {
+          if (!isDead && !isBenched) {
             onMark(unit.instanceId);
           }
         }}
@@ -95,7 +95,7 @@ function TeamUnitCard({
             {isMarked ? (
               <Badge
                 variant="outline"
-                className="rounded-none border-amber-300 bg-amber-300/10 px-1 py-0 font-body text-[9px] uppercase tracking-widest text-amber-200"
+                className={`rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest ${isEnemy ? "border-amber-300 bg-amber-300/10 text-amber-200" : "border-emerald-300 bg-emerald-300/10 text-emerald-200"}`}
               >
                 Target
               </Badge>
@@ -184,9 +184,11 @@ export default function BattleArena(): React.JSX.Element {
     playerTeam,
     enemyTeam,
     selectedEnemyMarker,
+    selectedAllyMarker,
     battleLog,
     interactionNotice,
     setEnemyMarker,
+    setAllyMarker,
     clearInteractionNotice,
     actionQueue,
     resetBattle,
@@ -366,7 +368,7 @@ export default function BattleArena(): React.JSX.Element {
                   Player Team
                 </CardTitle>
                 <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                  Monitor allies, statuses, and ultimate gauges
+                  Select a target for single-ally buffs and heals
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -375,9 +377,9 @@ export default function BattleArena(): React.JSX.Element {
                     key={unit.instanceId}
                     unit={unit}
                     isEnemy={false}
-                    isMarked={false}
-                    queuedHits={0}
-                    onMark={setEnemyMarker}
+                    isMarked={selectedAllyMarker === unit.instanceId}
+                    queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
+                    onMark={setAllyMarker}
                     onViewDetails={setDetailUnit}
                   />
                 ))}

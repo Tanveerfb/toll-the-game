@@ -344,8 +344,35 @@ describe("Leorio", () => {
     teams = await extras[0].action(teams.playerTeam[0], teams, noopLog);
     expect(teams.playerTeam[0].currentAttack).toBe(afterBase.currentAttack);
     expect(
-      teams.playerTeam[0].buffs.some((b) => b.name === "Kind Hearted Friend"),
+      teams.playerTeam[0].buffs.some(
+        (b) => b.name === "Kind Hearted Friend (bond)",
+      ),
     ).toBe(true); // base survives the death
+  });
+
+  it("base bonus survives the Collab synergy badge sharing the passive's name (regression)", async () => {
+    // In-game the passive's own [Collab] synergy runs first and pushes buffs
+    // named "Kind Hearted Friend" — the bond bonus must not mistake that
+    // badge for itself and skip.
+    const leorio = fromData(leorioData, "player");
+    const gon = fromData(gonData, "player");
+    const items: any[] = [];
+    registerCharacterPassives(leorio, (item) => items.push(item));
+    const main = items.find(
+      (i) => i.id === "leorio_passive_Kind Hearted Friend",
+    );
+    const base = items.find((i) => i.mechanicId?.includes("(base)"));
+
+    let teams = {
+      playerTeam: [leorio, gon],
+      enemyTeam: [] as BattleCharacter[],
+    };
+    teams = await main.action(teams.playerTeam[0], teams, noopLog);
+    const afterSynergy = teams.playerTeam[0].currentAttack;
+    teams = await base.action(teams.playerTeam[0], teams, noopLog);
+    expect(teams.playerTeam[0].currentAttack).toBe(
+      afterSynergy + Math.floor(leorioData.atk * 0.1),
+    );
   });
 
   it("Kind Hearted Friend base does NOT apply without Gon or Killua on the team", async () => {

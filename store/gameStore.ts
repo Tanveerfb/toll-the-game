@@ -3,6 +3,24 @@ import { BattleCharacter } from "@/types/character";
 import { BattlePhase } from "@/types/mechanic";
 import { ActionCard } from "@/types/action";
 
+// Ally-friendly skill that hits ONE ally at this card's rank (no aoe, and
+// aoeRanked inactive at the rank) — the player must mark the ally target.
+export function isSingleAllyTarget(card: ActionCard): boolean {
+  if (!["buff", "heal"].includes(card.skill.type)) return false;
+  const mechanics =
+    (card.skill as { mechanics?: Array<Record<string, unknown>> }).mechanics ??
+    [];
+  const rankIndex = (card.rank ?? 1) - 1;
+  const aoeActive = mechanics.some(
+    (m) =>
+      m.type === "aoe" ||
+      (m.type === "aoeRanked" &&
+        Array.isArray(m.ranks) &&
+        m.ranks[rankIndex] === true),
+  );
+  return !aoeActive;
+}
+
 function canCardsAutoMerge(left: ActionCard, right: ActionCard): boolean {
   return (
     left.rank < 3 &&
@@ -94,6 +112,7 @@ interface BattleState {
   deck: ActionCard[];
   actionQueue: ActionCard[];
   selectedEnemyMarker: string | null;
+  selectedAllyMarker: string | null;
   interactionNotice: string | null;
 
   // Actions
@@ -112,6 +131,7 @@ interface BattleState {
 
   // Deck Actions
   setEnemyMarker: (instanceId: string | null) => void;
+  setAllyMarker: (instanceId: string | null) => void;
   setInteractionNotice: (message: string | null) => void;
   clearInteractionNotice: () => void;
   initializeDeck: () => void;
@@ -136,6 +156,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
   deck: [],
   actionQueue: [],
   selectedEnemyMarker: null,
+  selectedAllyMarker: null,
   interactionNotice: null,
 
   setPlayerTeam: (team) => set({ playerTeam: team }),
@@ -169,10 +190,12 @@ export const useGameStore = create<BattleState>((set, get) => ({
       deck: [],
       actionQueue: [],
       selectedEnemyMarker: null,
+      selectedAllyMarker: null,
       interactionNotice: null,
     }),
 
   setEnemyMarker: (instanceId) => set({ selectedEnemyMarker: instanceId }),
+  setAllyMarker: (instanceId) => set({ selectedAllyMarker: instanceId }),
   setInteractionNotice: (message) => set({ interactionNotice: message }),
   clearInteractionNotice: () => set({ interactionNotice: null }),
 
@@ -301,8 +324,14 @@ export const useGameStore = create<BattleState>((set, get) => ({
   },
 
   selectCard: (cardId: string) => {
-    const { deck, actionQueue, enemyTeam, playerTeam, selectedEnemyMarker } =
-      get();
+    const {
+      deck,
+      actionQueue,
+      enemyTeam,
+      playerTeam,
+      selectedEnemyMarker,
+      selectedAllyMarker,
+    } = get();
     if (actionQueue.length >= 3) {
       set({ interactionNotice: "Action queue is full (3/3)." });
       return;
@@ -347,6 +376,22 @@ export const useGameStore = create<BattleState>((set, get) => ({
       }
 
       targetId = selectedEnemyMarker || undefined;
+    } else if (isSingleAllyTarget(card)) {
+      // Single-target ally skills (e.g. Leorio's rank-1 Member of the Zodiac)
+      // require the player to pick the ally — including the caster
+      const aliveAllies = playerTeam.filter((p) => p.currentHP > 0 && !p.isSub);
+      const markedAllyIsAlive =
+        selectedAllyMarker &&
+        aliveAllies.some((p) => p.instanceId === selectedAllyMarker);
+
+      if (!markedAllyIsAlive) {
+        set({
+          interactionNotice: "Select an ally target before queuing this card.",
+        });
+        return;
+      }
+
+      targetId = selectedAllyMarker || undefined;
     } else {
       targetId = char?.instanceId;
     }

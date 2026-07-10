@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { useGameStore } from "@/store/gameStore";
+import { isSingleAllyTarget, useGameStore } from "@/store/gameStore";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,10 @@ import { useBattleContext } from "@/hooks/BattleProvider";
 import type { ActionCard } from "@/types/action";
 import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
 import type { CharacterSkillData } from "@/lib/game/characterCatalog";
-import { buildDescriptionForRank } from "@/lib/game/descriptionTranslator";
+import {
+  buildDescriptionForRank,
+  buildSkillKeywordGlossary,
+} from "@/lib/game/descriptionTranslator";
 import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
 
 function escapeRegex(input: string): string {
@@ -32,9 +35,10 @@ function formatKeywordLabel(keyword: string): string {
 
 function getKeywordDefinitions(
   description: string,
+  glossary: Record<string, string> = mechanicGlossary,
 ): Array<{ keyword: string; meaning: string }> {
   const lowerDescription = description.toLowerCase();
-  const matches = Object.entries(mechanicGlossary)
+  const matches = Object.entries(glossary)
     .map(([keyword, meaning]) => {
       const regex = new RegExp(`\\b${escapeRegex(keyword)}\\b`, "i");
       const isMatched = regex.test(description);
@@ -114,6 +118,7 @@ export default function Deck() {
     deselectCard,
     playerTeam,
     selectedEnemyMarker,
+    selectedAllyMarker,
     battlePhase,
     mergeDeckCard,
     reorderDeckCard,
@@ -204,9 +209,25 @@ export default function Deck() {
     [previewCard],
   );
 
+  // Tiered stat wording ("raises", "greatly lowers") resolves to this card's
+  // actual numbers at its rank
+  const previewGlossary = React.useMemo(
+    () =>
+      previewCard
+        ? {
+            ...mechanicGlossary,
+            ...buildSkillKeywordGlossary(
+              previewCard.skill as CharacterSkillData,
+              previewCard.rank - 1,
+            ),
+          }
+        : mechanicGlossary,
+    [previewCard],
+  );
+
   const previewKeywordDefinitions = React.useMemo(
-    () => getKeywordDefinitions(previewDescription),
-    [previewDescription],
+    () => getKeywordDefinitions(previewDescription, previewGlossary),
+    [previewDescription, previewGlossary],
   );
 
   return (
@@ -235,6 +256,7 @@ export default function Deck() {
                 <KeyworkHighlighter
                   text={previewDescription}
                   className="font-body text-sm text-zinc-200"
+                  glossary={previewGlossary}
                   keywordClassName="inline-flex cursor-help items-center rounded-none border border-white/70 bg-transparent px-1 py-[1px] font-body text-xs uppercase tracking-[0.06em] text-zinc-100"
                 />
               </p>
@@ -381,7 +403,9 @@ export default function Deck() {
             "disable",
             "ultimate",
           ].includes(card.skill.type);
-          const missingTarget = requiresEnemyTarget && !selectedEnemyMarker;
+          const missingTarget =
+            (requiresEnemyTarget && !selectedEnemyMarker) ||
+            (isSingleAllyTarget(card) && !selectedAllyMarker);
           const queueFull = actionQueue.length >= 3;
           const colorTokenClass = getColorTokenClasses(char?.color);
 
