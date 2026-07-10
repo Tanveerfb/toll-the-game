@@ -24,13 +24,71 @@ export const mechanicGlossary = {
   lifesteal: "Recovers HP equal to a percentage of the damage dealt",
   extort: "Lowers enemy ATK/DEF and adds the stolen points to own stats for the duration; never stacks",
   extorts: "Lowers enemy ATK/DEF and adds the stolen points to own stats for the duration; never stacks",
+  seal: "Blocks the listed skill type for the duration; ultimates are unaffected",
   seals: "Blocks the listed skill type for the duration; ultimates are unaffected",
   deathblow: "Damage and crit chance +2% for every 3% of max HP lost",
   crit: "A critical hit: ignores 50% defense and type matchups, +50% damage",
   countered: "A unit in a counter stance strikes back when attacked (unless the hit kills it)",
+  counters: "A unit in a counter stance strikes back when attacked (unless the hit kills it)",
+  stance: "A held battle state; lasts until it expires or is cancelled",
+  stances: "Held battle states; last until they expire or are cancelled",
+  cancels: "Removes the listed effects from the target; uncancellable effects persist",
+  cancel: "Removes the listed effects from the target; uncancellable effects persist",
   lowers: "Reduces the target's stat by 20%",
   "greatly lowers": "Reduces the target's stat by 50%",
   "massively lowers": "Reduces the target's stat by 80%",
 } as const;
 
 export type MechanicKeyword = keyof typeof mechanicGlossary;
+
+/**
+ * Pill color category per keyword (Tanveer's scheme):
+ * offense = red, debuff = purple (incl. attack-applied debuffs),
+ * heal = green (heals + cleanses), stance = yellow, cancel = white.
+ */
+export type KeywordCategory =
+  | "offense"
+  | "debuff"
+  | "heal"
+  | "stance"
+  | "cancel";
+
+export const keywordCategories: Record<MechanicKeyword, KeywordCategory> = {
+  amplify: "offense",
+  combustion: "offense",
+  concentrate: "offense",
+  pierce: "offense",
+  spite: "offense",
+  weakpoint: "offense",
+  detonate: "offense",
+  critical: "offense",
+  crit: "offense",
+  rupture: "offense",
+  lifesteal: "offense",
+  deathblow: "offense",
+  stuns: "debuff",
+  stun: "debuff",
+  ignite: "debuff",
+  decay: "debuff",
+  shock: "debuff",
+  bleed: "debuff",
+  taunt: "debuff",
+  taunts: "debuff",
+  extort: "debuff",
+  extorts: "debuff",
+  seal: "debuff",
+  seals: "debuff",
+  lowers: "debuff",
+  "greatly lowers": "debuff",
+  "massively lowers": "debuff",
+  cleanse: "heal",
+  cleanses: "heal",
+  charged: "stance",
+  evade: "stance",
+  countered: "stance",
+  counters: "stance",
+  stance: "stance",
+  stances: "stance",
+  cancels: "cancel",
+  cancel: "cancel",
+};

@@ -24,6 +24,7 @@ import MechanicProvider from "@/hooks/MechanicProvider";
 import { AuthProvider } from "@/hooks/AuthProvider";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import TopNav from "@/components/ui/TopNav";
 
 export default function RootLayout({
   children,
@@ -39,7 +40,10 @@ export default function RootLayout({
         <TooltipProvider>
           <AuthProvider>
             <MechanicProvider>
-              <BattleProvider>{children}</BattleProvider>
+              <BattleProvider>
+                <TopNav />
+                {children}
+              </BattleProvider>
             </MechanicProvider>
           </AuthProvider>
         </TooltipProvider>

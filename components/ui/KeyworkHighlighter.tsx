@@ -6,7 +6,25 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
+import {
+  keywordCategories,
+  mechanicGlossary,
+  type KeywordCategory,
+  type MechanicKeyword,
+} from "@/lib/game/mechanicGlossary";
+
+// Colored keyword pills (Tanveer's scheme): red = attack-based effects,
+// purple = debuffs, green = heals/cleanses, yellow = stances, white = cancels.
+const CATEGORY_PILL_CLASSES: Record<KeywordCategory, string> = {
+  offense: "bg-red-600/90 text-white",
+  debuff: "bg-purple-600/90 text-white",
+  heal: "bg-emerald-600/90 text-white",
+  stance: "bg-amber-300 text-zinc-950",
+  cancel: "bg-zinc-100 text-zinc-900",
+};
+
+const PILL_BASE =
+  "cursor-help rounded-sm px-1 py-px font-body text-[0.8em] font-bold uppercase tracking-wide whitespace-nowrap align-baseline";
 
 interface KeyworkHighlighterProps {
   text: string;
@@ -53,13 +71,17 @@ export default function KeyworkHighlighter({
           );
         }
 
+        const category = keywordCategories[key as MechanicKeyword];
+
         return (
           <Tooltip key={`${part}-${index}`}>
             <TooltipTrigger asChild>
               <span
                 className={
                   keywordClassName ??
-                  "cursor-help underline decoration-dotted underline-offset-3 text-foreground"
+                  (category
+                    ? `${PILL_BASE} ${CATEGORY_PILL_CLASSES[category]}`
+                    : "cursor-help underline decoration-dotted underline-offset-3 text-foreground")
                 }
               >
                 {part}

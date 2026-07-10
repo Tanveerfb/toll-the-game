@@ -153,6 +153,19 @@ function MechanicsTags({ skill }: { skill: CharacterSkillData }): ReactNode {
   );
 }
 
+// Skill tag chips follow the effect-pill color scheme: red = attack,
+// purple = debuff/disable, green = heal/buff, yellow = stance/ultimate.
+const SKILL_TYPE_CHIP: Record<string, string> = {
+  attack: "bg-red-600 text-white",
+  debuff: "bg-purple-600 text-white",
+  disable: "bg-purple-600 text-white",
+  heal: "bg-emerald-600 text-white",
+  cleanse: "bg-emerald-600 text-white",
+  buff: "bg-emerald-600 text-white",
+  stance: "bg-amber-300 text-zinc-950",
+  ultimate: "bg-amber-300 text-zinc-950",
+};
+
 function SkillBlock({
   skill,
   tag,
@@ -162,13 +175,15 @@ function SkillBlock({
 }): ReactNode {
   const rankedLines =
     skill.type === "ultimate" ? null : buildRankedSkillDescriptions(skill);
+  const chipClass =
+    SKILL_TYPE_CHIP[skill.type] ?? "bg-zinc-700 text-zinc-200";
 
   return (
     <div className="border border-zinc-800 bg-zinc-950/60">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/70 px-3 py-2">
         <div className="flex items-center gap-2">
           <span
-            className={`px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-widest ${tag === "ULT" ? "bg-amber-300 text-zinc-950" : "bg-zinc-700 text-zinc-200"}`}
+            className={`px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-widest ${chipClass}`}
           >
             {tag}
           </span>

@@ -19,6 +19,7 @@ interface PreviewScenario {
   targetIgniteStacks?: number;
   targetUltGauge?: number;
   targetHasDebuff?: boolean;
+  targetHasBuff?: boolean;
   momentumStacks?: number;
   empoweredSkillMultiplierPercent?: number;
   note?: string;
@@ -46,6 +47,9 @@ interface NormalizedMechanic {
   damagePercent?: number;
   duration?: number;
   stacks?: number;
+  counterDamagePercent?: number;
+  ignoreDefensePercent?: number;
+  damageBonusPercent?: number;
 }
 
 const STANDARD_SCENARIO: PreviewScenario = {
@@ -114,6 +118,23 @@ function normalizeMechanic(
         : typeof stacksRanked?.[rankIndex] === "number"
           ? stacksRanked[rankIndex]
           : undefined,
+    counterDamagePercent:
+      typeof mechanic.counterDamagePercent === "number"
+        ? mechanic.counterDamagePercent
+        : Array.isArray(mechanic.counterDamagePercentRanked) &&
+            typeof (mechanic.counterDamagePercentRanked as number[])[
+              rankIndex
+            ] === "number"
+          ? (mechanic.counterDamagePercentRanked as number[])[rankIndex]
+          : undefined,
+    ignoreDefensePercent:
+      typeof mechanic.ignoreDefensePercent === "number"
+        ? mechanic.ignoreDefensePercent
+        : undefined,
+    damageBonusPercent:
+      typeof mechanic.damageBonusPercent === "number"
+        ? mechanic.damageBonusPercent
+        : undefined,
   };
 }
 
@@ -123,6 +144,77 @@ function hasMechanic(skill: CharacterSkillData, type: string): boolean {
       (mechanic) => typeof mechanic.type === "string" && mechanic.type === type,
     ) ?? false
   );
+}
+
+function hasPassiveMechanic(character: CharacterData, type: string): boolean {
+  return (
+    character.passive?.mechanics?.some(
+      (mechanic) => typeof mechanic.type === "string" && mechanic.type === type,
+    ) ?? false
+  );
+}
+
+/**
+ * Mechanic-driven scenarios for kits without a hand-written case —
+ * Weakpoint/Rupture/Detonate get their conditional-target rows and
+ * Deathblow carriers get a low-HP row.
+ */
+function getGenericScenarios(
+  character: CharacterData,
+  skill: CharacterSkillData,
+): PreviewScenario[] {
+  let scenarios: PreviewScenario[] = [STANDARD_SCENARIO];
+
+  if (hasMechanic(skill, "weakpoint")) {
+    scenarios = [
+      { id: "clean", label: "Clean target", targetHasDebuff: false },
+      {
+        id: "debuffed",
+        label: "Debuffed target",
+        targetHasDebuff: true,
+        note: "Weakpoint hits debuffed enemies for 3x.",
+      },
+    ];
+  } else if (hasMechanic(skill, "rupture")) {
+    scenarios = [
+      { id: "unbuffed", label: "Unbuffed target" },
+      {
+        id: "buffed",
+        label: "Buffed target",
+        targetHasBuff: true,
+        note: "Rupture hits buffed enemies for 2x.",
+      },
+    ];
+  } else if (hasMechanic(skill, "detonate")) {
+    scenarios = [
+      { id: "gauge-0", label: "0 ult gauge", targetUltGauge: 0 },
+      {
+        id: "gauge-5",
+        label: "5 ult gauge",
+        targetUltGauge: 5,
+        note: "Detonate: +20% damage per gauge point.",
+      },
+    ];
+  }
+
+  const dealsDamage =
+    (skill.damageRanked?.some((value) => value > 0) ?? false) ||
+    (skill.damage ?? 0) > 0;
+  if (hasPassiveMechanic(character, "deathblow") && dealsDamage) {
+    const last = scenarios[scenarios.length - 1];
+    scenarios = [
+      ...scenarios,
+      {
+        ...last,
+        id: `${last.id}-hp-40`,
+        label: `${last.label === "Standard" ? "" : `${last.label}, `}40% HP`,
+        attackerHpPercent: 40,
+        note: "Deathblow: damage rises as max HP is lost.",
+      },
+    ];
+  }
+
+  return scenarios;
 }
 
 function getRelevantScenarios(
@@ -259,7 +351,7 @@ function getRelevantScenarios(
       return [STANDARD_SCENARIO];
 
     default:
-      return [STANDARD_SCENARIO];
+      return getGenericScenarios(character, skill);
   }
 }
 
@@ -413,6 +505,27 @@ function applySkillDamageModifiers(
     );
   }
 
+  const deathblowMechanic = passive?.mechanics?.find(
+    (mechanic) =>
+      typeof mechanic.type === "string" && mechanic.type === "deathblow",
+  );
+  if (deathblowMechanic) {
+    const lostPercent = 100 - (currentHp / character.hp) * 100;
+    const hpStep =
+      typeof deathblowMechanic.hpStepPercent === "number"
+        ? deathblowMechanic.hpStepPercent
+        : 3;
+    const perStep =
+      typeof deathblowMechanic.damagePerStepPercent === "number"
+        ? deathblowMechanic.damagePerStepPercent
+        : 2;
+    const bonus = Math.floor(lostPercent / hpStep) * perStep;
+    if (bonus > 0) {
+      modifiedDamage *= 1 + bonus / 100;
+      notes.push(`Deathblow bonus applied (+${bonus}%).`);
+    }
+  }
+
   if (mechanics.some((mechanic) => mechanic.type === "spite")) {
     const missingHpPercent = 100 - (currentHp / character.hp) * 100;
     const spiteBonusPercent = missingHpPercent * 2;
@@ -532,6 +645,17 @@ function calculateFinalDamage(
     notes.push(`Pierce applied (${piercePercent}% DEF ignored).`);
   }
 
+  const criticalMechanic = mechanics.find(
+    (mechanic) => mechanic.type === "critical",
+  );
+  if (criticalMechanic) {
+    const ignorePercent = criticalMechanic.ignoreDefensePercent ?? 50;
+    effectiveDefense *= 1 - ignorePercent / 100;
+    notes.push(
+      `CRITICAL: ${ignorePercent}% DEF ignored, type matchups ignored.`,
+    );
+  }
+
   const effectiveBaseDamage = Math.max(1, baseDamage - effectiveDefense);
   let extraDamage = 0;
   const targetIgniteStacks = scenario.targetIgniteStacks ?? 0;
@@ -557,11 +681,26 @@ function calculateFinalDamage(
     notes.push("Weakpoint bonus applied (x3 total damage).");
   }
 
+  if (
+    mechanics.some((mechanic) => mechanic.type === "rupture") &&
+    scenario.targetHasBuff
+  ) {
+    extraDamage += effectiveBaseDamage * 1;
+    notes.push("Rupture bonus applied (x2 total damage).");
+  }
+
   if (skill.type === "heal") {
     return 0;
   }
 
-  return Math.floor(effectiveBaseDamage + extraDamage);
+  let total = effectiveBaseDamage + extraDamage;
+  if (criticalMechanic) {
+    const bonusPercent = criticalMechanic.damageBonusPercent ?? 50;
+    total *= 1 + bonusPercent / 100;
+    notes.push(`CRITICAL damage bonus applied (+${bonusPercent}%).`);
+  }
+
+  return Math.floor(total);
 }
 
 function getExtraEffectNotes(
@@ -660,6 +799,88 @@ function getExtraEffectNotes(
         `Vampiric Roots restores ${Math.floor(totalDamage * (healPercent / 100))} HP.`,
       );
     }
+  }
+
+  // Generic on-hit effect notes (kit-agnostic — covers the newer rosters)
+  for (const dot of mechanics) {
+    if ((dot.type === "shock" || dot.type === "bleed") && damage > 0) {
+      const percent = dot.damagePercent ?? (dot.type === "shock" ? 30 : 90);
+      const duration = dot.duration ?? (dot.type === "shock" ? 4 : 1);
+      if (duration > 0) {
+        const dotName = dot.type === "shock" ? "Shock" : "Bleed";
+        extraNotes.push(
+          `${dotName} DoT: ${Math.floor(damage * (percent / 100))}/turn for ${duration} turn${duration === 1 ? "" : "s"}.`,
+        );
+      }
+    }
+  }
+
+  const lifestealMechanic = mechanics.find(
+    (mechanic) => mechanic.type === "lifesteal",
+  );
+  if (lifestealMechanic && damage > 0) {
+    const percent =
+      lifestealMechanic.valuePercent ?? lifestealMechanic.value ?? 30;
+    const totalDamage = aoeActive ? damage * enemyCount : damage;
+    extraNotes.push(
+      `Lifesteal recovers ${Math.floor(totalDamage * (percent / 100))} HP.`,
+    );
+  }
+
+  const extortMechanic = mechanics.find(
+    (mechanic) => mechanic.type === "extort",
+  );
+  if (extortMechanic) {
+    const percent = extortMechanic.value ?? extortMechanic.valuePercent ?? 0;
+    const duration = extortMechanic.duration ?? 0;
+    if (percent > 0) {
+      extraNotes.push(
+        `Extorts ${percent}% ATK/DEF from each target hit for ${duration} turn${duration === 1 ? "" : "s"}.`,
+      );
+    }
+  }
+
+  const sealMechanic = mechanics.find((mechanic) => mechanic.type === "seal");
+  if (sealMechanic) {
+    const duration = sealMechanic.duration ?? 0;
+    extraNotes.push(
+      duration > 0
+        ? `Seals attack skills for ${duration} turn${duration === 1 ? "" : "s"}.`
+        : "No seal at this rank.",
+    );
+  }
+
+  const stunMechanic = mechanics.find((mechanic) => mechanic.type === "stun");
+  if (stunMechanic) {
+    const duration = stunMechanic.duration ?? 1;
+    extraNotes.push(
+      duration > 0
+        ? `Stuns for ${duration} turn${duration === 1 ? "" : "s"}.`
+        : "No stun at this rank.",
+    );
+  }
+
+  const gaugeMechanic = mechanics.find(
+    (mechanic) => mechanic.type === "gainUltGauge",
+  );
+  if (gaugeMechanic) {
+    extraNotes.push(
+      `Fills own ultimate gauge by ${gaugeMechanic.value ?? 1}.`,
+    );
+  }
+
+  const counterMechanic = mechanics.find(
+    (mechanic) =>
+      typeof mechanic.counterDamagePercent === "number" &&
+      mechanic.counterDamagePercent > 0,
+  );
+  if (counterMechanic) {
+    const counterDamage = Math.floor(
+      (character.atk * (counterMechanic.counterDamagePercent ?? 0)) / 100,
+    );
+    extraNotes.push(
+      `Counters attackers for ~${counterDamage} damage while the stance holds.`,
+    );
   }
 
   if (skill.type === "buff" || skill.type === "debuff") {
