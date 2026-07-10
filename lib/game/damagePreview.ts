@@ -869,20 +869,6 @@ function getExtraEffectNotes(
     );
   }
 
-  const counterMechanic = mechanics.find(
-    (mechanic) =>
-      typeof mechanic.counterDamagePercent === "number" &&
-      mechanic.counterDamagePercent > 0,
-  );
-  if (counterMechanic) {
-    const counterDamage = Math.floor(
-      (character.atk * (counterMechanic.counterDamagePercent ?? 0)) / 100,
-    );
-    extraNotes.push(
-      `Counters attackers for ~${counterDamage} damage while the stance holds.`,
-    );
-  }
-
   if (skill.type === "buff" || skill.type === "debuff") {
     if (damage === 0) {
       extraNotes.push("No direct damage.");
@@ -950,6 +936,31 @@ function buildPreviewRow(
     rowNotes,
   );
 
+  // Counter stances (Full Counter): the row's result is the damage dealt
+  // back per attack received, computed like the engine does — counter base
+  // vs the dummy's DEF, no skill mechanics applied.
+  const counterMechanic = mechanics.find(
+    (mechanic) =>
+      typeof mechanic.counterDamagePercent === "number" &&
+      mechanic.counterDamagePercent > 0,
+  );
+  let multiplierLabel = formatMultiplierLabel(skill, multiplier);
+  let scenarioLabel = scenario.label;
+  let resultLabel = `${damage} damage`;
+  if (counterMechanic && multiplier === 0) {
+    const counterPercent = counterMechanic.counterDamagePercent ?? 0;
+    const counterBase = (character.atk * counterPercent) / 100;
+    const counterDamage = Math.floor(
+      Math.max(1, counterBase - DAMAGE_PREVIEW_DUMMY.def),
+    );
+    multiplierLabel = `${counterPercent}%`;
+    scenarioLabel = "Per counter";
+    resultLabel = `${counterDamage} damage`;
+    allNotes.push(
+      "Dealt back to the attacker each time a hit is received while the stance holds.",
+    );
+  }
+
   return {
     id: `${skill.skillName}-${rankIndex ?? "ultimate"}-${scenario.id}`,
     abilityName: skill.skillName,
@@ -959,9 +970,9 @@ function buildPreviewRow(
         : skill.type === "ultimate"
           ? "Ultimate"
           : "Base",
-    multiplierLabel: formatMultiplierLabel(skill, multiplier),
-    scenarioLabel: scenario.label,
-    resultLabel: `${damage} damage`,
+    multiplierLabel,
+    scenarioLabel,
+    resultLabel,
     notes: allNotes.join(" "),
   };
 }
