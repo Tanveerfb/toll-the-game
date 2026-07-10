@@ -1,4 +1,4 @@
-# Status — 2026-07-07
+# Status — 2026-07-11
 
 Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @ `c3040f7`).
 
@@ -8,13 +8,15 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 - **Rank system** — card rank drives damage multiplier, `*Ranked` mechanic values, and `aoeRanked` activation; flat mechanic values stay flat; ultimates rank-immune.
 - **Deck (7DS GC rules)** — hand never resets; pure-random one-at-a-time refill with auto-merge on adjacent identical cards (+1 ult gauge per merge); ult guaranteed only if gauge was full BEFORE the refill; deck locked outside `PlayerAction`; empty-hand auto-pass.
 - **Sub units** — battle format 4v4 (all field) or 3v3 (4th member auto-sub); sub passive active from bench, no cards, untargetable; promoted at new-turn start after a teammate dies; lone subs auto-convert to field.
-- **Character kits** — 13 JSON kits incl. Duke's full Flowing Ruin, Seras (Shock/CRITICAL/Charged), and the 7DS collab trio: Meliodas (Deathblow crit ramp, Full Counter stance, stance/buff-cancelling ult), Ban (Lifesteal, Extort stat-steal, Extort Life max-HP shred), Diane (Rupture, rank-gated Attack Seal, Giant's Will ATK ramp).
+- **Character kits** — 16 JSON kits incl. Duke's full Flowing Ruin, Seras (Shock/CRITICAL/Charged), the 7DS collab trio: Meliodas (Deathblow crit ramp, Full Counter stance, stance/buff-cancelling ult), Ban (Lifesteal, Extort stat-steal, Extort Life max-HP shred), Diane (Rupture, rank-gated Attack Seal, Giant's Will ATK ramp), and the HxH collab trio: Gon (buff-before-hit Rock, self ult-gauge fill, Rookie Hunter stat flip), Killua (stance-cancel + rank-gated stun, Detonate), Leorio (rank-scaling team buff, Pierce + Bleed, Kind Hearted Friend character synergy). Tanveer's roster-wide stat rebalance (2026-07-11) is live.
+- **Literal durations (ruling #21)** — buffs tick at owner turn start, debuffs/DoT/stun at victim turn end; N turns = N procs / N blocked turns.
 - **Type advantage** — Dark<>Light mutual, Red>Green>Blue>Red; +20%/−10%/0; CRITICAL ignores it.
 - **Evade system** — base 0% for everyone; Charged stacks grant +5% each; evaded attacks deal nothing but still feed Charged.
 - **Crit system** — base 0%; a proc applies the CRITICAL package. **Effective stats** — percent/flat buff-debuff entries now actually change dealt/received damage (`lib/game/stats.ts`); previously they were cosmetic.
 - **UI (shadcn/ui + Tailwind 4)** — main menu, team select (format toggle, 1–4 units, art slots), battle arena (compact unit cards, sub badges, victory/defeat overlay with rematch), deck dock with hover previews and rank-aware descriptions, archive tile grid + Dokkan-style detail pages, login/profile (Firebase optional → guest mode).
 - **Character art** — full roster AI-generated (ComfyUI + Animagine XL 4.0, Dokkan × 7DSGC style); pipeline in `docs/ART_PIPELINE.md`.
-- **Tests** — 50 across combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow.
+- **Archive UX** — colored effect pills on keyword hover (red attack fx / purple debuffs / green heals / yellow stances / white cancels), skill chips colored by type, mechanic-driven damage preview scenarios for all kits, sticky topnav on every page.
+- **Tests** — 101 across combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders.
 
 ## Open Issues
 
@@ -24,7 +26,8 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 | 7 | `Character.passive: any` and `as any` casts around mechanics — type safety hole | `types/character.ts` | Medium (refactor) |
 | 11 | 4 MB legacy background PNG | `public/bg-images/` | Cosmetic |
 | 13 | Art nitpicks: Seras's horn-like hair tufts didn't render; Yalina's side braid renders as loose side curls (trigger-word/style limits — see ART_PIPELINE trigger-word table) | `public/characters/` | Cosmetic (re-roll) |
-| 14 | Mustafa + Siddiq designs still AI-invented (Batra invented from lore hints) — regenerate when Tanveer supplies sheets. Duke/Gabrist/Yalina redesigned per his direction + ref photos 2026-07-07; Lyra/Tao/Sara/Seras from his locked sheets (`docs/design/characters/`) | `docs/ART_PIPELINE.md` | Pending input |
+| 14 | Design feedback 2026-07-11: Mustafa approved; Siddiq redesigned (v2, still AI-invented — awaiting his sheet); Batra reworked per his direction (turban/beard/kesari, no armour). He loves Lyra/Sara/Gabrist; Duke/Yalina/Seras fine for now, iterate later | `docs/ART_PIPELINE.md` | Pending input |
+| 16 | Rank-gated effect text shows literal zeros at rank 1 (e.g. "stuns for 0 turn(s) at rank 2+", Diane's "0 turn Attack Seal") — cosmetic; consider hiding zero-value sentences in the translator | `descriptionTranslator.ts` | Cosmetic |
 | 15 | Console `FirebaseError: Missing or insufficient permissions` on page load — a Firestore read is denied by security rules (likely guest/unauthenticated). Harmless to gameplay but noisy; fix rules or gate the read when Firebase persistence work starts (Phase 4) | Firebase / stores | Low |
 
 ## Not Built Yet

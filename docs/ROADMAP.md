@@ -46,6 +46,11 @@ Solo dev + AI tooling. Ordered so every phase ends with something runnable. Mech
 - [x] Seras kit (2026-07-07) + new systems: type advantage chart, evade, Shock, CRITICAL
 - [x] 7DS collab trio Meliodas/Ban/Diane (2026-07-07) + new systems: crit chance, counter stances, Extort, Extort Life max-HP shred, Attack Seal, Giant's Will ramp, Rupture, lifesteal; effective-stats fix (buffs/debuffs now real)
 - [x] Species/synergy tags across the full roster (2026-07-07)
+- [x] Literal effect durations engine rework, ruling #21 (2026-07-11)
+- [x] HxH collab trio Gon/Killua/Leorio (2026-07-11) + new systems: buff-before-hit, gainUltGauge, rank-gated stun, Bleed, statShiftAfterAttacks, characterSynergy
+- [x] Tanveer's roster-wide stat rebalance + terse description pass wired in (2026-07-11)
+- [x] Archive UX: colored effect pills, typed skill chips, mechanic-driven damage preview for newer kits, sticky topnav (2026-07-11)
+- [x] Art v4: HxH trio, Siddiq redesign, Batra kesari rework; Mustafa design approved (2026-07-11)
 - [ ] Story mode skeleton: linear stage list (Dokkan-style stages)
 - [ ] Stage = scripted enemy team + dialogue intro/outro
 - [ ] Additional enemy kits — **[Tanveer]** designs kits, code implements
