@@ -20,8 +20,10 @@ import {
 import {
   buildRankedSkillDescriptions,
   buildSingleDescription,
+  buildSkillKeywordGlossary,
   getMechanicTypes,
 } from "@/lib/game/descriptionTranslator";
+import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
 import {
   buildCharacterDamagePreview,
   DAMAGE_PREVIEW_DUMMY,
@@ -204,13 +206,24 @@ function SkillBlock({
               <span className="font-body text-[10px] font-bold uppercase tracking-widest text-zinc-500">
                 R{index + 1}
               </span>
-              <KeyworkHighlighter text={line} className={UI.textValue} />
+              <KeyworkHighlighter
+                text={line}
+                className={UI.textValue}
+                glossary={{
+                  ...mechanicGlossary,
+                  ...buildSkillKeywordGlossary(skill, index),
+                }}
+              />
             </div>
           ))
         ) : (
           <KeyworkHighlighter
             text={buildSingleDescription(skill)}
             className={UI.textValue}
+            glossary={{
+              ...mechanicGlossary,
+              ...buildSkillKeywordGlossary(skill, 0),
+            }}
           />
         )}
       </div>

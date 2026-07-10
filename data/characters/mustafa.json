@@ -41,7 +41,7 @@
   ],
   "ultimate": {
     "skillName": "Tea Time Tremor",
-    "description": "Raises own DEF by 20% for [buff.duration] turns, then does DEF-scaled damage to one enemy.",
+    "description": "Raises DEF for [buff.duration] turns, then does DEF-scaled damage to one enemy.",
     "characterId": "mustafa",
     "type": "ultimate",
     "statMultiplier": "def",

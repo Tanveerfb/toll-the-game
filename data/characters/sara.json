@@ -36,7 +36,7 @@
   ],
   "ultimate": {
     "skillName": "Beast Master's Fury",
-    "description": "Raises own HP by 20% for 1 turn, then does HP-scaled damage to one enemy.",
+    "description": "Raises HP for 1 turn, then does HP-scaled damage to one enemy.",
     "characterId": "sara",
     "type": "ultimate",
     "statMultiplier": "hp",

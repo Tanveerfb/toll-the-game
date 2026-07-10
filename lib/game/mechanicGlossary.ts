@@ -37,6 +37,9 @@ export const mechanicGlossary = {
   lowers: "Reduces the target's stat by 20%",
   "greatly lowers": "Reduces the target's stat by 50%",
   "massively lowers": "Reduces the target's stat by 80%",
+  raises: "Raises the stat (under 50%). No listed duration = lasts the rest of battle",
+  "greatly raises": "Raises the stat by 50%+. No listed duration = lasts the rest of battle",
+  "massively raises": "Raises the stat by 80%+. No listed duration = lasts the rest of battle",
 } as const;
 
 export type MechanicKeyword = keyof typeof mechanicGlossary;
@@ -50,6 +53,7 @@ export type KeywordCategory =
   | "offense"
   | "debuff"
   | "heal"
+  | "buff"
   | "stance"
   | "cancel";
 
@@ -81,6 +85,9 @@ export const keywordCategories: Record<MechanicKeyword, KeywordCategory> = {
   lowers: "debuff",
   "greatly lowers": "debuff",
   "massively lowers": "debuff",
+  raises: "buff",
+  "greatly raises": "buff",
+  "massively raises": "buff",
   cleanse: "heal",
   cleanses: "heal",
   charged: "stance",

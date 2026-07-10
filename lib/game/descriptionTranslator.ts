@@ -298,6 +298,78 @@ export function buildDescriptionForRank(
   return `${cleanText(description)}.`;
 }
 
+const STAT_LABELS: Record<string, string> = {
+  atk: "ATK",
+  def: "DEF",
+  hp: "HP",
+  all: "all stats",
+  damageReduction: "damage reduction",
+};
+
+// Dokkan-style tier words (Tanveer's scheme, mirrors the lowers glossary):
+// <50% plain, 50–79% "greatly", 80%+ "massively".
+function tierWord(value: number, falling: boolean): string {
+  const base = falling ? "lowers" : "raises";
+  if (value >= 80) return `massively ${base}`;
+  if (value >= 50) return `greatly ${base}`;
+  return base;
+}
+
+/**
+ * Per-skill, per-rank glossary entries for tiered stat wording ("raises",
+ * "greatly lowers", …) so descriptions can drop the numbers — hovering the
+ * pill shows this skill's actual percentages. Value only (Tanveer's call):
+ * duration and cancel flags live in the description text itself.
+ */
+export function buildSkillKeywordGlossary(
+  skill: CharacterSkillData,
+  rankIndex: number,
+): Record<string, string> {
+  const collected: Record<string, Array<{ label: string; text: string }>> = {};
+
+  for (const mech of getMechanics(skill)) {
+    if (mech.type !== "buff" && mech.type !== "debuff") continue;
+    const stat = typeof mech.stat === "string" ? mech.stat : undefined;
+    if (!stat) continue;
+
+    const value =
+      getRankedValue(mech.valueRanked, rankIndex) ??
+      (typeof mech.valuePercent === "number"
+        ? mech.valuePercent
+        : typeof mech.value === "number"
+          ? mech.value
+          : undefined);
+    if (!value) continue;
+
+    const tier = tierWord(value, mech.type === "debuff");
+    const statLabel = STAT_LABELS[stat] ?? stat.toUpperCase();
+    const verb = mech.type === "debuff" ? "Reduces" : "Increases";
+
+    (collected[tier] ??= []).push({
+      label: statLabel,
+      text: `${verb} ${statLabel} by ${value}%`,
+    });
+  }
+
+  // The pill spans tier word + stat(s): "raises atk", and for multi-stat
+  // phrases "raises atk and def" (longest keys win in the highlighter).
+  // Bare tier keys stay as a fallback for looser wording.
+  const out: Record<string, string> = {};
+  for (const [tier, entries] of Object.entries(collected)) {
+    out[tier] = entries.map((e) => e.text).join("; ");
+    for (const entry of entries) {
+      out[`${tier} ${entry.label.toLowerCase()}`] = entry.text;
+    }
+    if (entries.length > 1) {
+      const combinedKey = `${tier} ${entries
+        .map((e) => e.label.toLowerCase())
+        .join(" and ")}`;
+      out[combinedKey] = entries.map((e) => e.text).join("; ");
+    }
+  }
+  return out;
+}
+
 export function buildRankedSkillDescriptions(
   skill: CharacterSkillData,
 ): string[] {

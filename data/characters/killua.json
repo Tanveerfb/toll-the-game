@@ -41,7 +41,7 @@
   ],
   "ultimate": {
     "skillName": "Speed of Lightning",
-    "description": "Raises own ATK and DEF by 30% (stackable), then does 500% ATK damage to one enemy.",
+    "description": "Raises ATK and DEF, then does 500% ATK damage to one enemy.",
     "characterId": "killua",
     "type": "ultimate",
     "statMultiplier": "atk",
