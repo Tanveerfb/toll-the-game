@@ -44,7 +44,7 @@ photorealistic, 3d, busy background, multiple characters
 | cuffs ("collar and cuffs") | handcuffs + wrist chains | "sleeve borders" |
 | chain ("hair chain") | wrist/neck chains | drop it |
 
-## Current Set (v3 — 2026-07-07)
+## Current Set (v4 — 2026-07-11)
 
 Locked design sheets live in `docs/design/characters/*.md` — they are the source of truth for appearance and override old lore descriptions. Reference photos in `docs/design/characters/refs/`.
 
@@ -56,13 +56,16 @@ Locked design sheets live in `docs/design/characters/*.md` — they are the sour
 | sara | 888003 | design sheet | platinum pigtails + black ribbons, cat-ear hoodie, spectral paws |
 | yalina | 888043 | design sheet + ref photo | v2 redesign: dark-brown curly hair, deep pink shalwar kameez + gold embroidery, green energy fist. Literal side braid won't render at this style weight — loose side curls accepted. "cuffs"/"chain" are trigger words (see rule above) |
 | seras | 888035 | design sheet | villain true form: pointed ears, light-red eyes, kimono-armor, lightning polearm. Horn-like hair tufts didn't render; acceptable v1, revisit later |
-| mustafa | 777004 | AI-invented | awaiting Tanveer's design sheet |
-| siddiq | 777005 | AI-invented | awaiting Tanveer's design sheet |
-| batra | 777006 | AI-invented (lore hints: Sikh, turban, KHALSA, lion) | Tanveer may still lock a sheet |
+| mustafa | 777004 | AI-invented | design approved by Tanveer 2026-07-11 |
+| siddiq | 777131 | AI-invented v2 (2026-07-11 redesign per Tanveer) | emerald kurta + gold trim, curly dark hair, nature orb + vines, red bg. Still awaiting his locked sheet |
+| batra | 777132 | Tanveer's direction (2026-07-11): keep turban/facial hair/kesari, drop heavy armour | kesari kurta, navy sash, steel kara, golden lion energy fists |
 | gabrist | 777019 | hair/face locked (ref photo) + AI ink-artist theme | jet-black shoulder-length waves, full beard, calligraphy brush + ink strokes |
 | meliodas | 777020 | canon (7DS collab) | danbooru character tag `meliodas \(nanatsu no taizai\)` — model knows the design natively |
 | ban | 777021 | canon (7DS collab) | pale spiky hair, cheek scar, nunchaku, green soul wisps |
 | diane | 777022 | canon (7DS collab) | twin pigtails, orange leotard, giant gauntlet, rock shards |
+| gon | 777023 | canon (HxH collab) | danbooru tag `gon freecss` — first roll accepted |
+| killua | 777024 | canon (HxH collab) | danbooru tag `killua zoldyck` — first roll accepted |
+| leorio | 777125 | canon (HxH collab) | suit + teashades + energy fist. Bg came out blue instead of red; forcing red bg regressed the character (gaunt villain face), so blue bg accepted — the card frame supplies the red |
 
 Full prompts recoverable from ComfyUI history / git log.
 
