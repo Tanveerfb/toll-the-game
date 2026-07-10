@@ -47,7 +47,11 @@ export type MechanicType =
   | "counterStance"
   | "deathblow"
   | "maxHpShred"
-  | "turnRamp";
+  | "turnRamp"
+  | "bleed"
+  | "gainUltGauge"
+  | "statShiftAfterAttacks"
+  | "characterSynergy";
 
 export interface Mechanic {
   type: MechanicType;
@@ -95,6 +99,11 @@ export interface Mechanic {
   atkStolen?: number; // extort runtime: flat ATK points taken
   defStolen?: number; // extort runtime: flat DEF points taken
   flatValue?: number; // buff/debuff: flat stat points instead of a percent
+  attacksRequired?: number; // statShiftAfterAttacks: hits received to trigger
+  atkShiftPercent?: number; // statShiftAfterAttacks: signed % of base ATK
+  defShiftPercent?: number; // statShiftAfterAttacks: signed % of base DEF
+  requiredCharacterIds?: string[]; // characterSynergy: ids that enable it
+  bothAliveBonusPercent?: number; // characterSynergy: extra % while all ids alive on field
 
   // Runtime calculated fields
   capturedDamage?: number; 

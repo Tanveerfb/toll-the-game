@@ -1,0 +1,89 @@
+{
+  "id": "gon",
+  "name": "Gon Freecss",
+  "color": "green",
+  "tags": ["Collab", "Human", "Male", "Hunter x Hunter"],
+  "lore": "A rookie Hunter with monstrous potential. Nen type: Enhancer. Collab unit.",
+  "atk": 95,
+  "def": 90,
+  "hp": 1501,
+  "skills": [
+    {
+      "skillName": "Jajanken: Rock",
+      "description": "Raises own ATK by 30% for 1 turn (stackable), then does ATK-scaled damage to one enemy.",
+      "characterId": "gon",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [120, 150, 225],
+      "mechanics": [
+        {
+          "type": "buff",
+          "targetSelf": true,
+          "stat": "atk",
+          "valuePercent": 30,
+          "duration": 1,
+          "uncancellable": true
+        }
+      ]
+    },
+    {
+      "skillName": "Jajanken: Round 2",
+      "description": "Does ATK-scaled damage to one enemy and fills own ultimate gauge by [gainUltGauge.value].",
+      "characterId": "gon",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [120, 135, 180],
+      "mechanics": [
+        {
+          "type": "gainUltGauge",
+          "valueRanked": [1, 1, 2]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Jajanken Combo",
+    "description": "Raises own ATK by 30% (stackable) and DEF by 50% for 1 turn, then does 500% ATK damage to one enemy.",
+    "characterId": "gon",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 500,
+    "mechanics": [
+      {
+        "type": "buff",
+        "targetSelf": true,
+        "stat": "atk",
+        "valuePercent": 30,
+        "uncancellable": true
+      },
+      {
+        "type": "buff",
+        "targetSelf": true,
+        "stat": "def",
+        "valuePercent": 50,
+        "duration": 1
+      }
+    ]
+  },
+  "passive": {
+    "name": "Rookie Hunter",
+    "description": "After receiving 10 attacks in battle, loses 50% ATK but gains 50% DEF (once per battle, cannot be cancelled).",
+    "trigger": "onAttackReceived",
+    "worksFromSub": false,
+    "mechanics": [
+      {
+        "type": "statShiftAfterAttacks",
+        "attacksRequired": 10,
+        "atkShiftPercent": -50,
+        "defShiftPercent": 50
+      },
+      {
+        "type": "synergy",
+        "conditionTags": ["Collab"],
+        "stat": "all",
+        "valuePercent": 5,
+        "flatBonus": true
+      }
+    ]
+  }
+}

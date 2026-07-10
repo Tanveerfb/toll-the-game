@@ -1,0 +1,96 @@
+{
+  "id": "leorio",
+  "name": "Leorio Paradinight",
+  "color": "red",
+  "tags": ["Collab", "Human", "Male", "Hunter x Hunter"],
+  "lore": "Aspiring doctor and member of the Zodiacs. Nen type: Emitter. Collab unit.",
+  "atk": 93,
+  "def": 85,
+  "hp": 980,
+  "skills": [
+    {
+      "skillName": "Member of the Zodiac",
+      "description": "Raises allies' ATK and DEF by [buff.value]% for [buff.duration] turn(s). Targets one ally at rank 1, all allies at rank 2+.",
+      "characterId": "leorio",
+      "type": "buff",
+      "statMultiplier": "atk",
+      "damageRanked": [0, 0, 0],
+      "mechanics": [
+        {
+          "type": "aoeRanked",
+          "ranks": [false, true, true]
+        },
+        {
+          "type": "buff",
+          "stat": "atk",
+          "valueRanked": [15, 25, 40],
+          "durationRanked": [1, 1, 2]
+        },
+        {
+          "type": "buff",
+          "stat": "def",
+          "valueRanked": [15, 25, 40],
+          "durationRanked": [1, 1, 2]
+        }
+      ]
+    },
+    {
+      "skillName": "Switchblade Attack",
+      "description": "Does Pierce ATK-scaled damage to one enemy and applies Bleed for [bleed.duration] turn(s).",
+      "characterId": "leorio",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [120, 135, 180],
+      "mechanics": [
+        {
+          "type": "pierce",
+          "value": 30
+        },
+        {
+          "type": "bleed",
+          "damagePercent": 90,
+          "durationRanked": [1, 1, 2]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Remote Punch",
+    "description": "Cancels buffs and stances, then does 500% ATK damage to one enemy and stuns for 2 turns.",
+    "characterId": "leorio",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 500,
+    "mechanics": [
+      {
+        "type": "cancelBuffs"
+      },
+      {
+        "type": "stun",
+        "duration": 2
+      }
+    ]
+  },
+  "passive": {
+    "name": "Kind Hearted Friend",
+    "description": "All allies gain +10% stats if Gon or Killua is a team member, and +10% more while both fight on the field.",
+    "trigger": "onBattleStart",
+    "worksFromSub": true,
+    "mechanics": [
+      {
+        "type": "characterSynergy",
+        "requiredCharacterIds": ["gon", "killua"],
+        "stat": "all",
+        "valuePercent": 10,
+        "bothAliveBonusPercent": 10
+      },
+      {
+        "type": "synergy",
+        "conditionTags": ["Collab"],
+        "stat": "all",
+        "valuePercent": 5,
+        "flatBonus": true
+      }
+    ]
+  }
+}

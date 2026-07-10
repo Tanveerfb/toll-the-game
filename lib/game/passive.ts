@@ -115,6 +115,147 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
 
   registerTurnRamp(character, registerToQueue);
   registerMaxHpShred(character, registerToQueue);
+  registerCharacterSynergy(character, registerToQueue);
+}
+
+// Kind Hearted Friend (Leorio): base +valuePercent to all allies if ANY of
+// requiredCharacterIds is a team member — decided once at battle start (sub
+// counts; survives their death). Extra +bothAliveBonusPercent while ALL of
+// them are alive on the field — rechecked at the team's turn start, dropped
+// when one dies (Tanveer ruling: base static, extra dynamic).
+function registerCharacterSynergy(
+  character: BattleCharacter,
+  registerToQueue: RegisterFn,
+) {
+  const mech = character.passive?.mechanics?.find(
+    (m: any) => m.type === "characterSynergy",
+  );
+  if (!mech) return;
+
+  const passiveName = character.passive!.name;
+  const requiredIds: string[] = mech.requiredCharacterIds ?? [];
+  const basePercent = mech.valuePercent ?? 10;
+  const extraPercent = mech.bothAliveBonusPercent ?? 0;
+  const extraName = `${passiveName}+`;
+
+  const applyPercentToTeam = (
+    team: BattleCharacter[],
+    percent: number,
+    name: string,
+    log: (e: string) => void,
+    logText: string,
+  ) => {
+    return team.map((ally) => {
+      if (ally.buffs.some((b) => b.name === name)) return ally;
+      const t = {
+        ...ally,
+        buffs: [
+          ...ally.buffs,
+          {
+            type: "buff" as const,
+            stat: "all",
+            valuePercent: percent,
+            uncancellable: true,
+            preApplied: true,
+            name,
+          },
+        ],
+      };
+      t.currentAttack += Math.floor(t.atk * (percent / 100));
+      t.currentDefense += Math.floor(t.def * (percent / 100));
+      const hpBoost = Math.floor(t.hp * (percent / 100));
+      t.hp += hpBoost;
+      t.currentHP += hpBoost;
+      log(`${t.name} ${logText}`);
+      return t;
+    });
+  };
+
+  const removePercentFromTeam = (
+    team: BattleCharacter[],
+    percent: number,
+    name: string,
+  ) => {
+    return team.map((ally) => {
+      if (!ally.buffs.some((b) => b.name === name)) return ally;
+      const t = { ...ally, buffs: ally.buffs.filter((b) => b.name !== name) };
+      t.currentAttack -= Math.floor(t.atk * (percent / 100));
+      t.currentDefense -= Math.floor(t.def * (percent / 100));
+      const hpBoost = Math.floor((t.hp * percent) / (100 + percent));
+      t.hp -= hpBoost;
+      t.currentHP = Math.min(t.currentHP, t.hp);
+      return t;
+    });
+  };
+
+  // Base bonus: once, at battle start
+  registerToQueue({
+    id: `${character.instanceId}_passive_${passiveName}_charSynergy`,
+    phase: "OnBattleStart",
+    sourceInstanceId: character.instanceId,
+    mechanicId: `${passiveName} (base)`,
+    action: async (source, teams, log) => {
+      const teamKey = source.team === "player" ? "playerTeam" : "enemyTeam";
+      const team = teams[teamKey];
+      const hasAny = team.some((c) => requiredIds.includes(c.id));
+      if (!hasAny) return teams;
+      const boosted = applyPercentToTeam(
+        team,
+        basePercent,
+        passiveName,
+        log,
+        `gains +${basePercent}% all stats from ${source.name}'s ${passiveName}!`,
+      );
+      return { ...teams, [teamKey]: boosted };
+    },
+  });
+
+  // Extra bonus: rechecked at the team's turn start (and battle start)
+  if (extraPercent > 0) {
+    const recheck = async (
+      source: BattleCharacter,
+      teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
+      log: (e: string) => void,
+    ) => {
+      const teamKey = source.team === "player" ? "playerTeam" : "enemyTeam";
+      const team = teams[teamKey];
+      const allAliveOnField = requiredIds.every((id) =>
+        team.some((c) => c.id === id && c.currentHP > 0 && !c.isSub),
+      );
+      const active = team.some((c) =>
+        c.buffs.some((b) => b.name === extraName),
+      );
+      if (allAliveOnField && !active) {
+        const boosted = applyPercentToTeam(
+          team,
+          extraPercent,
+          extraName,
+          log,
+          `gains an extra +${extraPercent}% all stats — the friends fight together!`,
+        );
+        return { ...teams, [teamKey]: boosted };
+      }
+      if (!allAliveOnField && active) {
+        const reverted = removePercentFromTeam(team, extraPercent, extraName);
+        log(`${source.name}'s ${passiveName} extra bonus fades.`);
+        return { ...teams, [teamKey]: reverted };
+      }
+      return teams;
+    };
+
+    for (const phase of [
+      "OnBattleStart",
+      character.team === "player" ? "OnPlayerTurnStart" : "OnEnemyTurnStart",
+    ] as BattlePhase[]) {
+      registerToQueue({
+        id: `${character.instanceId}_passive_${passiveName}_charSynergyExtra_${phase}`,
+        phase,
+        sourceInstanceId: character.instanceId,
+        mechanicId: `${passiveName} (extra)`,
+        action: recheck,
+      });
+    }
+  }
 }
 
 // Giant's Will (Diane): +valuePercent base ATK at the start of each of her

@@ -1,0 +1,87 @@
+{
+  "id": "killua",
+  "name": "Killua Zoldyck",
+  "color": "blue",
+  "tags": ["Collab", "Human", "Male", "Hunter x Hunter"],
+  "lore": "Heir of the Zoldyck assassin family. Nen type: Transmuter — his aura becomes electricity. Collab unit.",
+  "atk": 129,
+  "def": 79,
+  "hp": 1054,
+  "skills": [
+    {
+      "skillName": "Lightning Palm",
+      "description": "Cancels stances and does ATK-scaled damage to one enemy, stunning for [stun.duration] turn(s) at rank 2+.",
+      "characterId": "killua",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [150, 180, 250],
+      "mechanics": [
+        {
+          "type": "cancelStances"
+        },
+        {
+          "type": "stun",
+          "durationRanked": [0, 1, 2]
+        }
+      ]
+    },
+    {
+      "skillName": "Thunderbolt",
+      "description": "Does Detonate ATK-scaled damage to one enemy.",
+      "characterId": "killua",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [120, 135, 180],
+      "mechanics": [
+        {
+          "type": "detonate"
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Speed of Lightning",
+    "description": "Raises own ATK and DEF by 30% (stackable), then does 500% ATK damage to one enemy.",
+    "characterId": "killua",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 500,
+    "mechanics": [
+      {
+        "type": "buff",
+        "targetSelf": true,
+        "stat": "atk",
+        "valuePercent": 30,
+        "uncancellable": true
+      },
+      {
+        "type": "buff",
+        "targetSelf": true,
+        "stat": "def",
+        "valuePercent": 30,
+        "uncancellable": true
+      }
+    ]
+  },
+  "passive": {
+    "name": "Prodigy Assassin",
+    "description": "After receiving 10 attacks in battle, loses 50% DEF but gains 50% ATK (once per battle, cannot be cancelled).",
+    "trigger": "onAttackReceived",
+    "worksFromSub": false,
+    "mechanics": [
+      {
+        "type": "statShiftAfterAttacks",
+        "attacksRequired": 10,
+        "atkShiftPercent": 50,
+        "defShiftPercent": -50
+      },
+      {
+        "type": "synergy",
+        "conditionTags": ["Collab"],
+        "stat": "all",
+        "valuePercent": 5,
+        "flatBonus": true
+      }
+    ]
+  }
+}

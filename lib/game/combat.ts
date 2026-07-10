@@ -48,6 +48,51 @@ function gainChargedStack(char: BattleCharacter, log: (e: string) => void) {
   );
 }
 
+// Rookie Hunter / Prodigy Assassin (Gon/Killua): after receiving N attacks
+// in battle (evades count — same rule as Charged), permanently shift stats
+// by a signed % of base. Fires once; baked into current stats so it can't
+// be cleansed or cancelled.
+function gainAttackReceivedShift(
+  char: BattleCharacter,
+  log: (e: string) => void,
+) {
+  if (char.passive?.trigger !== "onAttackReceived") return;
+  const mech = char.passive.mechanics?.find(
+    (m: any) => m.type === "statShiftAfterAttacks",
+  );
+  if (!mech) return;
+  if (char.isSub && char.passive.worksFromSub === false) return;
+  if (char.passiveState.statShiftTriggered) return;
+
+  const required = mech.attacksRequired ?? 10;
+  const count = ((char.passiveState.attacksReceived as number) || 0) + 1;
+  char.passiveState.attacksReceived = count;
+  if (count < required) return;
+
+  char.passiveState.statShiftTriggered = true;
+  // trunc, not floor — floor turns -47.5 into -48 and over-penalizes
+  const atkShift = Math.trunc(char.atk * ((mech.atkShiftPercent ?? 0) / 100));
+  const defShift = Math.trunc(char.def * ((mech.defShiftPercent ?? 0) / 100));
+  char.currentAttack = Math.max(0, char.currentAttack + atkShift);
+  char.currentDefense = Math.max(0, char.currentDefense + defShift);
+  char.buffs.push({
+    type: "buff",
+    stat: "all",
+    uncancellable: true,
+    preApplied: true,
+    name: char.passive.name,
+  });
+  log(
+    `${char.name}'s ${char.passive.name} activates! ATK ${atkShift >= 0 ? "+" : ""}${atkShift}, DEF ${defShift >= 0 ? "+" : ""}${defShift}.`,
+  );
+}
+
+// Everything that reacts to "receiving an attack" (hit OR evade)
+function handleAttackReceived(char: BattleCharacter, log: (e: string) => void) {
+  gainChargedStack(char, log);
+  gainAttackReceivedShift(char, log);
+}
+
 // Returns the damage percent (e.g. 205 for 205%). Callers multiply the stat
 // first, then divide by 100 — dividing first introduces float error
 // (100 * (205/100) === 204.999…, which floors to 204).
@@ -271,6 +316,33 @@ export function executeSkill(
     targets = [actualTarget];
   }
 
+  // Self-targeted buffs apply BEFORE the damage calc (Tanveer ruling:
+  // "buff first, hit boosted" — Gon's Jajanken Rock benefits from its own
+  // +30% ATK). They apply to the source regardless of who the skill targets
+  // (e.g. Draw Fire taunts enemies while buffing Yalina herself).
+  skillMechanics.forEach((mech) => {
+    if ((mech.type === "buff" || mech.type === "stance") && mech.targetSelf) {
+      updatedSource.buffs.push({
+        type: mech.type,
+        stat: mech.stat,
+        // Counter stances carry no stat percent — their number is the
+        // counter damage, not a stat modifier
+        valuePercent: mech.counterDamagePercent
+          ? undefined
+          : mech.valuePercent || mech.value,
+        counterDamagePercent: mech.counterDamagePercent,
+        name: mech.name,
+        buffDuration: mech.duration,
+        unstackable: mech.unstackable,
+        uncancellable: mech.uncancellable,
+      });
+      log(
+        `[Action] ${updatedSource.name} gained ${mech.type} to ${mech.stat || "stat"} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim() +
+          ".",
+      );
+    }
+  });
+
   // Pre-calculate base stat — effective values honor stat buffs/debuffs
   const statMulti = action.skill.statMultiplier;
   let baseStat = 0;
@@ -422,7 +494,7 @@ export function executeSkill(
         log(
           `[Action] ${updatedTarget.name} evaded ${updatedSource.name}'s ${action.skill.skillName}!`,
         );
-        gainChargedStack(updatedTarget, log);
+        handleAttackReceived(updatedTarget, log);
         return;
       }
     }
@@ -505,9 +577,10 @@ export function executeSkill(
         updatedTarget.currentHP = Math.max(0, newHp);
       }
 
-      // Receiving an attack (and surviving it) grants a Charged stack
+      // Receiving an attack (and surviving it) feeds on-attack-received
+      // passives (Charged stacks, Rookie Hunter counters)
       if (updatedTarget.currentHP > 0) {
-        gainChargedStack(updatedTarget, log);
+        handleAttackReceived(updatedTarget, log);
       }
 
       // Damage-taken bookkeeping (Extort Life reset is resolved at round end)
@@ -582,11 +655,34 @@ export function executeSkill(
           targetEffects.push(`reduced ultimate gauge by ${reducedBy}`);
         }
         if (mech.type === "stun") {
-          updatedTarget.debuffs.push({
-            type: "stun",
-            debuffDuration: mech.duration || 1,
-          });
-          targetEffects.push(`applied stun${formatTurns(mech.duration || 1)}`);
+          // Rank-conditional via durationRanked (e.g. [0,1,2]): 0 = inactive
+          const stunDuration = mech.duration ?? 1;
+          if (stunDuration > 0) {
+            updatedTarget.debuffs.push({
+              type: "stun",
+              debuffDuration: stunDuration,
+            });
+            targetEffects.push(`applied stun${formatTurns(stunDuration)}`);
+          }
+        }
+        if (mech.type === "bleed") {
+          // Same machinery as Shock: independent DoT per application,
+          // valued off THIS hit's damage. Removable debuff.
+          const bleedDmg = Math.floor(
+            dealtDamage * ((mech.damagePercent || 90) / 100),
+          );
+          const bleedDuration = mech.duration ?? 1;
+          if (bleedDmg > 0 && bleedDuration > 0) {
+            updatedTarget.debuffs.push({
+              type: "damageOverTime",
+              name: "Bleed",
+              value: bleedDmg,
+              debuffDuration: bleedDuration,
+            });
+            targetEffects.push(
+              `applied Bleed (${bleedDmg}/turn)${formatTurns(bleedDuration)}`,
+            );
+          }
         }
         // (cancelBuffs / cancelStances resolve pre-damage, above)
         if (mech.type === "lifesteal" && dealtDamage > 0) {
@@ -698,6 +794,9 @@ export function executeSkill(
           stat: mech.stat,
           valuePercent: mech.valuePercent || mech.value,
           buffDuration: mech.duration,
+          name: mech.name,
+          unstackable: mech.unstackable,
+          uncancellable: mech.uncancellable,
         });
         targetEffects.push(
           `applied ${mech.type} to ${mech.stat || "stat"} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim(),
@@ -783,28 +882,15 @@ export function executeSkill(
     );
   }
 
-  // Self-targeted buffs apply to the source regardless of who the skill
-  // targets (e.g. Draw Fire taunts enemies while buffing Yalina herself)
-  skillMechanics.forEach((mech) => {
-    if ((mech.type === "buff" || mech.type === "stance") && mech.targetSelf) {
-      updatedSource.buffs.push({
-        type: mech.type,
-        stat: mech.stat,
-        // Counter stances carry no stat percent — their number is the
-        // counter damage, not a stat modifier
-        valuePercent: mech.counterDamagePercent
-          ? undefined
-          : mech.valuePercent || mech.value,
-        counterDamagePercent: mech.counterDamagePercent,
-        name: mech.name,
-        buffDuration: mech.duration,
-      });
-      log(
-        `[Action] ${updatedSource.name} gained ${mech.type} to ${mech.stat || "stat"} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim() +
-          ".",
-      );
-    }
-  });
+  // -- GAIN ULT GAUGE (Gon's Jajanken Round 2): fills the source's own gauge
+  const gaugeMech = skillMechanics.find((m) => m.type === "gainUltGauge");
+  if (gaugeMech && action.skill.type !== "ultimate") {
+    const gain = gaugeMech.value ?? 1;
+    updatedSource.ultGauge = Math.min(5, updatedSource.ultGauge + gain);
+    log(
+      `[Action] ${updatedSource.name} fills their ultimate gauge by ${gain}.`,
+    );
+  }
 
   // -- POST-DAMAGE PASSIVES
   if (

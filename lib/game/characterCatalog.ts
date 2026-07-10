@@ -3,6 +3,9 @@ import batra from "@/data/characters/batra.json";
 import diane from "@/data/characters/diane.json";
 import duke from "@/data/characters/duke.json";
 import gabrist from "@/data/characters/gabrist.json";
+import gon from "@/data/characters/gon.json";
+import killua from "@/data/characters/killua.json";
+import leorio from "@/data/characters/leorio.json";
 import lyra from "@/data/characters/lyra.json";
 import masterTao from "@/data/characters/master_tao.json";
 import meliodas from "@/data/characters/meliodas.json";
@@ -55,6 +58,9 @@ const characters = [
   diane,
   duke,
   gabrist,
+  gon,
+  killua,
+  leorio,
   lyra,
   masterTao,
   meliodas,
