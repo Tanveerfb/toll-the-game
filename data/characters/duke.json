@@ -9,7 +9,7 @@
   "skills": [
     {
       "skillName": "Fist of Flowing Ruin : Slide",
-      "description": "Does ATK-scaled damage to all enemies and pierces [pierce.value]% DEF.",
+      "description": "Does Pierce ATK-scaled damage to all enemies.",
       "characterId": "duke",
       "type": "attack",
       "statMultiplier": "atk",
@@ -19,8 +19,7 @@
           "type": "aoe"
         },
         {
-          "type": "pierce",
-          "value": 30
+          "type": "pierce"
         }
       ]
     },

@@ -26,22 +26,21 @@
     },
     {
       "skillName": "Red Ice: Magma Shaft",
-      "description": "Does ATK-scaled as [pierce.value]% pierce damage to one enemy",
+      "description": "Does Pierce ATK-scaled damage to one enemy.",
       "characterId": "lyra",
       "type": "attack",
       "statMultiplier": "atk",
       "damageRanked": [200, 275, 400],
       "mechanics": [
         {
-          "type": "pierce",
-          "valueRanked": [30, 50, 80]
+          "type": "pierce"
         }
       ]
     }
   ],
   "ultimate": {
     "skillName": "Red Ice: Absolute Zero Ignition",
-    "description": "Does ATK-scaled damage to all enemies and pierces [pierce.value]% DEF.",
+    "description": "Does Pierce ATK-scaled damage to all enemies.",
     "characterId": "lyra",
     "type": "ultimate",
     "statMultiplier": "atk",
@@ -51,8 +50,7 @@
         "type": "aoe"
       },
       {
-        "type": "pierce",
-        "value": 50
+        "type": "pierce"
       }
     ]
   },

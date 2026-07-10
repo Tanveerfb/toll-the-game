@@ -10,15 +10,14 @@
   "skills": [
     {
       "skillName": "Lion's Charge",
-      "description": "Does [x-ranked]% pierce damage equal to ATK-scaled to one enemy.",
+      "description": "Does Pierce ATK-scaled damage to one enemy.",
       "characterId": "batra",
       "type": "attack",
       "statMultiplier": "atk",
       "damageRanked": [180, 220, 275],
       "mechanics": [
         {
-          "type": "pierce",
-          "valueRanked": [20, 30, 50]
+          "type": "pierce"
         }
       ]
     },

@@ -18,10 +18,11 @@ export function calculateDamage({ baseDamage, skillMechanics, target, attackerCo
   // CRITICAL (Seras ult): ignores X% defense, ignores type matchups, +X% damage
   const criticalMechanic = skillMechanics.find(m => m.type === "critical");
 
-  // Pierce Calculation (ignores X% of enemy defense)
+  // Pierce ignores 50% of enemy defense (Tanveer 2026-07-11: generalized —
+  // no per-card pierce values anymore; explicit value still wins if present)
   const pierceMechanic = skillMechanics.find(m => m.type === "pierce");
   if (pierceMechanic) {
-    const piercePercent = pierceMechanic.value || 0;
+    const piercePercent = pierceMechanic.value ?? 50;
     effectiveDefense = effectiveDefense * (1 - piercePercent / 100);
   }
   if (criticalMechanic) {

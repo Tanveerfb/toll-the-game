@@ -640,7 +640,7 @@ function calculateFinalDamage(
   );
 
   if (pierceMechanic) {
-    const piercePercent = pierceMechanic.value ?? 0;
+    const piercePercent = pierceMechanic.value ?? 50;
     effectiveDefense *= 1 - piercePercent / 100;
     notes.push(`Pierce applied (${piercePercent}% DEF ignored).`);
   }

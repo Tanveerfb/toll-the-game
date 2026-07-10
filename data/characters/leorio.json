@@ -43,8 +43,7 @@
       "damageRanked": [120, 135, 180],
       "mechanics": [
         {
-          "type": "pierce",
-          "value": 30
+          "type": "pierce"
         },
         {
           "type": "bleed",
