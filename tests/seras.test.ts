@@ -3,7 +3,7 @@ import { executeSkill } from "@/lib/game/combat";
 import { calculateDamage } from "@/lib/game/damage";
 import { getTypeModifier } from "@/lib/game/typeAdvantage";
 import { getEvadeChance } from "@/lib/game/evade";
-import { tickTeamEffects } from "@/lib/game/tick";
+import { tickTeamDebuffs } from "@/lib/game/tick";
 import { registerCharacterPassives } from "@/lib/game/passive";
 import type { BattleCharacter } from "@/types/character";
 import type { Action } from "@/types/action";
@@ -190,9 +190,9 @@ describe("Shock", () => {
     expect(shocks).toHaveLength(2);
   });
 
-  it("ticks as damage over time at turn start", () => {
+  it("ticks as damage over time at the victim's turn end", () => {
     const target = hit(makeChar({ instanceId: "target", team: "enemy" }));
-    const [ticked] = tickTeamEffects([target], noopLog);
+    const [ticked] = tickTeamDebuffs([target], noopLog);
     expect(ticked.currentHP).toBe(900 - 30);
   });
 });

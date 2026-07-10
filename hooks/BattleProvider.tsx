@@ -9,7 +9,7 @@ import { TurnActions } from "@/types/action";
 import { executeSkill } from "@/lib/game/combat";
 import { ENEMY_ACTIONS_PER_TURN, getAIMove } from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
-import { tickTeamEffects } from "@/lib/game/tick";
+import { tickTeamBuffs, tickTeamDebuffs } from "@/lib/game/tick";
 import { ensureFieldUnit, promoteSubs } from "@/lib/game/sub";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 
@@ -120,14 +120,30 @@ export default function BattleProvider({
           initializeDeck();
         }
 
-        // System Ticks (Buff/Debuff durations, DoT/HoT) for BOTH teams
-        if (
-          battlePhase === "OnPlayerTurnStart" ||
-          battlePhase === "OnEnemyTurnStart"
-        ) {
+        // System ticks (ruling #21): buffs/HoT expire at the owner's turn
+        // START; debuffs/DoT proc and expire at the victim's turn END.
+        if (battlePhase === "OnPlayerTurnStart") {
           currentTeams = {
-            playerTeam: tickTeamEffects(currentTeams.playerTeam, addToBattleLog),
-            enemyTeam: tickTeamEffects(currentTeams.enemyTeam, addToBattleLog),
+            ...currentTeams,
+            playerTeam: tickTeamBuffs(currentTeams.playerTeam, addToBattleLog),
+          };
+        } else if (battlePhase === "OnPlayerTurnEnd") {
+          currentTeams = {
+            ...currentTeams,
+            playerTeam: tickTeamDebuffs(
+              currentTeams.playerTeam,
+              addToBattleLog,
+            ),
+          };
+        } else if (battlePhase === "OnEnemyTurnStart") {
+          currentTeams = {
+            ...currentTeams,
+            enemyTeam: tickTeamBuffs(currentTeams.enemyTeam, addToBattleLog),
+          };
+        } else if (battlePhase === "OnEnemyTurnEnd") {
+          currentTeams = {
+            ...currentTeams,
+            enemyTeam: tickTeamDebuffs(currentTeams.enemyTeam, addToBattleLog),
           };
         }
 

@@ -1,14 +1,22 @@
 import { BattleCharacter } from "@/types/character";
 
 /**
- * Turn-start system tick for one team: applies DoT/HoT, then decrements
- * buff/debuff durations and drops expired effects.
+ * Duration semantics (ruling #21 — durations are literal):
  *
- * Duration semantics: a duration of N means the effect survives N of these
- * ticks. Effects without a duration persist until removed by other means.
- * Also resets per-turn passive flags.
+ * - Harmful effects (debuffs, DoT, stun, seal) tick at the END of the
+ *   victim's team turn. The victim always gets their own turn to cleanse
+ *   before a proc lands, and "stun for N turns" blocks exactly N of the
+ *   victim's turns.
+ * - Beneficial effects (buffs, stances, HoT) tick at the START of the
+ *   owner's team turn. A 1-turn buff applied on your turn protects you
+ *   through the entire opposing turn and expires as your next turn begins.
+ *
+ * Duration N therefore means N procs (DoT/HoT) or N full turns of effect.
+ * Effects without a duration persist until removed by other means.
  */
-export function tickTeamEffects(
+
+/** Own-turn-START tick: reset per-turn flags, proc HoT, expire buffs. */
+export function tickTeamBuffs(
   team: BattleCharacter[],
   log: (entry: string) => void,
 ): BattleCharacter[] {
@@ -22,6 +30,41 @@ export function tickTeamEffects(
 
     // Reset action-specific passive flags each turn start
     char.passiveState.firstActionTriggeredThisTurn = false;
+
+    // Apply Heal-over-Time (HoT) effects
+    const hotEffects = char.buffs.filter((b) => b.type === "healOverTime");
+    let totalHot = 0;
+    hotEffects.forEach((hot) => {
+      if (hot.value) totalHot += hot.value;
+    });
+    if (totalHot > 0) {
+      char.currentHP = Math.min(char.hp, char.currentHP + totalHot);
+      log(`[System] ${char.name} heals ${totalHot} HP from HoT.`);
+    }
+
+    char.buffs = char.buffs
+      .map((b) => ({
+        ...b,
+        buffDuration: b.buffDuration ? b.buffDuration - 1 : undefined,
+      }))
+      .filter((b) => b.buffDuration === undefined || b.buffDuration > 0);
+
+    return char;
+  });
+}
+
+/** Own-turn-END tick: proc DoT/decay, expire debuffs. */
+export function tickTeamDebuffs(
+  team: BattleCharacter[],
+  log: (entry: string) => void,
+): BattleCharacter[] {
+  return team.map((original) => {
+    if (original.currentHP <= 0) return original;
+
+    const char = {
+      ...original,
+      passiveState: { ...original.passiveState },
+    };
 
     // Apply Damage-over-Time (DoT) and Decay effects
     const dotEffects = char.debuffs.filter(
@@ -42,24 +85,6 @@ export function tickTeamEffects(
       log(`[System] ${char.name} takes ${totalDot} damage from DoT.`);
     }
 
-    // Apply Heal-over-Time (HoT) effects
-    const hotEffects = char.buffs.filter((b) => b.type === "healOverTime");
-    let totalHot = 0;
-    hotEffects.forEach((hot) => {
-      if (hot.value) totalHot += hot.value;
-    });
-    if (totalHot > 0) {
-      char.currentHP = Math.min(char.hp, char.currentHP + totalHot);
-      log(`[System] ${char.name} heals ${totalHot} HP from HoT.`);
-    }
-
-    // Tick down buff and debuff durations
-    char.buffs = char.buffs
-      .map((b) => ({
-        ...b,
-        buffDuration: b.buffDuration ? b.buffDuration - 1 : undefined,
-      }))
-      .filter((b) => b.buffDuration === undefined || b.buffDuration > 0);
     char.debuffs = char.debuffs
       .map((d) => ({
         ...d,
