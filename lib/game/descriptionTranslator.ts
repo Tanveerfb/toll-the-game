@@ -84,7 +84,7 @@ function getRankedValue(
 function resolveMechanicField(
   mechanic: Record<string, unknown>,
   rankIndex: number,
-  field?: "value" | "duration" | "stacks",
+  field?: string,
 ): number | undefined {
   if (field === "duration") {
     return (
@@ -98,6 +98,17 @@ function resolveMechanicField(
       getRankedValue(mechanic.stacksRanked, rankIndex) ??
       (typeof mechanic.stacks === "number" ? mechanic.stacks : undefined)
     );
+  }
+
+  // Any other named field resolves against `<field>Ranked` first, then the
+  // scalar — lets descriptions reference fields like counterDamagePercent.
+  if (field && field !== "value") {
+    const ranked = getRankedValue(mechanic[`${field}Ranked`], rankIndex);
+    if (typeof ranked === "number") {
+      return ranked;
+    }
+    const scalar = mechanic[field];
+    return typeof scalar === "number" ? scalar : undefined;
   }
 
   const rankedCandidates = [
@@ -146,8 +157,8 @@ function resolveByMechanicType(
   skill: CharacterSkillData,
   mechanicType: string,
   rankIndex: number,
-  field?: "value" | "duration" | "stacks",
-): string {
+  field?: string,
+): string | undefined {
   const mechanic = getMechanics(skill).find(
     (entry) =>
       typeof entry.type === "string" &&
@@ -155,11 +166,11 @@ function resolveByMechanicType(
   );
 
   if (!mechanic) {
-    return "";
+    return undefined;
   }
 
   const value = resolveMechanicField(mechanic, rankIndex, field);
-  return typeof value === "number" ? formatNumber(value) : "";
+  return typeof value === "number" ? formatNumber(value) : undefined;
 }
 
 function resolveConditionByMechanicType(
@@ -222,10 +233,12 @@ function replaceMechanicPlaceholders(
       : "";
   });
 
+  // Unresolvable placeholders (e.g. keyword highlights like [Red]) are left
+  // untouched instead of being erased.
   result = result.replace(
-    /\[([a-zA-Z_]+)(?:\.(value|duration|stacks))?\]/g,
-    (_, mechanicType: string, field?: "value" | "duration" | "stacks") =>
-      resolveByMechanicType(skill, mechanicType, rankIndex, field),
+    /\[([a-zA-Z_]+)(?:\.([a-zA-Z_]+))?\]/g,
+    (match, mechanicType: string, field?: string) =>
+      resolveByMechanicType(skill, mechanicType, rankIndex, field) ?? match,
   );
 
   return result;

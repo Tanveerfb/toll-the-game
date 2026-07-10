@@ -14,7 +14,7 @@
       "characterId": "master_tao",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [120, 140, 175],
+      "damageRanked": [140 , 160 , 200],
       "mechanics": [
         {
           "type": "ignite",
@@ -28,7 +28,7 @@
       "characterId": "master_tao",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [120, 140, 170],
+      "damageRanked": [130, 155, 190],
       "mechanics": [
         {
           "type": "consumeIgnite",
@@ -44,7 +44,7 @@
     "characterId": "master_tao",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 280,
+    "damage": 300,
     "mechanics": [
       {
         "type": "aoe"

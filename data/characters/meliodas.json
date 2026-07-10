@@ -4,13 +4,13 @@
   "color": "red",
   "tags": ["Collab", "Demon", "Seven Deadly Sins"],
   "lore": "Captain of the Seven Deadly Sins. A demon wielding dark purgatory energy. Collab unit.",
-  "atk": 180,
-  "def": 80,
-  "hp": 1150,
+  "atk": 255,
+  "def": 100,
+  "hp": 1350,
   "skills": [
     {
       "skillName": "Triple Strike",
-      "description": "Does Weakpoint ATK-scaled damage to one enemy. Weakpoint deals 3x damage against debuffed enemies.",
+      "description": "Does Weakpoint ATK-scaled damage to one enemy. ",
       "characterId": "meliodas",
       "type": "attack",
       "statMultiplier": "atk",
@@ -23,7 +23,7 @@
     },
     {
       "skillName": "Full Counter",
-      "description": "Takes a counter stance. While it lasts, every attack received is countered with ATK-scaled damage to the attacker. Meliodas still takes the incoming damage, and a lethal hit is not countered.",
+      "description": "Takes a stance. While in this stance, when attacked, Meliodas counters with damage equal to [stance.counterDamagePercent]% of his ATK. Stance lasts [stance.duration] turn.",
       "characterId": "meliodas",
       "type": "stance",
       "statMultiplier": "atk",
@@ -58,7 +58,7 @@
   },
   "passive": {
     "name": "Deathblow",
-    "description": "Damage and crit chance rise by 2% for every 3% of max HP lost. A crit applies Critical: ignores 50% defense and type matchups, +50% damage. Inactive from the sub position. Teammates tagged [Demon] gain +5% all stats in battle.",
+    "description": "Damage dealt and critical chance increases by 2% for every 3% of max HP lost.",
     "trigger": "always",
     "worksFromSub": false,
     "mechanics": [

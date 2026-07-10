@@ -4,9 +4,9 @@
   "color": "red",
   "tags": ["Human"],
   "lore": "She is a bow user who can also do some hand-to-hand combat when needed. Her true power lies in her usage of Red Ice—a unique, volatile mix of ice and lava that freezes enemies on contact and burns fiercely if broken.",
-  "atk": 250,
-  "def": 50,
-  "hp": 950,
+  "atk": 195,
+  "def": 95,
+  "hp": 1100,
   "skills": [
     {
       "skillName": "Red Ice: Volcanic Frost",
@@ -14,7 +14,7 @@
       "characterId": "lyra",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [130, 145, 175],
+      "damageRanked": [150, 195, 250],
       "mechanics": [
         {
           "type": "decay",
@@ -30,11 +30,11 @@
       "characterId": "lyra",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [100, 120, 155],
+      "damageRanked": [200, 275, 400],
       "mechanics": [
         {
           "type": "pierce",
-          "valueRanked": [20, 30, 50]
+          "valueRanked": [30, 50, 80]
         }
       ]
     }
@@ -45,7 +45,7 @@
     "characterId": "lyra",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 300,
+    "damage": 500,
     "mechanics": [
       {
         "type": "aoe"
@@ -58,13 +58,13 @@
   },
   "passive": {
     "name": "First Action: Unbreakable Ice",
-    "description": "When Lyra acts first in a turn, gains +50% DEF for 1 turn. This buff is unstackable and uncancellable.",
+    "description": "When Lyra acts first in a turn, gains +100% DEF for 1 turn. This buff is unstackable and uncancellable.",
     "trigger": "onFirstAction",
     "mechanics": [
       {
         "type": "buff",
         "stat": "def",
-        "valuePercent": 50,
+        "valuePercent": 100,
         "duration": 1,
         "unstackable": true,
         "uncancellable": true

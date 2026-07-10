@@ -9,8 +9,8 @@
   "hp": 1408,
   "skills": [
     {
-      "skillName": "Draw Fire",
-      "description": "Taunts all enemies and gains [buff.value]% damage reduction for [buff.duration] turns.",
+      "skillName": "Attention Drawer",
+      "description": "Taunts and gains [buff.value]% damage reduction for [buff.duration] turns.",
       "characterId": "yalina",
       "type": "debuff",
       "statMultiplier": "def",
@@ -33,12 +33,12 @@
       ]
     },
     {
-      "skillName": "Amplified Strike",
+      "skillName": "Unexpected Strike",
       "description": "Does Amplify damage equal to HP-scaled to one enemy.",
       "characterId": "yalina",
       "type": "attack",
       "statMultiplier": "hp",
-      "damageRanked": [7, 10, 15],
+      "damageRanked": [9, 14, 20],
       "mechanics": [
         {
           "type": "amplify",
@@ -53,7 +53,7 @@
     "characterId": "yalina",
     "type": "ultimate",
     "statMultiplier": "hp",
-    "damage": 25,
+    "damage": 35,
     "mechanics": [
       {
         "type": "amplify",

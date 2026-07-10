@@ -14,7 +14,7 @@
       "characterId": "sara",
       "type": "attack",
       "statMultiplier": "hp",
-      "damageRanked": [10, 15, 24],
+      "damageRanked": [12, 18, 25],
       "mechanics": []
     },
     {
@@ -23,7 +23,7 @@
       "characterId": "sara",
       "type": "attack",
       "statMultiplier": "hp",
-      "damageRanked": [7, 9, 12.5],
+      "damageRanked": [10, 15, 20],
       "mechanics": [
         {
           "type": "aoe"
@@ -40,7 +40,7 @@
     "characterId": "sara",
     "type": "ultimate",
     "statMultiplier": "hp",
-    "damage": 30,
+    "damage": 35,
     "mechanics": [
       {
         "type": "buff",

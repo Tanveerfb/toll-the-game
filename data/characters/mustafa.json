@@ -5,7 +5,7 @@
   "tags": ["Human"],
   "lore": "South Asian male, ledger exam participant, likes to drink tea, India-themed attacks.",
   "atk": 65,
-  "def": 90,
+  "def": 120,
   "hp": 800,
   "skills": [
     {
@@ -30,7 +30,7 @@
       "characterId": "mustafa",
       "type": "attack",
       "statMultiplier": "def",
-      "damageRanked": [130, 155, 200],
+      "damageRanked": [180, 210, 300],
       "mechanics": [
         {
           "type": "lowerUltGauge",
@@ -58,7 +58,7 @@
   },
   "passive": {
     "name": "Earthen Resolve",
-    "description": "Red and Green allies gain +50% DEF for the battle.",
+    "description": "[Red] and [Green] allies gain +50% DEF for the battle.",
     "trigger": "onBattleStart",
     "mechanics": [
       {

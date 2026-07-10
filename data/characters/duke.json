@@ -3,8 +3,8 @@
   "name": "Duke",
   "color": "blue",
   "tags": ["Human"],
-  "atk": 200,
-  "def": 60,
+  "atk": 210,
+  "def": 85,
   "hp": 1200,
   "skills": [
     {
@@ -13,7 +13,7 @@
       "characterId": "duke",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [150, 180, 235],
+      "damageRanked": [150, 195, 250],
       "mechanics": [
         {
           "type": "aoe"
@@ -30,7 +30,7 @@
       "characterId": "duke",
       "type": "debuff",
       "statMultiplier": "atk",
-      "damageRanked": [110, 145, 205],
+      "damageRanked": [125, 150, 225],
       "mechanics": [
         {
           "type": "debuff",
@@ -47,11 +47,11 @@
     "characterId": "duke",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 350
+    "damage": 500
   },
   "passive": {
     "name": "Flowing Ruin",
-    "description": "After using a skill, gains 1 Flowing Ruin stack. At 3 stacks, the next skill consumes all stacks, deals 50% more damage, and lowers target ATK by 20% for 2 turns.",
+    "description": "After using a skill, gains 1 Flowing Ruin stack. At 3 stacks, the next skill consumes all stacks, deals 50% more damage, and lowers target ATK by 50% for 2 turns.",
     "trigger": "afterSkill",
     "mechanics": [
       {
@@ -65,10 +65,10 @@
         "type": "conditionalBuff",
         "name": "Flowing Ruin Empowerment",
         "triggerText": "When there are 3 stacks of Flowing Ruin",
-        "description": "At 3 stacks, the next skill consumes all stacks, deals 50% more damage, and lowers target ATK by 20% for 2 turns.",
+        "description": "At 3 stacks, the next skill consumes all stacks, deals 50% more damage, and lowers target ATK by 50% for 2 turns.",
         "conditionStacks": 3,
         "damageBonusPercent": 50,
-        "atkDownPercent": 20,
+        "atkDownPercent": 50,
         "atkDownDuration": 2
       }
     ]

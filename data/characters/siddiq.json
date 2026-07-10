@@ -4,9 +4,9 @@
   "color": "red",
   "tags": ["Human"],
   "lore": "Friend of Mustafa, ledger exam participant, India-themed attacks, nature powers.",
-  "atk": 82,
+  "atk": 110,
   "def": 75,
-  "hp": 910,
+  "hp": 1010,
   "skills": [
     {
       "skillName": "Nature's Strike",
@@ -54,13 +54,13 @@
   },
   "passive": {
     "name": "Vampiric Roots",
-    "description": "When below 50% HP, heals self for 30% of damage dealt.",
+    "description": "When below 50% HP, heals self for 20% of damage dealt.",
     "trigger": "onDamageDealt",
     "mechanics": [
       {
         "type": "healLifesteal",
         "hpConditionPercent": 50,
-        "lifestealPercent": 30
+        "lifestealPercent": 20
       }
     ]
   }

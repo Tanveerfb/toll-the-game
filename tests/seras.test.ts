@@ -225,10 +225,12 @@ describe("Charged passive + evade", () => {
     );
   });
 
-  it("caps at 5 stacks", () => {
+  it("caps at the data-defined max stacks", () => {
+    const cap = (serasData.passive.mechanics[0] as { maxStacks: number })
+      .maxStacks;
     let seras = makeSeras();
-    for (let i = 0; i < 7; i++) seras = attackSeras(seras, () => 0.99);
-    expect(seras.passiveState.chargedStacks).toBe(5);
+    for (let i = 0; i < cap + 3; i++) seras = attackSeras(seras, () => 0.99);
+    expect(seras.passiveState.chargedStacks).toBe(cap);
   });
 
   it("evade chance grows 5% per stack from a 0 base", () => {

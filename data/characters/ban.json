@@ -4,13 +4,13 @@
   "color": "green",
   "tags": ["Collab", "Human", "Seven Deadly Sins"],
   "lore": "Fox Sin of Greed. An undying human who takes what he wants — including your stats. Collab unit.",
-  "atk": 40,
-  "def": 20,
+  "atk": 140,
+  "def": 35,
   "hp": 1505,
   "skills": [
     {
       "skillName": "Drain",
-      "description": "Does ATK-scaled damage to all enemies with Lifesteal, recovering HP equal to 30% of the damage dealt.",
+      "description": "Does ATK-scaled damage to all enemies and Lifesteal 30% of the damage dealt.",
       "characterId": "ban",
       "type": "attack",
       "statMultiplier": "atk",
@@ -27,7 +27,7 @@
     },
     {
       "skillName": "Snatch",
-      "description": "Extorts ATK and DEF from all enemies. Extort lowers each enemy's ATK and DEF and adds the stolen points to Ban's own stats for the duration. Recasting refreshes — it never stacks.",
+      "description": "Applies [extort.value]% Extort effect ",
       "characterId": "ban",
       "type": "debuff",
       "statMultiplier": "atk",
@@ -61,7 +61,7 @@
   },
   "passive": {
     "name": "Extort Life",
-    "description": "Whenever Ban ends a full round without taking damage, all enemies' max HP falls by 8% (max 5 stacks, uncancellable). Taking any damage — including DoT and counters — fully restores enemy max HP and resets the stacks. Teammates tagged [Human] gain +5% all stats in battle.",
+    "description": "Whenever Ban ends a turn without taking damage, all enemies' max HP falls by 8% (max 5 stacks, uncancellable). Taking any damage — including DoT and counters — resets the stacks. ",
     "trigger": "onRoundEnd",
     "mechanics": [
       {

@@ -4,7 +4,7 @@
   "color": "blue",
   "tags": ["Human", "KHALSA"],
   "lore": "Ledger exam participant, Sikh, turban, lion-themed attacks.",
-  "atk": 85,
+  "atk": 245,
   "def": 70,
   "hp": 1120,
   "skills": [
@@ -41,11 +41,11 @@
   ],
   "ultimate": {
     "skillName": "Khalsa Flame",
-    "description": "Applies 3 Ignite stacks, then does Spite damage equal to ATK-scaled.",
+    "description": "Applies 3 Ignite stacks, then does Spite damage equal to ATK-scaled to one enemy.",
     "characterId": "batra",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 400,
+    "damage": 350,
     "mechanics": [
       {
         "type": "ignite",

@@ -248,9 +248,11 @@ describe("Ban — Lifesteal, Extort, Extort Life", () => {
       { playerTeam: [ban], enemyTeam: [target] },
       noopLog,
     );
-    // 40 ATK * 400% = 160 dealt -> 48 healed
-    expect(after.enemyTeam[0].currentHP).toBe(1000 - 160);
-    expect(after.playerTeam[0].currentHP).toBe(500 + 48);
+    // ATK * 400% dealt vs 0 DEF -> 30% healed (data-driven so rebalances don't break this)
+    const dealt =
+      banData.atk * ((banData.skills[0].damageRanked[2] as number) / 100);
+    expect(after.enemyTeam[0].currentHP).toBe(1000 - dealt);
+    expect(after.playerTeam[0].currentHP).toBe(500 + Math.floor(dealt * 0.3));
   });
 
   it("Snatch extorts per-stat and refreshes instead of stacking", () => {
@@ -414,8 +416,10 @@ describe("Diane — Rupture, Attack Seal, Giant's Will", () => {
     for (let i = 0; i < 7; i++) {
       teams = await ramp.action(teams.playerTeam[0], teams, noopLog);
     }
-    // capped at 5 stacks: 110 + 5 * floor(110*0.15)=5*16=80
-    expect(teams.playerTeam[0].currentAttack).toBe(dianeData.atk + 5 * 16);
+    // capped at 5 stacks of floor(base ATK * 15%)
+    expect(teams.playerTeam[0].currentAttack).toBe(
+      dianeData.atk + 5 * Math.floor(dianeData.atk * 0.15),
+    );
     expect(teams.playerTeam[0].passiveState.turnRampStacks).toBe(5);
   });
 });

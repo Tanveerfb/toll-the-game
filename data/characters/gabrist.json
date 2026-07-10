@@ -4,13 +4,13 @@
   "color": "blue",
   "tags": ["Human"],
   "lore": "Artist, friend of Batra, ledger exam participant, calm and cool.",
-  "atk": 110,
-  "def": 70,
+  "atk": 117,
+  "def": 75,
   "hp": 1300,
   "skills": [
     {
       "skillName": "Ink Slash",
-      "description": "Does ATK-scaled damage to one enemy and lowers ATK for 2 turns",
+      "description": "Does ATK-scaled damage to one enemy and greatly lowers ATK for 2 turns",
       "characterId": "gabrist",
       "type": "attack",
       "statMultiplier": "atk",
@@ -19,7 +19,7 @@
         {
           "type": "debuff",
           "stat": "atk",
-          "value": 20,
+          "valuePercent": 50,
           "duration": 2
         }
       ]
@@ -40,7 +40,7 @@
   ],
   "ultimate": {
     "skillName": "Masterpiece Unveiled",
-    "description": "Does ATK-scaled damage to all enemies and greatly lowers ATK and DEF for 2 turns.",
+    "description": "Cancel buffs and does ATK-scaled damage to all enemies and greatly lowers ATK and DEF for 2 turns.",
     "characterId": "gabrist",
     "type": "ultimate",
     "statMultiplier": "atk",
@@ -60,6 +60,9 @@
         "stat": "def",
         "valuePercent": 50,
         "duration": 2
+      },
+      {
+        "type": "cancelBuffs"
       }
     ]
   },
