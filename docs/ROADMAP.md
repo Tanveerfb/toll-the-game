@@ -50,6 +50,9 @@ Solo dev + AI tooling. Ordered so every phase ends with something runnable. Mech
 - [x] HxH collab trio Gon/Killua/Leorio (2026-07-11) + new systems: buff-before-hit, gainUltGauge, rank-gated stun, Bleed, statShiftAfterAttacks, characterSynergy
 - [x] Tanveer's roster-wide stat rebalance + terse description pass wired in (2026-07-11)
 - [x] Archive UX: colored effect pills, typed skill chips, mechanic-driven damage preview for newer kits, sticky topnav (2026-07-11)
+- [x] Dokkan wording system (rulings #26–27): tiered raise/lower words, per-skill hover values, phrase-level cancel pills, one pill per effect (2026-07-11)
+- [x] Single-ally target selection for rank-gated ally buffs (Leorio) + Kind Hearted Friend badge-collision fix (2026-07-11)
+- [x] Pierce generalized to flat 50% DEF ignore; counter-stance damage preview rows (2026-07-11)
 - [x] Art v4: HxH trio, Siddiq redesign, Batra kesari rework; Mustafa design approved (2026-07-11)
 - [ ] Story mode skeleton: linear stage list (Dokkan-style stages)
 - [ ] Stage = scripted enemy team + dialogue intro/outro
