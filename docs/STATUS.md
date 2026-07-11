@@ -22,7 +22,11 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 - **Lethal survival (ruling #29)** — Nine Lives catches direct hits AND lethal DoT procs (`lib/game/lethal.ts`, shared by combat + ticks); any revival strips all buffs and debuffs, uncancellable included.
 - **Battle QoL** — 1×/2× speed toggle (scales phase auto-advance + enemy resolve delays), battle-log filter (Actions only / All events incl. DoT ticks + passive procs), hover tooltips on unit ▲/▼ effect counters.
 - **Kit validation** — Zod schema (`lib/game/characterSchema.ts`) parses every character JSON at load; malformed kits fail with the character id and field named. `npm run check` = tsc + eslint + vitest.
-- **Tests** — 116 across combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, lethal survival.
+- **Effects vs buffs/debuffs (ruling #30)** — uncancellable entries (synergy bonuses, ramps) are grey "effects": excluded from Rupture/Amplify/Weakpoint counting, cleanse, AI cleanse decisions, and the ▲/▼ counters (grey ◆ counter + "Effects" section instead). Their stat modifiers still apply.
+- **Taunt-stance link (ruling #31)** — cancelling a unit's stances/buffs also breaks the taunts it authored; Yalina's Attention Drawer is a real stance now.
+- **Extort links (ruling #32)** — the thief's Extort buff dies when no living enemy carries a linked Extort debuff (death/cleanse/expiry); synced after every action and debuff tick.
+- **Deck QoL (ruling #33)** — Reset Hand rewinds queue + selection merges + merge-granted gauge to turn start; leftover cards auto-merge when queuing/unqueuing exposes identical neighbors.
+- **Tests** — 125 across combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, lethal survival, effects/links.
 
 ## Open Issues
 
@@ -35,6 +39,8 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 | 16 | Rank-gated effect text shows literal zeros at rank 1 (e.g. "stuns for 0 turn(s) at rank 2+", Diane's "0 turn Attack Seal") — cosmetic; consider hiding zero-value sentences in the translator | `descriptionTranslator.ts` | Cosmetic |
 | 17 | Gon/Killua ult raises now read "Permanently raises …" (ruling #28), so permanence is explicit — but the buffs are also `uncancellable` in data and the text doesn't say that. Remaining call for Tanveer: does "Permanently" imply cancel-proof (keep data as-is), or should the text add "(cannot be cancelled)" / the buffs become cancellable? | `data/characters/gon.json`, `killua.json` | Pending Tanveer |
 | 15 | Console `FirebaseError: Missing or insufficient permissions` — the Firestore `users/{uid}` read fires when signed in but rules deny it. Client now degrades gracefully (single warn, plays on with local state); `firestore.rules` written in repo root (own-doc read/write) — **needs deploying to the Firebase project** | Firebase / `firestore.rules` | Low |
+| 19 | `damageReduction` stat is never consumed by the damage engine — Mustafa's Fortress and Yalina's Attention Drawer DR display but don't reduce damage. Needs a damage-formula hook (multiply incoming by 1 − DR%) | `lib/game/damage.ts` / `stats.ts` | High (gameplay) |
+| 20 | Battle screen page gets a user-friendliness overhaul in a future batch (Tanveer, 2026-07-11) — after all mechanics work as expected | `components/game/*` | Planned |
 
 ## Not Built Yet
 

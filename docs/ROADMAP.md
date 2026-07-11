@@ -39,6 +39,7 @@ Solo dev + AI tooling. Ordered so every phase ends with something runnable. Mech
 - [x] Card art v2/v3 (2026-07-07): Duke/Gabrist/Yalina/Lyra redesigned from Tanveer's direction, ref photos, and concept art (`docs/design/characters/refs/`); image cache-busting via `?v=ART_VERSION` + `images.localPatterns`
 - [ ] Basic sound hooks (optional, cheap with framer-motion already present)
 - [ ] Mobile layout pass
+- [ ] Battle screen user-friendliness overhaul — **[Tanveer]** scheduled after all mechanics work as expected (his call, 2026-07-11)
 
 ## Phase 3 — Content & Story Mode
 

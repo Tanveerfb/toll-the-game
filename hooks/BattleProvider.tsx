@@ -10,6 +10,7 @@ import { executeSkill } from "@/lib/game/combat";
 import { ENEMY_ACTIONS_PER_TURN, getAIMove } from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
 import { tickTeamBuffs, tickTeamDebuffs } from "@/lib/game/tick";
+import { syncExtortLinks } from "@/lib/game/effects";
 import { ensureFieldUnit, promoteSubs } from "@/lib/game/sub";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 
@@ -66,6 +67,7 @@ export default function BattleProvider({
     // clearActionQueue is no longer needed; actions are resolved one by one.
     removeDeadCharacterCards,
     setActionQueue,
+    snapshotHand,
   } = store;
 
   // Removed phaseRef - accessing refs during render caused lint errors.
@@ -112,6 +114,12 @@ export default function BattleProvider({
         "OnEnemyTurnStart",
         "OnEnemyTurnEnd",
       ];
+
+      // Snapshot the hand + ult gauges as the player's turn opens so
+      // Reset Hand can rewind queuing and selection-time merges
+      if (battlePhase === "PlayerAction") {
+        snapshotHand();
+      }
 
       if (automatedPhases.includes(battlePhase)) {
         let currentTeams = { playerTeam, enemyTeam };
@@ -164,6 +172,14 @@ export default function BattleProvider({
             removeDeadCharacterCards(c.instanceId);
           }
         });
+
+        // Ruling #32: Extort self-buffs drop once no linked debuff survives
+        // on a living enemy (expiry or DoT death during the ticks above)
+        syncExtortLinks(
+          updatedTeams.playerTeam,
+          updatedTeams.enemyTeam,
+          addToBattleLog,
+        );
 
         // Bench units take the field only at the start of a new turn —
         // mid-turn deaths leave the slot open until the next turn begins

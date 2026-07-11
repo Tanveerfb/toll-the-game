@@ -51,18 +51,20 @@ export function calculateDamage({ baseDamage, skillMechanics, target, attackerCo
   }
 
   // Weakpoint Calculation (x3 total damage if target has >= 1 debuff)
-  // Only applies if the attacker's skill possesses "weakpoint"
+  // Only applies if the attacker's skill possesses "weakpoint".
+  // Ruling #30: uncancellable entries are "effects", not debuffs — excluded.
   if (skillMechanics.find(m => m.type === "weakpoint")) {
-    const hasDebuff = target.debuffs.length > 0;
+    const hasDebuff = target.debuffs.some(d => !d.uncancellable);
     if (hasDebuff) {
       extraDamage += effectiveBaseDamage * 2.0; // Base(1x) + Extra(2x) = 3x total
     }
   }
 
   // Rupture Calculation (x2 total damage if target has >= 1 buff)
-  // Only applies if the attacker's skill possesses "rupture"
+  // Only applies if the attacker's skill possesses "rupture".
+  // Ruling #30: uncancellable entries (synergy bonuses etc.) don't count.
   if (skillMechanics.find(m => m.type === "rupture")) {
-    const hasBuff = target.buffs.length > 0;
+    const hasBuff = target.buffs.some(b => !b.uncancellable);
     if (hasBuff) {
       extraDamage += effectiveBaseDamage * 1.0; // Base(1x) + Extra(1x) = 2x total
     }

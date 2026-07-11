@@ -149,4 +149,54 @@ describe("deck flow (7DS GC draw behavior)", () => {
     expect(deck.length).toBeGreaterThan(0);
     expect(deck.every((c) => c.sourceInstanceId === "promoted")).toBe(true);
   });
+
+  it("queuing a card auto-merges leftover neighbors it exposes (+1 gauge)", () => {
+    const unit = makeChar({ instanceId: "unit" });
+    const enemy = makeChar({ instanceId: "foe", team: "enemy" });
+    useGameStore.setState({
+      playerTeam: [unit],
+      enemyTeam: [enemy],
+      selectedEnemyMarker: "foe",
+      deck: [
+        { id: "a1", sourceInstanceId: "unit", skill: skillA, rank: 1 },
+        { id: "b1", sourceInstanceId: "unit", skill: skillB, rank: 1 },
+        { id: "a2", sourceInstanceId: "unit", skill: skillA, rank: 1 },
+      ],
+    });
+    useGameStore.getState().selectCard("b1");
+
+    const state = useGameStore.getState();
+    expect(state.actionQueue).toHaveLength(1);
+    // The two Alpha cards became adjacent and merged to R2
+    expect(state.deck).toHaveLength(1);
+    expect(state.deck[0].skill.skillName).toBe("Alpha");
+    expect(state.deck[0].rank).toBe(2);
+    expect(state.playerTeam[0].ultGauge).toBe(1);
+  });
+
+  it("resetHand rewinds the deck, queue, and merge-granted ult gauge to the snapshot", () => {
+    const unit = makeChar({ instanceId: "unit" });
+    const enemy = makeChar({ instanceId: "foe", team: "enemy" });
+    useGameStore.setState({
+      playerTeam: [unit],
+      enemyTeam: [enemy],
+      selectedEnemyMarker: "foe",
+      deck: [
+        { id: "a1", sourceInstanceId: "unit", skill: skillA, rank: 1 },
+        { id: "b1", sourceInstanceId: "unit", skill: skillB, rank: 1 },
+        { id: "a2", sourceInstanceId: "unit", skill: skillA, rank: 1 },
+      ],
+    });
+    useGameStore.getState().snapshotHand();
+    useGameStore.getState().selectCard("b1"); // queues + merges + grants gauge
+    expect(useGameStore.getState().playerTeam[0].ultGauge).toBe(1);
+
+    useGameStore.getState().resetHand();
+
+    const state = useGameStore.getState();
+    expect(state.actionQueue).toHaveLength(0);
+    expect(state.deck.map((c) => c.id)).toEqual(["a1", "b1", "a2"]);
+    expect(state.deck.every((c) => c.rank === 1)).toBe(true);
+    expect(state.playerTeam[0].ultGauge).toBe(0);
+  });
 });

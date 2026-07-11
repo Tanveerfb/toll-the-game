@@ -190,47 +190,75 @@ function TeamUnitCard({
                 {unit.ultGauge}/5
               </span>
             </span>
-            {unit.buffs.length > 0 || unit.debuffs.length > 0 ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="cursor-help underline decoration-dotted underline-offset-2">
-                    <span className="text-emerald-500">
-                      ▲{unit.buffs.length}
-                    </span>{" "}
-                    <span className="text-rose-500">
-                      ▼{unit.debuffs.length}
+            {(() => {
+              // Ruling #30: uncancellable entries are grey "effects" — they
+              // don't count as buffs/debuffs
+              const buffs = unit.buffs.filter((b) => !b.uncancellable);
+              const debuffs = unit.debuffs.filter((d) => !d.uncancellable);
+              const effects = [
+                ...unit.buffs.filter((b) => b.uncancellable),
+                ...unit.debuffs.filter((d) => d.uncancellable),
+              ];
+              const counters = (
+                <>
+                  <span className="text-emerald-500">▲{buffs.length}</span>{" "}
+                  <span className="text-rose-500">▼{debuffs.length}</span>
+                  {effects.length > 0 ? (
+                    <>
+                      {" "}
+                      <span className="text-zinc-400">◆{effects.length}</span>
+                    </>
+                  ) : null}
+                </>
+              );
+              if (
+                buffs.length === 0 &&
+                debuffs.length === 0 &&
+                effects.length === 0
+              ) {
+                return <span>{counters}</span>;
+              }
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-help underline decoration-dotted underline-offset-2">
+                      {counters}
                     </span>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <span className="block space-y-0.5 font-body text-xs normal-case tracking-normal">
-                    {unit.buffs.map((effect, idx) => (
-                      <span
-                        key={`b-${effect.type}-${idx}`}
-                        className="block text-emerald-300"
-                      >
-                        ▲ {effect.name ?? describeEffect(effect)}
-                        {effect.name ? ` — ${describeEffect(effect)}` : ""}
-                      </span>
-                    ))}
-                    {unit.debuffs.map((effect, idx) => (
-                      <span
-                        key={`d-${effect.type}-${idx}`}
-                        className="block text-rose-300"
-                      >
-                        ▼ {effect.name ?? describeEffect(effect)}
-                        {effect.name ? ` — ${describeEffect(effect)}` : ""}
-                      </span>
-                    ))}
-                  </span>
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <span>
-                <span className="text-emerald-500">▲{unit.buffs.length}</span>{" "}
-                <span className="text-rose-500">▼{unit.debuffs.length}</span>
-              </span>
-            )}
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <span className="block space-y-0.5 font-body text-xs normal-case tracking-normal">
+                      {buffs.map((effect, idx) => (
+                        <span
+                          key={`b-${effect.type}-${idx}`}
+                          className="block text-emerald-300"
+                        >
+                          ▲ {effect.name ?? describeEffect(effect)}
+                          {effect.name ? ` — ${describeEffect(effect)}` : ""}
+                        </span>
+                      ))}
+                      {debuffs.map((effect, idx) => (
+                        <span
+                          key={`d-${effect.type}-${idx}`}
+                          className="block text-rose-300"
+                        >
+                          ▼ {effect.name ?? describeEffect(effect)}
+                          {effect.name ? ` — ${describeEffect(effect)}` : ""}
+                        </span>
+                      ))}
+                      {effects.map((effect, idx) => (
+                        <span
+                          key={`e-${effect.type}-${idx}`}
+                          className="block text-zinc-400"
+                        >
+                          ◆ {effect.name ?? describeEffect(effect)}
+                          {effect.name ? ` — ${describeEffect(effect)}` : ""}
+                        </span>
+                      ))}
+                    </span>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })()}
           </div>
         </CardContent>
       </Card>
@@ -603,15 +631,17 @@ export default function BattleArena(): React.JSX.Element {
                     Active Buffs
                   </p>
                   <div className="max-h-36 space-y-1 overflow-y-auto pr-1">
-                    {detailUnit.buffs.length > 0 ? (
-                      detailUnit.buffs.map((effect, idx) => (
-                        <p
-                          key={`buff-${effect.type}-${idx}`}
-                          className="border border-emerald-700/60 bg-emerald-950/30 px-2 py-1 font-body text-xs text-emerald-100"
-                        >
-                          {describeEffect(effect)}
-                        </p>
-                      ))
+                    {detailUnit.buffs.some((b) => !b.uncancellable) ? (
+                      detailUnit.buffs
+                        .filter((b) => !b.uncancellable)
+                        .map((effect, idx) => (
+                          <p
+                            key={`buff-${effect.type}-${idx}`}
+                            className="border border-emerald-700/60 bg-emerald-950/30 px-2 py-1 font-body text-xs text-emerald-100"
+                          >
+                            {describeEffect(effect)}
+                          </p>
+                        ))
                     ) : (
                       <p className="font-body text-xs text-zinc-400">
                         No active buffs.
@@ -625,15 +655,17 @@ export default function BattleArena(): React.JSX.Element {
                     Active Debuffs
                   </p>
                   <div className="max-h-36 space-y-1 overflow-y-auto pr-1">
-                    {detailUnit.debuffs.length > 0 ? (
-                      detailUnit.debuffs.map((effect, idx) => (
-                        <p
-                          key={`debuff-${effect.type}-${idx}`}
-                          className="border border-rose-700/60 bg-rose-950/30 px-2 py-1 font-body text-xs text-rose-100"
-                        >
-                          {describeEffect(effect)}
-                        </p>
-                      ))
+                    {detailUnit.debuffs.some((d) => !d.uncancellable) ? (
+                      detailUnit.debuffs
+                        .filter((d) => !d.uncancellable)
+                        .map((effect, idx) => (
+                          <p
+                            key={`debuff-${effect.type}-${idx}`}
+                            className="border border-rose-700/60 bg-rose-950/30 px-2 py-1 font-body text-xs text-rose-100"
+                          >
+                            {describeEffect(effect)}
+                          </p>
+                        ))
                     ) : (
                       <p className="font-body text-xs text-zinc-400">
                         No active debuffs.
@@ -641,6 +673,28 @@ export default function BattleArena(): React.JSX.Element {
                     )}
                   </div>
                 </div>
+
+                {[...detailUnit.buffs, ...detailUnit.debuffs].some(
+                  (e) => e.uncancellable,
+                ) ? (
+                  <div>
+                    <p className="mb-1 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                      Effects
+                    </p>
+                    <div className="max-h-36 space-y-1 overflow-y-auto pr-1">
+                      {[...detailUnit.buffs, ...detailUnit.debuffs]
+                        .filter((e) => e.uncancellable)
+                        .map((effect, idx) => (
+                          <p
+                            key={`effect-${effect.type}-${idx}`}
+                            className="border border-zinc-600/60 bg-zinc-900/50 px-2 py-1 font-body text-xs text-zinc-300"
+                          >
+                            {describeEffect(effect)}
+                          </p>
+                        ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </CardContent>
           </Card>

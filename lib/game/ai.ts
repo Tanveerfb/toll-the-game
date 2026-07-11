@@ -62,8 +62,9 @@ export function getAIMove(
   const needsHeal = enemyTeam.some(
     (e) => e.currentHP > 0 && e.currentHP <= e.hp * 0.5,
   );
+  // Ruling #30: uncancellable entries are "effects" — nothing to cleanse
   const needsCleanse = enemyTeam.some(
-    (e) => e.currentHP > 0 && e.debuffs.length > 0,
+    (e) => e.currentHP > 0 && e.debuffs.some((d) => !d.uncancellable),
   );
 
   if (needsHeal || needsCleanse) {

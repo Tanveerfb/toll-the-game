@@ -122,6 +122,8 @@ export default function Deck() {
     battlePhase,
     mergeDeckCard,
     reorderDeckCard,
+    resetHand,
+    handSnapshot,
   } = useGameStore();
 
   const isPlayerActionPhase = battlePhase === "PlayerAction";
@@ -359,14 +361,25 @@ export default function Deck() {
       ) : null}
 
       <div className="mb-2 flex items-center justify-between gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsDockExpanded((prev) => !prev)}
-          className="border border-zinc-700 rounded-none px-2 text-[11px] uppercase tracking-widest text-zinc-300"
-        >
-          {isDockExpanded ? "Collapse Deck" : "Expand Deck"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsDockExpanded((prev) => !prev)}
+            className="border border-zinc-700 rounded-none px-2 text-[11px] uppercase tracking-widest text-zinc-300"
+          >
+            {isDockExpanded ? "Collapse Deck" : "Expand Deck"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!isPlayerActionPhase || !handSnapshot}
+            onClick={resetHand}
+            className="border border-amber-300/60 rounded-none px-2 text-[11px] uppercase tracking-widest text-amber-200 disabled:border-zinc-800 disabled:text-zinc-600"
+          >
+            Reset Hand
+          </Button>
+        </div>
 
         <span className="font-body text-[11px] uppercase tracking-[0.12em] text-zinc-500">
           {isPlayerActionPhase ? "Your turn" : "Waiting…"} • Queue{" "}

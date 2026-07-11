@@ -115,6 +115,12 @@ interface BattleState {
   selectedEnemyMarker: string | null;
   selectedAllyMarker: string | null;
   interactionNotice: string | null;
+  // Turn-start snapshot for Reset Hand (undoes queuing AND selection merges,
+  // including the ult gauge those merges granted)
+  handSnapshot: {
+    deck: ActionCard[];
+    ultGauges: Record<string, number>;
+  } | null;
 
   // Actions
   setPlayerTeam: (team: BattleCharacter[]) => void;
@@ -144,6 +150,8 @@ interface BattleState {
   mergeDeckCard: (cardId: string) => void;
   removeDeadCharacterCards: (instanceId: string) => void;
   setActionQueue: (queue: ActionCard[]) => void;
+  snapshotHand: () => void;
+  resetHand: () => void;
 }
 
 export const useGameStore = create<BattleState>((set, get) => ({
@@ -161,6 +169,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
   selectedEnemyMarker: null,
   selectedAllyMarker: null,
   interactionNotice: null,
+  handSnapshot: null,
 
   setPlayerTeam: (team) => set({ playerTeam: team }),
   setEnemyTeam: (team) => set({ enemyTeam: team }),
@@ -197,6 +206,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
       selectedEnemyMarker: null,
       selectedAllyMarker: null,
       interactionNotice: null,
+      handSnapshot: null,
     }),
 
   setEnemyMarker: (instanceId) => set({ selectedEnemyMarker: instanceId }),
@@ -205,6 +215,34 @@ export const useGameStore = create<BattleState>((set, get) => ({
   clearInteractionNotice: () => set({ interactionNotice: null }),
 
   setActionQueue: (queue) => set({ actionQueue: queue }),
+
+  // Captured when PlayerAction begins — Reset Hand restores this state
+  snapshotHand: () => {
+    const { deck, playerTeam } = get();
+    const ultGauges: Record<string, number> = {};
+    playerTeam.forEach((c) => {
+      ultGauges[c.instanceId] = c.ultGauge;
+    });
+    set({ handSnapshot: { deck: [...deck], ultGauges } });
+  },
+
+  // Discard the queued actions and rewind the hand to the turn start —
+  // selection-time merges are reversed, including their ult gauge grants
+  resetHand: () => {
+    const { handSnapshot, playerTeam } = get();
+    if (!handSnapshot) return;
+    set({
+      deck: [...handSnapshot.deck],
+      actionQueue: [],
+      playerTeam: playerTeam.map((c) =>
+        handSnapshot.ultGauges[c.instanceId] !== undefined
+          ? { ...c, ultGauge: handSnapshot.ultGauges[c.instanceId] }
+          : c,
+      ),
+      interactionNotice: null,
+    });
+  },
+
   initializeDeck: () => {
     const { playerTeam } = get();
     // Subs contribute no cards until promoted to the field
@@ -404,10 +442,27 @@ export const useGameStore = create<BattleState>((set, get) => ({
     const newDeck = [...deck];
     newDeck.splice(cardIndex, 1);
 
+    // Leftover cards auto-merge if removing this one made identical
+    // neighbors adjacent (each merge still grants +1 ult gauge; Reset Hand
+    // reverses both)
+    const mergeResult = applyAdjacentMerges(newDeck);
+    let updatedTeam = playerTeam;
+    if (mergeResult.mergeCount > 0) {
+      updatedTeam = playerTeam.map((c) => {
+        const gains = mergeResult.mergeSourceIds.filter(
+          (sourceId) => sourceId === c.instanceId,
+        ).length;
+        if (gains <= 0) return c;
+        return { ...c, ultGauge: Math.min(5, c.ultGauge + gains) };
+      });
+    }
+
     set({
-      deck: newDeck,
+      deck: mergeResult.deck,
+      playerTeam: updatedTeam,
       actionQueue: [...actionQueue, { ...card, targetInstanceId: targetId }],
-      interactionNotice: null,
+      interactionNotice:
+        mergeResult.mergeCount > 0 ? mergeResult.notices.join(" ") : null,
     });
   },
 
@@ -420,11 +475,27 @@ export const useGameStore = create<BattleState>((set, get) => ({
     const newQueue = [...actionQueue];
     newQueue.splice(cardIndex, 1);
 
-    // Put it back at the end of the deck
+    // Put it back at the end of the deck; auto-merge if it lands next to
+    // an identical card (same rule as draws and selection)
+    const { playerTeam } = get();
+    const mergeResult = applyAdjacentMerges([...deck, card]);
+    let updatedTeam = playerTeam;
+    if (mergeResult.mergeCount > 0) {
+      updatedTeam = playerTeam.map((c) => {
+        const gains = mergeResult.mergeSourceIds.filter(
+          (sourceId) => sourceId === c.instanceId,
+        ).length;
+        if (gains <= 0) return c;
+        return { ...c, ultGauge: Math.min(5, c.ultGauge + gains) };
+      });
+    }
+
     set({
       actionQueue: newQueue,
-      deck: [...deck, card],
-      interactionNotice: null,
+      deck: mergeResult.deck,
+      playerTeam: updatedTeam,
+      interactionNotice:
+        mergeResult.mergeCount > 0 ? mergeResult.notices.join(" ") : null,
     });
   },
 

@@ -3,6 +3,7 @@ import { Action } from "@/types/action";
 import { calculateDamage } from "./damage";
 import { getEvadeChance } from "./evade";
 import { trySurviveLethal } from "./lethal";
+import { syncExtortLinks } from "./effects";
 import { getEffectiveAttack, getEffectiveDefense } from "./stats";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
@@ -397,7 +398,10 @@ export function executeSkill(
 
   const amplifyMech = skillMechanics.find((m) => m.type === "amplify");
   if (amplifyMech && isAttack) {
-    const buffCount = updatedSource.buffs.length;
+    // Ruling #30: uncancellable "effects" don't count as buffs for Amplify
+    const buffCount = updatedSource.buffs.filter(
+      (b) => !b.uncancellable,
+    ).length;
     const multiplier = 1 + (buffCount * (amplifyMech.valuePercent || 10)) / 100;
     baseDamage *= multiplier;
     log(
@@ -507,16 +511,37 @@ export function executeSkill(
     // Cancels resolve BEFORE damage (Evil Spirit order: strip stances and
     // buffs, then hit) — canceling a counter stance prevents the counter.
     // Uncancellable effects (synergy badges, ramp stacks) survive.
+    // Ruling #31: cancelling a unit's stances also drops the taunts it
+    // authored — attackers are no longer redirected to it.
     if (isOffensive) {
+      const clearTauntsAuthoredByTarget = () => {
+        let cleared = false;
+        [...updatedTeams.playerTeam, ...updatedTeams.enemyTeam].forEach(
+          (unit) => {
+            const before = unit.debuffs.length;
+            unit.debuffs = unit.debuffs.filter(
+              (d) =>
+                !(
+                  d.type === "taunt" &&
+                  d.sourceId === updatedTarget.instanceId
+                ),
+            );
+            if (unit.debuffs.length !== before) cleared = true;
+          },
+        );
+        if (cleared) targetEffects.push("broke the taunt");
+      };
       if (skillMechanics.some((m) => m.type === "cancelBuffs")) {
         updatedTarget.buffs = updatedTarget.buffs.filter(
           (b) => b.uncancellable,
         );
+        clearTauntsAuthoredByTarget();
         targetEffects.push("cancelled buffs");
       } else if (skillMechanics.some((m) => m.type === "cancelStances")) {
         updatedTarget.buffs = updatedTarget.buffs.filter(
           (b) => b.type !== "stance" || b.uncancellable,
         );
+        clearTauntsAuthoredByTarget();
         targetEffects.push("cancelled stances");
       }
     }
@@ -704,12 +729,15 @@ export function executeSkill(
             const defStolen = Math.floor(
               (getEffectiveDefense(updatedTarget) * pct) / 100,
             );
+            // sourceId links the victim's debuffs to the thief's self-buff
+            // (ruling #32: the buff dies when no linked debuff remains)
             updatedTarget.debuffs.push({
               type: "debuff",
               stat: "atk",
               valuePercent: pct,
               debuffDuration: mech.duration,
               name: "Extort",
+              sourceId: updatedSource.instanceId,
             });
             updatedTarget.debuffs.push({
               type: "debuff",
@@ -717,6 +745,7 @@ export function executeSkill(
               valuePercent: pct,
               debuffDuration: mech.duration,
               name: "Extort",
+              sourceId: updatedSource.instanceId,
             });
             extortGains.atk += atkStolen;
             extortGains.def += defStolen;
@@ -768,7 +797,11 @@ export function executeSkill(
     // Friendly buffs/cleanses applied even if it's an attack (if targetSelf is true or targets are allies)
     skillMechanics.forEach((mech) => {
       if (mech.type === "cleanse" && isHealOrBuff) {
-        updatedTarget.debuffs = [];
+        // Ruling #30: uncancellable entries are "effects", not debuffs —
+        // cleanse can't touch them
+        updatedTarget.debuffs = updatedTarget.debuffs.filter(
+          (d) => d.uncancellable,
+        );
         targetEffects.push("cleansed all debuffs");
       }
       if ((mech.type === "buff" || mech.type === "stance") && !mech.targetSelf) {
@@ -915,6 +948,10 @@ export function executeSkill(
       );
     }
   }
+
+  // Ruling #32: Extort self-buffs live only while a linked debuff survives
+  // on a living enemy (covers deaths and cleanses caused by this action)
+  syncExtortLinks(updatedTeams.playerTeam, updatedTeams.enemyTeam, log);
 
   return updatedTeams;
 }
