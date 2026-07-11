@@ -19,7 +19,10 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 - **Dokkan wording (rulings #26–28)** — descriptions drop numbers ("raises" <50%, "greatly" 50–79%, "massively" 80%+; same for lowers); pills span the stat ("Raises ATK") and hover shows that skill's exact percentages per rank. One pill per unique effect — cancel effects are phrase-level keys. No "own"; cancellable/stackable is the unmentioned default. Permanent stat changes are explicit ("Permanently raises ATK" — its own pill tier); semicolons separate description clauses, applied roster-wide.
 - **Single-ally targeting** — single-target ally buffs/heals (Leorio's rank-1 Member of the Zodiac) require marking an ally on the arena (emerald Target badge); rank-gated aoe needs no selection.
 - **Pierce** — flat 50% DEF ignore for every card; per-card pierce values removed.
-- **Tests** — 110 across combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting.
+- **Lethal survival (ruling #29)** — Nine Lives catches direct hits AND lethal DoT procs (`lib/game/lethal.ts`, shared by combat + ticks); any revival strips all buffs and debuffs, uncancellable included.
+- **Battle QoL** — 1×/2× speed toggle (scales phase auto-advance + enemy resolve delays), battle-log filter (Actions only / All events incl. DoT ticks + passive procs), hover tooltips on unit ▲/▼ effect counters.
+- **Kit validation** — Zod schema (`lib/game/characterSchema.ts`) parses every character JSON at load; malformed kits fail with the character id and field named. `npm run check` = tsc + eslint + vitest.
+- **Tests** — 116 across combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, lethal survival.
 
 ## Open Issues
 
@@ -27,12 +30,11 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 |---|---|---|---|
 | 6 | Ultimates have no rank while skills rank up — confirmed intended for now; Tanveer may add an ult level-up system later | `types/ultimateCard.ts` | Design note |
 | 7 | `Character.passive: any` and `as any` casts around mechanics — type safety hole | `types/character.ts` | Medium (refactor) |
-| 11 | 4 MB legacy background PNG | `public/bg-images/` | Cosmetic |
 | 13 | Art nitpicks: Seras's horn-like hair tufts didn't render; Yalina's side braid renders as loose side curls (trigger-word/style limits — see ART_PIPELINE trigger-word table) | `public/characters/` | Cosmetic (re-roll) |
 | 14 | Design feedback 2026-07-11: Mustafa approved; Siddiq redesigned (v2, still AI-invented — awaiting his sheet); Batra reworked per his direction (turban/beard/kesari, no armour). He loves Lyra/Sara/Gabrist; Duke/Yalina/Seras fine for now, iterate later | `docs/ART_PIPELINE.md` | Pending input |
 | 16 | Rank-gated effect text shows literal zeros at rank 1 (e.g. "stuns for 0 turn(s) at rank 2+", Diane's "0 turn Attack Seal") — cosmetic; consider hiding zero-value sentences in the translator | `descriptionTranslator.ts` | Cosmetic |
 | 17 | Gon/Killua ult raises now read "Permanently raises …" (ruling #28), so permanence is explicit — but the buffs are also `uncancellable` in data and the text doesn't say that. Remaining call for Tanveer: does "Permanently" imply cancel-proof (keep data as-is), or should the text add "(cannot be cancelled)" / the buffs become cancellable? | `data/characters/gon.json`, `killua.json` | Pending Tanveer |
-| 15 | Console `FirebaseError: Missing or insufficient permissions` on page load — a Firestore read is denied by security rules (likely guest/unauthenticated). Harmless to gameplay but noisy; fix rules or gate the read when Firebase persistence work starts (Phase 4) | Firebase / stores | Low |
+| 15 | Console `FirebaseError: Missing or insufficient permissions` — the Firestore `users/{uid}` read fires when signed in but rules deny it. Client now degrades gracefully (single warn, plays on with local state); `firestore.rules` written in repo root (own-doc read/write) — **needs deploying to the Firebase project** | Firebase / `firestore.rules` | Low |
 
 ## Not Built Yet
 

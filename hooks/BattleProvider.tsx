@@ -212,7 +212,12 @@ export default function BattleProvider({
           drawCards();
         }
 
-        setTimeout(() => advancePhase(), 500);
+        // getState keeps the delay current with the speed toggle without
+        // widening this effect's dependency list
+        setTimeout(
+          () => advancePhase(),
+          500 / useGameStore.getState().battleSpeed,
+        );
       }
     }
 

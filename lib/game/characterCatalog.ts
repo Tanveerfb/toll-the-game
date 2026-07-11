@@ -14,6 +14,7 @@ import sara from "@/data/characters/sara.json";
 import seras from "@/data/characters/seras.json";
 import siddiq from "@/data/characters/siddiq.json";
 import yalina from "@/data/characters/yalina.json";
+import { validateCharacters } from "@/lib/game/characterSchema";
 
 export type CharacterColor = "light" | "red" | "blue" | "green" | "dark";
 
@@ -52,7 +53,7 @@ export interface CharacterData {
   [key: string]: unknown;
 }
 
-const characters = [
+const rawCharacters = [
   ban,
   batra,
   diane,
@@ -69,7 +70,13 @@ const characters = [
   seras,
   siddiq,
   yalina,
-] as CharacterData[];
+];
+
+// Fail loudly at load time on malformed kit JSON (typo'd fields, wrong
+// color, missing rank arrays) instead of crashing mid-battle.
+validateCharacters(rawCharacters);
+
+const characters = rawCharacters as CharacterData[];
 
 const characterMap = new Map<string, CharacterData>(
   characters.map((character) => [character.id, character]),

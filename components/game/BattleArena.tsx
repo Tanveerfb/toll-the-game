@@ -13,6 +13,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
@@ -25,6 +30,27 @@ function formatPhaseLabel(phase: string): string {
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (s) => s.toUpperCase())
     .trim();
+}
+
+function describeEffect(effect: BattleCharacter["buffs"][number]): string {
+  const stacksText = effect.stacks
+    ? `, ${effect.stacks} stack${effect.stacks > 1 ? "s" : ""}`
+    : "";
+  const valueText =
+    effect.valuePercent !== undefined
+      ? `${effect.valuePercent}%`
+      : effect.value !== undefined
+        ? `${effect.value}`
+        : "";
+  const statText = effect.stat ? ` ${effect.stat}` : "";
+  const duration = effect.buffDuration ?? effect.debuffDuration;
+  const durationText = duration
+    ? `, ${duration} turn${duration > 1 ? "s" : ""}`
+    : "";
+  const payload = `${valueText}${statText}`.trim();
+  return payload.length > 0
+    ? `${effect.type} (${payload}${stacksText}${durationText})`
+    : `${effect.type} (${`no numeric value${stacksText}${durationText}`.trim()})`;
 }
 
 function getUnitBorderClass(color: BattleCharacter["color"]): string {
@@ -164,10 +190,47 @@ function TeamUnitCard({
                 {unit.ultGauge}/5
               </span>
             </span>
-            <span>
-              <span className="text-emerald-500">▲{unit.buffs.length}</span>{" "}
-              <span className="text-rose-500">▼{unit.debuffs.length}</span>
-            </span>
+            {unit.buffs.length > 0 || unit.debuffs.length > 0 ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="cursor-help underline decoration-dotted underline-offset-2">
+                    <span className="text-emerald-500">
+                      ▲{unit.buffs.length}
+                    </span>{" "}
+                    <span className="text-rose-500">
+                      ▼{unit.debuffs.length}
+                    </span>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <span className="block space-y-0.5 font-body text-xs normal-case tracking-normal">
+                    {unit.buffs.map((effect, idx) => (
+                      <span
+                        key={`b-${effect.type}-${idx}`}
+                        className="block text-emerald-300"
+                      >
+                        ▲ {effect.name ?? describeEffect(effect)}
+                        {effect.name ? ` — ${describeEffect(effect)}` : ""}
+                      </span>
+                    ))}
+                    {unit.debuffs.map((effect, idx) => (
+                      <span
+                        key={`d-${effect.type}-${idx}`}
+                        className="block text-rose-300"
+                      >
+                        ▼ {effect.name ?? describeEffect(effect)}
+                        {effect.name ? ` — ${describeEffect(effect)}` : ""}
+                      </span>
+                    ))}
+                  </span>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <span>
+                <span className="text-emerald-500">▲{unit.buffs.length}</span>{" "}
+                <span className="text-rose-500">▼{unit.debuffs.length}</span>
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -187,6 +250,8 @@ export default function BattleArena(): React.JSX.Element {
     selectedAllyMarker,
     battleLog,
     interactionNotice,
+    battleSpeed,
+    setBattleSpeed,
     setEnemyMarker,
     setAllyMarker,
     clearInteractionNotice,
@@ -204,15 +269,16 @@ export default function BattleArena(): React.JSX.Element {
 
     const timer = window.setTimeout(() => {
       resolveEnemyTurnWrapper();
-    }, 450);
+    }, 450 / battleSpeed);
 
     return () => window.clearTimeout(timer);
-  }, [battlePhase, resolveEnemyTurnWrapper]);
+  }, [battlePhase, resolveEnemyTurnWrapper, battleSpeed]);
 
   const phaseLabel = formatPhaseLabel(battlePhase);
   const [detailUnit, setDetailUnit] = React.useState<BattleCharacter | null>(
     null,
   );
+  const [showAllEvents, setShowAllEvents] = React.useState(false);
 
   const phaseOrder = [
     "OnBattleStart",
@@ -246,30 +312,6 @@ export default function BattleArena(): React.JSX.Element {
   const actionLog = React.useMemo(
     () => battleLog.filter((entry) => entry.startsWith("[Action] ")),
     [battleLog],
-  );
-
-  const describeEffect = React.useCallback(
-    (effect: BattleCharacter["buffs"][number]) => {
-      const stacksText = effect.stacks
-        ? `, ${effect.stacks} stack${effect.stacks > 1 ? "s" : ""}`
-        : "";
-      const valueText =
-        effect.valuePercent !== undefined
-          ? `${effect.valuePercent}%`
-          : effect.value !== undefined
-            ? `${effect.value}`
-            : "";
-      const statText = effect.stat ? ` ${effect.stat}` : "";
-      const duration = effect.buffDuration ?? effect.debuffDuration;
-      const durationText = duration
-        ? `, ${duration} turn${duration > 1 ? "s" : ""}`
-        : "";
-      const payload = `${valueText}${statText}`.trim();
-      return payload.length > 0
-        ? `${effect.type} (${payload}${stacksText}${durationText})`
-        : `${effect.type} (${`no numeric value${stacksText}${durationText}`.trim()})`;
-    },
-    [],
   );
 
   return (
@@ -313,7 +355,7 @@ export default function BattleArena(): React.JSX.Element {
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 font-body text-xs uppercase tracking-[0.14em] text-zinc-300 md:col-span-2">
+            <div className="grid grid-cols-4 gap-2 font-body text-xs uppercase tracking-[0.14em] text-zinc-300 md:col-span-2">
               <div className="border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-center">
                 <span className="block text-zinc-500">Turn</span>
                 <span className="font-semibold text-zinc-100">
@@ -332,6 +374,14 @@ export default function BattleArena(): React.JSX.Element {
                   {enemyTurns}
                 </span>
               </div>
+              <button
+                type="button"
+                onClick={() => setBattleSpeed(battleSpeed === 1 ? 2 : 1)}
+                className={`cursor-pointer border px-3 py-2 text-center uppercase tracking-[0.14em] transition-colors ${battleSpeed === 2 ? "border-amber-300 bg-amber-300/10 text-amber-200" : "border-zinc-700 bg-zinc-900/60 text-zinc-300"}`}
+              >
+                <span className="block text-zinc-500">Speed</span>
+                <span className="font-semibold">{battleSpeed}×</span>
+              </button>
             </div>
           </CardContent>
         </Card>
@@ -418,13 +468,22 @@ export default function BattleArena(): React.JSX.Element {
                     </div>
                   ) : null}
 
-                  <p className="mb-2 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                    Recent Battle Events
-                  </p>
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                      Recent Battle Events
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowAllEvents((prev) => !prev)}
+                      className={`cursor-pointer border px-2 py-0.5 font-body text-[10px] uppercase tracking-widest transition-colors ${showAllEvents ? "border-amber-300 bg-amber-300/10 text-amber-200" : "border-zinc-700 text-zinc-400"}`}
+                    >
+                      {showAllEvents ? "All events" : "Actions only"}
+                    </button>
+                  </div>
                   <div className="max-h-65 space-y-1 overflow-y-auto pr-1 font-body text-sm text-zinc-200">
-                    {(actionLog.length > 0
-                      ? actionLog
-                          .slice(-14)
+                    {((showAllEvents ? battleLog : actionLog).length > 0
+                      ? (showAllEvents ? battleLog : actionLog)
+                          .slice(-20)
                           .reverse()
                           .map((entry) => entry.replace(/^\[Action\]\s*/, ""))
                       : ["No battle events yet."]

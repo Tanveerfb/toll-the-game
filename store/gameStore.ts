@@ -107,6 +107,7 @@ interface BattleState {
   enemyTurns: number;
   battleLog: string[];
   battlePhase: BattlePhase;
+  battleSpeed: number;
 
   // Deck System
   deck: ActionCard[];
@@ -127,6 +128,7 @@ interface BattleState {
   setEnemyTurns: (turn: number | ((prev: number) => number)) => void;
   setBattlePhase: (phase: BattlePhase) => void;
   addToBattleLog: (entry: string) => void;
+  setBattleSpeed: (speed: number) => void;
   resetBattle: () => void;
 
   // Deck Actions
@@ -152,6 +154,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
   enemyTurns: 0,
   battleLog: [],
   battlePhase: "initializing",
+  battleSpeed: 1,
 
   deck: [],
   actionQueue: [],
@@ -177,6 +180,8 @@ export const useGameStore = create<BattleState>((set, get) => ({
   setBattlePhase: (phase) => set({ battlePhase: phase }),
   addToBattleLog: (entry) =>
     set((state) => ({ battleLog: [...state.battleLog, entry] })),
+  // Speed is a player preference — deliberately not reset by resetBattle
+  setBattleSpeed: (speed) => set({ battleSpeed: speed }),
 
   resetBattle: () =>
     set({
@@ -511,3 +516,8 @@ export const useGameStore = create<BattleState>((set, get) => ({
     });
   },
 }));
+
+// Dev console access for debugging battle state (stripped from prod builds)
+if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
+  (window as unknown as Record<string, unknown>).__gameStore = useGameStore;
+}

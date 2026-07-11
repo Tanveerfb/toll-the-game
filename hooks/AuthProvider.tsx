@@ -67,7 +67,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setPlayerState({ uid: currentUser.uid });
           }
         } catch (e) {
-          console.error("Error syncing with Firestore", e);
+          if ((e as { code?: string })?.code === "permission-denied") {
+            // Firestore rules not deployed yet (see firestore.rules) —
+            // play on with local state instead of spamming the console.
+            console.warn(
+              "Cloud save unavailable (Firestore rules deny users/" +
+                currentUser.uid +
+                ") — continuing with local progress.",
+            );
+          } else {
+            console.error("Error syncing with Firestore", e);
+          }
         }
       } else {
         resetPlayerState();
