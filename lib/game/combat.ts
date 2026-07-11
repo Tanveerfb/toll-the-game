@@ -12,6 +12,11 @@ import {
   ConditionalBuffMechanic,
   Mechanic,
 } from "@/types/mechanic";
+import type {
+  BattleEventEmitter,
+  BattleEventTarget,
+  BattleEventCounter,
+} from "@/types/battleEvent";
 
 // Crit chance in percent — base 0 for everyone (same rule as evade). A crit
 // applies the full CRITICAL package (50% DEF ignore, type-immune, +50% dmg).
@@ -140,6 +145,9 @@ export function executeSkill(
   actionIndex: number = 0,
   // Injectable randomness so evade rolls are deterministic in tests
   rng: () => number = Math.random,
+  // Structured event stream for the UI animation sequencer (optional —
+  // engine behavior is identical without it)
+  emit?: BattleEventEmitter,
 ): { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] } {
   const allCharacters = [...teams.playerTeam, ...teams.enemyTeam];
   const source = allCharacters.find(
@@ -487,6 +495,10 @@ export function executeSkill(
     }
   }
 
+  // Structured event payload built alongside the log entries
+  const eventTargets: BattleEventTarget[] = [];
+  const eventCounters: BattleEventCounter[] = [];
+
   // Process attack/ultimate/heal/buff
   let totalDamageDealt = 0;
   // Extort accumulates flat steals across all targets, applied once after
@@ -521,11 +533,21 @@ export function executeSkill(
         log(
           `[Action] ${updatedTarget.name} evaded ${updatedSource.name}'s ${action.skill.skillName}!`,
         );
+        eventTargets.push({
+          instanceId: updatedTarget.instanceId,
+          name: updatedTarget.name,
+          evaded: true,
+        });
         handleAttackReceived(updatedTarget, log);
         return;
       }
     }
 
+    const targetEvent: BattleEventTarget = {
+      instanceId: updatedTarget.instanceId,
+      name: updatedTarget.name,
+      hpBefore: updatedTarget.currentHP,
+    };
     const targetEffects: string[] = [];
     let dealtDamage = 0;
     let healedAmount = 0;
@@ -576,7 +598,10 @@ export function executeSkill(
         critChance > 0 &&
         !skillMechanics.some((m) => m.type === "critical") &&
         rng() * 100 < critChance;
-      if (didCrit) targetEffects.push("a CRITICAL hit");
+      if (didCrit) {
+        targetEffects.push("a CRITICAL hit");
+        targetEvent.crit = true;
+      }
 
       const damage = calculateDamage({
         baseDamage,
@@ -591,6 +616,7 @@ export function executeSkill(
       const finalDamage = Math.floor(damage);
       dealtDamage = finalDamage;
       totalDamageDealt += finalDamage;
+      targetEvent.damage = finalDamage;
 
       const newHp = updatedTarget.currentHP - finalDamage;
 
@@ -598,6 +624,7 @@ export function executeSkill(
       if (newHp <= 0) {
         const healAmount = trySurviveLethal(updatedTarget, finalDamage);
         if (healAmount !== null) {
+          targetEvent.survivedLethal = true;
           targetEffects.push(
             `triggered ${updatedTarget.passive?.name ?? "lethal survival"}, healed ${healAmount} HP and lost all buffs and debuffs`,
           );
@@ -621,6 +648,7 @@ export function executeSkill(
     } else if (action.skill.type === "heal") {
       const healAmount = Math.floor(baseDamage);
       healedAmount = healAmount;
+      targetEvent.heal = healAmount;
       updatedTarget.currentHP = Math.min(
         updatedTarget.hp,
         updatedTarget.currentHP + healAmount,
@@ -814,6 +842,7 @@ export function executeSkill(
 
       if (isAttack && updatedTarget.currentHP === 0) {
         targetEffects.push("defeated");
+        targetEvent.killed = true;
       }
     }
 
@@ -857,6 +886,9 @@ export function executeSkill(
       );
     }
 
+    targetEvent.hpAfter = updatedTarget.currentHP;
+    eventTargets.push(targetEvent);
+
     // -- COUNTER STANCE (Full Counter): a surviving target with an active
     // counter stance strikes the attacker back. A unit killed by the hit
     // does not counter (Tanveer ruling). Counters don't chain.
@@ -889,6 +921,14 @@ export function executeSkill(
         if (counterDamage > 0) {
           updatedSource.passiveState.tookDamageThisRound = true;
         }
+        eventCounters.push({
+          byInstanceId: updatedTarget.instanceId,
+          byName: updatedTarget.name,
+          onInstanceId: updatedSource.instanceId,
+          damage: counterDamage,
+          killedAttacker: updatedSource.currentHP === 0,
+          attackerHpAfter: updatedSource.currentHP,
+        });
         log(
           `[Action] ${updatedTarget.name} counters ${updatedSource.name} for ${counterDamage} damage${updatedSource.currentHP === 0 ? " — defeated" : ""}!`,
         );
@@ -976,6 +1016,20 @@ export function executeSkill(
   // Ruling #32: Extort self-buffs live only while a linked debuff survives
   // on a living enemy (covers deaths and cleanses caused by this action)
   syncExtortLinks(updatedTeams.playerTeam, updatedTeams.enemyTeam, log);
+
+  emit?.({
+    kind: "action",
+    sourceInstanceId: updatedSource.instanceId,
+    sourceName: updatedSource.name,
+    sourceTeam: updatedSource.team,
+    sourceColor: updatedSource.color,
+    sourceCharacterId: updatedSource.id,
+    skillName: action.skill.skillName,
+    skillType: action.skill.type,
+    isUlt: action.skill.type === "ultimate",
+    targets: eventTargets,
+    counters: eventCounters,
+  });
 
   return updatedTeams;
 }

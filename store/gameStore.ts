@@ -2,6 +2,9 @@ import { create } from "zustand";
 import { BattleCharacter } from "@/types/character";
 import { BattlePhase } from "@/types/mechanic";
 import { ActionCard } from "@/types/action";
+import { BattleActionEvent } from "@/types/battleEvent";
+
+export type SequencedBattleEvent = BattleActionEvent & { id: number };
 
 // Ally-friendly skill that hits ONE ally at this card's rank (no aoe, and
 // aoeRanked inactive at the rank) — the player must mark the ally target.
@@ -106,6 +109,8 @@ interface BattleState {
   playerTurns: number;
   enemyTurns: number;
   battleLog: string[];
+  /** Structured action events for the animation sequencer */
+  battleEvents: SequencedBattleEvent[];
   battlePhase: BattlePhase;
   battleSpeed: number;
 
@@ -134,6 +139,7 @@ interface BattleState {
   setEnemyTurns: (turn: number | ((prev: number) => number)) => void;
   setBattlePhase: (phase: BattlePhase) => void;
   addToBattleLog: (entry: string) => void;
+  addBattleEvent: (event: BattleActionEvent) => void;
   setBattleSpeed: (speed: number) => void;
   resetBattle: () => void;
 
@@ -161,6 +167,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
   playerTurns: 0,
   enemyTurns: 0,
   battleLog: [],
+  battleEvents: [],
   battlePhase: "initializing",
   battleSpeed: 1,
 
@@ -189,6 +196,13 @@ export const useGameStore = create<BattleState>((set, get) => ({
   setBattlePhase: (phase) => set({ battlePhase: phase }),
   addToBattleLog: (entry) =>
     set((state) => ({ battleLog: [...state.battleLog, entry] })),
+  addBattleEvent: (event) =>
+    set((state) => ({
+      battleEvents: [
+        ...state.battleEvents,
+        { ...event, id: state.battleEvents.length + 1 },
+      ],
+    })),
   // Speed is a player preference — deliberately not reset by resetBattle
   setBattleSpeed: (speed) => set({ battleSpeed: speed }),
 
@@ -200,6 +214,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
       playerTurns: 0,
       enemyTurns: 0,
       battleLog: [],
+      battleEvents: [],
       battlePhase: "initializing",
       deck: [],
       actionQueue: [],

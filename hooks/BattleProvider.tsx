@@ -258,7 +258,14 @@ export default function BattleProvider({
       };
 
       // Execute the action
-      currentTeams = executeSkill(action, currentTeams, addToBattleLog, 0);
+      currentTeams = executeSkill(
+        action,
+        currentTeams,
+        addToBattleLog,
+        0,
+        undefined,
+        useGameStore.getState().addBattleEvent,
+      );
 
       // Remove dead player characters immediately (subs promote at turn start)
       const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
@@ -313,7 +320,14 @@ export default function BattleProvider({
       const action = getAIMove(currentTeams.enemyTeam, currentTeams.playerTeam);
       if (!action) break;
 
-      currentTeams = executeSkill(action, currentTeams, addToBattleLog, i);
+      currentTeams = executeSkill(
+        action,
+        currentTeams,
+        addToBattleLog,
+        i,
+        undefined,
+        useGameStore.getState().addBattleEvent,
+      );
 
       const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
       deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));

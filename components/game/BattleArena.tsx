@@ -22,7 +22,12 @@ import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import type { BattleCharacter } from "@/types/character";
+import type { Color } from "@/types/color";
 import BattleEffectsOverlay from "@/components/game/BattleEffectsOverlay";
+import {
+  useBattleSequencer,
+  type SequencerFlash,
+} from "@/hooks/useBattleSequencer";
 
 function formatPhaseLabel(phase: string): string {
   return phase
@@ -139,11 +144,27 @@ function EffectCounters({
   );
 }
 
+const FLASH_TINTS: Record<Color, string> = {
+  red: "rgba(244,63,94,0.55)",
+  blue: "rgba(56,189,248,0.55)",
+  green: "rgba(52,211,153,0.5)",
+  dark: "rgba(167,139,250,0.55)",
+  light: "rgba(252,211,77,0.55)",
+};
+
+interface TileFx {
+  hpOverride?: number;
+  shaking?: boolean;
+  evading?: boolean;
+  flash?: SequencerFlash;
+}
+
 function TeamUnitTile({
   unit,
   isEnemy,
   isMarked,
   queuedHits,
+  fx,
   onMark,
   onViewDetails,
 }: {
@@ -151,12 +172,15 @@ function TeamUnitTile({
   isEnemy: boolean;
   isMarked: boolean;
   queuedHits: number;
+  fx: TileFx;
   onMark: (instanceId: string) => void;
   onViewDetails: (unit: BattleCharacter) => void;
 }): React.JSX.Element {
-  const hpPercent =
-    unit.hp > 0 ? Math.max(0, (unit.currentHP / unit.hp) * 100) : 0;
-  const isDead = unit.currentHP <= 0;
+  // During playback the sequencer feeds exact per-event HP snapshots so the
+  // bar (and the DOWN stamp) land at the impact moment, not at resolve time
+  const displayHP = fx.hpOverride ?? unit.currentHP;
+  const hpPercent = unit.hp > 0 ? Math.max(0, (displayHP / unit.hp) * 100) : 0;
+  const isDead = displayHP <= 0;
   const isBenched = unit.isSub === true;
   const art = getCharacterArt(unit.id);
   const markColorClass = isEnemy
@@ -166,7 +190,7 @@ function TeamUnitTile({
   return (
     <div
       data-battle-instance={unit.instanceId}
-      className="relative min-h-0 h-full"
+      className={`relative min-h-0 h-full ${fx.shaking ? "battle-shake" : ""} ${fx.evading ? "battle-evade" : ""}`}
     >
       <div
         onClick={() => {
@@ -234,6 +258,24 @@ function TeamUnitTile({
               </span>
             </div>
           ) : null}
+
+          {fx.flash ? (
+            <motion.div
+              key={fx.flash.key}
+              initial={{ opacity: fx.flash.strong ? 1 : 0.75 }}
+              animate={{ opacity: 0 }}
+              transition={{ duration: 0.38, ease: "easeOut" }}
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background: `radial-gradient(75% 75% at 50% 45%, ${FLASH_TINTS[fx.flash.color]}, transparent 78%)`,
+              }}
+            >
+              <div
+                className="absolute inset-y-0 left-1/2 w-1 -translate-x-1/2 rotate-[24deg] bg-white/80"
+                style={{ display: fx.flash.strong ? undefined : "none" }}
+              />
+            </motion.div>
+          ) : null}
         </div>
 
         {/* Status bar */}
@@ -256,7 +298,7 @@ function TeamUnitTile({
             </div>
             <div className="mt-0.5 flex items-center justify-between font-body text-[9px] uppercase tracking-[0.08em] text-zinc-400">
               <span>
-                {unit.currentHP}/{unit.hp}
+                {displayHP}/{unit.hp}
               </span>
               <span className="flex items-center gap-0.5">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -298,7 +340,18 @@ export default function BattleArena(): React.JSX.Element {
   const { resolveEnemyTurnWrapper, startCustomBattle, lastBattleConfig } =
     useBattleContext();
   const router = useRouter();
+  const arenaRef = React.useRef<HTMLDivElement | null>(null);
+  const { view: seq, skip: skipPlayback } = useBattleSequencer(arenaRef);
   const isBattleOver = battlePhase === "victory" || battlePhase === "defeat";
+  // Hold the result screen until the cinematic finishes (skip jumps ahead)
+  const showBattleOver = isBattleOver && !seq.active;
+
+  const tileFx = (instanceId: string): TileFx => ({
+    hpOverride: seq.hpOverrides[instanceId],
+    shaking: seq.shaking[instanceId],
+    evading: seq.evading[instanceId],
+    flash: seq.flashes[instanceId],
+  });
 
   React.useEffect(() => {
     if (battlePhase !== "EnemyAction") return;
@@ -348,6 +401,12 @@ export default function BattleArena(): React.JSX.Element {
 
   const actionLog = React.useMemo(
     () => battleLog.filter((entry) => entry.startsWith("[Action] ")),
+    [battleLog],
+  );
+  // Action lines are visualized by the sequencer + ticker; keep the toast
+  // overlay for DoT ticks, passive procs and phase pulses only
+  const overlayLog = React.useMemo(
+    () => battleLog.filter((entry) => !entry.startsWith("[Action] ")),
     [battleLog],
   );
   const latestAction =
@@ -403,15 +462,132 @@ export default function BattleArena(): React.JSX.Element {
   return (
     // No z-index here: it would trap the fixed drawer/overlay children in a
     // stacking context below the sticky TopNav (z-50)
-    <div className="relative flex min-h-0 flex-1 flex-col">
+    <div ref={arenaRef} className="relative flex min-h-0 flex-1 flex-col">
       <BattleEffectsOverlay
-        battleLog={battleLog}
+        battleLog={overlayLog}
         battlePhase={battlePhase}
         units={[...playerTeam, ...enemyTeam].map((unit) => ({
           instanceId: unit.instanceId,
           name: unit.name,
         }))}
       />
+
+      {/* Cinematic layer: lunge ghost, ult cut-in, damage floaters */}
+      <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+        <AnimatePresence>
+          {seq.ghost ? (
+            <motion.div
+              key={`ghost-${seq.ghost.key}`}
+              initial={{
+                x: seq.ghost.fromX - 28,
+                y: seq.ghost.fromY - 28,
+                opacity: 0.35,
+                scale: 0.85,
+              }}
+              animate={{
+                x: seq.ghost.toX - 28,
+                y: seq.ghost.toY - 28,
+                opacity: 1,
+                scale: seq.ghost.isUlt ? 1.35 : 1.1,
+              }}
+              exit={{ opacity: 0, scale: 1.4 }}
+              transition={{ duration: 0.26 / battleSpeed, ease: "easeIn" }}
+              className="absolute left-0 top-0"
+            >
+              <div
+                className={`h-14 w-14 overflow-hidden rounded-full border-2 ${seq.ghost.isUlt ? "border-amber-300 shadow-[0_0_24px_rgba(252,211,77,0.9)]" : "border-white/80 shadow-[0_0_14px_rgba(255,255,255,0.5)]"}`}
+              >
+                {getCharacterArt(seq.ghost.characterId) ? (
+                  <Image
+                    src={getCharacterArt(seq.ghost.characterId)!}
+                    alt=""
+                    width={56}
+                    height={56}
+                    className="h-full w-full object-cover object-top"
+                  />
+                ) : null}
+              </div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {seq.cutIn ? (
+            <motion.div
+              key={`cutin-${seq.cutIn.key}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 / battleSpeed }}
+              className="absolute inset-0 bg-black/65"
+            >
+              <motion.div
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ duration: 0.3 / battleSpeed, ease: "easeOut" }}
+                className="absolute inset-x-0 top-1/2 flex h-32 -translate-y-1/2 items-center gap-4 overflow-hidden border-y-2 border-amber-300 bg-linear-to-r from-amber-950/95 via-zinc-950/95 to-amber-950/95 px-6"
+              >
+                {getCharacterArt(seq.cutIn.characterId) ? (
+                  <Image
+                    src={getCharacterArt(seq.cutIn.characterId)!}
+                    alt={seq.cutIn.name}
+                    width={220}
+                    height={220}
+                    className="h-40 w-28 shrink-0 border-2 border-amber-300/70 object-cover object-top shadow-[0_0_30px_rgba(252,211,77,0.6)]"
+                  />
+                ) : null}
+                <div className="min-w-0">
+                  <p className="font-body text-xs uppercase tracking-[0.3em] text-amber-200/80">
+                    {seq.cutIn.name} — Ultimate
+                  </p>
+                  <p className="truncate font-heading text-4xl tracking-[0.1em] text-amber-100 drop-shadow-[0_0_12px_rgba(252,211,77,0.8)]">
+                    {seq.cutIn.skillName}
+                  </p>
+                </div>
+              </motion.div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {seq.floaters.map((floater) => (
+            <motion.div
+              key={`floater-${floater.key}`}
+              initial={{ opacity: 0, y: 6, scale: 0.85 }}
+              animate={{ opacity: 1, y: -26, scale: 1 }}
+              exit={{ opacity: 0, y: -40 }}
+              transition={{ duration: 0.5 / battleSpeed, ease: "easeOut" }}
+              className={`absolute -translate-x-1/2 border px-2 py-0.5 font-heading tracking-[0.06em] shadow-xl ${
+                floater.kind === "crit"
+                  ? "border-amber-300 bg-amber-950/85 text-2xl text-amber-200"
+                  : floater.kind === "damage"
+                    ? "border-red-300/70 bg-red-950/80 text-xl text-red-200"
+                    : floater.kind === "counter"
+                      ? "border-orange-300/70 bg-orange-950/80 text-lg text-orange-200"
+                      : floater.kind === "heal"
+                        ? "border-emerald-300/70 bg-emerald-950/80 text-xl text-emerald-200"
+                        : floater.kind === "evade"
+                          ? "border-sky-300/70 bg-sky-950/80 text-lg text-sky-200"
+                          : "border-amber-300/70 bg-zinc-950/85 text-sm text-amber-100"
+              }`}
+              style={{ left: floater.x, top: floater.y }}
+            >
+              {floater.text}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {seq.active ? (
+        <button
+          type="button"
+          onClick={skipPlayback}
+          className="absolute bottom-10 right-3 z-30 cursor-pointer border border-zinc-500 bg-black/75 px-3 py-1.5 font-body text-[11px] uppercase tracking-[0.16em] text-zinc-200 backdrop-blur-sm transition-colors hover:border-amber-300 hover:text-amber-200"
+        >
+          Skip ▸▸
+        </button>
+      ) : null}
 
       {/* Slim status strip */}
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-800 bg-black/60 px-3 py-1.5 backdrop-blur-sm">
@@ -467,6 +643,7 @@ export default function BattleArena(): React.JSX.Element {
                 isEnemy
                 isMarked={selectedEnemyMarker === unit.instanceId}
                 queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
+                fx={tileFx(unit.instanceId)}
                 onMark={setEnemyMarker}
                 onViewDetails={setDetailUnit}
               />
@@ -489,6 +666,7 @@ export default function BattleArena(): React.JSX.Element {
                 isEnemy={false}
                 isMarked={selectedAllyMarker === unit.instanceId}
                 queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
+                fx={tileFx(unit.instanceId)}
                 onMark={setAllyMarker}
                 onViewDetails={setDetailUnit}
               />
@@ -586,7 +764,7 @@ export default function BattleArena(): React.JSX.Element {
         ) : null}
       </AnimatePresence>
 
-      {isBattleOver ? (
+      {showBattleOver ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
           <Card
             className={`w-full max-w-md rounded-none border-2 ${battlePhase === "victory" ? "border-amber-300" : "border-red-500"} bg-zinc-950/95 ring-0`}
