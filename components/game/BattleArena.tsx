@@ -12,13 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { useBattleContext } from "@/hooks/BattleProvider";
@@ -69,7 +68,78 @@ function getUnitBorderClass(color: BattleCharacter["color"]): string {
   }
 }
 
-function TeamUnitCard({
+function EffectCounters({
+  unit,
+}: {
+  unit: BattleCharacter;
+}): React.JSX.Element {
+  // Ruling #30: uncancellable entries are grey "effects" — they don't count
+  // as buffs/debuffs
+  const buffs = unit.buffs.filter((b) => !b.uncancellable);
+  const debuffs = unit.debuffs.filter((d) => !d.uncancellable);
+  const effects = [
+    ...unit.buffs.filter((b) => b.uncancellable),
+    ...unit.debuffs.filter((d) => d.uncancellable),
+  ];
+  const counters = (
+    <>
+      {buffs.length > 0 ? (
+        <span className="text-emerald-400">▲{buffs.length}</span>
+      ) : null}
+      {debuffs.length > 0 ? (
+        <span className="text-rose-400">▼{debuffs.length}</span>
+      ) : null}
+      {effects.length > 0 ? (
+        <span className="text-zinc-400">◆{effects.length}</span>
+      ) : null}
+    </>
+  );
+  if (buffs.length === 0 && debuffs.length === 0 && effects.length === 0) {
+    return <span />;
+  }
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="flex cursor-help items-center gap-1 font-body text-[10px]">
+          {counters}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs">
+        <span className="block space-y-0.5 font-body text-xs normal-case tracking-normal">
+          {buffs.map((effect, idx) => (
+            <span
+              key={`b-${effect.type}-${idx}`}
+              className="block text-emerald-300"
+            >
+              ▲ {effect.name ?? describeEffect(effect)}
+              {effect.name ? ` — ${describeEffect(effect)}` : ""}
+            </span>
+          ))}
+          {debuffs.map((effect, idx) => (
+            <span
+              key={`d-${effect.type}-${idx}`}
+              className="block text-rose-300"
+            >
+              ▼ {effect.name ?? describeEffect(effect)}
+              {effect.name ? ` — ${describeEffect(effect)}` : ""}
+            </span>
+          ))}
+          {effects.map((effect, idx) => (
+            <span
+              key={`e-${effect.type}-${idx}`}
+              className="block text-zinc-400"
+            >
+              ◆ {effect.name ?? describeEffect(effect)}
+              {effect.name ? ` — ${describeEffect(effect)}` : ""}
+            </span>
+          ))}
+        </span>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function TeamUnitTile({
   unit,
   isEnemy,
   isMarked,
@@ -88,31 +158,41 @@ function TeamUnitCard({
     unit.hp > 0 ? Math.max(0, (unit.currentHP / unit.hp) * 100) : 0;
   const isDead = unit.currentHP <= 0;
   const isBenched = unit.isSub === true;
+  const art = getCharacterArt(unit.id);
+  const markColorClass = isEnemy
+    ? "border-amber-300 shadow-[0_0_12px_rgba(252,211,77,0.45)]"
+    : "border-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.45)]";
 
   return (
-    <div data-battle-instance={unit.instanceId} className="relative">
-      <Card
-        className={`w-full rounded-none border ${isMarked ? (isEnemy ? "border-amber-300" : "border-emerald-300") : getUnitBorderClass(unit.color)} bg-black/55 ring-0 ${isBenched ? "opacity-60" : ""}`}
+    <div
+      data-battle-instance={unit.instanceId}
+      className="relative min-h-0 h-full"
+    >
+      <div
         onClick={() => {
           if (!isDead && !isBenched) {
             onMark(unit.instanceId);
           }
         }}
+        className={`flex h-full min-h-0 flex-col overflow-hidden border-2 bg-black/55 transition-colors ${isMarked ? markColorClass : getUnitBorderClass(unit.color)} ${isBenched ? "opacity-60" : ""} ${isDead || isBenched ? "cursor-default" : "cursor-pointer"}`}
       >
-        <CardHeader className="flex items-center justify-between gap-2 border-b border-zinc-800 px-2.5 py-1.5">
-          <div className="flex min-w-0 items-center gap-1.5">
-            {getCharacterArt(unit.id) ? (
-              <Image
-                src={getCharacterArt(unit.id)!}
-                alt={unit.name}
-                width={48}
-                height={48}
-                className={`h-7 w-7 shrink-0 border border-zinc-700 object-cover object-top ${isDead ? "grayscale" : ""}`}
-              />
-            ) : null}
-            <CardTitle className="truncate font-heading text-base tracking-[0.06em] text-zinc-100">
-              {unit.name}
-            </CardTitle>
+        {/* Portrait */}
+        <div className="relative min-h-0 flex-1 overflow-hidden bg-zinc-900/60">
+          {art ? (
+            <Image
+              src={art}
+              alt={unit.name}
+              fill
+              sizes="220px"
+              className={`object-cover object-top ${isDead ? "grayscale" : ""}`}
+            />
+          ) : (
+            <span className="absolute inset-0 flex items-center justify-center font-heading text-4xl text-white/80">
+              {unit.name.charAt(0).toUpperCase()}
+            </span>
+          )}
+
+          <div className="absolute left-1 top-1 flex flex-wrap gap-1">
             {isBenched ? (
               <Badge className="rounded-none bg-amber-300 px-1 py-0 font-body text-[9px] font-bold uppercase tracking-widest text-zinc-950">
                 Sub
@@ -121,7 +201,7 @@ function TeamUnitCard({
             {isMarked ? (
               <Badge
                 variant="outline"
-                className={`rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest ${isEnemy ? "border-amber-300 bg-amber-300/10 text-amber-200" : "border-emerald-300 bg-emerald-300/10 text-emerald-200"}`}
+                className={`rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest backdrop-blur-sm ${isEnemy ? "border-amber-300 bg-amber-300/20 text-amber-100" : "border-emerald-300 bg-emerald-300/20 text-emerald-100"}`}
               >
                 Target
               </Badge>
@@ -129,139 +209,67 @@ function TeamUnitCard({
             {queuedHits > 0 ? (
               <Badge
                 variant="outline"
-                className="rounded-none border-sky-300 bg-sky-500/15 px-1 py-0 font-body text-[9px] uppercase tracking-widest text-sky-100"
+                className="rounded-none border-sky-300 bg-sky-500/25 px-1 py-0 font-body text-[9px] uppercase tracking-widest text-sky-100 backdrop-blur-sm"
               >
                 {queuedHits}×
               </Badge>
             ) : null}
           </div>
 
-          <Button
-            variant="ghost"
-            size="xs"
+          <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onViewDetails(unit);
             }}
-            className="shrink-0 rounded-none border border-zinc-700 px-1.5 text-[9px] uppercase tracking-widest text-zinc-300"
+            className="absolute right-1 top-1 cursor-pointer border border-zinc-500/80 bg-black/60 px-1 py-0.5 font-body text-[9px] uppercase tracking-widest text-zinc-200 backdrop-blur-sm transition-colors hover:border-zinc-300 hover:text-white"
           >
             Info
-          </Button>
-        </CardHeader>
+          </button>
 
-        <CardContent
-          className={`space-y-1.5 px-2.5 py-2 ${isDead ? "opacity-55" : ""}`}
+          {isDead ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+              <span className="border border-red-500/80 bg-red-950/70 px-2 py-0.5 font-heading text-sm tracking-[0.2em] text-red-300">
+                DOWN
+              </span>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Status bar */}
+        <div
+          className={`shrink-0 space-y-1 border-t border-zinc-800 bg-black/75 px-1.5 py-1 ${isDead ? "opacity-60" : ""}`}
         >
+          <div className="flex items-center justify-between gap-1">
+            <span className="truncate font-heading text-xs tracking-[0.06em] text-zinc-100">
+              {unit.name}
+            </span>
+            <EffectCounters unit={unit} />
+          </div>
+
           <div>
-            <div className="mb-0.5 flex items-center justify-between font-body text-[10px] uppercase tracking-[0.1em] text-zinc-400">
-              <span>HP</span>
+            <div className="h-1.5 w-full overflow-hidden border border-zinc-700/80 bg-zinc-900">
+              <div
+                className={`h-full transition-[width] duration-300 ${isDead || hpPercent < 30 ? "bg-red-500" : "bg-emerald-500"}`}
+                style={{ width: `${hpPercent}%` }}
+              />
+            </div>
+            <div className="mt-0.5 flex items-center justify-between font-body text-[9px] uppercase tracking-[0.08em] text-zinc-400">
               <span>
                 {unit.currentHP}/{unit.hp}
               </span>
+              <span className="flex items-center gap-0.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1 w-2.5 -skew-x-12 ${i < unit.ultGauge ? (unit.ultGauge >= 5 ? "bg-amber-300 shadow-[0_0_5px_rgba(252,211,77,0.8)]" : "bg-amber-500/80") : "bg-zinc-700"}`}
+                  />
+                ))}
+              </span>
             </div>
-            <Progress
-              value={hpPercent}
-              className={
-                isDead || hpPercent < 30
-                  ? "**:data-[slot=progress-indicator]:bg-red-500"
-                  : "**:data-[slot=progress-indicator]:bg-emerald-500"
-              }
-            />
           </div>
-
-          <div className="flex items-center justify-between gap-1 font-body text-[10px] uppercase tracking-wider text-zinc-400">
-            <span>
-              <span className="text-zinc-600">ATK </span>
-              <span className="font-semibold text-zinc-200">
-                {unit.currentAttack}
-              </span>
-            </span>
-            <span>
-              <span className="text-zinc-600">DEF </span>
-              <span className="font-semibold text-zinc-200">
-                {unit.currentDefense}
-              </span>
-            </span>
-            <span>
-              <span className="text-zinc-600">ULT </span>
-              <span
-                className={`font-semibold ${unit.ultGauge >= 5 ? "text-amber-300" : "text-zinc-200"}`}
-              >
-                {unit.ultGauge}/5
-              </span>
-            </span>
-            {(() => {
-              // Ruling #30: uncancellable entries are grey "effects" — they
-              // don't count as buffs/debuffs
-              const buffs = unit.buffs.filter((b) => !b.uncancellable);
-              const debuffs = unit.debuffs.filter((d) => !d.uncancellable);
-              const effects = [
-                ...unit.buffs.filter((b) => b.uncancellable),
-                ...unit.debuffs.filter((d) => d.uncancellable),
-              ];
-              const counters = (
-                <>
-                  <span className="text-emerald-500">▲{buffs.length}</span>{" "}
-                  <span className="text-rose-500">▼{debuffs.length}</span>
-                  {effects.length > 0 ? (
-                    <>
-                      {" "}
-                      <span className="text-zinc-400">◆{effects.length}</span>
-                    </>
-                  ) : null}
-                </>
-              );
-              if (
-                buffs.length === 0 &&
-                debuffs.length === 0 &&
-                effects.length === 0
-              ) {
-                return <span>{counters}</span>;
-              }
-              return (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="cursor-help underline decoration-dotted underline-offset-2">
-                      {counters}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <span className="block space-y-0.5 font-body text-xs normal-case tracking-normal">
-                      {buffs.map((effect, idx) => (
-                        <span
-                          key={`b-${effect.type}-${idx}`}
-                          className="block text-emerald-300"
-                        >
-                          ▲ {effect.name ?? describeEffect(effect)}
-                          {effect.name ? ` — ${describeEffect(effect)}` : ""}
-                        </span>
-                      ))}
-                      {debuffs.map((effect, idx) => (
-                        <span
-                          key={`d-${effect.type}-${idx}`}
-                          className="block text-rose-300"
-                        >
-                          ▼ {effect.name ?? describeEffect(effect)}
-                          {effect.name ? ` — ${describeEffect(effect)}` : ""}
-                        </span>
-                      ))}
-                      {effects.map((effect, idx) => (
-                        <span
-                          key={`e-${effect.type}-${idx}`}
-                          className="block text-zinc-400"
-                        >
-                          ◆ {effect.name ?? describeEffect(effect)}
-                          {effect.name ? ` — ${describeEffect(effect)}` : ""}
-                        </span>
-                      ))}
-                    </span>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })()}
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
@@ -306,6 +314,7 @@ export default function BattleArena(): React.JSX.Element {
   const [detailUnit, setDetailUnit] = React.useState<BattleCharacter | null>(
     null,
   );
+  const [isLogOpen, setIsLogOpen] = React.useState(false);
   const [showAllEvents, setShowAllEvents] = React.useState(false);
 
   const phaseOrder = [
@@ -341,6 +350,10 @@ export default function BattleArena(): React.JSX.Element {
     () => battleLog.filter((entry) => entry.startsWith("[Action] ")),
     [battleLog],
   );
+  const latestAction =
+    actionLog.length > 0
+      ? actionLog[actionLog.length - 1].replace(/^\[Action\]\s*/, "")
+      : "No battle events yet.";
 
   // Playtest request: dump the full match (teams + every event) to
   // <project>/battle-log/ for post-battle debugging
@@ -388,14 +401,9 @@ export default function BattleArena(): React.JSX.Element {
   };
 
   return (
-    <main
-      className="relative min-h-screen overflow-hidden"
-      style={{
-        backgroundImage:
-          "radial-gradient(70% 50% at 50% 0%, rgba(245,158,11,0.22), transparent 72%), linear-gradient(140deg, #09090b 0%, #111827 52%, #0a0a0a 100%)",
-      }}
-    >
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-size-[36px_36px]" />
+    // No z-index here: it would trap the fixed drawer/overlay children in a
+    // stacking context below the sticky TopNav (z-50)
+    <div className="relative flex min-h-0 flex-1 flex-col">
       <BattleEffectsOverlay
         battleLog={battleLog}
         battlePhase={battlePhase}
@@ -405,176 +413,178 @@ export default function BattleArena(): React.JSX.Element {
         }))}
       />
 
-      <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 md:px-8 md:py-6">
-        <Card className="rounded-none border-2 border-zinc-700 bg-black/45 ring-0">
-          <CardContent className="grid gap-4 px-5 py-4 md:grid-cols-4 md:items-end">
-            <div className="md:col-span-2">
-              <p className="font-body text-xs uppercase tracking-[0.16em] text-zinc-400">
-                Battle Phase
-              </p>
-              <p className="font-heading text-2xl tracking-[0.12em] text-zinc-100 md:text-3xl">
-                {phaseLabel}
-              </p>
-              <div className="mt-3 h-2 w-full overflow-hidden border border-zinc-700 bg-zinc-900/70">
-                <motion.div
-                  className="h-full bg-linear-to-r from-amber-300 via-orange-400 to-yellow-300"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${phaseProgress}%` }}
-                  transition={{ duration: 0.35, ease: "easeOut" }}
-                />
-              </div>
-              <p className="mt-1 font-body text-[11px] uppercase tracking-[0.12em] text-zinc-500">
-                Turn Flow Progress
-              </p>
-            </div>
-
-            <div className="grid grid-cols-4 gap-2 font-body text-xs uppercase tracking-[0.14em] text-zinc-300 md:col-span-2">
-              <div className="border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-center">
-                <span className="block text-zinc-500">Turn</span>
-                <span className="font-semibold text-zinc-100">
-                  {currentTurn + 1}
-                </span>
-              </div>
-              <div className="border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-center">
-                <span className="block text-zinc-500">Player</span>
-                <span className="font-semibold text-zinc-100">
-                  {playerTurns}
-                </span>
-              </div>
-              <div className="border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-center">
-                <span className="block text-zinc-500">Enemy</span>
-                <span className="font-semibold text-zinc-100">
-                  {enemyTurns}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setBattleSpeed(battleSpeed === 1 ? 2 : 1)}
-                className={`cursor-pointer border px-3 py-2 text-center uppercase tracking-[0.14em] transition-colors ${battleSpeed === 2 ? "border-amber-300 bg-amber-300/10 text-amber-200" : "border-zinc-700 bg-zinc-900/60 text-zinc-300"}`}
-              >
-                <span className="block text-zinc-500">Speed</span>
-                <span className="font-semibold">{battleSpeed}×</span>
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <section className="grid flex-1 gap-5 lg:grid-cols-[1fr_330px]">
-          <div className="grid gap-5">
-            <Card className="rounded-none border border-zinc-700 bg-black/45 ring-0">
-              <CardHeader className="border-b border-zinc-800 px-5 py-4">
-                <CardTitle className="font-heading text-2xl tracking-widest text-zinc-100">
-                  Enemy Team
-                </CardTitle>
-                <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                  Select a target for queued attacks
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
-                {enemyTeam.map((unit) => (
-                  <TeamUnitCard
-                    key={unit.instanceId}
-                    unit={unit}
-                    isEnemy
-                    isMarked={selectedEnemyMarker === unit.instanceId}
-                    queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
-                    onMark={setEnemyMarker}
-                    onViewDetails={setDetailUnit}
-                  />
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-none border border-zinc-700 bg-black/45 ring-0">
-              <CardHeader className="border-b border-zinc-800 px-5 py-4">
-                <CardTitle className="font-heading text-2xl tracking-widest text-zinc-100">
-                  Player Team
-                </CardTitle>
-                <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                  Select a target for single-ally buffs and heals
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
-                {playerTeam.map((unit) => (
-                  <TeamUnitCard
-                    key={unit.instanceId}
-                    unit={unit}
-                    isEnemy={false}
-                    isMarked={selectedAllyMarker === unit.instanceId}
-                    queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
-                    onMark={setAllyMarker}
-                    onViewDetails={setDetailUnit}
-                  />
-                ))}
-              </CardContent>
-            </Card>
+      {/* Slim status strip */}
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-800 bg-black/60 px-3 py-1.5 backdrop-blur-sm">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="shrink-0 font-heading text-base tracking-[0.12em] text-zinc-100">
+            TURN {currentTurn + 1}
+          </span>
+          <span className="truncate font-body text-xs uppercase tracking-[0.16em] text-amber-200">
+            {phaseLabel}
+          </span>
+          <div className="hidden h-1.5 w-28 shrink-0 overflow-hidden border border-zinc-700 bg-zinc-900/70 sm:block">
+            <motion.div
+              className="h-full bg-linear-to-r from-amber-300 via-orange-400 to-yellow-300"
+              initial={{ width: 0 }}
+              animate={{ width: `${phaseProgress}%` }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+            />
           </div>
+        </div>
 
-          <aside className="grid content-start gap-5 lg:sticky lg:top-5">
-            <Card className="rounded-none border border-zinc-700 bg-black/45 ring-0">
-              <CardHeader className="flex flex-col items-start gap-3 border-b border-zinc-800 px-5 py-4">
-                <div>
-                  <CardTitle className="font-heading text-2xl tracking-widest text-zinc-100">
-                    Action Console
-                  </CardTitle>
-                  <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                    Standardized action feed.
-                  </CardDescription>
-                </div>
-              </CardHeader>
+        <div className="flex shrink-0 items-center gap-2 font-body text-[11px] uppercase tracking-[0.12em]">
+          <span className="hidden text-zinc-500 md:inline">
+            Player {playerTurns} • Enemy {enemyTurns}
+          </span>
+          <button
+            type="button"
+            onClick={() => setBattleSpeed(battleSpeed === 1 ? 2 : 1)}
+            className={`cursor-pointer border px-2 py-1 transition-colors ${battleSpeed === 2 ? "border-amber-300 bg-amber-300/10 text-amber-200" : "border-zinc-700 bg-zinc-900/60 text-zinc-300"}`}
+          >
+            {battleSpeed}× Speed
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsLogOpen(true)}
+            className="cursor-pointer border border-zinc-700 bg-zinc-900/60 px-2 py-1 text-zinc-300 transition-colors hover:border-zinc-500 hover:text-zinc-100"
+          >
+            Log
+          </button>
+        </div>
+      </header>
 
-              <CardContent className="grid gap-4 p-4">
-                <div className="border border-zinc-800 bg-zinc-950/45 p-3">
-                  {interactionNotice ? (
-                    <div className="mb-3 flex items-center justify-between gap-2 border border-red-400/60 bg-red-900/35 px-3 py-2">
-                      <p className="font-body text-xs uppercase tracking-[0.12em] text-red-100">
-                        {interactionNotice}
-                      </p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={clearInteractionNotice}
-                        className="rounded-none border border-red-300/70 px-2 text-[11px] uppercase tracking-widest text-red-100"
-                      >
-                        Dismiss
-                      </Button>
-                    </div>
-                  ) : null}
+      {/* Battlefield: both teams always visible */}
+      <section className="grid min-h-0 flex-1 grid-rows-2 gap-1.5 px-3 py-1.5">
+        <div className="flex min-h-0 flex-col">
+          <p className="mb-1 shrink-0 font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+            Enemy <span className="text-zinc-600">— click to target</span>
+          </p>
+          <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
+            {enemyTeam.map((unit) => (
+              <TeamUnitTile
+                key={unit.instanceId}
+                unit={unit}
+                isEnemy
+                isMarked={selectedEnemyMarker === unit.instanceId}
+                queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
+                onMark={setEnemyMarker}
+                onViewDetails={setDetailUnit}
+              />
+            ))}
+          </div>
+        </div>
 
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <p className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                      Recent Battle Events
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setShowAllEvents((prev) => !prev)}
-                      className={`cursor-pointer border px-2 py-0.5 font-body text-[10px] uppercase tracking-widest transition-colors ${showAllEvents ? "border-amber-300 bg-amber-300/10 text-amber-200" : "border-zinc-700 text-zinc-400"}`}
-                    >
-                      {showAllEvents ? "All events" : "Actions only"}
-                    </button>
-                  </div>
-                  <div className="max-h-65 space-y-1 overflow-y-auto pr-1 font-body text-sm text-zinc-200">
-                    {((showAllEvents ? battleLog : actionLog).length > 0
-                      ? (showAllEvents ? battleLog : actionLog)
-                          .slice(-20)
-                          .reverse()
-                          .map((entry) => entry.replace(/^\[Action\]\s*/, ""))
-                      : ["No battle events yet."]
-                    ).map((entry, idx) => (
-                      <p
-                        key={`${entry}-${idx}`}
-                        className="border-b border-zinc-900 pb-1 last:border-b-0"
-                      >
-                        {entry}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </aside>
-        </section>
+        <div className="flex min-h-0 flex-col">
+          <p className="mb-1 shrink-0 font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+            Player{" "}
+            <span className="text-zinc-600">
+              — click to target ally buffs/heals
+            </span>
+          </p>
+          <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
+            {playerTeam.map((unit) => (
+              <TeamUnitTile
+                key={unit.instanceId}
+                unit={unit}
+                isEnemy={false}
+                isMarked={selectedAllyMarker === unit.instanceId}
+                queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
+                onMark={setAllyMarker}
+                onViewDetails={setDetailUnit}
+              />
+            ))}
+          </div>
+        </div>
       </section>
+
+      {/* Event ticker (click for full log) */}
+      <div className="shrink-0 border-t border-zinc-800 bg-black/60 px-3 py-1 backdrop-blur-sm">
+        {interactionNotice ? (
+          <div className="flex items-center justify-between gap-2">
+            <p className="truncate font-body text-xs uppercase tracking-[0.1em] text-red-200">
+              {interactionNotice}
+            </p>
+            <button
+              type="button"
+              onClick={clearInteractionNotice}
+              className="shrink-0 cursor-pointer border border-red-300/70 px-2 py-0.5 font-body text-[10px] uppercase tracking-widest text-red-100"
+            >
+              Dismiss
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsLogOpen(true)}
+            className="block w-full cursor-pointer truncate text-left font-body text-xs text-zinc-300 transition-colors hover:text-zinc-100"
+          >
+            <span className="mr-1.5 text-amber-300">►</span>
+            {latestAction}
+          </button>
+        )}
+      </div>
+
+      {/* Full log drawer */}
+      <AnimatePresence>
+        {isLogOpen ? (
+          <>
+            <motion.div
+              key="log-scrim"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              onClick={() => setIsLogOpen(false)}
+              className="fixed inset-0 z-40 bg-black/50"
+            />
+            <motion.aside
+              key="log-drawer"
+              initial={{ x: 360 }}
+              animate={{ x: 0 }}
+              exit={{ x: 360 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              className="fixed right-0 top-0 z-50 flex h-dvh w-[340px] max-w-[90vw] flex-col border-l border-zinc-700 bg-zinc-950/95 backdrop-blur-md"
+            >
+              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-800 px-4 py-3">
+                <p className="font-heading text-lg tracking-[0.12em] text-zinc-100">
+                  BATTLE LOG
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllEvents((prev) => !prev)}
+                    className={`cursor-pointer border px-2 py-0.5 font-body text-[10px] uppercase tracking-widest transition-colors ${showAllEvents ? "border-amber-300 bg-amber-300/10 text-amber-200" : "border-zinc-700 text-zinc-400"}`}
+                  >
+                    {showAllEvents ? "All events" : "Actions only"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsLogOpen(false)}
+                    className="cursor-pointer border border-zinc-700 px-2 py-0.5 font-body text-[10px] uppercase tracking-widest text-zinc-300 hover:border-zinc-500"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+              <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-4 py-3 font-body text-sm text-zinc-200">
+                {((showAllEvents ? battleLog : actionLog).length > 0
+                  ? [...(showAllEvents ? battleLog : actionLog)]
+                      .reverse()
+                      .map((entry) => entry.replace(/^\[Action\]\s*/, ""))
+                  : ["No battle events yet."]
+                ).map((entry, idx) => (
+                  <p
+                    key={`${entry}-${idx}`}
+                    className="border-b border-zinc-900 pb-1 last:border-b-0"
+                  >
+                    {entry}
+                  </p>
+                ))}
+              </div>
+            </motion.aside>
+          </>
+        ) : null}
+      </AnimatePresence>
 
       {isBattleOver ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
@@ -757,6 +767,6 @@ export default function BattleArena(): React.JSX.Element {
           </Card>
         </div>
       ) : null}
-    </main>
+    </div>
   );
 }

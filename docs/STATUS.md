@@ -1,4 +1,4 @@
-# Status — 2026-07-11
+# Status — 2026-07-12
 
 Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @ `c3040f7`).
 
@@ -37,6 +37,7 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 - **Confirmed by Tanveer 2026-07-11** — identical tag synergies stack per carrier (ruling #40); cancel-then-hit order (ruling #41); DoT ticks unaffected by damage modifiers (ruling #42).
 - **Battle log dump** — SAVE BATTLE LOG on the victory/defeat overlay writes teams + the full event log to `<project>/battle-log/` via `app/api/battle-log` (gitignored, playtest debugging).
 - **Type-safe mechanics (STATUS #7 closed)** — `Mechanic` is a discriminated union of 42 per-type interfaces (`types/mechanic.ts`); narrowing on `type` exposes exactly that mechanic's fields. `Character.passive` is a typed `Passive` with a `PassiveTrigger` union (`types/passive.ts`); runtime buff/debuff entries are `StatusEffect`. Zero `any` left in lib/hooks/store/components/app. The Zod schema now rejects unknown mechanic types AND unknown passive triggers at load — a typo'd kit fails with the character id and path before a battle ever starts. One documented boundary cast where validated kit JSON becomes typed data (BattleProvider).
+- **Battle HUD redesign (STATUS #20, first pass — Tanveer's picks 2026-07-12)** — single-viewport layout, no page scroll: slim status strip (turn/phase/progress/speed/log), enemy row + player row of portrait-first unit tiles (art fills tile; overlaid HP bar, 5-segment ULT pips, ▲/▼/◆ counters with tooltip, Sub/Target/×N badges, DOWN stamp), event ticker above an always-visible deck dock (collapse toggle removed), queue rendered as compact chips beside Reset Hand, full log in a slide-over drawer (Actions only / All events filter). TopNav pinned to h-11 so the battle shell sizes to `100dvh - 2.875rem`; BattleArena root must NOT set a z-index (it would trap the fixed drawer/modals under the sticky TopNav's z-50).
 - **Tests** — 140 across combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, lethal survival, effects/links, playtest-2 regressions, kit schema validation.
 
 ## Open Issues
@@ -46,7 +47,7 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 | 6 | Ultimates have no rank while skills rank up — confirmed intended for now; Tanveer may add an ult level-up system later | `types/ultimateCard.ts` | Design note |
 | 13 | Art nitpicks: Seras's horn-like hair tufts didn't render; Yalina's side braid renders as loose side curls (trigger-word/style limits — see ART_PIPELINE trigger-word table) | `public/characters/` | Cosmetic (re-roll) |
 | 14 | Design feedback 2026-07-11: Mustafa approved; Siddiq redesigned (v2, still AI-invented — awaiting his sheet); Batra reworked per his direction (turban/beard/kesari, no armour). He loves Lyra/Sara/Gabrist; Duke/Yalina/Seras fine for now, iterate later | `docs/ART_PIPELINE.md` | Pending input |
-| 20 | Battle screen page gets a user-friendliness overhaul in a future batch (Tanveer, 2026-07-11) — after all mechanics work as expected | `components/game/*` | Planned |
+| 20 | Battle screen overhaul: layout pass shipped 2026-07-12 (single-viewport HUD, portrait tiles, always-visible deck, log drawer). Still open for polish: overkill/death animation skip, attack/hit animations, mobile pass | `components/game/*` | In progress |
 | 21 | Enemy AI decision quality (target/skill choices) needs tweaking — future batch per Tanveer (playtest 2) | `lib/game/ai.ts` | Planned |
 
 Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier stats wired, ruling #36), #16 (zero clauses hidden, ruling #44), #15 (firestore.rules deployed live via Firebase MCP 2026-07-11 — cloud saves work for signed-in users; minimal `firebase.json` added), #7 (Mechanic discriminated union — see Working).

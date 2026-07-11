@@ -146,7 +146,6 @@ export default function Deck() {
 
   const [previewCard, setPreviewCard] = React.useState<ActionCard | null>(null);
   const [draggedCardId, setDraggedCardId] = React.useState<string | null>(null);
-  const [isDockExpanded, setIsDockExpanded] = React.useState(false);
   const previewShowTimerRef = React.useRef<number | null>(null);
   const previewHideTimerRef = React.useRef<number | null>(null);
 
@@ -233,7 +232,7 @@ export default function Deck() {
   );
 
   return (
-    <div className="sticky bottom-0 z-30 mt-4 w-full border-t border-zinc-800 bg-linear-to-t from-black/95 to-black/60 p-4 backdrop-blur-md">
+    <div className="relative z-30 w-full shrink-0 border-t border-zinc-800 bg-linear-to-t from-black/95 to-black/70 px-3 pb-2 pt-1.5 backdrop-blur-md">
       {previewCard ? (
         <div className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-3 w-full max-w-xl -translate-x-1/2">
           <Card className="w-full rounded-none border border-zinc-700 bg-zinc-950/95 ring-0">
@@ -286,119 +285,84 @@ export default function Deck() {
         </div>
       ) : null}
 
-      {/* Action Queue */}
-      {isDockExpanded ? (
-        <div className="mb-3 flex min-h-30 gap-3 overflow-x-auto pb-1">
-          {actionQueue.map((card, i) => {
+      {/* Queue chips + controls — always visible */}
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto">
+          <span className="shrink-0 font-body text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+            Queue
+          </span>
+          {actionQueue.map((card) => {
             const char = playerTeam.find(
               (c) => c.instanceId === card.sourceInstanceId,
             );
             const isUlt = card.skill.type === "ultimate";
             return (
-              <Card
+              <button
                 key={card.id}
+                type="button"
                 onClick={() => isPlayerActionPhase && deselectCard(card.id)}
                 onMouseEnter={() => beginPreview(card)}
                 onMouseLeave={endPreview}
                 onFocus={() => beginPreview(card)}
                 onBlur={endPreview}
-                className={`h-35 w-25 shrink-0 -translate-y-1 cursor-pointer select-none flex flex-col border-2 p-2 transition-transform ${getColorTokenClasses(char?.color)} ${isUlt ? "ring-2 ring-amber-400/80 shadow-[0_0_14px_rgba(251,191,36,0.55)]" : ""}`}
+                className={`flex h-9 min-w-0 max-w-44 shrink-0 cursor-pointer items-center gap-1.5 border px-1.5 transition-colors ${getColorTokenClasses(char?.color)} ${isUlt ? "ring-1 ring-amber-400/80 shadow-[0_0_8px_rgba(251,191,36,0.45)]" : ""}`}
               >
-                <div className="flex items-start justify-between gap-1">
-                  <div className="text-[10px] text-zinc-300">
-                    Action {i + 1}
-                  </div>
-                  <div className="text-[11px] leading-none tracking-tight">
-                    {isUlt ? (
-                      <span className="font-bold text-[9px] uppercase tracking-widest text-amber-300">
-                        ULT
-                      </span>
-                    ) : (
-                      <span className="text-zinc-100">
-                        {getRankStars(card.rank)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="font-bold text-[12px] mt-1 text-white truncate">
-                  {char?.name}
-                </div>
-                <div className="relative my-auto flex flex-1 items-center justify-center overflow-hidden">
-                  {char && getCharacterArt(char.id) ? (
-                    <Image
-                      src={getCharacterArt(char.id)!}
-                      alt={char.name}
-                      width={160}
-                      height={160}
-                      className="h-full w-full object-cover object-top"
-                    />
-                  ) : (
-                    <span className="text-center font-heading text-3xl leading-none text-white/90 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
-                      {getCharacterInitial(char?.name)}
-                    </span>
-                  )}
-                </div>
-                <div
-                  className={`text-[11px] mt-auto font-semibold ${card.skill.type === "ultimate" ? "text-amber-400" : "text-zinc-200"}`}
-                >
-                  {card.skill.skillName}
-                </div>
-              </Card>
+                {char && getCharacterArt(char.id) ? (
+                  <Image
+                    src={getCharacterArt(char.id)!}
+                    alt={char.name}
+                    width={48}
+                    height={48}
+                    className="h-6 w-6 shrink-0 border border-zinc-700 object-cover object-top"
+                  />
+                ) : (
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center border border-zinc-700 font-heading text-sm text-white/90">
+                    {getCharacterInitial(char?.name)}
+                  </span>
+                )}
+                <span className="flex min-w-0 flex-col text-left leading-tight">
+                  <span className="truncate text-[10px] font-bold text-zinc-100">
+                    {char?.name}
+                  </span>
+                  <span
+                    className={`truncate text-[9px] ${isUlt ? "text-amber-300" : "text-zinc-300"}`}
+                  >
+                    {isUlt ? "ULT" : getRankStars(card.rank)} •{" "}
+                    {card.skill.skillName}
+                  </span>
+                </span>
+              </button>
             );
           })}
-          {/* Placeholder for remaining actions */}
           {Array.from({ length: Math.max(0, 3 - actionQueue.length) }).map(
             (_, i) => (
               <div
                 key={`empty-${i}`}
-                className="h-35 w-25 shrink-0 flex items-center justify-center rounded-xl border-2 border-dashed border-zinc-700 font-bold text-zinc-700"
+                className="flex h-9 w-14 shrink-0 items-center justify-center border border-dashed border-zinc-700 font-body text-[10px] text-zinc-600"
               >
                 {actionQueue.length + i + 1}
               </div>
             ),
           )}
-        </div>
-      ) : null}
-
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsDockExpanded((prev) => !prev)}
-            className="border border-zinc-700 rounded-none px-2 text-[11px] uppercase tracking-widest text-zinc-300"
-          >
-            {isDockExpanded ? "Collapse Deck" : "Expand Deck"}
-          </Button>
           <Button
             variant="ghost"
             size="sm"
             disabled={!isPlayerActionPhase || !handSnapshot}
             onClick={resetHand}
-            className="border border-amber-300/60 rounded-none px-2 text-[11px] uppercase tracking-widest text-amber-200 disabled:border-zinc-800 disabled:text-zinc-600"
+            className="shrink-0 border border-amber-300/60 rounded-none px-2 text-[11px] uppercase tracking-widest text-amber-200 disabled:border-zinc-800 disabled:text-zinc-600"
           >
             Reset Hand
           </Button>
         </div>
 
-        <span className="font-body text-[11px] uppercase tracking-[0.12em] text-zinc-500">
-          {isPlayerActionPhase ? "Your turn" : "Waiting…"} • Queue{" "}
-          {actionQueue.length}/3
+        <span className="shrink-0 font-body text-[11px] uppercase tracking-[0.12em] text-zinc-500">
+          {isPlayerActionPhase ? "Your turn" : "Waiting…"} •{" "}
+          {actionQueue.length}/3 queued
         </span>
       </div>
-      {!isDockExpanded ? (
-        <div className="flex w-full items-center justify-between gap-2 border border-zinc-800 bg-black/65 px-3 py-2 font-body text-xs uppercase tracking-[0.12em] text-zinc-400">
-          <span>Deck hidden to keep arena clear</span>
-          <span>
-            Queue {actionQueue.length}/3 • {deck.length} cards ready
-          </span>
-        </div>
-      ) : null}
 
-      {/* Main Deck Dock */}
-      <div
-        className={`${isDockExpanded ? "flex" : "hidden"} w-full gap-2 overflow-x-auto border border-zinc-800 bg-black/80 p-3 shadow-2xl`}
-      >
+      {/* Deck — always visible */}
+      <div className="flex w-full gap-2 overflow-x-auto border border-zinc-800 bg-black/60 p-2">
         {deck.map((card) => {
           const char = playerTeam.find(
             (c) => c.instanceId === card.sourceInstanceId,

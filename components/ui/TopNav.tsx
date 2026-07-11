@@ -15,7 +15,8 @@ export default function TopNav() {
 
   return (
     <nav className="sticky top-0 z-50 border-b-2 border-zinc-800 bg-zinc-950/90 backdrop-blur-sm">
-      <div className="mx-auto flex w-full max-w-6xl items-center gap-6 px-4 py-2 md:px-8">
+      {/* Fixed h-11: the battle screen sizes itself to 100dvh minus this bar */}
+      <div className="mx-auto flex h-11 w-full max-w-6xl items-center gap-6 px-4 md:px-8">
         <Link
           href="/"
           className="font-heading text-xl tracking-[0.2em] text-amber-300"
