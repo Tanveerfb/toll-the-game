@@ -341,7 +341,14 @@ export function buildSkillKeywordGlossary(
           : undefined);
     if (!value) continue;
 
-    const tier = tierWord(value, mech.type === "debuff");
+    // No resolvable duration = permanent — the wording says so explicitly
+    // ("Permanently raises ATK") instead of relying on omission.
+    const duration =
+      getRankedValue(mech.durationRanked, rankIndex) ??
+      (typeof mech.duration === "number" ? mech.duration : undefined);
+    const permanent = duration === undefined;
+
+    const tier = `${permanent ? "permanently " : ""}${tierWord(value, mech.type === "debuff")}`;
     const statLabel = STAT_LABELS[stat] ?? stat.toUpperCase();
     const verb = mech.type === "debuff" ? "Reduces" : "Increases";
 

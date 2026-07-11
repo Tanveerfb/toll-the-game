@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Drain",
-      "description": "Does ATK-scaled damage to all enemies and Lifesteal 30% of the damage dealt.",
+      "description": "Does ATK-scaled damage to all enemies; Lifesteal 30% of the damage dealt.",
       "characterId": "ban",
       "type": "attack",
       "statMultiplier": "atk",
@@ -46,7 +46,7 @@
   ],
   "ultimate": {
     "skillName": "Fox Hunt",
-    "description": "Does 600% ATK damage to one enemy and Extorts 50% of their ATK and DEF for 2 turns.",
+    "description": "Does 600% ATK damage to one enemy; Extorts 50% of their ATK and DEF for 2 turns.",
     "characterId": "ban",
     "type": "ultimate",
     "statMultiplier": "atk",

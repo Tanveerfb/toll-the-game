@@ -30,12 +30,13 @@ describe("description placeholders", () => {
     expect(rock["raises atk"]).toBe("Increases ATK by 30%");
     expect(rock.raises).toBe("Increases ATK by 30%"); // loose-wording fallback
 
-    // Gon ult: +30% ATK ("raises") and +50% DEF ("greatly raises")
+    // Gon ult: permanent +30% ATK ("permanently raises") and 1-turn +50% DEF
+    // ("greatly raises") — permanence is explicit in the wording now.
     const combo = buildSkillKeywordGlossary(
       gonData.ultimate as CharacterSkillData,
       0,
     );
-    expect(combo["raises atk"]).toBe("Increases ATK by 30%");
+    expect(combo["permanently raises atk"]).toBe("Increases ATK by 30%");
     expect(combo["greatly raises def"]).toBe("Increases DEF by 50%");
   });
 
@@ -51,7 +52,10 @@ describe("description placeholders", () => {
       ],
     } as unknown as CharacterSkillData;
     const glossary = buildSkillKeywordGlossary(skill, 0);
-    expect(glossary["massively raises atk"]).toBe("Increases ATK by 85%");
+    // Undurationed buff = permanent, prefixed; durationed debuff is not
+    expect(glossary["permanently massively raises atk"]).toBe(
+      "Increases ATK by 85%",
+    );
     expect(glossary["greatly lowers def"]).toBe("Reduces DEF by 50%");
   });
 
@@ -62,12 +66,29 @@ describe("description placeholders", () => {
       type: "buff",
       statMultiplier: "atk",
       mechanics: [
+        { type: "buff", stat: "atk", valuePercent: 30, duration: 1 },
+        { type: "buff", stat: "def", valuePercent: 30, duration: 1 },
+      ],
+    } as unknown as CharacterSkillData;
+    const glossary = buildSkillKeywordGlossary(skill, 0);
+    expect(glossary["raises atk and def"]).toBe(
+      "Increases ATK by 30%; Increases DEF by 30%",
+    );
+  });
+
+  it("permanent multi-stat raises combine under the permanently key (Killua ult)", () => {
+    const skill = {
+      skillName: "T",
+      characterId: "t",
+      type: "ultimate",
+      statMultiplier: "atk",
+      mechanics: [
         { type: "buff", stat: "atk", valuePercent: 30 },
         { type: "buff", stat: "def", valuePercent: 30 },
       ],
     } as unknown as CharacterSkillData;
     const glossary = buildSkillKeywordGlossary(skill, 0);
-    expect(glossary["raises atk and def"]).toBe(
+    expect(glossary["permanently raises atk and def"]).toBe(
       "Increases ATK by 30%; Increases DEF by 30%",
     );
   });

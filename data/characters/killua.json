@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Lightning Palm",
-      "description": "Cancels stances and does ATK-scaled damage to one enemy, stunning for [stun.duration] turn(s) at rank 2+.",
+      "description": "Cancels stances; does ATK-scaled damage to one enemy; stuns for [stun.duration] turn(s) at rank 2+.",
       "characterId": "killua",
       "type": "attack",
       "statMultiplier": "atk",
@@ -41,7 +41,7 @@
   ],
   "ultimate": {
     "skillName": "Speed of Lightning",
-    "description": "Raises ATK and DEF, then does 500% ATK damage to one enemy.",
+    "description": "Permanently raises ATK and DEF; then does 500% ATK damage to one enemy.",
     "characterId": "killua",
     "type": "ultimate",
     "statMultiplier": "atk",

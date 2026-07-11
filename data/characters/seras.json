@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Static Lance",
-      "description": "Does ATK-scaled damage to one enemy and applies Shock for 4 turns. ",
+      "description": "Does ATK-scaled damage to one enemy; applies Shock for 4 turns.",
       "characterId": "seras",
       "type": "attack",
       "statMultiplier": "atk",

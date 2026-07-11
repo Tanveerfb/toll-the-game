@@ -50,7 +50,11 @@
 - Dokkan wording tiers: "raises" (<50%), "greatly raises" (50–79%),
   "massively raises" (80%+); same for "lowers". Descriptions don't need the
   numbers — hovering the word shows that skill's exact values.
-- No duration mentioned on a stat raise/lower = permanent (rest of battle).
+- Permanent stat changes say it explicitly: "Permanently raises ATK"
+  (rest of battle). Temporary ones state the duration.
+- Semicolons separate the distinct parts of a description:
+  "Permanently raises ATK; greatly raises DEF for 1 turn; then does 500%
+  ATK damage to one enemy."
 - No "own": "Raises ATK" always means the skill user's stats.
 - Effects are cancellable and stackable by default — only call out
   "cannot be cancelled" / "unstackable" when they aren't.

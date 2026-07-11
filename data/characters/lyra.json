@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Red Ice: Volcanic Frost",
-      "description": "Does ATK-scaled damage to one enemy and applies [decay.stacks] Decay for [decay.duration] turns.",
+      "description": "Does ATK-scaled damage to one enemy; applies [decay.stacks] Decay for [decay.duration] turns.",
       "characterId": "lyra",
       "type": "attack",
       "statMultiplier": "atk",

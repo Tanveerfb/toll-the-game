@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Jajanken: Rock",
-      "description": "Raises ATK for 1 turn, then does ATK-scaled damage to one enemy.",
+      "description": "Raises ATK for 1 turn; then does ATK-scaled damage to one enemy.",
       "characterId": "gon",
       "type": "attack",
       "statMultiplier": "atk",
@@ -28,7 +28,7 @@
     },
     {
       "skillName": "Jajanken: Round 2",
-      "description": "Does ATK-scaled damage to one enemy and fills ultimate gauge by [gainUltGauge.value].",
+      "description": "Does ATK-scaled damage to one enemy; fills ultimate gauge by [gainUltGauge.value].",
       "characterId": "gon",
       "type": "attack",
       "statMultiplier": "atk",
@@ -43,7 +43,7 @@
   ],
   "ultimate": {
     "skillName": "Jajanken Combo",
-    "description": "Raises ATK, greatly raises DEF for 1 turn, then does 500% ATK damage to one enemy.",
+    "description": "Permanently raises ATK; greatly raises DEF for 1 turn; then does 500% ATK damage to one enemy.",
     "characterId": "gon",
     "type": "ultimate",
     "statMultiplier": "atk",

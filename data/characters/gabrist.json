@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Ink Slash",
-      "description": "Does ATK-scaled damage to one enemy and greatly lowers ATK for 2 turns",
+      "description": "Does ATK-scaled damage to one enemy; greatly lowers ATK for 2 turns.",
       "characterId": "gabrist",
       "type": "attack",
       "statMultiplier": "atk",
@@ -26,7 +26,7 @@
     },
     {
       "skillName": "Erase",
-      "description": "Cancels stances and does ATK-scaled damage to one enemy.",
+      "description": "Cancels stances; does ATK-scaled damage to one enemy.",
       "characterId": "gabrist",
       "type": "attack",
       "statMultiplier": "atk",
@@ -40,7 +40,7 @@
   ],
   "ultimate": {
     "skillName": "Masterpiece Unveiled",
-    "description": "Cancel buffs and does ATK-scaled damage to all enemies and greatly lowers ATK and DEF for 2 turns.",
+    "description": "Cancels buffs; does ATK-scaled damage to all enemies; greatly lowers ATK and DEF for 2 turns.",
     "characterId": "gabrist",
     "type": "ultimate",
     "statMultiplier": "atk",

@@ -19,7 +19,7 @@
     },
     {
       "skillName": "Cleansing Bloom",
-      "description": "Cleanses debuffs and heals [aoeRanked? allies : one ally] equal to ATK-scaled.",
+      "description": "Cleanses debuffs; heals [aoeRanked? allies : one ally] equal to ATK-scaled.",
       "characterId": "siddiq",
       "type": "heal",
       "statMultiplier": "atk",
@@ -37,7 +37,7 @@
   ],
   "ultimate": {
     "skillName": "Wrath of the Wild",
-    "description": "Cancels enemy buffs and stances, does ATK-scaled damage to one enemy, and stuns for [stun.duration] turns.",
+    "description": "Cancels buffs and stances; does ATK-scaled damage to one enemy; stuns for [stun.duration] turns.",
     "characterId": "siddiq",
     "type": "ultimate",
     "statMultiplier": "atk",

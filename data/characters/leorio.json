@@ -36,7 +36,7 @@
     },
     {
       "skillName": "Switchblade Attack",
-      "description": "Does Pierce ATK-scaled damage to one enemy and applies Bleed for [bleed.duration] turn(s).",
+      "description": "Does Pierce ATK-scaled damage to one enemy; applies Bleed for [bleed.duration] turn(s).",
       "characterId": "leorio",
       "type": "attack",
       "statMultiplier": "atk",
@@ -55,7 +55,7 @@
   ],
   "ultimate": {
     "skillName": "Remote Punch",
-    "description": "Cancels buffs and stances, then does 500% ATK damage to one enemy and stuns for 2 turns.",
+    "description": "Cancels buffs and stances; does 500% ATK damage to one enemy; stuns for 2 turns.",
     "characterId": "leorio",
     "type": "ultimate",
     "statMultiplier": "atk",

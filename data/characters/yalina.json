@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Attention Drawer",
-      "description": "Taunts and gains [buff.value]% damage reduction for [buff.duration] turns.",
+      "description": "Taunts; gains [buff.value]% damage reduction for [buff.duration] turns.",
       "characterId": "yalina",
       "type": "debuff",
       "statMultiplier": "def",

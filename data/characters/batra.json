@@ -40,7 +40,7 @@
   ],
   "ultimate": {
     "skillName": "Khalsa Flame",
-    "description": "Applies 3 Ignite stacks, then does Spite damage equal to ATK-scaled to one enemy.",
+    "description": "Applies 3 Ignite stacks; then does Spite damage equal to ATK-scaled to one enemy.",
     "characterId": "batra",
     "type": "ultimate",
     "statMultiplier": "atk",

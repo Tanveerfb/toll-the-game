@@ -41,7 +41,7 @@
   ],
   "ultimate": {
     "skillName": "Evil Spirit",
-    "description": "Cancels buffs and stances, does 700% ATK damage to one enemy and stuns for 2 turns.",
+    "description": "Cancels buffs and stances; does 700% ATK damage to one enemy; stuns for 2 turns.",
     "characterId": "meliodas",
     "type": "ultimate",
     "statMultiplier": "atk",

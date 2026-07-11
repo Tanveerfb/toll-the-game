@@ -26,7 +26,7 @@
     },
     {
       "skillName": "Earth Shatter",
-      "description": "Does DEF-scaled damage to one enemy and reduces [lowerUltGauge.value] ultimate gauge",
+      "description": "Does DEF-scaled damage to one enemy; reduces [lowerUltGauge.value] ultimate gauge.",
       "characterId": "mustafa",
       "type": "attack",
       "statMultiplier": "def",
@@ -41,7 +41,7 @@
   ],
   "ultimate": {
     "skillName": "Tea Time Tremor",
-    "description": "Raises DEF for [buff.duration] turns, then does DEF-scaled damage to one enemy.",
+    "description": "Raises DEF for [buff.duration] turns; then does DEF-scaled damage to one enemy.",
     "characterId": "mustafa",
     "type": "ultimate",
     "statMultiplier": "def",

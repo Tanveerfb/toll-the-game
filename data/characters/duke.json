@@ -25,7 +25,7 @@
     },
     {
       "skillName": "Fist of Flowing Ruin : Weaken",
-      "description": "Does ATK-scaled damage to one enemy and lowers ATK by [debuff.value]% for [debuff.duration] turns.",
+      "description": "Does ATK-scaled damage to one enemy; lowers ATK by [debuff.value]% for [debuff.duration] turns.",
       "characterId": "duke",
       "type": "debuff",
       "statMultiplier": "atk",
