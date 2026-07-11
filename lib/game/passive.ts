@@ -1,6 +1,6 @@
 ﻿import { BattleCharacter } from "@/types/character";
 import { QueueItem } from "@/hooks/MechanicProvider";
-import { BattlePhase } from "@/types/mechanic";
+import { BattlePhase, StatusEffect } from "@/types/mechanic";
 
 type RegisterFn = (item: QueueItem) => void;
 
@@ -23,7 +23,7 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
   // main trigger is combat-time (e.g. Batra's beforeSkill HP consume, Seras's
   // onAttackReceived Charged) -- without this fallback they never register.
   const hasBattleStartMechanics = character.passive.mechanics?.some(
-    (m: any) => m.type === "synergy" || m.type === "aura",
+    (m) => m.type === "synergy" || m.type === "aura",
   );
   const phase =
     mapTriggerToPhase(character.passive.trigger) ??
@@ -41,14 +41,15 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
         const mutateTeam = [...teams[teamKey]];
         let changed = false;
 
-        source.passive?.mechanics?.forEach((mech: any) => {
+        source.passive?.mechanics?.forEach((mech) => {
           if (mech.type === "synergy") {
-            const count = mech.conditionTags ? mutateTeam.filter(c => c.tags?.some(t => mech.conditionTags.includes(t))).length : 1;
-            
+            const conditionTags = mech.conditionTags;
+            const count = conditionTags ? mutateTeam.filter(c => c.tags?.some(t => conditionTags.includes(t))).length : 1;
+
             mutateTeam.forEach((ally, idx) => {
               let applies = false;
               if (mech.conditionColors && mech.conditionColors.includes(ally.color)) applies = true;
-              if (mech.conditionTags && ally.tags?.some(t => mech.conditionTags.includes(t))) applies = true;
+              if (conditionTags && ally.tags?.some(t => conditionTags.includes(t))) applies = true;
               
               if (applies) {
                 // flatBonus: fixed % per carrier (Seras). Default: scales
@@ -62,8 +63,8 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
                 // as amplify (15% damageDealt) for whatever reason").
                 // damageDealt entries are consumed by the damage engine at
                 // read time (ruling #36), so they are NOT preApplied.
-                const buff = {
-                  type: "buff" as any,
+                const buff: StatusEffect = {
+                  type: "buff",
                   stat: mech.stat,
                   valuePercent: totalPercent,
                   uncancellable: true,
@@ -71,7 +72,7 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
                   name: mech.conditionTags
                     ? `[${mech.conditionTags[0]}] Synergy`
                     : `${source.passive!.name}`
-                } as any;
+                };
                 
                 const t = { ...mutateTeam[idx], buffs: [...mutateTeam[idx].buffs, buff] };
                 if (mech.stat === "all") {
@@ -96,9 +97,9 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
 
           if (mech.type === "aura" && mech.conditionNoDeadAllies) {
             mutateTeam.forEach((ally, idx) => {
-              const buff = {
-                type: "buff" as any, stat: mech.stat, valuePercent: mech.valuePercent, uncancellable: true, name: source.passive!.name
-              } as any;
+              const buff: StatusEffect = {
+                type: "buff", stat: mech.stat, valuePercent: mech.valuePercent, uncancellable: true, name: source.passive!.name
+              };
               const t = { ...mutateTeam[idx], buffs: [...mutateTeam[idx].buffs, buff] };
               if (mech.stat === "hp") {
                 const hpBoost = Math.floor(t.hp * (mech.valuePercent/100));
@@ -135,9 +136,9 @@ function registerCharacterSynergy(
   registerToQueue: RegisterFn,
 ) {
   const mech = character.passive?.mechanics?.find(
-    (m: any) => m.type === "characterSynergy",
+    (m) => m.type === "characterSynergy",
   );
-  if (!mech) return;
+  if (!mech || mech.type !== "characterSynergy") return;
 
   const passiveName = character.passive!.name;
   const requiredIds: string[] = mech.requiredCharacterIds ?? [];
@@ -277,9 +278,9 @@ function registerCharacterSynergy(
 // team's turns AFTER the first, up to maxStacks. Uncancellable.
 function registerTurnRamp(character: BattleCharacter, registerToQueue: RegisterFn) {
   const mech = character.passive?.mechanics?.find(
-    (m: any) => m.type === "turnRamp",
+    (m) => m.type === "turnRamp",
   );
-  if (!mech) return;
+  if (!mech || mech.type !== "turnRamp") return;
 
   registerToQueue({
     id: `${character.instanceId}_passive_${character.passive!.name}_turnRamp`,
@@ -343,9 +344,9 @@ function registerTurnRamp(character: BattleCharacter, registerToQueue: RegisterF
 // current HP just re-clamps under the restored max).
 function registerMaxHpShred(character: BattleCharacter, registerToQueue: RegisterFn) {
   const mech = character.passive?.mechanics?.find(
-    (m: any) => m.type === "maxHpShred",
+    (m) => m.type === "maxHpShred",
   );
-  if (!mech) return;
+  if (!mech || mech.type !== "maxHpShred") return;
 
   registerToQueue({
     id: `${character.instanceId}_passive_${character.passive!.name}_shred`,

@@ -363,17 +363,32 @@ export default function BattleProvider({
     resetBattle();
     clearQueue();
 
+    // Single boundary cast: kit JSON is loose CharacterData, validated by
+    // the Zod schema at load (incl. mechanic types + passive triggers) —
+    // beyond this point everything is strictly typed.
     const buildBattleChar = (
-      raw: any,
+      raw: ReturnType<typeof getCharacterById>,
       team: "player" | "enemy",
       instanceId: string,
       isSub: boolean,
     ): BattleCharacter => ({
-      ...raw,
+      ...(raw as unknown as Omit<
+        BattleCharacter,
+        | "instanceId"
+        | "currentAttack"
+        | "currentDefense"
+        | "currentHP"
+        | "ultGauge"
+        | "buffs"
+        | "debuffs"
+        | "passiveState"
+        | "team"
+        | "isSub"
+      >),
       instanceId,
-      currentAttack: raw.atk,
-      currentDefense: raw.def,
-      currentHP: raw.hp,
+      currentAttack: raw!.atk,
+      currentDefense: raw!.def,
+      currentHP: raw!.hp,
       ultGauge: 0,
       buffs: [],
       debuffs: [],

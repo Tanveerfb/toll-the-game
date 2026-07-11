@@ -36,20 +36,20 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 - **Zero-value clauses hidden (ruling #44)** — rank-1 Lightning Palm doesn't mention its stun, rank-1 Rush Rock doesn't mention Attack Seal; the clause appears at the rank where the value is real.
 - **Confirmed by Tanveer 2026-07-11** — identical tag synergies stack per carrier (ruling #40); cancel-then-hit order (ruling #41); DoT ticks unaffected by damage modifiers (ruling #42).
 - **Battle log dump** — SAVE BATTLE LOG on the victory/defeat overlay writes teams + the full event log to `<project>/battle-log/` via `app/api/battle-log` (gitignored, playtest debugging).
-- **Tests** — 137 across combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, lethal survival, effects/links, playtest-2 regressions.
+- **Type-safe mechanics (STATUS #7 closed)** — `Mechanic` is a discriminated union of 42 per-type interfaces (`types/mechanic.ts`); narrowing on `type` exposes exactly that mechanic's fields. `Character.passive` is a typed `Passive` with a `PassiveTrigger` union (`types/passive.ts`); runtime buff/debuff entries are `StatusEffect`. Zero `any` left in lib/hooks/store/components/app. The Zod schema now rejects unknown mechanic types AND unknown passive triggers at load — a typo'd kit fails with the character id and path before a battle ever starts. One documented boundary cast where validated kit JSON becomes typed data (BattleProvider).
+- **Tests** — 140 across combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, lethal survival, effects/links, playtest-2 regressions, kit schema validation.
 
 ## Open Issues
 
 | # | Issue | Where | Severity |
 |---|---|---|---|
 | 6 | Ultimates have no rank while skills rank up — confirmed intended for now; Tanveer may add an ult level-up system later | `types/ultimateCard.ts` | Design note |
-| 7 | `Character.passive: any` and `as any` casts around mechanics — type safety hole. **Tanveer 2026-07-11: do the discriminated-union refactor NEXT BATCH**, before new mechanic types pile on | `types/character.ts` | Next batch |
 | 13 | Art nitpicks: Seras's horn-like hair tufts didn't render; Yalina's side braid renders as loose side curls (trigger-word/style limits — see ART_PIPELINE trigger-word table) | `public/characters/` | Cosmetic (re-roll) |
 | 14 | Design feedback 2026-07-11: Mustafa approved; Siddiq redesigned (v2, still AI-invented — awaiting his sheet); Batra reworked per his direction (turban/beard/kesari, no armour). He loves Lyra/Sara/Gabrist; Duke/Yalina/Seras fine for now, iterate later | `docs/ART_PIPELINE.md` | Pending input |
 | 20 | Battle screen page gets a user-friendliness overhaul in a future batch (Tanveer, 2026-07-11) — after all mechanics work as expected | `components/game/*` | Planned |
 | 21 | Enemy AI decision quality (target/skill choices) needs tweaking — future batch per Tanveer (playtest 2) | `lib/game/ai.ts` | Planned |
 
-Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier stats wired, ruling #36), #16 (zero clauses hidden, ruling #44), #15 (firestore.rules deployed live via Firebase MCP 2026-07-11 — cloud saves work for signed-in users; minimal `firebase.json` added).
+Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier stats wired, ruling #36), #16 (zero clauses hidden, ruling #44), #15 (firestore.rules deployed live via Firebase MCP 2026-07-11 — cloud saves work for signed-in users; minimal `firebase.json` added), #7 (Mechanic discriminated union — see Working).
 
 ## Not Built Yet
 

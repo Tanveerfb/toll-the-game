@@ -172,7 +172,7 @@ describe("tickTeamDebuffs (own turn end)", () => {
   });
 
   it("Nine Lives does not catch a lethal DoT below the HP threshold or twice", () => {
-    const passive = {
+    const passive: import("@/types/passive").Passive = {
       name: "Nine Lives",
       trigger: "onLethalDamage",
       mechanics: [

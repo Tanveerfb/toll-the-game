@@ -7,7 +7,11 @@ import { syncExtortLinks } from "./effects";
 import { getEffectiveAttack, getEffectiveDefense } from "./stats";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
-import { Mechanic } from "@/types/mechanic";
+import {
+  BuffMechanic,
+  ConditionalBuffMechanic,
+  Mechanic,
+} from "@/types/mechanic";
 
 // Crit chance in percent — base 0 for everyone (same rule as evade). A crit
 // applies the full CRITICAL package (50% DEF ignore, type-immune, +50% dmg).
@@ -16,7 +20,7 @@ import { Mechanic } from "@/types/mechanic";
 export function getCritChance(char: BattleCharacter): number {
   let chance = 0;
   const deathblow = char.passive?.mechanics?.find(
-    (m: any) => m.type === "deathblow",
+    (m) => m.type === "deathblow",
   );
   if (deathblow && !char.isSub) {
     const lostPercent = (1 - char.currentHP / char.hp) * 100;
@@ -32,7 +36,7 @@ export function getCritChance(char: BattleCharacter): number {
 function gainChargedStack(char: BattleCharacter, log: (e: string) => void) {
   if (char.passive?.trigger !== "onAttackReceived") return;
   const mech = char.passive.mechanics?.find(
-    (m: any) => m.type === "chargedStacks",
+    (m) => m.type === "chargedStacks",
   );
   if (!mech) return;
   const maxStacks = mech.maxStacks ?? 5;
@@ -60,7 +64,7 @@ function gainAttackReceivedShift(
 ) {
   if (char.passive?.trigger !== "onAttackReceived") return;
   const mech = char.passive.mechanics?.find(
-    (m: any) => m.type === "statShiftAfterAttacks",
+    (m) => m.type === "statShiftAfterAttacks",
   );
   if (!mech) return;
   if (char.isSub && char.passive.worksFromSub === false) return;
@@ -109,13 +113,13 @@ function getSkillDamagePercent(
   }
 }
 
-function normalizeMechanic(mechanic: any, rankIndex: number = 0): Mechanic {
-  const norm = { ...mechanic } as Mechanic;
+function normalizeMechanic(mechanic: Mechanic, rankIndex: number = 0): Mechanic {
+  const norm = { ...mechanic };
   if (norm.valueRanked) norm.value = norm.valueRanked[rankIndex];
   if (norm.stacksRanked) norm.stacks = norm.stacksRanked[rankIndex];
   if (norm.durationRanked) norm.duration = norm.durationRanked[rankIndex];
-  if (mechanic.counterDamagePercentRanked)
-    norm.counterDamagePercent = mechanic.counterDamagePercentRanked[rankIndex];
+  if (norm.counterDamagePercentRanked)
+    norm.counterDamagePercent = norm.counterDamagePercentRanked[rankIndex];
   return norm;
 }
 
@@ -197,7 +201,7 @@ export function executeSkill(
     updatedSource.passive.trigger === "beforeSkill"
   ) {
     const consumeMech = updatedSource.passive.mechanics?.find(
-      (m: any) => m.type === "consumeHpPercent",
+      (m) => m.type === "consumeHpPercent",
     );
     if (consumeMech) {
       const consumeAmt = Math.floor(
@@ -247,7 +251,7 @@ export function executeSkill(
       ally.passive?.trigger === "onAllySkill"
     ) {
       const mech = ally.passive.mechanics?.find(
-        (m: any) => m.type === "momentumStacks",
+        (m) => m.type === "momentumStacks",
       );
       if (mech) {
         const currentStacks = (ally.passiveState.momentumStacks as number) || 0;
@@ -262,11 +266,9 @@ export function executeSkill(
   });
 
   const rankIndex = (action.rank ?? 1) - 1;
-  const skillMechanics = (action.skill as any).mechanics
-    ? ((action.skill as any).mechanics as any[]).map((m) =>
-        normalizeMechanic(m, rankIndex),
-      )
-    : [];
+  const skillMechanics = (action.skill.mechanics ?? []).map((m) =>
+    normalizeMechanic(m, rankIndex),
+  );
 
   const isAoe = skillMechanics.some(
     (m) => m.type === "aoe" || (m.type === "aoeRanked" && m.ranks?.[rankIndex]),
@@ -386,7 +388,7 @@ export function executeSkill(
   // Deathblow (Meliodas): +damagePerStepPercent per hpStepPercent of max HP
   // lost. Inactive from the sub position by design.
   const deathblowMech = updatedSource.passive?.mechanics?.find(
-    (m: any) => m.type === "deathblow",
+    (m) => m.type === "deathblow",
   );
   if (deathblowMech && !updatedSource.isSub && isAttack) {
     const lostPercent =
@@ -421,7 +423,7 @@ export function executeSkill(
     const stacks = (updatedSource.passiveState.momentumStacks as number) || 0;
     if (stacks > 0) {
       const mech = updatedSource.passive.mechanics?.find(
-        (m: any) => m.type === "momentumStacks",
+        (m) => m.type === "momentumStacks",
       );
       if (mech) {
         const bonus = stacks * mech.valuePercent;
@@ -434,14 +436,15 @@ export function executeSkill(
 
   // -- FLOWING RUIN CONSUME (Duke) — at conditionStacks, this action consumes
   // all stacks for bonus damage and applies an ATK debuff to every target hit
-  let flowingRuinMech: Mechanic | undefined;
+  let flowingRuinMech: ConditionalBuffMechanic | undefined;
   if (updatedSource.passive?.trigger === "afterSkill" && isAttack) {
     const mech = updatedSource.passive.mechanics?.find(
-      (m: any) => m.type === "conditionalBuff" && m.conditionStacks,
+      (m): m is ConditionalBuffMechanic =>
+        m.type === "conditionalBuff" && Boolean(m.conditionStacks),
     );
     const stacks =
       (updatedSource.passiveState.flowingRuinStacks as number) || 0;
-    if (mech && stacks >= mech.conditionStacks) {
+    if (mech?.conditionStacks && stacks >= mech.conditionStacks) {
       flowingRuinMech = mech;
       updatedSource.passiveState.flowingRuinStacks = 0;
       const bonus = mech.damageBonusPercent ?? 50;
@@ -578,7 +581,7 @@ export function executeSkill(
       const damage = calculateDamage({
         baseDamage,
         skillMechanics: didCrit
-          ? [...skillMechanics, { type: "critical" } as Mechanic]
+          ? [...skillMechanics, { type: "critical" }]
           : skillMechanics,
         target: updatedTarget,
         attackerColor: updatedSource.color,
@@ -936,7 +939,7 @@ export function executeSkill(
     updatedSource.passive.trigger === "onDamageDealt"
   ) {
     const lifestealMech = updatedSource.passive.mechanics?.find(
-      (m: any) => m.type === "healLifesteal",
+      (m) => m.type === "healLifesteal",
     );
     if (
       lifestealMech &&
@@ -957,7 +960,7 @@ export function executeSkill(
   // Flowing Ruin stack gain — every action (skills and ultimate) grants one
   if (updatedSource.passive && updatedSource.passive.trigger === "afterSkill") {
     const stackMech = updatedSource.passive.mechanics?.find(
-      (m: any) => m.type === "buff" && m.maxStacks,
+      (m): m is BuffMechanic => m.type === "buff" && Boolean(m.maxStacks),
     );
     const maxStacks = stackMech?.maxStacks ?? 3;
     const currentStacks =

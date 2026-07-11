@@ -11,9 +11,9 @@ export function getEvadeChance(char: BattleCharacter): number {
   // Charged-style passives: +evadePerStackPercent per stack
   if (char.passive?.trigger === "onAttackReceived") {
     const mech = char.passive.mechanics?.find(
-      (m: { type?: string }) => m.type === "chargedStacks",
+      (m) => m.type === "chargedStacks",
     );
-    if (mech) {
+    if (mech && mech.type === "chargedStacks") {
       const stacks = (char.passiveState.chargedStacks as number) || 0;
       chance += stacks * (mech.evadePerStackPercent ?? 5);
     }

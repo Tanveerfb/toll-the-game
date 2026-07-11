@@ -33,7 +33,7 @@ function makeChar(
   } as BattleCharacter;
 }
 
-const nineLives = {
+const nineLives: import("@/types/passive").Passive = {
   name: "Nine Lives",
   trigger: "onLethalDamage",
   mechanics: [

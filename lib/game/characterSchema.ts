@@ -1,12 +1,34 @@
 import { z } from "zod";
+import { MECHANIC_TYPES } from "@/types/mechanic";
 
 // Runtime shape-check for data/characters/*.json — kits are hand-edited and
 // act as the source of truth, so a typo should fail loudly at load time with
 // the character id attached, not mid-battle. Loose objects: mechanics carry
-// per-type fields (counterDamagePercentRanked, sealType, …) that stay open.
+// per-type fields (counterDamagePercentRanked, sealType, …) that stay open,
+// but the `type` string itself must be a known mechanic (STATUS #7).
+
+const PASSIVE_TRIGGERS = [
+  "onBattleStart",
+  "aura",
+  "always",
+  "beforeSkill",
+  "afterSkill",
+  "onFirstAction",
+  "onAllySkill",
+  "onAttackReceived",
+  "onLethalDamage",
+  "onDamageDealt",
+  "onRoundEnd",
+  "onNewTurn",
+  "onIgniteConsume",
+  "OnPlayerTurnStart",
+  "OnPlayerTurnEnd",
+  "OnEnemyTurnStart",
+  "OnEnemyTurnEnd",
+] as const;
 
 const mechanicSchema = z.looseObject({
-  type: z.string().min(1),
+  type: z.enum(MECHANIC_TYPES),
 });
 
 const skillSchema = z.looseObject({
@@ -23,7 +45,7 @@ const skillSchema = z.looseObject({
 const passiveSchema = z.looseObject({
   name: z.string().min(1),
   description: z.string().min(1),
-  trigger: z.string().min(1),
+  trigger: z.enum(PASSIVE_TRIGGERS),
   mechanics: z.array(mechanicSchema).optional(),
 });
 

@@ -21,9 +21,9 @@ export function trySurviveLethal(
   if (char.passiveState.lethalSurvived) return null;
 
   const mech = char.passive.mechanics?.find(
-    (m: { type?: string }) => m.type === "surviveLethal",
+    (m) => m.type === "surviveLethal",
   );
-  if (!mech) return null;
+  if (!mech || mech.type !== "surviveLethal") return null;
 
   const hpCondition = (mech.hpConditionPercent ?? 30) / 100;
   if (char.currentHP < char.hp * hpCondition) return null;
