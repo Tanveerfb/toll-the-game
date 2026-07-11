@@ -16,6 +16,12 @@ export interface QueueItem {
   sourceInstanceId: string;
   mechanicId: string;
   action: QueueAction;
+  /**
+   * Run even when the source character is dead. Needed by cleanup-style
+   * rechecks (e.g. Kind Hearted Friend's extra bonus must FADE from the
+   * team after the required characters die — ruling #24).
+   */
+  runWhenDead?: boolean;
 }
 
 interface MechanicState {
@@ -74,8 +80,12 @@ export default function MechanicProvider({
         currentTeams.playerTeam.find(c => c.instanceId === item.sourceInstanceId) ||
         currentTeams.enemyTeam.find(c => c.instanceId === item.sourceInstanceId);
 
-      // Only execute if character is still alive or present
-      if (sourceCharacter && sourceCharacter.currentHP > 0) {
+      // Only execute if character is still alive or present — unless the
+      // item is a cleanup-style recheck that must also run after death
+      if (
+        sourceCharacter &&
+        (sourceCharacter.currentHP > 0 || item.runWhenDead)
+      ) {
         log(`Evaluating mechanics for ${sourceCharacter.name} [${item.mechanicId}]`);
         
         // Compute mutated team snapshot

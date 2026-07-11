@@ -78,11 +78,13 @@ const extortSkill: SkillCard = {
   mechanics: [{ type: "extort", value: 30, duration: 3 }],
 } as SkillCard;
 
-// Mimic MechanicProvider.processQueue for one phase
+// Mimic MechanicProvider.processQueue for one phase (incl. the
+// dead-source skip and the runWhenDead escape hatch)
 async function runPhase(
   items: {
     phase: string;
     sourceInstanceId: string;
+    runWhenDead?: boolean;
     action: (
       source: BattleCharacter,
       teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
@@ -104,7 +106,7 @@ async function runPhase(
       currentTeams.enemyTeam.find(
         (c) => c.instanceId === item.sourceInstanceId,
       );
-    if (source && source.currentHP > 0) {
+    if (source && (source.currentHP > 0 || item.runWhenDead)) {
       currentTeams = await item.action(source, currentTeams, noopLog);
     }
   }
@@ -346,6 +348,44 @@ describe("damage-modifier stats consumed multiplicatively (ruling #36)", () => {
       target: fromData(yalinaData, "enemy", "e_yalina2"),
     });
     expect(damage).toBeCloseTo(noStance * 0.75);
+  });
+});
+
+describe("Kind Hearted Friend extra fades even after Leorio dies (ruling #24)", () => {
+  it("removes the extra bonus from survivors when the recheck source is dead", async () => {
+    // Playtest log 2026-07-11 evening: Gon/Killua/Leorio all died, promoted
+    // Lyra kept the +10% extra — the recheck was skipped for a dead source.
+    const gonStub = makeChar({ instanceId: "gon" });
+    const killuaStub = makeChar({ instanceId: "killua" });
+    const leorio = fromData(leorioData, "player", "leorio");
+    const bystander = makeChar({ instanceId: "lyra" });
+
+    const items: Parameters<typeof runPhase>[0] = [];
+    registerCharacterPassives(leorio, (item) => items.push(item));
+    const extraItems = items.filter((i) =>
+      i.sourceInstanceId === "leorio" &&
+      (i as { mechanicId?: string }).mechanicId?.includes("(extra)"),
+    );
+    expect(extraItems.length).toBeGreaterThan(0);
+    expect(extraItems.every((i) => i.runWhenDead === true)).toBe(true);
+
+    let teams = await runPhase(items, "OnBattleStart", {
+      playerTeam: [gonStub, killuaStub, leorio, bystander],
+      enemyTeam: [],
+    });
+    expect(
+      teams.playerTeam[3].buffs.some((b) => b.name?.includes("(bond+)")),
+    ).toBe(true);
+
+    // Whole trio dies; recheck at the next turn start must still fade it
+    for (const id of ["gon", "killua", "leorio"]) {
+      const unit = teams.playerTeam.find((c) => c.instanceId === id)!;
+      unit.currentHP = 0;
+    }
+    teams = await runPhase(items, "OnPlayerTurnStart", teams);
+    expect(
+      teams.playerTeam[3].buffs.some((b) => b.name?.includes("(bond+)")),
+    ).toBe(false);
   });
 });
 

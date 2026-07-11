@@ -264,6 +264,10 @@ function registerCharacterSynergy(
         sourceInstanceId: character.instanceId,
         mechanicId: `${passiveName} (extra)`,
         action: recheck,
+        // The fade half of the recheck must run even after the passive
+        // holder dies (ruling #24: extra drops when one dies — playtest
+        // 2026-07-11 evening: Lyra kept +10% after the whole trio died)
+        runWhenDead: true,
       });
     }
   }
