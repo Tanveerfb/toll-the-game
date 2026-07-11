@@ -26,6 +26,7 @@
 
 # saved battle logs (debug dumps, local only)
 /battle-log/
+/battle-logs/
 
 # debug
 npm-debug.log*
