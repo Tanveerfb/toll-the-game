@@ -147,6 +147,58 @@ describe("tickTeamDebuffs (own turn end)", () => {
     expect(after.passiveState.tookDamageThisRound).toBe(true);
   });
 
+  it("lethal DoT triggers Nine Lives; the revival cleanses ALL buffs and debuffs (ruling #29)", () => {
+    const sara = makeChar({
+      instanceId: "sara",
+      currentHP: 400,
+      passive: {
+        name: "Nine Lives",
+        trigger: "onLethalDamage",
+        mechanics: [
+          { type: "surviveLethal", hpConditionPercent: 30, healDamagePercent: 50 },
+        ],
+      },
+      buffs: [
+        { type: "buff", stat: "atk", valuePercent: 30, uncancellable: true },
+      ],
+      debuffs: [{ type: "damageOverTime", value: 999, debuffDuration: 3 }],
+    });
+    const [after] = tickTeamDebuffs([sara], noopLog);
+    expect(after.currentHP).toBe(Math.floor(999 * 0.5)); // heals 50% of the proc
+    expect(after.passiveState.lethalSurvived).toBe(true);
+    expect(after.buffs).toHaveLength(0); // even uncancellable buffs are wiped
+    expect(after.debuffs).toHaveLength(0); // the DoT itself is gone too
+    expect(after.passiveState.tookDamageThisRound).toBe(true);
+  });
+
+  it("Nine Lives does not catch a lethal DoT below the HP threshold or twice", () => {
+    const passive = {
+      name: "Nine Lives",
+      trigger: "onLethalDamage",
+      mechanics: [
+        { type: "surviveLethal", hpConditionPercent: 30, healDamagePercent: 50 },
+      ],
+    };
+    const lowHp = makeChar({
+      instanceId: "low",
+      currentHP: 100, // below 30% of 1000
+      passive,
+      debuffs: [{ type: "damageOverTime", value: 200, debuffDuration: 1 }],
+    });
+    const [deadLow] = tickTeamDebuffs([lowHp], noopLog);
+    expect(deadLow.currentHP).toBe(0);
+
+    const usedUp = makeChar({
+      instanceId: "used",
+      currentHP: 400,
+      passive,
+      passiveState: { lethalSurvived: true },
+      debuffs: [{ type: "damageOverTime", value: 999, debuffDuration: 1 }],
+    });
+    const [deadUsed] = tickTeamDebuffs([usedUp], noopLog);
+    expect(deadUsed.currentHP).toBe(0);
+  });
+
   it("skips dead characters", () => {
     const dead = makeChar({
       instanceId: "dead",

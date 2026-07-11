@@ -2,6 +2,7 @@ import { BattleCharacter } from "@/types/character";
 import { Action } from "@/types/action";
 import { calculateDamage } from "./damage";
 import { getEvadeChance } from "./evade";
+import { trySurviveLethal } from "./lethal";
 import { getEffectiveAttack, getEffectiveDefense } from "./stats";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
@@ -545,31 +546,13 @@ export function executeSkill(
 
       const newHp = updatedTarget.currentHP - finalDamage;
 
-      // -- LETHAL DAMAGE SURVIVAL (Sara)
-      if (
-        newHp <= 0 &&
-        updatedTarget.passive &&
-        updatedTarget.passive.trigger === "onLethalDamage"
-      ) {
-        if (
-          !updatedTarget.passiveState.lethalSurvived &&
-          updatedTarget.currentHP >= updatedTarget.hp * 0.3
-        ) {
-          const healMech = updatedTarget.passive.mechanics?.find(
-            (m: any) => m.type === "surviveLethal",
+      // -- LETHAL DAMAGE SURVIVAL (Sara) — shared with DoT deaths in tick.ts
+      if (newHp <= 0) {
+        const healAmount = trySurviveLethal(updatedTarget, finalDamage);
+        if (healAmount !== null) {
+          targetEffects.push(
+            `triggered ${updatedTarget.passive?.name ?? "lethal survival"}, healed ${healAmount} HP and lost all buffs and debuffs`,
           );
-          if (healMech) {
-            const healAmount = Math.floor(
-              finalDamage * (healMech.healDamagePercent / 100),
-            );
-            updatedTarget.currentHP = Math.max(1, healAmount);
-            updatedTarget.passiveState.lethalSurvived = true;
-            targetEffects.push(
-              `triggered Nine Lives and healed ${healAmount} HP`,
-            );
-          } else {
-            updatedTarget.currentHP = 0;
-          }
         } else {
           updatedTarget.currentHP = 0;
         }

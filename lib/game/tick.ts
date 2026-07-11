@@ -1,4 +1,5 @@
 import { BattleCharacter } from "@/types/character";
+import { trySurviveLethal } from "./lethal";
 
 /**
  * Duration semantics (ruling #21 — durations are literal):
@@ -78,19 +79,39 @@ export function tickTeamDebuffs(
         totalDot += dot.value;
       }
     });
+    let survivedLethalDot = false;
     if (totalDot > 0) {
-      char.currentHP = Math.max(0, char.currentHP - totalDot);
+      const newHp = char.currentHP - totalDot;
+      if (newHp <= 0) {
+        // Ruling #29: DoT deaths trigger lethal survival too; the revival
+        // strips every buff and debuff (which also ends the DoTs).
+        const healAmount = trySurviveLethal(char, totalDot);
+        if (healAmount !== null) {
+          survivedLethalDot = true;
+          log(
+            `[System] ${char.name} triggered ${char.passive?.name ?? "lethal survival"} against DoT, healed ${healAmount} HP and lost all buffs and debuffs.`,
+          );
+        } else {
+          char.currentHP = 0;
+        }
+      } else {
+        char.currentHP = newHp;
+      }
       // DoT counts as taking damage (matters for Extort Life-style passives)
       char.passiveState.tookDamageThisRound = true;
-      log(`[System] ${char.name} takes ${totalDot} damage from DoT.`);
+      if (!survivedLethalDot) {
+        log(`[System] ${char.name} takes ${totalDot} damage from DoT.`);
+      }
     }
 
-    char.debuffs = char.debuffs
-      .map((d) => ({
-        ...d,
-        debuffDuration: d.debuffDuration ? d.debuffDuration - 1 : undefined,
-      }))
-      .filter((d) => d.debuffDuration === undefined || d.debuffDuration > 0);
+    if (!survivedLethalDot) {
+      char.debuffs = char.debuffs
+        .map((d) => ({
+          ...d,
+          debuffDuration: d.debuffDuration ? d.debuffDuration - 1 : undefined,
+        }))
+        .filter((d) => d.debuffDuration === undefined || d.debuffDuration > 0);
+    }
 
     return char;
   });
