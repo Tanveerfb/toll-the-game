@@ -57,13 +57,20 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
                   mech.conditionTags && !mech.flatBonus ? count : 1;
                 const totalPercent = mech.valuePercent * multiplier;
                 
+                // Named after the tag so the UI reads as a synergy, not as
+                // the source's passive (playtest: "[Female] synergy showed
+                // as amplify (15% damageDealt) for whatever reason").
+                // damageDealt entries are consumed by the damage engine at
+                // read time (ruling #36), so they are NOT preApplied.
                 const buff = {
-                  type: (mech.stat === "damageDealt" ? "amplify" : "buff") as any,
+                  type: "buff" as any,
                   stat: mech.stat,
                   valuePercent: totalPercent,
                   uncancellable: true,
-                  preApplied: true,
-                  name: `${source.passive!.name}`
+                  preApplied: mech.stat !== "damageDealt",
+                  name: mech.conditionTags
+                    ? `[${mech.conditionTags[0]}] Synergy`
+                    : `${source.passive!.name}`
                 } as any;
                 
                 const t = { ...mutateTeam[idx], buffs: [...mutateTeam[idx].buffs, buff] };

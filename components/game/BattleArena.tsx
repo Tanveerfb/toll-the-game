@@ -342,6 +342,51 @@ export default function BattleArena(): React.JSX.Element {
     [battleLog],
   );
 
+  // Playtest request: dump the full match (teams + every event) to
+  // <project>/battle-log/ for post-battle debugging
+  const [logSaveResult, setLogSaveResult] = React.useState<string | null>(
+    null,
+  );
+  // Clear the save receipt when a new battle starts (adjust-during-render
+  // pattern — the overlay component persists across rematches)
+  const [wasBattleOver, setWasBattleOver] = React.useState(isBattleOver);
+  if (wasBattleOver !== isBattleOver) {
+    setWasBattleOver(isBattleOver);
+    if (!isBattleOver) setLogSaveResult(null);
+  }
+  const saveBattleLog = async () => {
+    const stamp = new Date()
+      .toISOString()
+      .replace(/[:T]/g, "-")
+      .slice(0, 19);
+    const unitLine = (u: BattleCharacter) =>
+      `  ${u.name} (${u.id})${u.isSub ? " [sub]" : ""} — HP ${u.currentHP}/${u.hp}, ATK ${u.currentAttack}, DEF ${u.currentDefense}, ULT ${u.ultGauge}/5`;
+    const content = [
+      `Battle log — ${new Date().toString()}`,
+      `Result: ${battlePhase.toUpperCase()} on turn ${currentTurn + 1} (${playerTurns} player / ${enemyTurns} enemy turns resolved)`,
+      "",
+      "Player team (final state):",
+      ...playerTeam.map(unitLine),
+      "Enemy team (final state):",
+      ...enemyTeam.map(unitLine),
+      "",
+      `--- Full event log (${battleLog.length} entries) ---`,
+      ...battleLog,
+      "",
+    ].join("\n");
+    try {
+      const res = await fetch("/api/battle-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: `battle_${stamp}`, content }),
+      });
+      const data = await res.json();
+      setLogSaveResult(res.ok ? `Saved to ${data.saved}` : "Save failed");
+    } catch {
+      setLogSaveResult("Save failed");
+    }
+  };
+
   return (
     <main
       className="relative min-h-screen overflow-hidden"
@@ -560,6 +605,18 @@ export default function BattleArena(): React.JSX.Element {
                 >
                   REMATCH
                 </Button>
+              ) : null}
+              <Button
+                variant="outline"
+                onClick={saveBattleLog}
+                className="h-12 rounded-none border-2 border-sky-400 bg-transparent font-heading text-lg tracking-[0.14em] text-sky-200"
+              >
+                SAVE BATTLE LOG
+              </Button>
+              {logSaveResult ? (
+                <p className="text-center font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                  {logSaveResult}
+                </p>
               ) : null}
               <Button
                 variant="outline"

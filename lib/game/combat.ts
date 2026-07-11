@@ -235,12 +235,15 @@ export function executeSkill(
     }
   }
 
-  // -- ALLY SKILL USE TRACKER (Yalina Momentum)
+  // -- ALLY SKILL USE TRACKER (Yalina Momentum) — ruling #34: every card her
+  // team plays grants a stack, INCLUDING her own, but only while she is on
+  // the field (not benched) and alive
   const sourceTeam =
     source.team === "player" ? updatedTeams.playerTeam : updatedTeams.enemyTeam;
   sourceTeam.forEach((ally) => {
     if (
-      ally.instanceId !== updatedSource.instanceId &&
+      !ally.isSub &&
+      ally.currentHP > 0 &&
       ally.passive?.trigger === "onAllySkill"
     ) {
       const mech = ally.passive.mechanics?.find(
@@ -487,6 +490,22 @@ export function executeSkill(
   // the loop (refresh semantics — never stacks with a previous Extort)
   const extortGains = { atk: 0, def: 0, duration: undefined as number | undefined };
 
+  // Ruling #38: Extort never stacks — a recast OVERWRITES the previous
+  // Extort entirely, even if the old steal was more potent. Strip this
+  // thief's old Extort debuffs from every opposing unit before applying
+  // the new ones (the self-buff is rebuilt after the target loop).
+  if (skillMechanics.some((m) => m.type === "extort")) {
+    const opposition =
+      updatedSource.team === "player"
+        ? updatedTeams.enemyTeam
+        : updatedTeams.playerTeam;
+    opposition.forEach((opp) => {
+      opp.debuffs = opp.debuffs.filter(
+        (d) => !(d.name === "Extort" && d.sourceId === updatedSource.instanceId),
+      );
+    });
+  }
+
   targets.forEach((updatedTarget) => {
     if (updatedTarget.currentHP <= 0) return;
 
@@ -563,6 +582,7 @@ export function executeSkill(
           : skillMechanics,
         target: updatedTarget,
         attackerColor: updatedSource.color,
+        attacker: updatedSource,
       });
 
       const finalDamage = Math.floor(damage);
@@ -856,6 +876,7 @@ export function executeSkill(
             skillMechanics: [],
             target: updatedSource,
             attackerColor: updatedTarget.color,
+            attacker: updatedTarget,
           }),
         );
         updatedSource.currentHP = Math.max(

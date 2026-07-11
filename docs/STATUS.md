@@ -26,7 +26,13 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 - **Taunt-stance link (ruling #31)** — cancelling a unit's stances/buffs also breaks the taunts it authored; Yalina's Attention Drawer is a real stance now.
 - **Extort links (ruling #32)** — the thief's Extort buff dies when no living enemy carries a linked Extort debuff (death/cleanse/expiry); synced after every action and debuff tick.
 - **Deck QoL (ruling #33)** — Reset Hand rewinds queue + selection merges + merge-granted gauge to turn start; leftover cards auto-merge when queuing/unqueuing exposes identical neighbors.
-- **Tests** — 125 across combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, lethal survival, effects/links.
+- **Momentum gating (ruling #34)** — Yalina gains a stack from every card her team plays incl. her own, only while fielded and alive; benched/dead Yalina gains nothing.
+- **Damage-modifier stats (ruling #36)** — `damageDealt` and `damageReduction` are consumed by the damage engine, multiplicative stacking (attacker's damageDealt raises, target's damageReduction shrinks, counters included). Mustafa's Fortress and Yalina's Attention Drawer actually reduce damage now; Sara's [Female] synergy actually raises it.
+- **Extort overwrite (ruling #38)** — recasting Extort strips the thief's previous Extort debuffs from all enemies before applying; victim debuffs never stack.
+- **Synergy display** — tag synergies render as `[Tag] Synergy` (typed buff, never "amplify"); per-carrier scaling confirmed as designed (ruling #35).
+- **Enemy action count (ruling #39)** — 1 action per living field enemy, max 3, instead of a flat 3.
+- **Battle log dump** — SAVE BATTLE LOG on the victory/defeat overlay writes teams + the full event log to `<project>/battle-log/` via `app/api/battle-log` (gitignored, playtest debugging).
+- **Tests** — 134 across combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, lethal survival, effects/links, playtest-2 regressions.
 
 ## Open Issues
 
@@ -37,10 +43,11 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 | 13 | Art nitpicks: Seras's horn-like hair tufts didn't render; Yalina's side braid renders as loose side curls (trigger-word/style limits — see ART_PIPELINE trigger-word table) | `public/characters/` | Cosmetic (re-roll) |
 | 14 | Design feedback 2026-07-11: Mustafa approved; Siddiq redesigned (v2, still AI-invented — awaiting his sheet); Batra reworked per his direction (turban/beard/kesari, no armour). He loves Lyra/Sara/Gabrist; Duke/Yalina/Seras fine for now, iterate later | `docs/ART_PIPELINE.md` | Pending input |
 | 16 | Rank-gated effect text shows literal zeros at rank 1 (e.g. "stuns for 0 turn(s) at rank 2+", Diane's "0 turn Attack Seal") — cosmetic; consider hiding zero-value sentences in the translator | `descriptionTranslator.ts` | Cosmetic |
-| 17 | Gon/Killua ult raises now read "Permanently raises …" (ruling #28), so permanence is explicit — but the buffs are also `uncancellable` in data and the text doesn't say that. Remaining call for Tanveer: does "Permanently" imply cancel-proof (keep data as-is), or should the text add "(cannot be cancelled)" / the buffs become cancellable? | `data/characters/gon.json`, `killua.json` | Pending Tanveer |
 | 15 | Console `FirebaseError: Missing or insufficient permissions` — the Firestore `users/{uid}` read fires when signed in but rules deny it. Client now degrades gracefully (single warn, plays on with local state); `firestore.rules` written in repo root (own-doc read/write) — **needs deploying to the Firebase project** | Firebase / `firestore.rules` | Low |
-| 19 | `damageReduction` stat is never consumed by the damage engine — Mustafa's Fortress and Yalina's Attention Drawer DR display but don't reduce damage. Needs a damage-formula hook (multiply incoming by 1 − DR%) | `lib/game/damage.ts` / `stats.ts` | High (gameplay) |
-| 20 | Battle screen page gets a user-friendliness overhaul in a future batch (Tanveer, 2026-07-11) — after all mechanics work as expected | `components/game/*` | Planned |
+| 20 | Battle screen page gets a user-friendliness overhaul in a future batch (Tanveer, 2026-07-11) — after all mechanics work as expected. Include: lethal mid-queue skips the remaining damage animations and jumps straight to the win screen (playtest 2, match 2) | `components/game/*` | Planned |
+| 21 | Enemy AI decision quality (target/skill choices) needs tweaking — future batch per Tanveer (playtest 2) | `lib/game/ai.ts` | Planned |
+
+Closed this batch: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier stats wired, ruling #36).
 
 ## Not Built Yet
 

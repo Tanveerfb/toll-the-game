@@ -2,16 +2,21 @@ import { BattleCharacter } from "../../types/character";
 import { Mechanic } from "../../types/mechanic";
 import type { Color } from "../../types/color";
 import { getTypeModifier } from "./typeAdvantage";
-import { getEffectiveDefense } from "./stats";
+import {
+  getEffectiveDefense,
+  getDamageDealtMultiplier,
+  getDamageReductionMultiplier,
+} from "./stats";
 
 export interface DamageCalculationParams {
   baseDamage: number; // Pre-calculated (e.g. source.currentAttack * skill multiplier)
   skillMechanics: Mechanic[]; // Mechanics provided by the active skill/attack
   target: BattleCharacter;
   attackerColor?: Color; // Enables the type-advantage modifier when provided
+  attacker?: BattleCharacter; // Enables the attacker's damageDealt modifiers
 }
 
-export function calculateDamage({ baseDamage, skillMechanics, target, attackerColor }: DamageCalculationParams) {
+export function calculateDamage({ baseDamage, skillMechanics, target, attackerColor, attacker }: DamageCalculationParams) {
   // Effective defense honors DEF buffs/debuffs (stances, Weaken, Extort)
   let effectiveDefense = getEffectiveDefense(target);
 
@@ -80,6 +85,13 @@ export function calculateDamage({ baseDamage, skillMechanics, target, attackerCo
   } else {
     damageTaken *= 1 + (criticalMechanic.damageBonusPercent ?? 50) / 100;
   }
+
+  // Damage-modifier stats (ruling #36, multiplicative stacking): attacker's
+  // damageDealt raises the hit; target's damageReduction shrinks it.
+  if (attacker) {
+    damageTaken *= getDamageDealtMultiplier(attacker);
+  }
+  damageTaken *= getDamageReductionMultiplier(target);
 
   return damageTaken;
 }

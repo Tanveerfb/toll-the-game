@@ -3,8 +3,19 @@ import { Action } from "@/types/action";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
 
-/** Actions the enemy side takes per enemy turn — any living enemy may act, in any order, no fixed pattern. */
+/** Cap on actions the enemy side takes per enemy turn — any living enemy may act, in any order, no fixed pattern. */
 export const ENEMY_ACTIONS_PER_TURN = 3;
+
+/**
+ * Ruling #39 (amends #4): the enemy side gets 1 action per living field
+ * member, capped at ENEMY_ACTIONS_PER_TURN. Subs don't grant actions.
+ */
+export function enemyActionsForTurn(enemyTeam: BattleCharacter[]): number {
+  const livingFieldMembers = enemyTeam.filter(
+    (e) => e.currentHP > 0 && !e.isSub,
+  ).length;
+  return Math.min(ENEMY_ACTIONS_PER_TURN, livingFieldMembers);
+}
 
 /**
  * Picks a single AI action from the current battle state. Call once per
