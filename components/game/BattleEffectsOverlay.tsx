@@ -3,7 +3,7 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-type EffectKind = "damage" | "heal" | "status" | "system" | "phase";
+type EffectKind = "damage" | "heal" | "status" | "system";
 
 interface VisualEffect {
   id: number;
@@ -26,7 +26,10 @@ function resolveInstanceIdByName(
 function classifyLogEntry(
   entry: string,
   units: Array<{ instanceId: string; name: string }>,
-): Omit<VisualEffect, "id"> {
+): Omit<VisualEffect, "id"> | null {
+  // Engine bookkeeping — log-drawer only, never worth a toast
+  if (/^Evaluating mechanics/i.test(entry)) return null;
+
   const damageMatch = entry.match(/^(.+?)\s+takes\s+(\d+)\s+damage/i);
   if (damageMatch) {
     return {
@@ -63,13 +66,6 @@ function classifyLogEntry(
   }
 
   return { kind: "system", text: entry };
-}
-
-function formatPhaseLabel(phase: string): string {
-  return phase
-    .replace(/([A-Z])/g, " $1")
-    .replace(/^./, (s) => s.toUpperCase())
-    .trim();
 }
 
 export default function BattleEffectsOverlay({
@@ -110,20 +106,25 @@ export default function BattleEffectsOverlay({
 
     if (battleLog.length > previousLength) {
       const newEntries = battleLog.slice(previousLength);
-      const created = newEntries.slice(-4).map((entry) => {
-        idRef.current += 1;
-        const classified = classifyLogEntry(entry, units);
-        const anchor = classified.anchorInstanceId
-          ? computeAnchor(classified.anchorInstanceId)
-          : undefined;
+      const created = newEntries
+        .slice(-4)
+        .flatMap((entry) => {
+          const classified = classifyLogEntry(entry, units);
+          if (!classified) return [];
+          idRef.current += 1;
+          const anchor = classified.anchorInstanceId
+            ? computeAnchor(classified.anchorInstanceId)
+            : undefined;
 
-        return {
-          id: idRef.current,
-          ...classified,
-          anchorX: anchor?.x,
-          anchorY: anchor?.y,
-        };
-      });
+          return [
+            {
+              id: idRef.current,
+              ...classified,
+              anchorX: anchor?.x,
+              anchorY: anchor?.y,
+            },
+          ];
+        });
 
       setEffects((prev) => [...prev, ...created].slice(-12));
 
@@ -132,7 +133,7 @@ export default function BattleEffectsOverlay({
           () => {
             setEffects((prev) => prev.filter((x) => x.id !== effect.id));
           },
-          effect.kind === "system" ? 2200 : 1500,
+          effect.kind === "system" ? 1400 : 1200,
         );
       });
     }
@@ -140,28 +141,17 @@ export default function BattleEffectsOverlay({
     previousLogLengthRef.current = battleLog.length;
   }, [battleLog, computeAnchor, units]);
 
+  // Phase changes get only the brief screen pulse — the status strip already
+  // names the phase, so a toast per transition just piles up on screen
   React.useEffect(() => {
     if (previousPhaseRef.current === battlePhase) return;
 
-    idRef.current += 1;
-    const phaseEffect: VisualEffect = {
-      id: idRef.current,
-      kind: "phase",
-      text: formatPhaseLabel(battlePhase),
-    };
-
     setPhasePulse(true);
-    setEffects((prev) => [...prev, phaseEffect].slice(-12));
-
     const pulseTimer = window.setTimeout(() => setPhasePulse(false), 280);
-    const removeTimer = window.setTimeout(() => {
-      setEffects((prev) => prev.filter((x) => x.id !== phaseEffect.id));
-    }, 1200);
     previousPhaseRef.current = battlePhase;
 
     return () => {
       window.clearTimeout(pulseTimer);
-      window.clearTimeout(removeTimer);
     };
   }, [battlePhase]);
 
@@ -212,12 +202,8 @@ export default function BattleEffectsOverlay({
       <div className="absolute right-4 top-24 flex w-[min(92vw,26rem)] flex-col gap-2 md:right-8">
         <AnimatePresence>
           {effects
-            .filter(
-              (x) =>
-                x.kind === "status" ||
-                x.kind === "system" ||
-                x.kind === "phase",
-            )
+            .filter((x) => x.kind === "status" || x.kind === "system")
+            .slice(-3)
             .map((effect) => (
               <motion.div
                 key={effect.id}
@@ -228,14 +214,10 @@ export default function BattleEffectsOverlay({
                 className={`rounded border px-3 py-2 font-body text-xs uppercase tracking-[0.12em] shadow-lg ${
                   effect.kind === "status"
                     ? "border-sky-300/60 bg-sky-900/65 text-sky-100"
-                    : effect.kind === "phase"
-                      ? "border-amber-300/70 bg-amber-900/65 text-amber-100"
-                      : "border-zinc-500/70 bg-zinc-900/70 text-zinc-200"
+                    : "border-zinc-500/70 bg-zinc-900/70 text-zinc-200"
                 }`}
               >
-                {effect.kind === "phase"
-                  ? `Phase: ${effect.text}`
-                  : effect.text}
+                {effect.text}
               </motion.div>
             ))}
         </AnimatePresence>
