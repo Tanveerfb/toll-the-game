@@ -4,9 +4,9 @@
   "color": "red",
   "tags": ["Collab", "Human", "Male", "Hunter x Hunter"],
   "lore": "Aspiring doctor and member of the Zodiacs. Nen type: Emitter. Collab unit.",
-  "atk": 93,
-  "def": 85,
-  "hp": 980,
+  "atk": 183,
+  "def": 92,
+  "hp": 1100,
   "skills": [
     {
       "skillName": "Member of the Zodiac",
