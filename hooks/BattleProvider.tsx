@@ -279,6 +279,18 @@ export default function BattleProvider({
 
       // Remove processed card from the temporary queue
       remainingQueue.shift();
+
+      // Ruling #43: once the last enemy dies, remaining queued cards
+      // FIZZLE — no momentum, no gauge, straight to the win screen
+      const allEnemiesDead = currentTeams.enemyTeam.every(
+        (e) => e.currentHP <= 0,
+      );
+      if (allEnemiesDead && remainingQueue.length > 0) {
+        addToBattleLog(
+          `[System] Victory — ${remainingQueue.length} queued card(s) fizzle.`,
+        );
+        break;
+      }
     }
 
     // Update store with final state and clear the action queue

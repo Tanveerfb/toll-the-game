@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Lightning Palm",
-      "description": "Cancels stances; does ATK-scaled damage to one enemy; stuns for [stun.duration] turn(s) at rank 2+.",
+      "description": "Cancels stances; does ATK-scaled damage to one enemy; stuns for [stun.duration] turn(s).",
       "characterId": "killua",
       "type": "attack",
       "statMultiplier": "atk",

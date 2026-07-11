@@ -244,6 +244,31 @@ function replaceMechanicPlaceholders(
   return result;
 }
 
+/**
+ * STATUS #16 (Tanveer 2026-07-11): a clause whose ranked placeholder
+ * resolves to 0 at this rank is hidden entirely — a rank-1 card reads
+ * clean instead of "stuns for 0 turn(s)". Clauses are the semicolon
+ * segments of ruling #28.
+ */
+function dropZeroValueClauses(
+  description: string,
+  skill: CharacterSkillData,
+  rankIndex: number,
+): string {
+  return description
+    .split(";")
+    .filter((clause) => {
+      const matches = [
+        ...clause.matchAll(/\[([a-zA-Z_]+)(?:\.([a-zA-Z_]+))?\]/g),
+      ];
+      return !matches.some(
+        ([, mechanicType, field]) =>
+          resolveByMechanicType(skill, mechanicType, rankIndex, field) === "0",
+      );
+    })
+    .join(";");
+}
+
 function injectDamagePercent(
   description: string,
   damage: number,
@@ -283,7 +308,11 @@ export function buildDescriptionForRank(
   const raw = cleanText(skill.description ?? "");
   const damage = getRankDamage(skill, rankIndex);
 
-  let description = replaceMechanicPlaceholders(raw, skill, rankIndex);
+  let description = replaceMechanicPlaceholders(
+    dropZeroValueClauses(raw, skill, rankIndex),
+    skill,
+    rankIndex,
+  );
   if (typeof damage === "number" && damage > 0) {
     description = injectDamagePercent(
       description,

@@ -62,6 +62,11 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 37. **"Permanently" implies cancel-proof** (2026-07-11, closes old STATUS #17): permanent stat raises (Gon/Killua ults) stay `uncancellable` in data — buff-cancels can't strip them, and they render as grey effects per ruling #30. Text needs no extra "(cannot be cancelled)".
 38. **Extort recasts OVERWRITE, never stack** (2026-07-11, playtest 2): a new Extort strips the thief's previous Extort debuffs from every opposing unit before applying — even if the old steal was more potent. The self-buff is rebuilt from the new steal only.
 39. **Enemy actions scale with living field members** (2026-07-11, playtest 2, amends #4): the enemy side takes 1 action per living field member, capped at 3 (`enemyActionsForTurn`). Subs grant no actions.
+40. **Identical tag synergies stack across carriers** (2026-07-11): each carrier's [Tag] synergy is its own effect — the HxH trio's three 5% [Collab] synergies give everyone tagged +15% all, on top of Leorio's bond. Intended; rewards full collab teams.
+41. **Cancel-then-hit** (2026-07-11): a cancel+damage skill strips stances/buffs BEFORE its own damage calc — cancel skills punch through defensive stances (Killua's Lightning Palm hits Yalina at full power after breaking her stance). Confirmed current behavior.
+42. **Damage modifiers shape direct hits only** (2026-07-11): damageDealt/damageReduction apply to attacks and counters; DoT ticks (Shock, Bleed, Decay, Ignite) use the damage locked in at application and are NOT modified. Confirmed current behavior.
+43. **Victory fizzles the remaining queue** (2026-07-11): once the last enemy dies mid-queue, the leftover queued cards are discarded — no Momentum, no ult gauge, straight to the win screen.
+44. **Zero-value clauses are hidden** (2026-07-11, closes old STATUS #16): a description clause whose ranked placeholder resolves to 0 at the current rank is dropped entirely — a rank-1 Lightning Palm doesn't mention the stun; rank 2+ does (`dropZeroValueClauses` in the translator, clauses = ruling #28 semicolon segments).
 
 ## Working Style He Expects
 

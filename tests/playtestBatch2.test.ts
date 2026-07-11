@@ -389,6 +389,43 @@ describe("Kind Hearted Friend extra fades even after Leorio dies (ruling #24)", 
   });
 });
 
+describe("zero-value clauses hidden per rank (STATUS #16)", () => {
+  it("Killua's stun clause is hidden at rank 1, shown at rank 2+", async () => {
+    const { buildDescriptionForRank } = await import(
+      "@/lib/game/descriptionTranslator"
+    );
+    const killua = (await import("@/data/characters/killua.json")).default;
+    const lightningPalm = killua.skills[0] as never;
+
+    const r1 = buildDescriptionForRank(lightningPalm, 0);
+    expect(r1).not.toMatch(/stun/i);
+    expect(r1).not.toMatch(/0 turn/);
+    expect(r1).toMatch(/Cancels stances/);
+
+    const r2 = buildDescriptionForRank(lightningPalm, 1);
+    expect(r2).toMatch(/stuns for 1 turn/);
+    const r3 = buildDescriptionForRank(lightningPalm, 2);
+    expect(r3).toMatch(/stuns for 2 turn/);
+  });
+
+  it("Diane's Attack Seal clause is hidden at rank 1", async () => {
+    const { buildDescriptionForRank } = await import(
+      "@/lib/game/descriptionTranslator"
+    );
+    const diane = (await import("@/data/characters/diane.json")).default;
+    const rushRock = diane.skills.find(
+      (s: { skillName: string }) => s.skillName === "Rush Rock",
+    ) as never;
+
+    const r1 = buildDescriptionForRank(rushRock, 0);
+    expect(r1).not.toMatch(/Attack Seal/);
+    expect(r1).not.toMatch(/0 turn/);
+
+    const r2 = buildDescriptionForRank(rushRock, 1);
+    expect(r2).toMatch(/1 turn Attack Seal/);
+  });
+});
+
 describe("enemy action count (ruling #39)", () => {
   it("1 action per living field member, capped at 3", () => {
     const full = [
