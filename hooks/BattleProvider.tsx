@@ -7,7 +7,12 @@ import { useMechanicContext } from "./MechanicProvider";
 import { useGameStore } from "@/store/gameStore";
 import { TurnActions } from "@/types/action";
 import { executeSkill } from "@/lib/game/combat";
-import { enemyActionsForTurn, getAIMove } from "@/lib/game/ai";
+import {
+  enemyActionsForTurn,
+  freshAITurnContext,
+  getAIMove,
+  noteAIAction,
+} from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
 import { tickTeamBuffs, tickTeamDebuffs } from "@/lib/game/tick";
 import { syncExtortLinks } from "@/lib/game/effects";
@@ -317,9 +322,15 @@ export default function BattleProvider({
     // Ruling #39: 1 action per living field member, max 3 — any living
     // enemy, any order. Each decision sees the post-previous-action state.
     const actionCount = enemyActionsForTurn(currentTeams.enemyTeam);
+    const aiContext = freshAITurnContext();
     for (let i = 0; i < actionCount; i++) {
-      const action = getAIMove(currentTeams.enemyTeam, currentTeams.playerTeam);
+      const action = getAIMove(
+        currentTeams.enemyTeam,
+        currentTeams.playerTeam,
+        aiContext,
+      );
       if (!action) break;
+      noteAIAction(aiContext, action.skill.type);
 
       currentTeams = executeSkill(
         action,
