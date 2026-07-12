@@ -1,0 +1,42 @@
+{
+  "id": "road_bandit",
+  "name": "Road Bandit",
+  "color": "dark",
+  "storyOnly": true,
+  "tags": ["Human"],
+  "lore": "They work the jungle roads near the exam city, picking off travelers who look like they carry something worth taking.",
+  "atk": 140,
+  "def": 55,
+  "hp": 800,
+  "skills": [
+    {
+      "skillName": "Ambush Strike",
+      "description": "Does Pierce ATK-scaled damage to one enemy.",
+      "characterId": "road_bandit",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [160, 195, 240],
+      "mechanics": [
+        {
+          "type": "pierce"
+        }
+      ]
+    },
+    {
+      "skillName": "Sand Throw",
+      "description": "Does ATK-scaled damage to one enemy; lowers ATK.",
+      "characterId": "road_bandit",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [80, 100, 130],
+      "mechanics": [
+        {
+          "type": "debuff",
+          "stat": "atk",
+          "valuePercent": 15,
+          "duration": 2
+        }
+      ]
+    }
+  ]
+}

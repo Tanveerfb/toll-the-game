@@ -316,7 +316,21 @@ function TeamUnitTile({
   );
 }
 
-export default function BattleArena(): React.JSX.Element {
+/** Story mode swaps the result screen's actions for chapter-flow ones */
+export interface StoryBattleHandlers {
+  /** Victory → return to the story reader for the outro scenes */
+  onContinue: () => void;
+  /** Defeat → restart the same canon battle */
+  onRetry: () => void;
+  /** Defeat → abandon and go back to the chapter list */
+  onQuit: () => void;
+}
+
+export default function BattleArena({
+  story,
+}: {
+  story?: StoryBattleHandlers;
+} = {}): React.JSX.Element {
   const {
     battlePhase,
     currentTurn,
@@ -781,7 +795,32 @@ export default function BattleArena(): React.JSX.Element {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3 px-6 py-6">
-              {lastBattleConfig ? (
+              {story && battlePhase === "victory" ? (
+                <Button
+                  onClick={story.onContinue}
+                  className="h-12 rounded-none border-2 border-amber-300 font-heading text-lg tracking-[0.14em]"
+                >
+                  CONTINUE STORY
+                </Button>
+              ) : null}
+              {story && battlePhase === "defeat" ? (
+                <>
+                  <Button
+                    onClick={story.onRetry}
+                    className="h-12 rounded-none border-2 border-amber-300 font-heading text-lg tracking-[0.14em]"
+                  >
+                    RETRY BATTLE
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={story.onQuit}
+                    className="h-12 rounded-none border-2 border-zinc-400 bg-transparent font-heading text-lg tracking-[0.14em] text-zinc-100"
+                  >
+                    BACK TO CHAPTERS
+                  </Button>
+                </>
+              ) : null}
+              {!story && lastBattleConfig ? (
                 <Button
                   onClick={() =>
                     startCustomBattle(
@@ -806,23 +845,27 @@ export default function BattleArena(): React.JSX.Element {
                   {logSaveResult}
                 </p>
               ) : null}
-              <Button
-                variant="outline"
-                onClick={resetBattle}
-                className="h-12 rounded-none border-2 border-zinc-400 bg-transparent font-heading text-lg tracking-[0.14em] text-zinc-100"
-              >
-                CHANGE TEAMS
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  resetBattle();
-                  router.push("/");
-                }}
-                className="h-12 rounded-none border-2 border-zinc-700 font-heading text-lg tracking-[0.14em] text-zinc-300"
-              >
-                MAIN MENU
-              </Button>
+              {!story ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={resetBattle}
+                    className="h-12 rounded-none border-2 border-zinc-400 bg-transparent font-heading text-lg tracking-[0.14em] text-zinc-100"
+                  >
+                    CHANGE TEAMS
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      resetBattle();
+                      router.push("/");
+                    }}
+                    className="h-12 rounded-none border-2 border-zinc-700 font-heading text-lg tracking-[0.14em] text-zinc-300"
+                  >
+                    MAIN MENU
+                  </Button>
+                </>
+              ) : null}
             </CardContent>
           </Card>
         </div>

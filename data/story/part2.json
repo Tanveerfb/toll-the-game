@@ -1,0 +1,153 @@
+{
+  "id": "part2",
+  "order": 2,
+  "title": "Lyra",
+  "tagline": "You can't trust anyone these days.",
+  "coverCharacterId": "lyra",
+  "chapters": [
+    {
+      "id": "p2c1",
+      "title": "The Arrow",
+      "intro": [
+        {
+          "text": "Dense jungle terrain. Light through canopy, unhurried pace. Duke travels alone, relaxed."
+        },
+        {
+          "portraitId": "duke",
+          "text": "Distant sounds ahead — voices, movement, something unsettled. Not nature. He slows, reads it, and quietly adjusts his path to give it distance. Doesn't investigate."
+        },
+        {
+          "text": "Mid-step — incoming movement in his peripheral. Without breaking stride, he raises one hand and deflects the arrow with the back of his wrist. No stance. No announcement. Just a reflex that shouldn't be possible at that speed."
+        },
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "Through the trees — a woman at distance, bow raised, already nocking a second arrow. She's watching him with sharp focus. Not panic. Not a warning shot. She read him as a threat and acted on it."
+        },
+        {
+          "text": "She doesn't shout. She fires again."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "I don't know what your problem is — I was only passing by. But if you keep this up, I'll have no choice but to defend myself."
+        },
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "Her expression doesn't change. She fires again."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "duke" }],
+        "enemyTeam": [{ "id": "lyra" }]
+      },
+      "outro": [
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "She pauses. Draws Toll deliberately. An arrow forms from red ice — crystalline, strange-coloured."
+        },
+        {
+          "portraitId": "duke",
+          "text": "Duke catches it — and his hand freezes on contact, ice spreading up his fingers. He shatters it with his other hand. The break releases heat — a burn blooms across his palm. He pulls water Toll through the hand. Negates it. Looks at his palm for half a second."
+        },
+        {
+          "text": "Then looks at her. Neither speaks. Both have seen the other's ceiling — and neither knows where it actually ends."
+        }
+      ]
+    },
+    {
+      "id": "p2c2",
+      "title": "Recalibration",
+      "intro": [
+        {
+          "portraitId": "duke",
+          "text": "Duke moves. Controlled, reading her firing intervals, closing before she can adjust. He's inside her range."
+        },
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "She's better here than expected. Fast, clean technique. She buys herself space twice."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "duke" }],
+        "enemyTeam": [{ "id": "lyra" }]
+      },
+      "outro": [
+        {
+          "text": "He works her into position, deflects her last strike, and takes her to the ground — pinning both wrists. She fights the pin for a few seconds. Then stops — not defeated, recalculating."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "I told you. I have nothing to do with anyone here. Let's stop this."
+        },
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "She holds his gaze. He had every opportunity to hurt her. He didn't take any of them. Something in her expression shifts — not trust, but recalibration."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "...Where are you headed."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "The Grading."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "Same."
+        },
+        {
+          "text": "Later, on the road. Side by side but not close — Duke brushing dirt off his robes, Lyra straightening her gloves, checking her bow for damage."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Soooo... why did you attack me in the first place?"
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "Bandits come through this area. They target the village nearby — and me. You moved like one of them."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "So you thought I was one of them?"
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "You can't trust anyone these days."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Can't argue that."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "As an apology for mistaking you for a bandit... nice to meet someone nice for a change. My name is Lyra. What's yours?"
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Duke. Likewise."
+        }
+      ]
+    }
+  ]
+}

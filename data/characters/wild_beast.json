@@ -1,0 +1,44 @@
+{
+  "id": "wild_beast",
+  "name": "Wild Beast",
+  "color": "green",
+  "storyOnly": true,
+  "tags": ["Beast"],
+  "lore": "Predators of the deep wilderness where Duke trained alone for nine years. They do not test you. They collect you.",
+  "atk": 130,
+  "def": 40,
+  "hp": 700,
+  "skills": [
+    {
+      "skillName": "Savage Bite",
+      "description": "Does ATK-scaled damage to one enemy; Bleed.",
+      "characterId": "wild_beast",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [140, 170, 210],
+      "mechanics": [
+        {
+          "type": "bleed",
+          "damagePercent": 50,
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "skillName": "Rending Claws",
+      "description": "Does ATK-scaled damage to one enemy; lowers DEF.",
+      "characterId": "wild_beast",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [110, 140, 180],
+      "mechanics": [
+        {
+          "type": "debuff",
+          "stat": "def",
+          "valuePercent": 15,
+          "duration": 2
+        }
+      ]
+    }
+  ]
+}

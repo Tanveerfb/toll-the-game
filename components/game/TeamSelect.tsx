@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import type { TeamPick } from "@/hooks/BattleProvider";
 import {
-  getAllCharacters,
+  getPlayableCharacters,
   type CharacterData,
 } from "@/lib/game/characterCatalog";
 
@@ -152,7 +152,7 @@ export default function TeamSelect({
 }: {
   onStart: (playerPicks: TeamPick[], enemyPicks: TeamPick[]) => void;
 }): React.JSX.Element {
-  const roster = React.useMemo(() => getAllCharacters(), []);
+  const roster = React.useMemo(() => getPlayableCharacters(), []);
   const [format, setFormat] = React.useState<BattleFormat>("4v4");
   const [playerTeam, setPlayerTeam] = React.useState<CharacterData[]>([]);
   const [enemyTeam, setEnemyTeam] = React.useState<CharacterData[]>([]);

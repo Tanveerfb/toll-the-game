@@ -1,0 +1,41 @@
+{
+  "id": "raider",
+  "name": "Raider",
+  "color": "red",
+  "storyOnly": true,
+  "tags": ["Human"],
+  "lore": "The kind of people who burn villages because someone paid them to. Duke never saw their faces. In his dreams, they have none.",
+  "atk": 150,
+  "def": 50,
+  "hp": 850,
+  "skills": [
+    {
+      "skillName": "Torch Swing",
+      "description": "Does ATK-scaled damage to one enemy; applies Ignite.",
+      "characterId": "raider",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [150, 185, 230],
+      "mechanics": [
+        {
+          "type": "ignite",
+          "stacks": 1,
+          "duration": 2
+        }
+      ]
+    },
+    {
+      "skillName": "Pillager's Rush",
+      "description": "Does ATK-scaled damage to all enemies.",
+      "characterId": "raider",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [100, 125, 160],
+      "mechanics": [
+        {
+          "type": "aoe"
+        }
+      ]
+    }
+  ]
+}

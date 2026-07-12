@@ -1,0 +1,156 @@
+{
+  "id": "part1",
+  "order": 1,
+  "title": "Rawspent and Ledger",
+  "tagline": "Six hundred years ago, Toll was discovered in Asia. There is no free power.",
+  "coverCharacterId": "duke",
+  "chapters": [
+    {
+      "id": "p1c1",
+      "title": "The World That Toll Built",
+      "intro": [
+        {
+          "speaker": "Narrator",
+          "text": "Six hundred years ago, Toll was discovered in Asia. Life-force energy — generated passively by every living thing. Pain generates more than comfort. Sacrifice more than ease. Death releases everything accumulated in a lifetime, all at once."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "Toll can be spent to do impossible things. Move faster than a body allows. Strengthen flesh past its breaking point. Manipulate elements. Reshape matter. Six hundred years of this rewrote the world. But the cost is always paid in kind. There is no free power."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "When governments understood what unregulated Toll users meant for public order, the Ledger Bureau was established. Its purpose: certify, track, and licence every Toll user on Earth. A licensed user is called a Ledger. An unlicensed user is called Rawspent. Technically a criminal. Practically — invisible."
+        },
+        {
+          "text": "A small rural village. Remote, quiet, self-contained. The kind of place that doesn't appear on important maps."
+        },
+        {
+          "portraitId": "duke",
+          "text": "A teenager moves through it with ease. He knows everyone here. Everyone knows him. He leaves for something routine — pack on his back — and turns at the edge of the village to wave. Someone waves back from a doorway."
+        },
+        {
+          "text": "He doesn't know it's the last time."
+        },
+        {
+          "text": "Days later, he comes back over a familiar hill. The village is wrong. Smoke still rising. Buildings collapsed inward. The specific silence of a place that used to be loud."
+        },
+        {
+          "portraitId": "duke",
+          "text": "That night, and for years of nights after, the raid replays behind his eyes. In the dream he is always there when they come."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "duke" }],
+        "enemyTeam": [{ "id": "raider" }, { "id": "raider" }]
+      },
+      "outro": [
+        {
+          "portraitId": "duke",
+          "text": "He wakes at the edge of the wreckage of the dream. Standing very still. Not crying. Not speaking. The moment something gets decided that doesn't get undecided."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "The raid was ordered. Someone sent people to this village with a purpose. Duke was away when it happened."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "He was seventeen years old."
+        }
+      ]
+    },
+    {
+      "id": "p1c2",
+      "title": "Wearing the Lock Down",
+      "intro": [
+        {
+          "text": "Duke alone in the wilderness. No teacher. No system. Just terrain and repetition and a body being pushed past where it wants to stop."
+        },
+        {
+          "text": "Rain, heat, snow — the same movements practiced thousands of times. Falls. Getting up. Bleeding. Continuing."
+        },
+        {
+          "portraitId": "duke",
+          "text": "The wilderness pushes back. Something has been circling his camp for two nights, patient and hungry."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "duke" }],
+        "enemyTeam": [{ "id": "wild_beast" }]
+      },
+      "outro": [
+        {
+          "portraitId": "duke",
+          "text": "Past exhaustion, past pain, into something else entirely — his hand strikes and something responds from inside him. Not controlled. Not understood. Just there. Water Toll, raw and unformed, surging through his arm."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "Toll awakens when the body spends it without permission. When survival demands more than a person has. Duke didn't unlock it. He wore the lock down."
+        }
+      ]
+    },
+    {
+      "id": "p1c3",
+      "title": "Nine Years",
+      "intro": [
+        {
+          "text": "More time passing. Duke older now. The movements sharper. The Toll present but still unrefined, integrated into his strikes without full control."
+        },
+        {
+          "portraitId": "duke",
+          "text": "The shape of a style forming through years of solo repetition — water flowing through the fist, wearing everything down. Fist of Flowing Ruin."
+        },
+        {
+          "text": "The wilderness never stops testing him. It hunts in pairs now."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "duke" }],
+        "enemyTeam": [{ "id": "wild_beast" }, { "id": "wild_beast" }]
+      },
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "He trained for nine years. Not to become a fighter. He already was one. He trained because standing still felt like surrender."
+        }
+      ]
+    },
+    {
+      "id": "p1c4",
+      "title": "The Notice",
+      "intro": [
+        {
+          "text": "A small waypoint town — the first settlement he's been near in a while. A public notice board outside a postal building. Bureau announcements, local postings, civic notices."
+        },
+        {
+          "portraitId": "duke",
+          "text": "One notice, partially obscured. He peels the corner back. \"THE GRADING — Annual Ledger Certification Examination.\" A location. A date. Open registration. Bureau seal at the bottom."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "A Rawspent can't access Bureau records. Can't move through official channels. Can't get close to the kind of people who order things. A Ledger can."
+        },
+        {
+          "text": "The road out of town is not a safe one. Men wait where the traffic thins."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "duke" }],
+        "enemyTeam": [{ "id": "road_bandit" }, { "id": "road_bandit" }]
+      },
+      "outro": [
+        {
+          "portraitId": "duke",
+          "text": "He pulls a worn piece of paper from inside his robe — edges soft from years of handling. Partial names. Locations. Fragments of something he's been building for years. He looks at it, then back down the road. Refolds it. Puts it back."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "The licence is not the goal. It never was."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "It's the door."
+        }
+      ]
+    }
+  ]
+}

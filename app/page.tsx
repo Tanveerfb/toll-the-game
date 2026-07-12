@@ -51,9 +51,9 @@ export default function Home() {
 
           <CardContent className="grid gap-4 px-6 py-6 md:grid-cols-2 md:gap-5 md:px-10 md:py-10">
             <Button
-              variant="secondary"
-              disabled
-              className="h-20 justify-start rounded-none border-2 border-zinc-700 bg-transparent px-8 font-heading text-2xl tracking-[0.14em] text-zinc-500 md:h-24 md:text-3xl"
+              variant="outline"
+              onClick={() => router.push("/story")}
+              className="h-20 justify-start rounded-none border-2 border-amber-300 bg-transparent px-8 font-heading text-2xl tracking-[0.14em] text-amber-200 transition-all hover:bg-amber-300/10 hover:text-amber-100 md:h-24 md:text-3xl"
             >
               MAIN STORY
             </Button>

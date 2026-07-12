@@ -7,9 +7,9 @@ import {
 import CharacterBrowser, {
   type CharacterBrowserItem,
 } from "@/components/game/CharacterBrowser";
-import { getAllCharacters } from "@/lib/game/characterCatalog";
+import { getPlayableCharacters } from "@/lib/game/characterCatalog";
 
-const characters: CharacterBrowserItem[] = getAllCharacters().map(
+const characters: CharacterBrowserItem[] = getPlayableCharacters().map(
   (character) => ({
     id: character.id,
     name: character.name,
