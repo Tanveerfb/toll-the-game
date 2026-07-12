@@ -257,4 +257,19 @@ describe("optional enemy targeting (ruling 2026-07-12 — unmarked = random)", (
     expect(teams.enemyTeam[0].currentHP).toBe(900);
     expect(teams.enemyTeam[1].currentHP).toBe(1000);
   });
+
+  it("retargets when the marked enemy is already dead (focus-fire overkill)", () => {
+    const attacker = makeChar({ instanceId: "a", team: "player" });
+    const dead = makeChar({ instanceId: "dead", team: "enemy", currentHP: 0 });
+    const alive = makeChar({ instanceId: "alive", team: "enemy" });
+    // Marked "dead" is invalid -> re-pick from living pool (only "alive").
+    const { teams } = run(
+      { sourceInstanceId: "a", targetInstanceId: "dead", skill: strike },
+      [attacker],
+      [dead, alive],
+      () => 0,
+    );
+    expect(teams.enemyTeam[0].currentHP).toBe(0);
+    expect(teams.enemyTeam[1].currentHP).toBe(900);
+  });
 });

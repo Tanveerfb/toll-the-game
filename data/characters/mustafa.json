@@ -17,6 +17,9 @@
       "damageRanked": [0, 0, 0],
       "mechanics": [
         {
+          "type": "aoe"
+        },
+        {
           "type": "stance",
           "stat": "damageReduction",
           "valueRanked": [20, 30, 50],

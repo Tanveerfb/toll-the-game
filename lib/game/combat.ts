@@ -155,19 +155,32 @@ export function executeSkill(
   );
 
   // Enemy targeting is optional (ruling 2026-07-12): a card queued without a
-  // marked enemy picks a random living field enemy at execution time. Taunt
-  // redirects still apply afterwards. AoE is unaffected — the random pick is
-  // just the anchor target.
-  let targetInstanceId = action.targetInstanceId;
+  // marked enemy picks a random living field enemy at execution time. The same
+  // random re-pick fires when the marked enemy is no longer a valid target —
+  // dead, benched, or gone — which happens when several queued cards focus one
+  // enemy and an earlier card kills it: the rest retarget instead of wasting
+  // themselves on a corpse. Taunt redirects still apply afterwards; AoE is
+  // unaffected — the pick is just the anchor target.
+  let targetInstanceId: string | undefined = action.targetInstanceId;
   const needsEnemyTarget = ["attack", "debuff", "disable", "ultimate"].includes(
     action.skill.type,
   );
-  if (!targetInstanceId && needsEnemyTarget && source) {
+  if (needsEnemyTarget && source) {
     const opposingTeam =
       source.team === "player" ? teams.enemyTeam : teams.playerTeam;
-    const pool = opposingTeam.filter((c) => c.currentHP > 0 && !c.isSub);
-    if (pool.length > 0) {
-      targetInstanceId = pool[Math.floor(rng() * pool.length)].instanceId;
+    const marked = targetInstanceId
+      ? opposingTeam.find((c) => c.instanceId === targetInstanceId)
+      : undefined;
+    const markedInvalid = !marked || marked.currentHP <= 0 || marked.isSub;
+    if (markedInvalid) {
+      const pool = opposingTeam.filter((c) => c.currentHP > 0 && !c.isSub);
+      // Retarget only when a living enemy exists. With none left, leave the
+      // target untouched: an unmarked card fizzles at the lookup below (the
+      // battle is already won), while a card that marked a now-dead enemy
+      // still resolves its self-buffs against the corpse as before.
+      if (pool.length > 0) {
+        targetInstanceId = pool[Math.floor(rng() * pool.length)].instanceId;
+      }
     }
   }
 
