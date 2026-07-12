@@ -153,8 +153,26 @@ export function executeSkill(
   const source = allCharacters.find(
     (c) => c.instanceId === action.sourceInstanceId,
   );
+
+  // Enemy targeting is optional (ruling 2026-07-12): a card queued without a
+  // marked enemy picks a random living field enemy at execution time. Taunt
+  // redirects still apply afterwards. AoE is unaffected — the random pick is
+  // just the anchor target.
+  let targetInstanceId = action.targetInstanceId;
+  const needsEnemyTarget = ["attack", "debuff", "disable", "ultimate"].includes(
+    action.skill.type,
+  );
+  if (!targetInstanceId && needsEnemyTarget && source) {
+    const opposingTeam =
+      source.team === "player" ? teams.enemyTeam : teams.playerTeam;
+    const pool = opposingTeam.filter((c) => c.currentHP > 0 && !c.isSub);
+    if (pool.length > 0) {
+      targetInstanceId = pool[Math.floor(rng() * pool.length)].instanceId;
+    }
+  }
+
   const primaryTarget = allCharacters.find(
-    (c) => c.instanceId === action.targetInstanceId,
+    (c) => c.instanceId === targetInstanceId,
   );
 
   if (!source || source.currentHP <= 0 || !primaryTarget) {

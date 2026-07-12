@@ -5,7 +5,7 @@
 // Bump when any art file is replaced in place — busts the Next.js image
 // optimizer cache and browser cache, which otherwise keep serving the old
 // pixels for the unchanged URL.
-const ART_VERSION = 5;
+const ART_VERSION = 6;
 
 const CHARACTERS_WITH_ART = new Set([
   "ban",
@@ -24,6 +24,10 @@ const CHARACTERS_WITH_ART = new Set([
   "sara",
   "yalina",
   "seras",
+  // story-only NPC/enemy kits
+  "raider",
+  "road_bandit",
+  "wild_beast",
 ]);
 
 export function getCharacterArt(id: string): string | null {

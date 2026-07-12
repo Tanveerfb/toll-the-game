@@ -117,7 +117,6 @@ export default function Deck() {
     selectCard,
     deselectCard,
     playerTeam,
-    selectedEnemyMarker,
     selectedAllyMarker,
     battlePhase,
     mergeDeckCard,
@@ -374,15 +373,9 @@ export default function Deck() {
             char?.debuffs.some(
               (d) => d.type === "seal" && d.sealType === "attack",
             );
-          const requiresEnemyTarget = [
-            "attack",
-            "debuff",
-            "disable",
-            "ultimate",
-          ].includes(card.skill.type);
-          const missingTarget =
-            (requiresEnemyTarget && !selectedEnemyMarker) ||
-            (isSingleAllyTarget(card) && !selectedAllyMarker);
+          // Enemy targeting is optional (unmarked = random at execution);
+          // only single-target ally skills still demand a marked ally
+          const missingTarget = isSingleAllyTarget(card) && !selectedAllyMarker;
           const queueFull = actionQueue.length >= 3;
           const colorTokenClass = getColorTokenClasses(char?.color);
 

@@ -199,3 +199,62 @@ describe("battle event emission (animation sequencer contract)", () => {
     expect(teams.enemyTeam[0].currentHP).toBe(900);
   });
 });
+
+describe("optional enemy targeting (ruling 2026-07-12 — unmarked = random)", () => {
+  it("picks a random living field enemy when no target is set", () => {
+    const attacker = makeChar({ instanceId: "a", team: "player" });
+    const e1 = makeChar({ instanceId: "e1", team: "enemy" });
+    const e2 = makeChar({ instanceId: "e2", team: "enemy" });
+    // rng 0.99 → last pool slot (e2)
+    const { teams } = run(
+      { sourceInstanceId: "a", targetInstanceId: "", skill: strike },
+      [attacker],
+      [e1, e2],
+      () => 0.99,
+    );
+    expect(teams.enemyTeam[0].currentHP).toBe(1000);
+    expect(teams.enemyTeam[1].currentHP).toBe(900);
+  });
+
+  it("random pick skips dead enemies and subs", () => {
+    const attacker = makeChar({ instanceId: "a", team: "player" });
+    const dead = makeChar({ instanceId: "dead", team: "enemy", currentHP: 0 });
+    const sub = makeChar({ instanceId: "sub", team: "enemy", isSub: true });
+    const alive = makeChar({ instanceId: "alive", team: "enemy" });
+    // rng 0 → first pool slot; pool must contain only "alive"
+    const { teams } = run(
+      { sourceInstanceId: "a", targetInstanceId: "", skill: strike },
+      [attacker],
+      [dead, sub, alive],
+      () => 0,
+    );
+    expect(teams.enemyTeam[2].currentHP).toBe(900);
+    expect(teams.enemyTeam[1].currentHP).toBe(1000);
+  });
+
+  it("fizzles when every enemy is dead", () => {
+    const attacker = makeChar({ instanceId: "a", team: "player" });
+    const dead = makeChar({ instanceId: "dead", team: "enemy", currentHP: 0 });
+    const { teams, events } = run(
+      { sourceInstanceId: "a", targetInstanceId: "", skill: strike },
+      [attacker],
+      [dead],
+    );
+    expect(teams.enemyTeam[0].currentHP).toBe(0);
+    expect(events).toHaveLength(0);
+  });
+
+  it("a marked target is still honored", () => {
+    const attacker = makeChar({ instanceId: "a", team: "player" });
+    const e1 = makeChar({ instanceId: "e1", team: "enemy" });
+    const e2 = makeChar({ instanceId: "e2", team: "enemy" });
+    const { teams } = run(
+      { sourceInstanceId: "a", targetInstanceId: "e1", skill: strike },
+      [attacker],
+      [e1, e2],
+      () => 0.99,
+    );
+    expect(teams.enemyTeam[0].currentHP).toBe(900);
+    expect(teams.enemyTeam[1].currentHP).toBe(1000);
+  });
+});

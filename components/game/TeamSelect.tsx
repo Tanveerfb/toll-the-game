@@ -54,12 +54,12 @@ function TeamSlots({
   side,
   team,
   fieldCap,
-  onRemove,
+  onOpenRoster,
 }: {
   side: Side;
   team: CharacterData[];
   fieldCap: number;
-  onRemove: (side: Side, index: number) => void;
+  onOpenRoster: (side: Side) => void;
 }): React.JSX.Element {
   const fieldCount = Math.min(team.length, fieldCap);
   const subCount = Math.max(0, team.length - fieldCap);
@@ -80,6 +80,7 @@ function TeamSlots({
           </span>
         </div>
       </CardHeader>
+      {/* Every slot opens the roster overlay for this side */}
       <CardContent className="grid grid-cols-4 gap-2 p-3">
         {Array.from({ length: MAX_TEAM_SIZE }).map((_, index) => {
           const character = team[index];
@@ -87,22 +88,24 @@ function TeamSlots({
 
           if (!character) {
             return (
-              <div
+              <button
                 key={`empty-${index}`}
-                className={`flex h-24 flex-col items-center justify-center border-2 border-dashed font-heading text-2xl ${
+                type="button"
+                onClick={() => onOpenRoster(side)}
+                title="Open roster"
+                className={`flex h-24 cursor-pointer flex-col items-center justify-center border-2 border-dashed font-heading text-2xl transition-colors ${
                   isSubSlot
-                    ? "border-amber-800/60 text-amber-900"
-                    : "border-zinc-700 text-zinc-700"
+                    ? "border-amber-800/60 text-amber-900 hover:border-amber-500 hover:text-amber-500"
+                    : "border-zinc-700 text-zinc-700 hover:border-zinc-400 hover:text-zinc-400"
                 }`}
               >
+                <span className="text-3xl leading-none">+</span>
                 {isSubSlot ? (
                   <span className="font-body text-[10px] uppercase tracking-widest">
                     Sub
                   </span>
-                ) : (
-                  index + 1
-                )}
-              </div>
+                ) : null}
+              </button>
             );
           }
 
@@ -111,9 +114,9 @@ function TeamSlots({
             <button
               key={`${character.id}-${index}`}
               type="button"
-              onClick={() => onRemove(side, index)}
-              title="Remove from team"
-              className={`group relative flex h-24 flex-col items-center justify-end overflow-hidden border-2 ${
+              onClick={() => onOpenRoster(side)}
+              title="Open roster"
+              className={`group relative flex h-24 cursor-pointer flex-col items-center justify-end overflow-hidden border-2 ${
                 isSubSlot
                   ? "border-amber-400/70 bg-amber-950/20"
                   : "border-zinc-600 bg-zinc-900/70"
@@ -125,10 +128,10 @@ function TeamSlots({
                   alt={character.name}
                   width={256}
                   height={256}
-                  className="absolute inset-0 h-full w-full object-cover object-top opacity-90 transition-opacity group-hover:opacity-40"
+                  className="absolute inset-0 h-full w-full object-cover object-top opacity-90"
                 />
               ) : null}
-              <span className="relative z-10 w-full bg-black/60 px-1 py-0.5 text-center font-heading text-xs tracking-[0.06em] text-zinc-100 group-hover:hidden">
+              <span className="relative z-10 w-full bg-black/60 px-1 py-0.5 text-center font-heading text-xs tracking-[0.06em] text-zinc-100">
                 {character.name}
                 {isSubSlot ? (
                   <span className="ml-1 font-body text-[9px] uppercase tracking-widest text-amber-300">
@@ -136,14 +139,129 @@ function TeamSlots({
                   </span>
                 ) : null}
               </span>
-              <span className="relative z-10 hidden w-full bg-black/70 px-1 py-0.5 text-center font-body text-[10px] uppercase tracking-widest text-red-300 group-hover:block">
-                Remove
-              </span>
             </button>
           );
         })}
       </CardContent>
     </Card>
+  );
+}
+
+function RosterOverlay({
+  side,
+  roster,
+  team,
+  onToggle,
+  onDone,
+}: {
+  side: Side;
+  roster: CharacterData[];
+  team: CharacterData[];
+  onToggle: (character: CharacterData) => void;
+  onDone: () => void;
+}): React.JSX.Element {
+  const accent =
+    side === "player"
+      ? { border: "border-sky-400/70", text: "text-sky-200" }
+      : { border: "border-rose-400/70", text: "text-rose-200" };
+  const isFull = team.length >= MAX_TEAM_SIZE;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm">
+      <Card
+        className={`flex max-h-full w-full max-w-4xl flex-col rounded-none border-2 ${accent.border} bg-zinc-950/95 ring-0`}
+      >
+        <CardHeader className="border-b border-zinc-800 px-5 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle
+                className={`font-heading text-2xl tracking-[0.12em] ${accent.text}`}
+              >
+                {side === "player" ? "PLAYER TEAM" : "ENEMY TEAM"} ROSTER
+              </CardTitle>
+              <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-500">
+                Tap to add or remove • {team.length}/{MAX_TEAM_SIZE} picked
+              </CardDescription>
+            </div>
+            <Button
+              onClick={onDone}
+              className="h-10 rounded-none border-2 border-amber-300 px-6 font-heading text-base tracking-[0.14em]"
+            >
+              DONE
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-2 overflow-y-auto p-3 sm:grid-cols-3 md:grid-cols-4">
+          {roster.map((character) => {
+            const pickIndex = team.findIndex((c) => c.id === character.id);
+            const isPicked = pickIndex !== -1;
+            const disabled = !isPicked && isFull;
+            const art = getCharacterArt(character.id);
+            return (
+              <button
+                key={character.id}
+                type="button"
+                disabled={disabled}
+                onClick={() => onToggle(character)}
+                className={`group relative flex h-40 flex-col justify-end overflow-hidden border-2 text-left transition-all ${
+                  isPicked
+                    ? `${accent.border} ring-2 ${side === "player" ? "ring-sky-400/60" : "ring-rose-400/60"}`
+                    : disabled
+                      ? "cursor-not-allowed border-zinc-800 opacity-40"
+                      : "border-zinc-700 hover:border-zinc-400"
+                } bg-zinc-900/70`}
+              >
+                {art ? (
+                  <Image
+                    src={art}
+                    alt={character.name}
+                    width={256}
+                    height={256}
+                    className="absolute inset-0 h-full w-full object-cover object-top opacity-90"
+                  />
+                ) : (
+                  <span
+                    className={`absolute inset-0 ${colorSwatchClass(character.color)} opacity-20`}
+                  />
+                )}
+                {isPicked ? (
+                  <span
+                    className={`absolute right-1 top-1 z-10 border px-1.5 py-0.5 font-heading text-xs ${accent.border} bg-black/70 ${accent.text}`}
+                  >
+                    ✓ {pickIndex + 1}
+                  </span>
+                ) : null}
+                <span className="relative z-10 w-full bg-black/70 px-2 py-1">
+                  <span className="block truncate font-heading text-base tracking-[0.06em] text-zinc-100">
+                    {character.name}
+                  </span>
+                  <span className="mt-0.5 flex gap-1">
+                    <Badge
+                      variant="secondary"
+                      className="rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest"
+                    >
+                      ATK {character.atk}
+                    </Badge>
+                    <Badge
+                      variant="secondary"
+                      className="rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest"
+                    >
+                      DEF {character.def}
+                    </Badge>
+                    <Badge
+                      variant="secondary"
+                      className="rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest"
+                    >
+                      HP {character.hp}
+                    </Badge>
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -156,22 +274,20 @@ export default function TeamSelect({
   const [format, setFormat] = React.useState<BattleFormat>("4v4");
   const [playerTeam, setPlayerTeam] = React.useState<CharacterData[]>([]);
   const [enemyTeam, setEnemyTeam] = React.useState<CharacterData[]>([]);
+  const [rosterSide, setRosterSide] = React.useState<Side | null>(null);
 
   const fieldCap = FORMATS[format].fieldCap;
 
   const setTeam = (side: Side) =>
     side === "player" ? setPlayerTeam : setEnemyTeam;
 
-  const addTo = (side: Side, character: CharacterData) => {
-    setTeam(side)((team) =>
-      team.length < MAX_TEAM_SIZE && !team.some((c) => c.id === character.id)
-        ? [...team, character]
-        : team,
-    );
-  };
-
-  const removeAt = (side: Side, index: number) => {
-    setTeam(side)((team) => team.filter((_, i) => i !== index));
+  const toggleFor = (side: Side) => (character: CharacterData) => {
+    setTeam(side)((team) => {
+      if (team.some((c) => c.id === character.id)) {
+        return team.filter((c) => c.id !== character.id);
+      }
+      return team.length < MAX_TEAM_SIZE ? [...team, character] : team;
+    });
   };
 
   // Any combination of 1-4 units is a valid team
@@ -191,9 +307,9 @@ export default function TeamSelect({
             TEAM SELECT
           </h1>
           <p className="mt-1 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-            Sandbox — pick 1–4 units per side. {FORMATS[format].hint}. A
-            sub&apos;s passive works from the bench; it enters at the start of
-            a new turn after a teammate falls.
+            Sandbox — tap a team slot to open the roster and pick 1–4 units.{" "}
+            {FORMATS[format].hint}. A sub&apos;s passive works from the bench;
+            it enters at the start of a new turn after a teammate falls.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -240,101 +356,25 @@ export default function TeamSelect({
           side="player"
           team={playerTeam}
           fieldCap={fieldCap}
-          onRemove={removeAt}
+          onOpenRoster={setRosterSide}
         />
         <TeamSlots
           side="enemy"
           team={enemyTeam}
           fieldCap={fieldCap}
-          onRemove={removeAt}
+          onOpenRoster={setRosterSide}
         />
       </div>
 
-      <Card className="rounded-none border-2 border-zinc-700 bg-black/50 ring-0">
-        <CardHeader className="border-b border-zinc-800 px-4 py-2.5">
-          <div className="flex items-center justify-between">
-            <CardTitle className="font-heading text-lg tracking-[0.12em] text-zinc-100">
-              ROSTER
-            </CardTitle>
-            <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-500">
-              A character can appear once per side
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3">
-          {roster.map((character) => {
-            const onPlayer = playerTeam.some((c) => c.id === character.id);
-            const onEnemy = enemyTeam.some((c) => c.id === character.id);
-            return (
-              <div
-                key={character.id}
-                className="flex items-center justify-between gap-2 border border-zinc-700 bg-zinc-900/50 px-3 py-2"
-              >
-                <div className="flex min-w-0 items-center gap-2">
-                  {getCharacterArt(character.id) ? (
-                    <Image
-                      src={getCharacterArt(character.id)!}
-                      alt={character.name}
-                      width={80}
-                      height={80}
-                      className="h-10 w-10 shrink-0 border border-zinc-700 object-cover object-top"
-                    />
-                  ) : (
-                    <span
-                      className={`h-10 w-10 shrink-0 border border-border ${colorSwatchClass(character.color)}`}
-                    />
-                  )}
-                  <div className="min-w-0">
-                    <p className="truncate font-heading text-lg tracking-[0.06em] text-zinc-100">
-                      {character.name}
-                    </p>
-                    <div className="mt-0.5 flex gap-1">
-                      <Badge
-                        variant="secondary"
-                        className="rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest"
-                      >
-                        ATK {character.atk}
-                      </Badge>
-                      <Badge
-                        variant="secondary"
-                        className="rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest"
-                      >
-                        DEF {character.def}
-                      </Badge>
-                      <Badge
-                        variant="secondary"
-                        className="rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest"
-                      >
-                        HP {character.hp}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex shrink-0 gap-1">
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    disabled={onPlayer || playerTeam.length >= MAX_TEAM_SIZE}
-                    onClick={() => addTo("player", character)}
-                    className="rounded-none border-sky-400/60 bg-transparent text-[10px] uppercase tracking-widest text-sky-200"
-                  >
-                    {onPlayer ? "✓" : "+ P"}
-                  </Button>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    disabled={onEnemy || enemyTeam.length >= MAX_TEAM_SIZE}
-                    onClick={() => addTo("enemy", character)}
-                    className="rounded-none border-rose-400/60 bg-transparent text-[10px] uppercase tracking-widest text-rose-200"
-                  >
-                    {onEnemy ? "✓" : "+ E"}
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </CardContent>
-      </Card>
+      {rosterSide ? (
+        <RosterOverlay
+          side={rosterSide}
+          roster={roster}
+          team={rosterSide === "player" ? playerTeam : enemyTeam}
+          onToggle={toggleFor(rosterSide)}
+          onDone={() => setRosterSide(null)}
+        />
+      ) : null}
     </section>
   );
 }

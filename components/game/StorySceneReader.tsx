@@ -65,7 +65,7 @@ export default function StorySceneReader({
       role="button"
       tabIndex={0}
       onClick={advance}
-      className="relative flex h-full w-full flex-1 cursor-pointer flex-col justify-end overflow-hidden text-left"
+      className="relative flex h-full w-full flex-1 cursor-pointer flex-col justify-center overflow-hidden text-left"
       aria-label="Advance story"
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between px-4 py-3">
@@ -87,36 +87,41 @@ export default function StorySceneReader({
         </span>
       </div>
 
-      <AnimatePresence mode="popLayout">
-        {art ? (
-          <motion.div
-            key={`${scene.portraitId}-${side}`}
-            initial={{ opacity: 0, x: side === "left" ? -24 : 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className={`pointer-events-none absolute bottom-36 md:bottom-40 ${
-              side === "left" ? "left-2 md:left-10" : "right-2 md:right-10"
-            }`}
-          >
-            <Image
-              src={art}
-              alt={scene.speaker ?? scene.portraitId ?? "Portrait"}
-              width={512}
-              height={512}
-              priority
-              className="h-56 w-56 border-2 border-zinc-700 object-cover object-top shadow-[0_18px_50px_rgba(0,0,0,0.6)] md:h-80 md:w-80"
-            />
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {/* Positioning lives on this wrapper — framer-motion owns the inner
+          transform, so a Tailwind -translate-y class there would be clobbered */}
+      <div
+        className={`pointer-events-none absolute top-1/2 -translate-y-1/2 ${
+          side === "left" ? "left-2 md:left-10" : "right-2 md:right-10"
+        }`}
+      >
+        <AnimatePresence mode="popLayout">
+          {art ? (
+            <motion.div
+              key={`${scene.portraitId}-${side}`}
+              initial={{ opacity: 0, x: side === "left" ? -24 : 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              <Image
+                src={art}
+                alt={scene.speaker ?? scene.portraitId ?? "Portrait"}
+                width={512}
+                height={512}
+                priority
+                className="h-56 w-56 border-2 border-zinc-700 object-cover object-top shadow-[0_18px_50px_rgba(0,0,0,0.6)] md:h-80 md:w-80"
+              />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
 
       <motion.div
         key={index}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
-        className="relative z-10 mx-auto mb-6 w-full max-w-3xl px-4"
+        className="relative z-10 mx-auto w-full max-w-3xl px-4"
       >
         <div className="border-2 border-zinc-700 bg-zinc-950/90 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
           <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-2">

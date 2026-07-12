@@ -422,18 +422,13 @@ export const useGameStore = create<BattleState>((set, get) => ({
         return;
       }
 
+      // Enemy marker is optional (ruling 2026-07-12): marked = focus fire,
+      // unmarked = the engine picks a random living enemy at execution
       const markedEnemyIsAlive =
         selectedEnemyMarker &&
         aliveEnemies.some((e) => e.instanceId === selectedEnemyMarker);
 
-      if (!markedEnemyIsAlive) {
-        set({
-          interactionNotice: "Select an enemy target before queuing this card.",
-        });
-        return;
-      }
-
-      targetId = selectedEnemyMarker || undefined;
+      targetId = markedEnemyIsAlive ? selectedEnemyMarker : undefined;
     } else if (isSingleAllyTarget(card)) {
       // Single-target ally skills (e.g. Leorio's rank-1 Member of the Zodiac)
       // require the player to pick the ally — including the caster

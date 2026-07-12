@@ -67,6 +67,16 @@ Locked design sheets live in `docs/design/characters/*.md` — they are the sour
 | killua | 777024 | canon (HxH collab) | danbooru tag `killua zoldyck` — first roll accepted |
 | leorio | 777125 | canon (HxH collab) | suit + teashades + energy fist. Bg came out blue instead of red; forcing red bg regressed the character (gaunt villain face), so blue bg accepted — the card frame supplies the red |
 
+### Story-only NPC/enemy art (v6 — 2026-07-12)
+
+Generic enemy kits — no character sheets, AI-invented per element. Shown only in the hidden `/archive/npc` page and in story battles.
+
+| Character | Seed | Design source | Notes |
+|---|---|---|---|
+| raider | 777201 | AI-invented (red) | shaved head, red scarf, scavenged leather/pauldron, flaming torch, charging pose, dark-red bg + fire embers |
+| road_bandit | 777202 | AI-invented (dark) | hooded desert ambusher, face in shadow, reverse-grip curved dagger, crouched ambush, dark violet/indigo swirl bg |
+| wild_beast | 777203 | AI-invented (green) | feral quadruped monster, green-black fur, glowing yellow eyes, bared fangs + curved claws, emerald bg |
+
 Full prompts recoverable from ComfyUI history / git log.
 
 ## Adding a New Character

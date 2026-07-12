@@ -647,7 +647,10 @@ export default function BattleArena({
       <section className="grid min-h-0 flex-1 grid-rows-2 gap-1.5 px-3 py-1.5">
         <div className="flex min-h-0 flex-col">
           <p className="mb-1 shrink-0 font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            Enemy <span className="text-zinc-600">— click to target</span>
+            Enemy{" "}
+            <span className="text-zinc-600">
+              — click to focus fire (optional; unmarked attacks pick randomly)
+            </span>
           </p>
           <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
             {enemyTeam.map((unit) => (
