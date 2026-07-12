@@ -122,7 +122,12 @@ export default function Deck() {
     reorderDeckCard,
     resetHand,
     handSnapshot,
+    queuedNullCount,
+    addNullAction,
+    removeNullAction,
   } = useGameStore();
+
+  const slotsUsed = actionQueue.length + queuedNullCount;
 
   const isPlayerActionPhase = battlePhase === "PlayerAction";
 
@@ -132,11 +137,12 @@ export default function Deck() {
   const { resolveplayerTurnWrapper } = useBattleContext();
   React.useEffect(() => {
     if (!isPlayerActionPhase) return;
-    if (actionQueue.length === 3 || deck.length === 0) {
+    // All three slots filled (real actions + passes), or no cards left to play.
+    if (slotsUsed === 3 || deck.length === 0) {
       resolveplayerTurnWrapper();
     }
   }, [
-    actionQueue.length,
+    slotsUsed,
     deck.length,
     isPlayerActionPhase,
     resolveplayerTurnWrapper,
@@ -332,16 +338,30 @@ export default function Deck() {
               </button>
             );
           })}
-          {Array.from({ length: Math.max(0, 3 - actionQueue.length) }).map(
-            (_, i) => (
-              <div
-                key={`empty-${i}`}
-                className="flex h-9 w-14 shrink-0 items-center justify-center border border-dashed border-zinc-700 font-body text-[10px] text-zinc-600"
-              >
-                {actionQueue.length + i + 1}
-              </div>
-            ),
-          )}
+          {/* Queued passes — tap to take back */}
+          {Array.from({ length: queuedNullCount }).map((_, i) => (
+            <button
+              key={`pass-${i}`}
+              type="button"
+              onClick={() => isPlayerActionPhase && removeNullAction()}
+              className="flex h-9 w-14 shrink-0 items-center justify-center border border-zinc-600 bg-zinc-800/60 font-body text-[9px] uppercase tracking-widest text-zinc-400 transition-colors hover:border-rose-400/70 hover:text-rose-200"
+            >
+              Pass
+            </button>
+          ))}
+          {/* Empty slots — tap to pass */}
+          {Array.from({ length: Math.max(0, 3 - slotsUsed) }).map((_, i) => (
+            <button
+              key={`empty-${i}`}
+              type="button"
+              onClick={() => isPlayerActionPhase && addNullAction()}
+              disabled={!isPlayerActionPhase}
+              title="Tap to pass this action"
+              className="flex h-9 w-14 shrink-0 items-center justify-center border border-dashed border-zinc-700 font-body text-[10px] text-zinc-600 transition-colors enabled:hover:border-zinc-500 enabled:hover:text-zinc-400 disabled:cursor-not-allowed"
+            >
+              {slotsUsed + i + 1}
+            </button>
+          ))}
           <Button
             variant="ghost"
             size="sm"
@@ -351,11 +371,20 @@ export default function Deck() {
           >
             Reset Hand
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!isPlayerActionPhase || actionQueue.length === 0}
+            onClick={resolveplayerTurnWrapper}
+            className="shrink-0 rounded-none border border-emerald-400/60 px-2 text-[11px] uppercase tracking-widest text-emerald-200 disabled:border-zinc-800 disabled:text-zinc-600"
+          >
+            End Turn
+          </Button>
         </div>
 
         <span className="shrink-0 font-body text-[11px] uppercase tracking-[0.12em] text-zinc-500">
           {isPlayerActionPhase ? "Your turn" : "Waiting…"} •{" "}
-          {actionQueue.length}/3 queued
+          {slotsUsed}/3 queued
         </span>
       </div>
 
@@ -375,7 +404,7 @@ export default function Deck() {
           // Enemy targeting is optional (unmarked = random at execution).
           // Single-target ally skills open the ally chooser on select, so no
           // pre-selection marker is needed here.
-          const queueFull = actionQueue.length >= 3;
+          const queueFull = slotsUsed >= 3;
           const colorTokenClass = getColorTokenClasses(char?.color);
 
           return (

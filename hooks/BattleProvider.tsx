@@ -300,9 +300,10 @@ export default function BattleProvider({
       }
     }
 
-    // Update store with final state and clear the action queue
+    // Update store with final state and clear the action queue (+ any passes)
     updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
     setActionQueue([]);
+    useGameStore.setState({ queuedNullCount: 0 });
     setPlayerTurns((prev) => prev + 1);
     // Advance to the next phase after all actions are resolved
     advancePhase();

@@ -200,3 +200,67 @@ describe("deck flow (7DS GC draw behavior)", () => {
     expect(state.playerTeam[0].ultGauge).toBe(0);
   });
 });
+
+describe("null/pass actions", () => {
+  it("addNullAction fills slots up to the 3-slot cap alongside real cards", () => {
+    useGameStore.setState({
+      playerTeam: [makeChar({ instanceId: "unit" })],
+      enemyTeam: [makeChar({ instanceId: "foe", team: "enemy" })],
+      selectedEnemyMarker: "foe",
+      deck: [{ id: "a1", sourceInstanceId: "unit", skill: skillA, rank: 1 }],
+      battlePhase: "PlayerAction",
+    });
+    useGameStore.getState().selectCard("a1"); // 1 real action
+    useGameStore.getState().addNullAction(); // + pass = 2
+    useGameStore.getState().addNullAction(); // + pass = 3 (full)
+    useGameStore.getState().addNullAction(); // ignored, cap reached
+    const state = useGameStore.getState();
+    expect(state.actionQueue).toHaveLength(1);
+    expect(state.queuedNullCount).toBe(2);
+  });
+
+  it("passes grant no ult gauge and removeNullAction takes one back", () => {
+    useGameStore.setState({
+      playerTeam: [makeChar({ instanceId: "unit" })],
+      queuedNullCount: 0,
+      battlePhase: "PlayerAction",
+    });
+    useGameStore.getState().addNullAction();
+    useGameStore.getState().addNullAction();
+    expect(useGameStore.getState().queuedNullCount).toBe(2);
+    expect(useGameStore.getState().playerTeam[0].ultGauge).toBe(0);
+    useGameStore.getState().removeNullAction();
+    expect(useGameStore.getState().queuedNullCount).toBe(1);
+    useGameStore.getState().removeNullAction();
+    useGameStore.getState().removeNullAction(); // floors at 0
+    expect(useGameStore.getState().queuedNullCount).toBe(0);
+  });
+
+  it("a full slate of passes blocks queuing another card", () => {
+    useGameStore.setState({
+      playerTeam: [makeChar({ instanceId: "unit" })],
+      enemyTeam: [makeChar({ instanceId: "foe", team: "enemy" })],
+      selectedEnemyMarker: "foe",
+      deck: [{ id: "a1", sourceInstanceId: "unit", skill: skillA, rank: 1 }],
+      queuedNullCount: 3,
+      battlePhase: "PlayerAction",
+    });
+    useGameStore.getState().selectCard("a1");
+    const state = useGameStore.getState();
+    expect(state.actionQueue).toHaveLength(0);
+    expect(state.interactionNotice).toContain("full");
+  });
+
+  it("resetHand clears queued passes", () => {
+    useGameStore.setState({
+      playerTeam: [makeChar({ instanceId: "unit" })],
+      deck: [{ id: "a1", sourceInstanceId: "unit", skill: skillA, rank: 1 }],
+      battlePhase: "PlayerAction",
+    });
+    useGameStore.getState().snapshotHand();
+    useGameStore.getState().addNullAction();
+    expect(useGameStore.getState().queuedNullCount).toBe(1);
+    useGameStore.getState().resetHand();
+    expect(useGameStore.getState().queuedNullCount).toBe(0);
+  });
+});

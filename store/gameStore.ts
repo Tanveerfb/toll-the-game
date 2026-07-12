@@ -125,6 +125,12 @@ interface BattleState {
    * card is only queued once `confirmAllyTarget` resolves it.
    */
   pendingAllyCardId: string | null;
+  /**
+   * Number of action slots filled with a plain pass (null action) this turn.
+   * A pass occupies a slot but plays no card — no effect, no ult gauge. Counts
+   * toward the 3-slot cap alongside actionQueue.
+   */
+  queuedNullCount: number;
   interactionNotice: string | null;
   // Turn-start snapshot for Reset Hand (undoes queuing AND selection merges,
   // including the ult gauge those merges granted)
@@ -161,6 +167,10 @@ interface BattleState {
   confirmAllyTarget: (allyInstanceId: string) => void;
   /** Dismiss the ally chooser without queuing the card. */
   cancelAllyTarget: () => void;
+  /** Fill an empty action slot with a plain pass (no card, no effect). */
+  addNullAction: () => void;
+  /** Remove one queued pass. */
+  removeNullAction: () => void;
   deselectCard: (cardId: string) => void;
   reorderDeckCard: (draggedCardId: string, targetCardId: string) => void;
   mergeDeckCard: (cardId: string) => void;
@@ -221,6 +231,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
   selectedEnemyMarker: null,
   selectedAllyMarker: null,
   pendingAllyCardId: null,
+  queuedNullCount: 0,
   interactionNotice: null,
   handSnapshot: null,
 
@@ -267,6 +278,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
       selectedEnemyMarker: null,
       selectedAllyMarker: null,
       pendingAllyCardId: null,
+      queuedNullCount: 0,
       interactionNotice: null,
       handSnapshot: null,
     }),
@@ -302,6 +314,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
           : c,
       ),
       pendingAllyCardId: null,
+      queuedNullCount: 0,
       interactionNotice: null,
     });
   },
@@ -436,8 +449,9 @@ export const useGameStore = create<BattleState>((set, get) => ({
       enemyTeam,
       playerTeam,
       selectedEnemyMarker,
+      queuedNullCount,
     } = get();
-    if (actionQueue.length >= 3) {
+    if (actionQueue.length + queuedNullCount >= 3) {
       set({ interactionNotice: "Action queue is full (3/3)." });
       return;
     }
@@ -498,14 +512,15 @@ export const useGameStore = create<BattleState>((set, get) => ({
   },
 
   confirmAllyTarget: (allyInstanceId: string) => {
-    const { deck, actionQueue, playerTeam, pendingAllyCardId } = get();
+    const { deck, actionQueue, playerTeam, pendingAllyCardId, queuedNullCount } =
+      get();
     if (!pendingAllyCardId) return;
     const cardIndex = deck.findIndex((c) => c.id === pendingAllyCardId);
     if (cardIndex === -1) {
       set({ pendingAllyCardId: null });
       return;
     }
-    if (actionQueue.length >= 3) {
+    if (actionQueue.length + queuedNullCount >= 3) {
       set({
         interactionNotice: "Action queue is full (3/3).",
         pendingAllyCardId: null,
@@ -526,6 +541,18 @@ export const useGameStore = create<BattleState>((set, get) => ({
   },
 
   cancelAllyTarget: () => set({ pendingAllyCardId: null }),
+
+  addNullAction: () => {
+    const { actionQueue, queuedNullCount } = get();
+    if (actionQueue.length + queuedNullCount >= 3) return;
+    set({ queuedNullCount: queuedNullCount + 1, interactionNotice: null });
+  },
+
+  removeNullAction: () => {
+    const { queuedNullCount } = get();
+    if (queuedNullCount <= 0) return;
+    set({ queuedNullCount: queuedNullCount - 1 });
+  },
 
   deselectCard: (cardId: string) => {
     const { deck, actionQueue } = get();
