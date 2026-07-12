@@ -23,6 +23,10 @@ import { useGameStore } from "@/store/gameStore";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import type { BattleCharacter } from "@/types/character";
 import type { Color } from "@/types/color";
+import { getEffectiveAttack, getEffectiveDefense } from "@/lib/game/stats";
+import { getPassiveReadout } from "@/lib/game/passiveStacks";
+import { getCharacterById } from "@/lib/game/characterCatalog";
+import KitDetails, { type KitPassiveView } from "@/components/game/KitDetails";
 import BattleEffectsOverlay from "@/components/game/BattleEffectsOverlay";
 import {
   useBattleSequencer,
@@ -67,6 +71,207 @@ function describeEffect(effect: BattleCharacter["buffs"][number]): string {
   return payload.length > 0
     ? `${effect.type} (${payload}${stacksText}${durationText})`
     : `${effect.type} (${`no numeric value${stacksText}${durationText}`.trim()})`;
+}
+
+// A battle stat with its change since battle start, e.g. "220 [+20]" (green)
+// or "165 [-15]" (red). `base` is the immutable kit value; `value` the live
+// effective stat. Zero delta shows no bracket.
+function StatWithDelta({
+  label,
+  value,
+  base,
+}: {
+  label: string;
+  value: number;
+  base: number;
+}): React.JSX.Element {
+  const delta = value - base;
+  return (
+    <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1 font-body text-xs uppercase tracking-widest text-zinc-300">
+      <span className="text-zinc-500">{label}:</span> {value}
+      {delta !== 0 ? (
+        <span
+          className={delta > 0 ? "text-emerald-400" : "text-rose-400"}
+        >
+          {" "}
+          [{delta > 0 ? "+" : ""}
+          {delta}]
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+const STATUS_TONE = {
+  buff: "border-emerald-700/60 bg-emerald-950/30 text-emerald-100",
+  debuff: "border-rose-700/60 bg-rose-950/30 text-rose-100",
+  effect: "border-zinc-600/60 bg-zinc-900/50 text-zinc-300",
+} as const;
+
+function StatusColumn({
+  title,
+  items,
+  tone,
+}: {
+  title: string;
+  items: BattleCharacter["buffs"];
+  tone: keyof typeof STATUS_TONE;
+}): React.JSX.Element {
+  return (
+    <div className="min-w-0">
+      <p className="mb-1 font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400">
+        {title} ({items.length})
+      </p>
+      <div className="space-y-1">
+        {items.length > 0 ? (
+          items.map((effect, idx) => (
+            <p
+              key={`${title}-${effect.type}-${idx}`}
+              className={`border px-2 py-1 font-body text-xs ${STATUS_TONE[tone]}`}
+            >
+              {describeEffect(effect)}
+            </p>
+          ))
+        ) : (
+          <p className="font-body text-xs text-zinc-500">None.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Full-screen character info panel opened by tapping a unit tile. Shows live
+// stats with their change since battle start, the split status lists, the
+// passive-stack readout, and the character's full kit (no art).
+function UnitDetailPanel({
+  unit,
+  onClose,
+}: {
+  unit: BattleCharacter;
+  onClose: () => void;
+}): React.JSX.Element {
+  const kit = getCharacterById(unit.id);
+  const passive = getPassiveReadout(unit);
+  const effectiveAtk = getEffectiveAttack(unit);
+  const effectiveDef = getEffectiveDefense(unit);
+  const hpDelta = unit.currentHP - unit.hp;
+  const buffs = unit.buffs.filter((b) => !b.uncancellable);
+  const debuffs = unit.debuffs.filter((d) => !d.uncancellable);
+  const effects = [...unit.buffs, ...unit.debuffs].filter(
+    (e) => e.uncancellable,
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4 py-6">
+      <Card className="flex max-h-[88vh] w-full max-w-3xl flex-col rounded-none border border-zinc-600 bg-zinc-950/95 ring-0">
+        <CardHeader className="flex flex-row items-start justify-between gap-3 border-b border-zinc-800 px-5 py-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <CardTitle className="font-heading text-2xl tracking-[0.08em] text-zinc-100">
+                {unit.name}
+              </CardTitle>
+              <Badge className="rounded-none border border-zinc-600 bg-zinc-900 font-body text-[9px] uppercase tracking-widest text-zinc-300">
+                {unit.color}
+              </Badge>
+              {unit.tier === "elite" ? (
+                <Badge className="rounded-none border border-amber-400/70 bg-amber-400/10 font-body text-[9px] uppercase tracking-widest text-amber-200">
+                  Elite
+                </Badge>
+              ) : null}
+            </div>
+            <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+              Values in [brackets] = change since battle start
+            </CardDescription>
+          </div>
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            className="shrink-0 rounded-none border border-zinc-600 text-xs uppercase tracking-widest"
+          >
+            Close
+          </Button>
+        </CardHeader>
+
+        <CardContent className="space-y-4 overflow-y-auto px-5 py-4">
+          {/* Stats with deltas */}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1 font-body text-xs uppercase tracking-widest text-zinc-300">
+              <span className="text-zinc-500">HP:</span> {unit.currentHP}/
+              {unit.hp}
+              {hpDelta !== 0 ? (
+                <span className={hpDelta > 0 ? "text-emerald-400" : "text-rose-400"}>
+                  {" "}
+                  [{hpDelta > 0 ? "+" : ""}
+                  {hpDelta}]
+                </span>
+              ) : null}
+            </div>
+            <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1 font-body text-xs uppercase tracking-widest text-zinc-300">
+              <span className="text-zinc-500">ULT:</span> {unit.ultGauge}/5
+            </div>
+            <StatWithDelta label="ATK" value={effectiveAtk} base={unit.atk} />
+            <StatWithDelta label="DEF" value={effectiveDef} base={unit.def} />
+          </div>
+
+          {/* Passive readout — stacks and/or live derived values */}
+          {passive ? (
+            <div
+              className={`border px-3 py-2 ${passive.ready ? "border-amber-400/70 bg-amber-400/10" : "border-zinc-800 bg-zinc-900/40"}`}
+            >
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <p className="font-heading text-sm tracking-[0.06em] text-zinc-100">
+                  {passive.label}
+                  {passive.stacks ? (
+                    <span
+                      className={
+                        passive.ready ? " text-amber-200" : " text-zinc-400"
+                      }
+                    >
+                      {" "}
+                      [{passive.stacks.current}/{passive.stacks.max}]
+                    </span>
+                  ) : null}
+                </p>
+                {passive.note ? (
+                  <span className="font-body text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+                    {passive.note}
+                  </span>
+                ) : null}
+              </div>
+              {passive.lines && passive.lines.length > 0 ? (
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 font-body text-xs text-emerald-300">
+                  {passive.lines.map((line) => (
+                    <span key={line}>{line}</span>
+                  ))}
+                </div>
+              ) : null}
+              {passive.readyMessage ? (
+                <p className="mt-1 font-body text-xs font-semibold uppercase tracking-[0.1em] text-amber-200">
+                  {passive.readyMessage}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* Buffs | Debuffs | Effects */}
+          <div className="grid gap-3 sm:grid-cols-3">
+            <StatusColumn title="Buffs" items={buffs} tone="buff" />
+            <StatusColumn title="Debuffs" items={debuffs} tone="debuff" />
+            <StatusColumn title="Effects" items={effects} tone="effect" />
+          </div>
+
+          {/* Full kit (no art) */}
+          {kit ? (
+            <KitDetails
+              skills={kit.skills}
+              ultimate={kit.ultimate}
+              passive={kit.passive as KitPassiveView | undefined}
+            />
+          ) : null}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 function getUnitBorderClass(color: BattleCharacter["color"]): string {
@@ -887,121 +1092,7 @@ export default function BattleArena({
       ) : null}
 
       {detailUnit ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <Card className="w-full max-w-2xl rounded-none border border-zinc-600 bg-zinc-950/95 ring-0">
-            <CardHeader className="flex items-start justify-between gap-3 border-b border-zinc-800 px-5 py-4">
-              <div>
-                <CardTitle className="font-heading text-2xl tracking-[0.08em] text-zinc-100">
-                  {detailUnit.name}
-                </CardTitle>
-                <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                  Full active status details
-                </CardDescription>
-              </div>
-              <Button
-                variant="ghost"
-                onClick={() => setDetailUnit(null)}
-                className="rounded-none border border-zinc-600 text-xs uppercase tracking-widest"
-              >
-                Close
-              </Button>
-            </CardHeader>
-
-            <CardContent className="grid gap-4 px-5 py-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <p className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                  Stats Snapshot
-                </p>
-                <div className="grid grid-cols-2 gap-2 font-body text-xs uppercase tracking-widest text-zinc-300">
-                  <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1">
-                    HP: {detailUnit.currentHP}/{detailUnit.hp}
-                  </div>
-                  <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1">
-                    ULT: {detailUnit.ultGauge}/5
-                  </div>
-                  <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1">
-                    ATK: {detailUnit.currentAttack}
-                  </div>
-                  <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1">
-                    DEF: {detailUnit.currentDefense}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <p className="mb-1 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                    Active Buffs
-                  </p>
-                  <div className="max-h-36 space-y-1 overflow-y-auto pr-1">
-                    {detailUnit.buffs.some((b) => !b.uncancellable) ? (
-                      detailUnit.buffs
-                        .filter((b) => !b.uncancellable)
-                        .map((effect, idx) => (
-                          <p
-                            key={`buff-${effect.type}-${idx}`}
-                            className="border border-emerald-700/60 bg-emerald-950/30 px-2 py-1 font-body text-xs text-emerald-100"
-                          >
-                            {describeEffect(effect)}
-                          </p>
-                        ))
-                    ) : (
-                      <p className="font-body text-xs text-zinc-400">
-                        No active buffs.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="mb-1 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                    Active Debuffs
-                  </p>
-                  <div className="max-h-36 space-y-1 overflow-y-auto pr-1">
-                    {detailUnit.debuffs.some((d) => !d.uncancellable) ? (
-                      detailUnit.debuffs
-                        .filter((d) => !d.uncancellable)
-                        .map((effect, idx) => (
-                          <p
-                            key={`debuff-${effect.type}-${idx}`}
-                            className="border border-rose-700/60 bg-rose-950/30 px-2 py-1 font-body text-xs text-rose-100"
-                          >
-                            {describeEffect(effect)}
-                          </p>
-                        ))
-                    ) : (
-                      <p className="font-body text-xs text-zinc-400">
-                        No active debuffs.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {[...detailUnit.buffs, ...detailUnit.debuffs].some(
-                  (e) => e.uncancellable,
-                ) ? (
-                  <div>
-                    <p className="mb-1 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                      Effects
-                    </p>
-                    <div className="max-h-36 space-y-1 overflow-y-auto pr-1">
-                      {[...detailUnit.buffs, ...detailUnit.debuffs]
-                        .filter((e) => e.uncancellable)
-                        .map((effect, idx) => (
-                          <p
-                            key={`effect-${effect.type}-${idx}`}
-                            className="border border-zinc-600/60 bg-zinc-900/50 px-2 py-1 font-body text-xs text-zinc-300"
-                          >
-                            {describeEffect(effect)}
-                          </p>
-                        ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <UnitDetailPanel unit={detailUnit} onClose={() => setDetailUnit(null)} />
       ) : null}
     </div>
   );
