@@ -28,6 +28,8 @@ const CHARACTERS_WITH_ART = new Set([
   "raider",
   "road_bandit",
   "wild_beast",
+  // NPC boss copy of a playable char (reuses lyra.png, tweaked stats)
+  "lyra_npc",
 ]);
 
 export function getCharacterArt(id: string): string | null {

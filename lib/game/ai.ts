@@ -7,14 +7,25 @@ import { UltimateCard } from "@/types/ultimateCard";
 export const ENEMY_ACTIONS_PER_TURN = 3;
 
 /**
- * Ruling #39 (amends #4): the enemy side gets 1 action per living field
- * member, capped at ENEMY_ACTIONS_PER_TURN. Subs don't grant actions.
+ * Enemy action economy (ruling 2026-07-12, amends #39/#4). Counting only
+ * living field members (subs grant none):
+ *
+ *  - Elite tier present (named bosses — `tier: "elite"`): the side always
+ *    takes the full 3 actions, even a lone boss like Lyra/Tao/Seras.
+ *  - Otherwise (low-mid mobs): the side gets its member count +1, so a
+ *    single mob acts twice and two mobs act three times.
+ *
+ * Either branch is capped at ENEMY_ACTIONS_PER_TURN (3), so 3+ living
+ * members — up to a 5-enemy pack — still take 3 actions.
  */
 export function enemyActionsForTurn(enemyTeam: BattleCharacter[]): number {
-  const livingFieldMembers = enemyTeam.filter(
-    (e) => e.currentHP > 0 && !e.isSub,
-  ).length;
-  return Math.min(ENEMY_ACTIONS_PER_TURN, livingFieldMembers);
+  const livingField = enemyTeam.filter((e) => e.currentHP > 0 && !e.isSub);
+  if (livingField.length === 0) return 0;
+  const hasElite = livingField.some((e) => e.tier === "elite");
+  const actions = hasElite
+    ? ENEMY_ACTIONS_PER_TURN
+    : livingField.length + 1;
+  return Math.min(ENEMY_ACTIONS_PER_TURN, actions);
 }
 
 /**

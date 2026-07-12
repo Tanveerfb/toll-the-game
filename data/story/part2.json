@@ -40,7 +40,7 @@
       ],
       "battle": {
         "playerTeam": [{ "id": "duke" }],
-        "enemyTeam": [{ "id": "lyra" }]
+        "enemyTeam": [{ "id": "lyra_npc" }]
       },
       "outro": [
         {
@@ -73,7 +73,7 @@
       ],
       "battle": {
         "playerTeam": [{ "id": "duke" }],
-        "enemyTeam": [{ "id": "lyra" }]
+        "enemyTeam": [{ "id": "lyra_npc" }]
       },
       "outro": [
         {

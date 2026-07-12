@@ -40,13 +40,25 @@ function describeEffect(effect: BattleCharacter["buffs"][number]): string {
   const stacksText = effect.stacks
     ? `, ${effect.stacks} stack${effect.stacks > 1 ? "s" : ""}`
     : "";
+  // Decay/DoT carry their per-turn hit in capturedDamage (decay) or value
+  // (Bleed/Shock) rather than a percent — surface it so the tooltip never
+  // reads "no numeric value" for a damage-over-time effect.
+  const perTurnDamage =
+    effect.capturedDamage !== undefined
+      ? effect.capturedDamage
+      : effect.type === "decay" || effect.type === "damageOverTime"
+        ? effect.value
+        : undefined;
   const valueText =
-    effect.valuePercent !== undefined
-      ? `${effect.valuePercent}%`
-      : effect.value !== undefined
-        ? `${effect.value}`
-        : "";
-  const statText = effect.stat ? ` ${effect.stat}` : "";
+    perTurnDamage !== undefined
+      ? `${perTurnDamage}/turn`
+      : effect.valuePercent !== undefined
+        ? `${effect.valuePercent}%`
+        : effect.value !== undefined
+          ? `${effect.value}`
+          : "";
+  const statText =
+    effect.stat && perTurnDamage === undefined ? ` ${effect.stat}` : "";
   const duration = effect.buffDuration ?? effect.debuffDuration;
   const durationText = duration
     ? `, ${duration} turn${duration > 1 ? "s" : ""}`

@@ -76,6 +76,41 @@ describe("effective stats (buffs/debuffs finally count)", () => {
     expect(getEffectiveAttack(attacker)).toBe(50);
   });
 
+  it("stacked ATK-up buffs compound multiplicatively (ruling 2026-07-12)", () => {
+    const char = makeChar({ instanceId: "b", team: "player" });
+    // +10%, +10% -> ×1.1·1.1 = ×1.21 -> floor(100·1.21)=121
+    char.buffs.push({ type: "buff", stat: "atk", valuePercent: 10 });
+    char.buffs.push({ type: "buff", stat: "atk", valuePercent: 10 });
+    expect(getEffectiveAttack(char)).toBe(121);
+  });
+
+  it("stacked ATK-down debuffs multiply, never reaching 0 (ruling 2026-07-12)", () => {
+    const attacker = makeChar({ instanceId: "a", team: "player" });
+    // -25%, -50%, -25% -> ×0.75·0.50·0.75 = ×0.28125 -> floor(100·0.28125)=28
+    attacker.debuffs.push({ type: "debuff", stat: "atk", valuePercent: 25 });
+    attacker.debuffs.push({ type: "debuff", stat: "atk", valuePercent: 50 });
+    attacker.debuffs.push({ type: "debuff", stat: "atk", valuePercent: 25 });
+    expect(getEffectiveAttack(attacker)).toBe(28);
+  });
+
+  it("an 'all' debuff multiplies alongside a stat-specific one", () => {
+    const char = makeChar({
+      instanceId: "c",
+      team: "player",
+      currentDefense: 100,
+    });
+    // -50% def and -20% all -> ×0.5·0.8 = ×0.4 -> floor(100·0.4)=40
+    char.debuffs.push({ type: "debuff", stat: "def", valuePercent: 50 });
+    char.debuffs.push({ type: "debuff", stat: "all", valuePercent: 20 });
+    expect(getEffectiveDefense(char)).toBe(40);
+  });
+
+  it("a single ≥100% debuff still floors the stat to 0", () => {
+    const char = makeChar({ instanceId: "c", team: "player" });
+    char.debuffs.push({ type: "debuff", stat: "atk", valuePercent: 100 });
+    expect(getEffectiveAttack(char)).toBe(0);
+  });
+
   it("DEF buff raises effective defense in damage calc", () => {
     const target = makeChar({
       instanceId: "t",

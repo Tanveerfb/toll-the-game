@@ -7,6 +7,7 @@ import gon from "@/data/characters/gon.json";
 import killua from "@/data/characters/killua.json";
 import leorio from "@/data/characters/leorio.json";
 import lyra from "@/data/characters/lyra.json";
+import lyraNpc from "@/data/characters/lyra_npc.json";
 import masterTao from "@/data/characters/master_tao.json";
 import meliodas from "@/data/characters/meliodas.json";
 import mustafa from "@/data/characters/mustafa.json";
@@ -52,6 +53,12 @@ export interface CharacterData {
   lore?: string;
   /** Story-mode enemies: excluded from the practice roster and archive */
   storyOnly?: boolean;
+  /**
+   * Enemy action-economy tier. "elite" (named bosses — Tao/Seras/Lyra_npc)
+   * always act 3× per turn even solo; unset/other kits are low-mid and get
+   * the team +1-action bonus instead. See lib/game/ai.ts.
+   */
+  tier?: "elite";
   skills: CharacterSkillData[];
   ultimate?: CharacterSkillData;
   passive?: CharacterPassiveData;
@@ -68,6 +75,7 @@ const rawCharacters = [
   killua,
   leorio,
   lyra,
+  lyraNpc,
   masterTao,
   meliodas,
   mustafa,

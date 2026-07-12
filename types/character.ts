@@ -12,6 +12,12 @@ export interface Character {
   def: number;
   hp: number;
   tags?: string[]; // E.g. [FEMALE], [KHALSA]
+  /**
+   * Enemy action-economy tier. "elite" units (named bosses) act the full
+   * 3× per turn even solo; unset = low-mid and folds into the team +1 bonus.
+   * See enemyActionsForTurn in lib/game/ai.ts.
+   */
+  tier?: "elite";
   /** Exactly 2 skill cards */
   skills: [SkillCard, SkillCard];
   ultimate?: UltimateCard;

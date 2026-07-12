@@ -1,0 +1,74 @@
+{
+  "id": "lyra_npc",
+  "name": "Lyra",
+  "color": "red",
+  "storyOnly": true,
+  "tier": "elite",
+  "tags": ["Human"],
+  "lore": "Story-battle version of Lyra. Same Red Ice kit as the playable card, but with a boss's stamina — a longer, multi-turn duel. Elite tier: acts three times per turn even alone.",
+  "atk": 250,
+  "def": 115,
+  "hp": 3300,
+  "skills": [
+    {
+      "skillName": "Red Ice: Volcanic Frost",
+      "description": "Does ATK-scaled damage to one enemy; applies [decay.stacks] Decay for [decay.duration] turns.",
+      "characterId": "lyra_npc",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [170, 205, 250],
+      "mechanics": [
+        {
+          "type": "decay",
+          "stacksRanked": [1, 1, 3],
+          "duration": 2,
+          "damagePercent": 10
+        }
+      ]
+    },
+    {
+      "skillName": "Red Ice: Magma Shaft",
+      "description": "Does Pierce ATK-scaled damage to one enemy.",
+      "characterId": "lyra_npc",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [205, 275, 400],
+      "mechanics": [
+        {
+          "type": "pierce"
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Red Ice: Absolute Zero Ignition",
+    "description": "Does Pierce ATK-scaled damage to all enemies.",
+    "characterId": "lyra_npc",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 600,
+    "mechanics": [
+      {
+        "type": "aoe"
+      },
+      {
+        "type": "pierce"
+      }
+    ]
+  },
+  "passive": {
+    "name": "First Action: Unbreakable Ice",
+    "description": "When Lyra acts first in a turn, gains +100% DEF for 1 turn. This buff is unstackable and uncancellable.",
+    "trigger": "onFirstAction",
+    "mechanics": [
+      {
+        "type": "buff",
+        "stat": "def",
+        "valuePercent": 100,
+        "duration": 1,
+        "unstackable": true,
+        "uncancellable": true
+      }
+    ]
+  }
+}

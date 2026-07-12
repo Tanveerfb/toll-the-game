@@ -426,27 +426,82 @@ describe("zero-value clauses hidden per rank (STATUS #16)", () => {
   });
 });
 
-describe("enemy action count (ruling #39)", () => {
-  it("1 action per living field member, capped at 3", () => {
-    const full = [
-      makeChar({ instanceId: "e1", team: "enemy" }),
-      makeChar({ instanceId: "e2", team: "enemy" }),
-      makeChar({ instanceId: "e3", team: "enemy" }),
-      makeChar({ instanceId: "e4", team: "enemy" }),
-    ];
-    expect(enemyActionsForTurn(full)).toBe(3);
+describe("enemy action economy (ruling 2026-07-12 — low-mid +1, elite always 3)", () => {
+  it("low-mid team gets member count +1, capped at 3", () => {
+    // solo mob -> 2
+    expect(
+      enemyActionsForTurn([makeChar({ instanceId: "e1", team: "enemy" })]),
+    ).toBe(2);
 
-    const twoLeft = [
-      makeChar({ instanceId: "e1", team: "enemy" }),
-      makeChar({ instanceId: "e2", team: "enemy" }),
-      makeChar({ instanceId: "e3", team: "enemy", currentHP: 0 }),
-    ];
-    expect(enemyActionsForTurn(twoLeft)).toBe(2);
+    // two mobs -> 3
+    expect(
+      enemyActionsForTurn([
+        makeChar({ instanceId: "e1", team: "enemy" }),
+        makeChar({ instanceId: "e2", team: "enemy" }),
+      ]),
+    ).toBe(3);
 
-    const subDoesNotCount = [
-      makeChar({ instanceId: "e1", team: "enemy" }),
-      makeChar({ instanceId: "e2", team: "enemy", isSub: true }),
-    ];
-    expect(enemyActionsForTurn(subDoesNotCount)).toBe(1);
+    // five mobs -> still capped at 3
+    expect(
+      enemyActionsForTurn(
+        Array.from({ length: 5 }, (_, i) =>
+          makeChar({ instanceId: `e${i}`, team: "enemy" }),
+        ),
+      ),
+    ).toBe(3);
+  });
+
+  it("only living field members count toward the +1 (dead + subs excluded)", () => {
+    // two living + one dead -> 2 + 1 = 3
+    expect(
+      enemyActionsForTurn([
+        makeChar({ instanceId: "e1", team: "enemy" }),
+        makeChar({ instanceId: "e2", team: "enemy" }),
+        makeChar({ instanceId: "e3", team: "enemy", currentHP: 0 }),
+      ]),
+    ).toBe(3);
+
+    // one living + one sub -> 1 + 1 = 2
+    expect(
+      enemyActionsForTurn([
+        makeChar({ instanceId: "e1", team: "enemy" }),
+        makeChar({ instanceId: "e2", team: "enemy", isSub: true }),
+      ]),
+    ).toBe(2);
+
+    // nobody living -> 0
+    expect(
+      enemyActionsForTurn([
+        makeChar({ instanceId: "e1", team: "enemy", currentHP: 0 }),
+      ]),
+    ).toBe(0);
+  });
+
+  it("elite tier always acts 3× per turn, even solo", () => {
+    expect(
+      enemyActionsForTurn([
+        makeChar({ instanceId: "e1", team: "enemy", tier: "elite" }),
+      ]),
+    ).toBe(3);
+  });
+
+  it("a living elite anywhere on the team forces 3 (mixed team)", () => {
+    // elite + one mob would be 3 either way; but elite + all-else-dead still 3
+    expect(
+      enemyActionsForTurn([
+        makeChar({ instanceId: "e1", team: "enemy", tier: "elite" }),
+        makeChar({ instanceId: "e2", team: "enemy", currentHP: 0 }),
+      ]),
+    ).toBe(3);
+  });
+
+  it("a dead elite does not force 3 — team falls back to low-mid +1", () => {
+    // dead elite + one living mob -> low-mid rule: 1 + 1 = 2
+    expect(
+      enemyActionsForTurn([
+        makeChar({ instanceId: "e1", team: "enemy", tier: "elite", currentHP: 0 }),
+        makeChar({ instanceId: "e2", team: "enemy" }),
+      ]),
+    ).toBe(2);
   });
 });

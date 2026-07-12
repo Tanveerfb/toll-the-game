@@ -197,9 +197,14 @@ export default function StoryPage(): React.JSX.Element {
                       </div>
                     </div>
                     {cleared ? (
-                      <Badge className="rounded-none border border-amber-300 bg-amber-300/10 font-body text-[10px] uppercase tracking-widest text-amber-200">
-                        Cleared
-                      </Badge>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge className="rounded-none border border-amber-300 bg-amber-300/10 font-body text-[10px] uppercase tracking-widest text-amber-200">
+                          ✓ Cleared
+                        </Badge>
+                        <span className="font-body text-[9px] uppercase tracking-[0.16em] text-zinc-400">
+                          Replay ▸
+                        </span>
+                      </div>
                     ) : !unlocked ? (
                       <Badge
                         variant="secondary"

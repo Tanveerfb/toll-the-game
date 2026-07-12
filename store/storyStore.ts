@@ -23,10 +23,18 @@ interface StoryProgressState {
   hydrateFromCloud: (uid: string) => Promise<void>;
 }
 
+// Story progress lives ON the player's profile doc (`users/{uid}.storyProgress`)
+// rather than a separate collection — Firestore rules only grant a signed-in
+// user their own users/{uid} document, so a standalone storyProgress/{uid}
+// collection was always denied and progress never reached the cloud.
 async function pushToCloud(uid: string, completed: Record<string, boolean>) {
   if (!db) return;
   try {
-    await setDoc(doc(db, "storyProgress", uid), { completed }, { merge: true });
+    await setDoc(
+      doc(db, "users", uid),
+      { storyProgress: { completed } },
+      { merge: true },
+    );
   } catch (error) {
     // Offline / rules failures must never block local play
     console.warn("Story progress cloud sync failed:", error);
@@ -50,9 +58,9 @@ export const useStoryStore = create<StoryProgressState>()(
       hydrateFromCloud: async (uid) => {
         if (!db) return;
         try {
-          const snapshot = await getDoc(doc(db, "storyProgress", uid));
+          const snapshot = await getDoc(doc(db, "users", uid));
           const cloud =
-            (snapshot.data()?.completed as
+            (snapshot.data()?.storyProgress?.completed as
               | Record<string, boolean>
               | undefined) ?? {};
           const merged = { ...cloud, ...get().completed };

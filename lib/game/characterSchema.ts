@@ -58,6 +58,8 @@ export const characterSchema = z.looseObject({
   hp: z.number().positive(),
   tags: z.array(z.string()).optional(),
   lore: z.string().optional(),
+  storyOnly: z.boolean().optional(),
+  tier: z.enum(["elite"]).optional(),
   skills: z.array(skillSchema).length(2),
   ultimate: skillSchema.optional(),
   passive: passiveSchema.optional(),

@@ -705,7 +705,9 @@ export function executeSkill(
             debuffDuration: mech.duration,
             capturedDamage: decayDmg,
           });
-          targetEffects.push(`applied decay${formatTurns(mech.duration)}`);
+          targetEffects.push(
+            `applied decay (${decayDmg}/turn)${formatTurns(mech.duration)}`,
+          );
         }
         if (mech.type === "ignite") {
           const existing = updatedTarget.debuffs.find(

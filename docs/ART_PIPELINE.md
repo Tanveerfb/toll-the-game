@@ -79,6 +79,14 @@ Generic enemy kits — no character sheets, AI-invented per element. Shown only 
 
 Full prompts recoverable from ComfyUI history / git log.
 
+### NPC boss copies of playable characters (2026-07-12)
+
+When an official character appears as a story-battle enemy, it gets a dedicated `storyOnly` NPC kit with tweakable stats (raised HP for a multi-turn boss fight, `tier: "elite"` for 3 actions/turn). The NPC copy **reuses the playable character's art** — no regeneration: copy `public/characters/<base>.png` → `<base>_npc.png` and register `<base>_npc` in `characterArt.ts`.
+
+| Character | Art source | Notes |
+|---|---|---|
+| lyra_npc | copy of `lyra.png` | Part 2 boss. 3300 HP / 250 ATK (Tanveer's tune), elite tier |
+
 ## Adding a New Character
 
 **Workflow (agreed 2026-07-07):** Tanveer supplies the locked design — or at least a blueprint/idea — for any character without one. Generate from that. The three AI-invented designs below (Mustafa, Siddiq, Yalina) are placeholders to be regenerated once he provides theirs.
