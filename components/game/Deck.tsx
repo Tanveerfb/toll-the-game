@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { isSingleAllyTarget, useGameStore } from "@/store/gameStore";
+import { useGameStore } from "@/store/gameStore";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { Button } from "@/components/ui/button";
 import {
@@ -117,7 +117,6 @@ export default function Deck() {
     selectCard,
     deselectCard,
     playerTeam,
-    selectedAllyMarker,
     battlePhase,
     mergeDeckCard,
     reorderDeckCard,
@@ -373,9 +372,9 @@ export default function Deck() {
             char?.debuffs.some(
               (d) => d.type === "seal" && d.sealType === "attack",
             );
-          // Enemy targeting is optional (unmarked = random at execution);
-          // only single-target ally skills still demand a marked ally
-          const missingTarget = isSingleAllyTarget(card) && !selectedAllyMarker;
+          // Enemy targeting is optional (unmarked = random at execution).
+          // Single-target ally skills open the ally chooser on select, so no
+          // pre-selection marker is needed here.
           const queueFull = actionQueue.length >= 3;
           const colorTokenClass = getColorTokenClasses(char?.color);
 
@@ -410,7 +409,6 @@ export default function Deck() {
                 ${isUlt ? "ring-2 ring-amber-400/80 shadow-[0_0_14px_rgba(251,191,36,0.55)]" : ""}
                 ${isPlayerActionPhase ? "cursor-pointer hover:-translate-y-2 hover:shadow-lg" : "cursor-not-allowed opacity-50"}
                 ${isStunned || isSealed ? "grayscale brightness-50" : ""}
-                ${missingTarget ? "ring-1 ring-red-400/70" : ""}
                 ${queueFull ? "opacity-70" : ""}
                 ${draggedCardId === card.id ? "opacity-40" : ""}
                 border
@@ -467,11 +465,6 @@ export default function Deck() {
                 </Button>
               )}
 
-              {missingTarget && isPlayerActionPhase && !isStunned && (
-                <div className="absolute left-1 right-1 top-1 rounded border border-red-400/60 bg-red-900/50 px-1 py-0.5 text-center text-[9px] font-bold uppercase tracking-widest text-red-100">
-                  Pick Target
-                </div>
-              )}
               {isStunned && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20 text-[10px] font-bold text-white uppercase tracking-widest rounded-xl">
                   Stunned

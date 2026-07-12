@@ -119,6 +119,12 @@ interface BattleState {
   actionQueue: ActionCard[];
   selectedEnemyMarker: string | null;
   selectedAllyMarker: string | null;
+  /**
+   * Deck card id waiting for a single-ally target pick. Set when a single-ally
+   * skill is selected; the arena shows a living-ally chooser modal, and the
+   * card is only queued once `confirmAllyTarget` resolves it.
+   */
+  pendingAllyCardId: string | null;
   interactionNotice: string | null;
   // Turn-start snapshot for Reset Hand (undoes queuing AND selection merges,
   // including the ult gauge those merges granted)
@@ -151,6 +157,10 @@ interface BattleState {
   initializeDeck: () => void;
   drawCards: () => void;
   selectCard: (cardId: string) => void;
+  /** Resolve a pending single-ally card by queuing it against `allyInstanceId`. */
+  confirmAllyTarget: (allyInstanceId: string) => void;
+  /** Dismiss the ally chooser without queuing the card. */
+  cancelAllyTarget: () => void;
   deselectCard: (cardId: string) => void;
   reorderDeckCard: (draggedCardId: string, targetCardId: string) => void;
   mergeDeckCard: (cardId: string) => void;
@@ -158,6 +168,41 @@ interface BattleState {
   setActionQueue: (queue: ActionCard[]) => void;
   snapshotHand: () => void;
   resetHand: () => void;
+}
+
+// Removes `deck[cardIndex]`, appends it to the queue with the resolved target,
+// and rolls up any ult gauge granted by merges the removal exposed. Shared by
+// selectCard (enemy/self targets) and confirmAllyTarget (ally target).
+function buildQueueAppend(
+  deck: ActionCard[],
+  actionQueue: ActionCard[],
+  playerTeam: BattleCharacter[],
+  cardIndex: number,
+  targetId: string | undefined,
+): Partial<BattleState> {
+  const card = deck[cardIndex];
+  const newDeck = [...deck];
+  newDeck.splice(cardIndex, 1);
+
+  const mergeResult = applyAdjacentMerges(newDeck);
+  let updatedTeam = playerTeam;
+  if (mergeResult.mergeCount > 0) {
+    updatedTeam = playerTeam.map((c) => {
+      const gains = mergeResult.mergeSourceIds.filter(
+        (sourceId) => sourceId === c.instanceId,
+      ).length;
+      if (gains <= 0) return c;
+      return { ...c, ultGauge: Math.min(5, c.ultGauge + gains) };
+    });
+  }
+
+  return {
+    deck: mergeResult.deck,
+    playerTeam: updatedTeam,
+    actionQueue: [...actionQueue, { ...card, targetInstanceId: targetId }],
+    interactionNotice:
+      mergeResult.mergeCount > 0 ? mergeResult.notices.join(" ") : null,
+  };
 }
 
 export const useGameStore = create<BattleState>((set, get) => ({
@@ -175,6 +220,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
   actionQueue: [],
   selectedEnemyMarker: null,
   selectedAllyMarker: null,
+  pendingAllyCardId: null,
   interactionNotice: null,
   handSnapshot: null,
 
@@ -220,6 +266,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
       actionQueue: [],
       selectedEnemyMarker: null,
       selectedAllyMarker: null,
+      pendingAllyCardId: null,
       interactionNotice: null,
       handSnapshot: null,
     }),
@@ -254,6 +301,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
           ? { ...c, ultGauge: handSnapshot.ultGauges[c.instanceId] }
           : c,
       ),
+      pendingAllyCardId: null,
       interactionNotice: null,
     });
   },
@@ -388,7 +436,6 @@ export const useGameStore = create<BattleState>((set, get) => ({
       enemyTeam,
       playerTeam,
       selectedEnemyMarker,
-      selectedAllyMarker,
     } = get();
     if (actionQueue.length >= 3) {
       set({ interactionNotice: "Action queue is full (3/3)." });
@@ -430,51 +477,55 @@ export const useGameStore = create<BattleState>((set, get) => ({
 
       targetId = markedEnemyIsAlive ? selectedEnemyMarker : undefined;
     } else if (isSingleAllyTarget(card)) {
-      // Single-target ally skills (e.g. Leorio's rank-1 Member of the Zodiac)
-      // require the player to pick the ally — including the caster
+      // Single-target ally skills (e.g. Leorio's rank-1 Member of the Zodiac):
+      // defer queuing and open the living-ally chooser modal. The card is
+      // queued by confirmAllyTarget once the player picks. (Re-picking after
+      // Reset Hand happens naturally — the card returns to the deck.)
       const aliveAllies = playerTeam.filter((p) => p.currentHP > 0 && !p.isSub);
-      const markedAllyIsAlive =
-        selectedAllyMarker &&
-        aliveAllies.some((p) => p.instanceId === selectedAllyMarker);
-
-      if (!markedAllyIsAlive) {
-        set({
-          interactionNotice: "Select an ally target before queuing this card.",
-        });
+      if (aliveAllies.length <= 0) {
+        set({ interactionNotice: "No valid ally target available." });
         return;
       }
-
-      targetId = selectedAllyMarker || undefined;
+      set({ pendingAllyCardId: cardId, interactionNotice: null });
+      return;
     } else {
       targetId = char?.instanceId;
     }
 
-    const newDeck = [...deck];
-    newDeck.splice(cardIndex, 1);
+    // Leftover cards auto-merge if removing this one made identical neighbors
+    // adjacent (each merge grants +1 ult gauge; Reset Hand reverses both).
+    set(buildQueueAppend(deck, actionQueue, playerTeam, cardIndex, targetId));
+  },
 
-    // Leftover cards auto-merge if removing this one made identical
-    // neighbors adjacent (each merge still grants +1 ult gauge; Reset Hand
-    // reverses both)
-    const mergeResult = applyAdjacentMerges(newDeck);
-    let updatedTeam = playerTeam;
-    if (mergeResult.mergeCount > 0) {
-      updatedTeam = playerTeam.map((c) => {
-        const gains = mergeResult.mergeSourceIds.filter(
-          (sourceId) => sourceId === c.instanceId,
-        ).length;
-        if (gains <= 0) return c;
-        return { ...c, ultGauge: Math.min(5, c.ultGauge + gains) };
-      });
+  confirmAllyTarget: (allyInstanceId: string) => {
+    const { deck, actionQueue, playerTeam, pendingAllyCardId } = get();
+    if (!pendingAllyCardId) return;
+    const cardIndex = deck.findIndex((c) => c.id === pendingAllyCardId);
+    if (cardIndex === -1) {
+      set({ pendingAllyCardId: null });
+      return;
     }
-
+    if (actionQueue.length >= 3) {
+      set({
+        interactionNotice: "Action queue is full (3/3).",
+        pendingAllyCardId: null,
+      });
+      return;
+    }
+    const ally = playerTeam.find(
+      (p) => p.instanceId === allyInstanceId && p.currentHP > 0 && !p.isSub,
+    );
+    if (!ally) {
+      set({ interactionNotice: "That ally is not a valid target." });
+      return;
+    }
     set({
-      deck: mergeResult.deck,
-      playerTeam: updatedTeam,
-      actionQueue: [...actionQueue, { ...card, targetInstanceId: targetId }],
-      interactionNotice:
-        mergeResult.mergeCount > 0 ? mergeResult.notices.join(" ") : null,
+      ...buildQueueAppend(deck, actionQueue, playerTeam, cardIndex, allyInstanceId),
+      pendingAllyCardId: null,
     });
   },
+
+  cancelAllyTarget: () => set({ pendingAllyCardId: null }),
 
   deselectCard: (cardId: string) => {
     const { deck, actionQueue } = get();

@@ -52,7 +52,7 @@ describe("single-ally targeting (Leorio's Member of the Zodiac)", () => {
     expect(isSingleAllyTarget(makeCard(3))).toBe(false);
   });
 
-  it("rank-1 card refuses to queue without a marked ally", () => {
+  it("selecting a rank-1 card opens the ally chooser instead of queuing", () => {
     useGameStore.setState({
       playerTeam: [makeChar({ instanceId: "leorio" }), makeChar({ instanceId: "ally" })],
       enemyTeam: [makeChar({ instanceId: "enemy", team: "enemy" })],
@@ -62,21 +62,36 @@ describe("single-ally targeting (Leorio's Member of the Zodiac)", () => {
     useGameStore.getState().selectCard("card-1");
     const state = useGameStore.getState();
     expect(state.actionQueue).toHaveLength(0);
-    expect(state.interactionNotice).toContain("Select an ally target");
+    expect(state.pendingAllyCardId).toBe("card-1");
   });
 
-  it("rank-1 card queues against the marked ally (caster included)", () => {
+  it("confirmAllyTarget queues the pending card against the chosen ally (caster included)", () => {
     useGameStore.setState({
       playerTeam: [makeChar({ instanceId: "leorio" }), makeChar({ instanceId: "ally" })],
       enemyTeam: [makeChar({ instanceId: "enemy", team: "enemy" })],
       deck: [makeCard(1)],
       battlePhase: "PlayerAction",
     });
-    useGameStore.getState().setAllyMarker("ally");
     useGameStore.getState().selectCard("card-1");
-    expect(useGameStore.getState().actionQueue[0]?.targetInstanceId).toBe(
-      "ally",
-    );
+    useGameStore.getState().confirmAllyTarget("ally");
+    const state = useGameStore.getState();
+    expect(state.pendingAllyCardId).toBeNull();
+    expect(state.actionQueue[0]?.targetInstanceId).toBe("ally");
+  });
+
+  it("cancelAllyTarget dismisses the chooser and leaves the card in the deck", () => {
+    useGameStore.setState({
+      playerTeam: [makeChar({ instanceId: "leorio" }), makeChar({ instanceId: "ally" })],
+      enemyTeam: [makeChar({ instanceId: "enemy", team: "enemy" })],
+      deck: [makeCard(1)],
+      battlePhase: "PlayerAction",
+    });
+    useGameStore.getState().selectCard("card-1");
+    useGameStore.getState().cancelAllyTarget();
+    const state = useGameStore.getState();
+    expect(state.pendingAllyCardId).toBeNull();
+    expect(state.actionQueue).toHaveLength(0);
+    expect(state.deck).toHaveLength(1);
   });
 
   it("rank-2 card (all allies) queues without any ally marker", () => {

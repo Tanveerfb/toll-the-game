@@ -556,17 +556,23 @@ export default function BattleArena({
     playerTeam,
     enemyTeam,
     selectedEnemyMarker,
-    selectedAllyMarker,
     battleLog,
     interactionNotice,
     battleSpeed,
     setBattleSpeed,
     setEnemyMarker,
-    setAllyMarker,
     clearInteractionNotice,
     actionQueue,
+    deck,
+    pendingAllyCardId,
+    confirmAllyTarget,
+    cancelAllyTarget,
     resetBattle,
   } = useGameStore();
+
+  const pendingAllyCard = pendingAllyCardId
+    ? deck.find((c) => c.id === pendingAllyCardId)
+    : undefined;
 
   const { resolveEnemyTurnWrapper, startCustomBattle, lastBattleConfig } =
     useBattleContext();
@@ -887,10 +893,7 @@ export default function BattleArena({
 
         <div className="flex min-h-0 flex-col">
           <p className="mb-1 shrink-0 font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            Player{" "}
-            <span className="text-zinc-600">
-              — click to target ally buffs/heals
-            </span>
+            Player <span className="text-zinc-600">— tap Info for details</span>
           </p>
           <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
             {playerTeam.map((unit) => (
@@ -898,10 +901,10 @@ export default function BattleArena({
                 key={unit.instanceId}
                 unit={unit}
                 isEnemy={false}
-                isMarked={selectedAllyMarker === unit.instanceId}
+                isMarked={false}
                 queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
                 fx={tileFx(unit.instanceId)}
-                onMark={setAllyMarker}
+                onMark={() => {}}
                 onViewDetails={setDetailUnit}
               />
             ))}
@@ -1093,6 +1096,49 @@ export default function BattleArena({
 
       {detailUnit ? (
         <UnitDetailPanel unit={detailUnit} onClose={() => setDetailUnit(null)} />
+      ) : null}
+
+      {pendingAllyCard ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4">
+          <Card className="w-full max-w-md rounded-none border border-emerald-500/60 bg-zinc-950/95 ring-0">
+            <CardHeader className="border-b border-zinc-800 px-5 py-4">
+              <CardTitle className="font-heading text-xl tracking-[0.08em] text-zinc-100">
+                Choose an ally
+              </CardTitle>
+              <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                {pendingAllyCard.skill.skillName} — pick who it targets
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 px-5 py-4">
+              <div className="grid grid-cols-2 gap-2">
+                {playerTeam
+                  .filter((p) => p.currentHP > 0 && !p.isSub)
+                  .map((ally) => (
+                    <button
+                      key={ally.instanceId}
+                      type="button"
+                      onClick={() => confirmAllyTarget(ally.instanceId)}
+                      className="flex items-center justify-between gap-2 border-2 border-zinc-700 bg-zinc-900/60 px-3 py-2 text-left transition-colors hover:border-emerald-400 hover:bg-emerald-400/5"
+                    >
+                      <span className="min-w-0 truncate font-heading text-sm tracking-[0.06em] text-zinc-100">
+                        {ally.name}
+                      </span>
+                      <span className="shrink-0 font-body text-[10px] uppercase tracking-widest text-zinc-500">
+                        {ally.currentHP}/{ally.hp}
+                      </span>
+                    </button>
+                  ))}
+              </div>
+              <Button
+                variant="ghost"
+                onClick={cancelAllyTarget}
+                className="w-full rounded-none border border-zinc-700 text-xs uppercase tracking-widest text-zinc-300"
+              >
+                Cancel
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       ) : null}
     </div>
   );
