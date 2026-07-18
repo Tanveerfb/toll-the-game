@@ -5,7 +5,11 @@
 > engine work in "Systems required" below.
 
 - **Color:** Dark | **Tags:** [Demon] | **Tier:** elite (3 actions/turn)
-- **No ult gauge** — the "SP Skill" is the special, auto-fired (see timers).
+- **Ult gauge cap = 10** (not the standard 5 — per-character override; a new
+  engine field, since the cap is currently hardcoded 5). Fills via played cards
+  + merges like anyone else; the ult card is guaranteed by the deck at 10.
+- The "SP Skill" is a separate auto-fired special (see timers), distinct from
+  the Ultimate.
 - **Multi-phase "hearts"** (7DSGC Ragnarok demonic-beast model): a phase ends
   when its HP bar hits 0, then the next phase begins with a fresh bar.
 
@@ -29,8 +33,11 @@
   be the SP Skill (SP is never a normal AI pick).
 - **SP Passive 2:** immune to crowd control — **stun/freeze** only (freeze = a
   stun variant). Seal is NOT blocked. Future CC types join this list.
-- **SP Passive 3:** on **turn 10** (of the phase): x2 ATK, DEF, **and max HP**;
+- **SP Passive 3:** from **turn 10** (of the phase): x2 ATK, DEF, **and max HP**;
   current HP scales by the same ratio (e.g. 1000/3000 -> 2000/6000).
+  **Uncancellable, fires once.**
+- **Ultimate:** 500% ATK to one enemy; **disables attack skills for 2 turns**
+  (seal, sealType attack).
 
 ## Phase 2 — HP 4000 | ATK 210 | DEF 145
 - **Skill 1:** **Pierce** [150/180/250] damage to all enemies.
@@ -42,6 +49,7 @@
   CC immunity; turn-10 x2 spike).
 - **SP Passive 4:** from **turn 10** (of the phase), all enemies lose 10% of
   their max HP every turn.
+- **Ultimate:** 600% ATK to one enemy; **fills own ult gauge by 3**.
 
 ## New mechanic: Corrosion
 - DoT debuff. Each stack deals **10% of the target's MAX HP per turn**, ticking
@@ -63,8 +71,11 @@
    phase transitions with the reset/persist rules above.
 3. **New mechanics/hooks:** Corrosion (maxHP% DoT, uncapped); CC-immunity
    (block stun); auto-SP-timer (forced Nth action every 3rd phase-turn);
-   per-phase turn counter; turn-N stat spike incl. max-HP scaling; the
-   "+X% dmg vs corroded" and "debuff-count -> ATK" passives.
+   per-phase turn counter; turn-N stat spike incl. max-HP scaling (uncancellable,
+   once); the "+X% dmg vs corroded" and "debuff-count -> ATK" passives;
+   **per-character ult-gauge cap** (Molvarr = 10; replace hardcoded 5s in
+   gameStore/BattleProvider/deck refill/AI/info-panel with a `ultGaugeMax`
+   field, default 5). P1 ult = seal-attack (existing); P2 ult = gainUltGauge 3.
 4. **Molvarr kit data** authored against the new schema.
 5. **Kit Lab boss mode** (later — v2 of the tool).
 
