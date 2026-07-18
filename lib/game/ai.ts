@@ -1,5 +1,5 @@
 import { BattleCharacter } from "@/types/character";
-import { Action } from "@/types/action";
+import { Action, ActionCard } from "@/types/action";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
 
@@ -67,20 +67,34 @@ function buffAddsSomethingNew(
   );
 }
 
+/** One thing an enemy can do this action: a skill, plus (when it came from the
+ * hand) the card's rank and id so the loop can resolve rank + consume it. */
+interface Play {
+  skill: SkillCard | UltimateCard;
+  rank?: 1 | 2 | 3;
+  cardId?: string;
+}
+
 /**
  * Picks a single AI action from the current battle state. Call once per enemy
  * action so each decision sees the previous one's result; pass the shared
  * `context` so the per-turn caps hold. Returns null when no enemy can act or
  * no player is alive.
  *
- * Priority (ruling 2026-07-13): ultimate (gauge full) → a NEW buff (max 1/turn)
- * or a heal when an ally is under 50% → stance (max 1/turn, not already in one)
- * → debuff/disable (max 1/turn) → attack → any remaining skill.
+ * When `hand` is provided, the enemy plays ONLY cards in that hand (the headless
+ * 7DS GC deck — same RNG/merge fairness as the player), and the returned action
+ * carries the card's rank + id. When omitted, it falls back to picking from each
+ * enemy's full skill list at rank 1 (legacy / tests).
+ *
+ * Priority (ruling 2026-07-13): ultimate → a NEW buff (max 1/turn) or a heal
+ * when an ally is under 50% → stance (max 1/turn, not already in one) →
+ * debuff/disable (max 1/turn) → attack → any remaining skill.
  */
 export function getAIMove(
   enemyTeam: BattleCharacter[],
   playerTeam: BattleCharacter[],
   context: AITurnContext = freshAITurnContext(),
+  hand?: ActionCard[],
 ): Action | null {
   // Subs cannot act or be targeted
   const alivePlayers = playerTeam.filter((p) => p.currentHP > 0 && !p.isSub);
@@ -104,10 +118,27 @@ export function getAIMove(
 
   const attackSealed = (e: BattleCharacter) =>
     e.debuffs.some((d) => d.type === "seal" && d.sealType === "attack");
-  const skillOfType = (e: BattleCharacter, type: string) =>
-    e.skills.find(
-      (s) => s.type === type && !(attackSealed(e) && s.type === "attack"),
+
+  // The plays available to an enemy: hand cards for that enemy (headless deck),
+  // or its full skill list when no hand is supplied.
+  const playsFor = (e: BattleCharacter): Play[] => {
+    if (hand) {
+      return hand
+        .filter((c) => c.sourceInstanceId === e.instanceId)
+        .map((c) => ({ skill: c.skill, rank: c.rank, cardId: c.id }));
+    }
+    return e.skills.map((s) => ({ skill: s }));
+  };
+
+  const playOfType = (e: BattleCharacter, type: string): Play | undefined =>
+    playsFor(e).find(
+      (p) => p.skill.type === type && !(attackSealed(e) && p.skill.type === "attack"),
     );
+
+  const ultPlayFor = (e: BattleCharacter): Play | undefined => {
+    if (hand) return playsFor(e).find((p) => p.skill.type === "ultimate");
+    return e.ultimate && e.ultGauge >= 5 ? { skill: e.ultimate } : undefined;
+  };
 
   // A taunted enemy must strike its taunter; otherwise the lowest-HP player.
   const attackTargetFor = (e: BattleCharacter): BattleCharacter => {
@@ -125,42 +156,44 @@ export function getAIMove(
 
   const action = (
     e: BattleCharacter,
-    skill: SkillCard | UltimateCard,
+    play: Play,
     target: BattleCharacter,
   ): Action => ({
     sourceInstanceId: e.instanceId,
-    skill,
+    skill: play.skill,
     targetInstanceId: target.instanceId,
+    ...(play.rank ? { rank: play.rank } : {}),
+    ...(play.cardId ? { cardId: play.cardId } : {}),
   });
 
-  // Tier 1 — Ultimate, whenever any enemy's gauge is full.
-  const ultReady = actingPool.filter((e) => e.ultimate && e.ultGauge >= 5);
+  // Tier 1 — Ultimate.
+  const ultReady = actingPool.filter((e) => ultPlayFor(e));
   if (ultReady.length > 0) {
     const e = pick(ultReady);
-    return action(e, e.ultimate!, attackTargetFor(e));
+    return action(e, ultPlayFor(e)!, attackTargetFor(e));
   }
 
   // Tier 2a — a buff that actually adds something (max 1/turn).
   if (context.buffsUsed < 1) {
     const buffers = actingPool.filter((e) => {
-      const s = skillOfType(e, "buff");
-      return s !== undefined && buffAddsSomethingNew(e, s);
+      const p = playOfType(e, "buff");
+      return p !== undefined && buffAddsSomethingNew(e, p.skill as SkillCard);
     });
     if (buffers.length > 0) {
       const e = pick(buffers);
-      return action(e, skillOfType(e, "buff")!, e);
+      return action(e, playOfType(e, "buff")!, e);
     }
   }
 
   // Tier 2b — heal/cleanse when an ally is under 50%.
   if (someAllyLow) {
     const healers = actingPool.filter(
-      (e) => skillOfType(e, "heal") || skillOfType(e, "cleanse"),
+      (e) => playOfType(e, "heal") || playOfType(e, "cleanse"),
     );
     if (healers.length > 0) {
       const e = pick(healers);
-      const s = (skillOfType(e, "heal") || skillOfType(e, "cleanse"))!;
-      return action(e, s, lowestAlly);
+      const p = (playOfType(e, "heal") || playOfType(e, "cleanse"))!;
+      return action(e, p, lowestAlly);
     }
   }
 
@@ -168,37 +201,47 @@ export function getAIMove(
   if (context.stancesUsed < 1) {
     const stancers = actingPool.filter(
       (e) =>
-        skillOfType(e, "stance") && !e.buffs.some((b) => b.type === "stance"),
+        playOfType(e, "stance") && !e.buffs.some((b) => b.type === "stance"),
     );
     if (stancers.length > 0) {
       const e = pick(stancers);
-      return action(e, skillOfType(e, "stance")!, e);
+      return action(e, playOfType(e, "stance")!, e);
     }
   }
 
   // Tier 4 — debuff / disable (max 1/turn).
   if (context.debuffsUsed < 1) {
     const debuffers = actingPool.filter(
-      (e) => skillOfType(e, "debuff") || skillOfType(e, "disable"),
+      (e) => playOfType(e, "debuff") || playOfType(e, "disable"),
     );
     if (debuffers.length > 0) {
       const e = pick(debuffers);
-      const s = (skillOfType(e, "debuff") || skillOfType(e, "disable"))!;
-      return action(e, s, attackTargetFor(e));
+      const p = (playOfType(e, "debuff") || playOfType(e, "disable"))!;
+      return action(e, p, attackTargetFor(e));
     }
   }
 
   // Tier 5 — attack.
-  const attackers = actingPool.filter((e) => skillOfType(e, "attack"));
+  const attackers = actingPool.filter((e) => playOfType(e, "attack"));
   if (attackers.length > 0) {
     const e = pick(attackers);
-    return action(e, skillOfType(e, "attack")!, attackTargetFor(e));
+    return action(e, playOfType(e, "attack")!, attackTargetFor(e));
   }
 
-  // Tier 6 — any remaining usable skill (executeSkill safely fizzles a sealed
-  // cast if that's all that's left).
-  const e = pick(actingPool);
-  const s = e.skills.find((sk) => !(attackSealed(e) && sk.type === "attack")) ||
-    e.skills[0];
-  return action(e, s, attackTargetFor(e));
+  // Tier 6 — any remaining usable play (executeSkill safely fizzles a sealed
+  // cast if that's all that's left). Enemies with an empty hand can't act.
+  const playablePool = actingPool.filter((e) => {
+    const plays = playsFor(e);
+    return (
+      plays.some((p) => !(attackSealed(e) && p.skill.type === "attack")) ||
+      plays.length > 0
+    );
+  });
+  if (playablePool.length === 0) return null;
+  const e = pick(playablePool);
+  const plays = playsFor(e);
+  const play =
+    plays.find((p) => !(attackSealed(e) && p.skill.type === "attack")) ??
+    plays[0];
+  return action(e, play, attackTargetFor(e));
 }

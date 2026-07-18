@@ -15,6 +15,9 @@ export interface Action {
   targetInstanceId: string;
   /** Card rank at resolution time. Absent (AI/legacy) means rank 1. Ultimates ignore it. */
   rank?: 1 | 2 | 3;
+  /** When the AI played from its hand: the consumed card's id (battle loop
+   * removes it). Absent for the legacy skill-based path. */
+  cardId?: string;
 }
 
 export type TurnActions = (Action | null)[];

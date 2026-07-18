@@ -14,6 +14,7 @@ import {
   noteAIAction,
 } from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
+import { applyAdjacentMerges } from "@/lib/game/deck";
 import { tickTeamBuffs, tickTeamDebuffs } from "@/lib/game/tick";
 import { syncExtortLinks } from "@/lib/game/effects";
 import { ensureFieldUnit, promoteSubs } from "@/lib/game/sub";
@@ -68,6 +69,9 @@ export default function BattleProvider({
     addToBattleLog,
     initializeDeck,
     drawCards,
+    initializeEnemyDeck,
+    drawEnemyCards,
+    setEnemyDeck,
     actionQueue,
     // clearActionQueue is no longer needed; actions are resolved one by one.
     removeDeadCharacterCards,
@@ -131,6 +135,7 @@ export default function BattleProvider({
 
         if (battlePhase === "OnBattleStart") {
           initializeDeck();
+          initializeEnemyDeck();
         }
 
         // System ticks (ruling #21): buffs/HoT expire at the owner's turn
@@ -317,10 +322,18 @@ export default function BattleProvider({
   function resolveEnemyTurnWrapper() {
     if (battlePhase !== "EnemyAction") return;
 
-    let currentTeams = { playerTeam, enemyTeam };
+    // Refill the enemy hand to capacity first (RNG + auto-merge, same rules as
+    // the player deck; merges grant enemy ult gauge). The AI then plays only
+    // from this hand — headless 7DS GC.
+    drawEnemyCards();
+    let hand = useGameStore.getState().enemyDeck;
+    let currentTeams = {
+      playerTeam: useGameStore.getState().playerTeam,
+      enemyTeam: useGameStore.getState().enemyTeam,
+    };
 
-    // Ruling #39: 1 action per living field member, max 3 — any living
-    // enemy, any order. Each decision sees the post-previous-action state.
+    // Ruling #39: 1 action per living field member, max 3 (elite = 3). Each
+    // decision sees the post-previous-action state and the shrinking hand.
     const actionCount = enemyActionsForTurn(currentTeams.enemyTeam);
     const aiContext = freshAITurnContext();
     for (let i = 0; i < actionCount; i++) {
@@ -328,6 +341,7 @@ export default function BattleProvider({
         currentTeams.enemyTeam,
         currentTeams.playerTeam,
         aiContext,
+        hand,
       );
       if (!action) break;
       noteAIAction(aiContext, action.skill.type);
@@ -341,9 +355,40 @@ export default function BattleProvider({
         useGameStore.getState().addBattleEvent,
       );
 
+      // Consume the played card from the hand; auto-merge what it exposed
+      // (grants that enemy ult gauge, mirroring the player deck).
+      if (action.cardId) {
+        const merged = applyAdjacentMerges(
+          hand.filter((c) => c.id !== action.cardId),
+        );
+        hand = merged.deck;
+        if (merged.mergeCount > 0) {
+          currentTeams.enemyTeam = currentTeams.enemyTeam.map((char) => {
+            const gains = merged.mergeSourceIds.filter(
+              (id) => id === char.instanceId,
+            ).length;
+            return gains > 0
+              ? { ...char, ultGauge: Math.min(5, char.ultGauge + gains) }
+              : char;
+          });
+        }
+      }
+
       const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
       deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
 
+      // A dead enemy's cards leave the hand.
+      const deadEnemyIds = new Set(
+        currentTeams.enemyTeam
+          .filter((c) => c.currentHP <= 0)
+          .map((c) => c.instanceId),
+      );
+      if (deadEnemyIds.size > 0) {
+        hand = hand.filter((c) => !deadEnemyIds.has(c.sourceInstanceId));
+      }
+
+      // +1 ult gauge for playing a card (0 on the ult itself) — same per-card
+      // grant the player gets.
       currentTeams.enemyTeam = currentTeams.enemyTeam.map((char) =>
         char.instanceId === action.sourceInstanceId
           ? {
@@ -362,6 +407,7 @@ export default function BattleProvider({
       if (allPlayersDead) break;
     }
 
+    setEnemyDeck(hand);
     updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
     setEnemyTurns((prev) => prev + 1);
     advancePhase();

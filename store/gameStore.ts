@@ -3,6 +3,12 @@ import { BattleCharacter } from "@/types/character";
 import { BattlePhase } from "@/types/mechanic";
 import { ActionCard } from "@/types/action";
 import { BattleActionEvent } from "@/types/battleEvent";
+import {
+  applyAdjacentMerges,
+  initialCardsFor,
+  maxHandCapacity,
+  refillHand,
+} from "@/lib/game/deck";
 
 export type SequencedBattleEvent = BattleActionEvent & { id: number };
 
@@ -22,61 +28,6 @@ export function isSingleAllyTarget(card: ActionCard): boolean {
         m.ranks[rankIndex] === true),
   );
   return !aoeActive;
-}
-
-function canCardsAutoMerge(left: ActionCard, right: ActionCard): boolean {
-  return (
-    left.rank < 3 &&
-    right.rank < 3 &&
-    left.sourceInstanceId === right.sourceInstanceId &&
-    left.skill.skillName === right.skill.skillName &&
-    left.rank === right.rank
-  );
-}
-
-function applyAdjacentMerges(cards: ActionCard[]): {
-  deck: ActionCard[];
-  mergeCount: number;
-  mergeSourceIds: string[];
-  notices: string[];
-} {
-  const next = [...cards];
-  const mergeSourceIds: string[] = [];
-  const notices: string[] = [];
-  let mergeCount = 0;
-
-  let index = 0;
-  while (index < next.length - 1) {
-    const current = next[index];
-    const neighbor = next[index + 1];
-
-    if (!canCardsAutoMerge(current, neighbor)) {
-      index += 1;
-      continue;
-    }
-
-    const newRank = Math.min(3, current.rank + 1) as 1 | 2 | 3;
-    next[index] = {
-      ...current,
-      rank: newRank,
-    };
-    next.splice(index + 1, 1);
-
-    mergeCount += 1;
-    mergeSourceIds.push(current.sourceInstanceId);
-    notices.push(`${current.skill.skillName} auto-merged to R${newRank}.`);
-
-    if (index > 0) {
-      index -= 1;
-    }
-  }
-
-  return {
-    deck: next,
-    mergeCount,
-    mergeSourceIds,
-    notices,
-  };
 }
 
 function moveCardById(
@@ -116,6 +67,9 @@ interface BattleState {
 
   // Deck System
   deck: ActionCard[];
+  /** Enemy side's hidden hand — same 7DS GC rules as the player deck, played
+   * by the AI (headless, no manual merging). Managed by the battle loop. */
+  enemyDeck: ActionCard[];
   actionQueue: ActionCard[];
   selectedEnemyMarker: string | null;
   selectedAllyMarker: string | null;
@@ -162,6 +116,12 @@ interface BattleState {
   clearInteractionNotice: () => void;
   initializeDeck: () => void;
   drawCards: () => void;
+  /** Seed the enemy hand from the living field enemies (battle start). */
+  initializeEnemyDeck: () => void;
+  /** RNG-refill the enemy hand to capacity, auto-merging (grants enemy gauge). */
+  drawEnemyCards: () => void;
+  /** Replace the enemy hand (the battle loop consumes cards as the AI plays). */
+  setEnemyDeck: (deck: ActionCard[]) => void;
   selectCard: (cardId: string) => void;
   /** Resolve a pending single-ally card by queuing it against `allyInstanceId`. */
   confirmAllyTarget: (allyInstanceId: string) => void;
@@ -227,6 +187,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
   battleSpeed: 1,
 
   deck: [],
+  enemyDeck: [],
   actionQueue: [],
   selectedEnemyMarker: null,
   selectedAllyMarker: null,
@@ -274,6 +235,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
       battleEvents: [],
       battlePhase: "initializing",
       deck: [],
+      enemyDeck: [],
       actionQueue: [],
       selectedEnemyMarker: null,
       selectedAllyMarker: null,
@@ -323,21 +285,37 @@ export const useGameStore = create<BattleState>((set, get) => ({
     const { playerTeam } = get();
     // Subs contribute no cards until promoted to the field
     const living = playerTeam.filter((c) => c.currentHP > 0 && !c.isSub);
-    const initialCards: ActionCard[] = [];
+    set({ deck: initialCardsFor(living), actionQueue: [] });
+  },
 
-    living.forEach((c) => {
-      // 2 skills from each char
-      c.skills.forEach((skill) => {
-        initialCards.push({
-          id: Math.random().toString(36).substring(2, 9),
-          sourceInstanceId: c.instanceId,
-          skill,
-          rank: 1,
-        });
-      });
+  initializeEnemyDeck: () => {
+    const { enemyTeam } = get();
+    const living = enemyTeam.filter((c) => c.currentHP > 0 && !c.isSub);
+    set({ enemyDeck: initialCardsFor(living) });
+  },
+
+  setEnemyDeck: (deck) => set({ enemyDeck: deck }),
+
+  drawEnemyCards: () => {
+    const { enemyTeam, enemyDeck } = get();
+    const living = enemyTeam.filter((c) => c.currentHP > 0 && !c.isSub);
+    const fieldCount = enemyTeam.filter((c) => !c.isSub).length;
+    const maxCapacity = maxHandCapacity(fieldCount);
+    if (enemyDeck.length >= maxCapacity || living.length === 0) return;
+
+    const result = refillHand({
+      hand: enemyDeck,
+      livingUnits: living,
+      maxCapacity,
+      reservedCards: enemyDeck,
     });
 
-    set({ deck: initialCards, actionQueue: [] });
+    const updatedEnemies = enemyTeam.map((c) => {
+      const gain = result.gaugeGains[c.instanceId] ?? 0;
+      return gain > 0 ? { ...c, ultGauge: Math.min(5, c.ultGauge + gain) } : c;
+    });
+
+    set({ enemyDeck: result.deck, enemyTeam: updatedEnemies });
   },
 
   drawCards: () => {
@@ -345,99 +323,33 @@ export const useGameStore = create<BattleState>((set, get) => ({
     // Subs contribute no cards until promoted to the field
     const livingChars = playerTeam.filter((c) => c.currentHP > 0 && !c.isSub);
     const fieldCount = playerTeam.filter((c) => !c.isSub).length;
-
-    // Max amount is 4/5/7/8 for 1/2/3/4 field characters
-    const maxCapacityMap = [0, 4, 5, 7, 8];
-    const maxCapacity = maxCapacityMap[fieldCount] || 8;
+    const maxCapacity = maxHandCapacity(fieldCount);
 
     if (deck.length >= maxCapacity || livingChars.length === 0) return;
 
-    // The hand is never reset: leftover cards persist and new cards are
-    // drawn purely at random from the living field units' skill pools,
-    // one at a time, auto-merging adjacent identical cards as they land
-    // (7DS GC behavior; each merge grants that character +1 ult gauge)
-    // until the hand is full.
-    let currentDeck = [...deck];
-    let updatedTeam = playerTeam;
-    const notices: string[] = [];
-    let totalMerges = 0;
-
-    const pool: { charId: string; skill: any }[] = [];
-    livingChars.forEach((c) => {
-      c.skills.forEach((s) => {
-        pool.push({ charId: c.instanceId, skill: s });
-      });
+    // The hand is never reset: leftover cards persist and new cards are drawn
+    // purely at random, auto-merging adjacent identical cards (each merge grants
+    // that character +1 ult gauge). Shared with the enemy side via lib/game/deck.
+    const result = refillHand({
+      hand: deck,
+      livingUnits: livingChars,
+      maxCapacity,
+      reservedCards: [...deck, ...actionQueue],
     });
-    if (pool.length === 0) return;
 
-    // Ult eligibility is snapshotted BEFORE this refill: a gauge filled by
-    // merges during the refill guarantees the ultimate on the NEXT turn's
-    // draw, never in the same refill.
-    const ultEligible = new Set(
-      livingChars
-        .filter(
-          (c) =>
-            c.ultGauge >= 5 &&
-            c.ultimate &&
-            ![...deck, ...actionQueue].some(
-              (card) =>
-                card.sourceInstanceId === c.instanceId &&
-                card.skill.type === "ultimate",
-            ),
-        )
-        .map((c) => c.instanceId),
-    );
-
-    const nextCard = (): ActionCard => {
-      // A pre-refill full gauge guarantees that character's ultimate
-      // (one copy in hand/queue at a time)
-      const ultReadyId = livingChars.find((c) =>
-        ultEligible.has(c.instanceId),
-      )?.instanceId;
-      if (ultReadyId) {
-        ultEligible.delete(ultReadyId);
-        const owner = livingChars.find((c) => c.instanceId === ultReadyId)!;
-        return {
-          id: Math.random().toString(36).substring(2, 9),
-          sourceInstanceId: owner.instanceId,
-          skill: owner.ultimate!,
-          rank: 1,
-        };
-      }
-      const picked = pool[Math.floor(Math.random() * pool.length)];
-      return {
-        id: Math.random().toString(36).substring(2, 9),
-        sourceInstanceId: picked.charId,
-        skill: picked.skill,
-        rank: 1,
-      };
-    };
-
-    while (currentDeck.length < maxCapacity) {
-      currentDeck.push(nextCard());
-
-      const mergeResult = applyAdjacentMerges(currentDeck);
-      currentDeck = mergeResult.deck;
-
-      if (mergeResult.mergeCount > 0) {
-        totalMerges += mergeResult.mergeCount;
-        notices.push(...mergeResult.notices);
-        updatedTeam = updatedTeam.map((char) => {
-          const gains = mergeResult.mergeSourceIds.filter(
-            (sourceId) => sourceId === char.instanceId,
-          ).length;
-          if (gains <= 0) return char;
-          return { ...char, ultGauge: Math.min(5, char.ultGauge + gains) };
-        });
-      }
-    }
+    const updatedTeam = playerTeam.map((char) => {
+      const gain = result.gaugeGains[char.instanceId] ?? 0;
+      return gain > 0
+        ? { ...char, ultGauge: Math.min(5, char.ultGauge + gain) }
+        : char;
+    });
 
     set({
-      deck: currentDeck,
+      deck: result.deck,
       playerTeam: updatedTeam,
       interactionNotice:
-        totalMerges > 0
-          ? `${notices.join(" ")} +${totalMerges} Ult Gauge.`
+        result.mergeCount > 0
+          ? `${result.notices.join(" ")} +${result.mergeCount} Ult Gauge.`
           : get().interactionNotice,
     });
   },
