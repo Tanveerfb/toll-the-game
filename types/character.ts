@@ -4,6 +4,21 @@ import type { UltimateCard } from "./ultimateCard";
 import type { StatusEffect } from "./mechanic";
 import type { Passive } from "./passive";
 
+/**
+ * A single phase of a multi-phase ("hearts") boss (7DS GC Ragnarok model). Each
+ * phase has its own stat block + skill/passive set; the boss transitions to the
+ * next phase when the current one's HP hits 0. Skills can be any count and there
+ * can be multiple passives (unlike the 2-skill/1-passive playable kit).
+ */
+export interface CharacterPhase {
+  hp: number;
+  atk: number;
+  def: number;
+  skills: SkillCard[];
+  ultimate?: UltimateCard;
+  passives?: Passive[];
+}
+
 export interface Character {
   id: string;
   name: string;
@@ -12,6 +27,9 @@ export interface Character {
   def: number;
   hp: number;
   tags?: string[]; // E.g. [FEMALE], [KHALSA]
+  /** Multi-phase boss definition. Phase 0's stats/skills seed the unit; on
+   * HP 0 it transitions to the next phase (see lib/game/phases.ts). */
+  phases?: CharacterPhase[];
   /**
    * Enemy action-economy tier. "elite" units (named bosses) act the full
    * 3× per turn even solo; unset = low-mid and folds into the team +1 bonus.
@@ -36,6 +54,8 @@ export interface BattleCharacter extends Character {
   debuffs: StatusEffect[];
   passiveState: Record<string, unknown>;
   team: "player" | "enemy";
+  /** Current phase index for a multi-phase boss (0-based). Absent = phase 0. */
+  phaseIndex?: number;
   /**
    * Sub (bench) unit: passives stay active, but the unit contributes no
    * cards, takes no AI actions, and cannot be targeted. Promoted to the

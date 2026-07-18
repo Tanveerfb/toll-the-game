@@ -64,6 +64,20 @@ export const characterSchema = z.looseObject({
   skills: z.array(skillSchema).length(2),
   ultimate: skillSchema.optional(),
   passive: passiveSchema.optional(),
+  // Multi-phase boss: each phase is its own stat block + (any-count) skills +
+  // (multiple) passives. Only bosses carry this.
+  phases: z
+    .array(
+      z.looseObject({
+        hp: z.number().positive(),
+        atk: z.number().positive(),
+        def: z.number().positive(),
+        skills: z.array(skillSchema),
+        ultimate: skillSchema.optional(),
+        passives: z.array(passiveSchema).optional(),
+      }),
+    )
+    .optional(),
 });
 
 export function validateCharacters(characters: unknown[]): void {
