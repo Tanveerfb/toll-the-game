@@ -16,6 +16,7 @@ import {
 import { registerCharacterPassives } from "@/lib/game/passive";
 import { applyAdjacentMerges } from "@/lib/game/deck";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
+import { transitionBossPhases } from "@/lib/game/phases";
 import { tickTeamBuffs, tickTeamDebuffs } from "@/lib/game/tick";
 import { syncExtortLinks } from "@/lib/game/effects";
 import { ensureFieldUnit, promoteSubs } from "@/lib/game/sub";
@@ -208,6 +209,17 @@ export default function BattleProvider({
           );
         }
 
+        // Multi-phase boss: transition a boss whose bar emptied (e.g. from a
+        // DoT tick) before deciding victory; redraw its hand next enemy turn.
+        const phaseStep = transitionBossPhases(updatedTeams.enemyTeam);
+        if (phaseStep.transitions.length > 0) {
+          updatedTeams.enemyTeam = phaseStep.team;
+          phaseStep.transitions.forEach((t) =>
+            addToBattleLog(`[System] ${t}`),
+          );
+          setEnemyDeck([]);
+        }
+
         // Sync modified states to Zustand
         updateTeams(updatedTeams.playerTeam, updatedTeams.enemyTeam);
 
@@ -297,6 +309,16 @@ export default function BattleProvider({
 
       // Remove processed card from the temporary queue
       remainingQueue.shift();
+
+      // Multi-phase boss: a boss whose bar just emptied transitions to its
+      // next phase (fresh HP) instead of dying. Clear the enemy hand so the
+      // enemy turn redraws from the new phase's skills.
+      const phaseStep = transitionBossPhases(currentTeams.enemyTeam);
+      if (phaseStep.transitions.length > 0) {
+        currentTeams.enemyTeam = phaseStep.team;
+        phaseStep.transitions.forEach((t) => addToBattleLog(`[System] ${t}`));
+        setEnemyDeck([]);
+      }
 
       // Ruling #43: once the last enemy dies, remaining queued cards
       // FIZZLE — no momentum, no gauge, straight to the win screen

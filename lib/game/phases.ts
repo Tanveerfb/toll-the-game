@@ -13,6 +13,26 @@ export function bossPhaseCount(char: { phases?: CharacterPhase[] }): number {
 }
 
 /**
+ * Map a team, transitioning any boss whose HP hit 0 into its next phase instead
+ * of leaving it dead. Returns the new team + a log line per transition. Call
+ * this after any damage to enemies, BEFORE deciding victory — so a phased boss
+ * at 0 HP with a later phase is not counted as defeated.
+ */
+export function transitionBossPhases(team: BattleCharacter[]): {
+  team: BattleCharacter[];
+  transitions: string[];
+} {
+  const transitions: string[] = [];
+  const next = team.map((c) => {
+    if (!shouldAdvancePhase(c)) return c;
+    const idx = (c.phaseIndex ?? 0) + 1;
+    transitions.push(`${c.name} breaks and enters Phase ${idx + 1}!`);
+    return enterBossPhase(c, idx);
+  });
+  return { team: next, transitions };
+}
+
+/**
  * A boss whose current HP hit 0 but still has a later phase should transition
  * rather than die.
  */

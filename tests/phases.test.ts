@@ -3,6 +3,7 @@ import {
   bossPhaseCount,
   enterBossPhase,
   shouldAdvancePhase,
+  transitionBossPhases,
 } from "@/lib/game/phases";
 import type { BattleCharacter, CharacterPhase } from "@/types/character";
 import type { SkillCard } from "@/types/skillCard";
@@ -85,5 +86,20 @@ describe("boss phases", () => {
     expect(next.debuffs).toEqual([]);
     expect(next.ultGauge).toBe(0);
     expect(next.passiveState).toEqual({});
+  });
+
+  it("transitionBossPhases advances a downed phased boss, not other enemies", () => {
+    const mob = boss({ instanceId: "e2", phases: undefined, currentHP: 0 });
+    const downedBoss = boss({ currentHP: 0, phaseIndex: 0 });
+    const result = transitionBossPhases([downedBoss, mob]);
+    expect(result.transitions).toHaveLength(1);
+    expect(result.team[0].phaseIndex).toBe(1); // boss advanced
+    expect(result.team[0].currentHP).toBe(4000);
+    expect(result.team[1].currentHP).toBe(0); // plain mob stays dead
+  });
+
+  it("transitionBossPhases is a no-op when nothing is downed", () => {
+    const result = transitionBossPhases([boss({ currentHP: 3000 })]);
+    expect(result.transitions).toHaveLength(0);
   });
 });
