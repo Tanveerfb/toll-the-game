@@ -24,16 +24,30 @@ const CHARACTERS_WITH_ART = new Set([
   "sara",
   "yalina",
   "seras",
-  // story-only NPC/enemy kits
+  // story-only examiners/officials (art locked, kit pending)
+  "chiara",
+  "isolde",
+]);
+
+// NPC/enemy art lives in public/npc/ instead of public/characters/.
+// Includes AI-invented generic enemies and boss copies of playable chars.
+const NPC_ART = new Set([
   "raider",
   "road_bandit",
   "wild_beast",
-  // NPC boss copy of a playable char (reuses lyra.png, tweaked stats)
+  // unrevealed Phase-1 qualifiers used as story enemies
+  "gale",
+  "frost",
+  "iron",
+  "prism",
+  // Ch8/9 lake boss (art only; premium kit pending - 2nd main boss)
+  "sea_monster",
+  // NPC boss copy of a playable char (reuses lyra art, tweaked stats)
   "lyra_npc",
 ]);
 
 export function getCharacterArt(id: string): string | null {
-  return CHARACTERS_WITH_ART.has(id)
-    ? `/characters/${id}.png?v=${ART_VERSION}`
-    : null;
+  if (NPC_ART.has(id)) return `/npc/${id}.png?v=${ART_VERSION}`;
+  if (CHARACTERS_WITH_ART.has(id)) return `/characters/${id}.png?v=${ART_VERSION}`;
+  return null;
 }

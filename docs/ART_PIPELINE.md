@@ -67,9 +67,32 @@ Locked design sheets live in `docs/design/characters/*.md` — they are the sour
 | killua | 777024 | canon (HxH collab) | danbooru tag `killua zoldyck` — first roll accepted |
 | leorio | 777125 | canon (HxH collab) | suit + teashades + energy fist. Bg came out blue instead of red; forcing red bg regressed the character (gaunt villain face), so blue bg accepted — the card frame supplies the red |
 
+### Story-only examiners/officials (2026-07-18)
+
+Bureau officials introduced in the story (Ch7+). Art locked; game kits deferred until the story confirms they recur. Appearance briefs live in the story-dev folder's `pending-char-generations.md` (read-only — separate session owns it). Bureau official uniform language: deep navy/indigo base, silver-white trim, gold Bureau seal accent.
+
+| Character | Seed | Design source | Notes |
+|---|---|---|---|
+| chiara | 888060 (batch idx 1) | brief: Aventurine x Menchi "The Dealer", Veil/Fortune Toll | platinum-blonde + gold eyes (hair/eyes were open in brief), navy dealer-coat + silver trim + gold seal, fanned poker hand in fingerless glove, floating dice/coins/cards. Hair/eye color AI-chosen — Tanveer approved the roll |
+| isolde | 888066 (batch idx 1) | brief: Isolde (FKotA) x Yelan, Starred Ledger, Fairy/Weave-Bind Toll | mature elegant graceful, sharp confident half-lidded gaze, silver-lavender wavy hair, violet eyes, prominent iridescent fairy wings, navy Bureau dress-coat + white jabot/gloves + jeweled brooch, violet binding-thread magic, dark starfield bg. Iterated 5 rounds (young->mature, soft->sharp, killed a painterly-grain regression from over-weighted negatives) |
+
+**Prompt-quality gotcha (2026-07-18):** over-weighting a costume-color token (navy coat at 1.45) plus stacking extra background emphasis ("glowing purple thread strands, magical particles") and negatives ("posterized, high contrast neon, oversaturated") tipped Animagine into a painterly/posterized filter and bled silver-lavender hair to pink. Fix: keep costume weight <=1.35, don't pile on background-emphasis tokens, add `noise, grainy, painterly filter, wavy distortion, oil painting` to negative, guard `(pink hair:1.3)`.
+
+### Unreleased / alternate art
+
+`public/unreleased/<id>_<variant>.png` holds approved-but-not-primary rolls of a character — kept for story panels or later swap-in. Not wired into `characterArt.ts` (which serves the single primary `public/characters/<id>.png`). Reference them by direct path where needed.
+
+| File | Character | Notes |
+|---|---|---|
+| chiara_alt-dealing.png | chiara | open dealing-palm pose, cards floating (alt to the primary fanned-hand roll, same batch as 54) |
+| isolde_alt-serene.png | isolde | warmer confident closed-eye smile, wings spread (alt to the primary sharp-gaze roll) |
+| sea_monster_alt.png | sea_monster | living behemoth, taller draping-armed lurker variant (alt to official 82) |
+| sea_monster_golem-core.png | sea_monster | early stone-golem take, centered w/ glowing star-core (pre-"make it alive" direction) |
+| sea_monster_golem-mossy.png | sea_monster | early stone-golem take, hunched mossy brute (pre-"make it alive" direction) |
+
 ### Story-only NPC/enemy art (v6 — 2026-07-12)
 
-Generic enemy kits — no character sheets, AI-invented per element. Shown only in the hidden `/archive/npc` page and in story battles.
+NPC/enemy art lives in **`public/npc/<id>.png`** (separated from playable `public/characters/` as of 2026-07-18). `getCharacterArt` routes NPC ids via the `NPC_ART` set to `/npc/`. Generic enemy kits — no character sheets, AI-invented per element. Shown only in the hidden `/archive/npc` page and in story battles.
 
 | Character | Seed | Design source | Notes |
 |---|---|---|---|
@@ -77,11 +100,28 @@ Generic enemy kits — no character sheets, AI-invented per element. Shown only 
 | road_bandit | 777202 | AI-invented (dark) | hooded desert ambusher, face in shadow, reverse-grip curved dagger, crouched ambush, dark violet/indigo swirl bg |
 | wild_beast | 777203 | AI-invented (green) | feral quadruped monster, green-black fur, glowing yellow eyes, bared fangs + curved claws, emerald bg |
 
+#### Unrevealed Phase-1 candidate enemies (2026-07-18)
+
+The 12 unnamed Phase-1 qualifiers (story silhouettes). Generated 4 as usable story enemies, generic tier, varied elements — AI-picked, Tanveer vetoes in review. Enemy-only kits (2 attack skills, existing mechanics only, no new mechanics per Tanveer). If any becomes playable, Tanveer crafts the playable kit himself.
+
+| Character | Seed | Element/role | Notes |
+|---|---|---|---|
+| gale | 777401 | wind / green striker | teal-green spiky hair, scout leathers + wind scarf, green gust swirls |
+| frost | 777402 | ice / blue control | pale-blue hair, white frost mage robe + fur trim, ice shards |
+| iron | 777403 | steel / dark tank | dark hair, heavy steel plate, glowing iron greatsword, sparks |
+| prism | 777404 | light / light support | white hair + gold eyes, white-gold radiant robe, crystal shards + light halo |
+
+#### Sea monster (Ch8 lake beast, 2026-07-18)
+
+| Character | Seed | Notes |
+|---|---|---|
+| sea_monster | 777307 (batch idx 1) | LIVING rock-armored behemoth (Tanveer: alive, not a mechanical golem - Duke/Batra provoke it and ride its lunges across the lake). Muscular grey rock-scaled hide, snarling frilled head, clawed limbs, moss, green acid veins, huge rock-shell back as a platform. Dedicated model replacing the Ch8 "reuse Wild Beast" note. Alt (81, taller draping-armed lurker) in `public/unreleased/sea_monster_alt.png`. **Kit deferred - will get a premium boss kit (2nd main boss after Tao), not a generic 2-skill enemy.** Design path: rejected serpent (65/66) then fleshy brute (71/72), landed on living-golem hybrid. |
+
 Full prompts recoverable from ComfyUI history / git log.
 
 ### NPC boss copies of playable characters (2026-07-12)
 
-When an official character appears as a story-battle enemy, it gets a dedicated `storyOnly` NPC kit with tweakable stats (raised HP for a multi-turn boss fight, `tier: "elite"` for 3 actions/turn). The NPC copy **reuses the playable character's art** — no regeneration: copy `public/characters/<base>.png` → `<base>_npc.png` and register `<base>_npc` in `characterArt.ts`.
+When an official character appears as a story-battle enemy, it gets a dedicated `storyOnly` NPC kit with tweakable stats (raised HP for a multi-turn boss fight, `tier: "elite"` for 3 actions/turn). The NPC copy **reuses the playable character's art** — no regeneration: copy `public/characters/<base>.png` → `public/npc/<base>_npc.png` and register `<base>_npc` in the `NPC_ART` set in `characterArt.ts`.
 
 | Character | Art source | Notes |
 |---|---|---|

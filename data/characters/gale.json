@@ -1,0 +1,43 @@
+{
+  "id": "gale",
+  "name": "Gale",
+  "color": "green",
+  "storyOnly": true,
+  "tags": ["Human"],
+  "lore": "One of the twenty who cleared Phase 1 without ever being named on the board. Fast enough that most opponents only registered the wind, not the hit.",
+  "atk": 165,
+  "def": 45,
+  "hp": 720,
+  "skills": [
+    {
+      "skillName": "Gust Flurry",
+      "description": "Does ATK-scaled damage to one enemy; Weakpoint deals bonus damage to debuffed enemies.",
+      "characterId": "gale",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [150, 185, 230],
+      "mechanics": [
+        {
+          "type": "weakpoint"
+        }
+      ]
+    },
+    {
+      "skillName": "Tailwind Slash",
+      "description": "Does ATK-scaled damage to one enemy; raises ATK for 2 turns.",
+      "characterId": "gale",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [110, 140, 175],
+      "mechanics": [
+        {
+          "type": "buff",
+          "stat": "atk",
+          "valuePercent": 25,
+          "duration": 2,
+          "targetSelf": true
+        }
+      ]
+    }
+  ]
+}

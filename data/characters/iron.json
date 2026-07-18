@@ -1,0 +1,42 @@
+{
+  "id": "iron",
+  "name": "Iron",
+  "color": "dark",
+  "storyOnly": true,
+  "tags": ["Human"],
+  "lore": "Cleared Phase 1 by outlasting everyone sent at him. No flourish, no wasted motion — just a wall that eventually walked forward.",
+  "atk": 120,
+  "def": 95,
+  "hp": 1150,
+  "skills": [
+    {
+      "skillName": "Crushing Blow",
+      "description": "Does Pierce ATK-scaled damage to one enemy.",
+      "characterId": "iron",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [150, 185, 230],
+      "mechanics": [
+        {
+          "type": "pierce"
+        }
+      ]
+    },
+    {
+      "skillName": "Iron Wall",
+      "description": "Takes a defensive stance, reducing damage taken for 2 turns.",
+      "characterId": "iron",
+      "type": "stance",
+      "statMultiplier": "def",
+      "damageRanked": [0, 0, 0],
+      "mechanics": [
+        {
+          "type": "stance",
+          "stat": "damageReduction",
+          "valueRanked": [25, 30, 40],
+          "durationRanked": [2, 2, 2]
+        }
+      ]
+    }
+  ]
+}

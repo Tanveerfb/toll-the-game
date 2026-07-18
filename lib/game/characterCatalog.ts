@@ -2,7 +2,10 @@ import ban from "@/data/characters/ban.json";
 import batra from "@/data/characters/batra.json";
 import diane from "@/data/characters/diane.json";
 import duke from "@/data/characters/duke.json";
+import frost from "@/data/characters/frost.json";
 import gabrist from "@/data/characters/gabrist.json";
+import gale from "@/data/characters/gale.json";
+import iron from "@/data/characters/iron.json";
 import gon from "@/data/characters/gon.json";
 import killua from "@/data/characters/killua.json";
 import leorio from "@/data/characters/leorio.json";
@@ -11,6 +14,7 @@ import lyraNpc from "@/data/characters/lyra_npc.json";
 import masterTao from "@/data/characters/master_tao.json";
 import meliodas from "@/data/characters/meliodas.json";
 import mustafa from "@/data/characters/mustafa.json";
+import prism from "@/data/characters/prism.json";
 import raider from "@/data/characters/raider.json";
 import roadBandit from "@/data/characters/road_bandit.json";
 import sara from "@/data/characters/sara.json";
@@ -70,8 +74,11 @@ const rawCharacters = [
   batra,
   diane,
   duke,
+  frost,
   gabrist,
+  gale,
   gon,
+  iron,
   killua,
   leorio,
   lyra,
@@ -79,6 +86,7 @@ const rawCharacters = [
   masterTao,
   meliodas,
   mustafa,
+  prism,
   raider,
   roadBandit,
   sara,

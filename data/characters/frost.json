@@ -1,0 +1,43 @@
+{
+  "id": "frost",
+  "name": "Frost",
+  "color": "blue",
+  "storyOnly": true,
+  "tags": ["Human"],
+  "lore": "A quiet Phase 1 qualifier who never threw the first strike. She just made sure the second one never landed.",
+  "atk": 130,
+  "def": 60,
+  "hp": 820,
+  "skills": [
+    {
+      "skillName": "Frost Lance",
+      "description": "Does ATK-scaled damage to one enemy; lowers DEF for 2 turns.",
+      "characterId": "frost",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [140, 175, 215],
+      "mechanics": [
+        {
+          "type": "debuff",
+          "stat": "def",
+          "valuePercent": 25,
+          "duration": 2
+        }
+      ]
+    },
+    {
+      "skillName": "Glacial Bind",
+      "description": "Does ATK-scaled damage to one enemy; Freezes them for 1 turn.",
+      "characterId": "frost",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [80, 100, 130],
+      "mechanics": [
+        {
+          "type": "stun",
+          "duration": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "id": "prism",
+  "name": "Prism",
+  "color": "light",
+  "storyOnly": true,
+  "tags": ["Human"],
+  "lore": "Passed Phase 1 without landing a single finishing blow herself. Every candidate she teamed with in the forest simply refused to fall.",
+  "atk": 115,
+  "def": 70,
+  "hp": 900,
+  "skills": [
+    {
+      "skillName": "Radiant Bolt",
+      "description": "Does ATK-scaled damage to one enemy.",
+      "characterId": "prism",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [120, 150, 190],
+      "mechanics": []
+    },
+    {
+      "skillName": "Blessing Light",
+      "description": "Heals all allies ATK-scaled and cleanses their debuffs.",
+      "characterId": "prism",
+      "type": "heal",
+      "statMultiplier": "atk",
+      "damageRanked": [90, 120, 170],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "cleanse"
+        }
+      ]
+    }
+  ]
+}
