@@ -2,6 +2,25 @@
 
 Solo dev + AI tooling. Ordered so every phase ends with something runnable. Mechanic/balance decisions marked **[Tanveer]** per division-of-labor rules.
 
+---
+
+## Forward Product Roadmap (2026-07-18, Tanveer's ordered sequence)
+
+**Principle: one feature at a time, fully polished, before starting the next.** No parallel half-built systems.
+
+The foundation (combat, kits, story P1-2, archive, art, auth) is solid enough to build the live game properly. Ordered:
+
+1. **[Tanveer] Finalize the world-boss kit** — the premium multi-phase sea-monster kit (see `docs/design/WORLD_BOSS_AND_ASCENSION_PLAN.md`, Concept A/B references). Blocks the world-boss update.
+2. **Game UI/UX tuning for players + SFX + music + misc** — the player-experience polish pass (mobile, juice, audio system, onboarding); the biggest gap per `docs/PRODUCT_AUDIT.md`.
+3. **World Boss + Ascension update** — leveling (base/59, ~3x with ascension bumps), stamina, world-boss encounter, drops/inventory. Reachable cap Lv40 this update. Spec: `WORLD_BOSS_AND_ASCENSION_PLAN.md`.
+4. **Gacha** — summon/banners/pity/ult-level dupes/currencies. Spec: `docs/design/GACHA_DESIGN.md`.
+5. **Patch-notes system + first patch notes** — in-game changelog + the ~3-week update cadence begins.
+6. **Monetization + game promotion** — commerce (payment, packs, battle pass), compliance, marketing.
+
+This supersedes the "Deliberately Out of Scope" note below — gacha/monetization are now IN scope, sequenced.
+
+---
+
 ## Phase 0 — Resurrect the Build ✅ (2026-07-06)
 
 - [x] Restore configs from `5bce3ad`: `package.json`, `package-lock.json`, `tsconfig.json`, `next.config.ts`, `postcss.config.mjs`, `eslint.config.mjs`, `.gitignore`

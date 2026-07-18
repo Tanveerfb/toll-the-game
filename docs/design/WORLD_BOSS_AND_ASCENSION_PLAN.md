@@ -16,10 +16,32 @@ Retrofits meta-progression onto a game that currently has none (fixed kits, rank
 | Entry gate | Stamina: cap **120**, regen **+1 / 5 min** (full in 10h), **40 per run** (3 runs/full bar) |
 | Rewards | Common **level-up mats** (per clear) + signature rare drop **"Sea Monster's Eye"** (working name) |
 | Sink | Every playable character gains a **level system** |
-| Stat growth | **Flat** per level, **per-character constant**, ~**2x base at cap** |
-| Stat formula | per-level gain = `base_stat / (cap - 1)` for ATK/DEF/HP → auto role-weighted, no hand-authored numbers |
-| Cap / bands | Tentative **Lv60, 6 ascension bands of 10** (Tanveer to confirm) |
-| Ascension gate | Crossing a band consumes **Eyes + other items**, **per-character requirements** (e.g. Duke = 6x Eye + extras) |
+| Stat growth | **Flat** per level, **per-character constant**. Leveling alone ~**2x base at Lv60**; **ascension stat bumps** add up to another ~1x → **~3x base total** at fully-ascended Lv60 |
+| Stat formula | leveling gain = `base_stat / (cap - 1)` per ATK/DEF/HP (auto role-weighted, no hand-authored numbers), PLUS a discrete flat bump at each ascension unlock (6 bumps summing to ~+1x base) |
+| Cap / bands | **Lv60, 6 ascension bands of 10** eventual. **This update caps reachable level at Lv40** (4 bands) — 50/60 come later |
+| Ascension gate | Crossing a band consumes `[boss signature drop] + [local specialty] + [currency]` (Genshin model), **per-character requirements** (e.g. Duke = 6x Sea Monster's Eye + local specialty + coin) |
+| Ultimate Level | Separate axis fed by **gacha dupes**, 1/6 -> 6/6. **Stat/multiplier bump only for now** (no Lv4/6 special effects yet; future chars may add them). Resolves STATUS open issue #6. See GACHA_DESIGN.md |
+
+## Ascension costs (LOCKED — first 3 bands)
+
+Signature boss material = **Sea Monster's Eye**. Local specialty = per-character theme-linked item. Currency = in-world money coin.
+
+| Band unlock | Boss material | Local specialty | Currency |
+|---|---|---|---|
+| Band 1 (→Lv20) | 3 | 10 | 10,000 |
+| Band 2 (→Lv30) | 6 | 15 | 25,000 |
+| Band 3 (→Lv40) | 10 | 25 | 50,000 |
+| Bands 4-6 (→Lv50/60) | TODO (later update) | TODO | TODO |
+
+Each band unlock also grants a **flat stat bump** (the ascension contribution toward ~3x total). Per-band bump distribution = tuning TODO.
+
+## World-boss rewards (LOCKED)
+
+Single fight, single multiplier for now (difficulty tiers = future / player-rank unlock). Per clear:
+- **1× Sea Monster's Eye guaranteed** + **10% chance of +1**.
+- **Up to 5× local-specialty materials** (random).
+- **Currency: random 2,000–10,000**.
+- Entry: **40 stamina**.
 
 ---
 
@@ -45,9 +67,10 @@ users/{uid} {
 - Guest mode: mirror the same shape in `playerStore` (localStorage) so unsigned players still progress; sync-up on login (union/merge like storyProgress).
 
 ### Stat application
-- `lib/game/stats.ts` gains a pre-step: `leveledBase = base + perLevelGain * (level - 1)`, applied before buffs/debuffs (which stay multiplicative on top).
-- `perLevelGain[stat] = round(base[stat] / (cap - 1))`.
-- Ascension caps the level: `maxLevel = ascension * 10` (band gating). Leveling past a band is blocked until the ascension item cost is paid.
+- `lib/game/stats.ts` gains a pre-step: `leveledBase = base + perLevelGain*(level-1) + ascensionBump(ascension)`, applied before buffs/debuffs (which stay multiplicative on top).
+- `perLevelGain[stat] = round(base[stat] / 59)` (leveling portion → ~2x at Lv60).
+- `ascensionBump` = discrete flat per stat added at each ascension unlock, summing to ~+1x base across 6 unlocks → **~3x base at fully-ascended Lv60**. Per-band distribution = tuning TODO.
+- Ascension caps the level: `maxLevel = ascension * 10`. Leveling past a band is blocked until the band's cost is paid. **This update: reachable cap = Lv40 (ascension 4 / band 3).**
 
 ---
 
@@ -77,9 +100,12 @@ The monster's **fight kit** (Concept A "Topple" / Concept B "Fury", see below) i
 
 ## Open design items (Tanveer)
 
-- Confirm cap/bands (Lv60 / 6× 10?).
-- Per-character ascension costs (Eye counts scaling per band + other items).
-- Common level-mat: name + drop quantity per clear.
-- World-boss **difficulty tiers** (scale HP/rewards so it stays a threat as rosters level).
-- Whether ascension grants bonuses beyond unlocking the next cap (Genshin gives ascension stat bumps + talent unlocks).
-- The monster's premium multi-phase kit (up to 12 skills).
+- **Per-level leveling fuel** — within a band, Lv→Lv cost: currency only, or currency + a common mat? (ascension band gates are specced above.)
+- **Ascension stat-bump distribution** — the flat per-stat bump at each of the 6 unlocks (sum ≈ +1x base).
+- **Ult per-level multiplier step** (stat-only for now).
+- **Bands 4-6 ascension costs** (later update; Lv40 is the current ceiling).
+- **Local specialty items** per remaining character (theme/backstory-linked).
+- **[TODO] The monster's premium multi-phase kit** (up to 12 skills) — Tanveer to bring. Concept A "Topple" / B "Wind-Up" above are the reference starting points.
+
+## Resolved (2026-07-18)
+Cap Lv60 eventual / **Lv40 reachable now**; ascension = boss drop + local specialty + currency (bands 1-3 costed above); ascension grants flat stat bumps (→~3x total); world boss = single fight/multiplier now (tiers = future); rewards = 1 Eye (+10% for +1) + up to 5 specialty mats + 2k-10k currency per clear; ult level = stat bump only for now.
