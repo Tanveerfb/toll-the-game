@@ -120,3 +120,13 @@ export function getPlayableCharacters(): CharacterData[] {
 export function getCharacterById(id: string): CharacterData | undefined {
   return characterMap.get(id);
 }
+
+/**
+ * Kit Lab (dev tool) only: inject/replace a draft kit at runtime so it can be
+ * launched into a practice battle before it's saved to disk. Not part of the
+ * static roster (getAllCharacters/characterIds are unchanged) — it only makes
+ * getCharacterById resolve the draft id for startCustomBattle.
+ */
+export function registerDraftCharacter(data: CharacterData): void {
+  characterMap.set(data.id, data);
+}
