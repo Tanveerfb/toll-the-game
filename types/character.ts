@@ -38,6 +38,8 @@ export interface Character {
   tier?: "elite";
   /** Ult-gauge capacity override (default 5). Molvarr boss = 10. */
   ultGaugeMax?: number;
+  /** Immune to crowd-control debuffs (stun/freeze). Molvarr SP Passive 2. */
+  ccImmune?: boolean;
   /** Exactly 2 skill cards */
   skills: [SkillCard, SkillCard];
   ultimate?: UltimateCard;

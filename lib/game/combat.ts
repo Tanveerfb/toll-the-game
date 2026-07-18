@@ -767,11 +767,15 @@ export function executeSkill(
           // Rank-conditional via durationRanked (e.g. [0,1,2]): 0 = inactive
           const stunDuration = mech.duration ?? 1;
           if (stunDuration > 0) {
-            updatedTarget.debuffs.push({
-              type: "stun",
-              debuffDuration: stunDuration,
-            });
-            targetEffects.push(`applied stun${formatTurns(stunDuration)}`);
+            if (updatedTarget.ccImmune) {
+              targetEffects.push("resisted stun (CC immune)");
+            } else {
+              updatedTarget.debuffs.push({
+                type: "stun",
+                debuffDuration: stunDuration,
+              });
+              targetEffects.push(`applied stun${formatTurns(stunDuration)}`);
+            }
           }
         }
         if (mech.type === "bleed") {

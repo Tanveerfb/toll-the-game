@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { tickTeamDebuffs } from "@/lib/game/tick";
+import { executeSkill } from "@/lib/game/combat";
 import { ultGaugeMax, DEFAULT_ULT_GAUGE_MAX } from "@/lib/game/ultGauge";
 import type { BattleCharacter } from "@/types/character";
 import type { StatusEffect } from "@/types/mechanic";
+import type { SkillCard } from "@/types/skillCard";
 
 function char(over: Partial<BattleCharacter> = {}): BattleCharacter {
   return {
@@ -84,5 +86,46 @@ describe("Corrosion DoT (10% max HP per stack per turn)", () => {
     team = tickTeamDebuffs(team, noop);
     expect(team[0].debuffs.some((d) => d.type === "corrosion")).toBe(false);
     expect(team[0].currentHP).toBe(800); // two ticks of 100
+  });
+});
+
+describe("CC immunity", () => {
+  const stunSkill: SkillCard = {
+    skillName: "Bash",
+    characterId: "p",
+    type: "attack",
+    statMultiplier: "atk",
+    damageRanked: [50, 50, 50],
+    mechanics: [{ type: "stun", duration: 1 }],
+  };
+
+  const run = (targetImmune: boolean) => {
+    const attacker = char({ instanceId: "p1", team: "player" });
+    const target = char({
+      instanceId: "e1",
+      team: "enemy",
+      ccImmune: targetImmune,
+    });
+    return executeSkill(
+      {
+        sourceInstanceId: "p1",
+        skill: stunSkill,
+        targetInstanceId: "e1",
+      },
+      { playerTeam: [attacker], enemyTeam: [target] },
+      noop,
+      0,
+      () => 0.99, // never evade
+    );
+  };
+
+  it("blocks stun on a CC-immune target", () => {
+    const res = run(true);
+    expect(res.enemyTeam[0].debuffs.some((d) => d.type === "stun")).toBe(false);
+  });
+
+  it("still stuns a normal target", () => {
+    const res = run(false);
+    expect(res.enemyTeam[0].debuffs.some((d) => d.type === "stun")).toBe(true);
   });
 });

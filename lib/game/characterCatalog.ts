@@ -65,6 +65,8 @@ export interface CharacterData {
   tier?: "elite";
   /** Ult-gauge capacity override (default 5). See lib/game/ultGauge.ts. */
   ultGaugeMax?: number;
+  /** Immune to crowd-control debuffs (stun/freeze). */
+  ccImmune?: boolean;
   skills: CharacterSkillData[];
   ultimate?: CharacterSkillData;
   passive?: CharacterPassiveData;
