@@ -15,6 +15,7 @@ import {
 } from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
 import { applyAdjacentMerges } from "@/lib/game/deck";
+import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { tickTeamBuffs, tickTeamDebuffs } from "@/lib/game/tick";
 import { syncExtortLinks } from "@/lib/game/effects";
 import { ensureFieldUnit, promoteSubs } from "@/lib/game/sub";
@@ -289,7 +290,7 @@ export default function BattleProvider({
               ultGauge:
                 action.skill.type === "ultimate"
                   ? 0
-                  : Math.min(5, char.ultGauge + 1),
+                  : Math.min(ultGaugeMax(char), char.ultGauge + 1),
             }
           : char,
       );
@@ -368,7 +369,7 @@ export default function BattleProvider({
               (id) => id === char.instanceId,
             ).length;
             return gains > 0
-              ? { ...char, ultGauge: Math.min(5, char.ultGauge + gains) }
+              ? { ...char, ultGauge: Math.min(ultGaugeMax(char), char.ultGauge + gains) }
               : char;
           });
         }
@@ -396,7 +397,7 @@ export default function BattleProvider({
               ultGauge:
                 action.skill.type === "ultimate"
                   ? 0
-                  : Math.min(5, char.ultGauge + 1),
+                  : Math.min(ultGaugeMax(char), char.ultGauge + 1),
             }
           : char,
       );

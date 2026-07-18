@@ -63,6 +63,8 @@ export interface CharacterData {
    * the team +1-action bonus instead. See lib/game/ai.ts.
    */
   tier?: "elite";
+  /** Ult-gauge capacity override (default 5). See lib/game/ultGauge.ts. */
+  ultGaugeMax?: number;
   skills: CharacterSkillData[];
   ultimate?: CharacterSkillData;
   passive?: CharacterPassiveData;

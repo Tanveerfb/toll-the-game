@@ -52,6 +52,10 @@ export const MECHANIC_INFO: Record<MechanicType, MechanicInfo> = {
     desc: "Stores % of the hit, dealt per tick for N turns.",
     template: { damagePercent: 50, duration: 2, stacks: 1 },
   },
+  corrosion: {
+    desc: "Uncapped DoT: % of the target's MAX HP per stack per turn.",
+    template: { valuePercent: 10, duration: 2, stacks: 1 },
+  },
   ignite: { desc: "Applies Ignite stacks for N turns.", template: { stacks: 1, duration: 2 } },
   consumeIgnite: {
     desc: "Consumes Ignite for an effect (e.g. buffAtk) per stack.",

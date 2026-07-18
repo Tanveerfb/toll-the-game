@@ -2,6 +2,7 @@ import { BattleCharacter } from "@/types/character";
 import { Action, ActionCard } from "@/types/action";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
+import { ultGaugeMax } from "@/lib/game/ultGauge";
 
 /** Cap on actions the enemy side takes per enemy turn — any living enemy may act, in any order, no fixed pattern. */
 export const ENEMY_ACTIONS_PER_TURN = 3;
@@ -137,7 +138,9 @@ export function getAIMove(
 
   const ultPlayFor = (e: BattleCharacter): Play | undefined => {
     if (hand) return playsFor(e).find((p) => p.skill.type === "ultimate");
-    return e.ultimate && e.ultGauge >= 5 ? { skill: e.ultimate } : undefined;
+    return e.ultimate && e.ultGauge >= ultGaugeMax(e)
+      ? { skill: e.ultimate }
+      : undefined;
   };
 
   // A taunted enemy must strike its taunter; otherwise the lowest-HP player.

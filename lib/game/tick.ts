@@ -67,13 +67,20 @@ export function tickTeamDebuffs(
       passiveState: { ...original.passiveState },
     };
 
-    // Apply Damage-over-Time (DoT) and Decay effects
+    // Apply Damage-over-Time (DoT), Decay, and Corrosion effects
     const dotEffects = char.debuffs.filter(
-      (d) => d.type === "damageOverTime" || d.type === "decay",
+      (d) =>
+        d.type === "damageOverTime" ||
+        d.type === "decay" ||
+        d.type === "corrosion",
     );
     let totalDot = 0;
     dotEffects.forEach((dot) => {
-      if (dot.type === "decay" && dot.capturedDamage) {
+      if (dot.type === "corrosion") {
+        // % of the victim's MAX HP per stack — the uncapped boss gimmick.
+        const percent = dot.valuePercent ?? 10;
+        totalDot += Math.floor(char.hp * (percent / 100)) * (dot.stacks ?? 1);
+      } else if (dot.type === "decay" && dot.capturedDamage) {
         totalDot += dot.capturedDamage;
       } else if (dot.value) {
         totalDot += dot.value;

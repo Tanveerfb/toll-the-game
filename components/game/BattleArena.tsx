@@ -24,6 +24,7 @@ import { useBattleContext } from "@/hooks/BattleProvider";
 import type { BattleCharacter } from "@/types/character";
 import type { Color } from "@/types/color";
 import { getEffectiveAttack, getEffectiveDefense } from "@/lib/game/stats";
+import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { getPassiveReadout } from "@/lib/game/passiveStacks";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import KitDetails, { type KitPassiveView } from "@/components/game/KitDetails";
@@ -207,7 +208,8 @@ function UnitDetailPanel({
               ) : null}
             </div>
             <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1 font-body text-xs uppercase tracking-widest text-zinc-300">
-              <span className="text-zinc-500">ULT:</span> {unit.ultGauge}/5
+              <span className="text-zinc-500">ULT:</span> {unit.ultGauge}/
+              {ultGaugeMax(unit)}
             </div>
             <StatWithDelta label="ATK" value={effectiveAtk} base={unit.atk} />
             <StatWithDelta label="DEF" value={effectiveDef} base={unit.def} />
@@ -518,10 +520,10 @@ function TeamUnitTile({
                 {displayHP}/{unit.hp}
               </span>
               <span className="flex items-center gap-0.5">
-                {Array.from({ length: 5 }).map((_, i) => (
+                {Array.from({ length: ultGaugeMax(unit) }).map((_, i) => (
                   <span
                     key={i}
-                    className={`h-1 w-2.5 -skew-x-12 ${i < unit.ultGauge ? (unit.ultGauge >= 5 ? "bg-amber-300 shadow-[0_0_5px_rgba(252,211,77,0.8)]" : "bg-amber-500/80") : "bg-zinc-700"}`}
+                    className={`h-1 w-2.5 -skew-x-12 ${i < unit.ultGauge ? (unit.ultGauge >= ultGaugeMax(unit) ? "bg-amber-300 shadow-[0_0_5px_rgba(252,211,77,0.8)]" : "bg-amber-500/80") : "bg-zinc-700"}`}
                   />
                 ))}
               </span>
@@ -669,7 +671,7 @@ export default function BattleArena({
       .replace(/[:T]/g, "-")
       .slice(0, 19);
     const unitLine = (u: BattleCharacter) =>
-      `  ${u.name} (${u.id})${u.isSub ? " [sub]" : ""} — HP ${u.currentHP}/${u.hp}, ATK ${u.currentAttack}, DEF ${u.currentDefense}, ULT ${u.ultGauge}/5`;
+      `  ${u.name} (${u.id})${u.isSub ? " [sub]" : ""} — HP ${u.currentHP}/${u.hp}, ATK ${u.currentAttack}, DEF ${u.currentDefense}, ULT ${u.ultGauge}/${ultGaugeMax(u)}`;
     const content = [
       `Battle log — ${new Date().toString()}`,
       `Result: ${battlePhase.toUpperCase()} on turn ${currentTurn + 1} (${playerTurns} player / ${enemyTurns} enemy turns resolved)`,

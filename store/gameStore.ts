@@ -9,6 +9,7 @@ import {
   maxHandCapacity,
   refillHand,
 } from "@/lib/game/deck";
+import { ultGaugeMax } from "@/lib/game/ultGauge";
 
 export type SequencedBattleEvent = BattleActionEvent & { id: number };
 
@@ -162,7 +163,7 @@ function buildQueueAppend(
         (sourceId) => sourceId === c.instanceId,
       ).length;
       if (gains <= 0) return c;
-      return { ...c, ultGauge: Math.min(5, c.ultGauge + gains) };
+      return { ...c, ultGauge: Math.min(ultGaugeMax(c), c.ultGauge + gains) };
     });
   }
 
@@ -312,7 +313,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
 
     const updatedEnemies = enemyTeam.map((c) => {
       const gain = result.gaugeGains[c.instanceId] ?? 0;
-      return gain > 0 ? { ...c, ultGauge: Math.min(5, c.ultGauge + gain) } : c;
+      return gain > 0 ? { ...c, ultGauge: Math.min(ultGaugeMax(c), c.ultGauge + gain) } : c;
     });
 
     set({ enemyDeck: result.deck, enemyTeam: updatedEnemies });
@@ -340,7 +341,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
     const updatedTeam = playerTeam.map((char) => {
       const gain = result.gaugeGains[char.instanceId] ?? 0;
       return gain > 0
-        ? { ...char, ultGauge: Math.min(5, char.ultGauge + gain) }
+        ? { ...char, ultGauge: Math.min(ultGaugeMax(char), char.ultGauge + gain) }
         : char;
     });
 
@@ -486,7 +487,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
           (sourceId) => sourceId === c.instanceId,
         ).length;
         if (gains <= 0) return c;
-        return { ...c, ultGauge: Math.min(5, c.ultGauge + gains) };
+        return { ...c, ultGauge: Math.min(ultGaugeMax(c), c.ultGauge + gains) };
       });
     }
 
@@ -516,7 +517,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
           (sourceId) => sourceId === char.instanceId,
         ).length;
         if (gains <= 0) return char;
-        return { ...char, ultGauge: Math.min(5, char.ultGauge + gains) };
+        return { ...char, ultGauge: Math.min(ultGaugeMax(char), char.ultGauge + gains) };
       });
     }
 
@@ -568,7 +569,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
 
     const updatedPlayerTeam = playerTeam.map((char) =>
       char.instanceId === baseCard.sourceInstanceId
-        ? { ...char, ultGauge: Math.min(5, char.ultGauge + 1) }
+        ? { ...char, ultGauge: Math.min(ultGaugeMax(char), char.ultGauge + 1) }
         : char,
     );
 

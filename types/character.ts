@@ -18,6 +18,8 @@ export interface Character {
    * See enemyActionsForTurn in lib/game/ai.ts.
    */
   tier?: "elite";
+  /** Ult-gauge capacity override (default 5). Molvarr boss = 10. */
+  ultGaugeMax?: number;
   /** Exactly 2 skill cards */
   skills: [SkillCard, SkillCard];
   ultimate?: UltimateCard;

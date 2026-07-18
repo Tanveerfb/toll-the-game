@@ -136,6 +136,12 @@ export interface DecayMechanic extends MechanicBase {
   type: "decay";
   damagePercent?: number;
 }
+export interface CorrosionMechanic extends MechanicBase {
+  type: "corrosion";
+  /** % of the target's MAX HP dealt per stack per turn (default 10). Uncapped
+   * stacking — each application is an independent debuff entry. */
+  valuePercent?: number;
+}
 export interface IgniteMechanic extends MechanicBase {
   type: "ignite";
 }
@@ -264,6 +270,7 @@ export type Mechanic =
   | ShockMechanic
   | BleedMechanic
   | DecayMechanic
+  | CorrosionMechanic
   | IgniteMechanic
   | ConsumeIgniteMechanic
   | LowerUltGaugeMechanic
@@ -311,6 +318,7 @@ export const MECHANIC_TYPES = [
   "shock",
   "bleed",
   "decay",
+  "corrosion",
   "ignite",
   "consumeIgnite",
   "lowerUltGauge",
@@ -346,6 +354,7 @@ export type StatusEffectType =
   | "seal"
   | "ignite"
   | "decay"
+  | "corrosion"
   | "damageOverTime"
   | "healOverTime";
 

@@ -1,5 +1,6 @@
 import type { ActionCard } from "@/types/action";
 import type { BattleCharacter } from "@/types/character";
+import { ultGaugeMax } from "@/lib/game/ultGauge";
 
 // Shared deck logic for BOTH sides (7DS GC rules). The player hand lives in
 // gameStore and the enemy hand is driven by the battle loop, but the merge and
@@ -131,7 +132,7 @@ export function refillHand(params: {
     livingUnits
       .filter(
         (unit) =>
-          unit.ultGauge >= 5 &&
+          unit.ultGauge >= ultGaugeMax(unit) &&
           unit.ultimate &&
           !reservedCards.some(
             (card) =>

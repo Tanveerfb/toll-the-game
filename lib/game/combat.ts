@@ -5,6 +5,7 @@ import { getEvadeChance } from "./evade";
 import { trySurviveLethal } from "./lethal";
 import { syncExtortLinks } from "./effects";
 import { getEffectiveAttack, getEffectiveDefense } from "./stats";
+import { ultGaugeMax } from "./ultGauge";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
 import {
@@ -722,6 +723,22 @@ export function executeSkill(
             `applied decay (${decayDmg}/turn)${formatTurns(mech.duration)}`,
           );
         }
+        if (mech.type === "corrosion") {
+          // Corrosion: independent, uncapped-stacking DoT dealing % of the
+          // target's MAX HP per turn (not the hit). Each application is its own
+          // debuff entry, ticking at the victim's turn end.
+          const percent = mech.valuePercent ?? 10;
+          updatedTarget.debuffs.push({
+            type: "corrosion",
+            name: "Corrosion",
+            valuePercent: percent,
+            stacks: mech.stacks ?? 1,
+            debuffDuration: mech.duration,
+          });
+          targetEffects.push(
+            `applied Corrosion (${percent}% max HP/turn)${formatTurns(mech.duration)}`,
+          );
+        }
         if (mech.type === "ignite") {
           const existing = updatedTarget.debuffs.find(
             (d) => d.type === "ignite",
@@ -999,7 +1016,10 @@ export function executeSkill(
   const gaugeMech = skillMechanics.find((m) => m.type === "gainUltGauge");
   if (gaugeMech && action.skill.type !== "ultimate") {
     const gain = gaugeMech.value ?? 1;
-    updatedSource.ultGauge = Math.min(5, updatedSource.ultGauge + gain);
+    updatedSource.ultGauge = Math.min(
+      ultGaugeMax(updatedSource),
+      updatedSource.ultGauge + gain,
+    );
     log(
       `[Action] ${updatedSource.name} fills their ultimate gauge by ${gain}.`,
     );
