@@ -58,6 +58,26 @@
   forces a cleanse/heal unit, or a race to out-damage it.
 - Applied by: P1 Skill 1 (ranked duration [1/1/2]); P2 Main passive (1/turn).
 
+## BUILD PROGRESS (2026-07-18)
+
+- [x] Enemy hidden auto-merge deck (prerequisite; `lib/game/deck.ts`) — commit 9c0239b
+- [x] Per-character ult-gauge cap `ultGaugeMax` (Molvarr 10; `lib/game/ultGauge.ts`) — b91c0e6
+- [x] Corrosion mechanic (`combat.ts`/`tick.ts`) — b91c0e6
+- [x] Phase system core + loop wiring (`lib/game/phases.ts`) — cb5395b, c1ca30b
+- [x] CC-immunity (`ccImmune`) — 028d19b
+- [ ] **NEXT (piece 4 remainder):** the 5 timer/dynamic passives below share one
+  new sub-system — a per-phase turn-hook, a way to encode boss "SP passives" as
+  data, a per-phase `spSkill` slot, and multi-passive activation
+  (`enterBossPhase` applies only `passives[0]` today). Design that first.
+  - auto-SP-timer: forced 3rd action every 3rd phase-turn fires the phase's SP Skill
+  - turn-10 x2 ATK/DEF/maxHP spike (uncancellable, once; scales currentHP by the ratio)
+  - turn-10 -10% maxHP/turn drain on all enemies (P2)
+  - P1 main: debuff-count-across-enemies x10% -> ATK (linear, dynamic — apply as a
+    turn-start recomputed buff; stats.ts can't see the opposing team)
+  - P2 main: apply 1 Corrosion to each enemy at boss turn start; +30% dmg vs corroded
+- [ ] Molvarr kit data (from the finalized draft in `newchars.md`) + Test-in-Battle
+- [ ] Kit Lab boss mode (later)
+
 ## Systems required (build order)
 
 1. **Enemy hidden deck + auto-merge (7DSGC "headless" model).** Enemies get
