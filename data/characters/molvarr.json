@@ -19,7 +19,7 @@
       "characterId": "molvarr",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [140, 170, 225],
+      "damageRanked": [120, 145, 190],
       "mechanics": [
         { "type": "aoe" },
         { "type": "corrosion", "durationRanked": [1, 1, 2] }
@@ -31,7 +31,7 @@
       "characterId": "molvarr",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [300, 335, 400]
+      "damageRanked": [260, 290, 350]
     }
   ],
   "ultimate": {
@@ -45,9 +45,9 @@
   },
   "passive": {
     "name": "Growing Malice",
-    "description": "Raises ATK by 10% for each debuff stack on the enemy team.",
+    "description": "Raises ATK by 5% for each debuff stack on the enemy team.",
     "trigger": "always",
-    "mechanics": [{ "type": "bossDebuffAtk", "percentPerDebuff": 10 }]
+    "mechanics": [{ "type": "bossDebuffAtk", "percentPerDebuff": 5 }]
   },
   "phases": [
     {
@@ -61,7 +61,7 @@
           "characterId": "molvarr",
           "type": "attack",
           "statMultiplier": "atk",
-          "damageRanked": [140, 170, 225],
+          "damageRanked": [120, 145, 190],
           "mechanics": [
             { "type": "aoe" },
             { "type": "corrosion", "durationRanked": [1, 1, 2] }
@@ -73,7 +73,7 @@
           "characterId": "molvarr",
           "type": "attack",
           "statMultiplier": "atk",
-          "damageRanked": [300, 335, 400]
+          "damageRanked": [260, 290, 350]
         }
       ],
       "spSkill": {
@@ -97,9 +97,9 @@
       "passives": [
         {
           "name": "Growing Malice",
-          "description": "Raises ATK by 10% for each debuff stack on the enemy team.",
+          "description": "Raises ATK by 5% for each debuff stack on the enemy team.",
           "trigger": "always",
-          "mechanics": [{ "type": "bossDebuffAtk", "percentPerDebuff": 10 }]
+          "mechanics": [{ "type": "bossDebuffAtk", "percentPerDebuff": 5 }]
         },
         {
           "name": "Ancient Rhythm",
@@ -126,7 +126,7 @@
           "characterId": "molvarr",
           "type": "attack",
           "statMultiplier": "atk",
-          "damageRanked": [150, 180, 250],
+          "damageRanked": [130, 155, 210],
           "mechanics": [{ "type": "aoe" }, { "type": "pierce" }]
         },
         {
@@ -135,7 +135,7 @@
           "characterId": "molvarr",
           "type": "attack",
           "statMultiplier": "atk",
-          "damageRanked": [200, 250, 350],
+          "damageRanked": [180, 220, 300],
           "mechanics": [{ "type": "lifesteal", "valuePercent": 30 }]
         }
       ],
@@ -163,11 +163,11 @@
       "passives": [
         {
           "name": "Corrosive Tide",
-          "description": "Applies 1 Corrosion to each enemy at the start of each turn; deals 30% extra damage to enemies afflicted with Corrosion.",
+          "description": "Applies 1 Corrosion to each enemy at the start of each turn; deals 20% extra damage to enemies afflicted with Corrosion.",
           "trigger": "always",
           "mechanics": [
             { "type": "bossApplyCorrosion", "perTurn": 1, "duration": 2 },
-            { "type": "bossCorrosionBonus", "percent": 30 }
+            { "type": "bossCorrosionBonus", "percent": 20 }
           ]
         },
         {
