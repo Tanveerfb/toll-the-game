@@ -75,6 +75,7 @@ export default function BattleProvider({
     initializeEnemyDeck,
     drawEnemyCards,
     setEnemyDeck,
+    setPhaseBreak,
     actionQueue,
     // clearActionQueue is no longer needed; actions are resolved one by one.
     removeDeadCharacterCards,
@@ -251,6 +252,12 @@ export default function BattleProvider({
           phaseStep.transitions.forEach((t) =>
             addToBattleLog(`[System] ${t}`),
           );
+          if (phaseStep.breaks.length > 0) {
+            setPhaseBreak(
+              phaseStep.breaks[0].name,
+              phaseStep.breaks[0].phase,
+            );
+          }
           setEnemyDeck([]);
           // If a player-side tick (e.g. Corrosion) broke the phase on the
           // player's turn, skip the boss's upcoming enemy turn too. A break on
@@ -367,6 +374,9 @@ export default function BattleProvider({
       if (phaseStep.transitions.length > 0) {
         currentTeams.enemyTeam = phaseStep.team;
         phaseStep.transitions.forEach((t) => addToBattleLog(`[System] ${t}`));
+        if (phaseStep.breaks.length > 0) {
+          setPhaseBreak(phaseStep.breaks[0].name, phaseStep.breaks[0].phase);
+        }
         setEnemyDeck([]);
         // Broke a phase on the player's own turn — the boss skips its next turn.
         skipEnemyTurnRef.current = true;

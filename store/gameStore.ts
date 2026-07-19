@@ -87,6 +87,8 @@ interface BattleState {
    */
   queuedNullCount: number;
   interactionNotice: string | null;
+  /** A boss just broke into a new phase — drives the cinematic flourish. */
+  phaseBreak: { name: string; phase: number; key: number } | null;
   // Turn-start snapshot for Reset Hand (undoes queuing AND selection merges,
   // including the ult gauge those merges granted)
   handSnapshot: {
@@ -115,6 +117,8 @@ interface BattleState {
   setAllyMarker: (instanceId: string | null) => void;
   setInteractionNotice: (message: string | null) => void;
   clearInteractionNotice: () => void;
+  setPhaseBreak: (name: string, phase: number) => void;
+  clearPhaseBreak: () => void;
   initializeDeck: () => void;
   drawCards: () => void;
   /** Seed the enemy hand from the living field enemies (battle start). */
@@ -195,6 +199,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
   pendingAllyCardId: null,
   queuedNullCount: 0,
   interactionNotice: null,
+  phaseBreak: null,
   handSnapshot: null,
 
   setPlayerTeam: (team) => set({ playerTeam: team }),
@@ -243,6 +248,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
       pendingAllyCardId: null,
       queuedNullCount: 0,
       interactionNotice: null,
+      phaseBreak: null,
       handSnapshot: null,
     }),
 
@@ -250,6 +256,9 @@ export const useGameStore = create<BattleState>((set, get) => ({
   setAllyMarker: (instanceId) => set({ selectedAllyMarker: instanceId }),
   setInteractionNotice: (message) => set({ interactionNotice: message }),
   clearInteractionNotice: () => set({ interactionNotice: null }),
+  setPhaseBreak: (name, phase) =>
+    set({ phaseBreak: { name, phase, key: Date.now() } }),
+  clearPhaseBreak: () => set({ phaseBreak: null }),
 
   setActionQueue: (queue) => set({ actionQueue: queue }),
 

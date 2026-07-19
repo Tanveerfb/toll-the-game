@@ -21,15 +21,18 @@ export function bossPhaseCount(char: { phases?: CharacterPhase[] }): number {
 export function transitionBossPhases(team: BattleCharacter[]): {
   team: BattleCharacter[];
   transitions: string[];
+  breaks: { name: string; phase: number }[];
 } {
   const transitions: string[] = [];
+  const breaks: { name: string; phase: number }[] = [];
   const next = team.map((c) => {
     if (!shouldAdvancePhase(c)) return c;
     const idx = (c.phaseIndex ?? 0) + 1;
     transitions.push(`${c.name} breaks and enters Phase ${idx + 1}!`);
+    breaks.push({ name: c.name, phase: idx + 1 });
     return enterBossPhase(c, idx);
   });
-  return { team: next, transitions };
+  return { team: next, transitions, breaks };
 }
 
 /**

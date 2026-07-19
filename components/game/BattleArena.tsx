@@ -629,6 +629,8 @@ export default function BattleArena({
     selectedEnemyMarker,
     battleLog,
     interactionNotice,
+    phaseBreak,
+    clearPhaseBreak,
     battleSpeed,
     setBattleSpeed,
     setEnemyMarker,
@@ -671,6 +673,16 @@ export default function BattleArena({
 
     return () => window.clearTimeout(timer);
   }, [battlePhase, resolveEnemyTurnWrapper, battleSpeed]);
+
+  // Auto-dismiss the phase-break flourish after it plays
+  React.useEffect(() => {
+    if (!phaseBreak) return;
+    const t = window.setTimeout(
+      () => clearPhaseBreak(),
+      1800 / battleSpeed,
+    );
+    return () => window.clearTimeout(t);
+  }, [phaseBreak, clearPhaseBreak, battleSpeed]);
 
   const phaseLabel = formatPhaseLabel(battlePhase);
   const [detailUnit, setDetailUnit] = React.useState<BattleCharacter | null>(
@@ -842,12 +854,19 @@ export default function BattleArena({
               transition={{ duration: 0.18 / battleSpeed }}
               className="absolute inset-0 bg-black/65"
             >
+              {/* White flash punch on entry */}
               <motion.div
-                initial={{ x: "-100%" }}
-                animate={{ x: 0 }}
+                initial={{ opacity: 0.85 }}
+                animate={{ opacity: 0 }}
+                transition={{ duration: 0.45 / battleSpeed, ease: "easeOut" }}
+                className="absolute inset-0 bg-white"
+              />
+              <motion.div
+                initial={{ x: "-100%", scale: 1.12 }}
+                animate={{ x: 0, scale: 1 }}
                 exit={{ x: "100%" }}
                 transition={{ duration: 0.3 / battleSpeed, ease: "easeOut" }}
-                className="absolute inset-x-0 top-1/2 flex h-32 -translate-y-1/2 items-center gap-4 overflow-hidden border-y-2 border-amber-300 bg-linear-to-r from-amber-950/95 via-zinc-950/95 to-amber-950/95 px-6"
+                className="absolute inset-x-0 top-1/2 flex h-32 -translate-y-1/2 items-center gap-4 overflow-hidden border-y-2 border-amber-300 bg-linear-to-r from-amber-950/95 via-zinc-950/95 to-amber-950/95 px-6 shadow-[0_0_60px_rgba(252,211,77,0.5)]"
               >
                 {getCharacterArt(seq.cutIn.characterId) ? (
                   <Image
@@ -866,6 +885,41 @@ export default function BattleArena({
                     {seq.cutIn.skillName}
                   </p>
                 </div>
+              </motion.div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+
+        {/* Phase-break flourish — a boss shattering into its next phase */}
+        <AnimatePresence>
+          {phaseBreak ? (
+            <motion.div
+              key={`phasebreak-${phaseBreak.key}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 / battleSpeed }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <motion.div
+                initial={{ opacity: 0.9 }}
+                animate={{ opacity: 0 }}
+                transition={{ duration: 0.6 / battleSpeed, ease: "easeOut" }}
+                className="absolute inset-0 bg-rose-600/40"
+              />
+              <motion.div
+                initial={{ scale: 1.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.38 / battleSpeed, ease: "easeOut" }}
+                className="relative flex flex-col items-center gap-1 border-y-2 border-rose-400 bg-black/70 px-12 py-5 backdrop-blur-sm"
+              >
+                <span className="font-body text-xs uppercase tracking-[0.4em] text-rose-200/80">
+                  {phaseBreak.name}
+                </span>
+                <span className="font-heading text-5xl tracking-[0.16em] text-rose-100 drop-shadow-[0_0_16px_rgba(244,63,94,0.85)] md:text-6xl">
+                  PHASE {phaseBreak.phase}
+                </span>
               </motion.div>
             </motion.div>
           ) : null}

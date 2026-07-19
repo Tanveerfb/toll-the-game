@@ -96,6 +96,8 @@ describe("boss phases", () => {
     expect(result.team[0].phaseIndex).toBe(1); // boss advanced
     expect(result.team[0].currentHP).toBe(4000);
     expect(result.team[1].currentHP).toBe(0); // plain mob stays dead
+    // Structured break info drives the phase-break flourish
+    expect(result.breaks).toEqual([{ name: "Molvarr", phase: 2 }]);
   });
 
   it("transitionBossPhases is a no-op when nothing is downed", () => {
