@@ -314,7 +314,12 @@ export function useBattleSequencer(
     setView(IDLE_VIEW);
   }, [playEvent]);
 
-  React.useEffect(() => {
+  // useLayoutEffect (not useEffect): the engine has already written the FINAL
+  // team state to the store, so a plain effect would let the browser paint the
+  // final frame (dead units, empty bars) before we seed the pre-action HP.
+  // Running before paint means the seeded overrides land in the same commit —
+  // no flash of the outcome ahead of the animation.
+  React.useLayoutEffect(() => {
     // Battle reset rewinds the event stream — drop everything
     if (battleEvents.length < processedRef.current) {
       processedRef.current = battleEvents.length;

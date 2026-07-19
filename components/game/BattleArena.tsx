@@ -504,16 +504,12 @@ function TeamUnitTile({
           </div>
 
           <div>
-            <div className="flex items-center gap-1">
-              <div className="h-2 flex-1 overflow-hidden rounded-full border border-zinc-700/80 bg-zinc-900">
-                <div
-                  className={`h-full rounded-full transition-[width] duration-300 ${isDead || hpPercent < 30 ? "bg-red-500" : "bg-emerald-500"}`}
-                  style={{ width: `${hpPercent}%` }}
-                />
-              </div>
-              <span className="shrink-0 font-body text-[9px] uppercase tracking-[0.06em] text-zinc-400 tabular-nums">
-                {displayHP}/{unit.hp}
-              </span>
+            {/* HP bar only — exact numbers live in the Info panel */}
+            <div className="h-2 w-full overflow-hidden rounded-full border border-zinc-700/80 bg-zinc-900">
+              <div
+                className={`h-full rounded-full transition-[width] duration-300 ${isDead || hpPercent < 30 ? "bg-red-500" : "bg-emerald-500"}`}
+                style={{ width: `${hpPercent}%` }}
+              />
             </div>
             <span className="mt-0.5 flex items-center gap-0.5">
               {Array.from({ length: ultGaugeMax(unit) }).map((_, i) => (
