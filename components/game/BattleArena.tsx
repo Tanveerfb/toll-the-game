@@ -12,11 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { ArrowDown, ArrowUp, Sparkles } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
@@ -29,6 +25,9 @@ import { getPassiveReadout } from "@/lib/game/passiveStacks";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import KitDetails, { type KitPassiveView } from "@/components/game/KitDetails";
 import BattleEffectsOverlay from "@/components/game/BattleEffectsOverlay";
+import EffectsQuickPanel, {
+  categorizeEffects,
+} from "@/components/game/EffectsQuickPanel";
 import {
   useBattleSequencer,
   type SequencerFlash,
@@ -104,7 +103,8 @@ function StatWithDelta({
 }
 
 const STATUS_TONE = {
-  buff: "border-emerald-700/60 bg-emerald-950/30 text-emerald-100",
+  // Colour convention (Tanveer): buff = blue, debuff = red, effect = grey.
+  buff: "border-sky-700/60 bg-sky-950/30 text-sky-100",
   debuff: "border-rose-700/60 bg-rose-950/30 text-rose-100",
   effect: "border-zinc-600/60 bg-zinc-900/50 text-zinc-300",
 } as const;
@@ -292,74 +292,65 @@ function getUnitBorderClass(color: BattleCharacter["color"]): string {
   }
 }
 
-function EffectCounters({
+const CHIP_STYLE = {
+  buff: { cls: "border-sky-500/60 bg-sky-500/15 text-sky-200", icon: ArrowUp },
+  debuff: {
+    cls: "border-rose-500/60 bg-rose-500/15 text-rose-200",
+    icon: ArrowDown,
+  },
+  effect: {
+    cls: "border-zinc-500/60 bg-zinc-500/15 text-zinc-300",
+    icon: Sparkles,
+  },
+} as const;
+
+// Small colored status squares above the HP bar (blue buff / red debuff / grey
+// effect). The whole cluster is a button that opens the effects quick-panel.
+function StatusChips({
   unit,
+  onOpen,
 }: {
   unit: BattleCharacter;
+  onOpen: (unit: BattleCharacter) => void;
 }): React.JSX.Element {
-  // Ruling #30: uncancellable entries are grey "effects" — they don't count
-  // as buffs/debuffs
-  const buffs = unit.buffs.filter((b) => !b.uncancellable);
-  const debuffs = unit.debuffs.filter((d) => !d.uncancellable);
-  const effects = [
-    ...unit.buffs.filter((b) => b.uncancellable),
-    ...unit.debuffs.filter((d) => d.uncancellable),
-  ];
-  const counters = (
-    <>
-      {buffs.length > 0 ? (
-        <span className="text-emerald-400">▲{buffs.length}</span>
-      ) : null}
-      {debuffs.length > 0 ? (
-        <span className="text-rose-400">▼{debuffs.length}</span>
-      ) : null}
-      {effects.length > 0 ? (
-        <span className="text-zinc-400">◆{effects.length}</span>
-      ) : null}
-    </>
-  );
-  if (buffs.length === 0 && debuffs.length === 0 && effects.length === 0) {
-    return <span />;
-  }
+  const rows = categorizeEffects(unit);
+  if (rows.length === 0) return <span />;
+  const shown = rows.slice(0, 5);
+  const overflow = rows.length - shown.length;
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="flex cursor-help items-center gap-1 font-body text-[10px]">
-          {counters}
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpen(unit);
+      }}
+      title="View effects"
+      className="flex cursor-pointer items-center gap-0.5"
+    >
+      {shown.map(({ effect, category }, idx) => {
+        const style = CHIP_STYLE[category];
+        const Icon = style.icon;
+        const stacks = effect.stacks ?? 1;
+        return (
+          <span
+            key={`${effect.type}-${idx}`}
+            className={`relative flex h-4 w-4 items-center justify-center border ${style.cls}`}
+          >
+            <Icon className="h-2.5 w-2.5" strokeWidth={2.6} />
+            {stacks > 1 ? (
+              <span className="absolute -bottom-1 -right-1 bg-black px-0.5 font-body text-[7px] font-bold leading-none text-zinc-100">
+                {stacks}
+              </span>
+            ) : null}
+          </span>
+        );
+      })}
+      {overflow > 0 ? (
+        <span className="font-body text-[9px] font-bold text-zinc-400">
+          +{overflow}
         </span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-xs">
-        <span className="block space-y-0.5 font-body text-xs normal-case tracking-normal">
-          {buffs.map((effect, idx) => (
-            <span
-              key={`b-${effect.type}-${idx}`}
-              className="block text-emerald-300"
-            >
-              ▲ {effect.name ?? describeEffect(effect)}
-              {effect.name ? ` — ${describeEffect(effect)}` : ""}
-            </span>
-          ))}
-          {debuffs.map((effect, idx) => (
-            <span
-              key={`d-${effect.type}-${idx}`}
-              className="block text-rose-300"
-            >
-              ▼ {effect.name ?? describeEffect(effect)}
-              {effect.name ? ` — ${describeEffect(effect)}` : ""}
-            </span>
-          ))}
-          {effects.map((effect, idx) => (
-            <span
-              key={`e-${effect.type}-${idx}`}
-              className="block text-zinc-400"
-            >
-              ◆ {effect.name ?? describeEffect(effect)}
-              {effect.name ? ` — ${describeEffect(effect)}` : ""}
-            </span>
-          ))}
-        </span>
-      </TooltipContent>
-    </Tooltip>
+      ) : null}
+    </button>
   );
 }
 
@@ -386,6 +377,7 @@ function TeamUnitTile({
   fx,
   onMark,
   onViewDetails,
+  onOpenEffects,
 }: {
   unit: BattleCharacter;
   isEnemy: boolean;
@@ -394,6 +386,7 @@ function TeamUnitTile({
   fx: TileFx;
   onMark: (instanceId: string) => void;
   onViewDetails: (unit: BattleCharacter) => void;
+  onOpenEffects: (unit: BattleCharacter) => void;
 }): React.JSX.Element {
   // During playback the sequencer feeds exact per-event HP snapshots so the
   // bar (and the DOWN stamp) land at the impact moment, not at resolve time
@@ -505,7 +498,7 @@ function TeamUnitTile({
             <span className="truncate font-heading text-xs tracking-[0.06em] text-zinc-100">
               {unit.name}
             </span>
-            <EffectCounters unit={unit} />
+            <StatusChips unit={unit} onOpen={onOpenEffects} />
           </div>
 
           <div>
@@ -605,6 +598,18 @@ export default function BattleArena({
   const phaseLabel = formatPhaseLabel(battlePhase);
   const [detailUnit, setDetailUnit] = React.useState<BattleCharacter | null>(
     null,
+  );
+  // Effects quick-panel: store the id and resolve the LIVE unit so the panel
+  // reflects effect changes if the battle advances while it's open.
+  const [effectsUnitId, setEffectsUnitId] = React.useState<string | null>(null);
+  const effectsUnit = effectsUnitId
+    ? [...playerTeam, ...enemyTeam].find(
+        (u) => u.instanceId === effectsUnitId,
+      ) ?? null
+    : null;
+  const openEffects = React.useCallback(
+    (unit: BattleCharacter) => setEffectsUnitId(unit.instanceId),
+    [],
   );
   const [isLogOpen, setIsLogOpen] = React.useState(false);
   const [showAllEvents, setShowAllEvents] = React.useState(false);
@@ -888,6 +893,7 @@ export default function BattleArena({
                 fx={tileFx(unit.instanceId)}
                 onMark={setEnemyMarker}
                 onViewDetails={setDetailUnit}
+                onOpenEffects={openEffects}
               />
             ))}
           </div>
@@ -908,6 +914,7 @@ export default function BattleArena({
                 fx={tileFx(unit.instanceId)}
                 onMark={() => {}}
                 onViewDetails={setDetailUnit}
+                onOpenEffects={openEffects}
               />
             ))}
           </div>
@@ -1098,6 +1105,15 @@ export default function BattleArena({
 
       {detailUnit ? (
         <UnitDetailPanel unit={detailUnit} onClose={() => setDetailUnit(null)} />
+      ) : null}
+
+      {effectsUnit ? (
+        <EffectsQuickPanel
+          unit={effectsUnit}
+          playerTeam={playerTeam}
+          enemyTeam={enemyTeam}
+          onClose={() => setEffectsUnitId(null)}
+        />
       ) : null}
 
       {pendingAllyCard ? (
