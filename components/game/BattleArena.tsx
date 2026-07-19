@@ -12,7 +12,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowDown, ArrowUp, Sparkles } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+} from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
@@ -20,6 +26,8 @@ import { useBattleContext } from "@/hooks/BattleProvider";
 import type { BattleCharacter } from "@/types/character";
 import type { Color } from "@/types/color";
 import { getEffectiveAttack, getEffectiveDefense } from "@/lib/game/stats";
+import { getCritChance } from "@/lib/game/combat";
+import { getEvadeChance } from "@/lib/game/evade";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { getPassiveReadout } from "@/lib/game/passiveStacks";
 import { getCharacterById } from "@/lib/game/characterCatalog";
@@ -40,179 +48,243 @@ function formatPhaseLabel(phase: string): string {
     .trim();
 }
 
-function describeEffect(effect: BattleCharacter["buffs"][number]): string {
-  const stacksText = effect.stacks
-    ? `, ${effect.stacks} stack${effect.stacks > 1 ? "s" : ""}`
-    : "";
-  // Decay/DoT carry their per-turn hit in capturedDamage (decay) or value
-  // (Bleed/Shock) rather than a percent — surface it so the tooltip never
-  // reads "no numeric value" for a damage-over-time effect.
-  const perTurnDamage =
-    effect.capturedDamage !== undefined
-      ? effect.capturedDamage
-      : effect.type === "decay" || effect.type === "damageOverTime"
-        ? effect.value
-        : undefined;
-  const valueText =
-    perTurnDamage !== undefined
-      ? `${perTurnDamage}/turn`
-      : effect.valuePercent !== undefined
-        ? `${effect.valuePercent}%`
-        : effect.value !== undefined
-          ? `${effect.value}`
-          : "";
-  const statText =
-    effect.stat && perTurnDamage === undefined ? ` ${effect.stat}` : "";
-  const duration = effect.buffDuration ?? effect.debuffDuration;
-  const durationText = duration
-    ? `, ${duration} turn${duration > 1 ? "s" : ""}`
-    : "";
-  const payload = `${valueText}${statText}`.trim();
-  return payload.length > 0
-    ? `${effect.type} (${payload}${stacksText}${durationText})`
-    : `${effect.type} (${`no numeric value${stacksText}${durationText}`.trim()})`;
-}
-
-// A battle stat with its change since battle start, e.g. "220 [+20]" (green)
-// or "165 [-15]" (red). `base` is the immutable kit value; `value` the live
-// effective stat. Zero delta shows no bracket.
-function StatWithDelta({
+// A big stat callout for the info panel (7DSGC style): label, value, and an
+// optional delta-since-battle-start subline.
+function StatCallout({
   label,
   value,
-  base,
+  sub,
+  subTone,
+  align,
 }: {
   label: string;
-  value: number;
-  base: number;
+  value: string;
+  sub?: string;
+  subTone?: string;
+  align: "left" | "right";
 }): React.JSX.Element {
-  const delta = value - base;
   return (
-    <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1 font-body text-xs uppercase tracking-widest text-zinc-300">
-      <span className="text-zinc-500">{label}:</span> {value}
-      {delta !== 0 ? (
-        <span
-          className={delta > 0 ? "text-emerald-400" : "text-rose-400"}
-        >
-          {" "}
-          [{delta > 0 ? "+" : ""}
-          {delta}]
-        </span>
+    <div className={align === "right" ? "text-right" : "text-left"}>
+      <p className="font-body text-[10px] uppercase tracking-[0.18em] text-zinc-400">
+        {label}
+      </p>
+      <p className="font-heading text-2xl leading-tight tracking-[0.04em] text-emerald-300 md:text-3xl">
+        {value}
+      </p>
+      {sub ? (
+        <p className={`font-body text-xs ${subTone ?? "text-zinc-500"}`}>{sub}</p>
       ) : null}
     </div>
   );
 }
 
-const STATUS_TONE = {
-  // Colour convention (Tanveer): buff = blue, debuff = red, effect = grey.
-  buff: "border-sky-700/60 bg-sky-950/30 text-sky-100",
-  debuff: "border-rose-700/60 bg-rose-950/30 text-rose-100",
-  effect: "border-zinc-600/60 bg-zinc-900/50 text-zinc-300",
-} as const;
-
-function StatusColumn({
-  title,
-  items,
+// A row in the ?-toggled Detailed Info list.
+function DetailStatRow({
+  label,
+  value,
   tone,
 }: {
-  title: string;
-  items: BattleCharacter["buffs"];
-  tone: keyof typeof STATUS_TONE;
+  label: string;
+  value: string;
+  tone?: string;
 }): React.JSX.Element {
   return (
-    <div className="min-w-0">
-      <p className="mb-1 font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400">
-        {title} ({items.length})
-      </p>
-      <div className="space-y-1">
-        {items.length > 0 ? (
-          items.map((effect, idx) => (
-            <p
-              key={`${title}-${effect.type}-${idx}`}
-              className={`border px-2 py-1 font-body text-xs ${STATUS_TONE[tone]}`}
-            >
-              {describeEffect(effect)}
-            </p>
-          ))
-        ) : (
-          <p className="font-body text-xs text-zinc-500">None.</p>
-        )}
-      </div>
+    <div className="flex items-center justify-between border-b border-zinc-800 py-1.5 last:border-b-0">
+      <span className="font-body text-xs uppercase tracking-[0.12em] text-zinc-400">
+        {label}
+      </span>
+      <span className={`font-heading text-sm ${tone ?? "text-zinc-100"}`}>
+        {value}
+      </span>
     </div>
   );
 }
 
-// Full-screen character info panel opened by tapping a unit tile. Shows live
-// stats with their change since battle start, the split status lists, the
-// passive-stack readout, and the character's full kit (no art).
+// Full-screen character info panel (7DSGC-style, Images 2/3): big ATK/DEF/HP
+// callouts flanking the art, teammate nav, a ?-toggle for derived detailed
+// stats, and the full kit below. Buffs/debuffs live in the EffectsQuickPanel.
 function UnitDetailPanel({
   unit,
+  playerTeam,
+  enemyTeam,
   onClose,
 }: {
   unit: BattleCharacter;
+  playerTeam: BattleCharacter[];
+  enemyTeam: BattleCharacter[];
   onClose: () => void;
 }): React.JSX.Element {
-  const kit = getCharacterById(unit.id);
-  const passive = getPassiveReadout(unit);
-  const effectiveAtk = getEffectiveAttack(unit);
-  const effectiveDef = getEffectiveDefense(unit);
-  const hpDelta = unit.currentHP - unit.hp;
-  const buffs = unit.buffs.filter((b) => !b.uncancellable);
-  const debuffs = unit.debuffs.filter((d) => !d.uncancellable);
-  const effects = [...unit.buffs, ...unit.debuffs].filter(
-    (e) => e.uncancellable,
+  const ownTeam = unit.team === "player" ? playerTeam : enemyTeam;
+  const teamOnField = ownTeam.filter((u) => !u.isSub);
+  const [selectedId, setSelectedId] = React.useState(unit.instanceId);
+  const [showDetailed, setShowDetailed] = React.useState(false);
+  const idx = Math.max(
+    0,
+    teamOnField.findIndex((u) => u.instanceId === selectedId),
   );
+  const selected = teamOnField[idx] ?? unit;
+
+  const step = (dir: number) => {
+    if (teamOnField.length < 2) return;
+    const next = (idx + dir + teamOnField.length) % teamOnField.length;
+    setSelectedId(teamOnField[next].instanceId);
+    setShowDetailed(false);
+  };
+
+  const kit = getCharacterById(selected.id);
+  const passive = getPassiveReadout(selected);
+  const effAtk = getEffectiveAttack(selected);
+  const effDef = getEffectiveDefense(selected);
+  const atkDelta = effAtk - selected.atk;
+  const defDelta = effDef - selected.def;
+  const crit = Math.round(getCritChance(selected));
+  const evade = Math.round(getEvadeChance(selected));
+  const art = getCharacterArt(selected.id);
+
+  const deltaText = (d: number) =>
+    d === 0 ? undefined : `(${d > 0 ? "+" : ""}${d})`;
+  const deltaTone = (d: number) =>
+    d > 0 ? "text-emerald-400" : d < 0 ? "text-rose-400" : "text-zinc-500";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4 py-6">
-      <Card className="flex max-h-[88vh] w-full max-w-3xl flex-col rounded-none border border-zinc-600 bg-zinc-950/95 ring-0">
-        <CardHeader className="flex flex-row items-start justify-between gap-3 border-b border-zinc-800 px-5 py-4">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <CardTitle className="font-heading text-2xl tracking-[0.08em] text-zinc-100">
-                {unit.name}
-              </CardTitle>
-              <Badge className="rounded-none border border-zinc-600 bg-zinc-900 font-body text-[9px] uppercase tracking-widest text-zinc-300">
-                {unit.color}
-              </Badge>
-              {unit.tier === "elite" ? (
-                <Badge className="rounded-none border border-amber-400/70 bg-amber-400/10 font-body text-[9px] uppercase tracking-widest text-amber-200">
-                  Elite
-                </Badge>
-              ) : null}
-            </div>
-            <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-              Values in [brackets] = change since battle start
-            </CardDescription>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6">
+      <Card className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-none border-2 border-zinc-600 bg-zinc-950/95 ring-0">
+        {/* Header: close · name/element/tags · teammate nav */}
+        <CardHeader className="flex flex-row items-center justify-between gap-3 border-b border-zinc-800 px-4 py-3">
           <Button
             variant="ghost"
             onClick={onClose}
-            className="shrink-0 rounded-none border border-zinc-600 text-xs uppercase tracking-widest"
+            className="shrink-0 rounded-none border border-zinc-600 px-2 font-body text-xs uppercase tracking-widest"
           >
-            Close
+            <ChevronLeft className="h-4 w-4" /> Close
           </Button>
+          <div className="min-w-0 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <span
+                className={`h-2.5 w-2.5 rotate-45 border border-black/40 ${ELEMENT_SWATCH[selected.color]}`}
+              />
+              <CardTitle className="truncate font-heading text-2xl tracking-[0.08em] text-zinc-100">
+                {selected.name}
+              </CardTitle>
+            </div>
+            <CardDescription className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400">
+              {selected.color}
+              {selected.tags?.length ? ` · ${selected.tags.join(" ")}` : ""}
+              {selected.tier === "elite" ? " · Elite" : ""}
+            </CardDescription>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => step(-1)}
+              disabled={teamOnField.length < 2}
+              className="border border-zinc-600 p-1 text-zinc-300 transition-colors hover:border-zinc-400 disabled:opacity-30"
+              aria-label="Previous teammate"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => step(1)}
+              disabled={teamOnField.length < 2}
+              className="border border-zinc-600 p-1 text-zinc-300 transition-colors hover:border-zinc-400 disabled:opacity-30"
+              aria-label="Next teammate"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </CardHeader>
 
-        <CardContent className="space-y-4 overflow-y-auto px-5 py-4">
-          {/* Stats with deltas */}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1 font-body text-xs uppercase tracking-widest text-zinc-300">
-              <span className="text-zinc-500">HP:</span> {unit.currentHP}/
-              {unit.hp}
-              {hpDelta !== 0 ? (
-                <span className={hpDelta > 0 ? "text-emerald-400" : "text-rose-400"}>
-                  {" "}
-                  [{hpDelta > 0 ? "+" : ""}
-                  {hpDelta}]
+        <CardContent className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
+          {/* Callouts flanking the art; ? reveals the derived detailed stats */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+            <div className="space-y-4">
+              <StatCallout
+                label="Attack"
+                value={String(effAtk)}
+                sub={deltaText(atkDelta)}
+                subTone={deltaTone(atkDelta)}
+                align="left"
+              />
+              <StatCallout
+                label="Defense"
+                value={String(effDef)}
+                sub={deltaText(defDelta)}
+                subTone={deltaTone(defDelta)}
+                align="left"
+              />
+            </div>
+
+            <div className="relative mx-auto h-56 w-40 overflow-hidden border border-zinc-700 bg-zinc-900/60">
+              {art ? (
+                <Image
+                  src={art}
+                  alt={selected.name}
+                  fill
+                  sizes="200px"
+                  className="object-cover object-top"
+                />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center font-heading text-5xl text-white/70">
+                  {selected.name.charAt(0)}
                 </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowDetailed((v) => !v)}
+                title="Detailed info"
+                className={`absolute bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full border font-heading text-sm ${showDetailed ? "border-amber-300 bg-amber-300/25 text-amber-100" : "border-zinc-400 bg-black/60 text-zinc-100"}`}
+              >
+                ?
+              </button>
+              {showDetailed ? (
+                <div className="absolute inset-0 overflow-y-auto bg-black/85 px-3 py-2">
+                  <p className="mb-1 text-center font-heading text-xs uppercase tracking-[0.16em] text-amber-200">
+                    Detailed Info
+                  </p>
+                  <DetailStatRow
+                    label="Eff. ATK"
+                    value={`${effAtk}${deltaText(atkDelta) ? ` ${deltaText(atkDelta)}` : ""}`}
+                    tone={deltaTone(atkDelta)}
+                  />
+                  <DetailStatRow
+                    label="Eff. DEF"
+                    value={`${effDef}${deltaText(defDelta) ? ` ${deltaText(defDelta)}` : ""}`}
+                    tone={deltaTone(defDelta)}
+                  />
+                  <DetailStatRow label="Crit Chance" value={`${crit}%`} />
+                  <DetailStatRow label="Evade" value={`${evade}%`} />
+                  <DetailStatRow
+                    label="Ult Gauge"
+                    value={`${selected.ultGauge}/${ultGaugeMax(selected)}`}
+                    tone="text-amber-300"
+                  />
+                </div>
               ) : null}
             </div>
-            <div className="border border-zinc-800 bg-zinc-900/50 px-2 py-1 font-body text-xs uppercase tracking-widest text-zinc-300">
-              <span className="text-zinc-500">ULT:</span> {unit.ultGauge}/
-              {ultGaugeMax(unit)}
+
+            <div className="space-y-4">
+              <StatCallout
+                label="Remaining HP"
+                value={String(Math.max(0, selected.currentHP))}
+                align="right"
+              />
+              <StatCallout
+                label="Max HP"
+                value={String(selected.hp)}
+                align="right"
+              />
             </div>
-            <StatWithDelta label="ATK" value={effectiveAtk} base={unit.atk} />
-            <StatWithDelta label="DEF" value={effectiveDef} base={unit.def} />
+          </div>
+
+          {/* Ult gauge pips */}
+          <div className="flex items-center justify-center gap-1">
+            {Array.from({ length: ultGaugeMax(selected) }).map((_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 w-4 -skew-x-12 ${i < selected.ultGauge ? "bg-amber-400" : "bg-zinc-700"}`}
+              />
+            ))}
           </div>
 
           {/* Passive readout — stacks and/or live derived values */}
@@ -255,14 +327,7 @@ function UnitDetailPanel({
             </div>
           ) : null}
 
-          {/* Buffs | Debuffs | Effects */}
-          <div className="grid gap-3 sm:grid-cols-3">
-            <StatusColumn title="Buffs" items={buffs} tone="buff" />
-            <StatusColumn title="Debuffs" items={debuffs} tone="debuff" />
-            <StatusColumn title="Effects" items={effects} tone="effect" />
-          </div>
-
-          {/* Full kit (no art) */}
+          {/* Full kit */}
           {kit ? (
             <KitDetails
               skills={kit.skills}
@@ -1134,7 +1199,12 @@ export default function BattleArena({
       ) : null}
 
       {detailUnit ? (
-        <UnitDetailPanel unit={detailUnit} onClose={() => setDetailUnit(null)} />
+        <UnitDetailPanel
+          unit={detailUnit}
+          playerTeam={playerTeam}
+          enemyTeam={enemyTeam}
+          onClose={() => setDetailUnit(null)}
+        />
       ) : null}
 
       {effectsUnit ? (
