@@ -57,6 +57,30 @@ debuffs w/o `uncancellable`; `effect` = any `uncancellable` from either list.
 Full Info Panel (B), NEXT telegraph, enemy hidden-deck display, controls cluster
 (AUTO/pause), capsule HP-bar restyle — later slices.
 
+**STATUS: DONE 2026-07-19 (commit 1bf5592).**
+
+---
+
+## Slice 2 — Vertical unit-card redesign  (Tanveer 2026-07-20)
+
+Redesign `TeamUnitTile` into a proper **vertical card**. Tanveer's ask +
+"optimize per your own choice":
+
+- **Header on TOP** (currently our status/HP sits at the BOTTOM — flip it):
+  - **Element indicator** (unit's color — Light/Red/Blue/Green/Dark) as a crest.
+  - **Status chips** (the blue/red/grey squares from slice 1).
+  - **HP bar** + **ult-gauge pips**, and the HP number.
+- **Body: character artwork** below the header, filling the card.
+- Keep name, target/sub/queued-hit badges, DOWN stamp, info affordance, and the
+  flash/shake FX hooks — recomposed. Amber/zinc palette.
+
+Reference: 7DSGC bars ride ABOVE each unit (Images 1/5) — element crest left of
+the bar, HP capsule, ult pips beneath, status squares above.
+
+### Also note — solo-boss layout (Image 5)
+A single boss is centered + enlarged (vs the 3-across party). Our arena grids
+enemies 2/4-up. Consider centering/enlarging a lone boss tile.
+
 ## Testing
 `npm run check` green; `/practice` 200; drive a boss fight and open the panel on
 a unit carrying Corrosion/buffs. (No unit tests — presentational; verify live.)

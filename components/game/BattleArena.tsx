@@ -292,6 +292,15 @@ function getUnitBorderClass(color: BattleCharacter["color"]): string {
   }
 }
 
+// Element crest fill for the card header (matches the border color family).
+const ELEMENT_SWATCH: Record<Color, string> = {
+  red: "bg-rose-500",
+  blue: "bg-sky-500",
+  green: "bg-emerald-500",
+  dark: "bg-violet-500",
+  light: "bg-amber-300",
+};
+
 const CHIP_STYLE = {
   buff: { cls: "border-sky-500/60 bg-sky-500/15 text-sky-200", icon: ArrowUp },
   debuff: {
@@ -399,6 +408,8 @@ function TeamUnitTile({
     ? "border-amber-300 shadow-[0_0_12px_rgba(252,211,77,0.45)]"
     : "border-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.45)]";
 
+  const ultFull = unit.ultGauge >= ultGaugeMax(unit);
+
   return (
     <div
       data-battle-instance={unit.instanceId}
@@ -412,7 +423,45 @@ function TeamUnitTile({
         }}
         className={`flex h-full min-h-0 flex-col overflow-hidden border-2 bg-black/55 transition-colors ${isMarked ? markColorClass : getUnitBorderClass(unit.color)} ${isBenched ? "opacity-60" : ""} ${isDead || isBenched ? "cursor-default" : "cursor-pointer"}`}
       >
-        {/* Portrait */}
+        {/* HEADER (top): element crest · name · status chips, then HP + ult */}
+        <div
+          className={`shrink-0 space-y-1 border-b border-zinc-800 bg-black/80 px-1.5 py-1 ${isDead ? "opacity-60" : ""}`}
+        >
+          <div className="flex items-center gap-1">
+            <span
+              title={unit.color}
+              className={`h-2.5 w-2.5 shrink-0 rotate-45 border border-black/40 ${ELEMENT_SWATCH[unit.color]}`}
+            />
+            <span className="min-w-0 flex-1 truncate font-heading text-xs tracking-[0.06em] text-zinc-100">
+              {unit.name}
+            </span>
+            <StatusChips unit={unit} onOpen={onOpenEffects} />
+          </div>
+
+          <div>
+            <div className="flex items-center gap-1">
+              <div className="h-2 flex-1 overflow-hidden border border-zinc-700/80 bg-zinc-900">
+                <div
+                  className={`h-full transition-[width] duration-300 ${isDead || hpPercent < 30 ? "bg-red-500" : "bg-emerald-500"}`}
+                  style={{ width: `${hpPercent}%` }}
+                />
+              </div>
+              <span className="shrink-0 font-body text-[9px] uppercase tracking-[0.06em] text-zinc-400 tabular-nums">
+                {displayHP}/{unit.hp}
+              </span>
+            </div>
+            <span className="mt-0.5 flex items-center gap-0.5">
+              {Array.from({ length: ultGaugeMax(unit) }).map((_, i) => (
+                <span
+                  key={i}
+                  className={`h-1 flex-1 -skew-x-12 ${i < unit.ultGauge ? (ultFull ? "bg-amber-300 shadow-[0_0_5px_rgba(252,211,77,0.8)]" : "bg-amber-500/80") : "bg-zinc-700"}`}
+                />
+              ))}
+            </span>
+          </div>
+        </div>
+
+        {/* BODY: character artwork */}
         <div className="relative min-h-0 flex-1 overflow-hidden bg-zinc-900/60">
           {art ? (
             <Image
@@ -488,40 +537,6 @@ function TeamUnitTile({
               />
             </motion.div>
           ) : null}
-        </div>
-
-        {/* Status bar */}
-        <div
-          className={`shrink-0 space-y-1 border-t border-zinc-800 bg-black/75 px-1.5 py-1 ${isDead ? "opacity-60" : ""}`}
-        >
-          <div className="flex items-center justify-between gap-1">
-            <span className="truncate font-heading text-xs tracking-[0.06em] text-zinc-100">
-              {unit.name}
-            </span>
-            <StatusChips unit={unit} onOpen={onOpenEffects} />
-          </div>
-
-          <div>
-            <div className="h-1.5 w-full overflow-hidden border border-zinc-700/80 bg-zinc-900">
-              <div
-                className={`h-full transition-[width] duration-300 ${isDead || hpPercent < 30 ? "bg-red-500" : "bg-emerald-500"}`}
-                style={{ width: `${hpPercent}%` }}
-              />
-            </div>
-            <div className="mt-0.5 flex items-center justify-between font-body text-[9px] uppercase tracking-[0.08em] text-zinc-400">
-              <span>
-                {displayHP}/{unit.hp}
-              </span>
-              <span className="flex items-center gap-0.5">
-                {Array.from({ length: ultGaugeMax(unit) }).map((_, i) => (
-                  <span
-                    key={i}
-                    className={`h-1 w-2.5 -skew-x-12 ${i < unit.ultGauge ? (unit.ultGauge >= ultGaugeMax(unit) ? "bg-amber-300 shadow-[0_0_5px_rgba(252,211,77,0.8)]" : "bg-amber-500/80") : "bg-zinc-700"}`}
-                  />
-                ))}
-              </span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -882,20 +897,35 @@ export default function BattleArena({
               — click to focus fire (optional; unmarked attacks pick randomly)
             </span>
           </p>
-          <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
-            {enemyTeam.map((unit) => (
-              <TeamUnitTile
-                key={unit.instanceId}
-                unit={unit}
-                isEnemy
-                isMarked={selectedEnemyMarker === unit.instanceId}
-                queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
-                fx={tileFx(unit.instanceId)}
-                onMark={setEnemyMarker}
-                onViewDetails={setDetailUnit}
-                onOpenEffects={openEffects}
-              />
-            ))}
+          <div
+            className={
+              enemyTeam.length === 1
+                ? "flex min-h-0 flex-1 items-stretch justify-center"
+                : "grid min-h-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-4"
+            }
+          >
+            {enemyTeam.map((unit) => {
+              const tile = (
+                <TeamUnitTile
+                  unit={unit}
+                  isEnemy
+                  isMarked={selectedEnemyMarker === unit.instanceId}
+                  queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
+                  fx={tileFx(unit.instanceId)}
+                  onMark={setEnemyMarker}
+                  onViewDetails={setDetailUnit}
+                  onOpenEffects={openEffects}
+                />
+              );
+              // A lone boss is centered and enlarged (7DSGC solo-boss layout)
+              return enemyTeam.length === 1 ? (
+                <div key={unit.instanceId} className="min-h-0 w-1/2 sm:w-2/5">
+                  {tile}
+                </div>
+              ) : (
+                <React.Fragment key={unit.instanceId}>{tile}</React.Fragment>
+              );
+            })}
           </div>
         </div>
 
