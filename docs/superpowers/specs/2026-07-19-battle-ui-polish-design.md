@@ -81,6 +81,37 @@ the bar, HP capsule, ult pips beneath, status squares above.
 A single boss is centered + enlarged (vs the 3-across party). Our arena grids
 enemies 2/4-up. Consider centering/enlarging a lone boss tile.
 
+**STATUS: DONE 2026-07-20 (commit 8ba7105).**
+
+---
+
+## Slice 3 — Full character Info Panel (Images 2/3)
+
+Redesigned `UnitDetailPanel`: header (close · name + element crest + tags +
+Elite · teammate ‹ › nav), big ATK/DEF (left) + Remaining/Max HP (right)
+callouts flanking the art with deltas, `?` → Detailed Info (eff ATK/DEF w/
+delta, Crit Chance, Evade, Ult Gauge), ult pips + passive readout + `KitDetails`
+below. Buffs/debuffs removed (they live in the quick-panel). Image-3 stats we
+don't have (Pierce/Crit-Dmg/Recovery/Lifesteal as char stats) are omitted; no
+Lv field (leveling unbuilt).
+
+**STATUS: DONE 2026-07-20 (commit 63fcb5b).**
+
+---
+
+## Slice 4 — Battle HUD
+
+- **Enemy hidden-deck strip** (face-down cards = enemy hand size, honest) +
+  **capsule HP bars**. DONE 2026-07-20 (commit 2774281).
+- **AUTO / auto-battle:** SKIPPED (Tanveer 2026-07-20) — pairs with the
+  world-boss/farming update later.
+- **Per-enemy NEXT telegraph:** SKIPPED — our AI is dynamic, a committed NEXT
+  would be inaccurate; the hidden-deck strip telegraphs hand size honestly.
+- **Pause:** N/A (turn-based/manual).
+
+**Battle-UI polish batch COMPLETE.** Next in the roadmap batch: SFX + music
+(audio system + royalty-free assets, Tanveer approves), then Misc.
+
 ## Testing
 `npm run check` green; `/practice` 200; drive a boss fight and open the panel on
 a unit carrying Corrosion/buffs. (No unit tests — presentational; verify live.)
