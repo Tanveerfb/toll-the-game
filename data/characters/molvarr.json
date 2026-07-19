@@ -15,7 +15,7 @@
   "skills": [
     {
       "skillName": "Corrosive Surge",
-      "description": "Does ATK-scaled damage to all enemies; applies Corrosion.",
+      "description": "Does ATK-scaled damage to all enemies; applies Corrosion for [corrosion.duration] turns.",
       "characterId": "molvarr",
       "type": "attack",
       "statMultiplier": "atk",
@@ -57,7 +57,7 @@
       "skills": [
         {
           "skillName": "Corrosive Surge",
-          "description": "Does ATK-scaled damage to all enemies; applies Corrosion.",
+          "description": "Does ATK-scaled damage to all enemies; applies Corrosion for [corrosion.duration] turns.",
           "characterId": "molvarr",
           "type": "attack",
           "statMultiplier": "atk",
@@ -82,6 +82,7 @@
         "characterId": "molvarr",
         "type": "heal",
         "statMultiplier": "hp",
+        "damageRanked": [0, 0, 0],
         "mechanics": [{ "type": "heal", "missingHpPercent": 30, "targetSelf": true }]
       },
       "ultimate": {
@@ -144,6 +145,7 @@
         "characterId": "molvarr",
         "type": "buff",
         "statMultiplier": "atk",
+        "damageRanked": [0, 0, 0],
         "mechanics": [
           { "type": "buff", "stat": "atk", "valuePercent": 50, "duration": 2, "targetSelf": true },
           { "type": "buff", "stat": "def", "valuePercent": 50, "duration": 2, "targetSelf": true }

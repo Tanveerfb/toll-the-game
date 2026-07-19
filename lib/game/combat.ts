@@ -116,7 +116,9 @@ function getSkillDamagePercent(
   if (skill.type === "ultimate") {
     return (skill as UltimateCard).damage;
   } else {
-    return (skill as SkillCard).damageRanked[rankIndex];
+    // Heal/buff skills (e.g. Molvarr's SP Skills) carry no damageRanked — no
+    // damage. Treat a missing/short array as 0% rather than crashing.
+    return (skill as SkillCard).damageRanked?.[rankIndex] ?? 0;
   }
 }
 

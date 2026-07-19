@@ -246,6 +246,25 @@ describe("heal missingHpPercent (SP Skill)", () => {
     // 30% of (3000-500) = 750 -> 1250
     expect(res.enemyTeam[0].currentHP).toBe(1250);
   });
+
+  it("does not crash when a heal skill omits damageRanked", () => {
+    const healer = char({ instanceId: "b", team: "enemy", hp: 1000, currentHP: 400 });
+    // A skill with NO damageRanked (the live crash: SP Skills authored damageless)
+    const sp = {
+      skillName: "Devour",
+      characterId: "molvarr",
+      type: "heal",
+      statMultiplier: "hp",
+      mechanics: [{ type: "heal", missingHpPercent: 50, targetSelf: true }],
+    } as unknown as SkillCard;
+    expect(() =>
+      executeSkill(
+        { sourceInstanceId: "b", skill: sp, targetInstanceId: "b" },
+        { playerTeam: [], enemyTeam: [healer] },
+        noop,
+      ),
+    ).not.toThrow();
+  });
 });
 
 describe("bossCorrosionBonus (+30% vs Corroded, combat hook)", () => {
