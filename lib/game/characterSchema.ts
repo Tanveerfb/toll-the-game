@@ -74,6 +74,7 @@ export const characterSchema = z.looseObject({
         atk: z.number().positive(),
         def: z.number().positive(),
         skills: z.array(skillSchema),
+        spSkill: skillSchema.optional(),
         ultimate: skillSchema.optional(),
         passives: z.array(passiveSchema).optional(),
       }),

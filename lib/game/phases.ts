@@ -51,8 +51,9 @@ export function shouldAdvancePhase(char: BattleCharacter): boolean {
  * team state, the global battle turn counter, and boss-applied debuffs already
  * on the players (e.g. Corrosion) — none of which this function touches.
  *
- * NOTE: multi-passive activation is pending piece 4; for now the first passive
- * of the phase is applied.
+ * NOTE: `passive` holds passives[0] for the legacy single-passive combat hooks,
+ * but ALL of a phase's passives are active — the boss engine
+ * (lib/game/bossPassives.ts) reads them live from the phase each turn.
  */
 export function enterBossPhase(
   base: BattleCharacter,

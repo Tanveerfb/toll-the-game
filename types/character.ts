@@ -15,6 +15,9 @@ export interface CharacterPhase {
   atk: number;
   def: number;
   skills: SkillCard[];
+  /** Auto-fired special (Molvarr): NOT part of the deck/hand. The boss engine
+   * forces it as the final action on a timer (bossAutoSp). */
+  spSkill?: SkillCard;
   ultimate?: UltimateCard;
   passives?: Passive[];
 }

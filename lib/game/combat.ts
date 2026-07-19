@@ -6,6 +6,7 @@ import { trySurviveLethal } from "./lethal";
 import { syncExtortLinks } from "./effects";
 import { getEffectiveAttack, getEffectiveDefense } from "./stats";
 import { ultGaugeMax } from "./ultGauge";
+import { bossDamageMultiplierVsTarget } from "./bossPassives";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
 import {
@@ -635,8 +636,20 @@ export function executeSkill(
         targetEvent.crit = true;
       }
 
+      // Boss "+% vs Corroded" (Molvarr P2) — a per-target multiplier, so it
+      // scales THIS target's base damage without compounding across the loop.
+      const corrosionBonus = bossDamageMultiplierVsTarget(
+        updatedSource,
+        updatedTarget,
+      );
+      if (corrosionBonus > 1) {
+        targetEffects.push(
+          `+${Math.floor((corrosionBonus - 1) * 100)}% vs Corroded`,
+        );
+      }
+
       const damage = calculateDamage({
-        baseDamage,
+        baseDamage: baseDamage * corrosionBonus,
         skillMechanics: didCrit
           ? [...skillMechanics, { type: "critical" }]
           : skillMechanics,
@@ -678,7 +691,16 @@ export function executeSkill(
         updatedTarget.passiveState.tookDamageThisRound = true;
       }
     } else if (action.skill.type === "heal") {
-      const healAmount = Math.floor(baseDamage);
+      // Molvarr SP: heal a % of MISSING HP (maxHP - currentHP) instead of the
+      // stat-scaled amount. Falls back to the normal damageRanked-as-heal.
+      const healMech = skillMechanics.find((m) => m.type === "heal");
+      const healAmount =
+        healMech?.missingHpPercent != null
+          ? Math.floor(
+              (updatedTarget.hp - updatedTarget.currentHP) *
+                (healMech.missingHpPercent / 100),
+            )
+          : Math.floor(baseDamage);
       healedAmount = healAmount;
       targetEvent.heal = healAmount;
       updatedTarget.currentHP = Math.min(

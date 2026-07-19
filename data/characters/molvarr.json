@@ -1,0 +1,191 @@
+{
+  "id": "molvarr",
+  "name": "Molvarr",
+  "color": "dark",
+  "tags": ["Demon"],
+  "storyOnly": true,
+  "tier": "elite",
+  "ultGaugeMax": 10,
+  "ccImmune": true,
+  "lore": "The Sunken Warden of the lake — a living mountain of corroded stone that Duke and Batra rouse from the depths. It does not tire, and the water it churns eats through armor and flesh alike.",
+  "atk": 150,
+  "def": 110,
+  "hp": 3000,
+  "skills": [
+    {
+      "skillName": "Corrosive Surge",
+      "description": "Does ATK-scaled damage to all enemies; applies Corrosion.",
+      "characterId": "molvarr",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [140, 170, 225],
+      "mechanics": [
+        { "type": "aoe" },
+        { "type": "corrosion", "durationRanked": [1, 1, 2] }
+      ]
+    },
+    {
+      "skillName": "Crushing Maw",
+      "description": "Does ATK-scaled damage to one enemy.",
+      "characterId": "molvarr",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [300, 335, 400]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Sunken Verdict",
+    "description": "Does massive ATK-scaled damage to one enemy and disables their attack skills for 2 turns.",
+    "characterId": "molvarr",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 500,
+    "mechanics": [{ "type": "seal", "sealType": "attack", "duration": 2 }]
+  },
+  "passive": {
+    "name": "Growing Malice",
+    "description": "Raises ATK by 10% for each debuff stack on the enemy team.",
+    "trigger": "always",
+    "mechanics": [{ "type": "bossDebuffAtk", "percentPerDebuff": 10 }]
+  },
+  "phases": [
+    {
+      "hp": 3000,
+      "atk": 150,
+      "def": 110,
+      "skills": [
+        {
+          "skillName": "Corrosive Surge",
+          "description": "Does ATK-scaled damage to all enemies; applies Corrosion.",
+          "characterId": "molvarr",
+          "type": "attack",
+          "statMultiplier": "atk",
+          "damageRanked": [140, 170, 225],
+          "mechanics": [
+            { "type": "aoe" },
+            { "type": "corrosion", "durationRanked": [1, 1, 2] }
+          ]
+        },
+        {
+          "skillName": "Crushing Maw",
+          "description": "Does ATK-scaled damage to one enemy.",
+          "characterId": "molvarr",
+          "type": "attack",
+          "statMultiplier": "atk",
+          "damageRanked": [300, 335, 400]
+        }
+      ],
+      "spSkill": {
+        "skillName": "Devour the Tide",
+        "description": "Heals for 30% of diminished HP.",
+        "characterId": "molvarr",
+        "type": "heal",
+        "statMultiplier": "hp",
+        "mechanics": [{ "type": "heal", "missingHpPercent": 30, "targetSelf": true }]
+      },
+      "ultimate": {
+        "skillName": "Sunken Verdict",
+        "description": "Does massive ATK-scaled damage to one enemy and disables their attack skills for 2 turns.",
+        "characterId": "molvarr",
+        "type": "ultimate",
+        "statMultiplier": "atk",
+        "damage": 500,
+        "mechanics": [{ "type": "seal", "sealType": "attack", "duration": 2 }]
+      },
+      "passives": [
+        {
+          "name": "Growing Malice",
+          "description": "Raises ATK by 10% for each debuff stack on the enemy team.",
+          "trigger": "always",
+          "mechanics": [{ "type": "bossDebuffAtk", "percentPerDebuff": 10 }]
+        },
+        {
+          "name": "Ancient Rhythm",
+          "description": "Every 3rd turn, its final action is the SP Skill.",
+          "trigger": "always",
+          "mechanics": [{ "type": "bossAutoSp", "everyNTurns": 3 }]
+        },
+        {
+          "name": "Sunken Awakening",
+          "description": "From turn 10, permanently doubles ATK, DEF and max HP. Cannot be cancelled; happens once.",
+          "trigger": "always",
+          "mechanics": [{ "type": "bossStatSpike", "fromTurn": 10, "multiplier": 2 }]
+        }
+      ]
+    },
+    {
+      "hp": 4000,
+      "atk": 210,
+      "def": 145,
+      "skills": [
+        {
+          "skillName": "Abyssal Pierce",
+          "description": "Does Pierce ATK-scaled damage to all enemies.",
+          "characterId": "molvarr",
+          "type": "attack",
+          "statMultiplier": "atk",
+          "damageRanked": [150, 180, 250],
+          "mechanics": [{ "type": "aoe" }, { "type": "pierce" }]
+        },
+        {
+          "skillName": "Devouring Bite",
+          "description": "Does ATK-scaled damage to one enemy and lifesteals 30% of the damage dealt.",
+          "characterId": "molvarr",
+          "type": "attack",
+          "statMultiplier": "atk",
+          "damageRanked": [200, 250, 350],
+          "mechanics": [{ "type": "lifesteal", "valuePercent": 30 }]
+        }
+      ],
+      "spSkill": {
+        "skillName": "Iron Carapace",
+        "description": "Raises ATK and DEF by 50% for 2 turns.",
+        "characterId": "molvarr",
+        "type": "buff",
+        "statMultiplier": "atk",
+        "mechanics": [
+          { "type": "buff", "stat": "atk", "valuePercent": 50, "duration": 2, "targetSelf": true },
+          { "type": "buff", "stat": "def", "valuePercent": 50, "duration": 2, "targetSelf": true }
+        ]
+      },
+      "ultimate": {
+        "skillName": "Tidal Cataclysm",
+        "description": "Does massive ATK-scaled damage to one enemy and fills its own ultimate gauge by 3.",
+        "characterId": "molvarr",
+        "type": "ultimate",
+        "statMultiplier": "atk",
+        "damage": 600,
+        "mechanics": [{ "type": "gainUltGauge", "value": 3 }]
+      },
+      "passives": [
+        {
+          "name": "Corrosive Tide",
+          "description": "Applies 1 Corrosion to each enemy at the start of each turn; deals 30% extra damage to enemies afflicted with Corrosion.",
+          "trigger": "always",
+          "mechanics": [
+            { "type": "bossApplyCorrosion", "perTurn": 1, "duration": 2 },
+            { "type": "bossCorrosionBonus", "percent": 30 }
+          ]
+        },
+        {
+          "name": "Ancient Rhythm",
+          "description": "Every 3rd turn, its final action is the SP Skill.",
+          "trigger": "always",
+          "mechanics": [{ "type": "bossAutoSp", "everyNTurns": 3 }]
+        },
+        {
+          "name": "Sunken Awakening",
+          "description": "From turn 10, permanently doubles ATK, DEF and max HP. Cannot be cancelled; happens once.",
+          "trigger": "always",
+          "mechanics": [{ "type": "bossStatSpike", "fromTurn": 10, "multiplier": 2 }]
+        },
+        {
+          "name": "Drowning Depths",
+          "description": "From turn 10, all enemies lose 10% of their max HP every turn.",
+          "trigger": "always",
+          "mechanics": [{ "type": "bossMaxHpDrain", "fromTurn": 10, "percent": 10 }]
+        }
+      ]
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import lyra from "@/data/characters/lyra.json";
 import lyraNpc from "@/data/characters/lyra_npc.json";
 import masterTao from "@/data/characters/master_tao.json";
 import meliodas from "@/data/characters/meliodas.json";
+import molvarr from "@/data/characters/molvarr.json";
 import mustafa from "@/data/characters/mustafa.json";
 import prism from "@/data/characters/prism.json";
 import raider from "@/data/characters/raider.json";
@@ -89,6 +90,7 @@ const rawCharacters = [
   lyraNpc,
   masterTao,
   meliodas,
+  molvarr,
   mustafa,
   prism,
   raider,

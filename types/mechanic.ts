@@ -100,6 +100,9 @@ export interface StanceMechanic extends MechanicBase {
 export interface HealMechanic extends MechanicBase {
   type: "heal";
   valuePercent?: number;
+  /** Heal a % of the target's MISSING HP (maxHP - currentHP) instead of a
+   * stat/flat amount. Molvarr P1 SP Skill = 30% of diminished HP. */
+  missingHpPercent?: number;
   targetSelf?: boolean;
 }
 export interface CleanseMechanic extends MechanicBase {
@@ -246,6 +249,50 @@ export interface ConditionalBuffMechanic extends MechanicBase {
   stat?: string;
 }
 
+// --- Boss-only mechanics (multi-phase "hearts" bosses) ----------------------
+// These are read live from the boss's ACTIVE phase passives by the boss engine
+// (lib/game/bossPassives.ts), evaluated at the boss's turn start / in combat —
+// NOT registered through the OnBattleStart queue (which can't re-register on a
+// phase transition). See docs/design/BOSS_MOLVARR.md.
+
+/** Force the phase's SP Skill as the boss's final action every N phase-turns. */
+export interface BossAutoSpMechanic extends MechanicBase {
+  type: "bossAutoSp";
+  everyNTurns?: number; // default 3
+}
+/** From phase-turn `fromTurn`, multiply the boss's ATK/DEF/maxHP once. Current
+ * HP scales by the same ratio. Uncancellable, fires a single time per phase. */
+export interface BossStatSpikeMechanic extends MechanicBase {
+  type: "bossStatSpike";
+  fromTurn?: number; // default 10
+  multiplier?: number; // default 2 (a "100% increase")
+}
+/** From phase-turn `fromTurn`, each on-field enemy takes damage equal to
+ * `percent`% of its MAX HP at the boss's turn start (healable; cap intact). */
+export interface BossMaxHpDrainMechanic extends MechanicBase {
+  type: "bossMaxHpDrain";
+  fromTurn?: number; // default 10
+  percent?: number; // default 10
+}
+/** Recomputed each boss turn: boss ATK buff = (total debuff stacks across the
+ * enemy field) x `percentPerDebuff`%. Uncancellable badge, updated in place. */
+export interface BossDebuffAtkMechanic extends MechanicBase {
+  type: "bossDebuffAtk";
+  percentPerDebuff?: number; // default 10
+}
+/** Apply `perTurn` Corrosion stack(s) (each `duration` turns) to every on-field
+ * enemy at the boss's turn start. */
+export interface BossApplyCorrosionMechanic extends MechanicBase {
+  type: "bossApplyCorrosion";
+  perTurn?: number; // default 1
+  duration?: number; // default 2
+}
+/** The boss deals `percent`% extra damage to targets afflicted by Corrosion. */
+export interface BossCorrosionBonusMechanic extends MechanicBase {
+  type: "bossCorrosionBonus";
+  percent?: number; // default 30
+}
+
 export type Mechanic =
   | AoeMechanic
   | AoeRankedMechanic
@@ -289,7 +336,13 @@ export type Mechanic =
   | SurviveLethalMechanic
   | ConsumeHpPercentMechanic
   | HealLifestealMechanic
-  | ConditionalBuffMechanic;
+  | ConditionalBuffMechanic
+  | BossAutoSpMechanic
+  | BossStatSpikeMechanic
+  | BossMaxHpDrainMechanic
+  | BossDebuffAtkMechanic
+  | BossApplyCorrosionMechanic
+  | BossCorrosionBonusMechanic;
 
 export type MechanicType = Mechanic["type"];
 
@@ -338,6 +391,12 @@ export const MECHANIC_TYPES = [
   "consumeHpPercent",
   "healLifesteal",
   "conditionalBuff",
+  "bossAutoSp",
+  "bossStatSpike",
+  "bossMaxHpDrain",
+  "bossDebuffAtk",
+  "bossApplyCorrosion",
+  "bossCorrosionBonus",
 ] as const satisfies readonly MechanicType[];
 
 /**

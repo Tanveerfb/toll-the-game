@@ -17,6 +17,7 @@ import { registerCharacterPassives } from "@/lib/game/passive";
 import { applyAdjacentMerges } from "@/lib/game/deck";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { transitionBossPhases } from "@/lib/game/phases";
+import { applyBossTurnStart, bossForcedSpAction } from "@/lib/game/bossPassives";
 import { tickTeamBuffs, tickTeamDebuffs } from "@/lib/game/tick";
 import { syncExtortLinks } from "@/lib/game/effects";
 import { ensureFieldUnit, promoteSubs } from "@/lib/game/sub";
@@ -167,6 +168,22 @@ export default function BattleProvider({
           };
         }
 
+        // Multi-phase boss turn-start passives (Molvarr): per-phase turn
+        // counter, debuff-count ATK, per-turn Corrosion, turn-N drain, the
+        // one-time stat spike. Runs before the boss acts; Corrosion it applies
+        // ticks at the players' turn end (their cleanse window).
+        if (battlePhase === "OnEnemyTurnStart") {
+          const stepped = applyBossTurnStart(
+            currentTeams.enemyTeam,
+            currentTeams.playerTeam,
+            addToBattleLog,
+          );
+          currentTeams = {
+            playerTeam: stepped.playerTeam,
+            enemyTeam: stepped.enemyTeam,
+          };
+        }
+
         // Run any registered events for this phase
         const updatedTeams = await processQueue(
           battlePhase,
@@ -294,14 +311,21 @@ export default function BattleProvider({
       const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
       deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
 
-      // Grant ult gauge for the source character
+      // Grant ult gauge for the source character. An ultimate consumes the
+      // gauge (→0), then refills by its own gainUltGauge mechanic if any
+      // (Molvarr P2 ult refills 3); normal cards grant +1.
+      const playerUltRefill =
+        action.skill.type === "ultimate"
+          ? action.skill.mechanics?.find((m) => m.type === "gainUltGauge")
+              ?.value ?? 0
+          : 0;
       currentTeams.playerTeam = currentTeams.playerTeam.map((char) =>
         char.instanceId === action.sourceInstanceId
           ? {
               ...char,
               ultGauge:
                 action.skill.type === "ultimate"
-                  ? 0
+                  ? Math.min(ultGaugeMax(char), playerUltRefill)
                   : Math.min(ultGaugeMax(char), char.ultGauge + 1),
             }
           : char,
@@ -360,12 +384,20 @@ export default function BattleProvider({
     const actionCount = enemyActionsForTurn(currentTeams.enemyTeam);
     const aiContext = freshAITurnContext();
     for (let i = 0; i < actionCount; i++) {
-      const action = getAIMove(
-        currentTeams.enemyTeam,
-        currentTeams.playerTeam,
-        aiContext,
-        hand,
-      );
+      // A boss due its SP this turn forces the phase's SP Skill as the final
+      // action (bossAutoSp) — it's not in the deck, so no card is consumed.
+      const forcedSp =
+        i === actionCount - 1
+          ? bossForcedSpAction(currentTeams.enemyTeam, currentTeams.playerTeam)
+          : null;
+      const action =
+        forcedSp ??
+        getAIMove(
+          currentTeams.enemyTeam,
+          currentTeams.playerTeam,
+          aiContext,
+          hand,
+        );
       if (!action) break;
       noteAIAction(aiContext, action.skill.type);
 
@@ -410,15 +442,20 @@ export default function BattleProvider({
         hand = hand.filter((c) => !deadEnemyIds.has(c.sourceInstanceId));
       }
 
-      // +1 ult gauge for playing a card (0 on the ult itself) — same per-card
-      // grant the player gets.
+      // +1 ult gauge for playing a card; an ult consumes then refills by its
+      // own gainUltGauge mechanic (Molvarr P2 = 3) — same rule the player gets.
+      const enemyUltRefill =
+        action.skill.type === "ultimate"
+          ? action.skill.mechanics?.find((m) => m.type === "gainUltGauge")
+              ?.value ?? 0
+          : 0;
       currentTeams.enemyTeam = currentTeams.enemyTeam.map((char) =>
         char.instanceId === action.sourceInstanceId
           ? {
               ...char,
               ultGauge:
                 action.skill.type === "ultimate"
-                  ? 0
+                  ? Math.min(ultGaugeMax(char), enemyUltRefill)
                   : Math.min(ultGaugeMax(char), char.ultGauge + 1),
             }
           : char,

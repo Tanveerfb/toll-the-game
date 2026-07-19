@@ -105,6 +105,30 @@ export const MECHANIC_INFO: Record<MechanicType, MechanicInfo> = {
     desc: "Passive: consume stacks for a damage bonus (Flowing Ruin).",
     template: { conditionStacks: 3, damageBonusPercent: 50 },
   },
+  bossAutoSp: {
+    desc: "Boss: forces the phase's SP Skill as the final action every N phase-turns.",
+    template: { everyNTurns: 3 },
+  },
+  bossStatSpike: {
+    desc: "Boss: from phase-turn N, x-multiply ATK/DEF/maxHP once (uncancellable).",
+    template: { fromTurn: 10, multiplier: 2 },
+  },
+  bossMaxHpDrain: {
+    desc: "Boss: from phase-turn N, each field enemy takes %-of-maxHP damage per turn.",
+    template: { fromTurn: 10, percent: 10 },
+  },
+  bossDebuffAtk: {
+    desc: "Boss: ATK buff = (total enemy debuff stacks) x %, recomputed each turn.",
+    template: { percentPerDebuff: 10 },
+  },
+  bossApplyCorrosion: {
+    desc: "Boss: apply N Corrosion stack(s) to each field enemy at turn start.",
+    template: { perTurn: 1, duration: 2 },
+  },
+  bossCorrosionBonus: {
+    desc: "Boss: +% damage to targets afflicted by Corrosion.",
+    template: { percent: 30 },
+  },
 };
 
 export const ALL_MECHANIC_TYPES = MECHANIC_TYPES;

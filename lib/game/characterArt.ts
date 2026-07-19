@@ -40,8 +40,9 @@ const NPC_ART = new Set([
   "frost",
   "iron",
   "prism",
-  // Ch8/9 lake boss (art only; premium kit pending - 2nd main boss)
+  // Ch8/9 lake boss — Molvarr, the Sunken Warden (kit: data/characters/molvarr.json)
   "sea_monster",
+  "molvarr",
   // NPC boss copy of a playable char (reuses lyra art, tweaked stats)
   "lyra_npc",
 ]);

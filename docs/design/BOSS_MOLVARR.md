@@ -58,25 +58,38 @@
   forces a cleanse/heal unit, or a race to out-damage it.
 - Applied by: P1 Skill 1 (ranked duration [1/1/2]); P2 Main passive (1/turn).
 
-## BUILD PROGRESS (2026-07-18)
+## BUILD PROGRESS — COMPLETE (kit shipped 2026-07-19)
 
 - [x] Enemy hidden auto-merge deck (prerequisite; `lib/game/deck.ts`) — commit 9c0239b
 - [x] Per-character ult-gauge cap `ultGaugeMax` (Molvarr 10; `lib/game/ultGauge.ts`) — b91c0e6
 - [x] Corrosion mechanic (`combat.ts`/`tick.ts`) — b91c0e6
 - [x] Phase system core + loop wiring (`lib/game/phases.ts`) — cb5395b, c1ca30b
 - [x] CC-immunity (`ccImmune`) — 028d19b
-- [ ] **NEXT (piece 4 remainder):** the 5 timer/dynamic passives below share one
-  new sub-system — a per-phase turn-hook, a way to encode boss "SP passives" as
-  data, a per-phase `spSkill` slot, and multi-passive activation
-  (`enterBossPhase` applies only `passives[0]` today). Design that first.
-  - auto-SP-timer: forced 3rd action every 3rd phase-turn fires the phase's SP Skill
-  - turn-10 x2 ATK/DEF/maxHP spike (uncancellable, once; scales currentHP by the ratio)
-  - turn-10 -10% maxHP/turn drain on all enemies (P2)
-  - P1 main: debuff-count-across-enemies x10% -> ATK (linear, dynamic — apply as a
-    turn-start recomputed buff; stats.ts can't see the opposing team)
-  - P2 main: apply 1 Corrosion to each enemy at boss turn start; +30% dmg vs corroded
-- [ ] Molvarr kit data (from the finalized draft in `newchars.md`) + Test-in-Battle
-- [ ] Kit Lab boss mode (later)
+- [x] **Piece 4 — boss passive engine (`lib/game/bossPassives.ts`, 2026-07-19).**
+  Multi-phase bosses' timed/dynamic passives are read LIVE from the boss's
+  ACTIVE phase each turn (multi-passive: all of them, not just `passives[0]`),
+  so a phase transition needs no re-registration. Six typed boss mechanics:
+  - `bossAutoSp` — forces the phase's `spSkill` (new per-phase slot) as the
+    final action every N phase-turns (per-phase counter in `passiveState.phaseTurn`,
+    incremented at OnEnemyTurnStart; reset on transition via `enterBossPhase`).
+  - `bossStatSpike` — from turn 10, x2 ATK/DEF/maxHP once, currentHP scaled by
+    the ratio, uncancellable.
+  - `bossMaxHpDrain` — from turn 10 (P2), each field enemy takes 10%-of-maxHP
+    damage per turn (healable; cap intact — Tanveer ruling 2026-07-19).
+  - `bossDebuffAtk` — P1 ATK buff = (total enemy debuff STACKS) x 10%,
+    recomputed each boss turn (stacks, not entries — Tanveer ruling 2026-07-19).
+  - `bossApplyCorrosion` — P2 applies 1 Corrosion (2-turn) to each field enemy
+    at turn start (Tanveer ruling 2026-07-19).
+  - `bossCorrosionBonus` — P2 deals +30% to Corroded targets (combat hook).
+  - Plus `HealMechanic.missingHpPercent` (P1 SP heals 30% of diminished HP) and
+    ult-self-refill on ultimates (P2 ult refills gauge by 3).
+- [x] Molvarr kit data — `data/characters/molvarr.json` (registered in catalog;
+  art `public/npc/molvarr.png`; removed from `newchars.md`). Verified: 235 tests
+  (all boss passives + phase cohesion + kit load) + `/archive/molvarr` 200.
+- [ ] Kit Lab boss mode (later — v2 of the tool).
+
+> Also fixed: `next.config.ts` `localPatterns` now allows `/npc/**` (NPC/boss
+> art in the archive was 500ing since the public/npc/ migration).
 
 ## Systems required (build order)
 

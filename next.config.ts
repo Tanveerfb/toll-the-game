@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
       {
         pathname: "/characters/**",
       },
+      {
+        // NPC / enemy / boss art lives in public/npc/ (see characterArt.ts).
+        pathname: "/npc/**",
+      },
     ],
   },
 };
