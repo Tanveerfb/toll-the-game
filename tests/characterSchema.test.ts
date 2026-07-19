@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { validateCharacters } from "@/lib/game/characterSchema";
-import { getAllCharacters } from "@/lib/game/characterCatalog";
+import {
+  getAllCharacters,
+  getBossCharacters,
+  getPlayableCharacters,
+} from "@/lib/game/characterCatalog";
 
 describe("kit validation (STATUS #7 — typos fail loudly at load)", () => {
   it("accepts every shipped kit", () => {
@@ -70,5 +74,20 @@ describe("kit validation (STATUS #7 — typos fail loudly at load)", () => {
     expect(() => validateCharacters([broken])).toThrow(
       /badtrigger —.*trigger/,
     );
+  });
+});
+
+describe("boss roster (practice Boss Battle picker)", () => {
+  it("returns the curated bosses, all flagged boss:true", () => {
+    const bosses = getBossCharacters();
+    const ids = bosses.map((b) => b.id).sort();
+    expect(ids).toEqual(["lyra_npc", "molvarr"]);
+    expect(bosses.every((b) => b.boss === true)).toBe(true);
+  });
+
+  it("keeps bosses out of the playable roster (storyOnly)", () => {
+    const playable = getPlayableCharacters().map((c) => c.id);
+    expect(playable).not.toContain("molvarr");
+    expect(playable).not.toContain("lyra_npc");
   });
 });

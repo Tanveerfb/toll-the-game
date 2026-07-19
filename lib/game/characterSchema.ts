@@ -62,6 +62,7 @@ export const characterSchema = z.looseObject({
   tier: z.enum(["elite"]).optional(),
   ultGaugeMax: z.number().positive().optional(),
   ccImmune: z.boolean().optional(),
+  boss: z.boolean().optional(),
   skills: z.array(skillSchema).length(2),
   ultimate: skillSchema.optional(),
   passive: passiveSchema.optional(),

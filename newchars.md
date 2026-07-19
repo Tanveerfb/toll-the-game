@@ -35,3 +35,10 @@
      Molvarr (sea monster boss): implemented 2026-07-19 -> data/characters/molvarr.json. -->
 
 <!-- No pending drafts. Add the next character/boss kit below. -->
+
+## Ideas parked (not started)
+
+- **Lyra boss expansion:** Lyra_npc is currently the plain playable Red Ice kit
+  with boss stamina. Now that the boss passive engine exists (bossAutoSp /
+  spSkill slot / bossStatSpike / etc.), we may give her boss-only features — an
+  SP Skill and extra passives. Draft the kit here when ready.

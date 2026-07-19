@@ -15,10 +15,19 @@ import {
 import type { TeamPick } from "@/hooks/BattleProvider";
 import {
   getPlayableCharacters,
+  getBossCharacters,
   type CharacterData,
 } from "@/lib/game/characterCatalog";
 
 const MAX_TEAM_SIZE = 4;
+
+type Mode = "sandbox" | "boss";
+
+/** Multi-phase bosses expose a `phases[]` array; count it for the card badge. */
+function phaseCount(character: CharacterData): number {
+  const phases = (character as { phases?: unknown[] }).phases;
+  return Array.isArray(phases) ? phases.length : 1;
+}
 
 /** Battle format sets the field cap; members beyond it become subs. */
 const FORMATS = {
@@ -265,18 +274,106 @@ function RosterOverlay({
   );
 }
 
+function BossPicker({
+  bosses,
+  selectedId,
+  onSelect,
+}: {
+  bosses: CharacterData[];
+  selectedId: string | null;
+  onSelect: (character: CharacterData) => void;
+}): React.JSX.Element {
+  return (
+    <Card className="rounded-none border-2 border-rose-400/70 bg-black/50 ring-0">
+      <CardHeader className="border-b border-zinc-800 px-4 py-2.5">
+        <div className="flex items-center justify-between">
+          <CardTitle className="font-heading text-lg tracking-[0.12em] text-rose-200">
+            CHOOSE BOSS
+          </CardTitle>
+          <span className="font-body text-xs uppercase tracking-[0.14em] text-zinc-500">
+            {selectedId ? "1 selected" : "pick one"}
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3">
+        {bosses.map((character) => {
+          const isPicked = character.id === selectedId;
+          const art = getCharacterArt(character.id);
+          const phases = phaseCount(character);
+          return (
+            <button
+              key={character.id}
+              type="button"
+              onClick={() => onSelect(character)}
+              className={`group relative flex h-40 flex-col justify-end overflow-hidden border-2 text-left transition-all ${
+                isPicked
+                  ? "border-rose-400/70 ring-2 ring-rose-400/60"
+                  : "border-zinc-700 hover:border-zinc-400"
+              } bg-zinc-900/70`}
+            >
+              {art ? (
+                <Image
+                  src={art}
+                  alt={character.name}
+                  width={256}
+                  height={256}
+                  className="absolute inset-0 h-full w-full object-cover object-top opacity-90"
+                />
+              ) : (
+                <span
+                  className={`absolute inset-0 ${colorSwatchClass(character.color)} opacity-20`}
+                />
+              )}
+              {isPicked ? (
+                <span className="absolute right-1 top-1 z-10 border border-rose-400/70 bg-black/70 px-1.5 py-0.5 font-heading text-xs text-rose-200">
+                  ✓
+                </span>
+              ) : null}
+              <span className="relative z-10 w-full bg-black/70 px-2 py-1">
+                <span className="block truncate font-heading text-base tracking-[0.06em] text-zinc-100">
+                  {character.name}
+                </span>
+                <span className="mt-0.5 flex gap-1">
+                  <Badge
+                    variant="secondary"
+                    className="rounded-none border-amber-400/50 px-1 py-0 font-body text-[9px] uppercase tracking-widest text-amber-200"
+                  >
+                    Elite
+                  </Badge>
+                  {phases > 1 ? (
+                    <Badge
+                      variant="secondary"
+                      className="rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest"
+                    >
+                      {phases} Phases
+                    </Badge>
+                  ) : null}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function TeamSelect({
   onStart,
 }: {
   onStart: (playerPicks: TeamPick[], enemyPicks: TeamPick[]) => void;
 }): React.JSX.Element {
   const roster = React.useMemo(() => getPlayableCharacters(), []);
+  const bosses = React.useMemo(() => getBossCharacters(), []);
+  const [mode, setMode] = React.useState<Mode>("sandbox");
   const [format, setFormat] = React.useState<BattleFormat>("4v4");
   const [playerTeam, setPlayerTeam] = React.useState<CharacterData[]>([]);
   const [enemyTeam, setEnemyTeam] = React.useState<CharacterData[]>([]);
+  const [boss, setBoss] = React.useState<CharacterData | null>(null);
   const [rosterSide, setRosterSide] = React.useState<Side | null>(null);
 
   const fieldCap = FORMATS[format].fieldCap;
+  const isBossMode = mode === "boss";
 
   const setTeam = (side: Side) =>
     side === "player" ? setPlayerTeam : setEnemyTeam;
@@ -290,8 +387,13 @@ export default function TeamSelect({
     });
   };
 
-  // Any combination of 1-4 units is a valid team
-  const canStart = playerTeam.length > 0 && enemyTeam.length > 0;
+  const selectBoss = (character: CharacterData) =>
+    setBoss((current) => (current?.id === character.id ? null : character));
+
+  // Sandbox: any 1-4 vs 1-4. Boss: a player team + one boss.
+  const canStart = isBossMode
+    ? playerTeam.length > 0 && boss !== null
+    : playerTeam.length > 0 && enemyTeam.length > 0;
 
   const toPicks = (team: CharacterData[]): TeamPick[] =>
     team.map((c, index) => ({
@@ -299,20 +401,53 @@ export default function TeamSelect({
       isSub: index >= fieldCap || undefined,
     }));
 
+  const handleStart = () => {
+    if (isBossMode) {
+      if (boss) onStart(toPicks(playerTeam), [{ id: boss.id }]);
+    } else {
+      onStart(toPicks(playerTeam), toPicks(enemyTeam));
+    }
+  };
+
+  const clearAll = () => {
+    setPlayerTeam([]);
+    setEnemyTeam([]);
+    setBoss(null);
+  };
+
   return (
     <section className="mx-auto w-full max-w-6xl space-y-4 px-4 py-6 md:px-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-heading text-4xl tracking-[0.14em] text-zinc-100 md:text-5xl">
-            TEAM SELECT
+            {isBossMode ? "BOSS BATTLE" : "TEAM SELECT"}
           </h1>
           <p className="mt-1 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-            Sandbox — tap a team slot to open the roster and pick 1–4 units.{" "}
-            {FORMATS[format].hint}. A sub&apos;s passive works from the bench;
-            it enters at the start of a new turn after a teammate falls.
+            {isBossMode
+              ? "Build your team, then pick one boss to face. Bosses act three times a turn."
+              : "Sandbox — tap a team slot to open the roster and pick 1–4 units."}{" "}
+            {FORMATS[format].hint}. A sub&apos;s passive works from the bench; it
+            enters at the start of a new turn after a teammate falls.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Sandbox | Boss Battle mode toggle */}
+          <div className="flex border-2 border-zinc-700">
+            {(["sandbox", "boss"] as Mode[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setMode(key)}
+                className={`px-4 py-2 font-heading text-sm tracking-[0.12em] transition-colors ${
+                  mode === key
+                    ? "bg-rose-400/15 text-rose-200"
+                    : "text-zinc-500 hover:text-zinc-200"
+                }`}
+              >
+                {key === "sandbox" ? "SANDBOX" : "BOSS BATTLE"}
+              </button>
+            ))}
+          </div>
           <div className="flex border-2 border-zinc-700">
             {(Object.keys(FORMATS) as BattleFormat[]).map((key) => (
               <button
@@ -331,11 +466,10 @@ export default function TeamSelect({
           </div>
           <Button
             variant="ghost"
-            disabled={playerTeam.length === 0 && enemyTeam.length === 0}
-            onClick={() => {
-              setPlayerTeam([]);
-              setEnemyTeam([]);
-            }}
+            disabled={
+              playerTeam.length === 0 && enemyTeam.length === 0 && boss === null
+            }
+            onClick={clearAll}
             className="rounded-none border border-zinc-700 font-heading tracking-[0.12em] text-zinc-300"
           >
             CLEAR
@@ -343,10 +477,10 @@ export default function TeamSelect({
           <Button
             size="lg"
             disabled={!canStart}
-            onClick={() => onStart(toPicks(playerTeam), toPicks(enemyTeam))}
+            onClick={handleStart}
             className="h-11 rounded-none border-2 border-amber-300 bg-[linear-gradient(90deg,#b45309_0%,#d97706_38%,#f59e0b_70%,#facc15_100%)] px-8 font-heading text-lg tracking-[0.14em] text-zinc-950"
           >
-            START BATTLE
+            {isBossMode ? "START BOSS BATTLE" : "START BATTLE"}
           </Button>
         </div>
       </div>
@@ -358,15 +492,24 @@ export default function TeamSelect({
           fieldCap={fieldCap}
           onOpenRoster={setRosterSide}
         />
-        <TeamSlots
-          side="enemy"
-          team={enemyTeam}
-          fieldCap={fieldCap}
-          onOpenRoster={setRosterSide}
-        />
+        {isBossMode ? (
+          <BossPicker
+            bosses={bosses}
+            selectedId={boss?.id ?? null}
+            onSelect={selectBoss}
+          />
+        ) : (
+          <TeamSlots
+            side="enemy"
+            team={enemyTeam}
+            fieldCap={fieldCap}
+            onOpenRoster={setRosterSide}
+          />
+        )}
       </div>
 
-      {rosterSide ? (
+      {/* Boss mode uses only the player roster overlay; enemy side is the picker */}
+      {rosterSide && !(isBossMode && rosterSide === "enemy") ? (
         <RosterOverlay
           side={rosterSide}
           roster={roster}

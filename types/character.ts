@@ -43,6 +43,8 @@ export interface Character {
   ultGaugeMax?: number;
   /** Immune to crowd-control debuffs (stun/freeze). Molvarr SP Passive 2. */
   ccImmune?: boolean;
+  /** Curated boss flag — surfaced in the practice "Boss Battle" picker. */
+  boss?: boolean;
   /** Exactly 2 skill cards */
   skills: [SkillCard, SkillCard];
   ultimate?: UltimateCard;

@@ -3,6 +3,7 @@
   "name": "Lyra",
   "color": "red",
   "storyOnly": true,
+  "boss": true,
   "tier": "elite",
   "tags": ["Human"],
   "lore": "Story-battle version of Lyra. Same Red Ice kit as the playable card, but with a boss's stamina — a longer, multi-turn duel. Elite tier: acts three times per turn even alone.",

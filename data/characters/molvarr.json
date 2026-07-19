@@ -4,6 +4,7 @@
   "color": "dark",
   "tags": ["Demon"],
   "storyOnly": true,
+  "boss": true,
   "tier": "elite",
   "ultGaugeMax": 10,
   "ccImmune": true,

@@ -68,6 +68,8 @@ export interface CharacterData {
   ultGaugeMax?: number;
   /** Immune to crowd-control debuffs (stun/freeze). */
   ccImmune?: boolean;
+  /** Curated boss flag — surfaced in the practice "Boss Battle" picker. */
+  boss?: boolean;
   skills: CharacterSkillData[];
   ultimate?: CharacterSkillData;
   passive?: CharacterPassiveData;
@@ -121,6 +123,11 @@ export function getAllCharacters(): CharacterData[] {
 /** Roster shown in team select and the archive — story-only enemies hidden */
 export function getPlayableCharacters(): CharacterData[] {
   return characters.filter((character) => character.storyOnly !== true);
+}
+
+/** Curated bosses for the practice "Boss Battle" picker (ignores storyOnly). */
+export function getBossCharacters(): CharacterData[] {
+  return characters.filter((character) => character.boss === true);
 }
 
 export function getCharacterById(id: string): CharacterData | undefined {
