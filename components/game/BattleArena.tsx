@@ -505,9 +505,9 @@ function TeamUnitTile({
 
           <div>
             <div className="flex items-center gap-1">
-              <div className="h-2 flex-1 overflow-hidden border border-zinc-700/80 bg-zinc-900">
+              <div className="h-2 flex-1 overflow-hidden rounded-full border border-zinc-700/80 bg-zinc-900">
                 <div
-                  className={`h-full transition-[width] duration-300 ${isDead || hpPercent < 30 ? "bg-red-500" : "bg-emerald-500"}`}
+                  className={`h-full rounded-full transition-[width] duration-300 ${isDead || hpPercent < 30 ? "bg-red-500" : "bg-emerald-500"}`}
                   style={{ width: `${hpPercent}%` }}
                 />
               </div>
@@ -639,6 +639,7 @@ export default function BattleArena({
     clearInteractionNotice,
     actionQueue,
     deck,
+    enemyDeck,
     pendingAllyCardId,
     confirmAllyTarget,
     cancelAllyTarget,
@@ -956,12 +957,34 @@ export default function BattleArena({
       {/* Battlefield: both teams always visible */}
       <section className="grid min-h-0 flex-1 grid-rows-2 gap-1.5 px-3 py-1.5">
         <div className="flex min-h-0 flex-col">
-          <p className="mb-1 shrink-0 font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            Enemy{" "}
-            <span className="text-zinc-600">
-              — click to focus fire (optional; unmarked attacks pick randomly)
-            </span>
-          </p>
+          <div className="mb-1 flex shrink-0 items-center justify-between gap-2">
+            <p className="min-w-0 truncate font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+              Enemy{" "}
+              <span className="text-zinc-600">
+                — click to focus fire (optional; unmarked attacks pick randomly)
+              </span>
+            </p>
+            {/* Enemy hidden deck (headless 7DS GC model): face-down cards = the
+                enemy's current hand size. */}
+            {enemyDeck.length > 0 ? (
+              <div
+                className="flex shrink-0 items-center gap-1"
+                title={`Enemy hand: ${enemyDeck.length} card${enemyDeck.length > 1 ? "s" : ""}`}
+              >
+                <span className="font-body text-[9px] uppercase tracking-[0.16em] text-zinc-600">
+                  Deck
+                </span>
+                {enemyDeck.slice(0, 7).map((card, i) => (
+                  <span
+                    key={card.id ?? i}
+                    className="flex h-5 w-3.5 items-start justify-center border border-zinc-600/80 bg-linear-to-b from-zinc-800 to-zinc-950"
+                  >
+                    <span className="mt-1 block h-1.5 w-1.5 rotate-45 bg-amber-400/40" />
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
           <div
             className={
               enemyTeam.length === 1
