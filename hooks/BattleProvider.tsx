@@ -82,6 +82,12 @@ export default function BattleProvider({
     snapshotHand,
   } = store;
 
+  // When a boss breaks a phase DURING the player's turn, the new phase starts
+  // like a fresh battle: the boss does NOT get the enemy turn that would
+  // normally follow — the player acts first against the new phase (Tanveer
+  // 2026-07-19). This flag skips exactly that one enemy turn.
+  const skipEnemyTurnRef = React.useRef(false);
+
   // Removed phaseRef - accessing refs during render caused lint errors.
   // Instead we read the latest battlePhase from the Zustand store API.
   const advancePhase = () => {
@@ -100,7 +106,18 @@ export default function BattleProvider({
         setBattlePhase("OnPlayerTurnEnd");
         break;
       case "OnPlayerTurnEnd":
-        setBattlePhase("OnEnemyTurnStart");
+        if (skipEnemyTurnRef.current) {
+          // A phase broke this player turn — skip the boss's enemy turn and
+          // hand straight back to the player (fresh-battle feel for the phase).
+          skipEnemyTurnRef.current = false;
+          addToBattleLog(
+            "[System] The boss reels from the phase break — the party acts first.",
+          );
+          setCurrentTurn((prev) => prev + 1);
+          setBattlePhase("OnPlayerTurnStart");
+        } else {
+          setBattlePhase("OnEnemyTurnStart");
+        }
         break;
       case "OnEnemyTurnStart":
         setBattlePhase("EnemyAction");
@@ -235,6 +252,15 @@ export default function BattleProvider({
             addToBattleLog(`[System] ${t}`),
           );
           setEnemyDeck([]);
+          // If a player-side tick (e.g. Corrosion) broke the phase on the
+          // player's turn, skip the boss's upcoming enemy turn too. A break on
+          // the boss's own turn end already flows into the player's turn next.
+          if (
+            battlePhase === "OnPlayerTurnStart" ||
+            battlePhase === "OnPlayerTurnEnd"
+          ) {
+            skipEnemyTurnRef.current = true;
+          }
         }
 
         // Sync modified states to Zustand
@@ -342,6 +368,8 @@ export default function BattleProvider({
         currentTeams.enemyTeam = phaseStep.team;
         phaseStep.transitions.forEach((t) => addToBattleLog(`[System] ${t}`));
         setEnemyDeck([]);
+        // Broke a phase on the player's own turn — the boss skips its next turn.
+        skipEnemyTurnRef.current = true;
       }
 
       // Ruling #43: once the last enemy dies, remaining queued cards
@@ -494,6 +522,7 @@ export default function BattleProvider({
 
     resetBattle();
     clearQueue();
+    skipEnemyTurnRef.current = false;
 
     // Single boundary cast: kit JSON is loose CharacterData, validated by
     // the Zod schema at load (incl. mechanic types + passive triggers) —
