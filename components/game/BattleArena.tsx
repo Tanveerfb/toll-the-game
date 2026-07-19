@@ -985,15 +985,11 @@ export default function BattleArena({
               </div>
             ) : null}
           </div>
-          <div
-            className={
-              enemyTeam.length === 1
-                ? "flex min-h-0 flex-1 items-stretch justify-center"
-                : "grid min-h-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-4"
-            }
-          >
-            {enemyTeam.map((unit) => {
-              const tile = (
+          {/* Cards are 9:16 portrait, height-capped to the row and centered;
+              a lone boss just sits alone in the middle. */}
+          <div className="flex min-h-0 flex-1 items-stretch justify-center gap-3 overflow-hidden">
+            {enemyTeam.map((unit) => (
+              <div key={unit.instanceId} className="h-full aspect-[9/16]">
                 <TeamUnitTile
                   unit={unit}
                   isEnemy
@@ -1004,16 +1000,8 @@ export default function BattleArena({
                   onViewDetails={setDetailUnit}
                   onOpenEffects={openEffects}
                 />
-              );
-              // A lone boss is centered and enlarged (7DSGC solo-boss layout)
-              return enemyTeam.length === 1 ? (
-                <div key={unit.instanceId} className="min-h-0 w-1/2 sm:w-2/5">
-                  {tile}
-                </div>
-              ) : (
-                <React.Fragment key={unit.instanceId}>{tile}</React.Fragment>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1021,19 +1009,20 @@ export default function BattleArena({
           <p className="mb-1 shrink-0 font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
             Player <span className="text-zinc-600">— tap Info for details</span>
           </p>
-          <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="flex min-h-0 flex-1 items-stretch justify-center gap-3 overflow-hidden">
             {playerTeam.map((unit) => (
-              <TeamUnitTile
-                key={unit.instanceId}
-                unit={unit}
-                isEnemy={false}
-                isMarked={false}
-                queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
-                fx={tileFx(unit.instanceId)}
-                onMark={() => {}}
-                onViewDetails={setDetailUnit}
-                onOpenEffects={openEffects}
-              />
+              <div key={unit.instanceId} className="h-full aspect-[9/16]">
+                <TeamUnitTile
+                  unit={unit}
+                  isEnemy={false}
+                  isMarked={false}
+                  queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
+                  fx={tileFx(unit.instanceId)}
+                  onMark={() => {}}
+                  onViewDetails={setDetailUnit}
+                  onOpenEffects={openEffects}
+                />
+              </div>
             ))}
           </div>
         </div>
