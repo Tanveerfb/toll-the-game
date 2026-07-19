@@ -44,6 +44,15 @@ export interface SequencerFlash {
   strong: boolean;
 }
 
+// Expanding impact ring at the hit point (juice on damage).
+export interface SequencerBurst {
+  key: number;
+  x: number;
+  y: number;
+  color: Color;
+  strong: boolean;
+}
+
 export interface SequencerView {
   active: boolean;
   hpOverrides: Record<string, number>;
@@ -53,6 +62,7 @@ export interface SequencerView {
   ghost: SequencerGhost | null;
   cutIn: SequencerCutIn | null;
   floaters: SequencerFloater[];
+  bursts: SequencerBurst[];
 }
 
 const IDLE_VIEW: SequencerView = {
@@ -64,16 +74,19 @@ const IDLE_VIEW: SequencerView = {
   ghost: null,
   cutIn: null,
   floaters: [],
+  bursts: [],
 };
 
-// Base timings in ms — every sleep divides by the battle speed toggle
-const FLIGHT_MS = 280;
-const IMPACT_HOLD_MS = 320;
-const EVENT_GAP_MS = 100;
-const SUPPORT_MS = 500;
+// Base timings in ms — every sleep divides by the battle speed toggle.
+// Tightened for snappier pacing (2026-07-20 anim pass).
+const FLIGHT_MS = 210;
+const IMPACT_HOLD_MS = 260;
+const EVENT_GAP_MS = 55;
+const SUPPORT_MS = 400;
 const CUT_IN_MS = 900;
-const COUNTER_MS = 380;
-const FLOATER_LIFE_MS = 900;
+const COUNTER_MS = 300;
+const FLOATER_LIFE_MS = 850;
+const BURST_LIFE_MS = 480;
 
 export function useBattleSequencer(
   containerRef: React.RefObject<HTMLElement | null>,
@@ -140,6 +153,28 @@ export function useBattleSequencer(
           floaters: v.floaters.filter((f) => f.key !== floater.key),
         }));
       }, FLOATER_LIFE_MS / (useGameStore.getState().battleSpeed || 1));
+    },
+    [anchorFor],
+  );
+
+  const addBurst = React.useCallback(
+    (instanceId: string, color: Color, strong: boolean) => {
+      const anchor = anchorFor(instanceId);
+      if (!anchor) return;
+      const burst: SequencerBurst = {
+        key: nextKey(),
+        x: anchor.x,
+        y: anchor.y,
+        color,
+        strong,
+      };
+      setView((v) => ({ ...v, bursts: [...v.bursts, burst] }));
+      window.setTimeout(() => {
+        setView((v) => ({
+          ...v,
+          bursts: v.bursts.filter((b) => b.key !== burst.key),
+        }));
+      }, BURST_LIFE_MS / (useGameStore.getState().battleSpeed || 1));
     },
     [anchorFor],
   );
@@ -241,12 +276,9 @@ export function useBattleSequencer(
             return;
           }
           if (t.damage !== undefined) {
-            flashUnit(
-              t.instanceId,
-              ev.sourceColor,
-              Boolean(t.crit || t.killed || ev.isUlt),
-              true,
-            );
+            const strong = Boolean(t.crit || t.killed || ev.isUlt);
+            flashUnit(t.instanceId, ev.sourceColor, strong, true);
+            addBurst(t.instanceId, ev.sourceColor, strong);
             addFloater(
               t.instanceId,
               `${t.crit ? "CRIT " : ""}-${t.damage}`,
@@ -294,7 +326,7 @@ export function useBattleSequencer(
 
       await sleep(EVENT_GAP_MS);
     },
-    [addFloater, anchorFor, flashUnit, sleep],
+    [addBurst, addFloater, anchorFor, flashUnit, sleep],
   );
 
   const runQueue = React.useCallback(async () => {

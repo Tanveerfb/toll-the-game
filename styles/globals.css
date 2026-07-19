@@ -148,22 +148,46 @@ h6 {
 }
 
 /* Battle sequencer VFX (components/game/BattleArena.tsx) */
+/* Hits carry a scale-pop as well as a shake so impacts read as forceful. */
 @keyframes battle-shake {
   0%,
   100% {
-    transform: translate(0, 0);
+    transform: translate(0, 0) scale(1);
   }
-  20% {
-    transform: translate(-6px, 2px);
+  15% {
+    transform: translate(-5px, 2px) scale(1.035);
   }
-  40% {
-    transform: translate(5px, -3px);
+  35% {
+    transform: translate(4px, -3px) scale(1.02);
   }
   60% {
-    transform: translate(-4px, -2px);
+    transform: translate(-3px, -2px) scale(1.012);
   }
   80% {
-    transform: translate(3px, 2px);
+    transform: translate(2px, 2px) scale(1.004);
+  }
+}
+
+/* Crit / kill / ult impacts — bigger displacement and pop. */
+@keyframes battle-shake-strong {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  10% {
+    transform: translate(-9px, 3px) scale(1.085);
+  }
+  25% {
+    transform: translate(8px, -4px) scale(1.06);
+  }
+  42% {
+    transform: translate(-7px, -3px) scale(1.045);
+  }
+  60% {
+    transform: translate(5px, 3px) scale(1.028);
+  }
+  80% {
+    transform: translate(-3px, 2px) scale(1.012);
   }
 }
 
@@ -181,7 +205,11 @@ h6 {
 }
 
 .battle-shake {
-  animation: battle-shake 0.32s ease-out;
+  animation: battle-shake 0.3s ease-out;
+}
+
+.battle-shake-strong {
+  animation: battle-shake-strong 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
 
 .battle-evade {
@@ -190,6 +218,7 @@ h6 {
 
 @media (prefers-reduced-motion: reduce) {
   .battle-shake,
+  .battle-shake-strong,
   .battle-evade {
     animation: none;
   }

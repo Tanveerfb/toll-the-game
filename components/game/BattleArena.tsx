@@ -478,7 +478,7 @@ function TeamUnitTile({
   return (
     <div
       data-battle-instance={unit.instanceId}
-      className={`relative min-h-0 h-full ${fx.shaking ? "battle-shake" : ""} ${fx.evading ? "battle-evade" : ""}`}
+      className={`relative min-h-0 h-full ${fx.shaking ? (fx.flash?.strong ? "battle-shake-strong" : "battle-shake") : ""} ${fx.evading ? "battle-evade" : ""}`}
     >
       <div
         onClick={() => {
@@ -896,6 +896,28 @@ export default function BattleArena({
             >
               {floater.text}
             </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {/* Impact burst rings — expand and fade at each hit point */}
+        <AnimatePresence>
+          {seq.bursts.map((burst) => (
+            <motion.div
+              key={`burst-${burst.key}`}
+              initial={{ opacity: 0.85, scale: 0.35 }}
+              animate={{ opacity: 0, scale: burst.strong ? 2.9 : 2 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.48 / battleSpeed, ease: "easeOut" }}
+              className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{
+                left: burst.x,
+                top: burst.y,
+                width: burst.strong ? 84 : 58,
+                height: burst.strong ? 84 : 58,
+                border: `${burst.strong ? 3 : 2}px solid ${FLASH_TINTS[burst.color]}`,
+                boxShadow: `0 0 18px ${FLASH_TINTS[burst.color]}`,
+              }}
+            />
           ))}
         </AnimatePresence>
       </div>
