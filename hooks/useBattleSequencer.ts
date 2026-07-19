@@ -53,6 +53,15 @@ export interface SequencerBurst {
   strong: boolean;
 }
 
+// Element-colored streak across all targets of an AoE hit.
+export interface SequencerSweep {
+  key: number;
+  x: number;
+  y: number;
+  width: number;
+  color: Color;
+}
+
 export interface SequencerView {
   active: boolean;
   hpOverrides: Record<string, number>;
@@ -63,6 +72,7 @@ export interface SequencerView {
   cutIn: SequencerCutIn | null;
   floaters: SequencerFloater[];
   bursts: SequencerBurst[];
+  sweep: SequencerSweep | null;
 }
 
 const IDLE_VIEW: SequencerView = {
@@ -75,6 +85,7 @@ const IDLE_VIEW: SequencerView = {
   cutIn: null,
   floaters: [],
   bursts: [],
+  sweep: null,
 };
 
 // Base timings in ms — every sleep divides by the battle speed toggle.
@@ -87,6 +98,7 @@ const CUT_IN_MS = 900;
 const COUNTER_MS = 300;
 const FLOATER_LIFE_MS = 850;
 const BURST_LIFE_MS = 480;
+const SWEEP_LIFE_MS = 380;
 
 export function useBattleSequencer(
   containerRef: React.RefObject<HTMLElement | null>,
@@ -179,6 +191,31 @@ export function useBattleSequencer(
     [anchorFor],
   );
 
+  const addSweep = React.useCallback(
+    (instanceIds: string[], color: Color) => {
+      const anchors = instanceIds
+        .map((id) => anchorFor(id))
+        .filter((a): a is { x: number; y: number } => a !== null);
+      if (anchors.length < 2) return;
+      const xs = anchors.map((a) => a.x);
+      const ys = anchors.map((a) => a.y);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const sweep: SequencerSweep = {
+        key: nextKey(),
+        x: minX - 45,
+        y: ys.reduce((s, v) => s + v, 0) / ys.length,
+        width: maxX - minX + 90,
+        color,
+      };
+      setView((v) => ({ ...v, sweep }));
+      window.setTimeout(() => {
+        setView((v) => (v.sweep?.key === sweep.key ? { ...v, sweep: null } : v));
+      }, SWEEP_LIFE_MS / (useGameStore.getState().battleSpeed || 1));
+    },
+    [anchorFor],
+  );
+
   const flashUnit = React.useCallback(
     (instanceId: string, color: Color, strong: boolean, shake: boolean) => {
       const flash: SequencerFlash = { key: nextKey(), color, strong };
@@ -248,6 +285,15 @@ export function useBattleSequencer(
           await sleep(FLIGHT_MS);
           if (!alive()) return;
           setView((v) => ({ ...v, ghost: null }));
+        }
+
+        // AoE reads distinctly from a single hit: an element-colored streak
+        // sweeps across everything struck.
+        if (ev.targets.length > 1) {
+          addSweep(
+            ev.targets.filter((t) => !t.evaded).map((t) => t.instanceId),
+            ev.sourceColor,
+          );
         }
 
         // Impact: all targets at once (AoE hits together)
@@ -326,7 +372,7 @@ export function useBattleSequencer(
 
       await sleep(EVENT_GAP_MS);
     },
-    [addBurst, addFloater, anchorFor, flashUnit, sleep],
+    [addBurst, addFloater, addSweep, anchorFor, flashUnit, sleep],
   );
 
   const runQueue = React.useCallback(async () => {

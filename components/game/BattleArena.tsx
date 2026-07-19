@@ -920,6 +920,27 @@ export default function BattleArena({
             />
           ))}
         </AnimatePresence>
+
+        {/* AoE sweep — an element-colored streak across every target */}
+        <AnimatePresence>
+          {seq.sweep ? (
+            <motion.div
+              key={`sweep-${seq.sweep.key}`}
+              initial={{ opacity: 0, scaleX: 0.15 }}
+              animate={{ opacity: [0, 0.9, 0], scaleX: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 / battleSpeed, ease: "easeOut" }}
+              className="absolute h-12 origin-left -translate-y-1/2"
+              style={{
+                left: seq.sweep.x,
+                top: seq.sweep.y,
+                width: seq.sweep.width,
+                background: `linear-gradient(90deg, transparent, ${FLASH_TINTS[seq.sweep.color]} 45%, #ffffffcc 50%, ${FLASH_TINTS[seq.sweep.color]} 55%, transparent)`,
+                filter: "blur(1px)",
+              }}
+            />
+          ) : null}
+        </AnimatePresence>
       </div>
 
       {seq.active ? (
