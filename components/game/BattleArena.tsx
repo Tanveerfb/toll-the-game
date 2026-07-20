@@ -1004,6 +1004,25 @@ export default function BattleArena({
                     }}
                   />
                 ) : null}
+                {/* Flame's flicker — a smaller inner pulse that pops and
+                    dies faster than the main ring, like a lick of fire. */}
+                {shape === "flicker" ? (
+                  <motion.div
+                    initial={{ opacity: 0.9, scale: 0.15 }}
+                    animate={{ opacity: [0.9, 0.4, 0], scale: 1.1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 / battleSpeed, ease: "easeOut" }}
+                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    style={{
+                      left: burst.x,
+                      top: burst.y,
+                      width: size * 0.55,
+                      height: size * 0.55,
+                      background: tint,
+                      filter: "blur(2px)",
+                    }}
+                  />
+                ) : null}
               </React.Fragment>
             );
           })}

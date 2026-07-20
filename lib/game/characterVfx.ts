@@ -15,12 +15,17 @@ export interface CharacterVfx {
   shape: VfxShape;
 }
 
+// Tints are deliberately picked AWAY from the character's own element Color
+// (checked against FLASH_TINTS in BattleArena.tsx) — a flavor that lands on
+// the same hue as the default team-color ring is invisible. Duke and Lyra
+// are both element "blue"/"red", the same hue their original water/Red-Ice
+// tints used, so the flavor never read as distinct (Tanveer 2026-07-21).
 const CHARACTER_VFX: Record<string, CharacterVfx> = {
-  duke: { tint: "rgba(56,189,248,0.65)", shape: "ripple" }, // water
-  lyra: { tint: "rgba(244,63,94,0.6)", shape: "shard" }, // Red Ice — molten/frozen
-  lyra_npc: { tint: "rgba(244,63,94,0.6)", shape: "shard" },
-  batra: { tint: "rgba(251,146,60,0.65)", shape: "flicker" }, // flame
-  gabrist: { tint: "rgba(139,92,246,0.6)", shape: "blot" }, // ink
+  duke: { tint: "rgba(45,212,191,0.8)", shape: "ripple" }, // water — teal, away from his blue element
+  lyra: { tint: "rgba(232,65,199,0.8)", shape: "shard" }, // Red Ice — magenta, away from her red element
+  lyra_npc: { tint: "rgba(232,65,199,0.8)", shape: "shard" },
+  batra: { tint: "rgba(251,146,60,0.75)", shape: "flicker" }, // flame
+  gabrist: { tint: "rgba(167,139,250,0.75)", shape: "blot" }, // ink
 };
 
 /** Resolved tint for a burst/sweep: the character's flavor, else the base Color. */
