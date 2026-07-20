@@ -53,6 +53,8 @@ interface PassiveMechanicEntry {
 interface CharacterPassiveView {
   name?: string;
   trigger?: string;
+  /** Display-only trigger override; engine still keys off `trigger`. */
+  triggerText?: string;
   description?: string;
   mechanics?: PassiveMechanicEntry[];
 }
@@ -95,6 +97,7 @@ const COLOR_STYLES: Record<
 };
 
 const TRIGGER_EXPLANATIONS: Record<string, string> = {
+  always: "Always",
   afterSkill: "After each skill used by this character",
   onIgniteConsume:
     "After a certain number of ignites consumed by this character",
@@ -277,12 +280,14 @@ function getPassiveBlocks(passive?: CharacterPassiveView): Array<{
     ? passive.mechanics.some((entry) => entry.conditionNoDeadAllies === true)
     : false;
 
-  const trigger = noDeadAlliesCondition
-    ? "Always when there are no dead allies"
-    : passive.trigger
-      ? (TRIGGER_EXPLANATIONS[passive.trigger] ??
-        `When ${toTitleCase(passive.trigger)}`)
-      : "To be added";
+  const trigger = passive.triggerText?.trim()
+    ? passive.triggerText.trim()
+    : noDeadAlliesCondition
+      ? "Always when there are no dead allies"
+      : passive.trigger
+        ? (TRIGGER_EXPLANATIONS[passive.trigger] ??
+          `When ${toTitleCase(passive.trigger)}`)
+        : "To be added";
   const description = passive.description?.trim() || "To be added";
 
   return [{ trigger, description }];

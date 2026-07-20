@@ -109,8 +109,9 @@
         },
         {
           "name": "Sunken Awakening",
-          "description": "From turn 10, permanently doubles ATK, DEF and max HP. Cannot be cancelled; happens once.",
+          "description": "All stats +100%. Cannot be cancelled; only once.",
           "trigger": "always",
+          "triggerText": "On turn 10",
           "mechanics": [{ "type": "bossStatSpike", "fromTurn": 10, "multiplier": 2 }]
         }
       ]
@@ -178,14 +179,16 @@
         },
         {
           "name": "Sunken Awakening",
-          "description": "From turn 10, permanently doubles ATK, DEF and max HP. Cannot be cancelled; happens once.",
+          "description": "All stats +100%. Cannot be cancelled; only once.",
           "trigger": "always",
+          "triggerText": "On turn 10",
           "mechanics": [{ "type": "bossStatSpike", "fromTurn": 10, "multiplier": 2 }]
         },
         {
           "name": "Drowning Depths",
-          "description": "From turn 10, all enemies lose 10% of their max HP every turn.",
+          "description": "All enemies lose 10% of their max HP at the end of every turn.",
           "trigger": "always",
+          "triggerText": "From turn 10",
           "mechanics": [{ "type": "bossMaxHpDrain", "fromTurn": 10, "percent": 10 }]
         }
       ]

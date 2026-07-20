@@ -35,6 +35,9 @@ interface PassiveMechanicEntry {
 export interface KitPassiveView {
   name?: string;
   trigger?: string;
+  /** Display-only trigger override (e.g. "On turn 10") — the engine still keys
+   *  off `trigger`. Use when the raw trigger doesn't read well for players. */
+  triggerText?: string;
   description?: string;
   mechanics?: PassiveMechanicEntry[];
 }
@@ -45,6 +48,7 @@ const UI = {
 } as const;
 
 const TRIGGER_EXPLANATIONS: Record<string, string> = {
+  always: "Always",
   afterSkill: "After each skill used by this character",
   onIgniteConsume:
     "After a certain number of ignites consumed by this character",
@@ -198,12 +202,14 @@ function getPassiveBlocks(passive?: KitPassiveView): Array<{
   const noDeadAlliesCondition = Array.isArray(passive.mechanics)
     ? passive.mechanics.some((entry) => entry.conditionNoDeadAllies === true)
     : false;
-  const trigger = noDeadAlliesCondition
-    ? "Always when there are no dead allies"
-    : passive.trigger
-      ? (TRIGGER_EXPLANATIONS[passive.trigger] ??
-        `When ${toTitleCase(passive.trigger)}`)
-      : "To be added";
+  const trigger = passive.triggerText?.trim()
+    ? passive.triggerText.trim()
+    : noDeadAlliesCondition
+      ? "Always when there are no dead allies"
+      : passive.trigger
+        ? (TRIGGER_EXPLANATIONS[passive.trigger] ??
+          `When ${toTitleCase(passive.trigger)}`)
+        : "To be added";
   const description = passive.description?.trim() || "To be added";
   return [{ trigger, description }];
 }
