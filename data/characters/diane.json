@@ -42,7 +42,7 @@
   ],
   "ultimate": {
     "skillName": "Mother Earth Catastrophe",
-    "description": "Does 600% Rupture ATK-scaled damage to all enemies. ",
+    "description": "Does Rupture ATK-scaled damage to all enemies.",
     "characterId": "diane",
     "type": "ultimate",
     "statMultiplier": "atk",

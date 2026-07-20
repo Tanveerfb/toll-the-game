@@ -36,7 +36,7 @@
   ],
   "ultimate": {
     "skillName": "Sunken Verdict",
-    "description": "Does massive ATK-scaled damage to one enemy and disables their attack skills for 2 turns.",
+    "description": "Does ATK-scaled damage to one enemy and attack seals for 2 turns.",
     "characterId": "molvarr",
     "type": "ultimate",
     "statMultiplier": "atk",
@@ -45,7 +45,7 @@
   },
   "passive": {
     "name": "Growing Malice",
-    "description": "Raises ATK by 5% for each debuff stack on the enemy team.",
+    "description": "Increases ATK by 5% for each debuff present on the enemy team.",
     "trigger": "always",
     "mechanics": [{ "type": "bossDebuffAtk", "percentPerDebuff": 5 }]
   },
@@ -87,7 +87,7 @@
       },
       "ultimate": {
         "skillName": "Sunken Verdict",
-        "description": "Does massive ATK-scaled damage to one enemy and disables their attack skills for 2 turns.",
+        "description": "Does ATK-scaled damage to one enemy and attack seals for 2 turns.",
         "characterId": "molvarr",
         "type": "ultimate",
         "statMultiplier": "atk",
@@ -97,7 +97,7 @@
       "passives": [
         {
           "name": "Growing Malice",
-          "description": "Raises ATK by 5% for each debuff stack on the enemy team.",
+          "description": "Increases ATK by 5% for each debuff present on the enemy team.",
           "trigger": "always",
           "mechanics": [{ "type": "bossDebuffAtk", "percentPerDebuff": 5 }]
         },
@@ -154,7 +154,7 @@
       },
       "ultimate": {
         "skillName": "Tidal Cataclysm",
-        "description": "Does massive ATK-scaled damage to one enemy and fills its own ultimate gauge by 3.",
+        "description": "Does ATK-scaled damage to one enemy and fills its own ultimate gauge by 3.",
         "characterId": "molvarr",
         "type": "ultimate",
         "statMultiplier": "atk",
