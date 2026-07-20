@@ -134,6 +134,66 @@ export function getCharacterById(id: string): CharacterData | undefined {
   return characterMap.get(id);
 }
 
+/** One phase of a multi-phase boss, as loose JSON (mirrors CharacterPhase). */
+export interface CharacterPhaseData {
+  hp: number;
+  atk: number;
+  def: number;
+  skills: CharacterSkillData[];
+  spSkill?: CharacterSkillData;
+  ultimate?: CharacterSkillData;
+  passives?: CharacterPassiveData[];
+}
+
+/** Resolved kit for a single phase — passives always normalized to an array. */
+export interface CharacterKitView {
+  skills: CharacterSkillData[];
+  ultimate?: CharacterSkillData;
+  passives: CharacterPassiveData[];
+  atk: number;
+  def: number;
+  hp: number;
+}
+
+/** A boss's phase list (empty for a normal, single-phase character). */
+export function getCharacterPhases(
+  character: CharacterData,
+): CharacterPhaseData[] {
+  const phases = character.phases;
+  return Array.isArray(phases) ? (phases as CharacterPhaseData[]) : [];
+}
+
+/**
+ * The kit shown for a given phase (0-based). A phased boss returns that phase's
+ * skills/ultimate/passives; a normal character (or an out-of-range index) falls
+ * back to the top-level kit. Passives are always an array so callers can render
+ * a boss's several passives uniformly.
+ */
+export function getCharacterKit(
+  character: CharacterData,
+  phaseIndex = 0,
+): CharacterKitView {
+  const phase = getCharacterPhases(character)[phaseIndex];
+  if (phase) {
+    return {
+      skills: phase.skills,
+      ultimate: phase.ultimate,
+      passives: phase.passives ?? [],
+      atk: phase.atk,
+      def: phase.def,
+      hp: phase.hp,
+    };
+  }
+  return {
+    skills: character.skills,
+    ultimate: character.ultimate,
+    passives: character.passive ? [character.passive] : [],
+    atk: character.atk,
+    def: character.def,
+    hp: character.hp,
+  };
+}
+
 /**
  * Kit Lab (dev tool) only: inject/replace a draft kit at runtime so it can be
  * launched into a practice battle before it's saved to disk. Not part of the

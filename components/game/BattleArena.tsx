@@ -30,7 +30,7 @@ import { getCritChance } from "@/lib/game/combat";
 import { getEvadeChance } from "@/lib/game/evade";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { getPassiveReadout } from "@/lib/game/passiveStacks";
-import { getCharacterById } from "@/lib/game/characterCatalog";
+import { getCharacterById, getCharacterKit } from "@/lib/game/characterCatalog";
 import KitDetails, { type KitPassiveView } from "@/components/game/KitDetails";
 import BattleEffectsOverlay from "@/components/game/BattleEffectsOverlay";
 import EffectsQuickPanel, {
@@ -131,7 +131,10 @@ function UnitDetailPanel({
     setShowDetailed(false);
   };
 
-  const kit = getCharacterById(selected.id);
+  // Phase-aware kit: a multi-phase boss in a later phase shows THAT phase's
+  // skills/ultimate/passives, not the phase-1 catalog entry (Tanveer 2026-07-20).
+  const catalog = getCharacterById(selected.id);
+  const kit = catalog ? getCharacterKit(catalog, selected.phaseIndex ?? 0) : null;
   const passive = getPassiveReadout(selected);
   const effAtk = getEffectiveAttack(selected);
   const effDef = getEffectiveDefense(selected);
@@ -332,7 +335,7 @@ function UnitDetailPanel({
             <KitDetails
               skills={kit.skills}
               ultimate={kit.ultimate}
-              passive={kit.passive as KitPassiveView | undefined}
+              passives={kit.passives as KitPassiveView[]}
             />
           ) : null}
         </CardContent>

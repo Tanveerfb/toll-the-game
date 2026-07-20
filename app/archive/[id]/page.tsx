@@ -15,8 +15,10 @@ import {
 import {
   characterIds,
   getCharacterById,
+  getCharacterPhases,
   type CharacterSkillData,
 } from "@/lib/game/characterCatalog";
+import KitPhases from "@/components/game/KitPhases";
 import {
   buildRankedSkillDescriptions,
   buildSingleDescription,
@@ -335,6 +337,9 @@ export default async function CharacterDetailPage({
   const passiveBlocks = getPassiveBlocks(passive);
   const synergyBlocks = getSynergyBlocks(passive);
   const previewRows = buildCharacterDamagePreview(character);
+  // Multi-phase kits (bosses, and later playable transformations) get a phase
+  // switcher instead of the flat Skills + Passive sections.
+  const isMultiPhase = getCharacterPhases(character).length > 1;
 
   return (
     <main
@@ -437,6 +442,12 @@ export default async function CharacterDetailPage({
 
           {/* Kit details */}
           <div className="space-y-4">
+            {isMultiPhase ? (
+              <Section title="Kit">
+                <KitPhases character={character} />
+              </Section>
+            ) : (
+              <>
             <Section title="Skills">
               <div className="space-y-3">
                 {character.skills.map((skill, index) => (
@@ -500,6 +511,8 @@ export default async function CharacterDetailPage({
                 ) : null}
               </div>
             </Section>
+              </>
+            )}
 
             <Section
               title="Damage Preview"

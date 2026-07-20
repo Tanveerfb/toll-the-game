@@ -258,18 +258,79 @@ function PanelSection({
   );
 }
 
-/** Skills + Ultimate + Passive, rendered identically to the archive (no art). */
+/** One passive's blocks + synergy, with its name header. Bosses stack several. */
+function PassiveEntry({
+  passive,
+  showName,
+}: {
+  passive?: KitPassiveView;
+  showName: boolean;
+}): React.JSX.Element {
+  const passiveBlocks = getPassiveBlocks(passive);
+  const synergyBlocks = getSynergyBlocks(passive);
+
+  return (
+    <div className="space-y-2.5">
+      {showName && passive?.name ? (
+        <p className="font-heading text-sm tracking-[0.08em] text-amber-200/90">
+          {passive.name}
+        </p>
+      ) : null}
+      {passiveBlocks.map((block, index) => (
+        <div
+          key={`passive-block-${index}`}
+          className={`border border-zinc-800 bg-zinc-950/60 px-3 py-2.5 ${block.isConditional ? "ml-4 border-l-2 border-l-amber-400/50" : ""}`}
+        >
+          <p className={UI.fieldLabel}>
+            {block.isConditional ? "Conditional — " : ""}Trigger
+          </p>
+          <KeyworkHighlighter text={block.trigger} className={UI.textValue} />
+          <p className={`${UI.fieldLabel} mt-2`}>Effect</p>
+          <KeyworkHighlighter
+            text={block.description}
+            className={UI.textValue}
+          />
+        </div>
+      ))}
+
+      {synergyBlocks.length > 0 ? (
+        <div className="border border-zinc-800 bg-zinc-950/60 px-3 py-2.5">
+          <p className={UI.fieldLabel}>Synergy</p>
+          <div className="mt-1 space-y-1">
+            {synergyBlocks.map((line, index) => (
+              <KeyworkHighlighter
+                key={`synergy-${index}`}
+                text={line}
+                className={`${UI.textValue} block`}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Skills + Ultimate + Passive(s), rendered identically to the archive (no art).
+ * Pass `passives` for a multi-passive kit (bosses); `passive` is the legacy
+ * single-passive prop. When both are absent the passive section shows the
+ * "to be added" placeholder.
+ */
 export default function KitDetails({
   skills,
   ultimate,
   passive,
+  passives,
 }: {
   skills: CharacterSkillData[];
   ultimate?: CharacterSkillData;
   passive?: KitPassiveView;
+  passives?: KitPassiveView[];
 }): React.JSX.Element {
-  const passiveBlocks = getPassiveBlocks(passive);
-  const synergyBlocks = getSynergyBlocks(passive);
+  const passiveList = passives ?? (passive ? [passive] : []);
+  const multi = passiveList.length > 1;
+  const subtitleName = !multi ? passiveList[0]?.name : undefined;
 
   return (
     <div className="space-y-3">
@@ -287,47 +348,27 @@ export default function KitDetails({
       </PanelSection>
 
       <PanelSection
-        title="Passive"
+        title={multi ? "Passives" : "Passive"}
         subtitle={
-          passive?.name ? (
+          subtitleName ? (
             <span className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-              {passive.name}
+              {subtitleName}
             </span>
           ) : undefined
         }
       >
-        <div className="space-y-2.5">
-          {passiveBlocks.map((block, index) => (
-            <div
-              key={`passive-block-${index}`}
-              className={`border border-zinc-800 bg-zinc-950/60 px-3 py-2.5 ${block.isConditional ? "ml-4 border-l-2 border-l-amber-400/50" : ""}`}
-            >
-              <p className={UI.fieldLabel}>
-                {block.isConditional ? "Conditional — " : ""}Trigger
-              </p>
-              <KeyworkHighlighter text={block.trigger} className={UI.textValue} />
-              <p className={`${UI.fieldLabel} mt-2`}>Effect</p>
-              <KeyworkHighlighter
-                text={block.description}
-                className={UI.textValue}
+        <div className="space-y-3">
+          {passiveList.length === 0 ? (
+            <PassiveEntry passive={undefined} showName={false} />
+          ) : (
+            passiveList.map((p, index) => (
+              <PassiveEntry
+                key={`passive-${p.name ?? index}`}
+                passive={p}
+                showName={multi}
               />
-            </div>
-          ))}
-
-          {synergyBlocks.length > 0 ? (
-            <div className="border border-zinc-800 bg-zinc-950/60 px-3 py-2.5">
-              <p className={UI.fieldLabel}>Synergy</p>
-              <div className="mt-1 space-y-1">
-                {synergyBlocks.map((line, index) => (
-                  <KeyworkHighlighter
-                    key={`synergy-${index}`}
-                    text={line}
-                    className={`${UI.textValue} block`}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : null}
+            ))
+          )}
         </div>
       </PanelSection>
     </div>

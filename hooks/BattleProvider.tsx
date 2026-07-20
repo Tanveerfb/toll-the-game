@@ -380,6 +380,15 @@ export default function BattleProvider({
         setEnemyDeck([]);
         // Broke a phase on the player's own turn — the boss skips its next turn.
         skipEnemyTurnRef.current = true;
+        // A phase break ends the player turn like a fresh battle: any actions
+        // still queued after the killing blow FIZZLE — they don't get to hit
+        // the new phase (Tanveer 2026-07-20).
+        if (remainingQueue.length > 0) {
+          addToBattleLog(
+            `[System] Phase break — ${remainingQueue.length} queued action(s) fizzle.`,
+          );
+        }
+        break;
       }
 
       // Ruling #43: once the last enemy dies, remaining queued cards
