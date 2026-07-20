@@ -50,6 +50,9 @@ export interface SequencerBurst {
   x: number;
   y: number;
   color: Color;
+  /** Source character id — resolves a per-character VFX flavor (tint/shape)
+   *  when one is registered (lib/game/characterVfx.ts); falls back to `color`. */
+  characterId?: string;
   strong: boolean;
 }
 
@@ -60,6 +63,7 @@ export interface SequencerSweep {
   y: number;
   width: number;
   color: Color;
+  characterId?: string;
 }
 
 export interface SequencerView {
@@ -89,16 +93,25 @@ const IDLE_VIEW: SequencerView = {
 };
 
 // Base timings in ms — every sleep divides by the battle speed toggle.
-// Tightened for snappier pacing (2026-07-20 anim pass).
-const FLIGHT_MS = 210;
-const IMPACT_HOLD_MS = 260;
-const EVENT_GAP_MS = 55;
-const SUPPORT_MS = 400;
-const CUT_IN_MS = 900;
-const COUNTER_MS = 300;
-const FLOATER_LIFE_MS = 850;
-const BURST_LIFE_MS = 480;
-const SWEEP_LIFE_MS = 380;
+// Slowed back down from the earlier "snappier" pass (2026-07-20): Tanveer
+// found even 1x too fast to track attacker -> target -> result. The 2x
+// toggle still exists for players who want the quicker feel.
+const FLIGHT_MS = 340;
+const IMPACT_HOLD_MS = 480;
+const EVENT_GAP_MS = 120;
+const SUPPORT_MS = 480;
+const CUT_IN_MS = 950;
+const COUNTER_MS = 380;
+const FLOATER_LIFE_MS = 950;
+const BURST_LIFE_MS = 520;
+const SWEEP_LIFE_MS = 420;
+// AoE: gap between each target's hit as the sweep steps left -> right.
+const AOE_STAGGER_MS = 220;
+// Beat between the leading sweep cue and the first target's impact.
+const AOE_LEAD_MS = 160;
+// Tick events (DoT/HoT/boss drain) are secondary to the main action beat —
+// shorter hold so a chain of them doesn't drag, but still a real animation.
+const TICK_HOLD_MS = 320;
 
 export function useBattleSequencer(
   containerRef: React.RefObject<HTMLElement | null>,
@@ -170,7 +183,7 @@ export function useBattleSequencer(
   );
 
   const addBurst = React.useCallback(
-    (instanceId: string, color: Color, strong: boolean) => {
+    (instanceId: string, color: Color, strong: boolean, characterId?: string) => {
       const anchor = anchorFor(instanceId);
       if (!anchor) return;
       const burst: SequencerBurst = {
@@ -178,6 +191,7 @@ export function useBattleSequencer(
         x: anchor.x,
         y: anchor.y,
         color,
+        characterId,
         strong,
       };
       setView((v) => ({ ...v, bursts: [...v.bursts, burst] }));
@@ -192,7 +206,7 @@ export function useBattleSequencer(
   );
 
   const addSweep = React.useCallback(
-    (instanceIds: string[], color: Color) => {
+    (instanceIds: string[], color: Color, characterId?: string) => {
       const anchors = instanceIds
         .map((id) => anchorFor(id))
         .filter((a): a is { x: number; y: number } => a !== null);
@@ -207,6 +221,7 @@ export function useBattleSequencer(
         y: ys.reduce((s, v) => s + v, 0) / ys.length,
         width: maxX - minX + 90,
         color,
+        characterId,
       };
       setView((v) => ({ ...v, sweep }));
       window.setTimeout(() => {
@@ -240,6 +255,32 @@ export function useBattleSequencer(
   const playEvent = React.useCallback(
     async (ev: SequencedBattleEvent, gen: number) => {
       const alive = () => gen === generationRef.current;
+
+      // System tick (DoT/Corrosion/HoT/boss drain/stat-spike self-heal): no
+      // attacker, no lunge — just a per-target flash+floater so the bar
+      // never snaps to the post-tick value ahead of any animation.
+      if (ev.kind === "tick") {
+        for (const t of ev.targets) {
+          const delta = t.hpAfter - t.hpBefore;
+          setView((v) => ({
+            ...v,
+            hpOverrides: { ...v.hpOverrides, [t.instanceId]: t.hpAfter },
+          }));
+          const isHeal = delta > 0;
+          flashUnit(t.instanceId, isHeal ? "green" : "red", false, !isHeal);
+          if (delta !== 0) {
+            addFloater(
+              t.instanceId,
+              `${isHeal ? "+" : ""}${delta}`,
+              isHeal ? "heal" : "damage",
+            );
+          }
+        }
+        await sleep(TICK_HOLD_MS);
+        if (!alive()) return;
+        await sleep(EVENT_GAP_MS);
+        return;
+      }
 
       const isOffense =
         ev.targets.some((t) => t.damage !== undefined || t.evaded) ||
@@ -287,30 +328,30 @@ export function useBattleSequencer(
           setView((v) => ({ ...v, ghost: null }));
         }
 
-        // AoE reads distinctly from a single hit: an element-colored streak
-        // sweeps across everything struck.
-        if (ev.targets.length > 1) {
+        // AoE reads as a sequence, not a single simultaneous hit: order
+        // targets left -> right by their live on-field position and step
+        // through them one at a time, so the player can track each result.
+        const orderedTargets = [...ev.targets].sort((a, b) => {
+          const ax = anchorFor(a.instanceId)?.x ?? Number.POSITIVE_INFINITY;
+          const bx = anchorFor(b.instanceId)?.x ?? Number.POSITIVE_INFINITY;
+          return ax - bx;
+        });
+        const isAoe = orderedTargets.length > 1;
+
+        if (isAoe) {
           addSweep(
-            ev.targets.filter((t) => !t.evaded).map((t) => t.instanceId),
+            orderedTargets.filter((t) => !t.evaded).map((t) => t.instanceId),
             ev.sourceColor,
+            ev.sourceCharacterId,
           );
+          await sleep(AOE_LEAD_MS);
+          if (!alive()) return;
         }
 
-        // Impact: all targets at once (AoE hits together)
-        setView((v) => {
-          const hpOverrides = { ...v.hpOverrides };
-          const evading = { ...v.evading };
-          ev.targets.forEach((t) => {
-            if (t.evaded) {
-              evading[t.instanceId] = true;
-            } else if (t.hpAfter !== undefined) {
-              hpOverrides[t.instanceId] = t.hpAfter;
-            }
-          });
-          return { ...v, hpOverrides, evading };
-        });
-        ev.targets.forEach((t) => {
+        for (let i = 0; i < orderedTargets.length; i++) {
+          const t = orderedTargets[i];
           if (t.evaded) {
+            setView((v) => ({ ...v, evading: { ...v.evading, [t.instanceId]: true } }));
             addFloater(t.instanceId, "EVADE", "evade");
             window.setTimeout(() => {
               setView((v) => {
@@ -319,12 +360,16 @@ export function useBattleSequencer(
                 return { ...v, evading };
               });
             }, 420 / (useGameStore.getState().battleSpeed || 1));
-            return;
-          }
-          if (t.damage !== undefined) {
+          } else if (t.damage !== undefined) {
             const strong = Boolean(t.crit || t.killed || ev.isUlt);
+            if (t.hpAfter !== undefined) {
+              setView((v) => ({
+                ...v,
+                hpOverrides: { ...v.hpOverrides, [t.instanceId]: t.hpAfter! },
+              }));
+            }
             flashUnit(t.instanceId, ev.sourceColor, strong, true);
-            addBurst(t.instanceId, ev.sourceColor, strong);
+            addBurst(t.instanceId, ev.sourceColor, strong, ev.sourceCharacterId);
             addFloater(
               t.instanceId,
               `${t.crit ? "CRIT " : ""}-${t.damage}`,
@@ -334,7 +379,13 @@ export function useBattleSequencer(
               addFloater(t.instanceId, "SURVIVED!", "info", 26);
             }
           }
-        });
+          // Stagger between AoE targets so each hit reads individually; a
+          // single-target hit just falls straight into the full hold below.
+          if (isAoe && i < orderedTargets.length - 1) {
+            await sleep(AOE_STAGGER_MS);
+            if (!alive()) return;
+          }
+        }
         await sleep(IMPACT_HOLD_MS);
         if (!alive()) return;
 

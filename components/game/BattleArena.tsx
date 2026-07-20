@@ -31,6 +31,7 @@ import { getEvadeChance } from "@/lib/game/evade";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { getPassiveReadout } from "@/lib/game/passiveStacks";
 import { getCharacterById, getCharacterKit } from "@/lib/game/characterCatalog";
+import { getVfxShape, getVfxTint, vfxShapeStyle } from "@/lib/game/characterVfx";
 import KitDetails, { type KitPassiveView } from "@/components/game/KitDetails";
 import BattleEffectsOverlay from "@/components/game/BattleEffectsOverlay";
 import EffectsQuickPanel, {
@@ -956,26 +957,56 @@ export default function BattleArena({
           ))}
         </AnimatePresence>
 
-        {/* Impact burst rings — expand and fade at each hit point */}
+        {/* Impact burst rings — expand and fade at each hit point. A named
+            character's VFX flavor (water/ink/flame/Red Ice, …) overrides the
+            plain team-color ring with its own tint + shape. */}
         <AnimatePresence>
-          {seq.bursts.map((burst) => (
-            <motion.div
-              key={`burst-${burst.key}`}
-              initial={{ opacity: 0.85, scale: 0.35 }}
-              animate={{ opacity: 0, scale: burst.strong ? 2.9 : 2 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.48 / battleSpeed, ease: "easeOut" }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
-              style={{
-                left: burst.x,
-                top: burst.y,
-                width: burst.strong ? 84 : 58,
-                height: burst.strong ? 84 : 58,
-                border: `${burst.strong ? 3 : 2}px solid ${FLASH_TINTS[burst.color]}`,
-                boxShadow: `0 0 18px ${FLASH_TINTS[burst.color]}`,
-              }}
-            />
-          ))}
+          {seq.bursts.map((burst) => {
+            const tint = getVfxTint(burst.characterId, FLASH_TINTS[burst.color]);
+            const shape = getVfxShape(burst.characterId);
+            const size = burst.strong ? 84 : 58;
+            return (
+              <React.Fragment key={`burst-${burst.key}`}>
+                <motion.div
+                  initial={{ opacity: 0.85, scale: 0.35 }}
+                  animate={{ opacity: 0, scale: burst.strong ? 2.9 : 2 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.48 / battleSpeed, ease: "easeOut" }}
+                  className="absolute -translate-x-1/2 -translate-y-1/2"
+                  style={{
+                    left: burst.x,
+                    top: burst.y,
+                    width: size,
+                    height: size,
+                    border: `${burst.strong ? 3 : 2}px solid ${tint}`,
+                    boxShadow: `0 0 18px ${tint}`,
+                    ...vfxShapeStyle(shape),
+                  }}
+                />
+                {/* Water's second, slightly-delayed ring — a ripple */}
+                {shape === "ripple" ? (
+                  <motion.div
+                    initial={{ opacity: 0.6, scale: 0.2 }}
+                    animate={{ opacity: 0, scale: burst.strong ? 2.2 : 1.5 }}
+                    exit={{ opacity: 0 }}
+                    transition={{
+                      duration: 0.48 / battleSpeed,
+                      delay: 0.1 / battleSpeed,
+                      ease: "easeOut",
+                    }}
+                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    style={{
+                      left: burst.x,
+                      top: burst.y,
+                      width: size,
+                      height: size,
+                      border: `2px solid ${tint}`,
+                    }}
+                  />
+                ) : null}
+              </React.Fragment>
+            );
+          })}
         </AnimatePresence>
 
         {/* AoE sweep — an element-colored streak across every target */}
@@ -992,7 +1023,7 @@ export default function BattleArena({
                 left: seq.sweep.x,
                 top: seq.sweep.y,
                 width: seq.sweep.width,
-                background: `linear-gradient(90deg, transparent, ${FLASH_TINTS[seq.sweep.color]} 45%, #ffffffcc 50%, ${FLASH_TINTS[seq.sweep.color]} 55%, transparent)`,
+                background: `linear-gradient(90deg, transparent, ${getVfxTint(seq.sweep.characterId, FLASH_TINTS[seq.sweep.color])} 45%, #ffffffcc 50%, ${getVfxTint(seq.sweep.characterId, FLASH_TINTS[seq.sweep.color])} 55%, transparent)`,
                 filter: "blur(1px)",
               }}
             />

@@ -22,6 +22,32 @@ import { tickTeamBuffs, tickTeamDebuffs } from "@/lib/game/tick";
 import { syncExtortLinks } from "@/lib/game/effects";
 import { ensureFieldUnit, promoteSubs } from "@/lib/game/sub";
 import { getCharacterById } from "@/lib/game/characterCatalog";
+import type { AnyBattleEvent } from "@/types/battleEvent";
+
+/**
+ * Diffs a team before/after a system tick (DoT, HoT, boss drain, stat-spike
+ * self-heal, …) and emits a `tick` battle event for whoever changed. These
+ * effects mutate currentHP directly with no card/skill behind them — without
+ * this, the store would jump straight to the post-tick HP the instant it
+ * commits, with no sequencer animation ahead of it (the original "snapshot"
+ * bug, still present for anything that isn't a player/enemy card action).
+ */
+function emitHpTicks(
+  before: BattleCharacter[],
+  after: BattleCharacter[],
+  label: string,
+  emit: (event: AnyBattleEvent) => void,
+): void {
+  const beforeHp = new Map(before.map((c) => [c.instanceId, c.currentHP]));
+  const targets = after
+    .map((c) => {
+      const hpBefore = beforeHp.get(c.instanceId);
+      if (hpBefore === undefined || hpBefore === c.currentHP) return null;
+      return { instanceId: c.instanceId, name: c.name, hpBefore, hpAfter: c.currentHP };
+    })
+    .filter((t): t is NonNullable<typeof t> => t !== null);
+  if (targets.length > 0) emit({ kind: "tick", label, targets });
+}
 
 export interface TeamPick {
   id: string;
@@ -160,30 +186,31 @@ export default function BattleProvider({
         }
 
         // System ticks (ruling #21): buffs/HoT expire at the owner's turn
-        // START; debuffs/DoT proc and expire at the victim's turn END.
+        // START; debuffs/DoT proc and expire at the victim's turn END. Each
+        // tick's HP deltas are emitted as a battle event (see emitHpTicks)
+        // so the sequencer animates them instead of the bar silently
+        // snapping to the post-tick value.
+        const addBattleEvent = useGameStore.getState().addBattleEvent;
         if (battlePhase === "OnPlayerTurnStart") {
-          currentTeams = {
-            ...currentTeams,
-            playerTeam: tickTeamBuffs(currentTeams.playerTeam, addToBattleLog),
-          };
+          const before = currentTeams.playerTeam;
+          const ticked = tickTeamBuffs(before, addToBattleLog);
+          emitHpTicks(before, ticked, "Regeneration", addBattleEvent);
+          currentTeams = { ...currentTeams, playerTeam: ticked };
         } else if (battlePhase === "OnPlayerTurnEnd") {
-          currentTeams = {
-            ...currentTeams,
-            playerTeam: tickTeamDebuffs(
-              currentTeams.playerTeam,
-              addToBattleLog,
-            ),
-          };
+          const before = currentTeams.playerTeam;
+          const ticked = tickTeamDebuffs(before, addToBattleLog);
+          emitHpTicks(before, ticked, "DoT", addBattleEvent);
+          currentTeams = { ...currentTeams, playerTeam: ticked };
         } else if (battlePhase === "OnEnemyTurnStart") {
-          currentTeams = {
-            ...currentTeams,
-            enemyTeam: tickTeamBuffs(currentTeams.enemyTeam, addToBattleLog),
-          };
+          const before = currentTeams.enemyTeam;
+          const ticked = tickTeamBuffs(before, addToBattleLog);
+          emitHpTicks(before, ticked, "Regeneration", addBattleEvent);
+          currentTeams = { ...currentTeams, enemyTeam: ticked };
         } else if (battlePhase === "OnEnemyTurnEnd") {
-          currentTeams = {
-            ...currentTeams,
-            enemyTeam: tickTeamDebuffs(currentTeams.enemyTeam, addToBattleLog),
-          };
+          const before = currentTeams.enemyTeam;
+          const ticked = tickTeamDebuffs(before, addToBattleLog);
+          emitHpTicks(before, ticked, "DoT", addBattleEvent);
+          currentTeams = { ...currentTeams, enemyTeam: ticked };
         }
 
         // Multi-phase boss turn-start passives (Molvarr): per-phase turn
@@ -191,11 +218,17 @@ export default function BattleProvider({
         // one-time stat spike. Runs before the boss acts; Corrosion it applies
         // ticks at the players' turn end (their cleanse window).
         if (battlePhase === "OnEnemyTurnStart") {
+          const beforeEnemy = currentTeams.enemyTeam;
+          const beforePlayer = currentTeams.playerTeam;
           const stepped = applyBossTurnStart(
             currentTeams.enemyTeam,
             currentTeams.playerTeam,
             addToBattleLog,
           );
+          // Stat spike also jumps the boss's own max/current HP (a self-heal
+          // in effect); the max-HP drain lowers the players'.
+          emitHpTicks(beforeEnemy, stepped.enemyTeam, "Awakening", addBattleEvent);
+          emitHpTicks(beforePlayer, stepped.playerTeam, "Decay", addBattleEvent);
           currentTeams = {
             playerTeam: stepped.playerTeam,
             enemyTeam: stepped.enemyTeam,

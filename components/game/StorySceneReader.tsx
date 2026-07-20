@@ -57,6 +57,15 @@ export default function StorySceneReader({
   const art = scene.portraitId ? getCharacterArt(scene.portraitId) : null;
   const side = scene.side ?? "left";
 
+  // Two independent, permanently-positioned slots (not one div whose side
+  // flips via className) — a speaker's portrait only ever animates within
+  // its own slot. Previously both sides shared one container, so switching
+  // speakers teleported the container to the new side WHILE the old
+  // portrait was still mid-exit, flashing the wrong character in the new
+  // speaker's spot for a frame (Tanveer 2026-07-20).
+  const leftArt = side === "left" ? art : null;
+  const rightArt = side === "right" ? art : null;
+
   // div (not <button>): the Skip control nests inside, and button-in-button
   // is invalid HTML → hydration error. Enter/Space handled by the window
   // keydown listener above.
@@ -87,24 +96,43 @@ export default function StorySceneReader({
         </span>
       </div>
 
-      {/* Positioning lives on this wrapper — framer-motion owns the inner
-          transform, so a Tailwind -translate-y class there would be clobbered */}
-      <div
-        className={`pointer-events-none absolute top-1/2 -translate-y-1/2 ${
-          side === "left" ? "left-2 md:left-10" : "right-2 md:right-10"
-        }`}
-      >
-        <AnimatePresence mode="popLayout">
-          {art ? (
+      {/* Left slot — only ever holds the left speaker's portrait */}
+      <div className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 md:left-10">
+        <AnimatePresence mode="wait">
+          {leftArt ? (
             <motion.div
-              key={`${scene.portraitId}-${side}`}
-              initial={{ opacity: 0, x: side === "left" ? -24 : 24 }}
+              key={scene.portraitId}
+              initial={{ opacity: 0, x: -24 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
             >
               <Image
-                src={art}
+                src={leftArt}
+                alt={scene.speaker ?? scene.portraitId ?? "Portrait"}
+                width={512}
+                height={512}
+                priority
+                className="h-56 w-56 border-2 border-zinc-700 object-cover object-top shadow-[0_18px_50px_rgba(0,0,0,0.6)] md:h-80 md:w-80"
+              />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
+
+      {/* Right slot — only ever holds the right speaker's portrait */}
+      <div className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 md:right-10">
+        <AnimatePresence mode="wait">
+          {rightArt ? (
+            <motion.div
+              key={scene.portraitId}
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              <Image
+                src={rightArt}
                 alt={scene.speaker ?? scene.portraitId ?? "Portrait"}
                 width={512}
                 height={512}

@@ -58,7 +58,7 @@
   },
   "passive": {
     "name": "Giant's Will",
-    "description": "ATK rises by 15% for each turn passed (max 5 stacks, uncancellable). ",
+    "description": "ATK rises by 10% for each turn passed (max 5 stacks, uncancellable).",
     "trigger": "onNewTurn",
     "mechanics": [
       {

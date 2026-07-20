@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { BattleCharacter } from "@/types/character";
 import { BattlePhase } from "@/types/mechanic";
 import { ActionCard } from "@/types/action";
-import { BattleActionEvent } from "@/types/battleEvent";
+import { AnyBattleEvent } from "@/types/battleEvent";
 import {
   applyAdjacentMerges,
   initialCardsFor,
@@ -11,7 +11,7 @@ import {
 } from "@/lib/game/deck";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
 
-export type SequencedBattleEvent = BattleActionEvent & { id: number };
+export type SequencedBattleEvent = AnyBattleEvent & { id: number };
 
 // Ally-friendly skill that hits ONE ally at this card's rank (no aoe, and
 // aoeRanked inactive at the rank) — the player must mark the ally target.
@@ -108,7 +108,7 @@ interface BattleState {
   setEnemyTurns: (turn: number | ((prev: number) => number)) => void;
   setBattlePhase: (phase: BattlePhase) => void;
   addToBattleLog: (entry: string) => void;
-  addBattleEvent: (event: BattleActionEvent) => void;
+  addBattleEvent: (event: AnyBattleEvent) => void;
   setBattleSpeed: (speed: number) => void;
   resetBattle: () => void;
 

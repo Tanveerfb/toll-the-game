@@ -48,4 +48,28 @@ export interface BattleActionEvent {
   counters: BattleEventCounter[];
 }
 
+export interface BattleTickTarget {
+  instanceId: string;
+  name: string;
+  hpBefore: number;
+  hpAfter: number;
+}
+
+/**
+ * A non-action HP change — DoT/Corrosion, HoT regen, a boss's turn-start
+ * drain or stat-spike self-heal. No attacker/skill, so the sequencer plays
+ * these without a lunge: just a per-target flash/floater so the bar never
+ * silently snaps to a "future" value ahead of any animation.
+ */
+export interface BattleTickEvent {
+  kind: "tick";
+  /** Short label for context (not currently rendered, reserved for a future
+   *  on-tile tag) — e.g. "Corrosion", "Regeneration", "Decay". */
+  label: string;
+  targets: BattleTickTarget[];
+}
+
+export type AnyBattleEvent = BattleActionEvent | BattleTickEvent;
+
 export type BattleEventEmitter = (event: BattleActionEvent) => void;
+export type AnyBattleEventEmitter = (event: AnyBattleEvent) => void;
