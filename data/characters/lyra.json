@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Red Ice: Volcanic Frost",
-      "description": "Does ATK-scaled damage to one enemy; applies [decay.stacks] Decay for [decay.duration] turns.",
+      "description": "Does damage equal to ATK-scaled to one enemy; applies [decay.stacks] Decay for [decay.duration] turns.",
       "characterId": "lyra",
       "type": "attack",
       "statMultiplier": "atk",
@@ -26,7 +26,7 @@
     },
     {
       "skillName": "Red Ice: Magma Shaft",
-      "description": "Does Pierce ATK-scaled damage to one enemy.",
+      "description": "Does Pierce damage equal to ATK-scaled to one enemy.",
       "characterId": "lyra",
       "type": "attack",
       "statMultiplier": "atk",
@@ -40,7 +40,7 @@
   ],
   "ultimate": {
     "skillName": "Red Ice: Absolute Zero Ignition",
-    "description": "Does Pierce ATK-scaled damage to all enemies.",
+    "description": "Does Pierce damage equal to ATK-scaled to all enemies.",
     "characterId": "lyra",
     "type": "ultimate",
     "statMultiplier": "atk",

@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Lion's Charge",
-      "description": "Does [dmg]% Pierce ATK damage to one enemy.",
+      "description": "Does Pierce damage equal to ATK-scaled to one enemy.",
       "characterId": "batra",
       "type": "attack",
       "statMultiplier": "atk",
@@ -23,7 +23,7 @@
     },
     {
       "skillName": "Roar of Spite",
-      "description": "Does [dmg]% Spite ATK damage to all enemies.",
+      "description": "Does Spite damage equal to ATK-scaled to all enemies.",
       "characterId": "batra",
       "type": "attack",
       "statMultiplier": "atk",

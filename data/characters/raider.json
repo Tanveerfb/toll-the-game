@@ -11,7 +11,7 @@
   "skills": [
     {
       "skillName": "Torch Swing",
-      "description": "Does ATK-scaled damage to one enemy; applies Ignite.",
+      "description": "Does damage equal to ATK-scaled to one enemy; applies Ignite.",
       "characterId": "raider",
       "type": "attack",
       "statMultiplier": "atk",
@@ -26,7 +26,7 @@
     },
     {
       "skillName": "Pillager's Rush",
-      "description": "Does ATK-scaled damage to all enemies.",
+      "description": "Does damage equal to ATK-scaled to all enemies.",
       "characterId": "raider",
       "type": "attack",
       "statMultiplier": "atk",

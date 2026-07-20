@@ -11,7 +11,7 @@
   "skills": [
     {
       "skillName": "Savage Bite",
-      "description": "Does ATK-scaled damage to one enemy; Bleed.",
+      "description": "Does damage equal to ATK-scaled to one enemy; Bleed.",
       "characterId": "wild_beast",
       "type": "attack",
       "statMultiplier": "atk",
@@ -26,7 +26,7 @@
     },
     {
       "skillName": "Rending Claws",
-      "description": "Does ATK-scaled damage to one enemy; lowers DEF.",
+      "description": "Does damage equal to ATK-scaled to one enemy; lowers DEF.",
       "characterId": "wild_beast",
       "type": "attack",
       "statMultiplier": "atk",

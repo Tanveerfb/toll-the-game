@@ -11,7 +11,7 @@
   "skills": [
     {
       "skillName": "Crushing Blow",
-      "description": "Does Pierce ATK-scaled damage to one enemy.",
+      "description": "Does Pierce damage equal to ATK-scaled to one enemy.",
       "characterId": "iron",
       "type": "attack",
       "statMultiplier": "atk",

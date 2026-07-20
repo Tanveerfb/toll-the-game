@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Ground Gladius",
-      "description": "Does Rupture ATK-scaled damage to all enemies.",
+      "description": "Does Rupture damage equal to ATK-scaled to all enemies.",
       "characterId": "diane",
       "type": "attack",
       "statMultiplier": "atk",
@@ -26,7 +26,7 @@
     },
     {
       "skillName": "Rush Rock",
-      "description": "Does ATK-scaled damage to one enemy; applies [seal.duration] turn Attack Seal effect on the target.",
+      "description": "Does damage equal to ATK-scaled to one enemy; applies [seal.duration] turn Attack Seal effect on the target.",
       "characterId": "diane",
       "type": "attack",
       "statMultiplier": "atk",
@@ -42,7 +42,7 @@
   ],
   "ultimate": {
     "skillName": "Mother Earth Catastrophe",
-    "description": "Does Rupture ATK-scaled damage to all enemies.",
+    "description": "Does Rupture damage equal to ATK-scaled to all enemies.",
     "characterId": "diane",
     "type": "ultimate",
     "statMultiplier": "atk",

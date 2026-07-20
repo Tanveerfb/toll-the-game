@@ -11,7 +11,7 @@
   "skills": [
     {
       "skillName": "Ambush Strike",
-      "description": "Does Pierce ATK-scaled damage to one enemy.",
+      "description": "Does Pierce damage equal to ATK-scaled to one enemy.",
       "characterId": "road_bandit",
       "type": "attack",
       "statMultiplier": "atk",
@@ -24,7 +24,7 @@
     },
     {
       "skillName": "Sand Throw",
-      "description": "Does ATK-scaled damage to one enemy; lowers ATK.",
+      "description": "Does damage equal to ATK-scaled to one enemy; lowers ATK.",
       "characterId": "road_bandit",
       "type": "attack",
       "statMultiplier": "atk",

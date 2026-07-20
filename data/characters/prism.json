@@ -11,7 +11,7 @@
   "skills": [
     {
       "skillName": "Radiant Bolt",
-      "description": "Does ATK-scaled damage to one enemy.",
+      "description": "Does damage equal to ATK-scaled to one enemy.",
       "characterId": "prism",
       "type": "attack",
       "statMultiplier": "atk",

@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Flaming Palm",
-      "description": "Does ATK-scaled damage to one enemy; applies [ignite.stacks] Ignite.",
+      "description": "Does damage equal to ATK-scaled to one enemy; applies [ignite.stacks] Ignite.",
       "characterId": "master_tao",
       "type": "attack",
       "statMultiplier": "atk",
@@ -40,7 +40,7 @@
   ],
   "ultimate": {
     "skillName": "Wrath of the Fire Sage",
-    "description": "Applies 3 Ignite stacks to all enemies; then does ATK-scaled damage to all enemies.",
+    "description": "Applies 3 Ignite stacks to all enemies; then does damage equal to ATK-scaled to all enemies.",
     "characterId": "master_tao",
     "type": "ultimate",
     "statMultiplier": "atk",

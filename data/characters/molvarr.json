@@ -15,7 +15,7 @@
   "skills": [
     {
       "skillName": "Corrosive Surge",
-      "description": "Does ATK-scaled damage to all enemies; applies Corrosion for [corrosion.duration] turns.",
+      "description": "Does damage equal to ATK-scaled to all enemies; applies Corrosion for [corrosion.duration] turns.",
       "characterId": "molvarr",
       "type": "attack",
       "statMultiplier": "atk",
@@ -27,7 +27,7 @@
     },
     {
       "skillName": "Crushing Maw",
-      "description": "Does ATK-scaled damage to one enemy.",
+      "description": "Does damage equal to ATK-scaled to one enemy.",
       "characterId": "molvarr",
       "type": "attack",
       "statMultiplier": "atk",
@@ -36,7 +36,7 @@
   ],
   "ultimate": {
     "skillName": "Sunken Verdict",
-    "description": "Does ATK-scaled damage to one enemy and attack seals for 2 turns.",
+    "description": "Does damage equal to ATK-scaled to one enemy and attack seals for 2 turns.",
     "characterId": "molvarr",
     "type": "ultimate",
     "statMultiplier": "atk",
@@ -57,7 +57,7 @@
       "skills": [
         {
           "skillName": "Corrosive Surge",
-          "description": "Does ATK-scaled damage to all enemies; applies Corrosion for [corrosion.duration] turns.",
+          "description": "Does damage equal to ATK-scaled to all enemies; applies Corrosion for [corrosion.duration] turns.",
           "characterId": "molvarr",
           "type": "attack",
           "statMultiplier": "atk",
@@ -69,7 +69,7 @@
         },
         {
           "skillName": "Crushing Maw",
-          "description": "Does ATK-scaled damage to one enemy.",
+          "description": "Does damage equal to ATK-scaled to one enemy.",
           "characterId": "molvarr",
           "type": "attack",
           "statMultiplier": "atk",
@@ -87,7 +87,7 @@
       },
       "ultimate": {
         "skillName": "Sunken Verdict",
-        "description": "Does ATK-scaled damage to one enemy and attack seals for 2 turns.",
+        "description": "Does damage equal to ATK-scaled to one enemy and attack seals for 2 turns.",
         "characterId": "molvarr",
         "type": "ultimate",
         "statMultiplier": "atk",
@@ -123,7 +123,7 @@
       "skills": [
         {
           "skillName": "Abyssal Pierce",
-          "description": "Does Pierce ATK-scaled damage to all enemies.",
+          "description": "Does Pierce damage equal to ATK-scaled to all enemies.",
           "characterId": "molvarr",
           "type": "attack",
           "statMultiplier": "atk",
@@ -132,7 +132,7 @@
         },
         {
           "skillName": "Devouring Bite",
-          "description": "Does ATK-scaled damage to one enemy and lifesteals 30% of the damage dealt.",
+          "description": "Does damage equal to ATK-scaled to one enemy and lifesteals 30% of the damage dealt.",
           "characterId": "molvarr",
           "type": "attack",
           "statMultiplier": "atk",
@@ -154,7 +154,7 @@
       },
       "ultimate": {
         "skillName": "Tidal Cataclysm",
-        "description": "Does ATK-scaled damage to one enemy and fills its own ultimate gauge by 3.",
+        "description": "Does damage equal to ATK-scaled to one enemy and fills its own ultimate gauge by 3.",
         "characterId": "molvarr",
         "type": "ultimate",
         "statMultiplier": "atk",

@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Nature's Strike",
-      "description": "Does ATK-scaled damage to one enemy.",
+      "description": "Does damage equal to ATK-scaled to one enemy.",
       "characterId": "siddiq",
       "type": "attack",
       "statMultiplier": "atk",
@@ -37,7 +37,7 @@
   ],
   "ultimate": {
     "skillName": "Wrath of the Wild",
-    "description": "Cancels buffs and stances; does ATK-scaled damage to one enemy; stuns for [stun.duration] turns.",
+    "description": "Cancels buffs and stances; does damage equal to ATK-scaled to one enemy; stuns for [stun.duration] turns.",
     "characterId": "siddiq",
     "type": "ultimate",
     "statMultiplier": "atk",

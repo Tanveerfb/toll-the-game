@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Animal Strike",
-      "description": "Does HP-scaled damage to one enemy.",
+      "description": "Does damage equal to HP-scaled to one enemy.",
       "characterId": "sara",
       "type": "attack",
       "statMultiplier": "hp",
@@ -19,7 +19,7 @@
     },
     {
       "skillName": "Stampede Concentrate",
-      "description": "Does HP-scaled of concentrate damage to all enemies. ",
+      "description": "Does Concentrate damage equal to HP-scaled to all enemies.",
       "characterId": "sara",
       "type": "attack",
       "statMultiplier": "hp",
@@ -36,7 +36,7 @@
   ],
   "ultimate": {
     "skillName": "Beast Master's Fury",
-    "description": "Raises HP for 1 turn; then does HP-scaled damage to one enemy.",
+    "description": "Raises HP for 1 turn; then does damage equal to HP-scaled to one enemy.",
     "characterId": "sara",
     "type": "ultimate",
     "statMultiplier": "hp",

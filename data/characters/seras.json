@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Static Lance",
-      "description": "Does ATK-scaled damage to one enemy; applies Shock for 4 turns.",
+      "description": "Does damage equal to ATK-scaled to one enemy; applies Shock for 4 turns.",
       "characterId": "seras",
       "type": "attack",
       "statMultiplier": "atk",
@@ -25,7 +25,7 @@
     },
     {
       "skillName": "Chain Tempest",
-      "description": "Does Weakpoint ATK-scaled damage to all enemies.",
+      "description": "Does Weakpoint damage equal to ATK-scaled to all enemies.",
       "characterId": "seras",
       "type": "attack",
       "statMultiplier": "atk",
@@ -42,7 +42,7 @@
   ],
   "ultimate": {
     "skillName": "Heavenfall Bolt",
-    "description": "Does 500% CRITICAL ATK damage to one enemy.",
+    "description": "Does Critical damage equal to ATK-scaled to one enemy.",
     "characterId": "seras",
     "type": "ultimate",
     "statMultiplier": "atk",

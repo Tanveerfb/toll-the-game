@@ -11,7 +11,7 @@
   "skills": [
     {
       "skillName": "Frost Lance",
-      "description": "Does ATK-scaled damage to one enemy; lowers DEF for 2 turns.",
+      "description": "Does damage equal to ATK-scaled to one enemy; lowers DEF for 2 turns.",
       "characterId": "frost",
       "type": "attack",
       "statMultiplier": "atk",
@@ -27,7 +27,7 @@
     },
     {
       "skillName": "Glacial Bind",
-      "description": "Does ATK-scaled damage to one enemy; Freezes them for 1 turn.",
+      "description": "Does damage equal to ATK-scaled to one enemy; Freezes them for 1 turn.",
       "characterId": "frost",
       "type": "attack",
       "statMultiplier": "atk",

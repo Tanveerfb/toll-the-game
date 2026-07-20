@@ -9,7 +9,7 @@
   "skills": [
     {
       "skillName": "Fist of Flowing Ruin : Slide",
-      "description": "Does Pierce ATK-scaled damage to all enemies.",
+      "description": "Does Pierce damage equal to ATK-scaled to all enemies.",
       "characterId": "duke",
       "type": "attack",
       "statMultiplier": "atk",
@@ -25,7 +25,7 @@
     },
     {
       "skillName": "Fist of Flowing Ruin : Weaken",
-      "description": "Does ATK-scaled damage to one enemy; lowers ATK by [debuff.value]% for [debuff.duration] turns.",
+      "description": "Does damage equal to ATK-scaled to one enemy; lowers ATK by [debuff.value]% for [debuff.duration] turns.",
       "characterId": "duke",
       "type": "debuff",
       "statMultiplier": "atk",
@@ -42,7 +42,7 @@
   ],
   "ultimate": {
     "skillName": "Fist of Flowing Ruin : Water",
-    "description": "Does ATK-scaled damage to one enemy.",
+    "description": "Does damage equal to ATK-scaled to one enemy.",
     "characterId": "duke",
     "type": "ultimate",
     "statMultiplier": "atk",

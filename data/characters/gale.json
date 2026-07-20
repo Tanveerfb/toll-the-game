@@ -11,7 +11,7 @@
   "skills": [
     {
       "skillName": "Gust Flurry",
-      "description": "Does ATK-scaled damage to one enemy; Weakpoint deals bonus damage to debuffed enemies.",
+      "description": "Does Weakpoint damage equal to ATK-scaled to one enemy.",
       "characterId": "gale",
       "type": "attack",
       "statMultiplier": "atk",
@@ -24,7 +24,7 @@
     },
     {
       "skillName": "Tailwind Slash",
-      "description": "Does ATK-scaled damage to one enemy; raises ATK for 2 turns.",
+      "description": "Does damage equal to ATK-scaled to one enemy; raises ATK for 2 turns.",
       "characterId": "gale",
       "type": "attack",
       "statMultiplier": "atk",

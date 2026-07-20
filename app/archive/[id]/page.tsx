@@ -19,6 +19,7 @@ import {
   type CharacterSkillData,
 } from "@/lib/game/characterCatalog";
 import KitPhases from "@/components/game/KitPhases";
+import { PassiveProse, type KitPassiveView } from "@/components/game/KitDetails";
 import {
   buildRankedSkillDescriptions,
   buildSingleDescription,
@@ -34,29 +35,6 @@ import { getCharacterArt } from "@/lib/game/characterArt";
 
 interface CharacterPageProps {
   params: Promise<{ id: string }>;
-}
-
-interface PassiveMechanicEntry {
-  type?: string;
-  name?: string;
-  trigger?: string;
-  triggerText?: string;
-  description?: string;
-  conditionTags?: string[];
-  conditionColors?: string[];
-  stat?: string;
-  valuePercent?: number;
-  conditionNoDeadAllies?: boolean;
-  [key: string]: unknown;
-}
-
-interface CharacterPassiveView {
-  name?: string;
-  trigger?: string;
-  /** Display-only trigger override; engine still keys off `trigger`. */
-  triggerText?: string;
-  description?: string;
-  mechanics?: PassiveMechanicEntry[];
 }
 
 const UI = {
@@ -94,21 +72,6 @@ const COLOR_STYLES: Record<
     gradient: "from-violet-600/30 to-transparent",
     chip: "bg-violet-500 text-zinc-950",
   },
-};
-
-const TRIGGER_EXPLANATIONS: Record<string, string> = {
-  always: "Always",
-  afterSkill: "After each skill used by this character",
-  onIgniteConsume:
-    "After a certain number of ignites consumed by this character",
-  beforeSkill: "Before this character uses a skill",
-  onBattleStart: "At the start of battle",
-  onFirstAction: "When this character acts first in a turn",
-  onLethalDamage: "When this character receives lethal damage",
-  onDamageDealt: "When this character deals damage",
-  onAllySkill: "When an ally uses a skill",
-  onRoundEnd: "At the end of enemy turn",
-  aura: "While this character remains active",
 };
 
 function toTitleCase(value: string): string {
@@ -237,92 +200,6 @@ function SkillBlock({
   );
 }
 
-function getPassiveBlocks(passive?: CharacterPassiveView): Array<{
-  trigger: string;
-  description: string;
-  isConditional?: boolean;
-}> {
-  if (!passive) {
-    return [{ trigger: "To be added", description: "To be added" }];
-  }
-
-  const mechanicBlocks = Array.isArray(passive.mechanics)
-    ? passive.mechanics
-        .filter(
-          (entry) =>
-            typeof entry === "object" &&
-            entry !== null &&
-            entry.type !== "synergy" &&
-            typeof entry.description === "string" &&
-            entry.description.trim().length > 0,
-        )
-        .map((entry) => {
-          const rawTrigger =
-            (typeof entry.triggerText === "string" && entry.triggerText) ||
-            (typeof entry.trigger === "string" &&
-              (TRIGGER_EXPLANATIONS[entry.trigger] ??
-                `When ${toTitleCase(entry.trigger)}`));
-          const rawType =
-            typeof entry.type === "string" ? entry.type.toLowerCase() : "";
-
-          return {
-            trigger: rawTrigger || "When passive condition is met",
-            description: entry.description!.trim(),
-            isConditional: rawType.includes("conditional"),
-          };
-        })
-    : [];
-
-  if (mechanicBlocks.length > 0) {
-    return mechanicBlocks;
-  }
-
-  const noDeadAlliesCondition = Array.isArray(passive.mechanics)
-    ? passive.mechanics.some((entry) => entry.conditionNoDeadAllies === true)
-    : false;
-
-  const trigger = passive.triggerText?.trim()
-    ? passive.triggerText.trim()
-    : noDeadAlliesCondition
-      ? "Always when there are no dead allies"
-      : passive.trigger
-        ? (TRIGGER_EXPLANATIONS[passive.trigger] ??
-          `When ${toTitleCase(passive.trigger)}`)
-        : "To be added";
-  const description = passive.description?.trim() || "To be added";
-
-  return [{ trigger, description }];
-}
-
-function formatSynergyStat(stat?: string): string {
-  if (!stat) return "stats";
-  if (stat.toLowerCase() === "all") return "all stats";
-  if (stat.toLowerCase() === "damagedealt") return "damage dealt";
-  return stat.toUpperCase();
-}
-
-function getSynergyBlocks(passive?: CharacterPassiveView): string[] {
-  if (!Array.isArray(passive?.mechanics)) return [];
-
-  return passive.mechanics
-    .filter((entry) => entry.type === "synergy")
-    .map((entry) => {
-      const tagText =
-        Array.isArray(entry.conditionTags) && entry.conditionTags.length > 0
-          ? entry.conditionTags.join(" and ")
-          : Array.isArray(entry.conditionColors) &&
-              entry.conditionColors.length > 0
-            ? entry.conditionColors
-                .map((color) => toTitleCase(color))
-                .join(" and ")
-            : "matched";
-      const value =
-        typeof entry.valuePercent === "number" ? entry.valuePercent : 0;
-      const stat = formatSynergyStat(entry.stat);
-
-      return `All ${tagText} allies gain +${value}% ${stat}.`;
-    });
-}
 
 export function generateStaticParams(): Array<{ id: string }> {
   return characterIds.map((id) => ({ id }));
@@ -339,9 +216,7 @@ export default async function CharacterDetailPage({
   }
 
   const style = COLOR_STYLES[character.color] ?? COLOR_STYLES.light;
-  const passive = character.passive as CharacterPassiveView | undefined;
-  const passiveBlocks = getPassiveBlocks(passive);
-  const synergyBlocks = getSynergyBlocks(passive);
+  const passive = character.passive as KitPassiveView | undefined;
   const previewRows = buildCharacterDamagePreview(character);
   // Multi-phase kits (bosses, and later playable transformations) get a phase
   // switcher instead of the flat Skills + Passive sections.
@@ -479,43 +354,7 @@ export default async function CharacterDetailPage({
                 ) : undefined
               }
             >
-              <div className="space-y-3">
-                {passiveBlocks.map((block, index) => (
-                  <div
-                    key={`passive-block-${index}`}
-                    className={`border border-zinc-800 bg-zinc-950/60 px-3 py-2.5 ${block.isConditional ? "ml-4 border-l-2 border-l-amber-400/50" : ""}`}
-                  >
-                    <p className={UI.fieldLabel}>
-                      {block.isConditional ? "Conditional — " : ""}
-                      Trigger
-                    </p>
-                    <KeyworkHighlighter
-                      text={block.trigger}
-                      className={UI.textValue}
-                    />
-                    <p className={`${UI.fieldLabel} mt-2`}>Effect</p>
-                    <KeyworkHighlighter
-                      text={block.description}
-                      className={UI.textValue}
-                    />
-                  </div>
-                ))}
-
-                {synergyBlocks.length > 0 ? (
-                  <div className="border border-zinc-800 bg-zinc-950/60 px-3 py-2.5">
-                    <p className={UI.fieldLabel}>Synergy</p>
-                    <div className="mt-1 space-y-1">
-                      {synergyBlocks.map((line, index) => (
-                        <KeyworkHighlighter
-                          key={`synergy-${index}`}
-                          text={line}
-                          className={`${UI.textValue} block`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
+              <PassiveProse passive={passive} showName={false} />
             </Section>
               </>
             )}

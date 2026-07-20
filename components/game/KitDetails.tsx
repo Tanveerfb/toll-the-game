@@ -47,21 +47,6 @@ const UI = {
   textValue: "font-body text-sm text-zinc-200",
 } as const;
 
-const TRIGGER_EXPLANATIONS: Record<string, string> = {
-  always: "Always",
-  afterSkill: "After each skill used by this character",
-  onIgniteConsume:
-    "After a certain number of ignites consumed by this character",
-  beforeSkill: "Before this character uses a skill",
-  onBattleStart: "At the start of battle",
-  onFirstAction: "When this character acts first in a turn",
-  onLethalDamage: "When this character receives lethal damage",
-  onDamageDealt: "When this character deals damage",
-  onAllySkill: "When an ally uses a skill",
-  onRoundEnd: "At the end of enemy turn",
-  aura: "While this character remains active",
-};
-
 // red = attack, purple = debuff/disable, green = heal/buff, yellow = stance/ult
 const SKILL_TYPE_CHIP: Record<string, string> = {
   attack: "bg-red-600 text-white",
@@ -163,58 +148,6 @@ export function SkillBlock({
   );
 }
 
-function getPassiveBlocks(passive?: KitPassiveView): Array<{
-  trigger: string;
-  description: string;
-  isConditional?: boolean;
-}> {
-  if (!passive) {
-    return [{ trigger: "To be added", description: "To be added" }];
-  }
-
-  const mechanicBlocks = Array.isArray(passive.mechanics)
-    ? passive.mechanics
-        .filter(
-          (entry) =>
-            typeof entry === "object" &&
-            entry !== null &&
-            entry.type !== "synergy" &&
-            typeof entry.description === "string" &&
-            entry.description.trim().length > 0,
-        )
-        .map((entry) => {
-          const rawTrigger =
-            (typeof entry.triggerText === "string" && entry.triggerText) ||
-            (typeof entry.trigger === "string" &&
-              (TRIGGER_EXPLANATIONS[entry.trigger] ??
-                `When ${toTitleCase(entry.trigger)}`));
-          const rawType =
-            typeof entry.type === "string" ? entry.type.toLowerCase() : "";
-          return {
-            trigger: rawTrigger || "When passive condition is met",
-            description: entry.description!.trim(),
-            isConditional: rawType.includes("conditional"),
-          };
-        })
-    : [];
-
-  if (mechanicBlocks.length > 0) return mechanicBlocks;
-
-  const noDeadAlliesCondition = Array.isArray(passive.mechanics)
-    ? passive.mechanics.some((entry) => entry.conditionNoDeadAllies === true)
-    : false;
-  const trigger = passive.triggerText?.trim()
-    ? passive.triggerText.trim()
-    : noDeadAlliesCondition
-      ? "Always when there are no dead allies"
-      : passive.trigger
-        ? (TRIGGER_EXPLANATIONS[passive.trigger] ??
-          `When ${toTitleCase(passive.trigger)}`)
-        : "To be added";
-  const description = passive.description?.trim() || "To be added";
-  return [{ trigger, description }];
-}
-
 function formatSynergyStat(stat?: string): string {
   if (!stat) return "stats";
   if (stat.toLowerCase() === "all") return "all stats";
@@ -265,53 +198,76 @@ function PanelSection({
   );
 }
 
-/** One passive's blocks + synergy, with its name header. Bosses stack several. */
-function PassiveEntry({
+function UncancellableBadge(): React.JSX.Element {
+  return (
+    <span className="rounded-sm border border-rose-500/60 px-1 py-px font-body text-[9px] font-bold uppercase tracking-wider text-rose-300">
+      Uncancellable
+    </span>
+  );
+}
+
+/**
+ * A passive rendered 7DS-style: flowing prose (trigger woven into the sentence,
+ * no Trigger/Effect labels), blue mechanics + amber numbers + cyan
+ * parenthetical notes via the highlighter, an "Uncancellable" badge when the
+ * text says so, and any synergy mechanic appended. Paragraphs split on blank
+ * lines; a `※`-prefixed line is a grey-italic clarifier. Shared by the battle
+ * info panel and the archive.
+ */
+export function PassiveProse({
   passive,
   showName,
 }: {
   passive?: KitPassiveView;
   showName: boolean;
 }): React.JSX.Element {
-  const passiveBlocks = getPassiveBlocks(passive);
+  const description = passive?.description?.trim() || "To be added.";
+  const uncancellable = /uncancellabl|cannot be cancel/i.test(description);
   const synergyBlocks = getSynergyBlocks(passive);
+  const paragraphs = description
+    .split(/\n{2,}|\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   return (
-    <div className="space-y-2.5">
-      {showName && passive?.name ? (
-        <p className="font-heading text-sm tracking-[0.08em] text-amber-200/90">
-          {passive.name}
-        </p>
-      ) : null}
-      {passiveBlocks.map((block, index) => (
-        <div
-          key={`passive-block-${index}`}
-          className={`border border-zinc-800 bg-zinc-950/60 px-3 py-2.5 ${block.isConditional ? "ml-4 border-l-2 border-l-amber-400/50" : ""}`}
-        >
-          <p className={UI.fieldLabel}>
-            {block.isConditional ? "Conditional — " : ""}Trigger
-          </p>
-          <KeyworkHighlighter text={block.trigger} className={UI.textValue} />
-          <p className={`${UI.fieldLabel} mt-2`}>Effect</p>
-          <KeyworkHighlighter
-            text={block.description}
-            className={UI.textValue}
-          />
+    <div className="space-y-2">
+      {(showName && passive?.name) || uncancellable ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {showName && passive?.name ? (
+            <p className="font-heading text-sm tracking-[0.08em] text-amber-200/90">
+              {passive.name}
+            </p>
+          ) : null}
+          {uncancellable ? <UncancellableBadge /> : null}
         </div>
-      ))}
+      ) : null}
+
+      {paragraphs.map((para, index) =>
+        para.startsWith("※") ? (
+          <p
+            key={`para-${index}`}
+            className="font-body text-xs italic text-zinc-500"
+          >
+            {para}
+          </p>
+        ) : (
+          <KeyworkHighlighter
+            key={`para-${index}`}
+            text={para}
+            className={`${UI.textValue} block leading-relaxed`}
+          />
+        ),
+      )}
 
       {synergyBlocks.length > 0 ? (
-        <div className="border border-zinc-800 bg-zinc-950/60 px-3 py-2.5">
-          <p className={UI.fieldLabel}>Synergy</p>
-          <div className="mt-1 space-y-1">
-            {synergyBlocks.map((line, index) => (
-              <KeyworkHighlighter
-                key={`synergy-${index}`}
-                text={line}
-                className={`${UI.textValue} block`}
-              />
-            ))}
-          </div>
+        <div className="mt-1 space-y-1 border-l-2 border-sky-500/40 pl-2.5">
+          {synergyBlocks.map((line, index) => (
+            <KeyworkHighlighter
+              key={`synergy-${index}`}
+              text={line}
+              className="block font-body text-xs text-zinc-300"
+            />
+          ))}
         </div>
       ) : null}
     </div>
@@ -364,12 +320,12 @@ export default function KitDetails({
           ) : undefined
         }
       >
-        <div className="space-y-3">
+        <div className="space-y-4">
           {passiveList.length === 0 ? (
-            <PassiveEntry passive={undefined} showName={false} />
+            <PassiveProse passive={undefined} showName={false} />
           ) : (
             passiveList.map((p, index) => (
-              <PassiveEntry
+              <PassiveProse
                 key={`passive-${p.name ?? index}`}
                 passive={p}
                 showName={multi}

@@ -6,37 +6,24 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  keywordCategories,
-  mechanicGlossary,
-  type KeywordCategory,
-  type MechanicKeyword,
-} from "@/lib/game/mechanicGlossary";
+import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
 
-// Colored keyword pills (Tanveer's scheme): red = attack-based effects,
-// purple = debuffs, green = heals/cleanses, yellow = stances, white = cancels.
-const CATEGORY_PILL_CLASSES: Record<KeywordCategory, string> = {
-  offense: "bg-red-600/90 text-white",
-  debuff: "bg-purple-600/90 text-white",
-  heal: "bg-emerald-600/90 text-white",
-  buff: "bg-emerald-500/90 text-white",
-  stance: "bg-amber-300 text-zinc-950",
-  cancel: "bg-zinc-100 text-zinc-900",
-};
+// Description highlighter, 7DS-style (Tanveer 2026-07-20): mechanic keywords
+// render as blue text with a hover tooltip; every number (damage %, durations,
+// stacks, gauge counts) renders as amber; multi-word parenthetical limiter
+// notes — "(Resets upon taking damage)", "(max 5 stacks, uncancellable)" —
+// render as cyan. No category pills. A `keywordClassName` override keeps the
+// deck-preview chip look.
 
-const PILL_BASE =
-  "cursor-help rounded-sm px-1 py-px font-body text-[0.8em] font-bold uppercase tracking-wide whitespace-nowrap align-baseline";
+const KEYWORD_CLASS =
+  "cursor-help font-semibold text-sky-400 underline decoration-dotted decoration-sky-400/40 underline-offset-2";
+const NUMBER_CLASS = "font-semibold text-amber-400";
+const PAREN_CLASS = "text-cyan-300";
 
-// Dynamic per-skill keys extend a static keyword with a stat suffix
-// ("raises atk", "greatly lowers def") — inherit the base word's category.
-function categoryForKeyword(key: string): KeywordCategory | undefined {
-  const direct = keywordCategories[key as MechanicKeyword];
-  if (direct) return direct;
-  const base = (Object.keys(keywordCategories) as MechanicKeyword[]).find(
-    (candidate) => key.startsWith(`${candidate} `),
-  );
-  return base ? keywordCategories[base] : undefined;
-}
+// A standalone number, optionally a percentage (180%, 2, 2.5).
+const NUMBER_SRC = "\\d+(?:\\.\\d+)?%?";
+// A parenthetical that contains a space — a limiter note, not "turn(s)"/"(s)".
+const PAREN_SRC = "\\([^)]*\\s[^)]*\\)";
 
 interface KeyworkHighlighterProps {
   text: string;
@@ -61,57 +48,67 @@ export default function KeyworkHighlighter({
     [dictionary],
   );
 
-  if (keywords.length === 0) {
-    return <span className={className}>{text}</span>;
+  const patternSource = React.useMemo(() => {
+    const kw = keywords.map(escapeRegex).join("|");
+    return kw
+      ? `(${PAREN_SRC})|\\b(${kw})\\b|(${NUMBER_SRC})`
+      : `(${PAREN_SRC})|(${NUMBER_SRC})`;
+  }, [keywords]);
+
+  const hasKeywords = keywords.length > 0;
+  // Fresh regex per render (matchAll needs a global regex; a memoized one
+  // can't be mutated under the React compiler's immutability rule).
+  const matches = [...text.matchAll(new RegExp(patternSource, "gi"))];
+
+  const nodes: React.ReactNode[] = [];
+  let last = 0;
+  matches.forEach((match, i) => {
+    const idx = match.index ?? 0;
+    if (idx > last) {
+      nodes.push(
+        <React.Fragment key={`t-${i}`}>{text.slice(last, idx)}</React.Fragment>,
+      );
+    }
+    const parenMatch = match[1];
+    const kwMatch = hasKeywords ? match[2] : undefined;
+    const numMatch = hasKeywords ? match[3] : match[2];
+
+    if (parenMatch) {
+      nodes.push(
+        <span key={`p-${i}`} className={PAREN_CLASS}>
+          {parenMatch}
+        </span>,
+      );
+    } else if (kwMatch) {
+      const desc = dictionary[kwMatch.toLowerCase()];
+      nodes.push(
+        <Tooltip key={`k-${i}`}>
+          <TooltipTrigger asChild>
+            <span className={keywordClassName ?? KEYWORD_CLASS}>{kwMatch}</span>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs">
+            <span className="block">
+              <span className="block font-body text-[10px] uppercase tracking-[0.14em] opacity-70">
+                {kwMatch.toLowerCase()}
+              </span>
+              <span className="mt-1 block font-body text-xs">{desc}</span>
+            </span>
+          </TooltipContent>
+        </Tooltip>,
+      );
+    } else if (numMatch) {
+      nodes.push(
+        <span key={`n-${i}`} className={NUMBER_CLASS}>
+          {numMatch}
+        </span>,
+      );
+    }
+
+    last = idx + match[0].length;
+  });
+  if (last < text.length) {
+    nodes.push(<React.Fragment key="t-end">{text.slice(last)}</React.Fragment>);
   }
 
-  const pattern = new RegExp(
-    `\\b(${keywords.map(escapeRegex).join("|")})\\b`,
-    "gi",
-  );
-  const parts = text.split(pattern);
-
-  return (
-    <span className={className}>
-      {parts.map((part, index) => {
-        const key = part.toLowerCase();
-        const description = dictionary[key];
-
-        if (!description) {
-          return (
-            <React.Fragment key={`${part}-${index}`}>{part}</React.Fragment>
-          );
-        }
-
-        const category = categoryForKeyword(key);
-
-        return (
-          <Tooltip key={`${part}-${index}`}>
-            <TooltipTrigger asChild>
-              <span
-                className={
-                  keywordClassName ??
-                  (category
-                    ? `${PILL_BASE} ${CATEGORY_PILL_CLASSES[category]}`
-                    : "cursor-help underline decoration-dotted underline-offset-3 text-foreground")
-                }
-              >
-                {part}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <span className="block">
-                <span className="block font-body text-[10px] uppercase tracking-[0.14em] opacity-70">
-                  {key}
-                </span>
-                <span className="mt-1 block font-body text-xs">
-                  {description}
-                </span>
-              </span>
-            </TooltipContent>
-          </Tooltip>
-        );
-      })}
-    </span>
-  );
+  return <span className={className}>{nodes}</span>;
 }
