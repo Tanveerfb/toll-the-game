@@ -748,19 +748,25 @@ export function executeSkill(
           );
         }
         if (mech.type === "corrosion") {
-          // Corrosion: independent, uncapped-stacking DoT dealing % of the
-          // target's MAX HP per turn (not the hit). Each application is its own
-          // debuff entry, ticking at the victim's turn end.
+          // Corrosion: independent, uncapped-stacking DoT ticking at the
+          // victim's turn end. Basis (Tanveer 2026-07-21): only an R3 cast
+          // or an ultimate applies % of MAX HP — R1/R2 applications target
+          // the victim's REMAINING (current) HP instead, so early ranks hit
+          // softer as the target's HP drops rather than always chunking a
+          // fixed slice of the original max.
           const percent = mech.valuePercent ?? 10;
+          const maxHpBasis =
+            rankIndex === 2 || action.skill.type === "ultimate";
           updatedTarget.debuffs.push({
             type: "corrosion",
             name: "Corrosion",
             valuePercent: percent,
             stacks: mech.stacks ?? 1,
             debuffDuration: mech.duration,
+            maxHp: maxHpBasis,
           });
           targetEffects.push(
-            `applied Corrosion (${percent}% max HP/turn)${formatTurns(mech.duration)}`,
+            `applied Corrosion (${percent}% ${maxHpBasis ? "max" : "remaining"} HP/turn)${formatTurns(mech.duration)}`,
           );
         }
         if (mech.type === "ignite") {
@@ -885,11 +891,25 @@ export function executeSkill(
           }
         }
         if (mech.type === "debuff") {
+          // Re-applying an ATK/DEF-lower debuff on the SAME stat OVERRIDES
+          // this source's own previous instance instead of stacking a
+          // second one (Tanveer 2026-07-21) — a different source's debuff
+          // on the same stat still stacks multiplicatively (getEffectiveAttack/
+          // Defense). Matches the existing Extort-never-stacks precedent.
+          updatedTarget.debuffs = updatedTarget.debuffs.filter(
+            (d) =>
+              !(
+                d.type === "debuff" &&
+                d.stat === mech.stat &&
+                d.sourceId === updatedSource.instanceId
+              ),
+          );
           updatedTarget.debuffs.push({
             type: "debuff",
             stat: mech.stat,
             valuePercent: mech.valuePercent || mech.value,
             debuffDuration: mech.duration,
+            sourceId: updatedSource.instanceId,
           });
           targetEffects.push(
             `lowered ${mech.stat || "stat"} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim(),
@@ -907,11 +927,20 @@ export function executeSkill(
       });
 
       if (flowingRuinMech) {
+        updatedTarget.debuffs = updatedTarget.debuffs.filter(
+          (d) =>
+            !(
+              d.type === "debuff" &&
+              d.stat === "atk" &&
+              d.sourceId === updatedSource.instanceId
+            ),
+        );
         updatedTarget.debuffs.push({
           type: "debuff",
           stat: "atk",
           valuePercent: flowingRuinMech.atkDownPercent ?? 20,
           debuffDuration: flowingRuinMech.atkDownDuration ?? 2,
+          sourceId: updatedSource.instanceId,
         });
         targetEffects.push(
           `lowered atk by ${flowingRuinMech.atkDownPercent ?? 20}%${formatTurns(flowingRuinMech.atkDownDuration ?? 2)}`,

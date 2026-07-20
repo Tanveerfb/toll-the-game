@@ -442,4 +442,7 @@ export interface StatusEffect {
   sealType?: string;
   /** Decay: damage captured from the applying hit, dealt per tick. */
   capturedDamage?: number;
+  /** Corrosion basis: true = % of MAX HP per tick (R3/ultimate only),
+   *  false/absent = % of the victim's REMAINING (current) HP per tick. */
+  maxHp?: boolean;
 }

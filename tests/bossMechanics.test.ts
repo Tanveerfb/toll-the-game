@@ -40,7 +40,7 @@ describe("ultGaugeMax", () => {
   });
 });
 
-describe("Corrosion DoT (10% max HP per stack per turn)", () => {
+describe("Corrosion DoT (10% per stack per turn — basis depends on rank)", () => {
   const corrosion = (over: Partial<StatusEffect> = {}): StatusEffect => ({
     type: "corrosion",
     name: "Corrosion",
@@ -50,20 +50,28 @@ describe("Corrosion DoT (10% max HP per stack per turn)", () => {
     ...over,
   });
 
-  it("deals 10% of MAX HP at the victim's turn end", () => {
+  it("deals 10% of the victim's HP at their turn end (basis coincides at full HP)", () => {
     const [ticked] = tickTeamDebuffs([char({ debuffs: [corrosion()] })], noop);
     expect(ticked.currentHP).toBe(900); // 10% of 1000
   });
 
-  it("is based on max HP, not current HP", () => {
+  it("with no maxHp flag (R1/R2), ticks % of REMAINING HP, not max", () => {
     const [ticked] = tickTeamDebuffs(
       [char({ currentHP: 500, debuffs: [corrosion()] })],
       noop,
     );
-    expect(ticked.currentHP).toBe(400); // still 100 (10% of max 1000), not 50
+    expect(ticked.currentHP).toBe(450); // 10% of current 500, not max 1000
   });
 
-  it("stacks uncapped — 3 stacks = 30% max HP", () => {
+  it("maxHp:true (R3/ultimate) ticks % of MAX HP regardless of current HP", () => {
+    const [ticked] = tickTeamDebuffs(
+      [char({ currentHP: 500, debuffs: [corrosion({ maxHp: true })] })],
+      noop,
+    );
+    expect(ticked.currentHP).toBe(400); // 10% of max 1000, not current 500
+  });
+
+  it("stacks uncapped — 3 stacks = 30% (at full HP, basis coincides)", () => {
     const [ticked] = tickTeamDebuffs(
       [char({ debuffs: [corrosion({ stacks: 3 })] })],
       noop,
@@ -80,7 +88,11 @@ describe("Corrosion DoT (10% max HP per stack per turn)", () => {
   });
 
   it("decrements duration and expires", () => {
-    let team = [char({ debuffs: [corrosion({ debuffDuration: 2 })] })];
+    // maxHp:true keeps this test's math (duration/expiry) independent of
+    // the remaining-vs-max basis question covered above.
+    let team = [
+      char({ debuffs: [corrosion({ debuffDuration: 2, maxHp: true })] }),
+    ];
     team = tickTeamDebuffs(team, noop);
     expect(team[0].debuffs[0].debuffDuration).toBe(1);
     team = tickTeamDebuffs(team, noop);

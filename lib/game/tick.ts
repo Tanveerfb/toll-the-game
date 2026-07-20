@@ -77,9 +77,13 @@ export function tickTeamDebuffs(
     let totalDot = 0;
     dotEffects.forEach((dot) => {
       if (dot.type === "corrosion") {
-        // % of the victim's MAX HP per stack — the uncapped boss gimmick.
+        // Basis (Tanveer 2026-07-21): an R3/ultimate application (dot.maxHp)
+        // ticks % of MAX HP; an R1/R2 application ticks % of the victim's
+        // REMAINING (current, pre-tick) HP instead — the uncapped boss
+        // gimmick, softened for lower ranks.
         const percent = dot.valuePercent ?? 10;
-        totalDot += Math.floor(char.hp * (percent / 100)) * (dot.stacks ?? 1);
+        const basis = dot.maxHp ? char.hp : char.currentHP;
+        totalDot += Math.floor(basis * (percent / 100)) * (dot.stacks ?? 1);
       } else if (dot.type === "decay" && dot.capturedDamage) {
         totalDot += dot.capturedDamage;
       } else if (dot.value) {

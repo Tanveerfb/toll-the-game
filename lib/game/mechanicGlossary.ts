@@ -24,7 +24,7 @@ export const mechanicGlossary = {
   lifesteal: "Recovers HP equal to a percentage of the damage dealt",
   lifesteals: "Recovers HP equal to a percentage of the damage dealt",
   corrosion:
-    "Stacking DoT dealing 10% of the target's max HP each turn; each application is independent and never caps",
+    "Stacking DoT dealing 10% of the target's HP each turn — max HP at R3/ultimate, remaining HP otherwise; each application is independent and never caps",
   "attack seal": "Blocks the target's attack skills for the duration; ultimates are unaffected",
   "attack seals": "Blocks the target's attack skills for the duration; ultimates are unaffected",
   deplete: "Lowers the target's ultimate gauge by the listed amount",
