@@ -211,6 +211,15 @@ function replaceMechanicPlaceholders(
 ): string {
   let result = description;
 
+  // [dmg] resolves to this rank's damage value (the number only). Lets a
+  // description place the percent explicitly so the mechanic word can sit
+  // between it and "ATK" — the canonical attack wording Tanveer wants:
+  // "Does [dmg]% Pierce ATK damage to one enemy" -> "Does 180% Pierce ATK...".
+  result = result.replace(/\[dmg\]/gi, () => {
+    const value = getRankDamage(skill, rankIndex);
+    return typeof value === "number" ? formatNumber(value) : "";
+  });
+
   result = result.replace(
     /\[([a-zA-Z_]+)\?\s*([^:\]]+?)\s*:\s*([^\]]+?)\]/g,
     (_, mechanicType: string, truthyValue: string, falsyValue: string) =>

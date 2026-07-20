@@ -107,6 +107,7 @@ const TRIGGER_EXPLANATIONS: Record<string, string> = {
   onLethalDamage: "When this character receives lethal damage",
   onDamageDealt: "When this character deals damage",
   onAllySkill: "When an ally uses a skill",
+  onRoundEnd: "At the end of enemy turn",
   aura: "While this character remains active",
 };
 
