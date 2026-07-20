@@ -20,7 +20,7 @@
         {
           "type": "debuff",
           "stat": "def",
-          "valuePercent": 25,
+          "valuePercent": 30,
           "duration": 2
         }
       ]

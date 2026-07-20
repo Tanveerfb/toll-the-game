@@ -24,7 +24,7 @@
     },
     {
       "skillName": "Iron Wall",
-      "description": "Takes a defensive stance, reducing damage taken for 2 turns.",
+      "description": "Takes a defensive stance, reducing damage taken by [stance.value]% for [stance.duration] turns.",
       "characterId": "iron",
       "type": "stance",
       "statMultiplier": "def",

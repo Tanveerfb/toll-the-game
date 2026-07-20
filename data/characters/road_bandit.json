@@ -33,7 +33,7 @@
         {
           "type": "debuff",
           "stat": "atk",
-          "valuePercent": 15,
+          "valuePercent": 30,
           "duration": 2
         }
       ]

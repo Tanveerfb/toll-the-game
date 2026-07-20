@@ -53,7 +53,7 @@
       {
         "type": "buff",
         "stat": "def",
-        "valuePercent": 20,
+        "valuePercent": 30,
         "duration": 2,
         "targetSelf": true
       }

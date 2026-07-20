@@ -30,6 +30,9 @@ interface KeyworkHighlighterProps {
   className?: string;
   glossary?: Record<string, string>;
   keywordClassName?: string;
+  /** Override for numbers — heal skills pass a green class so their recovery
+   *  amount reads green (7DS). Defaults to amber. */
+  numberClassName?: string;
 }
 
 function escapeRegex(input: string): string {
@@ -41,6 +44,7 @@ export default function KeyworkHighlighter({
   className,
   glossary,
   keywordClassName,
+  numberClassName,
 }: KeyworkHighlighterProps): React.JSX.Element {
   const dictionary: Record<string, string> = glossary ?? mechanicGlossary;
   const keywords = React.useMemo(
@@ -98,7 +102,7 @@ export default function KeyworkHighlighter({
       );
     } else if (numMatch) {
       nodes.push(
-        <span key={`n-${i}`} className={NUMBER_CLASS}>
+        <span key={`n-${i}`} className={numberClassName ?? NUMBER_CLASS}>
           {numMatch}
         </span>,
       );

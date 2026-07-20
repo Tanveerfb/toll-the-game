@@ -45,7 +45,7 @@
       {
         "type": "buff",
         "stat": "hp",
-        "valuePercent": 20,
+        "valuePercent": 30,
         "duration": 1,
         "targetSelf": true
       }

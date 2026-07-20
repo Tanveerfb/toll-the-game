@@ -33,7 +33,7 @@
         {
           "type": "buff",
           "stat": "atk",
-          "valuePercent": 25,
+          "valuePercent": 30,
           "duration": 2,
           "targetSelf": true
         }

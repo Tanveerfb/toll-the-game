@@ -96,6 +96,9 @@ export function SkillBlock({
   const rankedLines =
     skill.type === "ultimate" ? null : buildRankedSkillDescriptions(skill);
   const chipClass = SKILL_TYPE_CHIP[skill.type] ?? "bg-zinc-700 text-zinc-200";
+  // Heal skills show their recovery amount in green (7DS convention).
+  const numberClassName =
+    skill.type === "heal" ? "font-semibold text-emerald-400" : undefined;
 
   return (
     <div className="border border-zinc-800 bg-zinc-950/60">
@@ -126,6 +129,7 @@ export function SkillBlock({
               <KeyworkHighlighter
                 text={line}
                 className={UI.textValue}
+                numberClassName={numberClassName}
                 glossary={{
                   ...mechanicGlossary,
                   ...buildSkillKeywordGlossary(skill, index),
@@ -137,6 +141,7 @@ export function SkillBlock({
           <KeyworkHighlighter
             text={buildSingleDescription(skill)}
             className={UI.textValue}
+            numberClassName={numberClassName}
             glossary={{
               ...mechanicGlossary,
               ...buildSkillKeywordGlossary(skill, 0),

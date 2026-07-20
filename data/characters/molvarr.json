@@ -142,7 +142,7 @@
       ],
       "spSkill": {
         "skillName": "Iron Carapace",
-        "description": "Raises ATK and DEF by 50% for 2 turns.",
+        "description": "Greatly raises ATK and DEF for 2 turns.",
         "characterId": "molvarr",
         "type": "buff",
         "statMultiplier": "atk",
