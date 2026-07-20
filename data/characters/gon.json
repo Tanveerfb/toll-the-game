@@ -6,21 +6,21 @@
   "lore": "A rookie Hunter with monstrous potential. Nen type: Enhancer. Collab unit.",
   "atk": 195,
   "def": 90,
-  "hp": 1501,
+  "hp": 1800,
   "skills": [
     {
       "skillName": "Jajanken: Rock",
-      "description": "Raises ATK for 1 turn; then does damage equal to ATK-scaled to one enemy.",
+      "description": "Greatly raises ATK for 1 turn; then does damage equal to ATK-scaled to one enemy.",
       "characterId": "gon",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [120, 150, 225],
+      "damageRanked": [195, 240, 300],
       "mechanics": [
         {
           "type": "buff",
           "targetSelf": true,
           "stat": "atk",
-          "valuePercent": 30,
+          "valuePercent": 50,
           "duration": 1,
           "uncancellable": true
         }
@@ -32,7 +32,7 @@
       "characterId": "gon",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [120, 135, 180],
+      "damageRanked": [230, 280, 350],
       "mechanics": [
         {
           "type": "gainUltGauge",

@@ -195,6 +195,28 @@ export function getCharacterKit(
 }
 
 /**
+ * Every distinct mechanic type across a character's whole kit (skills, ultimate,
+ * passive, and all boss phases). Used by the archive's mechanic filter.
+ */
+export function getCharacterMechanics(character: CharacterData): string[] {
+  const types = new Set<string>();
+  const add = (mechs?: Array<Record<string, unknown>>) => {
+    (mechs ?? []).forEach((m) => {
+      if (typeof m.type === "string" && m.type.length > 0) types.add(m.type);
+    });
+  };
+  character.skills.forEach((s) => add(s.mechanics));
+  add(character.ultimate?.mechanics);
+  add(character.passive?.mechanics);
+  for (const phase of getCharacterPhases(character)) {
+    phase.skills.forEach((s) => add(s.mechanics));
+    add(phase.ultimate?.mechanics);
+    (phase.passives ?? []).forEach((p) => add(p.mechanics));
+  }
+  return [...types].sort();
+}
+
+/**
  * Kit Lab (dev tool) only: inject/replace a draft kit at runtime so it can be
  * launched into a practice battle before it's saved to disk. Not part of the
  * static roster (getAllCharacters/characterIds are unchanged) — it only makes

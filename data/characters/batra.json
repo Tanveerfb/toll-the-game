@@ -6,7 +6,7 @@
   "lore": "Ledger exam participant, Sikh, turban, lion-themed attacks.",
   "atk": 245,
   "def": 70,
-  "hp": 1120,
+  "hp": 1455,
   "skills": [
     {
       "skillName": "Lion's Charge",
@@ -14,7 +14,7 @@
       "characterId": "batra",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [180, 220, 275],
+      "damageRanked": [230, 280, 350],
       "mechanics": [
         {
           "type": "pierce"
@@ -27,7 +27,7 @@
       "characterId": "batra",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [120, 150, 200],
+      "damageRanked": [165, 200, 250],
       "mechanics": [
         {
           "type": "aoe"
@@ -44,7 +44,7 @@
     "characterId": "batra",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 350,
+    "damage": 400,
     "mechanics": [
       {
         "type": "ignite",

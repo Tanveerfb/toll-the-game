@@ -5,8 +5,8 @@
   "tags": ["Human", "Fairy", "Hybrid", "Female", "Powerful Opponent"],
   "lore": "Hybrid of fairy and human, wielding lightning.",
   "atk": 245,
-  "def": 65,
-  "hp": 1450,
+  "def": 80,
+  "hp": 1740,
   "skills": [
     {
       "skillName": "Static Lance",
@@ -14,7 +14,7 @@
       "characterId": "seras",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [150, 180, 250],
+      "damageRanked": [230, 280, 350],
       "mechanics": [
         {
           "type": "shock",
@@ -29,7 +29,7 @@
       "characterId": "seras",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [130, 150, 200],
+      "damageRanked": [165, 200, 250],
       "mechanics": [
         {
           "type": "aoe"

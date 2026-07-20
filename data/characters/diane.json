@@ -6,7 +6,7 @@
   "lore": "Serpent Sin of Envy. A giant commanding the earth itself. Collab unit.",
   "atk": 238,
   "def": 90,
-  "hp": 1250,
+  "hp": 1560,
   "skills": [
     {
       "skillName": "Ground Gladius",
@@ -63,7 +63,7 @@
     "mechanics": [
       {
         "type": "turnRamp",
-        "valuePercent": 15,
+        "valuePercent": 10,
         "maxStacks": 5
       },
       {

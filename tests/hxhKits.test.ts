@@ -80,9 +80,9 @@ describe("Gon", () => {
       { playerTeam: [gon], enemyTeam: [target] },
       noopLog,
     );
-    // effective ATK = floor(95 * 1.3) = 123; 123 * 120% = 147.6 -> 147
-    const boosted = Math.floor(gonData.atk * 1.3);
-    const expected = Math.floor((boosted * 120) / 100);
+    // Rock now greatly raises ATK (+50%) before an R1 195% hit
+    const boosted = Math.floor(gonData.atk * 1.5);
+    const expected = Math.floor((boosted * 195) / 100);
     expect(after.enemyTeam[0].currentHP).toBe(1000 - expected);
     // the buff itself: 1 turn, uncancellable, stackable
     const buff = after.playerTeam[0].buffs.find((b) => b.stat === "atk");

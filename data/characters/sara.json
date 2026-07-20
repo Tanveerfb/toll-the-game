@@ -6,7 +6,7 @@
   "lore": "Ledger exam examinee, girl, animal control theme.",
   "atk": 34,
   "def": 68,
-  "hp": 1616,
+  "hp": 2100,
   "skills": [
     {
       "skillName": "Animal Strike",
@@ -14,7 +14,7 @@
       "characterId": "sara",
       "type": "attack",
       "statMultiplier": "hp",
-      "damageRanked": [12, 18, 25],
+      "damageRanked": [23, 28, 35],
       "mechanics": []
     },
     {
@@ -23,7 +23,7 @@
       "characterId": "sara",
       "type": "attack",
       "statMultiplier": "hp",
-      "damageRanked": [10, 15, 20],
+      "damageRanked": [20, 25, 30],
       "mechanics": [
         {
           "type": "aoe"
@@ -36,16 +36,16 @@
   ],
   "ultimate": {
     "skillName": "Beast Master's Fury",
-    "description": "Raises HP for 1 turn; then does damage equal to HP-scaled to one enemy.",
+    "description": "Greatly raises HP for 1 turn; then does damage equal to HP-scaled to one enemy.",
     "characterId": "sara",
     "type": "ultimate",
     "statMultiplier": "hp",
-    "damage": 35,
+    "damage": 40,
     "mechanics": [
       {
         "type": "buff",
         "stat": "hp",
-        "valuePercent": 30,
+        "valuePercent": 50,
         "duration": 1,
         "targetSelf": true
       }

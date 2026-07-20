@@ -26,9 +26,9 @@ describe("description placeholders", () => {
       gonData.skills[0] as CharacterSkillData,
       0,
     );
-    // Pill spans the stat too: "Raises ATK"
-    expect(rock["raises atk"]).toBe("Increases ATK by 30%");
-    expect(rock.raises).toBe("Increases ATK by 30%"); // loose-wording fallback
+    // Pill spans the stat too: "Greatly raises ATK" (50% = greatly tier)
+    expect(rock["greatly raises atk"]).toBe("Increases ATK by 50%");
+    expect(rock["greatly raises"]).toBe("Increases ATK by 50%"); // loose-wording fallback
 
     // Gon ult: permanent +30% ATK ("permanently raises") and 1-turn +50% DEF
     // ("greatly raises") — permanence is explicit in the wording now.

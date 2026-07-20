@@ -6,7 +6,7 @@
   "lore": "Ledger exam examinee, teammate and friend of Sara.",
   "atk": 30,
   "def": 59,
-  "hp": 1408,
+  "hp": 1830,
   "skills": [
     {
       "skillName": "Attention Drawer",
@@ -38,7 +38,7 @@
       "characterId": "yalina",
       "type": "attack",
       "statMultiplier": "hp",
-      "damageRanked": [9, 14, 20],
+      "damageRanked": [20, 25, 30],
       "mechanics": [
         {
           "type": "amplify",
@@ -53,7 +53,7 @@
     "characterId": "yalina",
     "type": "ultimate",
     "statMultiplier": "hp",
-    "damage": 35,
+    "damage": 40,
     "mechanics": [
       {
         "type": "amplify",
@@ -63,7 +63,7 @@
   },
   "passive": {
     "name": "Momentum",
-    "description": "Gains a buff that increases damage by 20% (max 5 stacks). Consumes all stacks after dealing damage.",
+    "description": "After each ally action, gains a buff to self that increases damage by 20% (max 5 stacks). Consumes all stacks after dealing damage to an enemy.",
     "trigger": "onAllySkill",
     "mechanics": [
       {

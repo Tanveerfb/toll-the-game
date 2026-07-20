@@ -4,10 +4,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import Link from "next/link";
 import CharacterBrowser, {
   type CharacterBrowserItem,
 } from "@/components/game/CharacterBrowser";
-import { getPlayableCharacters } from "@/lib/game/characterCatalog";
+import {
+  getCharacterMechanics,
+  getPlayableCharacters,
+} from "@/lib/game/characterCatalog";
 
 const characters: CharacterBrowserItem[] = getPlayableCharacters().map(
   (character) => ({
@@ -17,6 +21,8 @@ const characters: CharacterBrowserItem[] = getPlayableCharacters().map(
     atk: character.atk,
     def: character.def,
     hp: character.hp,
+    tags: character.tags ?? [],
+    mechanics: getCharacterMechanics(character),
   }),
 );
 
@@ -33,10 +39,16 @@ export default function ArchivePage() {
 
       <section className="relative z-10 mx-auto w-full max-w-6xl px-6 py-8 md:px-10 md:py-10">
         <Card className="rounded-none border-2 border-zinc-700 bg-black/55 shadow-[0_20px_60px_rgba(0,0,0,0.55)] ring-0">
-          <CardHeader className="border-b border-zinc-700 px-6 py-6 md:px-8">
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b border-zinc-700 px-6 py-6 md:px-8">
             <CardTitle className="font-heading text-4xl tracking-[0.12em] text-zinc-100 md:text-6xl">
               CHARACTER ARCHIVE
             </CardTitle>
+            <Link
+              href="/archive/npc"
+              className="border-2 border-zinc-600 px-4 py-2 font-body text-xs uppercase tracking-[0.14em] text-zinc-300 transition-colors hover:border-amber-300 hover:text-amber-200"
+            >
+              NPC Archive →
+            </Link>
           </CardHeader>
 
           <CardContent className="p-6 md:p-8">

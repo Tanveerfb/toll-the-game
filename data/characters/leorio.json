@@ -6,7 +6,7 @@
   "lore": "Aspiring doctor and member of the Zodiacs. Nen type: Emitter. Collab unit.",
   "atk": 183,
   "def": 92,
-  "hp": 1100,
+  "hp": 1430,
   "skills": [
     {
       "skillName": "Member of the Zodiac",
@@ -40,7 +40,7 @@
       "characterId": "leorio",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [120, 135, 180],
+      "damageRanked": [195, 240, 300],
       "mechanics": [
         {
           "type": "pierce"

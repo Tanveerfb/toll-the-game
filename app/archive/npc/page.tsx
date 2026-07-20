@@ -8,9 +8,12 @@ import {
 import CharacterBrowser, {
   type CharacterBrowserItem,
 } from "@/components/game/CharacterBrowser";
-import { getAllCharacters } from "@/lib/game/characterCatalog";
+import {
+  getAllCharacters,
+  getCharacterMechanics,
+} from "@/lib/game/characterCatalog";
 
-// Hidden page — no UI links here; reachable only by typing the URL.
+// Reachable from the CHARACTER ARCHIVE page ("NPC Archive" button) or by URL.
 // Shows the story-only NPC/enemy kits the regular archive filters out.
 const characters: CharacterBrowserItem[] = getAllCharacters()
   .filter((character) => character.storyOnly === true)
@@ -21,6 +24,8 @@ const characters: CharacterBrowserItem[] = getAllCharacters()
     atk: character.atk,
     def: character.def,
     hp: character.hp,
+    tags: character.tags ?? [],
+    mechanics: getCharacterMechanics(character),
   }));
 
 export default function NpcArchivePage() {

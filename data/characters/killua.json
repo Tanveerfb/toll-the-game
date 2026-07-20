@@ -6,7 +6,7 @@
   "lore": "Heir of the Zoldyck assassin family. Nen type: Transmuter — his aura becomes electricity. Collab unit.",
   "atk": 199,
   "def": 99,
-  "hp": 1554,
+  "hp": 1865,
   "skills": [
     {
       "skillName": "Lightning Palm",
@@ -14,7 +14,7 @@
       "characterId": "killua",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [150, 180, 250],
+      "damageRanked": [230, 280, 350],
       "mechanics": [
         {
           "type": "cancelStances"
@@ -31,7 +31,7 @@
       "characterId": "killua",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [120, 135, 180],
+      "damageRanked": [195, 240, 300],
       "mechanics": [
         {
           "type": "detonate"

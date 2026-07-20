@@ -6,7 +6,7 @@
   "lore": "Artist, friend of Batra, ledger exam participant, calm and cool.",
   "atk": 117,
   "def": 75,
-  "hp": 1300,
+  "hp": 1690,
   "skills": [
     {
       "skillName": "Ink Slash",
@@ -14,7 +14,7 @@
       "characterId": "gabrist",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [170, 195, 240],
+      "damageRanked": [260, 320, 400],
       "mechanics": [
         {
           "type": "debuff",
@@ -30,7 +30,7 @@
       "characterId": "gabrist",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [180, 210, 265],
+      "damageRanked": [295, 360, 450],
       "mechanics": [
         {
           "type": "cancelStances"

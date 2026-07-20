@@ -6,7 +6,7 @@
   "lore": "Friend of Mustafa, ledger exam participant, India-themed attacks, nature powers.",
   "atk": 110,
   "def": 75,
-  "hp": 1010,
+  "hp": 1315,
   "skills": [
     {
       "skillName": "Nature's Strike",
@@ -14,7 +14,7 @@
       "characterId": "siddiq",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [200, 235, 295],
+      "damageRanked": [325, 400, 500],
       "mechanics": []
     },
     {
@@ -23,7 +23,7 @@
       "characterId": "siddiq",
       "type": "heal",
       "statMultiplier": "atk",
-      "damageRanked": [75, 105, 160],
+      "damageRanked": [260, 320, 400],
       "mechanics": [
         {
           "type": "cleanse"

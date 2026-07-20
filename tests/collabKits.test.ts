@@ -437,7 +437,7 @@ describe("Diane — Rupture, Attack Seal, Giant's Will", () => {
     expect(move).not.toBeNull();
   });
 
-  it("Giant's Will ramps +15% base ATK per turn passed, max 5, skipping turn 1", async () => {
+  it("Giant's Will ramps +10% base ATK per turn passed, max 5, skipping turn 1", async () => {
     const diane = fromData(dianeData, "player");
     const items: any[] = [];
     registerCharacterPassives(diane, (item) => items.push(item));
@@ -451,9 +451,9 @@ describe("Diane — Rupture, Attack Seal, Giant's Will", () => {
     for (let i = 0; i < 7; i++) {
       teams = await ramp.action(teams.playerTeam[0], teams, noopLog);
     }
-    // capped at 5 stacks of floor(base ATK * 15%)
+    // capped at 5 stacks of floor(base ATK * 10%)
     expect(teams.playerTeam[0].currentAttack).toBe(
-      dianeData.atk + 5 * Math.floor(dianeData.atk * 0.15),
+      dianeData.atk + 5 * Math.floor(dianeData.atk * 0.1),
     );
     expect(teams.playerTeam[0].passiveState.turnRampStacks).toBe(5);
   });
