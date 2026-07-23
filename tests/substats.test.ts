@@ -9,6 +9,7 @@ import type { BattleCharacter } from "@/types/character";
 import type { SkillCard } from "@/types/skillCard";
 import { getEffectiveHealAmount, applyHeal } from "@/lib/game/heal";
 import { calculateDamage } from "@/lib/game/damage";
+import { executeSkill } from "@/lib/game/combat";
 
 function dummySkill(): SkillCard {
   return {
@@ -163,5 +164,54 @@ describe("Crit Damage substat wiring (damage.ts)", () => {
       target,
     });
     expect(dmg).toBe(300);
+  });
+});
+
+describe("Crit Resistance substat wiring (combat.ts crit roll)", () => {
+  it("subtracts the target's crit resistance from the attacker's crit chance", () => {
+    // Deathblow-style attacker forced to a known crit chance via currentHP loss
+    const attacker = makeChar({
+      passive: {
+        name: "Test Deathblow",
+        trigger: "always",
+        mechanics: [
+          {
+            type: "deathblow",
+            hpStepPercent: 25,
+            critPerStepPercent: 100,
+            // Deathblow also drives an unrelated flat damage-boost mechanic
+            // (combat.ts ~line 436, keyed off the same mechanic entry) —
+            // zero it out so this test isolates the crit-chance roll only.
+            damagePerStepPercent: 0,
+          },
+        ],
+      },
+      // 750/1000 (not 900/1000) deliberately avoids a binary floating-point
+      // trap: 1 - 900/1000 evaluates to 9.999999999999998, which floors one
+      // step short of the intended value and silently zeroes the crit chance.
+      currentHP: 750, // 25% lost -> 1 step -> 100% crit chance base
+      hp: 1000,
+    });
+    const target = makeChar({
+      instanceId: "t",
+      team: "enemy",
+      currentDefense: 0, // isolate the crit-chance roll from defense math
+      critResistPercent: 100, // fully negates the 100% base crit chance
+    });
+    const result = executeSkill(
+      {
+        sourceInstanceId: "c",
+        skill: dummySkill(),
+        targetInstanceId: "t",
+      },
+      { playerTeam: [attacker], enemyTeam: [target] },
+      () => {},
+      0,
+      () => 0.01, // would crit if chance > 1%
+    );
+    // 100% - 100% crit resist = 0% chance -> no crit -> no CRITICAL package
+    // (target has 0 def, so a non-crit hit deals plain base damage; a crit
+    // would add +50% and ignore defense — neither special case fires here)
+    expect(result.enemyTeam[0].currentHP).toBe(target.hp - attacker.currentAttack);
   });
 });

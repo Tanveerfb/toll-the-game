@@ -7,6 +7,7 @@ import { syncExtortLinks } from "./effects";
 import { getEffectiveAttack, getEffectiveDefense } from "./stats";
 import { ultGaugeMax } from "./ultGauge";
 import { bossDamageMultiplierVsTarget } from "./bossPassives";
+import { getEffectiveCritResist } from "./substats";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
 import {
@@ -628,7 +629,10 @@ export function executeSkill(
     if (isAttack) {
       // Crit roll — a proc applies the full CRITICAL package. Skills that
       // are already CRITICAL don't double-dip.
-      const critChance = getCritChance(updatedSource);
+      const critChance = Math.max(
+        0,
+        getCritChance(updatedSource) - getEffectiveCritResist(updatedTarget),
+      );
       const didCrit =
         critChance > 0 &&
         !skillMechanics.some((m) => m.type === "critical") &&
