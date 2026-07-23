@@ -1,5 +1,6 @@
 import { BattleCharacter } from "@/types/character";
 import { trySurviveLethal } from "./lethal";
+import { applyHeal } from "./heal";
 
 /**
  * Duration semantics (ruling #21 — durations are literal):
@@ -32,15 +33,18 @@ export function tickTeamBuffs(
     // Reset action-specific passive flags each turn start
     char.passiveState.firstActionTriggeredThisTurn = false;
 
-    // Apply Heal-over-Time (HoT) effects
+    // Apply Heal-over-Time (HoT) effects — recovery rate is recalculated
+    // live off the recipient's CURRENT rate every tick, not snapshotted
+    // at cast time (Tanveer ruling 2026-07-24).
     const hotEffects = char.buffs.filter((b) => b.type === "healOverTime");
     let totalHot = 0;
     hotEffects.forEach((hot) => {
       if (hot.value) totalHot += hot.value;
     });
     if (totalHot > 0) {
-      char.currentHP = Math.min(char.hp, char.currentHP + totalHot);
-      log(`[System] ${char.name} heals ${totalHot} HP from HoT.`);
+      const { character: healedChar, healed } = applyHeal(char, totalHot);
+      Object.assign(char, healedChar);
+      if (healed > 0) log(`[System] ${char.name} heals ${healed} HP from HoT.`);
     }
 
     char.buffs = char.buffs

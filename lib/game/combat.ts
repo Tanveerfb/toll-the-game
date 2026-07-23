@@ -716,19 +716,20 @@ export function executeSkill(
       // Molvarr SP: heal a % of MISSING HP (maxHP - currentHP) instead of the
       // stat-scaled amount. Falls back to the normal damageRanked-as-heal.
       const healMech = skillMechanics.find((m) => m.type === "heal");
-      const healAmount =
+      const rawHealAmount =
         healMech?.missingHpPercent != null
           ? Math.floor(
               (updatedTarget.hp - updatedTarget.currentHP) *
                 (healMech.missingHpPercent / 100),
             )
           : Math.floor(baseDamage);
-      healedAmount = healAmount;
-      targetEvent.heal = healAmount;
-      updatedTarget.currentHP = Math.min(
-        updatedTarget.hp,
-        updatedTarget.currentHP + healAmount,
+      const { character: healedTarget, healed } = applyHeal(
+        updatedTarget,
+        rawHealAmount,
       );
+      Object.assign(updatedTarget, healedTarget);
+      healedAmount = healed;
+      targetEvent.heal = healed;
     }
 
     // Hostile mechanics apply for offensive skills even at 0 damage
@@ -849,15 +850,16 @@ export function executeSkill(
         }
         // (cancelBuffs / cancelStances resolve pre-damage, above)
         if (mech.type === "lifesteal" && dealtDamage > 0) {
-          const heal = Math.floor(
+          const rawHeal = Math.floor(
             dealtDamage * ((mech.valuePercent || mech.value || 30) / 100),
           );
-          if (heal > 0) {
-            updatedSource.currentHP = Math.min(
-              updatedSource.hp,
-              updatedSource.currentHP + heal,
-            );
-            targetEffects.push(`drained ${heal} HP`);
+          const { character: healedSource, healed } = applyHeal(
+            updatedSource,
+            rawHeal,
+          );
+          Object.assign(updatedSource, healedSource);
+          if (healed > 0) {
+            targetEffects.push(`drained ${healed} HP`);
           }
         }
         if (mech.type === "seal") {
@@ -1129,14 +1131,15 @@ export function executeSkill(
       updatedSource.currentHP <
         updatedSource.hp * (lifestealMech.hpConditionPercent / 100)
     ) {
-      const heal = Math.floor(
+      const rawHeal = Math.floor(
         totalDamageDealt * (lifestealMech.lifestealPercent / 100),
       );
-      updatedSource.currentHP = Math.min(
-        updatedSource.hp,
-        updatedSource.currentHP + heal,
+      const { character: healedSource, healed } = applyHeal(
+        updatedSource,
+        rawHeal,
       );
-      log(`${updatedSource.name}'s Vampiric Roots restores ${heal} HP!`);
+      Object.assign(updatedSource, healedSource);
+      log(`${updatedSource.name}'s Vampiric Roots restores ${healed} HP!`);
     }
   }
 

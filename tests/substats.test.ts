@@ -10,6 +10,8 @@ import type { SkillCard } from "@/types/skillCard";
 import { getEffectiveHealAmount, applyHeal } from "@/lib/game/heal";
 import { calculateDamage } from "@/lib/game/damage";
 import { executeSkill } from "@/lib/game/combat";
+import { tickTeamBuffs } from "@/lib/game/tick";
+import { trySurviveLethal } from "@/lib/game/lethal";
 
 function dummySkill(): SkillCard {
   return {
@@ -247,5 +249,67 @@ describe("Lifesteal substat wiring (combat.ts)", () => {
     );
     // dealt = 100; skill lifesteal 30 -> +30; substat lifesteal 10% -> +10
     expect(result.playerTeam[0].currentHP).toBe(540);
+  });
+});
+
+describe("Recovery Rate applied at existing heal call sites", () => {
+  it("a heal-type skill scales by the target's recovery rate", () => {
+    const healer = makeChar({ instanceId: "h" });
+    const target = makeChar({
+      instanceId: "t",
+      currentHP: 500,
+      recoveryRatePercent: 150,
+    });
+    const healSkill: SkillCard = {
+      skillName: "Heal",
+      characterId: "h",
+      type: "heal",
+      statMultiplier: "atk",
+      damageRanked: [100, 100, 100],
+    };
+    const result = executeSkill(
+      { sourceInstanceId: "h", skill: healSkill, targetInstanceId: "t" },
+      { playerTeam: [healer, target], enemyTeam: [] },
+      () => {},
+    );
+    // base heal = healer.currentAttack (100) scaled by 150% recovery = 150
+    const healedTarget = result.playerTeam.find((c) => c.instanceId === "t")!;
+    expect(healedTarget.currentHP).toBe(650);
+  });
+
+  it("HoT ticks scale by the recipient's CURRENT recovery rate, recalculated live", async () => {
+    const char = makeChar({ currentHP: 500, recoveryRatePercent: 100 });
+    char.buffs.push({
+      type: "healOverTime",
+      value: 100,
+      buffDuration: 2,
+    });
+    let [ticked] = tickTeamBuffs([char], () => {});
+    // tick 1 at 100% recovery rate -> +100
+    expect(ticked.currentHP).toBe(600);
+
+    // recipient's recovery rate improves mid-duration
+    ticked.recoveryRatePercent = 200;
+    [ticked] = tickTeamBuffs([ticked], () => {});
+    // tick 2 at 200% recovery rate -> +200 (not the original +100)
+    expect(ticked.currentHP).toBe(800);
+  });
+
+  it("lethal-survival heal scales by the survivor's recovery rate", () => {
+    const char = makeChar({
+      currentHP: 400, // >= 30% of 1000 max HP, so the condition is met
+      recoveryRatePercent: 200,
+      passive: {
+        name: "Nine Lives",
+        trigger: "onLethalDamage",
+        mechanics: [
+          { type: "surviveLethal", hpConditionPercent: 30, healDamagePercent: 50 },
+        ],
+      },
+    });
+    const healAmount = trySurviveLethal(char, 1000);
+    // 1000 incoming * 50% = 500 raw heal, * 200% recovery rate = 1000
+    expect(healAmount).toBe(1000);
+    expect(char.currentHP).toBe(1000);
   });
 });

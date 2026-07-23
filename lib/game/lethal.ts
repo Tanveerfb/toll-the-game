@@ -1,4 +1,5 @@
 import type { BattleCharacter } from "@/types/character";
+import { getEffectiveHealAmount } from "./heal";
 
 /**
  * Lethal-damage survival (Sara's Nine Lives), shared by direct hits
@@ -28,9 +29,10 @@ export function trySurviveLethal(
   const hpCondition = (mech.hpConditionPercent ?? 30) / 100;
   if (char.currentHP < char.hp * hpCondition) return null;
 
-  const healAmount = Math.floor(
+  const rawHealAmount = Math.floor(
     incomingDamage * ((mech.healDamagePercent ?? 50) / 100),
   );
+  const healAmount = getEffectiveHealAmount(char, rawHealAmount);
   char.currentHP = Math.max(1, healAmount);
   char.passiveState.lethalSurvived = true;
   // Revival wipes the slate: all buffs AND debuffs go, cancellable or not
