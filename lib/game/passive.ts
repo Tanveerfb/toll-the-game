@@ -36,7 +36,14 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
       sourceInstanceId: character.instanceId,
       mechanicId: character.passive.name,
       action: async (source, teams, log) => {
-        
+        // Default-deny: a passive only fires from the bench if its data
+        // explicitly opts in with worksFromSub: true (Tanveer ruling
+        // 2026-07-24 — most passives need field presence, so the safe
+        // default flipped from opt-out to opt-in).
+        if (source.isSub && source.passive?.worksFromSub !== true) {
+          return teams;
+        }
+
         const teamKey = source.team === "player" ? "playerTeam" : "enemyTeam";
         const mutateTeam = [...teams[teamKey]];
         let changed = false;
@@ -291,7 +298,8 @@ function registerTurnRamp(character: BattleCharacter, registerToQueue: RegisterF
       const teamKey = source.team === "player" ? "playerTeam" : "enemyTeam";
       const team = [...teams[teamKey]];
       const idx = team.findIndex((c) => c.instanceId === source.instanceId);
-      if (idx === -1 || team[idx].currentHP <= 0) return teams;
+      if (idx === -1 || team[idx].currentHP <= 0 || team[idx].isSub)
+        return teams;
 
       const self = {
         ...team[idx],
@@ -359,7 +367,8 @@ function registerMaxHpShred(character: BattleCharacter, registerToQueue: Registe
       const team = [...teams[teamKey]];
       const opponents = [...teams[oppKey]];
       const idx = team.findIndex((c) => c.instanceId === source.instanceId);
-      if (idx === -1 || team[idx].currentHP <= 0) return teams;
+      if (idx === -1 || team[idx].currentHP <= 0 || team[idx].isSub)
+        return teams;
 
       const self = {
         ...team[idx],

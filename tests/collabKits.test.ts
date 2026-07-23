@@ -9,6 +9,7 @@ import type { SkillCard } from "@/types/skillCard";
 import meliodasData from "@/data/characters/meliodas.json";
 import banData from "@/data/characters/ban.json";
 import dianeData from "@/data/characters/diane.json";
+import leorioData from "@/data/characters/leorio.json";
 
 const noopLog = () => {};
 
@@ -456,5 +457,79 @@ describe("Diane — Rupture, Attack Seal, Giant's Will", () => {
       dianeData.atk + 5 * Math.floor(dianeData.atk * 0.1),
     );
     expect(teams.playerTeam[0].passiveState.turnRampStacks).toBe(5);
+  });
+
+  it("Giant's Will does not ramp while Diane is benched", async () => {
+    const diane = fromData(dianeData, "player");
+    diane.isSub = true;
+    const items: any[] = [];
+    registerCharacterPassives(diane, (item) => items.push(item));
+    const ramp = items.find((i) => i.id.includes("turnRamp"));
+
+    let teams = { playerTeam: [diane], enemyTeam: [] as BattleCharacter[] };
+    teams = await ramp.action(teams.playerTeam[0], teams, noopLog);
+    teams = await ramp.action(teams.playerTeam[0], teams, noopLog);
+    expect(teams.playerTeam[0].currentAttack).toBe(dianeData.atk);
+    expect(teams.playerTeam[0].passiveState.turnRampStacks).toBeUndefined();
+  });
+
+  it("Giant's Will synergy (Collab/Giant tag buff) does not apply while benched", async () => {
+    const diane = fromData(dianeData, "player");
+    diane.isSub = true;
+    const ally = makeChar({
+      instanceId: "ally",
+      team: "player",
+      tags: ["Giant"],
+    });
+    const items: any[] = [];
+    registerCharacterPassives(diane, (item) => items.push(item));
+    const synergy = items.find((i) => i.id.includes("passive_Giant's Will"));
+
+    const teams = await synergy.action(
+      diane,
+      { playerTeam: [diane, ally], enemyTeam: [] },
+      noopLog,
+    );
+    expect(teams.playerTeam[1].buffs).toHaveLength(0);
+  });
+});
+
+describe("Sub-passive gating (worksFromSub)", () => {
+  it("Extort Life does not shred while Ban is benched", async () => {
+    const ban = fromData(banData, "player");
+    ban.isSub = true;
+    const enemy = makeChar({ instanceId: "e", team: "enemy" });
+    const items: any[] = [];
+    registerCharacterPassives(ban, (item) => items.push(item));
+    const shred = items.find((i) => i.id.includes("shred"));
+
+    const teams = await shred.action(
+      ban,
+      { playerTeam: [ban], enemyTeam: [enemy] },
+      noopLog,
+    );
+    expect(teams.enemyTeam[0].hp).toBe(1000);
+  });
+
+  it("Kind Hearted Friend's Collab synergy still applies while Leorio is benched (worksFromSub: true)", async () => {
+    const leorio = fromData(leorioData, "player");
+    leorio.isSub = true;
+    const ally = makeChar({
+      instanceId: "ally",
+      team: "player",
+      tags: ["Collab"],
+    });
+    const items: any[] = [];
+    registerCharacterPassives(leorio, (item) => items.push(item));
+    const synergy = items.find((i) =>
+      i.id.includes("passive_Kind Hearted Friend"),
+    );
+
+    const teams = await synergy.action(
+      leorio,
+      { playerTeam: [leorio, ally], enemyTeam: [] },
+      noopLog,
+    );
+    expect(teams.playerTeam[1].buffs).toHaveLength(1);
   });
 });

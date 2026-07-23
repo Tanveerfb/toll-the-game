@@ -59,6 +59,7 @@
     "name": "Charged",
     "description": "Gains a Charged stack every time Seras receives or evades an attack (max 6).",
     "trigger": "onAttackReceived",
+    "worksFromSub": false,
     "mechanics": [
       {
         "type": "chargedStacks",

@@ -74,7 +74,7 @@ function gainAttackReceivedShift(
     (m) => m.type === "statShiftAfterAttacks",
   );
   if (!mech) return;
-  if (char.isSub && char.passive.worksFromSub === false) return;
+  if (char.isSub && char.passive.worksFromSub !== true) return;
   if (char.passiveState.statShiftTriggered) return;
 
   const required = mech.attacksRequired ?? 10;

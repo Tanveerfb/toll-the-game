@@ -63,6 +63,7 @@
     "name": "Earthen Resolve",
     "description": "[Red] and [Green] allies gain +50% DEF for the battle.",
     "trigger": "onBattleStart",
+    "worksFromSub": true,
     "mechanics": [
       {
         "type": "synergy",

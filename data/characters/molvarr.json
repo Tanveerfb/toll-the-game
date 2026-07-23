@@ -109,7 +109,7 @@
         },
         {
           "name": "Sunken Awakening",
-          "description": "All stats +100%. Cannot be cancelled; only once.",
+          "description": "Basic stats +100%. Cannot be cancelled; only once.",
           "trigger": "always",
           "triggerText": "On turn 10",
           "mechanics": [{ "type": "bossStatSpike", "fromTurn": 10, "multiplier": 2 }]
@@ -179,7 +179,7 @@
         },
         {
           "name": "Sunken Awakening",
-          "description": "All stats +100%. Cannot be cancelled; only once.",
+          "description": "Basic stats +100%. Cannot be cancelled; only once.",
           "trigger": "always",
           "triggerText": "On turn 10",
           "mechanics": [{ "type": "bossStatSpike", "fromTurn": 10, "multiplier": 2 }]

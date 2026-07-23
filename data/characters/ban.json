@@ -63,6 +63,7 @@
     "name": "Extort Life",
     "description": "Whenever Ban ends a turn without taking damage, all enemies' max HP falls by 8% (max 5 stacks, uncancellable). Taking any damage — including DoT and counters — resets the stacks. ",
     "trigger": "onRoundEnd",
+    "worksFromSub": false,
     "mechanics": [
       {
         "type": "maxHpShred",

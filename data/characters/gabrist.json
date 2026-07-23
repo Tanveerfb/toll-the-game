@@ -70,6 +70,7 @@
     "name": "Flawless Canvas",
     "description": "All allies gain +20% DEF while no ally is defeated.",
     "trigger": "aura",
+    "worksFromSub": true,
     "mechanics": [
       {
         "type": "aura",

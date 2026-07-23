@@ -55,6 +55,7 @@
     "name": "Nine Lives",
     "description": "When receiving lethal damage at 30%+ HP, survives, heals 50% of incoming damage and loses all buffs and debuffs. Triggers once per battle.",
     "trigger": "onLethalDamage",
+    "worksFromSub": false,
     "mechanics": [
       {
         "type": "surviveLethal",

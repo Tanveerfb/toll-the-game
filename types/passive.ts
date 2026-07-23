@@ -32,9 +32,11 @@ export interface Passive {
   description?: string;
   trigger: PassiveTrigger;
   /**
-   * Whether the passive stays active from the bench. Absent = kit-specific
-   * default (synergies always work from sub per Tanveer; combat passives
-   * check this flag explicitly).
+   * Whether the passive stays active from the bench. Default-deny: absent
+   * or false means it does NOT work from sub (Tanveer ruling 2026-07-24 —
+   * most passives need field presence to interact with enemies/allies).
+   * Set true only for passives that just grant buffs/effects with no
+   * interaction requirement (e.g. Leorio, Mustafa, Gabrist).
    */
   worksFromSub?: boolean;
   mechanics?: Mechanic[];

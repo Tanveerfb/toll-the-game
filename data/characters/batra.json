@@ -60,6 +60,7 @@
     "name": "Fierce Dedication",
     "description": "Before using a skill, consumes 5% max HP (cannot reduce self below 1 HP).",
     "trigger": "beforeSkill",
+    "worksFromSub": false,
     "mechanics": [
       {
         "type": "consumeHpPercent",
