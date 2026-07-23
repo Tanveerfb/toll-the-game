@@ -217,7 +217,12 @@ describe("Meliodas — Deathblow + Full Counter", () => {
     );
     const enemy = teams.enemyTeam[0];
     const melAfter = teams.playerTeam[0];
-    expect(melAfter.currentHP).toBeLessThan(melAfter.hp); // he still took the hit
+    // Lifesteal substat (Task 6): Meliodas's counter deals a massive 400%-ATK
+    // hit back, and his own base lifestealPercent (default 5%) heals him for
+    // 5% of THAT counter damage — comfortably more than the modest hit he
+    // took from the enemy's plain attack, so he lands back at full (clamped)
+    // HP instead of staying strictly below max.
+    expect(melAfter.currentHP).toBe(melAfter.hp); // took the hit, then fully lifestole back via the counter
     expect(enemy.currentHP).toBeLessThan(1000); // counter landed
 
     // Lethal hit: no counter
@@ -288,7 +293,12 @@ describe("Ban — Lifesteal, Extort, Extort Life", () => {
     const dealt =
       banData.atk * ((banData.skills[0].damageRanked[2] as number) / 100);
     expect(after.enemyTeam[0].currentHP).toBe(1000 - dealt);
-    expect(after.playerTeam[0].currentHP).toBe(500 + Math.floor(dealt * 0.3));
+    // Lifesteal substat (Task 6): on top of Drain's own skill-level 30%
+    // lifesteal mechanic, Ban also gets his base lifestealPercent substat
+    // (undefined on ban.json -> defaults to 5%) applied additively.
+    expect(after.playerTeam[0].currentHP).toBe(
+      500 + Math.floor(dealt * 0.3) + Math.floor(dealt * 0.05),
+    );
   });
 
   it("Snatch extorts per-stat and refreshes instead of stacking", () => {

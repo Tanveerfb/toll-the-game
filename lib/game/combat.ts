@@ -7,7 +7,8 @@ import { syncExtortLinks } from "./effects";
 import { getEffectiveAttack, getEffectiveDefense } from "./stats";
 import { ultGaugeMax } from "./ultGauge";
 import { bossDamageMultiplierVsTarget } from "./bossPassives";
-import { getEffectiveCritResist } from "./substats";
+import { getEffectiveCritResist, getEffectiveLifesteal } from "./substats";
+import { applyHeal } from "./heal";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
 import {
@@ -669,6 +670,21 @@ export function executeSkill(
       totalDamageDealt += finalDamage;
       targetEvent.damage = finalDamage;
 
+      // Lifesteal substat — unconditional heal-on-hit, stacks additively with
+      // any explicit skill-level "lifesteal" mechanic (resolved separately,
+      // below in the mechanics loop).
+      if (dealtDamage > 0) {
+        const lifestealPercent = getEffectiveLifesteal(updatedSource);
+        if (lifestealPercent > 0) {
+          const { character: healedSource, healed } = applyHeal(
+            updatedSource,
+            Math.floor(dealtDamage * (lifestealPercent / 100)),
+          );
+          Object.assign(updatedSource, healedSource);
+          if (healed > 0) targetEffects.push(`self-healed ${healed} HP (lifesteal)`);
+        }
+      }
+
       const newHp = updatedTarget.currentHP - finalDamage;
 
       // -- LETHAL DAMAGE SURVIVAL (Sara) — shared with DoT deaths in tick.ts
@@ -1031,6 +1047,19 @@ export function executeSkill(
         );
         if (counterDamage > 0) {
           updatedSource.passiveState.tookDamageThisRound = true;
+        }
+        if (counterDamage > 0) {
+          const counterLifestealPercent = getEffectiveLifesteal(updatedTarget);
+          if (counterLifestealPercent > 0) {
+            const { character: healedCounterer, healed } = applyHeal(
+              updatedTarget,
+              Math.floor(counterDamage * (counterLifestealPercent / 100)),
+            );
+            Object.assign(updatedTarget, healedCounterer);
+            if (healed > 0) {
+              log(`${updatedTarget.name} self-healed ${healed} HP (lifesteal counter).`);
+            }
+          }
         }
         eventCounters.push({
           byInstanceId: updatedTarget.instanceId,

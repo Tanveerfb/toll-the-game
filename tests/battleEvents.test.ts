@@ -179,7 +179,13 @@ describe("battle event emission (animation sequencer contract)", () => {
     expect(counter.byInstanceId).toBe("v");
     expect(counter.onInstanceId).toBe("a");
     expect(counter.damage).toBeGreaterThan(0);
-    expect(counter.attackerHpAfter).toBe(300 - counter.damage);
+    // Lifesteal substat (Task 6): the attacker "a" also self-heals off their
+    // OWN initial hit for their base lifestealPercent (default 5%, since not
+    // overridden here) before the counter lands: dealt 100 * 5% = 5.
+    const attackerLifestealHeal = Math.floor(100 * 0.05);
+    expect(counter.attackerHpAfter).toBe(
+      300 + attackerLifestealHeal - counter.damage,
+    );
   });
 
   it("emits nothing without an emitter (default path untouched)", () => {

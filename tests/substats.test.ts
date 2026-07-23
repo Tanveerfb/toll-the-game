@@ -215,3 +215,37 @@ describe("Crit Resistance substat wiring (combat.ts crit roll)", () => {
     expect(result.enemyTeam[0].currentHP).toBe(target.hp - attacker.currentAttack);
   });
 });
+
+describe("Lifesteal substat wiring (combat.ts)", () => {
+  it("a plain attack with no skill lifesteal mechanic still heals the attacker for their base lifestealPercent", () => {
+    const attacker = makeChar({ lifestealPercent: 10, currentHP: 500 });
+    const target = makeChar({ instanceId: "t", team: "enemy", currentDefense: 0 });
+    const result = executeSkill(
+      { sourceInstanceId: "c", skill: dummySkill(), targetInstanceId: "t" },
+      { playerTeam: [attacker], enemyTeam: [target] },
+      () => {},
+    );
+    // dealt = attacker.currentAttack (100) - 0 def = 100; 10% lifesteal = 10
+    expect(result.playerTeam[0].currentHP).toBe(510);
+  });
+
+  it("stacks additively with an existing skill-level lifesteal mechanic", () => {
+    const attacker = makeChar({ lifestealPercent: 10, currentHP: 500 });
+    const target = makeChar({ instanceId: "t", team: "enemy", currentDefense: 0 });
+    const skill: SkillCard = {
+      skillName: "Drain",
+      characterId: "c",
+      type: "attack",
+      statMultiplier: "atk",
+      damageRanked: [100, 100, 100],
+      mechanics: [{ type: "lifesteal", valuePercent: 30 }],
+    };
+    const result = executeSkill(
+      { sourceInstanceId: "c", skill, targetInstanceId: "t" },
+      { playerTeam: [attacker], enemyTeam: [target] },
+      () => {},
+    );
+    // dealt = 100; skill lifesteal 30 -> +30; substat lifesteal 10% -> +10
+    expect(result.playerTeam[0].currentHP).toBe(540);
+  });
+});
