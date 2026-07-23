@@ -8,6 +8,7 @@ import {
 import type { BattleCharacter } from "@/types/character";
 import type { SkillCard } from "@/types/skillCard";
 import { getEffectiveHealAmount, applyHeal } from "@/lib/game/heal";
+import { calculateDamage } from "@/lib/game/damage";
 
 function dummySkill(): SkillCard {
   return {
@@ -124,5 +125,43 @@ describe("applyHeal", () => {
     applyHeal(c, 100, (e) => logs.push(e));
     expect(logs).toHaveLength(1);
     expect(logs[0]).toContain("100");
+  });
+});
+
+describe("Crit Damage substat wiring (damage.ts)", () => {
+  it("a proc'd crit (no explicit damageBonusPercent) uses the attacker's crit damage substat", () => {
+    const attacker = makeChar({ critDamagePercent: 80 });
+    const target = makeChar({ instanceId: "t", team: "enemy", currentDefense: 0 });
+    const dmg = calculateDamage({
+      baseDamage: 200,
+      skillMechanics: [{ type: "critical" }],
+      target,
+      attacker,
+    });
+    // 200 base * (1 + 80/100) = 360
+    expect(dmg).toBe(360);
+  });
+
+  it("a skill with an explicit damageBonusPercent overrides the substat", () => {
+    const attacker = makeChar({ critDamagePercent: 80 });
+    const target = makeChar({ instanceId: "t", team: "enemy", currentDefense: 0 });
+    const dmg = calculateDamage({
+      baseDamage: 200,
+      skillMechanics: [{ type: "critical", damageBonusPercent: 30 }],
+      target,
+      attacker,
+    });
+    // 200 * (1 + 30/100) = 260, substat ignored
+    expect(dmg).toBe(260);
+  });
+
+  it("falls back to 50% when no attacker is passed (backward compatible)", () => {
+    const target = makeChar({ instanceId: "t", team: "enemy", currentDefense: 0 });
+    const dmg = calculateDamage({
+      baseDamage: 200,
+      skillMechanics: [{ type: "critical" }],
+      target,
+    });
+    expect(dmg).toBe(300);
   });
 });

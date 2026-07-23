@@ -7,6 +7,7 @@ import {
   getDamageDealtMultiplier,
   getDamageReductionMultiplier,
 } from "./stats";
+import { getEffectiveCritDamage } from "./substats";
 
 export interface DamageCalculationParams {
   baseDamage: number; // Pre-calculated (e.g. source.currentAttack * skill multiplier)
@@ -83,7 +84,10 @@ export function calculateDamage({ baseDamage, skillMechanics, target, attackerCo
   if (!criticalMechanic) {
     damageTaken *= getTypeModifier(attackerColor, target.color);
   } else {
-    damageTaken *= 1 + (criticalMechanic.damageBonusPercent ?? 50) / 100;
+    const bonus =
+      criticalMechanic.damageBonusPercent ??
+      (attacker ? getEffectiveCritDamage(attacker) : 50);
+    damageTaken *= 1 + bonus / 100;
   }
 
   // Damage-modifier stats (ruling #36, multiplicative stacking): attacker's
