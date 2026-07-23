@@ -7,6 +7,7 @@ import {
 } from "@/lib/game/substats";
 import type { BattleCharacter } from "@/types/character";
 import type { SkillCard } from "@/types/skillCard";
+import { getEffectiveHealAmount, applyHeal } from "@/lib/game/heal";
 
 function dummySkill(): SkillCard {
   return {
@@ -81,5 +82,47 @@ describe("substat buff/debuff stacking (multiplicative)", () => {
     const c = makeChar();
     c.buffs.push({ type: "buff", stat: "all", valuePercent: 50 });
     expect(getEffectiveCritResist(c)).toBe(10);
+  });
+});
+
+describe("getEffectiveHealAmount (Recovery Rate scaling)", () => {
+  it("100 raw heal at 100% recovery rate stays 100", () => {
+    const c = makeChar();
+    expect(getEffectiveHealAmount(c, 100)).toBe(100);
+  });
+
+  it("100 raw heal at 150% recovery rate becomes 150", () => {
+    const c = makeChar({ recoveryRatePercent: 150 });
+    expect(getEffectiveHealAmount(c, 100)).toBe(150);
+  });
+
+  it("never returns negative for a 0 or negative raw amount", () => {
+    const c = makeChar();
+    expect(getEffectiveHealAmount(c, 0)).toBe(0);
+    expect(getEffectiveHealAmount(c, -50)).toBe(0);
+  });
+});
+
+describe("applyHeal", () => {
+  it("adds the recovery-rate-scaled amount to currentHP", () => {
+    const c = makeChar({ currentHP: 500, recoveryRatePercent: 150 });
+    const { character, healed } = applyHeal(c, 100);
+    expect(healed).toBe(150);
+    expect(character.currentHP).toBe(650);
+  });
+
+  it("clamps at max HP", () => {
+    const c = makeChar({ currentHP: 950, hp: 1000 });
+    const { character, healed } = applyHeal(c, 200);
+    expect(character.currentHP).toBe(1000);
+    expect(healed).toBe(50);
+  });
+
+  it("logs the heal when a log function is passed", () => {
+    const c = makeChar({ currentHP: 500 });
+    const logs: string[] = [];
+    applyHeal(c, 100, (e) => logs.push(e));
+    expect(logs).toHaveLength(1);
+    expect(logs[0]).toContain("100");
   });
 });
