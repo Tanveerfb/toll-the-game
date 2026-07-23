@@ -54,6 +54,10 @@ export interface CharacterData {
   atk: number;
   def: number;
   hp: number;
+  critDamagePercent?: number;
+  recoveryRatePercent?: number;
+  lifestealPercent?: number;
+  critResistPercent?: number;
   tags?: string[];
   lore?: string;
   /** Story-mode enemies: excluded from the practice roster and archive */

@@ -63,6 +63,14 @@ export const characterSchema = z.looseObject({
   ultGaugeMax: z.number().positive().optional(),
   ccImmune: z.boolean().optional(),
   boss: z.boolean().optional(),
+  /** Crit damage bonus %, base 50 if absent (lib/game/substats.ts). */
+  critDamagePercent: z.number().nonnegative().optional(),
+  /** Heal-scaling multiplier %, base 100 if absent. */
+  recoveryRatePercent: z.number().nonnegative().optional(),
+  /** % of damage dealt returned as self-heal on every hit, base 5 if absent. */
+  lifestealPercent: z.number().nonnegative().optional(),
+  /** Reduces incoming crit chance by this %, base 10 if absent. */
+  critResistPercent: z.number().nonnegative().optional(),
   skills: z.array(skillSchema).length(2),
   ultimate: skillSchema.optional(),
   passive: passiveSchema.optional(),

@@ -29,6 +29,14 @@ export interface Character {
   atk: number;
   def: number;
   hp: number;
+  /** Crit damage bonus %, base 50 if absent (lib/game/substats.ts). */
+  critDamagePercent?: number;
+  /** Heal-scaling multiplier %, base 100 if absent. */
+  recoveryRatePercent?: number;
+  /** % of damage dealt returned as self-heal on every hit, base 5 if absent. */
+  lifestealPercent?: number;
+  /** Reduces incoming crit chance by this %, base 10 if absent. */
+  critResistPercent?: number;
   tags?: string[]; // E.g. [FEMALE], [KHALSA]
   /** Multi-phase boss definition. Phase 0's stats/skills seed the unit; on
    * HP 0 it transitions to the next phase (see lib/game/phases.ts). */

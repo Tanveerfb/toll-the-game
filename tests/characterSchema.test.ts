@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateCharacters } from "@/lib/game/characterSchema";
+import { characterSchema, validateCharacters } from "@/lib/game/characterSchema";
 import {
   getAllCharacters,
   getBossCharacters,
@@ -89,5 +89,58 @@ describe("boss roster (practice Boss Battle picker)", () => {
     const playable = getPlayableCharacters().map((c) => c.id);
     expect(playable).not.toContain("molvarr");
     expect(playable).not.toContain("lyra_npc");
+  });
+});
+
+describe("substat fields (crit dmg, recovery rate, lifesteal, crit resist)", () => {
+  function baseCharacter(overrides: Record<string, unknown> = {}) {
+    return {
+      id: "test",
+      name: "Test",
+      color: "blue",
+      atk: 100,
+      def: 50,
+      hp: 1000,
+      skills: [
+        {
+          skillName: "A",
+          characterId: "test",
+          type: "attack",
+          statMultiplier: "atk",
+          damageRanked: [100, 100, 100],
+        },
+        {
+          skillName: "B",
+          characterId: "test",
+          type: "attack",
+          statMultiplier: "atk",
+          damageRanked: [100, 100, 100],
+        },
+      ],
+      ...overrides,
+    };
+  }
+
+  it("accepts a character with no substat fields", () => {
+    expect(characterSchema.safeParse(baseCharacter()).success).toBe(true);
+  });
+
+  it("accepts explicit substat fields", () => {
+    const result = characterSchema.safeParse(
+      baseCharacter({
+        critDamagePercent: 60,
+        recoveryRatePercent: 120,
+        lifestealPercent: 8,
+        critResistPercent: 15,
+      }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a negative substat value", () => {
+    const result = characterSchema.safeParse(
+      baseCharacter({ critDamagePercent: -10 }),
+    );
+    expect(result.success).toBe(false);
   });
 });
