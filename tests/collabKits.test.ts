@@ -6,6 +6,7 @@ import { getAIMove } from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
 import type { BattleCharacter } from "@/types/character";
 import type { SkillCard } from "@/types/skillCard";
+import type { BattleActionEvent } from "@/types/battleEvent";
 import meliodasData from "@/data/characters/meliodas.json";
 import banData from "@/data/characters/ban.json";
 import dianeData from "@/data/characters/diane.json";
@@ -206,6 +207,7 @@ describe("Meliodas — Deathblow + Full Counter", () => {
     expect(stance?.buffDuration).toBe(2);
 
     // Enemy attacks Meliodas -> takes 400% of his effective ATK back
+    const events: BattleActionEvent[] = [];
     teams = executeSkill(
       {
         sourceInstanceId: "e",
@@ -214,9 +216,22 @@ describe("Meliodas — Deathblow + Full Counter", () => {
       },
       teams,
       noopLog,
+      0,
+      undefined,
+      (e) => events.push(e),
     );
     const enemy = teams.enemyTeam[0];
     const melAfter = teams.playerTeam[0];
+    // The event stream snapshots the target's hp immediately after the
+    // incoming hit resolves — BEFORE the counter (and its lifesteal
+    // overheal) fires — so this is the one place that still proves the
+    // enemy's attack actually dealt damage, independent of where Meliodas
+    // ends up after he counters and heals back off it.
+    const melHitEvent = events[0].targets.find(
+      (t) => t.instanceId === "meliodas",
+    );
+    expect(melHitEvent?.damage).toBeGreaterThan(0); // he really took the hit
+    expect(melHitEvent?.hpAfter).toBeLessThan(mel.hp);
     // Lifesteal substat (Task 6): Meliodas's counter deals a massive 400%-ATK
     // hit back, and his own base lifestealPercent (default 5%) heals him for
     // 5% of THAT counter damage — comfortably more than the modest hit he
