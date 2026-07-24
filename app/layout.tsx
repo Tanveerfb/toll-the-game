@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bangers, Rajdhani } from "next/font/google";
 import "../styles/globals.css";
 
@@ -17,6 +17,11 @@ const rajdhani = Rajdhani({
 export const metadata: Metadata = {
   title: "Toll The Game",
   description: "A card battle game",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 import BattleProvider from "@/hooks/BattleProvider";
