@@ -14,8 +14,18 @@ import {
 } from "lucide-react";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { getEffectiveAttack, getEffectiveDefense } from "@/lib/game/stats";
+import { getCharacterById, getCharacterKit } from "@/lib/game/characterCatalog";
+import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
 import type { BattleCharacter } from "@/types/character";
 import type { StatusEffect } from "@/types/mechanic";
+import SubstatDrawer from "@/components/game/SubstatDrawer";
+import DetailOverlay from "@/components/game/DetailOverlay";
+import {
+  PassiveDetailSections,
+  SkillBlock,
+  type KitPassiveView,
+} from "@/components/game/KitDetails";
+import type { CharacterSkillData } from "@/lib/game/characterCatalog";
 
 type Category = "buff" | "debuff" | "effect";
 
@@ -166,6 +176,20 @@ export default function EffectsQuickPanel({
 
   const rows = categorizeEffects(selected);
 
+  // Super ATK / Passive rows with Details buttons (spec §6), reusing the
+  // shared Detail Overlay from §5. Phase-aware, same as the fuller detail
+  // screen — a boss in a later phase shows that phase's kit.
+  const catalog = getCharacterById(selected.id);
+  const kit = catalog
+    ? getCharacterKit(catalog, selected.phaseIndex ?? 0)
+    : null;
+  const passiveList = (kit?.passives as KitPassiveView[] | undefined) ?? [];
+  const [detailOverlay, setDetailOverlay] = React.useState<
+    | { kind: "ultimate"; skill: CharacterSkillData }
+    | { kind: "passive"; passive: KitPassiveView }
+    | null
+  >(null);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6"
@@ -220,6 +244,39 @@ export default function EffectsQuickPanel({
           </button>
         </div>
 
+        {/* Type/category icon row + portrait + name (spec §6) */}
+        <div className="flex items-center gap-3 border-b border-zinc-800 bg-black/30 px-4 py-2.5">
+          <div className="h-10 w-10 shrink-0 overflow-hidden border border-zinc-700">
+            {getCharacterArt(selected.id) ? (
+              <Image
+                src={getCharacterArt(selected.id)!}
+                alt={selected.name}
+                width={40}
+                height={40}
+                className="h-full w-full object-cover object-top"
+              />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center bg-zinc-800 font-heading text-base text-zinc-200">
+                {selected.name.charAt(0)}
+              </span>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate font-heading text-base tracking-[0.05em] text-zinc-100">
+              {selected.name}
+            </p>
+            <p className="flex flex-wrap items-center gap-x-1.5 font-body text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+              <span
+                className={`h-2 w-2 shrink-0 rotate-45 border border-black/40 ${ELEMENT_SWATCH[selected.color]}`}
+              />
+              <span>{selected.color}</span>
+              {(selected.tags ?? []).map((tag) => (
+                <span key={tag}>· {tag}</span>
+              ))}
+            </p>
+          </div>
+        </div>
+
         {/* Quick stat strip */}
         <div className="flex items-center gap-5 border-b border-zinc-800 bg-zinc-900/40 px-4 py-2.5">
           <StatPill
@@ -238,6 +295,59 @@ export default function EffectsQuickPanel({
             tone="text-emerald-300"
           />
         </div>
+
+        <div className="border-b border-zinc-800 px-3 py-2">
+          <SubstatDrawer unit={selected} />
+        </div>
+
+        {/* Super ATK / Passive rows with Details buttons (spec §6), reusing
+            the shared Detail Overlay (§5). No live combat-stat tracker row
+            in this pass — deferred per spec. */}
+        {kit?.ultimate || passiveList.length > 0 ? (
+          <div className="space-y-1.5 border-b border-zinc-800 bg-black/20 p-3">
+            {kit?.ultimate ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setDetailOverlay({ kind: "ultimate", skill: kit.ultimate! })
+                }
+                className="flex w-full items-center justify-between gap-2 border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-left transition-colors hover:border-amber-300/60"
+              >
+                <div className="min-w-0">
+                  <p className="font-body text-[9px] uppercase tracking-widest text-zinc-500">
+                    Super ATK
+                  </p>
+                  <p className="truncate font-heading text-sm text-zinc-100">
+                    {kit.ultimate.skillName}
+                  </p>
+                </div>
+                <span className="shrink-0 font-body text-[10px] uppercase tracking-widest text-amber-200">
+                  Details
+                </span>
+              </button>
+            ) : null}
+            {passiveList.map((p, index) => (
+              <button
+                key={`passive-${p.name ?? index}`}
+                type="button"
+                onClick={() => setDetailOverlay({ kind: "passive", passive: p })}
+                className="flex w-full items-center justify-between gap-2 border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-left transition-colors hover:border-amber-300/60"
+              >
+                <div className="min-w-0">
+                  <p className="font-body text-[9px] uppercase tracking-widest text-zinc-500">
+                    {passiveList.length > 1 ? "Passive" : "Passive Skill"}
+                  </p>
+                  <p className="truncate font-heading text-sm text-zinc-100">
+                    {p.name ?? "Passive"}
+                  </p>
+                </div>
+                <span className="shrink-0 font-body text-[10px] uppercase tracking-widest text-amber-200">
+                  Details
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         {/* Effect list */}
         <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-3">
@@ -303,6 +413,33 @@ export default function EffectsQuickPanel({
           )}
         </div>
       </div>
+
+      {detailOverlay ? (
+        // stopPropagation: this overlay is nested inside the mini panel's own
+        // backdrop-click-to-close div — without this, dismissing the Details
+        // overlay would bubble up and close the whole mini panel too.
+        <div onClick={(e) => e.stopPropagation()}>
+          <DetailOverlay
+            title={
+              detailOverlay.kind === "ultimate"
+                ? "Super Attack Details"
+                : "Passive Details"
+            }
+            subtitle={
+              detailOverlay.kind === "ultimate"
+                ? detailOverlay.skill.skillName
+                : detailOverlay.passive.name
+            }
+            onClose={() => setDetailOverlay(null)}
+          >
+            {detailOverlay.kind === "ultimate" ? (
+              <SkillBlock skill={detailOverlay.skill} tag="ULT" />
+            ) : (
+              <PassiveDetailSections passive={detailOverlay.passive} />
+            )}
+          </DetailOverlay>
+        </div>
+      ) : null}
     </div>
   );
 }
