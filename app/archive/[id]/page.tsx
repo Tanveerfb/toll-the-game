@@ -19,6 +19,7 @@ import {
   type CharacterSkillData,
 } from "@/lib/game/characterCatalog";
 import KitPhases from "@/components/game/KitPhases";
+import PreviewButton from "@/components/game/PreviewButton";
 import { PassiveProse, type KitPassiveView } from "@/components/game/KitDetails";
 import {
   buildRankedSkillDescriptions,
@@ -315,6 +316,8 @@ export default async function CharacterDetailPage({
                 ))}
               </div>
             </div>
+
+            <PreviewButton characterId={character.id} />
 
             {character.lore ? (
               <div className="border-2 border-zinc-800 bg-black/45 px-4 py-3">
