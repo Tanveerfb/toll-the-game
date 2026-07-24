@@ -120,6 +120,31 @@ export default function BattleProvider({
   // 2026-07-19). This flag skips exactly that one enemy turn.
   const skipEnemyTurnRef = React.useRef(false);
 
+  // Resume a battle restored from sessionStorage (page reload / dev HMR). The
+  // teams/decks/phase come back via zustand-persist, but passive handlers live
+  // in MechanicProvider's queue as non-serializable closures — so they must be
+  // re-registered here for the restored units, or the resumed battle would run
+  // with no passives. The phase itself was already snapped to a safe point by
+  // the store's onRehydrateStorage (Option A). Runs once on mount.
+  const resumedRef = React.useRef(false);
+  useEffect(() => {
+    if (resumedRef.current) return;
+    resumedRef.current = true;
+    const s = useGameStore.getState();
+    const inProgress =
+      s.playerTeam.length > 0 &&
+      s.enemyTeam.length > 0 &&
+      s.battlePhase !== "initializing" &&
+      s.battlePhase !== "victory" &&
+      s.battlePhase !== "defeat";
+    if (!inProgress) return;
+    clearQueue();
+    [...s.playerTeam, ...s.enemyTeam].forEach((c) =>
+      registerCharacterPassives(c, registerToQueue),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Removed phaseRef - accessing refs during render caused lint errors.
   // Instead we read the latest battlePhase from the Zustand store API.
   const advancePhase = () => {

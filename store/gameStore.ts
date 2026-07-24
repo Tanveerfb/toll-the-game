@@ -1,4 +1,9 @@
 import { create } from "zustand";
+import {
+  persist,
+  createJSONStorage,
+  type StateStorage,
+} from "zustand/middleware";
 import { BattleCharacter } from "@/types/character";
 import { BattlePhase } from "@/types/mechanic";
 import { ActionCard } from "@/types/action";
@@ -192,7 +197,17 @@ function buildQueueAppend(
   };
 }
 
-export const useGameStore = create<BattleState>((set, get) => ({
+// Inert storage for non-browser contexts (SSR, tests) — persist stays a no-op
+// there instead of crashing on an undefined sessionStorage.
+const NOOP_STORAGE: StateStorage = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+};
+
+export const useGameStore = create<BattleState>()(
+  persist(
+    (set, get) => ({
   playerTeam: [],
   enemyTeam: [],
   currentTurn: 0,
@@ -621,7 +636,73 @@ export const useGameStore = create<BattleState>((set, get) => ({
       actionQueue: actionQueue.filter((c) => c.sourceInstanceId !== instanceId),
     });
   },
-}));
+    }),
+    {
+      // Persist an in-progress battle to sessionStorage so a page reload or dev
+      // HMR resumes it instead of dropping the player back to the menu. Cleared
+      // when the tab closes (sessionStorage) — "persist for the session". The
+      // transient animation/UI fields (battleEvents, bigHitFocus, phaseBreak,
+      // interactionNotice) are deliberately NOT persisted so a resume doesn't
+      // replay stale effects. Passive handlers live in MechanicProvider (not
+      // serializable) and are re-registered on resume by BattleProvider.
+      name: "toll-battle-session",
+      // Real sessionStorage in the browser; an inert no-op everywhere else
+      // (SSR, tests) so persist never touches an undefined storage.
+      storage: createJSONStorage(() =>
+        typeof window !== "undefined" && window.sessionStorage
+          ? window.sessionStorage
+          : NOOP_STORAGE,
+      ),
+      partialize: (state) => ({
+        playerTeam: state.playerTeam,
+        enemyTeam: state.enemyTeam,
+        currentTurn: state.currentTurn,
+        playerTurns: state.playerTurns,
+        enemyTurns: state.enemyTurns,
+        battleLog: state.battleLog,
+        battlePhase: state.battlePhase,
+        battleSpeed: state.battleSpeed,
+        isPreview: state.isPreview,
+        deck: state.deck,
+        enemyDeck: state.enemyDeck,
+        actionQueue: state.actionQueue,
+        queuedNullCount: state.queuedNullCount,
+        selectedEnemyMarker: state.selectedEnemyMarker,
+        selectedAllyMarker: state.selectedAllyMarker,
+        pendingAllyCardId: state.pendingAllyCardId,
+        handSnapshot: state.handSnapshot,
+      }),
+      // Option A resume: if the tab reloaded mid-automated-phase (enemy turn or
+      // a resolving sequence), snap back to the player's action and drop any
+      // in-flight queued actions. Runs during hydration, before React renders,
+      // so the phase machine never processes the stale automated phase. Battles
+      // that were idle on the player's turn (or already over) resume untouched.
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        const phase = state.battlePhase;
+        // A finished battle (victory/defeat) must not resume as a stale results
+        // screen — reset to team select instead.
+        if (phase === "victory" || phase === "defeat") {
+          state.battlePhase = "initializing";
+          state.playerTeam = [];
+          state.enemyTeam = [];
+          state.deck = [];
+          state.enemyDeck = [];
+          state.actionQueue = [];
+          state.queuedNullCount = 0;
+          return;
+        }
+        // An in-progress battle reloaded mid-automated-phase snaps back to the
+        // player's action (Option A); one idle on the player's turn resumes as-is.
+        if (phase !== "initializing" && phase !== "PlayerAction") {
+          state.battlePhase = "PlayerAction";
+          state.actionQueue = [];
+          state.queuedNullCount = 0;
+        }
+      },
+    },
+  ),
+);
 
 // Dev console access for debugging battle state (stripped from prod builds)
 if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
