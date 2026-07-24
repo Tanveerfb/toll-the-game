@@ -11,6 +11,7 @@ import {
   getMechanicTypes,
 } from "@/lib/game/descriptionTranslator";
 import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
+import { buildPassiveDetailSections } from "@/lib/game/passiveDetailSections";
 
 // Kit rendering shared by the archive detail page and the in-battle info
 // panel so a character reads identically in both. Fed raw kit data
@@ -89,9 +90,14 @@ function MechanicsTags({ skill }: { skill: CharacterSkillData }): React.ReactNod
 export function SkillBlock({
   skill,
   tag,
+  onDetails,
 }: {
   skill: CharacterSkillData;
   tag: string;
+  /** Opens the shared DetailOverlay for this skill (spec §5 — used for the
+   *  Super Attack row in the battle character-detail screen). Omitted
+   *  everywhere else (archive, kit-phases, kit-lab) — no behavior change. */
+  onDetails?: () => void;
 }): React.ReactNode {
   const rankedLines =
     skill.type === "ultimate" ? null : buildRankedSkillDescriptions(skill);
@@ -113,7 +119,18 @@ export function SkillBlock({
             {skill.skillName}
           </p>
         </div>
-        <MechanicsTags skill={skill} />
+        <div className="flex items-center gap-2">
+          <MechanicsTags skill={skill} />
+          {onDetails ? (
+            <button
+              type="button"
+              onClick={onDetails}
+              className="shrink-0 border border-zinc-600 px-2 py-1 font-body text-[10px] uppercase tracking-widest text-zinc-300 transition-colors hover:border-amber-300 hover:text-amber-200"
+            >
+              Details
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className="space-y-1.5 px-3 py-2.5">
@@ -222,9 +239,13 @@ function UncancellableBadge(): React.JSX.Element {
 export function PassiveProse({
   passive,
   showName,
+  onDetails,
 }: {
   passive?: KitPassiveView;
   showName: boolean;
+  /** Opens the shared DetailOverlay's categorized Passive Details view
+   *  (spec §5). Omitted everywhere else — no behavior change there. */
+  onDetails?: () => void;
 }): React.JSX.Element {
   const description = passive?.description?.trim() || "To be added.";
   const uncancellable = /uncancellabl|cannot be cancel/i.test(description);
@@ -236,14 +257,25 @@ export function PassiveProse({
 
   return (
     <div className="space-y-2">
-      {(showName && passive?.name) || uncancellable ? (
-        <div className="flex flex-wrap items-center gap-2">
-          {showName && passive?.name ? (
-            <p className="font-heading text-sm tracking-[0.08em] text-amber-200/90">
-              {passive.name}
-            </p>
+      {(showName && passive?.name) || uncancellable || onDetails ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {showName && passive?.name ? (
+              <p className="font-heading text-sm tracking-[0.08em] text-amber-200/90">
+                {passive.name}
+              </p>
+            ) : null}
+            {uncancellable ? <UncancellableBadge /> : null}
+          </div>
+          {onDetails ? (
+            <button
+              type="button"
+              onClick={onDetails}
+              className="shrink-0 border border-zinc-600 px-2 py-1 font-body text-[10px] uppercase tracking-widest text-zinc-300 transition-colors hover:border-amber-300 hover:text-amber-200"
+            >
+              Details
+            </button>
           ) : null}
-          {uncancellable ? <UncancellableBadge /> : null}
         </div>
       ) : null}
 
@@ -290,11 +322,19 @@ export default function KitDetails({
   ultimate,
   passive,
   passives,
+  onUltimateDetails,
+  onPassiveDetails,
 }: {
   skills: CharacterSkillData[];
   ultimate?: CharacterSkillData;
   passive?: KitPassiveView;
   passives?: KitPassiveView[];
+  /** Opens the shared DetailOverlay for the ultimate/"Super Attack" row
+   *  (spec §5). Battle screen only — absent everywhere else. */
+  onUltimateDetails?: (ultimate: CharacterSkillData) => void;
+  /** Opens the shared DetailOverlay's categorized Passive Details view for
+   *  this passive (spec §5). Battle screen only — absent everywhere else. */
+  onPassiveDetails?: (passive: KitPassiveView) => void;
 }): React.JSX.Element {
   const passiveList = passives ?? (passive ? [passive] : []);
   const multi = passiveList.length > 1;
@@ -311,7 +351,15 @@ export default function KitDetails({
               tag={`S${index + 1}`}
             />
           ))}
-          {ultimate ? <SkillBlock skill={ultimate} tag="ULT" /> : null}
+          {ultimate ? (
+            <SkillBlock
+              skill={ultimate}
+              tag="ULT"
+              onDetails={
+                onUltimateDetails ? () => onUltimateDetails(ultimate) : undefined
+              }
+            />
+          ) : null}
         </div>
       </PanelSection>
 
@@ -334,11 +382,53 @@ export default function KitDetails({
                 key={`passive-${p.name ?? index}`}
                 passive={p}
                 showName={multi}
+                onDetails={
+                  onPassiveDetails ? () => onPassiveDetails(p) : undefined
+                }
               />
             ))
           )}
         </div>
       </PanelSection>
+    </div>
+  );
+}
+
+/**
+ * Passive Details content (spec §5): categorized condition headers, each
+ * followed by a bulleted effect list — rendered inside the shared
+ * DetailOverlay. Pure grouping logic lives in lib/game/passiveDetailSections.
+ */
+export function PassiveDetailSections({
+  passive,
+}: {
+  passive: KitPassiveView;
+}): React.JSX.Element {
+  const sections = buildPassiveDetailSections(passive);
+  return (
+    <div className="space-y-4">
+      {passive.name ? (
+        <p className="font-heading text-sm tracking-[0.08em] text-amber-200/90">
+          {passive.name}
+        </p>
+      ) : null}
+      {sections.map((section) => (
+        <div key={section.header}>
+          <h4 className="mb-1.5 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-amber-200/80">
+            {section.header}
+          </h4>
+          <ul className="space-y-1 border-l-2 border-zinc-700 pl-3">
+            {section.bullets.map((bullet, index) => (
+              <li key={index} className="list-none">
+                <KeyworkHighlighter
+                  text={bullet}
+                  className={`${UI.textValue} block leading-relaxed`}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </div>
   );
 }

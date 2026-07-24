@@ -30,11 +30,21 @@ import { getCritChance } from "@/lib/game/combat";
 import { getEvadeChance } from "@/lib/game/evade";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { getPassiveReadout } from "@/lib/game/passiveStacks";
-import { getCharacterById, getCharacterKit } from "@/lib/game/characterCatalog";
+import {
+  getCharacterById,
+  getCharacterKit,
+  getPlayableCharacters,
+} from "@/lib/game/characterCatalog";
 import { getVfxShape, getVfxTint, vfxShapeStyle } from "@/lib/game/characterVfx";
 import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
-import KitDetails, { type KitPassiveView } from "@/components/game/KitDetails";
+import KitDetails, {
+  PassiveDetailSections,
+  SkillBlock,
+  type KitPassiveView,
+} from "@/components/game/KitDetails";
+import type { CharacterSkillData } from "@/lib/game/characterCatalog";
 import SubstatDrawer from "@/components/game/SubstatDrawer";
+import DetailOverlay from "@/components/game/DetailOverlay";
 import BattleEffectsOverlay from "@/components/game/BattleEffectsOverlay";
 import EffectsQuickPanel, {
   categorizeEffects,
@@ -121,6 +131,15 @@ function UnitDetailPanel({
   const teamOnField = ownTeam.filter((u) => !u.isSub);
   const [selectedId, setSelectedId] = React.useState(unit.instanceId);
   const [showDetailed, setShowDetailed] = React.useState(false);
+  // Tag chip tapped (spec §5) — opens the Character List overlay for it.
+  const [tagOverlayTag, setTagOverlayTag] = React.useState<string | null>(null);
+  // Super Attack / Passive "Details" buttons (spec §5) open this shared
+  // overlay, parameterized by which kind of content it's showing.
+  const [detailOverlay, setDetailOverlay] = React.useState<
+    | { kind: "ultimate"; skill: CharacterSkillData }
+    | { kind: "passive"; passive: KitPassiveView }
+    | null
+  >(null);
   const idx = Math.max(
     0,
     teamOnField.findIndex((u) => u.instanceId === selectedId),
@@ -173,10 +192,23 @@ function UnitDetailPanel({
                 {selected.name}
               </CardTitle>
             </div>
-            <CardDescription className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400">
-              {selected.color}
-              {selected.tags?.length ? ` · ${selected.tags.join(" ")}` : ""}
-              {selected.tier === "elite" ? " · Elite" : ""}
+            {/* Tag chips (spec §5) — tapping one opens the Character List
+                overlay for every playable character carrying that tag. */}
+            <CardDescription className="flex flex-wrap items-center justify-center gap-x-1 gap-y-0.5 font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400">
+              <span>{selected.color}</span>
+              {selected.tier === "elite" ? <span>· Elite</span> : null}
+              {(selected.tags ?? []).map((tag) => (
+                <React.Fragment key={tag}>
+                  <span>·</span>
+                  <button
+                    type="button"
+                    onClick={() => setTagOverlayTag(tag)}
+                    className="cursor-pointer underline decoration-dotted underline-offset-2 transition-colors hover:text-amber-200"
+                  >
+                    {tag}
+                  </button>
+                </React.Fragment>
+              ))}
             </CardDescription>
           </div>
           <div className="flex shrink-0 items-center gap-1">
@@ -342,11 +374,180 @@ function UnitDetailPanel({
               skills={kit.skills}
               ultimate={kit.ultimate}
               passives={kit.passives as KitPassiveView[]}
+              onUltimateDetails={(skill) =>
+                setDetailOverlay({ kind: "ultimate", skill })
+              }
+              onPassiveDetails={(p) => setDetailOverlay({ kind: "passive", passive: p })}
             />
           ) : null}
         </CardContent>
       </Card>
+
+      {detailOverlay ? (
+        <DetailOverlay
+          title={
+            detailOverlay.kind === "ultimate"
+              ? "Super Attack Details"
+              : "Passive Details"
+          }
+          subtitle={
+            detailOverlay.kind === "ultimate"
+              ? detailOverlay.skill.skillName
+              : detailOverlay.passive.name
+          }
+          onClose={() => setDetailOverlay(null)}
+        >
+          {detailOverlay.kind === "ultimate" ? (
+            <SkillBlock skill={detailOverlay.skill} tag="ULT" />
+          ) : (
+            <PassiveDetailSections passive={detailOverlay.passive} />
+          )}
+        </DetailOverlay>
+      ) : null}
+
+      {tagOverlayTag ? (
+        <CharacterListOverlay
+          tag={tagOverlayTag}
+          onClose={() => setTagOverlayTag(null)}
+        />
+      ) : null}
     </div>
+  );
+}
+
+// Team Details list (spec §5) — every party member as a row: portrait
+// thumbnail, element "quick icon", effective ATK/DEF, and a signature skill
+// name. No "Lv" callout — this game has no character-level system, so that
+// Dokkan reference field is dropped rather than invented.
+function TeamDetailsList({
+  playerTeam,
+  onSelectUnit,
+  onClose,
+}: {
+  playerTeam: BattleCharacter[];
+  onSelectUnit: (unit: BattleCharacter) => void;
+  onClose: () => void;
+}): React.JSX.Element {
+  return (
+    <DetailOverlay title="Team Details" onClose={onClose}>
+      <div className="space-y-2">
+        {playerTeam.map((unit) => {
+          const art = getCharacterArt(unit.id);
+          const catalog = getCharacterById(unit.id);
+          const kit = catalog
+            ? getCharacterKit(catalog, unit.phaseIndex ?? 0)
+            : null;
+          const signature = kit?.ultimate?.skillName ?? kit?.skills[0]?.skillName;
+          return (
+            <button
+              key={unit.instanceId}
+              type="button"
+              onClick={() => onSelectUnit(unit)}
+              className="flex w-full items-center gap-3 border border-zinc-800 bg-zinc-900/40 px-3 py-2 text-left transition-colors hover:border-amber-300/60"
+            >
+              <div className="relative h-12 w-12 shrink-0 overflow-hidden border border-zinc-700">
+                {art ? (
+                  <Image
+                    src={art}
+                    alt={unit.name}
+                    fill
+                    sizes="48px"
+                    className="object-cover object-top"
+                  />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center font-heading text-lg text-white/80">
+                    {unit.name.charAt(0)}
+                  </span>
+                )}
+              </div>
+              <span
+                title={unit.color}
+                className={`h-2.5 w-2.5 shrink-0 rotate-45 border border-black/40 ${ELEMENT_SWATCH[unit.color]}`}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-heading text-sm tracking-[0.04em] text-zinc-100">
+                  {unit.name}
+                  {unit.isSub ? (
+                    <span className="ml-1.5 font-body text-[9px] uppercase tracking-widest text-amber-300">
+                      Sub
+                    </span>
+                  ) : null}
+                </p>
+                <p className="truncate font-body text-[10px] uppercase tracking-widest text-zinc-500">
+                  {signature ?? "—"}
+                </p>
+              </div>
+              <div className="shrink-0 text-right font-body text-[10px] uppercase tracking-widest text-zinc-400">
+                <div>ATK {getEffectiveAttack(unit)}</div>
+                <div>DEF {getEffectiveDefense(unit)}</div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </DetailOverlay>
+  );
+}
+
+// Character List overlay (spec §5) — tapping a tag chip opens a grid of
+// every character carrying that tag: portrait + badge only, no stats.
+//
+// Note: uses the full playable catalog rather than gating by the player's
+// owned roster. Ownership/gacha isn't built yet (playerStore.roster is a
+// starter-only stub with no pull system — TeamSelect's own practice roster
+// already ignores it and uses getPlayableCharacters() for the same reason);
+// gating here today would show almost nothing. Revisit once gacha ships.
+function CharacterListOverlay({
+  tag,
+  onClose,
+}: {
+  tag: string;
+  onClose: () => void;
+}): React.JSX.Element {
+  const matches = getPlayableCharacters().filter((c) =>
+    (c.tags ?? []).includes(tag),
+  );
+  return (
+    <DetailOverlay title={`Tag: ${tag}`} onClose={onClose}>
+      {matches.length === 0 ? (
+        <p className="py-6 text-center font-body text-sm uppercase tracking-[0.14em] text-zinc-500">
+          No characters found.
+        </p>
+      ) : (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {matches.map((char) => {
+            const art = getCharacterArt(char.id);
+            return (
+              <div
+                key={char.id}
+                className="flex flex-col items-center gap-1 border border-zinc-800 bg-zinc-900/40 p-1.5"
+              >
+                <div className="relative aspect-square w-full overflow-hidden border border-zinc-700">
+                  {art ? (
+                    <Image
+                      src={art}
+                      alt={char.name}
+                      fill
+                      sizes="100px"
+                      className="object-cover object-top"
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center font-heading text-2xl text-white/80">
+                      {char.name.charAt(0)}
+                    </span>
+                  )}
+                </div>
+                <Badge
+                  className={`w-full justify-center truncate rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest text-zinc-950 ${ELEMENT_SWATCH[char.color]}`}
+                >
+                  {char.name}
+                </Badge>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </DetailOverlay>
   );
 }
 
@@ -706,6 +907,7 @@ export default function BattleArena({
   const [detailUnit, setDetailUnit] = React.useState<BattleCharacter | null>(
     null,
   );
+  const [showTeamList, setShowTeamList] = React.useState(false);
   // Effects quick-panel: store the id and resolve the LIVE unit so the panel
   // reflects effect changes if the battle advances while it's open.
   const [effectsUnitId, setEffectsUnitId] = React.useState<string | null>(null);
@@ -1138,6 +1340,40 @@ export default function BattleArena({
         </button>
       ) : null}
 
+      {/* Bottom-right cluster (Dokkan's "Next Up" stack, spec §5) — opens the
+          Team Details list. */}
+      <button
+        type="button"
+        onClick={() => setShowTeamList(true)}
+        aria-label="View team details"
+        className="absolute bottom-3 right-3 z-30 flex min-h-11 cursor-pointer items-center gap-1.5 border border-zinc-600 bg-black/75 px-2 py-1.5 backdrop-blur-sm transition-colors hover:border-amber-300"
+      >
+        <div className="flex -space-x-2">
+          {playerTeam.slice(0, 3).map((unit) => {
+            const art = getCharacterArt(unit.id);
+            return (
+              <span
+                key={unit.instanceId}
+                className="h-6 w-6 overflow-hidden rounded-full border border-zinc-500 bg-zinc-800"
+              >
+                {art ? (
+                  <Image
+                    src={art}
+                    alt=""
+                    width={24}
+                    height={24}
+                    className="h-full w-full object-cover object-top"
+                  />
+                ) : null}
+              </span>
+            );
+          })}
+        </div>
+        <span className="font-body text-[10px] uppercase tracking-[0.14em] text-zinc-300">
+          Team
+        </span>
+      </button>
+
       {/* Slim status strip */}
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-800 bg-black/60 px-3 py-1.5 backdrop-blur-sm">
         <div className="flex min-w-0 items-center gap-3">
@@ -1463,6 +1699,17 @@ export default function BattleArena({
           playerTeam={playerTeam}
           enemyTeam={enemyTeam}
           onClose={() => setDetailUnit(null)}
+        />
+      ) : null}
+
+      {showTeamList ? (
+        <TeamDetailsList
+          playerTeam={playerTeam}
+          onSelectUnit={(unit) => {
+            setShowTeamList(false);
+            setDetailUnit(unit);
+          }}
+          onClose={() => setShowTeamList(false)}
         />
       ) : null}
 
