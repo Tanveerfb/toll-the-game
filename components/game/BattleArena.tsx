@@ -182,7 +182,7 @@ function UnitDetailPanel({
               type="button"
               onClick={() => step(-1)}
               disabled={teamOnField.length < 2}
-              className="border border-zinc-600 p-1 text-zinc-300 transition-colors hover:border-zinc-400 disabled:opacity-30"
+              className="flex h-11 w-11 items-center justify-center border border-zinc-600 text-zinc-300 transition-colors hover:border-zinc-400 disabled:opacity-30"
               aria-label="Previous teammate"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -191,7 +191,7 @@ function UnitDetailPanel({
               type="button"
               onClick={() => step(1)}
               disabled={teamOnField.length < 2}
-              className="border border-zinc-600 p-1 text-zinc-300 transition-colors hover:border-zinc-400 disabled:opacity-30"
+              className="flex h-11 w-11 items-center justify-center border border-zinc-600 text-zinc-300 transition-colors hover:border-zinc-400 disabled:opacity-30"
               aria-label="Next teammate"
             >
               <ChevronRight className="h-4 w-4" />
@@ -237,7 +237,8 @@ function UnitDetailPanel({
                 type="button"
                 onClick={() => setShowDetailed((v) => !v)}
                 title="Detailed info"
-                className={`absolute bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full border font-heading text-sm ${showDetailed ? "border-amber-300 bg-amber-300/25 text-amber-100" : "border-zinc-400 bg-black/60 text-zinc-100"}`}
+                aria-label="Toggle detailed stats"
+                className={`absolute bottom-1 right-1 flex h-11 w-11 items-center justify-center rounded-full border font-heading text-sm ${showDetailed ? "border-amber-300 bg-amber-300/25 text-amber-100" : "border-zinc-400 bg-black/60 text-zinc-100"}`}
               >
                 ?
               </button>
@@ -403,7 +404,8 @@ function StatusChips({
         onOpen(unit);
       }}
       title="View effects"
-      className="flex cursor-pointer items-center gap-0.5"
+      aria-label="View status effects"
+      className="flex cursor-pointer items-center gap-0.5 p-1.5 -m-1.5"
     >
       {shown.map(({ effect, category }, idx) => {
         const style = CHIP_STYLE[category];
@@ -572,7 +574,8 @@ function TeamUnitTile({
               e.stopPropagation();
               onViewDetails(unit);
             }}
-            className="absolute right-1 top-1 cursor-pointer border border-zinc-500/80 bg-black/60 px-1 py-0.5 font-body text-[9px] uppercase tracking-widest text-zinc-200 backdrop-blur-sm transition-colors hover:border-zinc-300 hover:text-white"
+            aria-label={`View ${unit.name} details`}
+            className="absolute right-1 top-1 flex min-h-11 cursor-pointer items-center border border-zinc-500/80 bg-black/60 px-2 py-0.5 font-body text-[9px] uppercase tracking-widest text-zinc-200 backdrop-blur-sm transition-colors hover:border-zinc-300 hover:text-white"
           >
             Info
           </button>
