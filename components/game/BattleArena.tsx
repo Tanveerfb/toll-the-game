@@ -48,6 +48,7 @@ import DetailOverlay from "@/components/game/DetailOverlay";
 import BattleEffectsOverlay from "@/components/game/BattleEffectsOverlay";
 import EffectsQuickPanel, {
   categorizeEffects,
+  EffectsList,
 } from "@/components/game/EffectsQuickPanel";
 import {
   useBattleSequencer,
@@ -328,6 +329,18 @@ function UnitDetailPanel({
             ))}
           </div>
 
+          {/* Active effects — the full buff/debuff/effect list (incl. grey
+              effects that are hidden on the battlefield tile). */}
+          <div className="space-y-1.5">
+            <p className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+              Active Effects
+            </p>
+            <EffectsList
+              unit={selected}
+              allUnits={[...playerTeam, ...enemyTeam]}
+            />
+          </div>
+
           {/* Passive readout — stacks and/or live derived values */}
           {passive ? (
             <div
@@ -588,10 +601,11 @@ function StatusChips({
   unit: BattleCharacter;
   onOpen: (unit: BattleCharacter) => void;
 }): React.JSX.Element {
-  const rows = categorizeEffects(unit);
-  if (rows.length === 0) return <span />;
-  const shown = rows.slice(0, 5);
-  const overflow = rows.length - shown.length;
+  // Only buffs/debuffs surface on the battlefield tile; grey "effect"-category
+  // statuses (and the full itemized list) live in the character info panel
+  // (Team list -> character panel). Bar wraps to at most 2 lines.
+  const rows = categorizeEffects(unit).filter((r) => r.category !== "effect");
+  if (rows.length === 0) return <></>;
   return (
     <button
       type="button"
@@ -601,16 +615,16 @@ function StatusChips({
       }}
       title="View effects"
       aria-label="View status effects"
-      className="flex cursor-pointer items-center gap-0.5 p-1.5 -m-1.5"
+      className="flex max-h-[2.15rem] w-full cursor-pointer flex-wrap content-start items-center gap-0.5 overflow-hidden"
     >
-      {shown.map(({ effect, category }, idx) => {
+      {rows.map(({ effect, category }, idx) => {
         const style = CHIP_STYLE[category];
         const Icon = style.icon;
         const stacks = effect.stacks ?? 1;
         return (
           <span
             key={`${effect.type}-${idx}`}
-            className={`relative flex h-4 w-4 items-center justify-center border ${style.cls}`}
+            className={`relative flex h-4 w-4 shrink-0 items-center justify-center border ${style.cls}`}
           >
             <Icon className="h-2.5 w-2.5" strokeWidth={2.6} />
             {stacks > 1 ? (
@@ -621,11 +635,6 @@ function StatusChips({
           </span>
         );
       })}
-      {overflow > 0 ? (
-        <span className="font-body text-[9px] font-bold text-zinc-400">
-          +{overflow}
-        </span>
-      ) : null}
     </button>
   );
 }
@@ -652,7 +661,6 @@ function TeamUnitTile({
   queuedHits,
   fx,
   onMark,
-  onViewDetails,
   onOpenEffects,
 }: {
   unit: BattleCharacter;
@@ -661,7 +669,6 @@ function TeamUnitTile({
   queuedHits: number;
   fx: TileFx;
   onMark: (instanceId: string) => void;
-  onViewDetails: (unit: BattleCharacter) => void;
   onOpenEffects: (unit: BattleCharacter) => void;
 }): React.JSX.Element {
   // During playback the sequencer feeds exact per-event HP snapshots so the
@@ -709,15 +716,18 @@ function TeamUnitTile({
         <div
           className={`shrink-0 space-y-1 border-b border-zinc-800 bg-black/80 px-1.5 py-1 ${isDead ? "opacity-60" : ""}`}
         >
+          {/* Effects bar (top): buffs/debuffs only, wraps max 2 lines. */}
+          <StatusChips unit={unit} onOpen={onOpenEffects} />
+
+          {/* Identity: element crest + name only — nothing else on this row. */}
           <div className="flex items-center gap-1">
             <span
               title={unit.color}
               className={`h-2.5 w-2.5 shrink-0 rotate-45 border border-black/40 ${ELEMENT_SWATCH[unit.color]}`}
             />
             <span className="min-w-0 flex-1 truncate font-heading text-xs tracking-[0.06em] text-zinc-100">
-              {unit.name}
+              {unit.name.split(" ")[0]}
             </span>
-            <StatusChips unit={unit} onOpen={onOpenEffects} />
           </div>
 
           <div>
@@ -778,18 +788,6 @@ function TeamUnitTile({
               </Badge>
             ) : null}
           </div>
-
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewDetails(unit);
-            }}
-            aria-label={`View ${unit.name} details`}
-            className="absolute right-1 top-1 flex min-h-11 cursor-pointer items-center border border-zinc-500/80 bg-black/60 px-2 py-0.5 font-body text-[9px] uppercase tracking-widest text-zinc-200 backdrop-blur-sm transition-colors hover:border-zinc-300 hover:text-white"
-          >
-            Info
-          </button>
 
           {isDead ? (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -860,8 +858,16 @@ export default function BattleArena({
     confirmAllyTarget,
     cancelAllyTarget,
     resetBattle,
+    setBattlePhase,
     bigHitFocus,
   } = useGameStore();
+
+  // Exit Battle (player-initiated forfeit) — ends the fight as a loss. Ordinary
+  // reloads resume the battle (persistence); this is the deliberate way out.
+  const confirmExitBattle = (): void => {
+    setIsExitConfirmOpen(false);
+    setBattlePhase("defeat");
+  };
 
   const pendingAllyCard = pendingAllyCardId
     ? deck.find((c) => c.id === pendingAllyCardId)
@@ -918,9 +924,10 @@ export default function BattleArena({
     : null;
   const openEffects = React.useCallback(
     (unit: BattleCharacter) => setEffectsUnitId(unit.instanceId),
-    [],
+    [setEffectsUnitId],
   );
   const [isLogOpen, setIsLogOpen] = React.useState(false);
+  const [isExitConfirmOpen, setIsExitConfirmOpen] = React.useState(false);
   const [showAllEvents, setShowAllEvents] = React.useState(false);
 
   const phaseOrder = [
@@ -1411,6 +1418,15 @@ export default function BattleArena({
           >
             Log
           </button>
+          {!isBattleOver ? (
+            <button
+              type="button"
+              onClick={() => setIsExitConfirmOpen(true)}
+              className="cursor-pointer border border-red-500/60 bg-red-950/40 px-2 py-1 text-red-300 transition-colors hover:border-red-400 hover:text-red-200"
+            >
+              Exit Battle
+            </button>
+          ) : null}
         </div>
       </header>
 
@@ -1451,9 +1467,12 @@ export default function BattleArena({
           </div>
           {/* Cards are 9:16 portrait, height-capped to the row and centered;
               a lone boss just sits alone in the middle. */}
-          <div className="flex min-h-0 flex-1 items-stretch justify-center gap-3 overflow-hidden">
+          <div className="flex min-h-0 flex-1 items-center justify-center gap-2 overflow-hidden">
             {enemyTeam.map((unit) => (
-              <div key={unit.instanceId} className="h-full aspect-[9/16]">
+              <div
+                key={unit.instanceId}
+                className="aspect-[9/16] max-h-full min-w-0 flex-1 max-w-[88px]"
+              >
                 <TeamUnitTile
                   unit={unit}
                   isEnemy
@@ -1461,7 +1480,6 @@ export default function BattleArena({
                   queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
                   fx={tileFx(unit.instanceId)}
                   onMark={setEnemyMarker}
-                  onViewDetails={setDetailUnit}
                   onOpenEffects={openEffects}
                 />
               </div>
@@ -1490,11 +1508,14 @@ export default function BattleArena({
           className={`bighit-recede flex min-h-0 flex-col transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.97] opacity-50" : "scale-100 opacity-100"}`}
         >
           <p className="mb-1 shrink-0 font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            Player <span className="text-zinc-600">— tap Info for details</span>
+            Player <span className="text-zinc-600">— tap TEAM for details</span>
           </p>
-          <div className="flex min-h-0 flex-1 items-stretch justify-center gap-3 overflow-hidden">
+          <div className="flex min-h-0 flex-1 items-center justify-center gap-2 overflow-hidden">
             {playerTeam.map((unit) => (
-              <div key={unit.instanceId} className="h-full aspect-[9/16]">
+              <div
+                key={unit.instanceId}
+                className="aspect-[9/16] max-h-full min-w-0 flex-1 max-w-[88px]"
+              >
                 <TeamUnitTile
                   unit={unit}
                   isEnemy={false}
@@ -1502,7 +1523,6 @@ export default function BattleArena({
                   queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
                   fx={tileFx(unit.instanceId)}
                   onMark={() => {}}
-                  onViewDetails={setDetailUnit}
                   onOpenEffects={openEffects}
                 />
               </div>
@@ -1599,6 +1619,36 @@ export default function BattleArena({
           </>
         ) : null}
       </AnimatePresence>
+
+      {isExitConfirmOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
+          <Card className="w-full max-w-sm rounded-none border-2 border-red-500 bg-zinc-950/95 ring-0">
+            <CardHeader className="border-b border-zinc-800 px-6 py-5 text-center">
+              <CardTitle className="font-heading text-3xl tracking-[0.12em] text-red-400">
+                EXIT BATTLE?
+              </CardTitle>
+              <CardDescription className="mt-2 font-body text-xs uppercase tracking-[0.12em] text-zinc-400">
+                This counts as a loss — your progress in this fight is forfeited.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3 px-6 py-5">
+              <Button
+                onClick={confirmExitBattle}
+                className="h-11 rounded-none border-2 border-red-500 bg-transparent font-heading text-base tracking-[0.12em] text-red-300 hover:bg-red-500/10"
+              >
+                EXIT — TAKE THE LOSS
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setIsExitConfirmOpen(false)}
+                className="h-11 rounded-none border-2 border-zinc-500 bg-transparent font-heading text-base tracking-[0.12em] text-zinc-100"
+              >
+                CANCEL
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
 
       {showBattleOver ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">

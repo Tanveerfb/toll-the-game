@@ -229,3 +229,13 @@ h6 {
     transform: none !important;
   }
 }
+/* In-battle horizontal strips (hand deck, queue) stay swipe/wheel-scrollable
+   but hide the OS scrollbar entirely — a web scrollbar breaks the game-HUD
+   feel. Partial cards at the edges already signal there's more to scroll. */
+.hud-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge/IE */
+}
+.hud-scroll::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}

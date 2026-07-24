@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { useGameStore } from "@/store/gameStore";
-import { getCharacterArt } from "@/lib/game/characterArt";
+import { getCharacterArt, getSkillArt } from "@/lib/game/characterArt";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,6 +20,13 @@ import {
   buildDescriptionForRank,
   buildSkillKeywordGlossary,
 } from "@/lib/game/descriptionTranslator";
+import {
+  ArrowBigDown,
+  ArrowBigUp,
+  Heart,
+  Sword,
+  Swords,
+} from "lucide-react";
 import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
 import { getCardFrameStyle } from "@/lib/game/cardFrameStyle";
 import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
@@ -39,6 +46,64 @@ function getSkillPowerText(card: ActionCard): string {
 function getRankStars(rank: 1 | 2 | 3): string {
   return `${"⭐".repeat(rank)}${"☆".repeat(3 - rank)}`;
 }
+
+// Skill-type badge (7DSGC-style, top-right corner of a card). Collapses the
+// full SkillType union into the five gameplay categories: attack, attack-debuff
+// (an attack that also inflicts a debuff), buff, debuff, heal.
+type SkillTypeCategory =
+  | "attack"
+  | "attackDebuff"
+  | "buff"
+  | "debuff"
+  | "heal";
+
+const DEBUFF_MECHANICS = new Set([
+  "debuff",
+  "seal",
+  "stun",
+  "shock",
+  "bleed",
+  "corrosion",
+  "decay",
+  "weaken",
+  "extort",
+  "rupture",
+  "disable",
+  "ignite",
+]);
+
+function skillTypeCategory(skill: ActionCard["skill"]): SkillTypeCategory {
+  switch (skill.type) {
+    case "heal":
+    case "cleanse":
+      return "heal";
+    case "buff":
+    case "stance":
+      return "buff";
+    case "debuff":
+    case "disable":
+      return "debuff";
+    // attack + ultimate (ultimates are offensive super-attacks): tag as
+    // attack-debuff when the skill also carries a debuff-type mechanic.
+    default: {
+      const hasDebuff = (skill.mechanics ?? []).some((m) =>
+        DEBUFF_MECHANICS.has(m.type),
+      );
+      return hasDebuff ? "attackDebuff" : "attack";
+    }
+  }
+}
+
+const SKILL_TYPE_BADGE: Record<
+  SkillTypeCategory,
+  { Icon: React.ElementType; cls: string }
+> = {
+  attack: { Icon: Sword, cls: "bg-red-600 text-white" },
+  attackDebuff: { Icon: Swords, cls: "bg-fuchsia-700 text-white" },
+  buff: { Icon: ArrowBigUp, cls: "bg-sky-600 text-white" },
+  debuff: { Icon: ArrowBigDown, cls: "bg-purple-700 text-white" },
+  heal: { Icon: Heart, cls: "bg-emerald-600 text-white" },
+};
 
 function getCharacterInitial(name?: string): string {
   if (!name || name.trim().length === 0) {
@@ -289,10 +354,7 @@ export default function Deck() {
 
       {/* Queue chips + controls — always visible */}
       <div className="mb-1.5 flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto">
-          <span className="shrink-0 font-body text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-            Queue
-          </span>
+        <div className="hud-scroll flex min-w-0 items-center gap-1.5 overflow-x-auto">
           {actionQueue.map((card) => {
             const char = playerTeam.find(
               (c) => c.instanceId === card.sourceInstanceId,
@@ -379,15 +441,12 @@ export default function Deck() {
             End Turn
           </Button>
         </div>
-
-        <span className="shrink-0 font-body text-[11px] uppercase tracking-[0.12em] text-zinc-500">
-          {isPlayerActionPhase ? "Your turn" : "Waiting…"} •{" "}
-          {slotsUsed}/3 queued
-        </span>
       </div>
 
-      {/* Deck — always visible */}
-      <div className="flex w-full gap-2 overflow-x-auto border border-zinc-800 bg-black/60 p-2">
+      {/* Deck — always visible. Cards flex to fill the row width so the whole
+          hand (up to 8 cards at 4v4) shows at once without scrolling, 7DSGC-
+          style; hud-scroll stays as a safety net for any overflow edge case. */}
+      <div className="hud-scroll flex w-full justify-center gap-1 overflow-x-auto border border-zinc-800 bg-black/60 p-2">
         {deck.map((card) => {
           const char = playerTeam.find(
             (c) => c.instanceId === card.sourceInstanceId,
@@ -431,7 +490,7 @@ export default function Deck() {
                 setDraggedCardId(null);
               }}
               className={`
-                h-28 w-20! relative shrink-0 select-none flex flex-col overflow-hidden bg-zinc-900/80 p-1.5 transition-all
+                h-28 relative min-w-0 flex-1 max-w-20 select-none flex flex-col overflow-hidden bg-zinc-900/80 p-1 transition-all
                 ${frame.borderClass}
                 ${isPlayerActionPhase ? "cursor-pointer hover:-translate-y-2 hover:shadow-lg" : "cursor-not-allowed opacity-50"}
                 ${isStunned || isSealed ? "grayscale brightness-50" : ""}
@@ -444,33 +503,47 @@ export default function Deck() {
                   className={`absolute inset-x-0 top-0 h-1 ${frame.accentBarClass}`}
                 />
               ) : null}
-              <div className="mb-1 flex items-start justify-between gap-1">
-                <div className="flex min-w-0 items-center gap-1">
-                  <span
-                    title={char?.color}
-                    className={`h-2 w-2 shrink-0 rounded-full border border-black/40 ${ELEMENT_SWATCH[char?.color ?? "light"]}`}
-                  />
-                  <span className="truncate font-bold text-[10px] text-zinc-100">
-                    {char?.name}
-                  </span>
-                </div>
-                <div className="shrink-0 text-[11px] leading-none tracking-tight">
-                  {isUlt ? (
-                    <span className="font-bold text-[9px] uppercase tracking-widest text-cyan-300">
-                      ULT
+              {/* 7DSGC-style card, top -> bottom:
+                  1. one row: rank stars / ULT badge and the skill-type icon,
+                     spaced apart (justify-around)
+                  2. skill artwork (defaults to character art until per-skill
+                     art is generated via ComfyUI). */}
+              {(() => {
+                const badge = SKILL_TYPE_BADGE[skillTypeCategory(card.skill)];
+                const BadgeIcon = badge.Icon;
+                return (
+                  <div className="flex items-center justify-around gap-1">
+                    <span className="text-[11px] leading-none tracking-tight">
+                      {isUlt ? (
+                        <span className="font-bold text-[9px] uppercase tracking-widest text-cyan-300">
+                          ULT
+                        </span>
+                      ) : (
+                        <span className="text-zinc-100">
+                          {getRankStars(card.rank)}
+                        </span>
+                      )}
                     </span>
-                  ) : (
-                    <span className="text-zinc-100">
-                      {getRankStars(card.rank)}
+                    <span
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded ${badge.cls}`}
+                    >
+                      <BadgeIcon className="h-2.5 w-2.5" strokeWidth={2.6} />
                     </span>
-                  )}
-                </div>
-              </div>
-              <div className="relative my-auto flex flex-1 items-center justify-center overflow-hidden">
-                {char && getCharacterArt(char.id) ? (
+                  </div>
+                );
+              })()}
+              <div className="relative mt-0.5 flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+                {(() => {
+                  // Per-skill art when available; otherwise the character
+                  // portrait (docs/design/SKILL_ART_PLAN.md).
+                  const art = char
+                    ? getSkillArt(char.id, card.skill.skillName) ??
+                      getCharacterArt(char.id)
+                    : null;
+                  return art ? (
                   <Image
-                    src={getCharacterArt(char.id)!}
-                    alt={char.name}
+                    src={art}
+                    alt={char?.name ?? card.skill.skillName}
                     width={160}
                     height={160}
                     className="h-full w-full object-cover object-top"
@@ -479,12 +552,8 @@ export default function Deck() {
                   <span className="text-center font-heading text-3xl leading-none text-white/90 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
                     {getCharacterInitial(char?.name)}
                   </span>
-                )}
-              </div>
-              <div
-                className={`text-[10px] mt-auto font-medium ${isUlt ? "text-cyan-300" : "text-white"}`}
-              >
-                {card.skill.skillName}
+                );
+                })()}
               </div>
 
               {canMergeCard(card) && isPlayerActionPhase && (

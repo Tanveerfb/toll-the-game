@@ -143,6 +143,92 @@ function StatPill({
 }
 
 /**
+ * The itemized active-effects list (buffs, then debuffs, then grey effects),
+ * each with duration, stacks, description, and the source unit's portrait.
+ * Shared between the quick panel and the Team-list character detail panel so
+ * the full effect breakdown reads identically wherever it's opened.
+ */
+export function EffectsList({
+  unit,
+  allUnits,
+}: {
+  unit: BattleCharacter;
+  allUnits: BattleCharacter[];
+}): React.JSX.Element {
+  const rows = categorizeEffects(unit);
+  const sourceArt = (sourceId?: string): string | null => {
+    if (!sourceId) return null;
+    const src = allUnits.find((u) => u.instanceId === sourceId);
+    return src ? getCharacterArt(src.id) : null;
+  };
+  if (rows.length === 0) {
+    return (
+      <p className="py-6 text-center font-body text-sm uppercase tracking-[0.14em] text-zinc-500">
+        No active effects.
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-1.5">
+      {rows.map(({ effect, category }, idx) => {
+        const style = CATEGORY_STYLE[category];
+        const Icon = style.icon;
+        const duration = effect.buffDuration ?? effect.debuffDuration;
+        const stacks = effect.stacks ?? 1;
+        const art = sourceArt(effect.sourceId);
+        const desc = effectDescription(effect);
+        return (
+          <div
+            key={`${effect.type}-${idx}`}
+            className={`flex items-center gap-2.5 border px-2.5 py-2 ${style.row}`}
+          >
+            <div
+              className={`flex h-8 w-8 shrink-0 items-center justify-center border border-white/10 bg-black/30 ${style.chip}`}
+            >
+              <Icon className="h-4 w-4" strokeWidth={2.4} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <span className="font-heading text-sm tracking-[0.04em] text-zinc-100">
+                  {prettyName(effect)}
+                </span>
+                {duration ? (
+                  <span className="flex items-center gap-0.5 font-body text-[10px] uppercase tracking-widest text-zinc-400">
+                    <Hourglass className="h-3 w-3" />
+                    {duration}
+                  </span>
+                ) : null}
+                {stacks > 1 ? (
+                  <span className="border border-zinc-600 bg-black/40 px-1 font-body text-[10px] font-bold text-zinc-200">
+                    ×{stacks}
+                  </span>
+                ) : null}
+              </div>
+              {desc ? (
+                <p className="font-body text-xs text-zinc-300">
+                  <DescriptionText text={desc} />
+                </p>
+              ) : null}
+            </div>
+            {art ? (
+              <div className="h-9 w-9 shrink-0 overflow-hidden border border-zinc-700">
+                <Image
+                  src={art}
+                  alt=""
+                  width={36}
+                  height={36}
+                  className="h-full w-full object-cover object-top"
+                />
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
  * Compact in-battle effects popup (7DSGC "tap the status icons" panel). Team
  * switcher across the top, a quick ATK/DEF/HP strip, then the selected unit's
  * active buffs/debuffs/effects with durations, stacks, and the source portrait.
@@ -168,14 +254,6 @@ export default function EffectsQuickPanel({
     () => [...playerTeam, ...enemyTeam],
     [playerTeam, enemyTeam],
   );
-  const sourceArt = (sourceId?: string): string | null => {
-    if (!sourceId) return null;
-    const src = allUnits.find((u) => u.instanceId === sourceId);
-    return src ? getCharacterArt(src.id) : null;
-  };
-
-  const rows = categorizeEffects(selected);
-
   // Super ATK / Passive rows with Details buttons (spec §6), reusing the
   // shared Detail Overlay from §5. Phase-aware, same as the fuller detail
   // screen — a boss in a later phase shows that phase's kit.
@@ -350,67 +428,8 @@ export default function EffectsQuickPanel({
         ) : null}
 
         {/* Effect list */}
-        <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-3">
-          {rows.length === 0 ? (
-            <p className="py-6 text-center font-body text-sm uppercase tracking-[0.14em] text-zinc-500">
-              No active effects.
-            </p>
-          ) : (
-            rows.map(({ effect, category }, idx) => {
-              const style = CATEGORY_STYLE[category];
-              const Icon = style.icon;
-              const duration = effect.buffDuration ?? effect.debuffDuration;
-              const stacks = effect.stacks ?? 1;
-              const art = sourceArt(effect.sourceId);
-              const desc = effectDescription(effect);
-              return (
-                <div
-                  key={`${effect.type}-${idx}`}
-                  className={`flex items-center gap-2.5 border px-2.5 py-2 ${style.row}`}
-                >
-                  <div
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center border border-white/10 bg-black/30 ${style.chip}`}
-                  >
-                    <Icon className="h-4 w-4" strokeWidth={2.4} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                      <span className="font-heading text-sm tracking-[0.04em] text-zinc-100">
-                        {prettyName(effect)}
-                      </span>
-                      {duration ? (
-                        <span className="flex items-center gap-0.5 font-body text-[10px] uppercase tracking-widest text-zinc-400">
-                          <Hourglass className="h-3 w-3" />
-                          {duration}
-                        </span>
-                      ) : null}
-                      {stacks > 1 ? (
-                        <span className="border border-zinc-600 bg-black/40 px-1 font-body text-[10px] font-bold text-zinc-200">
-                          ×{stacks}
-                        </span>
-                      ) : null}
-                    </div>
-                    {desc ? (
-                      <p className="font-body text-xs text-zinc-300">
-                        <DescriptionText text={desc} />
-                      </p>
-                    ) : null}
-                  </div>
-                  {art ? (
-                    <div className="h-9 w-9 shrink-0 overflow-hidden border border-zinc-700">
-                      <Image
-                        src={art}
-                        alt=""
-                        width={36}
-                        height={36}
-                        className="h-full w-full object-cover object-top"
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })
-          )}
+        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+          <EffectsList unit={selected} allUnits={allUnits} />
         </div>
       </div>
 
