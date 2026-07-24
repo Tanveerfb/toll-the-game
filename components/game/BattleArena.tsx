@@ -32,6 +32,7 @@ import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { getPassiveReadout } from "@/lib/game/passiveStacks";
 import { getCharacterById, getCharacterKit } from "@/lib/game/characterCatalog";
 import { getVfxShape, getVfxTint, vfxShapeStyle } from "@/lib/game/characterVfx";
+import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
 import KitDetails, { type KitPassiveView } from "@/components/game/KitDetails";
 import BattleEffectsOverlay from "@/components/game/BattleEffectsOverlay";
 import EffectsQuickPanel, {
@@ -362,15 +363,6 @@ function getUnitBorderClass(color: BattleCharacter["color"]): string {
   }
 }
 
-// Element crest fill for the card header (matches the border color family).
-const ELEMENT_SWATCH: Record<Color, string> = {
-  red: "bg-rose-500",
-  blue: "bg-sky-500",
-  green: "bg-emerald-500",
-  dark: "bg-violet-500",
-  light: "bg-amber-300",
-};
-
 const CHIP_STYLE = {
   buff: { cls: "border-sky-500/60 bg-sky-500/15 text-sky-200", icon: ArrowUp },
   debuff: {
@@ -475,24 +467,39 @@ function TeamUnitTile({
   const isDead = displayHP <= 0;
   const isBenched = unit.isSub === true;
   const art = getCharacterArt(unit.id);
+  // Enemies get a camera-reticle corner-bracket overlay instead of a
+  // glowing border (spec §3, 7dsgc-enemy-target-marker.jpg) — allies keep
+  // the glow treatment (currently unused: player tiles never mark).
   const markColorClass = isEnemy
-    ? "border-amber-300 shadow-[0_0_12px_rgba(252,211,77,0.45)]"
+    ? ""
     : "border-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.45)]";
 
   const ultFull = unit.ultGauge >= ultGaugeMax(unit);
+  const showTargetReticle = isMarked && isEnemy;
 
   return (
     <div
       data-battle-instance={unit.instanceId}
       className={`relative min-h-0 h-full ${fx.shaking ? (fx.flash?.strong ? "battle-shake-strong" : "battle-shake") : ""} ${fx.evading ? "battle-evade" : ""}`}
     >
+      {/* Camera-reticle target marker (7dsgc-enemy-target-marker.jpg): red
+          corner brackets overlaid directly on the card, not a separate
+          arrow/glow element. */}
+      {showTargetReticle ? (
+        <div className="pointer-events-none absolute inset-0.5 z-20">
+          <span className="absolute left-0 top-0 h-4 w-4 border-l-2 border-t-2 border-red-500" />
+          <span className="absolute right-0 top-0 h-4 w-4 border-r-2 border-t-2 border-red-500" />
+          <span className="absolute bottom-0 left-0 h-4 w-4 border-b-2 border-l-2 border-red-500" />
+          <span className="absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-red-500" />
+        </div>
+      ) : null}
       <div
         onClick={() => {
           if (!isDead && !isBenched) {
             onMark(unit.instanceId);
           }
         }}
-        className={`flex h-full min-h-0 flex-col overflow-hidden border-2 bg-black/55 transition-colors ${isMarked ? markColorClass : getUnitBorderClass(unit.color)} ${isBenched ? "opacity-60" : ""} ${isDead || isBenched ? "cursor-default" : "cursor-pointer"}`}
+        className={`flex h-full min-h-0 flex-col overflow-hidden border-2 bg-black/55 transition-colors ${isMarked && !isEnemy ? markColorClass : getUnitBorderClass(unit.color)} ${isBenched ? "opacity-60" : ""} ${isDead || isBenched ? "cursor-default" : "cursor-pointer"}`}
       >
         {/* HEADER (top): element crest · name · status chips, then HP + ult */}
         <div
@@ -550,10 +557,10 @@ function TeamUnitTile({
                 Sub
               </Badge>
             ) : null}
-            {isMarked ? (
+            {isMarked && !isEnemy ? (
               <Badge
                 variant="outline"
-                className={`rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest backdrop-blur-sm ${isEnemy ? "border-amber-300 bg-amber-300/20 text-amber-100" : "border-emerald-300 bg-emerald-300/20 text-emerald-100"}`}
+                className="rounded-none border-emerald-300 bg-emerald-300/20 px-1 py-0 font-body text-[9px] uppercase tracking-widest text-emerald-100 backdrop-blur-sm"
               >
                 Target
               </Badge>

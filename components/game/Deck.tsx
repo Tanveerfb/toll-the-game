@@ -21,6 +21,8 @@ import {
   buildSkillKeywordGlossary,
 } from "@/lib/game/descriptionTranslator";
 import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
+import { getCardFrameStyle } from "@/lib/game/cardFrameStyle";
+import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
 
 function escapeRegex(input: string): string {
   return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -405,7 +407,7 @@ export default function Deck() {
           // Single-target ally skills open the ally chooser on select, so no
           // pre-selection marker is needed here.
           const queueFull = slotsUsed >= 3;
-          const colorTokenClass = getColorTokenClasses(char?.color);
+          const frame = getCardFrameStyle(card.rank, isUlt);
 
           return (
             <Card
@@ -433,23 +435,32 @@ export default function Deck() {
                 setDraggedCardId(null);
               }}
               className={`
-                h-32.5 w-22.5! relative shrink-0 select-none flex flex-col p-2 transition-all
-                ${colorTokenClass}
-                ${isUlt ? "ring-2 ring-amber-400/80 shadow-[0_0_14px_rgba(251,191,36,0.55)]" : ""}
+                h-32.5 w-22.5! relative shrink-0 select-none flex flex-col overflow-hidden bg-zinc-900/80 p-2 transition-all
+                ${frame.borderClass}
                 ${isPlayerActionPhase ? "cursor-pointer hover:-translate-y-2 hover:shadow-lg" : "cursor-not-allowed opacity-50"}
                 ${isStunned || isSealed ? "grayscale brightness-50" : ""}
                 ${queueFull ? "opacity-70" : ""}
                 ${draggedCardId === card.id ? "opacity-40" : ""}
-                border
               `}
             >
+              {frame.accentBarClass ? (
+                <span
+                  className={`absolute inset-x-0 top-0 h-1 ${frame.accentBarClass}`}
+                />
+              ) : null}
               <div className="mb-1 flex items-start justify-between gap-1">
-                <div className="font-bold text-[10px] text-zinc-100 truncate">
-                  {char?.name}
+                <div className="flex min-w-0 items-center gap-1">
+                  <span
+                    title={char?.color}
+                    className={`h-2 w-2 shrink-0 rounded-full border border-black/40 ${ELEMENT_SWATCH[char?.color ?? "light"]}`}
+                  />
+                  <span className="truncate font-bold text-[10px] text-zinc-100">
+                    {char?.name}
+                  </span>
                 </div>
-                <div className="text-[11px] leading-none tracking-tight">
+                <div className="shrink-0 text-[11px] leading-none tracking-tight">
                   {isUlt ? (
-                    <span className="font-bold text-[9px] uppercase tracking-widest text-amber-300">
+                    <span className="font-bold text-[9px] uppercase tracking-widest text-cyan-300">
                       ULT
                     </span>
                   ) : (
@@ -475,7 +486,7 @@ export default function Deck() {
                 )}
               </div>
               <div
-                className={`text-[10px] mt-auto font-medium ${isUlt ? "text-amber-400" : "text-white"}`}
+                className={`text-[10px] mt-auto font-medium ${isUlt ? "text-cyan-300" : "text-white"}`}
               >
                 {card.skill.skillName}
               </div>
