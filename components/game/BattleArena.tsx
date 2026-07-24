@@ -140,7 +140,9 @@ function UnitDetailPanel({
   const router = useRouter();
   const launchPreview = (characterId: string) => {
     registerPracticeDummy();
-    startCustomBattle([{ id: characterId }], [{ id: PRACTICE_DUMMY_ID }]);
+    startCustomBattle([{ id: characterId }], [{ id: PRACTICE_DUMMY_ID }], {
+      preview: true,
+    });
     router.push("/practice");
   };
   const ownTeam = unit.team === "player" ? playerTeam : enemyTeam;

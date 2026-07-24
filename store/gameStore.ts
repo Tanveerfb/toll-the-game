@@ -6,6 +6,7 @@ import { AnyBattleEvent } from "@/types/battleEvent";
 import {
   applyAdjacentMerges,
   initialCardsFor,
+  previewCardsFor,
   maxHandCapacity,
   refillHand,
 } from "@/lib/game/deck";
@@ -72,6 +73,9 @@ interface BattleState {
   bigHitFocus: boolean;
 
   // Deck System
+  /** Preview mode (spec §7): the hand is a hardcoded full rank/ultimate set
+   *  (previewCardsFor) and is never RNG-refilled. Set per battle launch. */
+  isPreview: boolean;
   deck: ActionCard[];
   /** Enemy side's hidden hand — same 7DS GC rules as the player deck, played
    * by the AI (headless, no manual merging). Managed by the battle loop. */
@@ -127,6 +131,8 @@ interface BattleState {
   clearPhaseBreak: () => void;
   initializeDeck: () => void;
   drawCards: () => void;
+  /** Toggle preview mode (hardcoded full-set hand, no RNG refill). */
+  setPreviewMode: (preview: boolean) => void;
   /** Seed the enemy hand from the living field enemies (battle start). */
   initializeEnemyDeck: () => void;
   /** RNG-refill the enemy hand to capacity, auto-merging (grants enemy gauge). */
@@ -198,6 +204,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
   battleSpeed: 1,
   bigHitFocus: false,
 
+  isPreview: false,
   deck: [],
   enemyDeck: [],
   actionQueue: [],
@@ -259,6 +266,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
       phaseBreak: null,
       handSnapshot: null,
       bigHitFocus: false,
+      isPreview: false,
     }),
 
   setEnemyMarker: (instanceId) => set({ selectedEnemyMarker: instanceId }),
@@ -300,11 +308,17 @@ export const useGameStore = create<BattleState>((set, get) => ({
     });
   },
 
+  setPreviewMode: (preview) => set({ isPreview: preview }),
+
   initializeDeck: () => {
-    const { playerTeam } = get();
+    const { playerTeam, isPreview } = get();
     // Subs contribute no cards until promoted to the field
     const living = playerTeam.filter((c) => c.currentHP > 0 && !c.isSub);
-    set({ deck: initialCardsFor(living), actionQueue: [] });
+    // Preview: hardcoded full rank/ultimate set; normal: one R1 card per skill.
+    set({
+      deck: isPreview ? previewCardsFor(living) : initialCardsFor(living),
+      actionQueue: [],
+    });
   },
 
   initializeEnemyDeck: () => {
@@ -338,7 +352,9 @@ export const useGameStore = create<BattleState>((set, get) => ({
   },
 
   drawCards: () => {
-    const { playerTeam, deck, actionQueue } = get();
+    const { playerTeam, deck, actionQueue, isPreview } = get();
+    // Preview mode keeps its hardcoded full-set hand — never RNG-refill it.
+    if (isPreview) return;
     // Subs contribute no cards until promoted to the field
     const livingChars = playerTeam.filter((c) => c.currentHP > 0 && !c.isSub);
     const fieldCount = playerTeam.filter((c) => !c.isSub).length;

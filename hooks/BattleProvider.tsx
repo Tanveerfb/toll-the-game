@@ -59,7 +59,11 @@ interface BattleContextType {
   advancePhase: () => void;
   startDukeTest: () => void;
   startFullTest: () => void;
-  startCustomBattle: (playerPicks: TeamPick[], enemyPicks: TeamPick[]) => void;
+  startCustomBattle: (
+    playerPicks: TeamPick[],
+    enemyPicks: TeamPick[],
+    options?: { preview?: boolean },
+  ) => void;
   lastBattleConfig: { playerPicks: TeamPick[]; enemyPicks: TeamPick[] } | null;
   resolveplayerTurnWrapper: () => void;
   resolveEnemyTurnWrapper: () => void;
@@ -98,6 +102,7 @@ export default function BattleProvider({
     addToBattleLog,
     initializeDeck,
     drawCards,
+    setPreviewMode,
     initializeEnemyDeck,
     drawEnemyCards,
     setEnemyDeck,
@@ -567,13 +572,16 @@ export default function BattleProvider({
   const startCustomBattle = (
     rawPlayerPicks: TeamPick[],
     rawEnemyPicks: TeamPick[],
+    options?: { preview?: boolean },
   ) => {
+    const preview = options?.preview === true;
     // A lone sub (or all-sub team) auto-converts to a field unit
     const playerPicks = ensureFieldUnit(rawPlayerPicks);
     const enemyPicks = ensureFieldUnit(rawEnemyPicks);
 
     resetBattle();
     clearQueue();
+    setPreviewMode(preview);
     skipEnemyTurnRef.current = false;
 
     // Single boundary cast: kit JSON is loose CharacterData, validated by

@@ -83,6 +83,38 @@ export function initialCardsFor(livingUnits: BattleCharacter[]): ActionCard[] {
   return cards;
 }
 
+/**
+ * Player-facing Preview hand (spec §7): a deterministic, hardcoded deck that
+ * exposes EVERY skill at EVERY rank (R1/R2/R3) plus the ultimate, all at once,
+ * so the player can preview any ability/rank without grinding merges or waiting
+ * on the ult gauge. Unlike a normal battle hand this is never RNG-refilled —
+ * drawCards() no-ops in preview mode so the full set stays put.
+ */
+export function previewCardsFor(livingUnits: BattleCharacter[]): ActionCard[] {
+  const cards: ActionCard[] = [];
+  livingUnits.forEach((unit) => {
+    unit.skills.forEach((skill) => {
+      ([1, 2, 3] as const).forEach((rank) => {
+        cards.push({
+          id: newCardId(),
+          sourceInstanceId: unit.instanceId,
+          skill,
+          rank,
+        });
+      });
+    });
+    if (unit.ultimate) {
+      cards.push({
+        id: newCardId(),
+        sourceInstanceId: unit.instanceId,
+        skill: unit.ultimate,
+        rank: 1,
+      });
+    }
+  });
+  return cards;
+}
+
 /** Per-source ult-gauge gains from a set of merges. */
 export function gaugeGainsFromMerges(mergeSourceIds: string[]): Record<string, number> {
   const gains: Record<string, number> = {};
