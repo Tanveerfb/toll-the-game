@@ -43,3 +43,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# brainstorm mockups
+.superpowers/
+# reference screenshots (kept locally, INDEX.md stays tracked)
+docs/design/references/**/*.jpg
