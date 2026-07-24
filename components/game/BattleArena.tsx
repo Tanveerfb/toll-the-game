@@ -34,6 +34,7 @@ import { getCharacterById, getCharacterKit } from "@/lib/game/characterCatalog";
 import { getVfxShape, getVfxTint, vfxShapeStyle } from "@/lib/game/characterVfx";
 import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
 import KitDetails, { type KitPassiveView } from "@/components/game/KitDetails";
+import SubstatDrawer from "@/components/game/SubstatDrawer";
 import BattleEffectsOverlay from "@/components/game/BattleEffectsOverlay";
 import EffectsQuickPanel, {
   categorizeEffects,
@@ -282,6 +283,8 @@ function UnitDetailPanel({
               />
             </div>
           </div>
+
+          <SubstatDrawer unit={selected} />
 
           {/* Ult gauge pips */}
           <div className="flex items-center justify-center gap-1">
