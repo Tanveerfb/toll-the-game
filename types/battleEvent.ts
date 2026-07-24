@@ -44,6 +44,9 @@ export interface BattleActionEvent {
   skillName: string;
   skillType: string;
   isUlt: boolean;
+  /** Played card's rank (1-3). Undefined/legacy paths default to 1 in the
+   *  sequencer. Ignored for ultimates — they're their own reveal tier. */
+  rank?: 1 | 2 | 3;
   targets: BattleEventTarget[];
   counters: BattleEventCounter[];
 }

@@ -3,6 +3,7 @@
 import React from "react";
 import { useGameStore, SequencedBattleEvent } from "@/store/gameStore";
 import type { Color } from "@/types/color";
+import { getRevealTier } from "@/lib/game/revealTier";
 
 /**
  * Replays structured battle events as a timed cinematic: attacker lunge,
@@ -56,7 +57,10 @@ export interface SequencerBurst {
   strong: boolean;
 }
 
-// Element-colored streak across all targets of an AoE hit.
+// Element-colored streak across all targets of an AoE hit. R3/ultimate also
+// use this for a caster -> target "beam" even on single-target hits
+// (source instance included in the anchor list) — `strong` renders it as
+// the thicker/brighter beam rather than the thin AoE streak.
 export interface SequencerSweep {
   key: number;
   x: number;
@@ -64,6 +68,15 @@ export interface SequencerSweep {
   width: number;
   color: Color;
   characterId?: string;
+  strong?: boolean;
+}
+
+// Whole-arena flash, reserved for R2 (brightness pulse), R3 (brief flash)
+// and ultimate (full white flash) — distinct from the per-tile SequencerFlash.
+export interface SequencerScreenFlash {
+  key: number;
+  kind: "pulse" | "brief" | "white";
+  color: Color;
 }
 
 export interface SequencerView {
@@ -77,6 +90,12 @@ export interface SequencerView {
   floaters: SequencerFloater[];
   bursts: SequencerBurst[];
   sweep: SequencerSweep | null;
+  /** Whole-arena shake, reserved for R3/ultimate (target tiles already shake
+   *  on their own for every hit at R2+). */
+  screenShake: "light" | "heavy" | null;
+  screenFlash: SequencerScreenFlash | null;
+  /** Ultimate-only cutscene dim: surrounding UI recedes while the reveal plays. */
+  dim: boolean;
 }
 
 const IDLE_VIEW: SequencerView = {
@@ -90,7 +109,22 @@ const IDLE_VIEW: SequencerView = {
   floaters: [],
   bursts: [],
   sweep: null,
+  screenShake: null,
+  screenFlash: null,
+  dim: false,
 };
+
+// Reveal tiers add a couple of heavier beats (screen shake, wind-up hold) on
+// top of the existing per-hit animation — skip those specifically under
+// prefers-reduced-motion, matching the CSS-level opt-out already in place for
+// the per-tile .battle-shake/.battle-shake-strong classes.
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
 
 // Base timings in ms — every sleep divides by the battle speed toggle.
 // Slowed back down from the earlier "snappier" pass (2026-07-20): Tanveer
@@ -112,6 +146,13 @@ const AOE_LEAD_MS = 160;
 // Tick events (DoT/HoT/boss drain) are secondary to the main action beat —
 // shorter hold so a chain of them doesn't drag, but still a real animation.
 const TICK_HOLD_MS = 320;
+// Reveal-tier escalation (R3 wind-up, screen flash/shake, ultimate cutscene).
+const WIND_UP_MS = 260;
+const SCREEN_FLASH_LIFE_MS = 360;
+const SCREEN_SHAKE_LIFE_MS = 420;
+// Ultimate cutscene: dim in before the cut-in banner, hold through the beam
+// + shake + flash, restore right after — matches the existing CUT_IN_MS beat.
+const ULT_RESTORE_MS = 260;
 
 export function useBattleSequencer(
   containerRef: React.RefObject<HTMLElement | null>,
@@ -206,7 +247,12 @@ export function useBattleSequencer(
   );
 
   const addSweep = React.useCallback(
-    (instanceIds: string[], color: Color, characterId?: string) => {
+    (
+      instanceIds: string[],
+      color: Color,
+      characterId?: string,
+      strong?: boolean,
+    ) => {
       const anchors = instanceIds
         .map((id) => anchorFor(id))
         .filter((a): a is { x: number; y: number } => a !== null);
@@ -222,6 +268,7 @@ export function useBattleSequencer(
         width: maxX - minX + 90,
         color,
         characterId,
+        strong,
       };
       setView((v) => ({ ...v, sweep }));
       window.setTimeout(() => {
@@ -229,6 +276,30 @@ export function useBattleSequencer(
       }, SWEEP_LIFE_MS / (useGameStore.getState().battleSpeed || 1));
     },
     [anchorFor],
+  );
+
+  const triggerScreenShake = React.useCallback((strength: "light" | "heavy") => {
+    if (prefersReducedMotion()) return;
+    setView((v) => ({ ...v, screenShake: strength }));
+    window.setTimeout(() => {
+      setView((v) => ({ ...v, screenShake: null }));
+    }, SCREEN_SHAKE_LIFE_MS / (useGameStore.getState().battleSpeed || 1));
+  }, []);
+
+  const triggerScreenFlash = React.useCallback(
+    (kind: "pulse" | "brief" | "white", color: Color) => {
+      // The brightness pulse (R2) is soft enough to keep even under reduced
+      // motion; the heavier brief/white flashes (R3/ultimate) are skipped.
+      if (kind !== "pulse" && prefersReducedMotion()) return;
+      const flash: SequencerScreenFlash = { key: nextKey(), kind, color };
+      setView((v) => ({ ...v, screenFlash: flash }));
+      window.setTimeout(() => {
+        setView((v) =>
+          v.screenFlash?.key === flash.key ? { ...v, screenFlash: null } : v,
+        );
+      }, SCREEN_FLASH_LIFE_MS / (useGameStore.getState().battleSpeed || 1));
+    },
+    [],
   );
 
   const flashUnit = React.useCallback(
@@ -289,6 +360,21 @@ export function useBattleSequencer(
         ev.skillType === "debuff" ||
         ev.skillType === "disable";
 
+      // Reveal escalation tier (spec §2) — a pure mapping from the played
+      // card's rank/ultimate flag to how much fanfare this hit gets. Element
+      // color tints every effect below via ev.sourceColor as before.
+      const tier = getRevealTier({
+        rank: (ev.rank ?? 1) as 1 | 2 | 3,
+        isUltimate: ev.isUlt,
+        color: ev.sourceColor,
+      });
+
+      // Ultimate cutscene: screen dims first, held through the slam-in banner
+      // and the whole reveal, restored once the impact/shake/flash settle.
+      if (tier.cutscene) {
+        setView((v) => ({ ...v, dim: true }));
+      }
+
       // Ult cut-in: character art banner before the hit lands
       if (ev.isUlt) {
         setView((v) => ({
@@ -306,6 +392,14 @@ export function useBattleSequencer(
       }
 
       if (isOffense && ev.targets.length > 0) {
+        // Caster wind-up (R3/ultimate): a brief caster-side glow-hold before
+        // the attack flies out. Skipped under prefers-reduced-motion.
+        if (tier.windUp && !prefersReducedMotion()) {
+          flashUnit(ev.sourceInstanceId, ev.sourceColor, false, false);
+          await sleep(WIND_UP_MS);
+          if (!alive()) return;
+        }
+
         // Lunge: ghost portrait flies from attacker to the first target
         const from = anchorFor(ev.sourceInstanceId);
         const to = anchorFor(ev.targets[0].instanceId);
@@ -338,12 +432,17 @@ export function useBattleSequencer(
         });
         const isAoe = orderedTargets.length > 1;
 
-        if (isAoe) {
-          addSweep(
-            orderedTargets.filter((t) => !t.evaded).map((t) => t.instanceId),
-            ev.sourceColor,
-            ev.sourceCharacterId,
-          );
+        // R3/ultimate get a caster -> target beam even on a single target
+        // (not just the AoE streak) — spec's "beam sweep"/"mega beam".
+        if (isAoe || tier.beamSweep) {
+          const hitTargetIds = orderedTargets
+            .filter((t) => !t.evaded)
+            .map((t) => t.instanceId);
+          const beamIds =
+            tier.beamSweep && !isAoe
+              ? [ev.sourceInstanceId, ...hitTargetIds]
+              : hitTargetIds;
+          addSweep(beamIds, ev.sourceColor, ev.sourceCharacterId, tier.beamSweep);
           await sleep(AOE_LEAD_MS);
           if (!alive()) return;
         }
@@ -361,14 +460,19 @@ export function useBattleSequencer(
               });
             }, 420 / (useGameStore.getState().battleSpeed || 1));
           } else if (t.damage !== undefined) {
-            const strong = Boolean(t.crit || t.killed || ev.isUlt);
+            const strong = Boolean(
+              t.crit || t.killed || ev.isUlt || tier.burstStrong,
+            );
+            // Target-tile shake starts at R2 (spec: R1/basic stay silent) —
+            // a crit/kill still earns a shake regardless of tier.
+            const shakeTile = tier.shake !== "none" || Boolean(t.crit || t.killed);
             if (t.hpAfter !== undefined) {
               setView((v) => ({
                 ...v,
                 hpOverrides: { ...v.hpOverrides, [t.instanceId]: t.hpAfter! },
               }));
             }
-            flashUnit(t.instanceId, ev.sourceColor, strong, true);
+            flashUnit(t.instanceId, ev.sourceColor, strong, shakeTile);
             addBurst(t.instanceId, ev.sourceColor, strong, ev.sourceCharacterId);
             addFloater(
               t.instanceId,
@@ -389,7 +493,26 @@ export function useBattleSequencer(
         await sleep(IMPACT_HOLD_MS);
         if (!alive()) return;
 
-        // Counters strike back after the main impacts
+        // Stage-wide escalation: R2 gets a soft brightness pulse, R3 a brief
+        // flash + screen shake, ultimate the full heavy shake + white flash.
+        if (tier.flash !== "none") {
+          triggerScreenFlash(tier.flash, ev.sourceColor);
+        }
+        if (tier.shake === "heavy") {
+          triggerScreenShake("heavy");
+          await sleep(SCREEN_SHAKE_LIFE_MS);
+          if (!alive()) return;
+        }
+
+        // Counters strike back after the main impacts — automatic secondary
+        // hits, forced to the "basic" reveal tier (cheap, no fanfare, fires
+        // constantly) regardless of the triggering action's own tier.
+        const counterTier = getRevealTier({
+          rank: 1,
+          isUltimate: false,
+          isBasic: true,
+          color: ev.sourceColor,
+        });
         for (const counter of ev.counters) {
           setView((v) => ({
             ...v,
@@ -398,7 +521,14 @@ export function useBattleSequencer(
               [counter.onInstanceId]: counter.attackerHpAfter,
             },
           }));
-          flashUnit(counter.onInstanceId, ev.sourceColor, counter.killedAttacker, true);
+          const counterShake =
+            counterTier.shake !== "none" || counter.killedAttacker;
+          flashUnit(
+            counter.onInstanceId,
+            ev.sourceColor,
+            counter.killedAttacker,
+            counterShake,
+          );
           addFloater(counter.onInstanceId, `-${counter.damage} COUNTER`, "counter");
           await sleep(COUNTER_MS);
           if (!alive()) return;
@@ -421,9 +551,27 @@ export function useBattleSequencer(
         if (!alive()) return;
       }
 
+      // Restore from the ultimate cutscene dim once the reveal has settled —
+      // unconditional so a targetless/support-only ultimate (if one ever
+      // exists) can't leave the screen stuck dimmed.
+      if (tier.cutscene) {
+        await sleep(ULT_RESTORE_MS);
+        if (!alive()) return;
+        setView((v) => ({ ...v, dim: false }));
+      }
+
       await sleep(EVENT_GAP_MS);
     },
-    [addBurst, addFloater, addSweep, anchorFor, flashUnit, sleep],
+    [
+      addBurst,
+      addFloater,
+      addSweep,
+      anchorFor,
+      flashUnit,
+      sleep,
+      triggerScreenFlash,
+      triggerScreenShake,
+    ],
   );
 
   const runQueue = React.useCallback(async () => {

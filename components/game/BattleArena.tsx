@@ -809,10 +809,19 @@ export default function BattleArena({
     }
   };
 
+  // Reveal-tier screen shake (R3/ultimate): whole-arena shake, distinct from
+  // the per-tile shake already applied on the hit target. Reuses the same
+  // CSS classes/keyframes (and their prefers-reduced-motion opt-out).
+  const screenShakeClass =
+    seq.screenShake === "heavy" ? "battle-shake-strong" : "";
+
   return (
     // No z-index here: it would trap the fixed drawer/overlay children in a
     // stacking context below the sticky TopNav (z-50)
-    <div ref={arenaRef} className="relative flex min-h-0 flex-1 flex-col">
+    <div
+      ref={arenaRef}
+      className={`relative flex min-h-0 flex-1 flex-col ${screenShakeClass}`}
+    >
       <BattleEffectsOverlay
         battleLog={overlayLog}
         battlePhase={battlePhase}
@@ -824,6 +833,53 @@ export default function BattleArena({
 
       {/* Cinematic layer: lunge ghost, ult cut-in, damage floaters */}
       <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+        {/* Ultimate cutscene dim — surrounding UI recedes while the reveal
+            plays (spec §2); restored automatically once the beat ends. */}
+        <AnimatePresence>
+          {seq.dim ? (
+            <motion.div
+              key="reveal-dim"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 / battleSpeed }}
+              className="absolute inset-0 bg-black/70"
+            />
+          ) : null}
+        </AnimatePresence>
+
+        {/* Stage-wide flash — R2 brightness pulse, R3 brief flash, ultimate
+            full white flash. Tinted by the source's element color except
+            the ultimate's full-white punch. */}
+        <AnimatePresence>
+          {seq.screenFlash ? (
+            <motion.div
+              key={`screen-flash-${seq.screenFlash.key}`}
+              initial={{
+                opacity:
+                  seq.screenFlash.kind === "white"
+                    ? 0.9
+                    : seq.screenFlash.kind === "brief"
+                      ? 0.55
+                      : 0.18,
+              }}
+              animate={{ opacity: 0 }}
+              transition={{
+                duration:
+                  (seq.screenFlash.kind === "white" ? 0.5 : 0.32) / battleSpeed,
+                ease: "easeOut",
+              }}
+              className="absolute inset-0"
+              style={{
+                background:
+                  seq.screenFlash.kind === "white"
+                    ? "#ffffff"
+                    : FLASH_TINTS[seq.screenFlash.color],
+              }}
+            />
+          ) : null}
+        </AnimatePresence>
+
         <AnimatePresence>
           {seq.ghost ? (
             <motion.div
@@ -1041,7 +1097,9 @@ export default function BattleArena({
           })}
         </AnimatePresence>
 
-        {/* AoE sweep — an element-colored streak across every target */}
+        {/* Sweep — an element-colored streak across AoE targets, or (when
+            `strong`) the R3/ultimate caster -> target beam: thicker, brighter,
+            longer-held ("beam sweep"/"mega beam" from spec §2). */}
         <AnimatePresence>
           {seq.sweep ? (
             <motion.div
@@ -1049,14 +1107,20 @@ export default function BattleArena({
               initial={{ opacity: 0, scaleX: 0.15 }}
               animate={{ opacity: [0, 0.9, 0], scaleX: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.4 / battleSpeed, ease: "easeOut" }}
-              className="absolute h-12 origin-left -translate-y-1/2"
+              transition={{
+                duration: (seq.sweep.strong ? 0.55 : 0.4) / battleSpeed,
+                ease: "easeOut",
+              }}
+              className={`absolute origin-left -translate-y-1/2 ${seq.sweep.strong ? "h-20" : "h-12"}`}
               style={{
                 left: seq.sweep.x,
                 top: seq.sweep.y,
                 width: seq.sweep.width,
                 background: `linear-gradient(90deg, transparent, ${getVfxTint(seq.sweep.characterId, FLASH_TINTS[seq.sweep.color])} 45%, #ffffffcc 50%, ${getVfxTint(seq.sweep.characterId, FLASH_TINTS[seq.sweep.color])} 55%, transparent)`,
-                filter: "blur(1px)",
+                filter: seq.sweep.strong ? "blur(2px)" : "blur(1px)",
+                boxShadow: seq.sweep.strong
+                  ? `0 0 26px ${getVfxTint(seq.sweep.characterId, FLASH_TINTS[seq.sweep.color])}`
+                  : undefined,
               }}
             />
           ) : null}

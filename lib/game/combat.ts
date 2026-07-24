@@ -1173,6 +1173,7 @@ export function executeSkill(
     skillName: action.skill.skillName,
     skillType: action.skill.type,
     isUlt: action.skill.type === "ultimate",
+    rank: action.rank,
     targets: eventTargets,
     counters: eventCounters,
   });
