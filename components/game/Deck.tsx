@@ -24,50 +24,10 @@ import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
 import { getCardFrameStyle } from "@/lib/game/cardFrameStyle";
 import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
 import type { BattleCharacter } from "@/types/character";
-
-function escapeRegex(input: string): string {
-  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function formatKeywordLabel(keyword: string): string {
-  return keyword
-    .split(" ")
-    .map((chunk) => (chunk ? chunk[0].toUpperCase() + chunk.slice(1) : chunk))
-    .join(" ");
-}
-
-function getKeywordDefinitions(
-  description: string,
-  glossary: Record<string, string> = mechanicGlossary,
-): Array<{ keyword: string; meaning: string }> {
-  const lowerDescription = description.toLowerCase();
-  const matches = Object.entries(glossary)
-    .map(([keyword, meaning]) => {
-      const regex = new RegExp(`\\b${escapeRegex(keyword)}\\b`, "i");
-      const isMatched = regex.test(description);
-      const position = lowerDescription.indexOf(keyword.toLowerCase());
-      return {
-        keyword,
-        meaning,
-        isMatched,
-        position,
-      };
-    })
-    .filter((entry) => entry.isMatched)
-    .sort((a, b) => a.position - b.position);
-
-  const deduped: Array<{ keyword: string; meaning: string }> = [];
-  const seen = new Set<string>();
-
-  for (const entry of matches) {
-    const normalized = entry.keyword.toLowerCase();
-    if (seen.has(normalized)) continue;
-    seen.add(normalized);
-    deduped.push({ keyword: entry.keyword, meaning: entry.meaning });
-  }
-
-  return deduped;
-}
+import {
+  extractKeywordFootnotes,
+  formatFootnoteLabel,
+} from "@/lib/game/keywordFootnotes";
 
 function getSkillPowerText(card: ActionCard): string {
   if (card.skill.type === "ultimate") {
@@ -262,7 +222,7 @@ export default function Deck() {
   );
 
   const previewKeywordDefinitions = React.useMemo(
-    () => getKeywordDefinitions(previewDescription, previewGlossary),
+    () => extractKeywordFootnotes(previewDescription, previewGlossary),
     [previewDescription, previewGlossary],
   );
 
@@ -310,12 +270,13 @@ export default function Deck() {
                     {previewKeywordDefinitions.map((entry) => (
                       <p
                         key={entry.keyword}
-                        className="font-body text-xs text-zinc-300"
+                        className="font-body text-xs text-zinc-400"
                       >
-                        <span className="mr-1 inline-flex items-center rounded-none border border-white/70 px-1 py-px font-body text-[10px] uppercase tracking-[0.08em] text-zinc-100">
-                          {formatKeywordLabel(entry.keyword)}
+                        <span className="mr-1 text-zinc-500">※</span>
+                        <span className="font-semibold text-sky-300">
+                          {formatFootnoteLabel(entry.keyword)}
                         </span>
-                        - {entry.meaning}
+                        <span className="text-zinc-300"> — {entry.meaning}</span>
                       </p>
                     ))}
                   </div>

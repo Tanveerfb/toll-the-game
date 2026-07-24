@@ -12,6 +12,11 @@ import {
 } from "@/lib/game/descriptionTranslator";
 import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
 import { buildPassiveDetailSections } from "@/lib/game/passiveDetailSections";
+import {
+  extractKeywordFootnotes,
+  formatFootnoteLabel,
+  type KeywordFootnote,
+} from "@/lib/game/keywordFootnotes";
 
 // Kit rendering shared by the archive detail page and the in-battle info
 // panel so a character reads identically in both. Fed raw kit data
@@ -106,6 +111,23 @@ export function SkillBlock({
   const numberClassName =
     skill.type === "heal" ? "font-semibold text-emerald-400" : undefined;
 
+  // Keyword footnotes (spec §5): one glossary line per highlighted term,
+  // computed across every rank's wording (a term can appear at only one
+  // rank) so nothing is missed, deduped by extractKeywordFootnotes.
+  const footnoteGlossary = rankedLines
+    ? rankedLines.reduce<Record<string, string>>(
+        (acc, _line, index) => ({
+          ...acc,
+          ...buildSkillKeywordGlossary(skill, index),
+        }),
+        mechanicGlossary,
+      )
+    : { ...mechanicGlossary, ...buildSkillKeywordGlossary(skill, 0) };
+  const footnoteText = rankedLines
+    ? rankedLines.join(" ")
+    : buildSingleDescription(skill);
+  const footnotes = extractKeywordFootnotes(footnoteText, footnoteGlossary);
+
   return (
     <div className="border border-zinc-800 bg-zinc-950/60">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/70 px-3 py-2">
@@ -165,7 +187,30 @@ export function SkillBlock({
             }}
           />
         )}
+        <FootnoteList footnotes={footnotes} />
       </div>
+    </div>
+  );
+}
+
+/** Shared "※ Term — meaning" glossary footnote list (spec §5). */
+function FootnoteList({
+  footnotes,
+}: {
+  footnotes: KeywordFootnote[];
+}): React.ReactNode {
+  if (footnotes.length === 0) return null;
+  return (
+    <div className="mt-1.5 space-y-0.5 border-t border-zinc-800 pt-1.5">
+      {footnotes.map((entry) => (
+        <p key={entry.keyword} className="font-body text-xs text-zinc-400">
+          <span className="mr-1 text-zinc-500">※</span>
+          <span className="font-semibold text-sky-300">
+            {formatFootnoteLabel(entry.keyword)}
+          </span>
+          <span className="text-zinc-300"> — {entry.meaning}</span>
+        </p>
+      ))}
     </div>
   );
 }
@@ -307,6 +352,8 @@ export function PassiveProse({
           ))}
         </div>
       ) : null}
+
+      <FootnoteList footnotes={extractKeywordFootnotes(description)} />
     </div>
   );
 }
