@@ -101,7 +101,7 @@ export function SkillBlock({
   tag: string;
   /** Opens the shared DetailOverlay for this skill (spec §5 — used for the
    *  Super Attack row in the battle character-detail screen). Omitted
-   *  everywhere else (archive, kit-phases, kit-lab) — no behavior change. */
+   *  everywhere else (archive, kit-phases) — no behavior change. */
   onDetails?: () => void;
 }): React.ReactNode {
   const rankedLines =

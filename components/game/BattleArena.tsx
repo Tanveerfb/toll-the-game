@@ -45,6 +45,10 @@ import KitDetails, {
 import type { CharacterSkillData } from "@/lib/game/characterCatalog";
 import SubstatDrawer from "@/components/game/SubstatDrawer";
 import DetailOverlay from "@/components/game/DetailOverlay";
+import {
+  registerPracticeDummy,
+  PRACTICE_DUMMY_ID,
+} from "@/lib/game/damagePreview";
 import BattleEffectsOverlay from "@/components/game/BattleEffectsOverlay";
 import EffectsQuickPanel, {
   categorizeEffects,
@@ -121,12 +125,24 @@ function UnitDetailPanel({
   playerTeam,
   enemyTeam,
   onClose,
+  canPreview,
 }: {
   unit: BattleCharacter;
   playerTeam: BattleCharacter[];
   enemyTeam: BattleCharacter[];
   onClose: () => void;
+  /** Preview (spec §7/Task 10) launches an isolated 1v1 sandbox, which resets
+   *  the current battle — never offered mid-story-battle, where that would
+   *  silently abandon story progress. */
+  canPreview?: boolean;
 }): React.JSX.Element {
+  const { startCustomBattle } = useBattleContext();
+  const router = useRouter();
+  const launchPreview = (characterId: string) => {
+    registerPracticeDummy();
+    startCustomBattle([{ id: characterId }], [{ id: PRACTICE_DUMMY_ID }]);
+    router.push("/practice");
+  };
   const ownTeam = unit.team === "player" ? playerTeam : enemyTeam;
   const teamOnField = ownTeam.filter((u) => !u.isSub);
   const [selectedId, setSelectedId] = React.useState(unit.instanceId);
@@ -398,7 +414,18 @@ function UnitDetailPanel({
           onClose={() => setDetailOverlay(null)}
         >
           {detailOverlay.kind === "ultimate" ? (
-            <SkillBlock skill={detailOverlay.skill} tag="ULT" />
+            <div className="space-y-3">
+              <SkillBlock skill={detailOverlay.skill} tag="ULT" />
+              {canPreview ? (
+                <button
+                  type="button"
+                  onClick={() => launchPreview(selected.id)}
+                  className="flex w-full min-h-11 items-center justify-center border border-amber-300/70 bg-amber-400/10 font-body text-xs uppercase tracking-widest text-amber-200 transition-colors hover:bg-amber-400/20"
+                >
+                  Preview — full rank/ultimate set vs. a training dummy
+                </button>
+              ) : null}
+            </div>
           ) : (
             <PassiveDetailSections passive={detailOverlay.passive} />
           )}
@@ -1699,6 +1726,7 @@ export default function BattleArena({
           playerTeam={playerTeam}
           enemyTeam={enemyTeam}
           onClose={() => setDetailUnit(null)}
+          canPreview={!story}
         />
       ) : null}
 

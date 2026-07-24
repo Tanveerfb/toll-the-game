@@ -221,10 +221,11 @@ export function getCharacterMechanics(character: CharacterData): string[] {
 }
 
 /**
- * Kit Lab (dev tool) only: inject/replace a draft kit at runtime so it can be
- * launched into a practice battle before it's saved to disk. Not part of the
- * static roster (getAllCharacters/characterIds are unchanged) — it only makes
- * getCharacterById resolve the draft id for startCustomBattle.
+ * Inject/replace a character at runtime without touching disk. Not part of
+ * the static roster (getAllCharacters/characterIds are unchanged) — it only
+ * makes getCharacterById resolve the id for startCustomBattle. Used by the
+ * player-facing Preview sandbox (lib/game/damagePreview.ts's practice
+ * dummy) to register an ephemeral, never-persisted opponent.
  */
 export function registerDraftCharacter(data: CharacterData): void {
   characterMap.set(data.id, data);

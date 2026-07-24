@@ -1,4 +1,5 @@
 import {
+  registerDraftCharacter,
   type CharacterData,
   type CharacterPassiveData,
   type CharacterSkillData,
@@ -9,6 +10,48 @@ export const DAMAGE_PREVIEW_DUMMY = {
   def: 50,
   hp: 2000,
 } as const;
+
+/**
+ * Player-facing Preview (spec §7, Task 10 — repoints the retired Kit Lab's
+ * "Test in Battle" path): a live 1v1 sandbox launched from a skill/ultimate
+ * info screen, card owner vs. this low-HP dummy. Deliberately separate stats
+ * from DAMAGE_PREVIEW_DUMMY above — that one needs "typical enemy" numbers
+ * for the static per-ability table; this one needs to go down fast so a
+ * Preview loop (hit -> victory -> Reset) stays snappy.
+ */
+export const PRACTICE_DUMMY_ID = "practice_dummy";
+
+/** Pure builder — a fresh CharacterData each call, registered at runtime via
+ *  registerDraftCharacter (same mechanism the old Kit Lab used for its own
+ *  draft kit), never persisted to disk and invisible to the static roster. */
+export function buildPracticeDummy(): CharacterData {
+  const fillerSkill: CharacterSkillData = {
+    skillName: "Practice Strike",
+    characterId: PRACTICE_DUMMY_ID,
+    type: "attack",
+    statMultiplier: "atk",
+    damageRanked: [DAMAGE_PREVIEW_DUMMY.atk, DAMAGE_PREVIEW_DUMMY.atk, DAMAGE_PREVIEW_DUMMY.atk],
+    description: "Does damage equal to ATK-scaled to one enemy.",
+  };
+  return {
+    id: PRACTICE_DUMMY_ID,
+    name: "Training Dummy",
+    color: "light",
+    atk: DAMAGE_PREVIEW_DUMMY.atk,
+    def: DAMAGE_PREVIEW_DUMMY.def,
+    hp: 400,
+    storyOnly: true,
+    tags: ["Dummy"],
+    skills: [fillerSkill, { ...fillerSkill }],
+  };
+}
+
+/** Registers the practice dummy so getCharacterById/startCustomBattle can
+ *  resolve it — safe to call every time a Preview launches (re-registering
+ *  is a harmless overwrite, not a duplicate). */
+export function registerPracticeDummy(): void {
+  registerDraftCharacter(buildPracticeDummy());
+}
 
 interface PreviewScenario {
   id: string;
