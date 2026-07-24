@@ -659,6 +659,7 @@ export default function BattleArena({
     confirmAllyTarget,
     cancelAllyTarget,
     resetBattle,
+    bigHitFocus,
   } = useGameStore();
 
   const pendingAllyCard = pendingAllyCardId
@@ -1177,9 +1178,13 @@ export default function BattleArena({
         </div>
       </header>
 
-      {/* Battlefield: both teams always visible */}
-      <section className="grid min-h-0 flex-1 grid-rows-2 gap-1.5 px-3 py-1.5">
-        <div className="flex min-h-0 flex-col">
+      {/* Battlefield — "Balanced Stack" (spec §1): enemy row / center battle
+          stage / ally row. Big-hit focus (R3/ultimate) recedes both team
+          rows and lets the stage take momentary visual focus, then restores. */}
+      <section className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-1 px-3 py-1.5">
+        <div
+          className={`bighit-recede flex min-h-0 flex-col transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.97] opacity-50" : "scale-100 opacity-100"}`}
+        >
           <div className="mb-1 flex shrink-0 items-center justify-between gap-2">
             <p className="min-w-0 truncate font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
               Enemy{" "}
@@ -1228,7 +1233,26 @@ export default function BattleArena({
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-col">
+        {/* Battle stage — the focal strip where attack VFX/reveal animations
+            play (ghost lunge, beams, cut-ins are already absolute-positioned
+            over the whole arena; this band just gives that action a visual
+            "stage" between the two team rows instead of them sitting flush). */}
+        <div
+          className={`bighit-recede relative flex h-6 shrink-0 items-center justify-center transition-[transform,filter] duration-300 sm:h-8 ${bigHitFocus ? "scale-x-105" : ""}`}
+        >
+          <div
+            className={`h-px w-full bg-linear-to-r from-transparent via-amber-300/40 to-transparent transition-opacity duration-300 ${bigHitFocus ? "opacity-100" : "opacity-60"}`}
+          />
+          <span
+            className={`absolute font-heading text-[10px] tracking-[0.4em] text-amber-200/70 transition-opacity duration-300 sm:text-xs ${bigHitFocus ? "opacity-100" : "opacity-50"}`}
+          >
+            VS
+          </span>
+        </div>
+
+        <div
+          className={`bighit-recede flex min-h-0 flex-col transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.97] opacity-50" : "scale-100 opacity-100"}`}
+        >
           <p className="mb-1 shrink-0 font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
             Player <span className="text-zinc-600">— tap Info for details</span>
           </p>

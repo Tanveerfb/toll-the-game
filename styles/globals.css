@@ -222,4 +222,10 @@ h6 {
   .battle-evade {
     animation: none;
   }
+
+  /* Big-hit focus recede (spec §1) — keep the opacity dim (not motion-
+     sensitive) but drop the scale transform for reduced-motion users. */
+  .bighit-recede {
+    transform: none !important;
+  }
 }

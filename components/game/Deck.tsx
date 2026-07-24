@@ -23,6 +23,7 @@ import {
 import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
 import { getCardFrameStyle } from "@/lib/game/cardFrameStyle";
 import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
+import type { BattleCharacter } from "@/types/character";
 
 function escapeRegex(input: string): string {
   return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -112,6 +113,32 @@ function getSkillDescription(card: ActionCard): string {
   return buildDescriptionForRank(skillData, card.rank - 1);
 }
 
+// Compact per-unit dots (spec §1 item 6, "Team bar") — an at-a-glance
+// who's-alive readout, one row per side.
+function TeamBarDots({
+  units,
+}: {
+  units: BattleCharacter[];
+}): React.JSX.Element {
+  return (
+    <div className="flex items-center gap-1">
+      {units.map((unit) => (
+        <span
+          key={unit.instanceId}
+          title={`${unit.name} — ${Math.max(0, unit.currentHP)}/${unit.hp} HP`}
+          className={`h-2 w-2 rounded-full border border-black/40 ${ELEMENT_SWATCH[unit.color]} ${
+            unit.currentHP <= 0
+              ? "opacity-25 grayscale"
+              : unit.isSub
+                ? "opacity-50"
+                : "opacity-100"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function Deck() {
   const {
     deck,
@@ -119,6 +146,7 @@ export default function Deck() {
     selectCard,
     deselectCard,
     playerTeam,
+    enemyTeam,
     battlePhase,
     mergeDeckCard,
     reorderDeckCard,
@@ -127,6 +155,7 @@ export default function Deck() {
     queuedNullCount,
     addNullAction,
     removeNullAction,
+    bigHitFocus,
   } = useGameStore();
 
   const slotsUsed = actionQueue.length + queuedNullCount;
@@ -238,7 +267,13 @@ export default function Deck() {
   );
 
   return (
-    <div className="relative z-30 w-full shrink-0 border-t border-zinc-800 bg-linear-to-t from-black/95 to-black/70 px-3 pb-2 pt-1.5 backdrop-blur-md">
+    <div
+      // Big-hit focus (spec §1): R3/ultimate reveals momentarily recede the
+      // hand while the center battle stage takes visual focus — transient
+      // only, the hand stays persistently visible in normal play (never a
+      // permanent drawer), so this just dims/shrinks it a touch, not hides it.
+      className={`bighit-recede relative z-30 w-full shrink-0 border-t border-zinc-800 bg-linear-to-t from-black/95 to-black/70 px-3 pb-2 pt-1.5 backdrop-blur-md transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.98] opacity-60" : "scale-100 opacity-100"}`}
+    >
       {previewCard ? (
         <div className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-3 w-full max-w-xl -translate-x-1/2">
           <Card className="w-full rounded-none border border-zinc-700 bg-zinc-950/95 ring-0">
@@ -513,6 +548,16 @@ export default function Deck() {
             </Card>
           );
         })}
+      </div>
+
+      {/* Team bar — bottom edge of the screen (spec §1 item 6), below the
+          always-visible hand. */}
+      <div className="mt-1.5 flex items-center justify-center gap-3">
+        <TeamBarDots units={playerTeam} />
+        <span className="font-body text-[9px] uppercase tracking-[0.2em] text-zinc-600">
+          vs
+        </span>
+        <TeamBarDots units={enemyTeam} />
       </div>
     </div>
   );

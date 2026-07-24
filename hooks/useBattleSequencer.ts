@@ -375,6 +375,14 @@ export function useBattleSequencer(
         setView((v) => ({ ...v, dim: true }));
       }
 
+      // Big-hit focus (spec §1): R3/ultimate reveals give the center stage
+      // transient visual focus while surrounding UI outside this hook's own
+      // tree (the hand, team bar) recedes/dims — published on the shared
+      // store since Deck isn't a child of BattleArena.
+      if (tier.windUp) {
+        useGameStore.getState().setBigHitFocus(true);
+      }
+
       // Ult cut-in: character art banner before the hit lands
       if (ev.isUlt) {
         setView((v) => ({
@@ -553,11 +561,15 @@ export function useBattleSequencer(
 
       // Restore from the ultimate cutscene dim once the reveal has settled —
       // unconditional so a targetless/support-only ultimate (if one ever
-      // exists) can't leave the screen stuck dimmed.
+      // exists) can't leave the screen stuck dimmed. R3 has no dim to clear
+      // but still needs its big-hit focus turned back off.
       if (tier.cutscene) {
         await sleep(ULT_RESTORE_MS);
         if (!alive()) return;
         setView((v) => ({ ...v, dim: false }));
+      }
+      if (tier.windUp) {
+        useGameStore.getState().setBigHitFocus(false);
       }
 
       await sleep(EVENT_GAP_MS);
@@ -604,6 +616,7 @@ export function useBattleSequencer(
       generationRef.current += 1;
       runningRef.current = false;
       setView(IDLE_VIEW);
+      useGameStore.getState().setBigHitFocus(false);
       return;
     }
     if (battleEvents.length === processedRef.current) return;
@@ -630,10 +643,12 @@ export function useBattleSequencer(
     void runQueue();
   }, [battleEvents, runQueue]);
 
-  // Unmount: invalidate the running generation so stale timers no-op
+  // Unmount: invalidate the running generation so stale timers no-op, and
+  // clear the shared big-hit-focus flag so it can't outlive this screen.
   React.useEffect(
     () => () => {
       generationRef.current += 1;
+      useGameStore.getState().setBigHitFocus(false);
     },
     [],
   );
@@ -643,6 +658,9 @@ export function useBattleSequencer(
     queueRef.current = [];
     runningRef.current = false;
     setView(IDLE_VIEW);
+    // Skipping mid-reveal must not leave the shared big-hit-focus flag stuck
+    // on, since it's read by components outside this hook's own tree.
+    useGameStore.getState().setBigHitFocus(false);
   }, []);
 
   return { view, skip };

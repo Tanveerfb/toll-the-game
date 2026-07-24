@@ -65,6 +65,11 @@ interface BattleState {
   battleEvents: SequencedBattleEvent[];
   battlePhase: BattlePhase;
   battleSpeed: number;
+  /** True while an R3/ultimate reveal has visual focus (spec §1 "Big-hit
+   *  focus") — surrounding UI (the hand, team bar) recedes/dims, then
+   *  restores. Published here (not local sequencer state) so components
+   *  outside BattleArena's tree, like Deck, can react to it too. */
+  bigHitFocus: boolean;
 
   // Deck System
   deck: ActionCard[];
@@ -110,6 +115,7 @@ interface BattleState {
   addToBattleLog: (entry: string) => void;
   addBattleEvent: (event: AnyBattleEvent) => void;
   setBattleSpeed: (speed: number) => void;
+  setBigHitFocus: (focused: boolean) => void;
   resetBattle: () => void;
 
   // Deck Actions
@@ -190,6 +196,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
   battleEvents: [],
   battlePhase: "initializing",
   battleSpeed: 1,
+  bigHitFocus: false,
 
   deck: [],
   enemyDeck: [],
@@ -229,6 +236,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
     })),
   // Speed is a player preference — deliberately not reset by resetBattle
   setBattleSpeed: (speed) => set({ battleSpeed: speed }),
+  setBigHitFocus: (focused) => set({ bigHitFocus: focused }),
 
   resetBattle: () =>
     set({
@@ -250,6 +258,7 @@ export const useGameStore = create<BattleState>((set, get) => ({
       interactionNotice: null,
       phaseBreak: null,
       handSnapshot: null,
+      bigHitFocus: false,
     }),
 
   setEnemyMarker: (instanceId) => set({ selectedEnemyMarker: instanceId }),
