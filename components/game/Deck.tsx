@@ -431,7 +431,7 @@ export default function Deck() {
                 setDraggedCardId(null);
               }}
               className={`
-                h-32.5 w-22.5! relative shrink-0 select-none flex flex-col overflow-hidden bg-zinc-900/80 p-2 transition-all
+                h-28 w-20! relative shrink-0 select-none flex flex-col overflow-hidden bg-zinc-900/80 p-1.5 transition-all
                 ${frame.borderClass}
                 ${isPlayerActionPhase ? "cursor-pointer hover:-translate-y-2 hover:shadow-lg" : "cursor-not-allowed opacity-50"}
                 ${isStunned || isSealed ? "grayscale brightness-50" : ""}
