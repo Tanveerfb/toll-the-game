@@ -24,7 +24,9 @@ const CHARACTERS_WITH_ART = new Set([
   "sara",
   "yalina",
   "seras",
-  // story-only examiners/officials (art locked, kit pending)
+  // Bureau officials, kit landed 2026-07-25 (data/characters/chiara.json,
+  // data/characters/isolde.json) — full playable roster, no skill-specific
+  // art yet (portrait fallback via getSkillArt)
   "chiara",
   "isolde",
 ]);

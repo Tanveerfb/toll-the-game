@@ -226,16 +226,39 @@ export function executeSkill(
   }
 
   // -- SEAL CHECK (defense in depth — the UI/AI should not offer sealed
-  // skills, but never let one through). Attack Seal blocks attack-type
-  // skills only; ultimates and damaging debuff skills stay usable.
-  if (
-    action.skill.type === "attack" &&
-    updatedSource.debuffs.some(
-      (d) => d.type === "seal" && d.sealType === "attack",
-    )
-  ) {
+  // skills, but never let one through). A seal's sealType names which
+  // category of skill it blocks: "attack" = any attack-type skill (the
+  // original/default case), "debuff" = any debuff-type skill, "attackDebuff"
+  // = an attack-type skill that ALSO carries any hostile debuff-category
+  // mechanic (Chiara's "House Rules" — a conceptual category, not a literal
+  // skill.type value; see Diane's Rush Rock (a "seal" mechanic) and the
+  // author's own example, "applies [Bleed] debuff", for the breadth of what
+  // counts). Ultimates are never sealed by any sealType.
+  const DEBUFF_CATEGORY_MECHANICS = new Set([
+    "debuff",
+    "stun",
+    "seal",
+    "taunt",
+    "shock",
+    "bleed",
+    "decay",
+    "corrosion",
+    "ignite",
+    "extort",
+  ]);
+  const skillHasDebuffMechanic = (action.skill.mechanics ?? []).some((m) =>
+    DEBUFF_CATEGORY_MECHANICS.has(m.type),
+  );
+  const activeSeal = updatedSource.debuffs.find((d) => {
+    if (d.type !== "seal") return false;
+    if (d.sealType === "attackDebuff") {
+      return action.skill.type === "attack" && skillHasDebuffMechanic;
+    }
+    return d.sealType === action.skill.type;
+  });
+  if (activeSeal) {
     log(
-      `[Action] ${updatedSource.name}'s attack skills are sealed — ${action.skill.skillName} fizzles.`,
+      `[Action] ${updatedSource.name}'s ${activeSeal.sealType} skills are sealed — ${action.skill.skillName} fizzles.`,
     );
     return updatedTeams;
   }
@@ -318,10 +341,27 @@ export function executeSkill(
   const isAoe = skillMechanics.some(
     (m) => m.type === "aoe" || (m.type === "aoeRanked" && m.ranks?.[rankIndex]),
   );
+  // An ultimate carrying a friendly, non-self mechanic (buff/stance/cleanse/
+  // heal/debuffImmunity/healOverTime) is ally-directed even though its
+  // skill.type is hardcoded "ultimate" (UltimateCard can't be typed "buff").
+  // Isolde's "Starbound Ward" is the first such ultimate — existing
+  // ultimates only ever use targetSelf buffs, so this is additive and
+  // doesn't change any current character's targeting.
+  const hasFriendlyAllyMechanic = skillMechanics.some(
+    (m) =>
+      (m.type === "buff" ||
+        m.type === "stance" ||
+        m.type === "cleanse" ||
+        m.type === "heal" ||
+        m.type === "debuffImmunity" ||
+        m.type === "healOverTime") &&
+      !m.targetSelf,
+  );
   const isHealOrBuff =
     action.skill.type === "heal" ||
     action.skill.type === "buff" ||
-    action.skill.type === "stance";
+    action.skill.type === "stance" ||
+    (action.skill.type === "ultimate" && hasFriendlyAllyMechanic);
   // A skill deals damage whenever its numbers say so, regardless of type —
   // e.g. debuff-type skills with damageRanked > 0 hit AND debuff. Heal-type
   // skills reuse damageRanked as the heal amount, so they are excluded.
@@ -732,8 +772,19 @@ export function executeSkill(
       targetEvent.heal = healed;
     }
 
-    // Hostile mechanics apply for offensive skills even at 0 damage
-    if (isOffensive) {
+    // Hostile mechanics apply for offensive skills even at 0 damage — unless
+    // the target currently holds Debuff Immunity (Isolde's "Starbound
+    // Ward"), which blocks every debuff type below (stat-downs, DoTs,
+    // stun/seal/taunt/extort), not just CC. Damage itself is unaffected, and
+    // the "defeated" check still runs regardless of immunity — only the
+    // debuff-application mechanics below are gated.
+    const targetIsDebuffImmune = updatedTarget.buffs.some(
+      (b) => b.debuffImmune,
+    );
+    if (isOffensive && targetIsDebuffImmune) {
+      targetEffects.push("resisted all debuffs (Debuff Immunity)");
+    }
+    if (isOffensive && !targetIsDebuffImmune) {
       // Apply skill mechanics (Debuffs)
       skillMechanics.forEach((mech) => {
         if (mech.type === "shock") {
@@ -807,7 +858,10 @@ export function executeSkill(
           );
         }
         if (mech.type === "lowerUltGauge") {
-          const reducedBy = mech.value || 1;
+          // Nullish coalescing (not ||): an explicit ranked value of 0
+          // (Isolde's R1 "no gauge deplete") must mean zero, not fall
+          // through to the default-1.
+          const reducedBy = mech.value ?? 1;
           updatedTarget.ultGauge = Math.max(
             0,
             updatedTarget.ultGauge - reducedBy,
@@ -968,11 +1022,13 @@ export function executeSkill(
           `lowered atk by ${flowingRuinMech.atkDownPercent ?? 20}%${formatTurns(flowingRuinMech.atkDownDuration ?? 2)}`,
         );
       }
+    }
 
-      if (isAttack && updatedTarget.currentHP === 0) {
-        targetEffects.push("defeated");
-        targetEvent.killed = true;
-      }
+    // "Defeated" always registers regardless of Debuff Immunity — dying to
+    // direct damage has nothing to do with resisting debuffs.
+    if (isOffensive && isAttack && updatedTarget.currentHP === 0) {
+      targetEffects.push("defeated");
+      targetEvent.killed = true;
     }
 
     // Friendly buffs/cleanses applied even if it's an attack (if targetSelf is true or targets are allies)
@@ -986,18 +1042,63 @@ export function executeSkill(
         targetEffects.push("cleansed all debuffs");
       }
       if ((mech.type === "buff" || mech.type === "stance") && !mech.targetSelf) {
+        const percent = mech.valuePercent || mech.value;
         updatedTarget.buffs.push({
           type: mech.type,
           stat: mech.stat,
-          valuePercent: mech.valuePercent || mech.value,
+          valuePercent: percent,
           buffDuration: mech.duration,
           name: mech.name,
           unstackable: mech.unstackable,
           uncancellable: mech.uncancellable,
         });
+        // "hp"/"all" aren't read dynamically (unlike atk/def via
+        // effectiveStat) — bake the gain now, mirroring how passive.ts's
+        // synergy/aura handlers already do this for the OnBattleStart path.
+        // Isolde's ultimate is the first ally-wide buff to need it here.
+        if (percent && (mech.stat === "hp" || mech.stat === "all")) {
+          const hpBoost = Math.floor(updatedTarget.hp * (percent / 100));
+          updatedTarget.hp += hpBoost;
+          updatedTarget.currentHP += hpBoost;
+        }
         targetEffects.push(
-          `applied ${mech.type} to ${mech.stat || "stat"} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim(),
+          `applied ${mech.type} to ${mech.stat || "stat"} by ${toPercentText(percent)}${formatTurns(mech.duration)}`.trim(),
         );
+      }
+      if (mech.type === "debuffImmunity" && !mech.targetSelf && isHealOrBuff) {
+        // Ruling #30 precedent (same as cleanse): uncancellable entries are
+        // "effects", not debuffs — immunity can't strip those.
+        updatedTarget.debuffs = updatedTarget.debuffs.filter(
+          (d) => d.uncancellable,
+        );
+        updatedTarget.buffs.push({
+          type: "buff",
+          debuffImmune: true,
+          buffDuration: mech.duration,
+          name: mech.name || "Debuff Immunity",
+        });
+        targetEffects.push(
+          `cleansed debuffs and gained Debuff Immunity${formatTurns(mech.duration)}`,
+        );
+      }
+      if (mech.type === "healOverTime" && !mech.targetSelf && isHealOrBuff) {
+        // Valued off THIS cast's heal amount (e.g. heal 200 -> 30% = 60/turn
+        // for `duration` turns), same convention as Shock/Bleed valuing off
+        // the hit that applied them.
+        const hotAmount = Math.floor(
+          healedAmount * ((mech.valuePercent ?? 30) / 100),
+        );
+        if (hotAmount > 0) {
+          updatedTarget.buffs.push({
+            type: "healOverTime",
+            name: mech.name || "Rejuvenate",
+            value: hotAmount,
+            buffDuration: mech.duration,
+          });
+          targetEffects.push(
+            `applied Rejuvenate (${hotAmount}/turn)${formatTurns(mech.duration)}`,
+          );
+        }
       }
     });
 

@@ -102,7 +102,13 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
             });
           }
 
-          if (mech.type === "aura" && mech.conditionNoDeadAllies) {
+          // conditionNoDeadAllies is currently informational only — every
+          // aura here is applied once at OnBattleStart regardless (there's
+          // no dynamic per-turn recheck of ally-death state yet, matching
+          // the flag's pre-existing behavior for Gabrist). Isolde's aura
+          // ("Increase all allies HP related stats by 10%") has no such
+          // condition at all, so the gate no longer requires the flag.
+          if (mech.type === "aura") {
             mutateTeam.forEach((ally, idx) => {
               const buff: StatusEffect = {
                 type: "buff", stat: mech.stat, valuePercent: mech.valuePercent, uncancellable: true, name: source.passive!.name
@@ -131,6 +137,7 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
   registerTurnRamp(character, registerToQueue);
   registerMaxHpShred(character, registerToQueue);
   registerCharacterSynergy(character, registerToQueue);
+  registerRandomTurnEffect(character, registerToQueue);
 }
 
 // Kind Hearted Friend (Leorio): base +valuePercent to all allies if ANY of
@@ -425,6 +432,125 @@ function registerMaxHpShred(character: BattleCharacter, registerToQueue: Registe
 
       team[idx] = self;
       return { ...teams, [teamKey]: team, [oppKey]: opponents };
+    },
+  });
+}
+
+// Cut the Deck (Chiara): at the start of each of her team's turns, rolls one
+// of the passive's `options` uniformly at random and applies it for that
+// option's own duration — a fresh roll every turn, not additive/stacking
+// (badges share one name so a re-roll simply replaces the prior badge on
+// tick expiry rather than piling up). Requires field presence — her passive
+// is explicitly "while on battlefield" (default-deny, no worksFromSub).
+function registerRandomTurnEffect(
+  character: BattleCharacter,
+  registerToQueue: RegisterFn,
+) {
+  const mech = character.passive?.mechanics?.find(
+    (m) => m.type === "randomTurnEffect",
+  );
+  if (!mech || mech.type !== "randomTurnEffect") return;
+  const options = mech.options;
+  if (!options || options.length === 0) return;
+
+  const applyEntry = (
+    list: BattleCharacter[],
+    stat: string,
+    valuePercent: number,
+    duration: number,
+    kind: "buff" | "debuff",
+    name: string,
+  ) =>
+    list.map((c) => {
+      if (c.currentHP <= 0 || c.isSub) return c;
+      if (kind === "buff") {
+        return {
+          ...c,
+          buffs: [
+            ...c.buffs,
+            {
+              type: "buff" as const,
+              stat,
+              valuePercent,
+              buffDuration: duration,
+              uncancellable: true,
+              name,
+            },
+          ],
+        };
+      }
+      return {
+        ...c,
+        debuffs: [
+          ...c.debuffs,
+          {
+            type: "debuff" as const,
+            stat,
+            valuePercent,
+            debuffDuration: duration,
+            uncancellable: true,
+            name,
+          },
+        ],
+      };
+    });
+
+  registerToQueue({
+    id: `${character.instanceId}_passive_${character.passive!.name}_randomTurnEffect`,
+    phase:
+      character.team === "player" ? "OnPlayerTurnStart" : "OnEnemyTurnStart",
+    sourceInstanceId: character.instanceId,
+    mechanicId: `${character.passive!.name} (roll)`,
+    action: async (source, teams, log) => {
+      const teamKey = source.team === "player" ? "playerTeam" : "enemyTeam";
+      const enemyKey = source.team === "player" ? "enemyTeam" : "playerTeam";
+      const selfNow =
+        teams[teamKey].find((c) => c.instanceId === source.instanceId) ??
+        source;
+      if (selfNow.currentHP <= 0 || selfNow.isSub) return teams;
+
+      const picked = options[Math.floor(Math.random() * options.length)];
+      const badgeName = `${character.passive!.name}: ${picked.kind === "buff" ? "+" : "-"}${picked.valuePercent}% ${picked.stat}`;
+
+      let team = teams[teamKey];
+      let enemies = teams[enemyKey];
+      if (picked.target === "self") {
+        team = team.map((c) =>
+          c.instanceId === source.instanceId
+            ? applyEntry(
+                [c],
+                picked.stat,
+                picked.valuePercent,
+                picked.duration,
+                picked.kind,
+                badgeName,
+              )[0]
+            : c,
+        );
+      } else if (picked.target === "allies") {
+        team = applyEntry(
+          team,
+          picked.stat,
+          picked.valuePercent,
+          picked.duration,
+          picked.kind,
+          badgeName,
+        );
+      } else {
+        enemies = applyEntry(
+          enemies,
+          picked.stat,
+          picked.valuePercent,
+          picked.duration,
+          picked.kind,
+          badgeName,
+        );
+      }
+
+      log(
+        `${source.name}'s ${character.passive!.name} rolls: ${badgeName} for ${picked.duration} turn(s)!`,
+      );
+      return { ...teams, [teamKey]: team, [enemyKey]: enemies };
     },
   });
 }

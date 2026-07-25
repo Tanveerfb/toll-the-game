@@ -1,0 +1,113 @@
+{
+  "id": "chiara",
+  "name": "Chiara",
+  "color": "dark",
+  "tags": ["Human", "Female", "Bureau"],
+  "lore": "Bureau official who deals in cards, dice, and fortune as much as ledgers. Runs her exam encounters like a game she's already rigged in her favor.",
+  "atk": 191,
+  "def": 99,
+  "hp": 1100,
+  "skills": [
+    {
+      "skillName": "Marked Card",
+      "description": "Does damage equal to ATK-scaled to one enemy; lowers DEF for [debuff.duration] turns.",
+      "characterId": "chiara",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [260, 320, 400],
+      "mechanics": [
+        {
+          "type": "debuff",
+          "stat": "def",
+          "valueRanked": [20, 35, 35],
+          "durationRanked": [1, 1, 2]
+        }
+      ]
+    },
+    {
+      "skillName": "House Rules",
+      "description": "Does damage equal to ATK-scaled to one enemy; seals Debuff skills for [x-ranked] turns; seals Attack Debuff skills for [y-ranked] turns.",
+      "characterId": "chiara",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [260, 320, 375],
+      "mechanics": [
+        {
+          "type": "seal",
+          "sealType": "debuff",
+          "durationRanked": [0, 0, 2]
+        },
+        {
+          "type": "seal",
+          "sealType": "attackDebuff",
+          "durationRanked": [0, 1, 2]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "All In",
+    "description": "Raises ATK by 30% and evade chance by 33% for 3 turns; then does damage equal to ATK-scaled to all enemies.",
+    "characterId": "chiara",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 333,
+    "mechanics": [
+      {
+        "type": "buff",
+        "stat": "atk",
+        "valuePercent": 30,
+        "duration": 3,
+        "targetSelf": true
+      },
+      {
+        "type": "buff",
+        "stat": "evade",
+        "valuePercent": 33,
+        "duration": 3,
+        "targetSelf": true
+      },
+      {
+        "type": "aoe"
+      }
+    ]
+  },
+  "passive": {
+    "name": "Cut the Deck",
+    "description": "At the start of each of her turns, randomly gains one of: lowers all enemies' ATK by 20% for 1 turn, raises allies' ATK and DEF by 15% for 1 turn, or gains 30% damage reduction for 1 turn. Ranks up her own skills by 1 at the start of turn 3.",
+    "trigger": "onNewTurn",
+    "worksFromSub": false,
+    "mechanics": [
+      {
+        "type": "randomTurnEffect",
+        "options": [
+          {
+            "target": "enemies",
+            "stat": "atk",
+            "valuePercent": 20,
+            "duration": 1,
+            "kind": "debuff"
+          },
+          {
+            "target": "allies",
+            "stat": "all",
+            "valuePercent": 15,
+            "duration": 1,
+            "kind": "buff"
+          },
+          {
+            "target": "self",
+            "stat": "damageReduction",
+            "valuePercent": 30,
+            "duration": 1,
+            "kind": "buff"
+          }
+        ]
+      },
+      {
+        "type": "rankUpOwnDeck",
+        "atTurn": 3
+      }
+    ]
+  }
+}

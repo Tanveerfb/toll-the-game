@@ -115,6 +115,22 @@ export interface CancelBuffsMechanic extends MechanicBase {
 export interface CancelStancesMechanic extends MechanicBase {
   type: "cancelStances";
 }
+/** Cleanses cancellable debuffs and blocks all NEW debuffs (stat-downs,
+ * DoTs, stun/seal/taunt — everything, not just CC) while active. Isolde's
+ * "Starbound Ward". Gated by combat.ts's `targetIsDebuffImmune` check at
+ * the top of the hostile-mechanics block. */
+export interface DebuffImmunityMechanic extends MechanicBase {
+  type: "debuffImmunity";
+  targetSelf?: boolean;
+}
+/** Applies a Heal-over-Time worth `valuePercent`% of THIS cast's heal
+ * amount, per turn, for `duration` turns. Isolde's "Threads of Renewal"
+ * rejuvenate. */
+export interface HealOverTimeMechanic extends MechanicBase {
+  type: "healOverTime";
+  valuePercent?: number;
+  targetSelf?: boolean;
+}
 
 // --- Debuff applications ---------------------------------------------------
 export interface StunMechanic extends MechanicBase {
@@ -248,6 +264,32 @@ export interface ConditionalBuffMechanic extends MechanicBase {
   atkDownDuration?: number;
   stat?: string;
 }
+/** Once the owner's team reaches phase-turn `atTurn` (displayed, 1-indexed;
+ * default 3), ranks up every non-ultimate, sub-max-rank card belonging to
+ * the owner currently in their hand/deck by 1. Fires once per battle
+ * (guarded by passiveState.rankUpOwnDeckTriggered). Handled directly in
+ * BattleProvider.tsx (the mechanic-queue's `action` callback only sees
+ * `teams`, not the hand/deck store) — see store/gameStore.ts's
+ * rankUpCharacterCards. Chiara's "Cut the Deck". */
+export interface RankUpOwnDeckMechanic extends MechanicBase {
+  type: "rankUpOwnDeck";
+  atTurn?: number;
+}
+/** One option a `randomTurnEffect` passive can roll. */
+export interface RandomEffectOption {
+  target: "enemies" | "allies" | "self";
+  stat: string;
+  valuePercent: number;
+  duration: number;
+  kind: "buff" | "debuff";
+}
+/** Each of the owner's own team-turn starts, rolls one of `options`
+ * uniformly at random and applies it (1 turn is typical, but each option
+ * carries its own duration). Chiara's "Cut the Deck". */
+export interface RandomTurnEffectMechanic extends MechanicBase {
+  type: "randomTurnEffect";
+  options: RandomEffectOption[];
+}
 
 // --- Boss-only mechanics (multi-phase "hearts" bosses) ----------------------
 // These are read live from the boss's ACTIVE phase passives by the boss engine
@@ -311,6 +353,8 @@ export type Mechanic =
   | CleanseMechanic
   | CancelBuffsMechanic
   | CancelStancesMechanic
+  | DebuffImmunityMechanic
+  | HealOverTimeMechanic
   | StunMechanic
   | TauntMechanic
   | SealMechanic
@@ -337,6 +381,8 @@ export type Mechanic =
   | ConsumeHpPercentMechanic
   | HealLifestealMechanic
   | ConditionalBuffMechanic
+  | RankUpOwnDeckMechanic
+  | RandomTurnEffectMechanic
   | BossAutoSpMechanic
   | BossStatSpikeMechanic
   | BossMaxHpDrainMechanic
@@ -365,6 +411,8 @@ export const MECHANIC_TYPES = [
   "cleanse",
   "cancelBuffs",
   "cancelStances",
+  "debuffImmunity",
+  "healOverTime",
   "stun",
   "taunt",
   "seal",
@@ -391,6 +439,8 @@ export const MECHANIC_TYPES = [
   "consumeHpPercent",
   "healLifesteal",
   "conditionalBuff",
+  "rankUpOwnDeck",
+  "randomTurnEffect",
   "bossAutoSp",
   "bossStatSpike",
   "bossMaxHpDrain",
@@ -445,4 +495,8 @@ export interface StatusEffect {
   /** Corrosion basis: true = % of MAX HP per tick (R3/ultimate only),
    *  false/absent = % of the victim's REMAINING (current) HP per tick. */
   maxHp?: boolean;
+  /** Debuff Immunity: while true on an active buff, the owner resists all
+   * NEW debuffs (combat.ts's `targetIsDebuffImmune` gate). Existing
+   * cancellable debuffs are cleansed the moment this is granted. */
+  debuffImmune?: boolean;
 }

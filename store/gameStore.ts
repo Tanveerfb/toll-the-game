@@ -157,6 +157,11 @@ interface BattleState {
   reorderDeckCard: (draggedCardId: string, targetCardId: string) => void;
   mergeDeckCard: (cardId: string) => void;
   removeDeadCharacterCards: (instanceId: string) => void;
+  /** Ranks up every non-ultimate, sub-max-rank card belonging to `instanceId`
+   * currently in the given team's hand by 1. Data-driven support for the
+   * `rankUpOwnDeck` passive mechanic (Chiara) — called from BattleProvider,
+   * which is the only layer with both team + deck state in scope. */
+  rankUpCharacterCards: (instanceId: string, team: "player" | "enemy") => void;
   setActionQueue: (queue: ActionCard[]) => void;
   snapshotHand: () => void;
   resetHand: () => void;
@@ -635,6 +640,22 @@ export const useGameStore = create<BattleState>()(
       deck: deck.filter((c) => c.sourceInstanceId !== instanceId),
       actionQueue: actionQueue.filter((c) => c.sourceInstanceId !== instanceId),
     });
+  },
+
+  rankUpCharacterCards: (instanceId: string, team: "player" | "enemy") => {
+    const rankUp = (cards: ActionCard[]) =>
+      cards.map((c) =>
+        c.sourceInstanceId === instanceId &&
+        c.skill.type !== "ultimate" &&
+        c.rank < 3
+          ? { ...c, rank: (c.rank + 1) as 1 | 2 | 3 }
+          : c,
+      );
+    if (team === "player") {
+      set({ deck: rankUp(get().deck) });
+    } else {
+      set({ enemyDeck: rankUp(get().enemyDeck) });
+    }
   },
     }),
     {

@@ -1,11 +1,13 @@
 import ban from "@/data/characters/ban.json";
 import batra from "@/data/characters/batra.json";
+import chiara from "@/data/characters/chiara.json";
 import diane from "@/data/characters/diane.json";
 import duke from "@/data/characters/duke.json";
 import frost from "@/data/characters/frost.json";
 import gabrist from "@/data/characters/gabrist.json";
 import gale from "@/data/characters/gale.json";
 import iron from "@/data/characters/iron.json";
+import isolde from "@/data/characters/isolde.json";
 import gon from "@/data/characters/gon.json";
 import killua from "@/data/characters/killua.json";
 import leorio from "@/data/characters/leorio.json";
@@ -83,6 +85,7 @@ export interface CharacterData {
 const rawCharacters = [
   ban,
   batra,
+  chiara,
   diane,
   duke,
   frost,
@@ -90,6 +93,7 @@ const rawCharacters = [
   gale,
   gon,
   iron,
+  isolde,
   killua,
   leorio,
   lyra,

@@ -43,6 +43,14 @@ export const MECHANIC_INFO: Record<MechanicType, MechanicInfo> = {
   cleanse: { desc: "Removes debuffs.", template: {} },
   cancelBuffs: { desc: "Cancels the target's buffs.", template: {} },
   cancelStances: { desc: "Cancels the target's stances.", template: {} },
+  debuffImmunity: {
+    desc: "Cleanses debuffs and blocks all new debuffs for N turns.",
+    template: { duration: 2 },
+  },
+  healOverTime: {
+    desc: "HoT worth % of this cast's heal amount, per turn for N turns.",
+    template: { valuePercent: 30, duration: 2 },
+  },
   stun: { desc: "Stuns for N turns.", template: { duration: 1 } },
   taunt: { desc: "Forces enemies to target the user for N turns.", template: { duration: 1 } },
   seal: { desc: "Seals a skill type for N turns.", template: { sealType: "attack", duration: 2 } },
@@ -104,6 +112,18 @@ export const MECHANIC_INFO: Record<MechanicType, MechanicInfo> = {
   conditionalBuff: {
     desc: "Passive: consume stacks for a damage bonus (Flowing Ruin).",
     template: { conditionStacks: 3, damageBonusPercent: 50 },
+  },
+  rankUpOwnDeck: {
+    desc: "Passive: ranks up the owner's own hand cards by 1 once their team reaches turn N.",
+    template: { atTurn: 3 },
+  },
+  randomTurnEffect: {
+    desc: "Passive: rolls one of several buff/debuff options at random each of the owner's turns.",
+    template: {
+      options: [
+        { target: "self", stat: "damageReduction", valuePercent: 30, duration: 1, kind: "buff" },
+      ],
+    },
   },
   bossAutoSp: {
     desc: "Boss: forces the phase's SP Skill as the final action every N phase-turns.",

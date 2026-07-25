@@ -1,0 +1,97 @@
+{
+  "id": "isolde",
+  "name": "Isolde",
+  "color": "light",
+  "tags": ["Fairy", "Female", "Bureau"],
+  "lore": "Bureau official who weaves protective thread-magic around her allies. Elegant, sharp-eyed, and unhurried even mid-battle.",
+  "atk": 184,
+  "def": 77,
+  "hp": 1333,
+  "skills": [
+    {
+      "skillName": "Threads of Renewal",
+      "description": "Cleanses debuffs and heals equal to HP-scaled to one ally; applies Rejuvenate (HoT, 30% of heal) for [healOverTime.duration] turns.",
+      "characterId": "isolde",
+      "type": "heal",
+      "statMultiplier": "hp",
+      "damageRanked": [30, 30, 30],
+      "mechanics": [
+        {
+          "type": "cleanse"
+        },
+        {
+          "type": "aoeRanked",
+          "ranks": [false, true, true]
+        },
+        {
+          "type": "healOverTime",
+          "valuePercent": 30,
+          "durationRanked": [1, 1, 2]
+        }
+      ]
+    },
+    {
+      "skillName": "Severed Ledger",
+      "description": "Does damage equal to ATK-scaled to all enemies; depletes [lowerUltGauge.value] ultimate gauge from each.",
+      "characterId": "isolde",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [280, 340, 400],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "lowerUltGauge",
+          "valueRanked": [0, 1, 3]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Starbound Ward",
+    "description": "Grants all allies Debuff Immunity and increases their basic stats by 30% for 3 turns.",
+    "characterId": "isolde",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 0,
+    "mechanics": [
+      {
+        "type": "debuffImmunity",
+        "duration": 3
+      },
+      {
+        "type": "buff",
+        "stat": "all",
+        "valuePercent": 30,
+        "duration": 3
+      },
+      {
+        "type": "aoe"
+      }
+    ]
+  },
+  "passive": {
+    "name": "Woven Blessing",
+    "description": "Increases all allies' HP, Recovery Rate, and Lifesteal by 10%. Activates from sub.",
+    "trigger": "aura",
+    "worksFromSub": true,
+    "mechanics": [
+      {
+        "type": "aura",
+        "stat": "hp",
+        "valuePercent": 10
+      },
+      {
+        "type": "aura",
+        "stat": "recoveryRate",
+        "valuePercent": 10
+      },
+      {
+        "type": "aura",
+        "stat": "lifesteal",
+        "valuePercent": 10
+      }
+    ]
+  }
+}

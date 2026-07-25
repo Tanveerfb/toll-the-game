@@ -112,6 +112,7 @@ export default function BattleProvider({
     removeDeadCharacterCards,
     setActionQueue,
     snapshotHand,
+    rankUpCharacterCards,
   } = store;
 
   // When a boss breaks a phase DURING the player's turn, the new phase starts
@@ -305,6 +306,50 @@ export default function BattleProvider({
             updatedTeams.enemyTeam,
             addToBattleLog,
           );
+        }
+
+        // Data-driven one-off: a `rankUpOwnDeck` passive mechanic ranks up
+        // its owner's own non-ultimate, sub-max-rank hand cards once their
+        // team reaches the mechanic's `atTurn` (default 3). This can't live
+        // in the mechanic queue (MechanicProvider's action callback only
+        // sees `teams`, not the hand/deck store), so it's special-cased here
+        // alongside the other turn-start bookkeeping. Fires once per battle
+        // per owner (passiveState.rankUpOwnDeckTriggered guard).
+        if (
+          battlePhase === "OnPlayerTurnStart" ||
+          battlePhase === "OnEnemyTurnStart"
+        ) {
+          const isPlayerSide = battlePhase === "OnPlayerTurnStart";
+          const teamSide: "player" | "enemy" = isPlayerSide ? "player" : "enemy";
+          const displayedTurn = useGameStore.getState().currentTurn + 1;
+          const applyRankUp = (c: (typeof updatedTeams.playerTeam)[number]) => {
+            const mech = c.passive?.mechanics?.find(
+              (m) => m.type === "rankUpOwnDeck",
+            );
+            if (
+              mech &&
+              mech.type === "rankUpOwnDeck" &&
+              c.currentHP > 0 &&
+              !c.isSub &&
+              displayedTurn === (mech.atTurn ?? 3) &&
+              !c.passiveState.rankUpOwnDeckTriggered
+            ) {
+              rankUpCharacterCards(c.instanceId, teamSide);
+              addToBattleLog(
+                `[System] ${c.name}'s ${c.passive!.name} ranks up her own skills!`,
+              );
+              return {
+                ...c,
+                passiveState: { ...c.passiveState, rankUpOwnDeckTriggered: true },
+              };
+            }
+            return c;
+          };
+          if (isPlayerSide) {
+            updatedTeams.playerTeam = updatedTeams.playerTeam.map(applyRankUp);
+          } else {
+            updatedTeams.enemyTeam = updatedTeams.enemyTeam.map(applyRankUp);
+          }
         }
 
         // Multi-phase boss: transition a boss whose bar emptied (e.g. from a
