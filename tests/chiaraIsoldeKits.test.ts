@@ -527,3 +527,56 @@ describe("Chiara/Isolde stat sanity (matches author_notes.md)", () => {
     expect(isoldeData.hp).toBe(1333);
   });
 });
+
+describe("Archive-page description rendering (the actual bug Tanveer caught)", () => {
+  it("Chiara's Marked Card: word swaps 'lowers' -> 'greatly lowers' as the rank curve crosses tiers", async () => {
+    const { buildRankedSkillDescriptions } = await import(
+      "@/lib/game/descriptionTranslator"
+    );
+    const markedCard = chiaraData.skills[0] as never;
+    const lines = buildRankedSkillDescriptions(markedCard);
+    expect(lines[0]).toMatch(/\blowers DEF for 1 turns?\b/i);
+    expect(lines[0]).not.toMatch(/greatly lowers/i);
+    expect(lines[1]).toMatch(/\bgreatly lowers DEF for 1 turns?\b/i);
+    expect(lines[2]).toMatch(/\bgreatly lowers DEF for 2 turns?\b/i);
+  });
+
+  it("Chiara's House Rules: R1 mentions neither seal, R2 only the active one, R3 both", async () => {
+    const { buildRankedSkillDescriptions } = await import(
+      "@/lib/game/descriptionTranslator"
+    );
+    const houseRules = chiaraData.skills[1] as never;
+    const lines = buildRankedSkillDescriptions(houseRules);
+    expect(lines[0]).not.toMatch(/seal/i);
+    // "debuff" seal is still inactive at R2 — only "attack debuff" shows
+    expect(lines[1]).not.toMatch(/seals debuff skills/i);
+    expect(lines[1]).toMatch(/seals attack debuff skills for 1 turns?/i);
+    expect(lines[2]).toMatch(/seals debuff skills for 2 turns?/i);
+    expect(lines[2]).toMatch(/seals attack debuff skills for 2 turns?/i);
+  });
+
+  it("Isolde's Threads of Renewal: no inline HoT percentage, Rejuvenate is a bare glossary keyword", async () => {
+    const { buildRankedSkillDescriptions } = await import(
+      "@/lib/game/descriptionTranslator"
+    );
+    const threadsOfRenewal = isoldeData.skills[0] as never;
+    const lines = buildRankedSkillDescriptions(threadsOfRenewal);
+    for (const line of lines) {
+      expect(line).not.toMatch(/30%\s*of\s*heal/i);
+      expect(line).toMatch(/\bRejuvenate\b/);
+    }
+    expect(lines[0]).toMatch(/\bone ally\b/i);
+    expect(lines[1]).toMatch(/\ballies\b/i);
+    expect(lines[2]).toMatch(/\ballies\b/i);
+  });
+
+  it("Isolde's heal scales up by rank like every other stat-scaled skill (not flat)", () => {
+    expect(isoldeData.skills[0].damageRanked).toEqual([20, 25, 30]);
+  });
+
+  it("Rejuvenate resolves to the correct HoT explanation via the shared glossary", async () => {
+    const { mechanicGlossary } = await import("@/lib/game/mechanicGlossary");
+    expect(mechanicGlossary.rejuvenate).toMatch(/30%/);
+    expect(mechanicGlossary.rejuvenate).toMatch(/heal/i);
+  });
+});

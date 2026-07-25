@@ -258,13 +258,32 @@ function dropZeroValueClauses(
   return description
     .split(";")
     .filter((clause) => {
-      const matches = [
+      const typeMatches = [
         ...clause.matchAll(/\[([a-zA-Z_]+)(?:\.([a-zA-Z_]+))?\]/g),
       ];
-      return !matches.some(
-        ([, mechanicType, field]) =>
-          resolveByMechanicType(skill, mechanicType, rankIndex, field) === "0",
-      );
+      if (
+        typeMatches.some(
+          ([, mechanicType, field]) =>
+            resolveByMechanicType(skill, mechanicType, rankIndex, field) ===
+            "0",
+        )
+      ) {
+        return false;
+      }
+
+      // Same zero-hiding rule for [x-ranked]/[y-ranked]-style positional
+      // refs — needed when a skill has two mechanics of the SAME type
+      // (e.g. two "seal" entries) and can't disambiguate them by type name
+      // alone (Chiara's "House Rules": seals two different skill
+      // categories, each with its own per-rank on/off duration).
+      const indexMatches = [...clause.matchAll(/\[([xyzwv])-ranked\]/gi)];
+      return !indexMatches.some(([, letter]) => {
+        const index = LETTER_INDEX[letter.toLowerCase()];
+        return (
+          typeof index === "number" &&
+          resolveByMechanicIndex(skill, index, rankIndex) === "0"
+        );
+      });
     })
     .join(";");
 }

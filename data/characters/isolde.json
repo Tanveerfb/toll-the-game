@@ -10,11 +10,11 @@
   "skills": [
     {
       "skillName": "Threads of Renewal",
-      "description": "Cleanses debuffs and heals equal to HP-scaled to one ally; applies Rejuvenate (HoT, 30% of heal) for [healOverTime.duration] turns.",
+      "description": "Cleanses debuffs; heals [aoeRanked? allies : one ally] equal to HP-scaled; applies Rejuvenate for [healOverTime.duration] turns.",
       "characterId": "isolde",
       "type": "heal",
       "statMultiplier": "hp",
-      "damageRanked": [30, 30, 30],
+      "damageRanked": [20, 25, 30],
       "mechanics": [
         {
           "type": "cleanse"
@@ -50,7 +50,7 @@
   ],
   "ultimate": {
     "skillName": "Starbound Ward",
-    "description": "Grants all allies Debuff Immunity and increases their basic stats by 30% for 3 turns.",
+    "description": "Grants all allies Debuff Immunity and raises their basic stats for 3 turns.",
     "characterId": "isolde",
     "type": "ultimate",
     "statMultiplier": "atk",
