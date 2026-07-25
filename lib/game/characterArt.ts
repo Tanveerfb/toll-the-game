@@ -5,7 +5,7 @@
 // Bump when any art file is replaced in place — busts the Next.js image
 // optimizer cache and browser cache, which otherwise keep serving the old
 // pixels for the unchanged URL.
-const ART_VERSION = 6;
+const ART_VERSION = 14;
 
 const CHARACTERS_WITH_ART = new Set([
   "ban",
@@ -61,7 +61,64 @@ export function getCharacterArt(id: string): string | null {
 // character portrait for any skill without its own art yet, so art ships
 // incrementally with no broken images. See docs/design/SKILL_ART_PLAN.md.
 const SKILLS_WITH_ART = new Set<string>([
-  // e.g. "gon__jajanken-rock" — populated as skill art lands
+  // Gon proof batch (2026-07-25)
+  "gon__jajanken-rock",
+  "gon__jajanken-round-2",
+  "gon__jajanken-combo",
+  // Full roster batch (2026-07-25) — 15 playables x 3 + Molvarr x 8
+  "ban__drain",
+  "ban__fox-hunt",
+  "ban__snatch",
+  "batra__khalsa-flame",
+  "batra__lion-s-charge",
+  "batra__roar-of-spite",
+  "diane__ground-gladius",
+  "diane__mother-earth-catastrophe",
+  "diane__rush-rock",
+  "duke__fist-of-flowing-ruin-slide",
+  "duke__fist-of-flowing-ruin-water",
+  "duke__fist-of-flowing-ruin-weaken",
+  "gabrist__erase",
+  "gabrist__ink-slash",
+  "gabrist__masterpiece-unveiled",
+  "killua__lightning-palm",
+  "killua__speed-of-lightning",
+  "killua__thunderbolt",
+  "leorio__member-of-the-zodiac",
+  "leorio__remote-punch",
+  "leorio__switchblade-attack",
+  "lyra__red-ice-absolute-zero-ignition",
+  "lyra__red-ice-magma-shaft",
+  "lyra__red-ice-volcanic-frost",
+  "master_tao__flaming-palm",
+  "master_tao__inferno-consumption",
+  "master_tao__wrath-of-the-fire-sage",
+  "meliodas__evil-spirit",
+  "meliodas__full-counter",
+  "meliodas__triple-strike",
+  "mustafa__earth-shatter",
+  "mustafa__earth-stance-fortress",
+  "mustafa__tea-time-tremor",
+  "sara__animal-strike",
+  "sara__beast-master-s-fury",
+  "sara__stampede-concentrate",
+  "seras__chain-tempest",
+  "seras__heavenfall-bolt",
+  "seras__static-lance",
+  "siddiq__cleansing-bloom",
+  "siddiq__nature-s-strike",
+  "siddiq__wrath-of-the-wild",
+  "yalina__attention-drawer",
+  "yalina__devastating-blow",
+  "yalina__unexpected-strike",
+  "molvarr__abyssal-pierce",
+  "molvarr__corrosive-surge",
+  "molvarr__crushing-maw",
+  "molvarr__devour-the-tide",
+  "molvarr__devouring-bite",
+  "molvarr__iron-carapace",
+  "molvarr__sunken-verdict",
+  "molvarr__tidal-cataclysm",
 ]);
 
 /** Deterministic slug for a skill name (kebab-case, punctuation stripped).
