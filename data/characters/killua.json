@@ -65,7 +65,7 @@
   },
   "passive": {
     "name": "Prodigy Assassin",
-    "description": "After receiving 10 attacks in battle, DEF 50% falls but ATK 50% rises (once per battle, cannot be cancelled).",
+    "description": "# After receiving 10 attacks during battle\n- DEF 50% 👇 (Activates only once, Uncancellable)\n- ATK 50% 👆 (Activates only once, Uncancellable)",
     "trigger": "onAttackReceived",
     "worksFromSub": false,
     "mechanics": [

@@ -63,7 +63,7 @@
   },
   "passive": {
     "name": "Momentum",
-    "description": "After each ally action, gains a buff to self that increases damage by 20% (max 5 stacks). Consumes all stacks after dealing damage to an enemy.",
+    "description": "# After an ally uses a skill\n- Gains 1x buff [Damage 20% 👆] (Max 5)\n\n# After using a skill to deal damage to enemies\n- Removes all [Damage 20% 👆] buffs from self",
     "trigger": "onAllySkill",
     "mechanics": [
       {

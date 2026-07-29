@@ -72,7 +72,7 @@
   },
   "passive": {
     "name": "Kind Hearted Friend",
-    "description": "All allies gain +10% basic stats if Gon or Killua is a team member, and additional +10% basic stats when both are present on the field.",
+    "description": "# When the ally team includes a character whose name includes 'Gon' or 'Killua'\n- All allies' basic stats 10% 👆\n\n# When the team includes both characters 'Gon' and 'Killua'\n- All allies' basic stats 10% 👆",
     "trigger": "onBattleStart",
     "worksFromSub": true,
     "mechanics": [

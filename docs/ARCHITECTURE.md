@@ -130,7 +130,7 @@ Phase-queue additions: `characterSynergy` (Leorio) registers a static base bonus
 
 **Passive status icons (live, in-battle):** `lib/game/passiveStacks.ts`'s `getPassiveReadout(unit, {playerTeam, enemyTeam, currentTurn})` returns one of 7 display shapes (stack badge, stack+ready-tick, progress-to-once, conditional pill, one-shot pill, always-active marker, multi-tick row, or a derived stat line) rendered in `UnitDetailPanel` (`BattleArena.tsx`). An `activationMode` tag (`buildup`/`once`) is the exception, not the rule — only shown for a genuine per-stack growing benefit (Seras/Diane/Ban/Yalina) or a true once-per-battle trigger (Gon/Killua/Sara/Chiara's rank-up); most readouts carry no tag. Full spec: `docs/superpowers/specs/2026-07-29-passive-status-icons-design.md`.
 
-**Passive description authoring (`data/characters/*.json`'s `passive.description`):** being migrated character-by-character (4/18 done as of 2026-07-29: Ban, Batra, Chiara, Diane) to a structured `#`/`-`/`--` format instead of flat prose:
+**Passive description authoring (`data/characters/*.json`'s `passive.description`):** migration complete as of 2026-07-29 — all 18 playable passives now use the structured `#`/`-`/`--` format instead of flat prose:
 
 ```
 # When finishing a turn without receiving damage

@@ -61,7 +61,7 @@
   },
   "passive": {
     "name": "Earthen Resolve",
-    "description": "[Red] and [Green] allies gain +50% DEF for the battle.",
+    "description": "[Red] and [Green] element allies DEF 50% 👆 during battle",
     "trigger": "onBattleStart",
     "worksFromSub": true,
     "mechanics": [

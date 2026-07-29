@@ -54,7 +54,7 @@
   },
   "passive": {
     "name": "Vampiric Roots",
-    "description": "When below 50% HP, heals self for 20% of damage dealt.",
+    "description": "# When attacking while HP is 50% or below\n- Heals self equal to 20% of damage dealt to enemies",
     "trigger": "onDamageDealt",
     "mechanics": [
       {

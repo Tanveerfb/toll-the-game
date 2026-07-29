@@ -56,7 +56,7 @@
   },
   "passive": {
     "name": "First Action: Unbreakable Ice",
-    "description": "When Lyra acts first in a turn, gains +150% DEF for 1 turn. This buff is unstackable and uncancellable.",
+    "description": "# When performing first in a turn\n- DEF 150% 👆 for 1 turn (Activates once per turn, Unstackable, Uncancellable)",
     "trigger": "onFirstAction",
     "mechanics": [
       {

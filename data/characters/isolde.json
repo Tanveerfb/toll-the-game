@@ -73,7 +73,7 @@
   },
   "passive": {
     "name": "Woven Blessing",
-    "description": "Increases all allies' HP, Recovery Rate, and Lifesteal by 10%. Activates from sub.",
+    "description": "All allies max HP, Recovery Rate and Lifesteal 10% 👆 during battle (Uncancellable)",
     "trigger": "aura",
     "worksFromSub": true,
     "mechanics": [

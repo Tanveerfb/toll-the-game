@@ -58,7 +58,7 @@
   },
   "passive": {
     "name": "Deathblow",
-    "description": "Damage dealt and critical chance increases by 2% for every 3% of max HP lost.",
+    "description": "- All demon allies basic stats 5% 👆\n\n# When attacking, for every 3% of maxHP lost\n- Damage 2% 👆 (Uncancellable)\n- Critical chance 2% 👆 (Uncancellable)",
     "trigger": "always",
     "worksFromSub": false,
     "mechanics": [

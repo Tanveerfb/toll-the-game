@@ -53,7 +53,7 @@
   },
   "passive": {
     "name": "Nine Lives",
-    "description": "When receiving lethal damage at 30%+ HP, survives, heals 50% of incoming damage and loses all buffs and debuffs. Triggers once per battle.",
+    "description": "- [Female] allies' damage 5% 👆 during battle\n\n# When taking a lethal blow at 30% HP or higher\n- Removes all debuffs and buffs from self\n- Heals 50% of incoming attack damage (Only once)",
     "trigger": "onLethalDamage",
     "worksFromSub": false,
     "mechanics": [

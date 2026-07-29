@@ -57,7 +57,7 @@
   },
   "passive": {
     "name": "Healing Flames",
-    "description": "For every 3 Ignite stacks consumed, restores Master Tao's HP by 30% (max of 3 times).",
+    "description": "# Every time this character consumes 3 stacks of [Ignite] during battle\n- Heals own HP equal to 30% of max HP (Max 3 times)",
     "trigger": "onIgniteConsume",
     "mechanics": [
       {

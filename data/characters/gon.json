@@ -67,7 +67,7 @@
   },
   "passive": {
     "name": "Rookie Hunter",
-    "description": "After receiving 10 attacks in battle, ATK 50% falls but DEF 50% rises (once per battle, cannot be cancelled).",
+    "description": "# After receiving 10 attacks during battle\n- ATK 50% 👇 (Activates only once, Uncancellable)\n- DEF 50% 👆 (Activates only once, Uncancellable)",
     "trigger": "onAttackReceived",
     "worksFromSub": false,
     "mechanics": [

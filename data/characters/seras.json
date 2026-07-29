@@ -57,7 +57,7 @@
   },
   "passive": {
     "name": "Charged",
-    "description": "Gains a Charged stack every time Seras receives or evades an attack (max 6).",
+    "description": "- [Powerful Opponent] allies' all stats 10% 👆 during battle\n\n# After receiving or evading an attack\n- Gains 1x [Charged] stack (Max 6) (Uncancellable)\n-- [Charged]: For each stack, ATK, DEF and evade chance 5% 👆",
     "trigger": "onAttackReceived",
     "worksFromSub": false,
     "mechanics": [
