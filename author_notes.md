@@ -1,6 +1,141 @@
 # Game notes, ideas, bugs, requests by Tanveer Singh
 
+Last updated - 29/07/2026
+
 > Entries get removed once implemented/resolved/verified — see `author_notes_report.md` for the log of what happened to each one and when.
+
+## Passive style overhaul - Current
+
+The last session we did, we decided to change the formatting of how passive skill are displayed on archive pages. The style is closer to how DBZ dokkan battle displays the character kits - using green top arrows, red down arrows, bullet point formatting, etc. I personally gave passive redesign for Ban, Batra, Chiara, Diane in mdx format. I am now working on other characters below -
+
+1. Duke -
+
+# After using a skill
+
+- Gains 1 stack of [Flowing Ruin] (Max 3) (Uncancellable)
+
+# While using a skill When there are 3 stacks of [Flowing Ruin]
+
+- Next attack's damage 100% 👆;
+- Attacked enemies ATK 50% 👇;
+- Clears all stacks of [Flowing Ruin] after the attack ends.
+
+---
+
+2. Gabrist
+
+# While there are no defeated ally team members
+
+- All allies DEF 20% 👆;
+
+---
+
+3. Gon -
+
+# After receiving 10 attacks during battle
+
+- ATK 50% 👇 (Activates only once, uncancellable)
+- DEF 50% 👆 (Activates only once, uncancellable)
+
+---
+
+4. Killua -
+
+# After receiving 10 attacks during battle
+
+- DEF 50% 👇 (Activates only once, uncancellable)
+- ATK 50% 👆 (Activates only once, uncancellable)
+
+---
+
+5. Leorio -
+
+# When the ally team includes a character whose name includes 'Gon' or 'Killua'
+
+- All allies' basic stats 10% 👆
+
+# When the team includes both characters 'Gon' and 'Killua'
+
+- All allies' basic stats 10% 👆
+
+---
+
+6. Lyra -
+
+# When performing first in a turn
+
+- DEF 150% 👆 for 1 turn (Activates once per turn, uncancellable)
+
+---
+
+7. Master Tao
+
+# Every time this character consumes 3 stacks of [ignite] during battle
+
+- Heals own hp equal to 30% of max hp (max of 3 times)
+
+---
+
+8. Meliodas -
+
+All demon allies basic stats 5% 👆;
+
+# When attacking, for every 3% of maxHP lost
+
+- Damage 2% 👆 (Uncancellable)
+- Critical chance 2% 👆 (Uncancellable)
+
+---
+
+9. Mustafa -
+   [Red] and [Green] element allies DEF 50% 👆 during battle
+
+---
+
+10. Sara
+
+[Female] allies' damage 5% 👆 during battle
+
+# When taking a lethal blow at 30% hp or higher
+
+- Removes all debuffs and buffs from self.
+- Heals 50% of incoming attack damage (Only once)
+
+---
+
+11. Seras
+
+[Powerful Opponent] allies' all stats 10% during battle 👆
+
+# After receiving or evading an attack
+
+- Gains 1x [Charged] stack. (Max 6) (Uncancellable)
+  -- [Charged] - For each stack - ATK, DEF and evade chance 5% 👆
+
+---
+
+12. Siddiq -
+
+# When attacking while hp is 50% hp or below
+
+- Heals self equal to 20% of damage dealt to enemies
+
+---
+
+13. Yalina -
+
+# After an ally uses a skill
+
+- Gains 1x buff [Damage 20% 👆] (max 5)
+
+# After using a skill to deal damage to enemies
+
+- Removes all [Damage 20% 👆] buffs from self
+
+## Ideas
+
+- Thinking about developing a probability related tier word system too. Very low chance = 5%, Low chance = 10%, Medium chance = 30%, High chance = 50%, Great chance = 70%,
+  -- we can probably use it for crits or evades and other stuff. for example "Medium chance to evade attacks", "Great chance for critical attacks". Usually passive stuff but may appear in skills too. Eventually having a skill that may do "High chance of massively raising atk and do damage equal to x ATK"
 
 ## Future characters' kit (Not finalized)
 
@@ -28,10 +163,3 @@
 - Skill 1 Rank 3 - Does [Power Strike] damage equal to [400]% to one enemy.
 - Skill 2 Rank 3 - Does [Rupture] damage equal to [300]% to all enemies
 - Ultimate - Does [Power Strike] damage equal to [500]% to one enemy and fills own ult gauge by 2.
-
-## Ideas
-
-- Thinking about developing a probability related tier word system too. Very low chance = 5%, Low chance = 10%, Medium chance = 30%, High chance = 50%, Great chance = 70%,
-  -- we can probably use it for crits or evades and other stuff. for example "Medium chance to evade attacks", "Great chance for critical attacks". Usually passive stuff but may appear in skills too. Eventually having a skill that may do "High chance of massively raising atk and do damage equal to x ATK"
-- Will categorize 'X-related stats'. for example 'Attack related stats' will involve ATK, crit chance, crit damage. 'Defense related stats' would include DEF, crit resistance. 'HP related stats' would include HP, recovery rate, lifesteal.
-  -- Currently, Evade chance and damage reduction do not fit into any 'related' categories
