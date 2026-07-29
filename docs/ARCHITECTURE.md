@@ -140,6 +140,24 @@ Phase-queue additions: `characterSynergy` (Leorio) registers a static base bonus
 
 `# ` = a trigger/condition heading (displayed, not just internal), `- ` = an effect bullet, `-- ` = a comment on the preceding bullet (dimmer, smaller). Parsed by `lib/game/passiveMarkup.ts`, rendered by `PassiveProse`/the "Passive Details" overlay in `components/game/KitDetails.tsx` (old flat-prose passives keep rendering exactly as before — this is additive per-character). Literal 👇/👆 typed inline become colored `ArrowDown`/`ArrowUp` icons via `KeyworkHighlighter` (a phone-typeable stand-in for the app's real icon, never shown as the raw emoji) — the actual percentage stays as plain visible text next to the arrow (Tanveer: "numbers are important in passives"), unlike skill descriptions' tier-word system which intentionally hides the number behind a fixed-value tooltip.
 
+## Design Glossary
+
+Reference definitions migrated from `author_notes.md` once confirmed stable against the code (see `author_notes_report.md` for when/why).
+
+**Effect coloring:** Grey = uncancellable effect. Blue = cancellable buff. Red = cancellable debuff.
+
+**Skill categories** (descriptive convention, not a data field): *Attack* — damage only, may carry damage-boosting mechanics (weakpoint, detonate) or side effects (stance/buff cancel). *Attack Debuff* — damage + one or more debuffs in the same skill (e.g. "does damage and applies Bleed for 2 turns"); Diane's Rush Rock is Attack-only at rank 1 and becomes Attack Debuff at rank 2+ once it gains attack seal — an intentional per-rank category shift. *Debuff* — no damage, applies debuffs/DoT directly (e.g. Corrosion). *Buff* — no damage, buffs one or more allies.
+
+**Sub-passive activation** (`passive.worksFromSub`, default `false`): only passives that purely grant a buff/effect without needing to interact with an enemy/ally target work from the bench. Confirmed opt-in: Leorio, Mustafa, Gabrist, Isolde. Confirmed opt-out (needs field presence): Chiara (has a literal "while on battlefield" condition), Diane, Meliodas, Ban, Duke, Lyra, Batra, Sara, Yalina, Siddiq, Gon, Killua, Master Tao.
+
+**Mechanic definitions:**
+- `[Power Strike]` — damage bonus scaling off enemy DEF: +1% damage per 2 points of enemy DEF.
+- `type-neutral` — ignores type advantage/disadvantage in both directions while active.
+- `Debuff Immunity` — blocks incoming debuffs for the buff's duration and clears existing debuffs on application.
+- Recovery Rate substat — multiplies all incoming healing (heals, HoT, lifesteal) by the percentage; base 100%.
+- Lifesteal substat — converts a percentage of damage dealt (skills + counters) into a heal, applied at the end of the attack before the next action resolves; itself scaled by Recovery Rate.
+- "Basic stats" = ATK/DEF/HP only. "All stats" = basic stats + crit chance/damage, evade, crit resist, and any future substat.
+
 ## Enemy AI (`lib/game/ai.ts`)
 
 Per living enemy, priority order: heal/cleanse if an ally ≤50% HP or debuffed → ultimate if gauge ≥5 → buff/debuff → attack → stance → fallback skill 0. Default target: lowest-HP player character; taunt overrides.
