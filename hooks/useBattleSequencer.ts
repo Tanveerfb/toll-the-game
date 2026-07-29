@@ -165,11 +165,31 @@ export function useBattleSequencer(
   const runningRef = React.useRef(false);
   const generationRef = React.useRef(0);
   const keyRef = React.useRef(0);
+  const timeoutsRef = React.useRef<Set<number>>(new Set());
 
   const nextKey = () => {
     keyRef.current += 1;
     return keyRef.current;
   };
+
+  // Fire-and-forget timers (floater/burst/sweep/flash cleanup) aren't awaited
+  // like the sequencer's main `sleep()` beats, so skip()/unmount previously
+  // couldn't cancel them — a stale callback could still mutate `view` after
+  // the generation moved on. Track every handle here so both call sites can
+  // sweep them all at once.
+  const scheduleTimeout = React.useCallback((fn: () => void, ms: number) => {
+    const handle: number = window.setTimeout(() => {
+      timeoutsRef.current.delete(handle);
+      fn();
+    }, ms);
+    timeoutsRef.current.add(handle);
+    return handle;
+  }, []);
+
+  const clearAllTimeouts = React.useCallback(() => {
+    timeoutsRef.current.forEach((handle) => window.clearTimeout(handle));
+    timeoutsRef.current.clear();
+  }, []);
 
   const anchorFor = React.useCallback(
     (instanceId: string): { x: number; y: number } | null => {
@@ -213,14 +233,14 @@ export function useBattleSequencer(
         kind,
       };
       setView((v) => ({ ...v, floaters: [...v.floaters, floater] }));
-      window.setTimeout(() => {
+      scheduleTimeout(() => {
         setView((v) => ({
           ...v,
           floaters: v.floaters.filter((f) => f.key !== floater.key),
         }));
       }, FLOATER_LIFE_MS / (useGameStore.getState().battleSpeed || 1));
     },
-    [anchorFor],
+    [anchorFor, scheduleTimeout],
   );
 
   const addBurst = React.useCallback(
@@ -236,14 +256,14 @@ export function useBattleSequencer(
         strong,
       };
       setView((v) => ({ ...v, bursts: [...v.bursts, burst] }));
-      window.setTimeout(() => {
+      scheduleTimeout(() => {
         setView((v) => ({
           ...v,
           bursts: v.bursts.filter((b) => b.key !== burst.key),
         }));
       }, BURST_LIFE_MS / (useGameStore.getState().battleSpeed || 1));
     },
-    [anchorFor],
+    [anchorFor, scheduleTimeout],
   );
 
   const addSweep = React.useCallback(
@@ -271,20 +291,23 @@ export function useBattleSequencer(
         strong,
       };
       setView((v) => ({ ...v, sweep }));
-      window.setTimeout(() => {
+      scheduleTimeout(() => {
         setView((v) => (v.sweep?.key === sweep.key ? { ...v, sweep: null } : v));
       }, SWEEP_LIFE_MS / (useGameStore.getState().battleSpeed || 1));
     },
-    [anchorFor],
+    [anchorFor, scheduleTimeout],
   );
 
-  const triggerScreenShake = React.useCallback((strength: "light" | "heavy") => {
-    if (prefersReducedMotion()) return;
-    setView((v) => ({ ...v, screenShake: strength }));
-    window.setTimeout(() => {
-      setView((v) => ({ ...v, screenShake: null }));
-    }, SCREEN_SHAKE_LIFE_MS / (useGameStore.getState().battleSpeed || 1));
-  }, []);
+  const triggerScreenShake = React.useCallback(
+    (strength: "light" | "heavy") => {
+      if (prefersReducedMotion()) return;
+      setView((v) => ({ ...v, screenShake: strength }));
+      scheduleTimeout(() => {
+        setView((v) => ({ ...v, screenShake: null }));
+      }, SCREEN_SHAKE_LIFE_MS / (useGameStore.getState().battleSpeed || 1));
+    },
+    [scheduleTimeout],
+  );
 
   const triggerScreenFlash = React.useCallback(
     (kind: "pulse" | "brief" | "white", color: Color) => {
@@ -293,13 +316,13 @@ export function useBattleSequencer(
       if (kind !== "pulse" && prefersReducedMotion()) return;
       const flash: SequencerScreenFlash = { key: nextKey(), kind, color };
       setView((v) => ({ ...v, screenFlash: flash }));
-      window.setTimeout(() => {
+      scheduleTimeout(() => {
         setView((v) =>
           v.screenFlash?.key === flash.key ? { ...v, screenFlash: null } : v,
         );
       }, SCREEN_FLASH_LIFE_MS / (useGameStore.getState().battleSpeed || 1));
     },
-    [],
+    [scheduleTimeout],
   );
 
   const flashUnit = React.useCallback(
@@ -310,7 +333,7 @@ export function useBattleSequencer(
         flashes: { ...v.flashes, [instanceId]: flash },
         shaking: shake ? { ...v.shaking, [instanceId]: true } : v.shaking,
       }));
-      window.setTimeout(() => {
+      scheduleTimeout(() => {
         setView((v) => {
           const flashes = { ...v.flashes };
           if (flashes[instanceId]?.key === flash.key) delete flashes[instanceId];
@@ -320,7 +343,7 @@ export function useBattleSequencer(
         });
       }, 380 / (useGameStore.getState().battleSpeed || 1));
     },
-    [],
+    [scheduleTimeout],
   );
 
   const playEvent = React.useCallback(
@@ -460,7 +483,7 @@ export function useBattleSequencer(
           if (t.evaded) {
             setView((v) => ({ ...v, evading: { ...v.evading, [t.instanceId]: true } }));
             addFloater(t.instanceId, "EVADE", "evade");
-            window.setTimeout(() => {
+            scheduleTimeout(() => {
               setView((v) => {
                 const evading = { ...v.evading };
                 delete evading[t.instanceId];
@@ -580,6 +603,7 @@ export function useBattleSequencer(
       addSweep,
       anchorFor,
       flashUnit,
+      scheduleTimeout,
       sleep,
       triggerScreenFlash,
       triggerScreenShake,
@@ -615,6 +639,7 @@ export function useBattleSequencer(
       queueRef.current = [];
       generationRef.current += 1;
       runningRef.current = false;
+      clearAllTimeouts();
       setView(IDLE_VIEW);
       useGameStore.getState().setBigHitFocus(false);
       return;
@@ -641,27 +666,31 @@ export function useBattleSequencer(
 
     queueRef.current.push(...fresh);
     void runQueue();
-  }, [battleEvents, runQueue]);
+  }, [battleEvents, runQueue, clearAllTimeouts]);
 
-  // Unmount: invalidate the running generation so stale timers no-op, and
-  // clear the shared big-hit-focus flag so it can't outlive this screen.
+  // Unmount: invalidate the running generation, cancel every in-flight
+  // fire-and-forget timer (floater/burst/sweep/flash cleanup) so none of
+  // them can call setState after this component is gone, and clear the
+  // shared big-hit-focus flag so it can't outlive this screen.
   React.useEffect(
     () => () => {
       generationRef.current += 1;
+      clearAllTimeouts();
       useGameStore.getState().setBigHitFocus(false);
     },
-    [],
+    [clearAllTimeouts],
   );
 
   const skip = React.useCallback(() => {
     generationRef.current += 1;
     queueRef.current = [];
     runningRef.current = false;
+    clearAllTimeouts();
     setView(IDLE_VIEW);
     // Skipping mid-reveal must not leave the shared big-hit-focus flag stuck
     // on, since it's read by components outside this hook's own tree.
     useGameStore.getState().setBigHitFocus(false);
-  }, []);
+  }, [clearAllTimeouts]);
 
   return { view, skip };
 }

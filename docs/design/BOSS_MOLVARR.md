@@ -52,10 +52,13 @@
 - **Ultimate:** 600% ATK to one enemy; **fills own ult gauge by 3**.
 
 ## New mechanic: Corrosion
-- DoT debuff. Each stack deals **10% of the target's MAX HP per turn**, ticking
-  at the victim's turn-end (cleanse window, ruling #21).
-- **Stacks uncapped** — 3 Corrosion = 30% max HP/turn. Intended boss gimmick:
-  forces a cleanse/heal unit, or a race to out-damage it.
+- DoT debuff. Each stack deals **10% of the target's REMAINING HP per turn**
+  by default, ticking at the victim's turn-end (cleanse window, ruling #21).
+  Only an R3-card or ultimate application ticks % of MAX HP instead — Molvarr's
+  Corrosive Tide (P1 Skill 1, P2 Main passive) is a recurring proc, not a
+  ranked cast or ultimate, so it always uses remaining-HP basis at every phase.
+- **Stacks uncapped** — 3 Corrosion = 30% remaining HP/turn. Intended boss
+  gimmick: forces a cleanse/heal unit, or a race to out-damage it.
 - Applied by: P1 Skill 1 (ranked duration [1/1/2]); P2 Main passive (1/turn).
 
 ## BUILD PROGRESS — COMPLETE (kit shipped 2026-07-19)

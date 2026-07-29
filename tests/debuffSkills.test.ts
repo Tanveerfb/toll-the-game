@@ -289,3 +289,112 @@ describe("Corrosion basis (R3/ultimate = max HP, else remaining HP)", () => {
     expect(dot?.maxHp).toBe(true);
   });
 });
+
+describe("Taunt override, priority, and dead-taunter fallback", () => {
+  const basicAttack: SkillCard = {
+    skillName: "Basic Attack",
+    characterId: "attacker",
+    type: "attack",
+    statMultiplier: "atk",
+    damageRanked: [100, 100, 100],
+  };
+
+  it("a same-source taunt recast overrides its own prior instance instead of stacking", () => {
+    const yalina = makeChar({ instanceId: "yalina", team: "player" });
+    const enemy = makeChar({ instanceId: "enemy", team: "enemy" });
+    let teams = { playerTeam: [yalina], enemyTeam: [enemy] };
+    teams = executeSkill(
+      { sourceInstanceId: "yalina", skill: drawFire, targetInstanceId: "enemy", rank: 1 },
+      teams,
+      noopLog,
+    );
+    teams = executeSkill(
+      { sourceInstanceId: "yalina", skill: drawFire, targetInstanceId: "enemy", rank: 1 },
+      teams,
+      noopLog,
+    );
+    const taunts = teams.enemyTeam[0].debuffs.filter((d) => d.type === "taunt");
+    expect(taunts).toHaveLength(1);
+  });
+
+  it("with two different taunters active, the enemy targets whoever cast the most-recently-applied taunt", () => {
+    const p1 = makeChar({
+      instanceId: "p1",
+      team: "player",
+      debuffs: [],
+    });
+    const p2 = makeChar({
+      instanceId: "p2",
+      team: "player",
+      debuffs: [],
+    });
+    const bystander = makeChar({ instanceId: "bystander", team: "player" });
+    const enemy = makeChar({
+      instanceId: "enemy",
+      team: "enemy",
+      debuffs: [
+        { type: "taunt", debuffDuration: 2, sourceId: "p1" },
+        { type: "taunt", debuffDuration: 2, sourceId: "p2" },
+      ],
+    });
+    const result = executeSkill(
+      { sourceInstanceId: "enemy", skill: basicAttack, targetInstanceId: "bystander", rank: 1 },
+      { playerTeam: [p1, p2, bystander], enemyTeam: [enemy] },
+      noopLog,
+    );
+    // p2's taunt was applied most recently (last in the array) — it wins
+    expect(result.playerTeam.find((c) => c.instanceId === "p2")!.currentHP).toBeLessThan(1000);
+    expect(result.playerTeam.find((c) => c.instanceId === "p1")!.currentHP).toBe(1000);
+    expect(result.playerTeam.find((c) => c.instanceId === "bystander")!.currentHP).toBe(1000);
+  });
+
+  it("falls through to the next-most-recent still-alive taunter when the most recent taunter has died", () => {
+    const p1 = makeChar({ instanceId: "p1", team: "player" });
+    const p2 = makeChar({ instanceId: "p2", team: "player", currentHP: 0 });
+    const bystander = makeChar({ instanceId: "bystander", team: "player" });
+    const enemy = makeChar({
+      instanceId: "enemy",
+      team: "enemy",
+      debuffs: [
+        { type: "taunt", debuffDuration: 2, sourceId: "p1" },
+        { type: "taunt", debuffDuration: 2, sourceId: "p2" },
+      ],
+    });
+    const result = executeSkill(
+      { sourceInstanceId: "enemy", skill: basicAttack, targetInstanceId: "bystander", rank: 1 },
+      { playerTeam: [p1, p2, bystander], enemyTeam: [enemy] },
+      noopLog,
+    );
+    // p2 (most recent) is dead — falls through to p1, not the original bystander target
+    expect(result.playerTeam.find((c) => c.instanceId === "p1")!.currentHP).toBeLessThan(1000);
+    expect(result.playerTeam.find((c) => c.instanceId === "bystander")!.currentHP).toBe(1000);
+  });
+});
+
+describe("Ignite merges stacks AND refreshes its duration", () => {
+  const igniteSkill: SkillCard = {
+    skillName: "Ignite Strike",
+    characterId: "attacker",
+    type: "attack",
+    statMultiplier: "atk",
+    damageRanked: [100, 100, 100],
+    mechanics: [{ type: "ignite", stacks: 1, duration: 3 }],
+  };
+
+  it("a second application merges the stack count and resets debuffDuration to a fresh value", () => {
+    const attacker = makeChar({ instanceId: "attacker", team: "player" });
+    const enemy = makeChar({
+      instanceId: "enemy",
+      team: "enemy",
+      debuffs: [{ type: "ignite", stacks: 1, debuffDuration: 1 }],
+    });
+    const result = executeSkill(
+      { sourceInstanceId: "attacker", skill: igniteSkill, targetInstanceId: "enemy", rank: 1 },
+      { playerTeam: [attacker], enemyTeam: [enemy] },
+      noopLog,
+    );
+    const ignite = result.enemyTeam[0].debuffs.find((d) => d.type === "ignite");
+    expect(ignite?.stacks).toBe(2);
+    expect(ignite?.debuffDuration).toBe(3);
+  });
+});

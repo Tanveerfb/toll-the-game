@@ -438,15 +438,25 @@ export default function BattleProvider({
         rank: card.rank,
       };
 
-      // Execute the action
-      currentTeams = executeSkill(
-        action,
-        currentTeams,
-        addToBattleLog,
-        0,
-        undefined,
-        useGameStore.getState().addBattleEvent,
-      );
+      // Execute the action — a malformed mechanic/card should end the battle
+      // gracefully instead of throwing past this handler uncaught (event
+      // handlers aren't covered by app/error.tsx's render-phase boundary).
+      try {
+        currentTeams = executeSkill(
+          action,
+          currentTeams,
+          addToBattleLog,
+          0,
+          undefined,
+          useGameStore.getState().addBattleEvent,
+        );
+      } catch (err) {
+        console.error("[BattleProvider] executeSkill crashed (player turn):", err);
+        addToBattleLog("BATTLE ERROR — the fight could not continue.");
+        updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
+        setBattlePhase("defeat");
+        return;
+      }
 
       // Remove dead player characters immediately (subs promote at turn start)
       const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
@@ -556,14 +566,22 @@ export default function BattleProvider({
       if (!action) break;
       noteAIAction(aiContext, action.skill.type);
 
-      currentTeams = executeSkill(
-        action,
-        currentTeams,
-        addToBattleLog,
-        i,
-        undefined,
-        useGameStore.getState().addBattleEvent,
-      );
+      try {
+        currentTeams = executeSkill(
+          action,
+          currentTeams,
+          addToBattleLog,
+          i,
+          undefined,
+          useGameStore.getState().addBattleEvent,
+        );
+      } catch (err) {
+        console.error("[BattleProvider] executeSkill crashed (enemy turn):", err);
+        addToBattleLog("BATTLE ERROR — the fight could not continue.");
+        updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
+        setBattlePhase("defeat");
+        return;
+      }
 
       // Consume the played card from the hand; auto-merge what it exposed
       // (grants that enemy ult gauge, mirroring the player deck).

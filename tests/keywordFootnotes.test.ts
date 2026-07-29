@@ -57,4 +57,20 @@ describe("extractKeywordFootnotes", () => {
     expect(result.length).toBeGreaterThan(0);
     expect(result[0].keyword).toBe("pierce");
   });
+
+  it("a longer compound keyword wins over a shorter one it contains — no spurious extra footnote (Tanveer's report: Gon's ultimate showed an unrelated 'raises' entry alongside 'greatly raises')", () => {
+    const TIER_GLOSSARY = {
+      raises: "Raises the stat by 30%",
+      "greatly raises": "Raises the stat by 50%",
+      "permanently raises": "Raises the stat by 30% for the rest of battle",
+    };
+    const result = extractKeywordFootnotes(
+      "Permanently raises ATK; greatly raises DEF for 1 turn; then does damage equal to 500% ATK to one enemy.",
+      TIER_GLOSSARY,
+    );
+    expect(result.map((r) => r.keyword)).toEqual([
+      "permanently raises",
+      "greatly raises",
+    ]);
+  });
 });

@@ -1,4 +1,5 @@
 import type { KitPassiveView } from "@/components/game/KitDetails";
+import { isStructuredPassiveMarkup, parsePassiveMarkup } from "@/lib/game/passiveMarkup";
 
 /**
  * Passive Details content pattern (2026-07-24 battle UI overhaul, spec §5):
@@ -61,16 +62,35 @@ function resolveHeader(
   return humanizeTrigger(passive.trigger);
 }
 
+/** The structured `#`/`-`/`--` format (lib/game/passiveMarkup.ts) already
+ *  IS a list of header+bullets — convert it directly instead of dumping the
+ *  raw "# heading\n- bullet" text as one unparsed bullet. Comments fold into
+ *  their own "※"-prefixed bullet under the same header (matching the
+ *  existing grey-clarifier-line convention elsewhere). */
+function sectionsFromStructuredMarkup(description: string): PassiveDetailSection[] {
+  return parsePassiveMarkup(description).map((section) => ({
+    header: section.heading || "Basic effect(s)",
+    bullets: section.bullets.flatMap((bullet) => [
+      bullet.text,
+      ...bullet.comments.map((comment) => `※ ${comment}`),
+    ]),
+  }));
+}
+
 export function buildPassiveDetailSections(
   passive: KitPassiveView,
 ): PassiveDetailSection[] {
   const mechanics = passive.mechanics ?? [];
+  const description = passive.description?.trim() || "";
 
   if (mechanics.length === 0) {
+    if (description && isStructuredPassiveMarkup(description)) {
+      return sectionsFromStructuredMarkup(description);
+    }
     return [
       {
         header: humanizeTrigger(passive.trigger),
-        bullets: [passive.description?.trim() || "To be added."],
+        bullets: [description || "To be added."],
       },
     ];
   }
@@ -100,10 +120,13 @@ export function buildPassiveDetailSections(
   // Every mechanic lacked its own description — fall back to the passive's
   // top-level description as a single bullet rather than an empty section.
   if (sections.length === 0) {
+    if (description && isStructuredPassiveMarkup(description)) {
+      return sectionsFromStructuredMarkup(description);
+    }
     return [
       {
         header: humanizeTrigger(passive.trigger),
-        bullets: [passive.description?.trim() || "To be added."],
+        bullets: [description || "To be added."],
       },
     ];
   }

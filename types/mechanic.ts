@@ -104,6 +104,10 @@ export interface HealMechanic extends MechanicBase {
    * stat/flat amount. Molvarr P1 SP Skill = 30% of diminished HP. */
   missingHpPercent?: number;
   targetSelf?: boolean;
+  /** onIgniteConsume passives (Master Tao): heals once per this many Ignite
+   *  stacks consumed in a single cast, capped at maxTriggers total per battle. */
+  conditionStacks?: number;
+  maxTriggers?: number;
 }
 export interface CleanseMechanic extends MechanicBase {
   type: "cleanse";

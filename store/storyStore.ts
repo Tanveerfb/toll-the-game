@@ -7,6 +7,8 @@ import { chapterKey } from "@/lib/game/storyCatalog";
 interface StoryProgressState {
   /** Chapter keys (`partId:chapterId`) → true once cleared */
   completed: Record<string, boolean>;
+  /** True once zustand-persist has rehydrated from localStorage. */
+  hasHydrated: boolean;
   /**
    * Mark a chapter cleared. Local persistence is immediate; when a signed-in
    * uid is passed the progress is mirrored to Firestore best-effort.
@@ -45,6 +47,7 @@ export const useStoryStore = create<StoryProgressState>()(
   persist(
     (set, get) => ({
       completed: {},
+      hasHydrated: false,
 
       markChapterComplete: (partId, chapterId, uid) => {
         const completed = {
@@ -71,6 +74,15 @@ export const useStoryStore = create<StoryProgressState>()(
         }
       },
     }),
-    { name: "toll-story-progress" },
+    {
+      name: "toll-story-progress",
+      version: 1,
+      // No shape changes yet — placeholder so a future field addition has
+      // somewhere to land instead of silently spreading stale old data.
+      migrate: (persistedState) => persistedState as StoryProgressState,
+      onRehydrateStorage: () => (state) => {
+        if (state) state.hasHydrated = true;
+      },
+    },
   ),
 );

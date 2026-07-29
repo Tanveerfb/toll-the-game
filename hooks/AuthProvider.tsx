@@ -37,6 +37,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Without Firebase config there is nothing to wait for — start resolved.
   const [loading, setLoading] = useState(firebaseEnabled);
   const { setPlayerState, resetPlayerState } = usePlayerStore();
+  // Tracks whether THIS app session ever saw an authenticated user, so the
+  // reset below only fires on an explicit sign-out transition — not on every
+  // anonymous/guest page load, which previously wiped the persisted
+  // toll-player-storage roster/inventory/pity on each visit while logged out.
+  const hadUserRef = React.useRef(false);
 
   useEffect(() => {
     if (!auth || !db) return;
@@ -45,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(currentUser);
 
       if (currentUser) {
+        hadUserRef.current = true;
         try {
           const docRef = doc(firestore, "users", currentUser.uid);
           const docSnap = await getDoc(docRef);
@@ -80,9 +86,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } else {
-        resetPlayerState();
+        // Only reset on a real sign-out (we previously had an authenticated
+        // user this session) — a guest who was never logged in keeps their
+        // locally-persisted progress instead of getting wiped on every load.
+        if (hadUserRef.current) {
+          resetPlayerState();
+        }
+        hadUserRef.current = false;
       }
-      
+
       setLoading(false);
     });
 

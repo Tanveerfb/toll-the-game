@@ -15,8 +15,12 @@ import {
 import {
   ArrowDown,
   ArrowUp,
+  CheckCircle2,
+  Circle,
+  CircleAlert,
   ChevronLeft,
   ChevronRight,
+  Infinity as InfinityIcon,
   Sparkles,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -29,7 +33,7 @@ import { getEffectiveAttack, getEffectiveDefense } from "@/lib/game/stats";
 import { getCritChance } from "@/lib/game/combat";
 import { getEvadeChance } from "@/lib/game/evade";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
-import { getPassiveReadout } from "@/lib/game/passiveStacks";
+import { getPassiveReadout, type PassiveReadout } from "@/lib/game/passiveStacks";
 import {
   getCharacterById,
   getCharacterKit,
@@ -114,6 +118,166 @@ function DetailStatRow({
   );
 }
 
+// Activation-mode tag — the exception, not the rule (most passives show
+// none): "buildup" for a stack that itself grants a live, incrementally
+// growing benefit (Seras/Diane/Ban/Yalina); "once" for a genuine
+// once-per-battle trigger (Gon/Killua/Sara/Chiara's rank-up).
+function PassiveActivationTag({
+  mode,
+}: {
+  mode: PassiveReadout["activationMode"];
+}): React.JSX.Element | null {
+  if (mode === "buildup") {
+    return (
+      <span className="inline-flex items-center gap-0.5 border border-zinc-600 bg-zinc-800/80 px-1 py-px text-zinc-300">
+        <InfinityIcon className="h-2.5 w-2.5" strokeWidth={2.6} />
+      </span>
+    );
+  }
+  if (mode === "once") {
+    return (
+      <span className="inline-flex items-center gap-0.5 border border-amber-400/70 bg-amber-400/15 px-1 py-px font-body text-[9px] font-bold text-amber-200">
+        <CircleAlert className="h-2.5 w-2.5" strokeWidth={2.6} />
+        1×
+      </span>
+    );
+  }
+  return null;
+}
+
+/** Icon/number passive status card — see lib/game/passiveStacks.ts for the
+ *  per-character mapping this switches on. */
+function PassiveReadoutCard({
+  passive,
+}: {
+  passive: PassiveReadout;
+}): React.JSX.Element {
+  const highlight =
+    passive.ready || (passive.progress !== undefined && passive.fired);
+
+  return (
+    <div
+      className={`border px-3 py-2 ${highlight ? "border-amber-400/70 bg-amber-400/10" : "border-zinc-800 bg-zinc-900/40"}`}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="flex items-center gap-1.5 font-heading text-sm tracking-[0.06em] text-zinc-100">
+          {passive.label}
+          <PassiveActivationTag mode={passive.activationMode} />
+        </p>
+        {passive.note ? (
+          <span className="font-body text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+            {passive.note}
+          </span>
+        ) : null}
+      </div>
+
+      {passive.stacks ? (
+        <div className="mt-1 flex items-center gap-1.5">
+          <ArrowUp
+            className={`h-3.5 w-3.5 ${passive.ready ? "text-amber-200" : "text-sky-300"}`}
+            strokeWidth={2.6}
+          />
+          <span
+            className={`font-body text-xs font-semibold ${passive.ready ? "text-amber-200" : "text-zinc-300"}`}
+          >
+            {passive.stacks.current}/{passive.stacks.max}
+          </span>
+          {passive.ready ? (
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
+          ) : null}
+        </div>
+      ) : null}
+
+      {passive.progress ? (
+        passive.fired ? (
+          <div className="mt-1 flex items-center gap-1.5">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
+            <span className="font-body text-xs font-bold uppercase tracking-[0.1em] text-emerald-300">
+              Active
+            </span>
+          </div>
+        ) : (
+          <p className="mt-1 font-body text-xs font-semibold text-zinc-300">
+            {passive.progress.current}/{passive.progress.required}
+          </p>
+        )
+      ) : null}
+
+      {passive.conditionMet !== undefined ? (
+        <div className="mt-1 flex items-center gap-1.5">
+          {passive.conditionMet ? (
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
+          ) : (
+            <Circle className="h-3.5 w-3.5 text-zinc-600" strokeWidth={2.6} />
+          )}
+          <span
+            className={`font-body text-xs font-semibold uppercase tracking-[0.1em] ${passive.conditionMet ? "text-emerald-300" : "text-zinc-500"}`}
+          >
+            {passive.conditionMet ? "Active" : "Inactive"}
+          </span>
+        </div>
+      ) : null}
+
+      {passive.oneShot ? (
+        <div className="mt-1 flex items-center gap-1.5">
+          {passive.oneShot.available ? (
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
+          ) : (
+            <Circle className="h-3.5 w-3.5 text-zinc-600" strokeWidth={2.6} />
+          )}
+          <span
+            className={`font-body text-xs font-bold uppercase tracking-[0.1em] ${passive.oneShot.available ? "text-emerald-300" : "text-zinc-500"}`}
+          >
+            {passive.oneShot.available ? "Available" : "Used"}
+          </span>
+        </div>
+      ) : null}
+
+      {passive.subStates ? (
+        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+          {passive.subStates.map((sub) => (
+            <div key={sub.label} className="flex items-center gap-1.5">
+              {sub.active ? (
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
+              ) : (
+                <Circle className="h-3.5 w-3.5 text-zinc-600" strokeWidth={2.6} />
+              )}
+              <span
+                className={`font-body text-xs ${sub.active ? "text-emerald-300" : "text-zinc-500"}`}
+              >
+                {sub.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {passive.alwaysActive ? (
+        <div className="mt-1 flex items-center gap-1.5">
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
+          <span className="font-body text-xs font-bold uppercase tracking-[0.1em] text-emerald-300">
+            Active
+          </span>
+        </div>
+      ) : null}
+
+      {passive.lines && passive.lines.length > 0 ? (
+        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 font-body text-xs text-emerald-300">
+          {passive.lines.map((line) => (
+            <span key={line}>{line}</span>
+          ))}
+        </div>
+      ) : null}
+
+      {passive.readyMessage ? (
+        <p className="mt-1 font-body text-xs font-semibold uppercase tracking-[0.1em] text-amber-200">
+          {passive.readyMessage}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 // Full-screen character info panel (7DSGC-style, Images 2/3): big ATK/DEF/HP
 // callouts flanking the art, teammate nav, a ?-toggle for derived detailed
 // stats, and the full kit below. Buffs/debuffs live in the EffectsQuickPanel.
@@ -121,11 +285,13 @@ function UnitDetailPanel({
   unit,
   playerTeam,
   enemyTeam,
+  currentTurn,
   onClose,
 }: {
   unit: BattleCharacter;
   playerTeam: BattleCharacter[];
   enemyTeam: BattleCharacter[];
+  currentTurn: number;
   onClose: () => void;
 }): React.JSX.Element {
   const ownTeam = unit.team === "player" ? playerTeam : enemyTeam;
@@ -158,7 +324,11 @@ function UnitDetailPanel({
   // skills/ultimate/passives, not the phase-1 catalog entry (Tanveer 2026-07-20).
   const catalog = getCharacterById(selected.id);
   const kit = catalog ? getCharacterKit(catalog, selected.phaseIndex ?? 0) : null;
-  const passive = getPassiveReadout(selected);
+  const passive = getPassiveReadout(selected, {
+    playerTeam,
+    enemyTeam,
+    currentTurn,
+  });
   const effAtk = getEffectiveAttack(selected);
   const effDef = getEffectiveDefense(selected);
   const atkDelta = effAtk - selected.atk;
@@ -341,45 +511,8 @@ function UnitDetailPanel({
             />
           </div>
 
-          {/* Passive readout — stacks and/or live derived values */}
-          {passive ? (
-            <div
-              className={`border px-3 py-2 ${passive.ready ? "border-amber-400/70 bg-amber-400/10" : "border-zinc-800 bg-zinc-900/40"}`}
-            >
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="font-heading text-sm tracking-[0.06em] text-zinc-100">
-                  {passive.label}
-                  {passive.stacks ? (
-                    <span
-                      className={
-                        passive.ready ? " text-amber-200" : " text-zinc-400"
-                      }
-                    >
-                      {" "}
-                      [{passive.stacks.current}/{passive.stacks.max}]
-                    </span>
-                  ) : null}
-                </p>
-                {passive.note ? (
-                  <span className="font-body text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                    {passive.note}
-                  </span>
-                ) : null}
-              </div>
-              {passive.lines && passive.lines.length > 0 ? (
-                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 font-body text-xs text-emerald-300">
-                  {passive.lines.map((line) => (
-                    <span key={line}>{line}</span>
-                  ))}
-                </div>
-              ) : null}
-              {passive.readyMessage ? (
-                <p className="mt-1 font-body text-xs font-semibold uppercase tracking-[0.1em] text-amber-200">
-                  {passive.readyMessage}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
+          {/* Passive readout — icon/number status per lib/game/passiveStacks.ts */}
+          {passive ? <PassiveReadoutCard passive={passive} /> : null}
 
           {/* Full kit */}
           {kit ? (
@@ -654,7 +787,7 @@ interface TileFx {
   flash?: SequencerFlash;
 }
 
-function TeamUnitTile({
+const TeamUnitTile = React.memo(function TeamUnitTile({
   unit,
   isEnemy,
   isMarked,
@@ -818,7 +951,7 @@ function TeamUnitTile({
       </div>
     </div>
   );
-}
+});
 
 /** Story mode swaps the result screen's actions for chapter-flow ones */
 export interface StoryBattleHandlers {
@@ -835,32 +968,34 @@ export default function BattleArena({
 }: {
   story?: StoryBattleHandlers;
 } = {}): React.JSX.Element {
-  const {
-    battlePhase,
-    currentTurn,
-    playerTurns,
-    enemyTurns,
-    playerTeam,
-    enemyTeam,
-    selectedEnemyMarker,
-    battleLog,
-    interactionNotice,
-    phaseBreak,
-    clearPhaseBreak,
-    battleSpeed,
-    setBattleSpeed,
-    setEnemyMarker,
-    clearInteractionNotice,
-    actionQueue,
-    deck,
-    enemyDeck,
-    pendingAllyCardId,
-    confirmAllyTarget,
-    cancelAllyTarget,
-    resetBattle,
-    setBattlePhase,
-    bigHitFocus,
-  } = useGameStore();
+  // Individual selectors (not a whole-store destructure) so this component —
+  // the main battle render tree — only re-renders for the specific fields it
+  // reads, instead of on every store mutation anywhere (HP ticks, sequencer
+  // flags, etc).
+  const battlePhase = useGameStore((s) => s.battlePhase);
+  const currentTurn = useGameStore((s) => s.currentTurn);
+  const playerTurns = useGameStore((s) => s.playerTurns);
+  const enemyTurns = useGameStore((s) => s.enemyTurns);
+  const playerTeam = useGameStore((s) => s.playerTeam);
+  const enemyTeam = useGameStore((s) => s.enemyTeam);
+  const selectedEnemyMarker = useGameStore((s) => s.selectedEnemyMarker);
+  const battleLog = useGameStore((s) => s.battleLog);
+  const interactionNotice = useGameStore((s) => s.interactionNotice);
+  const phaseBreak = useGameStore((s) => s.phaseBreak);
+  const clearPhaseBreak = useGameStore((s) => s.clearPhaseBreak);
+  const battleSpeed = useGameStore((s) => s.battleSpeed);
+  const setBattleSpeed = useGameStore((s) => s.setBattleSpeed);
+  const setEnemyMarker = useGameStore((s) => s.setEnemyMarker);
+  const clearInteractionNotice = useGameStore((s) => s.clearInteractionNotice);
+  const actionQueue = useGameStore((s) => s.actionQueue);
+  const deck = useGameStore((s) => s.deck);
+  const enemyDeck = useGameStore((s) => s.enemyDeck);
+  const pendingAllyCardId = useGameStore((s) => s.pendingAllyCardId);
+  const confirmAllyTarget = useGameStore((s) => s.confirmAllyTarget);
+  const cancelAllyTarget = useGameStore((s) => s.cancelAllyTarget);
+  const resetBattle = useGameStore((s) => s.resetBattle);
+  const setBattlePhase = useGameStore((s) => s.setBattlePhase);
+  const bigHitFocus = useGameStore((s) => s.bigHitFocus);
 
   // Exit Battle (player-initiated forfeit) — ends the fight as a loss. Ordinary
   // reloads resume the battle (persistence); this is the deliberate way out.
@@ -1705,17 +1840,21 @@ export default function BattleArena({
                   REMATCH
                 </Button>
               ) : null}
-              <Button
-                variant="outline"
-                onClick={saveBattleLog}
-                className="h-12 rounded-none border-2 border-sky-400 bg-transparent font-heading text-lg tracking-[0.14em] text-sky-200"
-              >
-                SAVE BATTLE LOG
-              </Button>
-              {logSaveResult ? (
-                <p className="text-center font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                  {logSaveResult}
-                </p>
+              {process.env.NODE_ENV !== "production" ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={saveBattleLog}
+                    className="h-12 rounded-none border-2 border-sky-400 bg-transparent font-heading text-lg tracking-[0.14em] text-sky-200"
+                  >
+                    SAVE BATTLE LOG
+                  </Button>
+                  {logSaveResult ? (
+                    <p className="text-center font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                      {logSaveResult}
+                    </p>
+                  ) : null}
+                </>
               ) : null}
               {!story ? (
                 <>
@@ -1748,6 +1887,7 @@ export default function BattleArena({
           unit={detailUnit}
           playerTeam={playerTeam}
           enemyTeam={enemyTeam}
+          currentTurn={currentTurn}
           onClose={() => setDetailUnit(null)}
         />
       ) : null}

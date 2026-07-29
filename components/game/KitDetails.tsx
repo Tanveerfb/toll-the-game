@@ -10,7 +10,15 @@ import {
   buildSkillKeywordGlossary,
   getMechanicTypes,
 } from "@/lib/game/descriptionTranslator";
-import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
+import { mechanicGlossary, passiveStatVerbGlossary } from "@/lib/game/mechanicGlossary";
+import { isStructuredPassiveMarkup, parsePassiveMarkup } from "@/lib/game/passiveMarkup";
+
+// Passive-only: recognizes the generic stat-change verbs (gains/loses/
+// increases/reduces/rises/falls) so KeyworkHighlighter's showStatArrows can
+// attach an arrow — kept out of the base mechanicGlossary since those same
+// words appear in ordinary skill-description prose (Duke, Leorio, Yalina)
+// where they must stay plain, unhighlighted text.
+const passiveGlossary = { ...mechanicGlossary, ...passiveStatVerbGlossary };
 import { buildPassiveDetailSections } from "@/lib/game/passiveDetailSections";
 import {
   extractKeywordFootnotes,
@@ -324,21 +332,57 @@ export function PassiveProse({
         </div>
       ) : null}
 
-      {paragraphs.map((para, index) =>
-        para.startsWith("※") ? (
-          <p
-            key={`para-${index}`}
-            className="font-body text-xs italic text-zinc-500"
-          >
-            {para}
-          </p>
-        ) : (
-          <KeyworkHighlighter
-            key={`para-${index}`}
-            text={para}
-            className={`${UI.textValue} block leading-relaxed`}
-          />
-        ),
+      {isStructuredPassiveMarkup(description) ? (
+        <div className="space-y-3">
+          {parsePassiveMarkup(description).map((section, sIdx) => (
+            <div key={`section-${sIdx}`} className="space-y-1">
+              {section.heading ? (
+                <p className="font-body text-[11px] font-bold uppercase tracking-[0.14em] text-amber-200/80">
+                  {section.heading}
+                </p>
+              ) : null}
+              <ul className="space-y-1.5 border-l-2 border-zinc-700 pl-3">
+                {section.bullets.map((bullet, bIdx) => (
+                  <li key={`bullet-${bIdx}`} className="list-none">
+                    <KeyworkHighlighter
+                      text={bullet.text}
+                      className={`${UI.textValue} block leading-relaxed`}
+                      glossary={passiveGlossary}
+                      showStatArrows
+                    />
+                    {bullet.comments.map((comment, cIdx) => (
+                      <p
+                        key={`comment-${cIdx}`}
+                        className="mt-0.5 pl-3 font-body text-xs italic text-zinc-500"
+                      >
+                        {comment}
+                      </p>
+                    ))}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ) : (
+        paragraphs.map((para, index) =>
+          para.startsWith("※") ? (
+            <p
+              key={`para-${index}`}
+              className="font-body text-xs italic text-zinc-500"
+            >
+              {para}
+            </p>
+          ) : (
+            <KeyworkHighlighter
+              key={`para-${index}`}
+              text={para}
+              className={`${UI.textValue} block leading-relaxed`}
+              glossary={passiveGlossary}
+              showStatArrows
+            />
+          ),
+        )
       )}
 
       {synergyBlocks.length > 0 ? (
@@ -348,6 +392,8 @@ export function PassiveProse({
               key={`synergy-${index}`}
               text={line}
               className="block font-body text-xs text-zinc-300"
+              glossary={passiveGlossary}
+              showStatArrows
             />
           ))}
         </div>
@@ -470,6 +516,8 @@ export function PassiveDetailSections({
                 <KeyworkHighlighter
                   text={bullet}
                   className={`${UI.textValue} block leading-relaxed`}
+                  glossary={passiveGlossary}
+                  showStatArrows
                 />
               </li>
             ))}

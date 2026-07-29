@@ -23,7 +23,8 @@ export function tickTeamBuffs(
   log: (entry: string) => void,
 ): BattleCharacter[] {
   return team.map((original) => {
-    if (original.currentHP <= 0) return original;
+    // Benched units can't act or be healed normally — freeze their buffs too
+    if (original.currentHP <= 0 || original.isSub) return original;
 
     const char = {
       ...original,
@@ -64,7 +65,10 @@ export function tickTeamDebuffs(
   log: (entry: string) => void,
 ): BattleCharacter[] {
   return team.map((original) => {
-    if (original.currentHP <= 0) return original;
+    // Benched units can't act or be targeted by new debuffs (combat.ts) —
+    // existing DoT/Corrosion on a subbed-out unit shouldn't keep ticking
+    // (and potentially killing it) while it's stuck on the bench.
+    if (original.currentHP <= 0 || original.isSub) return original;
 
     const char = {
       ...original,

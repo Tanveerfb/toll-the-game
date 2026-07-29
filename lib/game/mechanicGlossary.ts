@@ -65,6 +65,29 @@ export const mechanicGlossary = {
 export type MechanicKeyword = keyof typeof mechanicGlossary;
 
 /**
+ * Passive descriptions are hand-authored prose, not the tier-word system
+ * above — the exact % stays stated inline in the sentence (Tanveer: "numbers
+ * are important in passives"), so these generic verbs exist only to drive
+ * the Dokkan-style stat-change arrow, not to claim a fixed value the way
+ * "lowers"/"raises" do. Deliberately kept OUT of `mechanicGlossary` — several
+ * (increases/reduces/gains) also appear in ordinary skill-description prose
+ * (Duke, Leorio, Yalina) where they must NOT get keyword highlighting or a
+ * tooltip. Only merged in at the passive-only KeyworkHighlighter call sites
+ * (components/game/KitDetails.tsx's PassiveProse and Passive Details
+ * overlay), alongside `showStatArrows`.
+ */
+export const passiveStatVerbGlossary = {
+  gains: "Gains the stated amount",
+  loses: "Loses the stated amount",
+  increases: "Increases the stated amount",
+  reduces: "Reduces the stated amount",
+  rises: "Rises by the stated amount",
+  falls: "Falls by the stated amount",
+} as const;
+
+export type PassiveStatVerb = keyof typeof passiveStatVerbGlossary;
+
+/**
  * Pill color category per keyword (Tanveer's scheme):
  * offense = red, debuff = purple (incl. attack-applied debuffs),
  * heal = green (heals + cleanses), stance = yellow, cancel = white.
@@ -137,4 +160,16 @@ export const keywordCategories: Record<MechanicKeyword, KeywordCategory> = {
   "cancel buffs": "cancel",
   "cancels stances": "cancel",
   "cancel stances": "cancel",
+};
+
+/** Category lookup for the passive-only stat-change verbs above — separate
+ *  from `keywordCategories` for the same reason `passiveStatVerbGlossary` is
+ *  separate from `mechanicGlossary` (see its comment). */
+export const passiveStatVerbCategories: Record<PassiveStatVerb, KeywordCategory> = {
+  gains: "buff",
+  loses: "debuff",
+  increases: "buff",
+  reduces: "debuff",
+  rises: "buff",
+  falls: "debuff",
 };

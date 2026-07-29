@@ -58,7 +58,7 @@
   },
   "passive": {
     "name": "Fierce Dedication",
-    "description": "Before using a skill, consumes 5% max HP (cannot reduce self below 1 HP).",
+    "description": "# When using a skill\n- Current HP 5% 👇\n-- This effect cannot cause the character to be defeated\n-- HP cannot go below 1",
     "trigger": "beforeSkill",
     "worksFromSub": false,
     "mechanics": [

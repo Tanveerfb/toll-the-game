@@ -128,6 +128,18 @@ Phase-queue additions: `characterSynergy` (Leorio) registers a static base bonus
 
 `passiveState: Record<string, unknown>` on each `BattleCharacter` carries per-battle counters (momentum stacks, lethal-survival used, etc.).
 
+**Passive status icons (live, in-battle):** `lib/game/passiveStacks.ts`'s `getPassiveReadout(unit, {playerTeam, enemyTeam, currentTurn})` returns one of 7 display shapes (stack badge, stack+ready-tick, progress-to-once, conditional pill, one-shot pill, always-active marker, multi-tick row, or a derived stat line) rendered in `UnitDetailPanel` (`BattleArena.tsx`). An `activationMode` tag (`buildup`/`once`) is the exception, not the rule — only shown for a genuine per-stack growing benefit (Seras/Diane/Ban/Yalina) or a true once-per-battle trigger (Gon/Killua/Sara/Chiara's rank-up); most readouts carry no tag. Full spec: `docs/superpowers/specs/2026-07-29-passive-status-icons-design.md`.
+
+**Passive description authoring (`data/characters/*.json`'s `passive.description`):** being migrated character-by-character (4/18 done as of 2026-07-29: Ban, Batra, Chiara, Diane) to a structured `#`/`-`/`--` format instead of flat prose:
+
+```
+# When finishing a turn without receiving damage
+- All enemies max HP 8% 👇 (Max 5 times) (Uncancellable)
+-- Effects reset after receiving damage
+```
+
+`# ` = a trigger/condition heading (displayed, not just internal), `- ` = an effect bullet, `-- ` = a comment on the preceding bullet (dimmer, smaller). Parsed by `lib/game/passiveMarkup.ts`, rendered by `PassiveProse`/the "Passive Details" overlay in `components/game/KitDetails.tsx` (old flat-prose passives keep rendering exactly as before — this is additive per-character). Literal 👇/👆 typed inline become colored `ArrowDown`/`ArrowUp` icons via `KeyworkHighlighter` (a phone-typeable stand-in for the app's real icon, never shown as the raw emoji) — the actual percentage stays as plain visible text next to the arrow (Tanveer: "numbers are important in passives"), unlike skill descriptions' tier-word system which intentionally hides the number behind a fixed-value tooltip.
+
 ## Enemy AI (`lib/game/ai.ts`)
 
 Per living enemy, priority order: heal/cleanse if an ally ≤50% HP or debuffed → ultimate if gauge ≥5 → buff/debuff → attack → stance → fallback skill 0. Default target: lowest-HP player character; taunt overrides.

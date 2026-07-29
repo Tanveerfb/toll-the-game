@@ -25,7 +25,7 @@ import seras from "@/data/characters/seras.json";
 import siddiq from "@/data/characters/siddiq.json";
 import wildBeast from "@/data/characters/wild_beast.json";
 import yalina from "@/data/characters/yalina.json";
-import { validateCharacters } from "@/lib/game/characterSchema";
+import { characterSchema, validateCharacters } from "@/lib/game/characterSchema";
 
 export type CharacterColor = "light" | "red" | "blue" | "green" | "dark";
 
@@ -113,10 +113,23 @@ const rawCharacters = [
 ];
 
 // Fail loudly at load time on malformed kit JSON (typo'd fields, wrong
-// color, missing rank arrays) instead of crashing mid-battle.
-validateCharacters(rawCharacters);
-
-const characters = rawCharacters as CharacterData[];
+// color, missing rank arrays) — but this file is imported by practice/story/
+// archive/battle pages alike, so a throw here would take down every route,
+// not just the one with the bad edit. Log the full report either way, then
+// drop only the characters that actually fail validation and keep the game
+// running with the rest, rather than crashing catalog load entirely.
+try {
+  validateCharacters(rawCharacters);
+} catch (err) {
+  console.error(
+    "[characterCatalog] one or more characters failed validation — dropping " +
+      "the offending entries and continuing with the rest:\n" +
+      (err instanceof Error ? err.message : String(err)),
+  );
+}
+const characters = rawCharacters.filter(
+  (character) => characterSchema.safeParse(character).success,
+) as CharacterData[];
 
 const characterMap = new Map<string, CharacterData>(
   characters.map((character) => [character.id, character]),

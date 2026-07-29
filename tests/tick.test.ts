@@ -67,6 +67,18 @@ describe("tickTeamBuffs (own turn start)", () => {
     expect(after.buffs).toHaveLength(1);
   });
 
+  it("skips benched (sub) units — an existing HoT doesn't keep healing while subbed out", () => {
+    const benched = makeChar({
+      instanceId: "benched",
+      isSub: true,
+      currentHP: 500,
+      buffs: [{ type: "healOverTime", value: 100, buffDuration: 2 }],
+    });
+    const [after] = tickTeamBuffs([benched], noopLog);
+    expect(after.currentHP).toBe(500);
+    expect(after.buffs[0].buffDuration).toBe(2); // untouched
+  });
+
   it("procs HoT capped at max HP and resets per-turn passive flags", () => {
     const healing = makeChar({
       instanceId: "healing",
@@ -207,5 +219,17 @@ describe("tickTeamDebuffs (own turn end)", () => {
     });
     const [after] = tickTeamDebuffs([dead], noopLog);
     expect(after.debuffs).toHaveLength(1); // untouched
+  });
+
+  it("skips benched (sub) units — an existing DoT doesn't keep ticking while subbed out", () => {
+    const benched = makeChar({
+      instanceId: "benched",
+      isSub: true,
+      currentHP: 500,
+      debuffs: [{ type: "damageOverTime", value: 300, debuffDuration: 1 }],
+    });
+    const [after] = tickTeamDebuffs([benched], noopLog);
+    expect(after.currentHP).toBe(500);
+    expect(after.debuffs).toHaveLength(1); // untouched, still 1 turn left
   });
 });

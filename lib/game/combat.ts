@@ -21,6 +21,21 @@ import type {
   BattleEventTarget,
   BattleEventCounter,
 } from "@/types/battleEvent";
+import type { StatusEffect } from "@/types/mechanic";
+
+/**
+ * Strips any prior effect this same source applied that matches `matches`,
+ * before a fresh instance is pushed — the shared "recast overrides own
+ * prior application" rule used by debuff/taunt/Extort/Flowing Ruin so the
+ * refresh semantics can't drift between the four call sites.
+ */
+function stripOwnEffect(
+  effects: StatusEffect[],
+  sourceId: string,
+  matches: (effect: StatusEffect) => boolean,
+): StatusEffect[] {
+  return effects.filter((e) => !(e.sourceId === sourceId && matches(e)));
+}
 
 // Crit chance in percent — base 0 for everyone (same rule as evade). A crit
 // applies the full CRITICAL package (50% DEF ignore, type-immune, +50% dmg).
@@ -390,18 +405,22 @@ export function executeSkill(
     targets = targets.filter((t) => t.currentHP > 0 && !t.isSub);
   } else {
     let actualTarget = getUpdatedChar(primaryTarget.instanceId)!;
-    // Taunt override for single-target offensive skills
+    // Taunt override for single-target offensive skills. Multiple taunters
+    // can be active at once — most-recently-applied wins, and if that
+    // taunter has since died, fall through to the next-most-recent taunter
+    // still alive rather than hitting the original target.
     if (isOffensive) {
-      const tauntedBy = updatedSource.debuffs.find(
+      const tauntDebuffs = updatedSource.debuffs.filter(
         (d) => d.type === "taunt" && d.sourceId,
       );
-      if (tauntedBy?.sourceId) {
-        const tauntTarget = getUpdatedChar(tauntedBy.sourceId);
+      for (let i = tauntDebuffs.length - 1; i >= 0; i--) {
+        const tauntTarget = getUpdatedChar(tauntDebuffs[i].sourceId!);
         if (tauntTarget && tauntTarget.currentHP > 0) {
           actualTarget = tauntTarget;
           log(
             `[Action] ${updatedSource.name} was taunted and redirected to ${tauntTarget.name}.`,
           );
+          break;
         }
       }
     }
@@ -569,6 +588,49 @@ export function executeSkill(
           baseDamage =
             (updatedSource.currentAttack * skillDamagePercent) / 100;
       }
+
+      // -- HEALING FLAMES (Master Tao's passive, onIgniteConsume) — a
+      // separate reaction to the same consumption event above. Each cast
+      // independently floors its own consumed-stack count by conditionStacks
+      // (no carrying a leftover 1-2 stacks toward a future cast); the
+      // cumulative trigger count across the whole battle is capped at
+      // maxTriggers via passiveState.igniteConsumeTriggers.
+      if (updatedSource.passive?.trigger === "onIgniteConsume") {
+        const healMech = updatedSource.passive.mechanics?.find(
+          (m) => m.type === "heal",
+        );
+        if (healMech?.conditionStacks) {
+          const maxTriggers = healMech.maxTriggers ?? Infinity;
+          const triggersUsed =
+            (updatedSource.passiveState.igniteConsumeTriggers as number) || 0;
+          const triggersEarned = Math.floor(
+            totalIgnitesConsumed / healMech.conditionStacks,
+          );
+          const triggersToApply = Math.min(
+            triggersEarned,
+            maxTriggers - triggersUsed,
+          );
+          if (triggersToApply > 0) {
+            const healAmount = Math.floor(
+              updatedSource.hp *
+                ((healMech.valuePercent ?? 0) / 100) *
+                triggersToApply,
+            );
+            const { character: healed, healed: actualHealed } = applyHeal(
+              updatedSource,
+              healAmount,
+            );
+            Object.assign(updatedSource, healed);
+            updatedSource.passiveState.igniteConsumeTriggers =
+              triggersUsed + triggersToApply;
+            if (actualHealed > 0) {
+              log(
+                `${updatedSource.name}'s ${updatedSource.passive.name} restores ${actualHealed} HP!`,
+              );
+            }
+          }
+        }
+      }
     }
   }
 
@@ -592,8 +654,10 @@ export function executeSkill(
         ? updatedTeams.enemyTeam
         : updatedTeams.playerTeam;
     opposition.forEach((opp) => {
-      opp.debuffs = opp.debuffs.filter(
-        (d) => !(d.name === "Extort" && d.sourceId === updatedSource.instanceId),
+      opp.debuffs = stripOwnEffect(
+        opp.debuffs,
+        updatedSource.instanceId,
+        (d) => d.name === "Extort",
       );
     });
   }
@@ -845,9 +909,10 @@ export function executeSkill(
           const existing = updatedTarget.debuffs.find(
             (d) => d.type === "ignite",
           );
-          if (existing)
+          if (existing) {
             existing.stacks = (existing.stacks || 1) + (mech.stacks || 1);
-          else
+            existing.debuffDuration = mech.duration || 3;
+          } else
             updatedTarget.debuffs.push({
               type: "ignite",
               stacks: mech.stacks,
@@ -972,13 +1037,10 @@ export function executeSkill(
           // second one (Tanveer 2026-07-21) — a different source's debuff
           // on the same stat still stacks multiplicatively (getEffectiveAttack/
           // Defense). Matches the existing Extort-never-stacks precedent.
-          updatedTarget.debuffs = updatedTarget.debuffs.filter(
-            (d) =>
-              !(
-                d.type === "debuff" &&
-                d.stat === mech.stat &&
-                d.sourceId === updatedSource.instanceId
-              ),
+          updatedTarget.debuffs = stripOwnEffect(
+            updatedTarget.debuffs,
+            updatedSource.instanceId,
+            (d) => d.type === "debuff" && d.stat === mech.stat,
           );
           updatedTarget.debuffs.push({
             type: "debuff",
@@ -992,7 +1054,14 @@ export function executeSkill(
           );
         }
         if (mech.type === "taunt") {
-          // Applied to enemy, overriding their target
+          // Applied to enemy, overriding their target. A recast from the
+          // SAME source overrides its own prior taunt (same rule as debuff)
+          // rather than stacking stale duplicates.
+          updatedTarget.debuffs = stripOwnEffect(
+            updatedTarget.debuffs,
+            updatedSource.instanceId,
+            (d) => d.type === "taunt",
+          );
           updatedTarget.debuffs.push({
             type: "taunt",
             debuffDuration: mech.duration,
@@ -1003,13 +1072,10 @@ export function executeSkill(
       });
 
       if (flowingRuinMech) {
-        updatedTarget.debuffs = updatedTarget.debuffs.filter(
-          (d) =>
-            !(
-              d.type === "debuff" &&
-              d.stat === "atk" &&
-              d.sourceId === updatedSource.instanceId
-            ),
+        updatedTarget.debuffs = stripOwnEffect(
+          updatedTarget.debuffs,
+          updatedSource.instanceId,
+          (d) => d.type === "debuff" && d.stat === "atk",
         );
         updatedTarget.debuffs.push({
           type: "debuff",

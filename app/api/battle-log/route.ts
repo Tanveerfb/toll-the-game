@@ -9,6 +9,9 @@ import path from "path";
  * read-only (e.g. serverless deploys).
  */
 export async function POST(req: Request) {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
   try {
     const { filename, content } = await req.json();
     if (typeof content !== "string" || content.length === 0) {

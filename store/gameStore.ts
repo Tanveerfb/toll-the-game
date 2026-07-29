@@ -16,6 +16,7 @@ import {
   refillHand,
 } from "@/lib/game/deck";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
+import { useSettingsStore } from "./settingsStore";
 
 export type SequencedBattleEvent = AnyBattleEvent & { id: number };
 
@@ -221,7 +222,9 @@ export const useGameStore = create<BattleState>()(
   battleLog: [],
   battleEvents: [],
   battlePhase: "initializing",
-  battleSpeed: 1,
+  // Seeded from the persisted settings slice so the player's chosen speed
+  // survives across battles/reloads instead of resetting to 1x every time.
+  battleSpeed: useSettingsStore.getState().battleSpeed,
   bigHitFocus: false,
 
   isPreview: false,
@@ -261,8 +264,12 @@ export const useGameStore = create<BattleState>()(
         { ...event, id: state.battleEvents.length + 1 },
       ],
     })),
-  // Speed is a player preference — deliberately not reset by resetBattle
-  setBattleSpeed: (speed) => set({ battleSpeed: speed }),
+  // Speed is a player preference — deliberately not reset by resetBattle,
+  // and mirrored into the persisted settings slice so it survives reloads.
+  setBattleSpeed: (speed) => {
+    useSettingsStore.getState().setBattleSpeed(speed);
+    set({ battleSpeed: speed });
+  },
   setBigHitFocus: (focused) => set({ bigHitFocus: focused }),
 
   resetBattle: () =>

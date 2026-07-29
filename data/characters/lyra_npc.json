@@ -17,7 +17,7 @@
       "characterId": "lyra_npc",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [170, 205, 250],
+      "damageRanked": [230, 280, 350],
       "mechanics": [
         {
           "type": "decay",
@@ -33,7 +33,7 @@
       "characterId": "lyra_npc",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [205, 275, 400],
+      "damageRanked": [200, 275, 400],
       "mechanics": [
         {
           "type": "pierce"
@@ -59,13 +59,13 @@
   },
   "passive": {
     "name": "First Action: Unbreakable Ice",
-    "description": "When Lyra acts first in a turn, gains +100% DEF for 1 turn. This buff is unstackable and uncancellable.",
+    "description": "When Lyra acts first in a turn, gains +150% DEF for 1 turn. This buff is unstackable and uncancellable.",
     "trigger": "onFirstAction",
     "mechanics": [
       {
         "type": "buff",
         "stat": "def",
-        "valuePercent": 100,
+        "valuePercent": 150,
         "duration": 1,
         "unstackable": true,
         "uncancellable": true

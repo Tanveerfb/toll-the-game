@@ -75,7 +75,7 @@
   },
   "passive": {
     "name": "Cut the Deck",
-    "description": "At the start of each of her turns, randomly gains one of: reduces all enemies' ATK by 20% for 1 turn, increases allies' ATK and DEF by 15% for 1 turn, or gains 30% damage reduction for 1 turn. Ranks up her own skills by 1 at the start of turn 3.",
+    "description": "# At the start of every turn, gain one of the following effects\n- All enemies ATK 20% 👇 for 1 turn\n- All allies ATK 15% 👆 and DEF 15% 👆 for 1 turn\n- Damage reduction 30% 👆 for 1 turn\n# At the start of turn 3\n- Ranks up own cards in the deck by 1 level (Once only)",
     "trigger": "onNewTurn",
     "worksFromSub": false,
     "mechanics": [

@@ -11,7 +11,7 @@ import type { Action } from "@/types/action";
 // applyBossTurnStart at OnEnemyTurnStart, forced SP in the EnemyAction loop,
 // and bossDamageMultiplierVsTarget in combat. See docs/design/BOSS_MOLVARR.md.
 
-const CORROSION_PERCENT = 10; // % max HP per stack per turn (tick.ts default)
+const CORROSION_PERCENT = 10; // % remaining HP per stack per turn (tick.ts default; max HP only on R3/ultimate applications)
 
 export function isBoss(char: { phases?: CharacterPhase[] }): boolean {
   return (char.phases?.length ?? 0) > 0;

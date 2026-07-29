@@ -22,29 +22,38 @@ function escapeRegex(input: string): string {
  * Every glossary term that appears as a whole word in `description`, in the
  * order it first appears in the text (not glossary/dictionary order),
  * deduped case-insensitively.
+ *
+ * Many glossary keys are substrings of longer, more specific ones ("raises"
+ * inside "greatly raises"/"permanently raises", "lowers" inside "greatly
+ * lowers", "seal"/"seals" inside "attack seal"/"attack seals", ...). Testing
+ * each keyword independently (the old approach — one `\bkeyword\b` regex per
+ * entry) matched BOTH the short and long form at the same spot in the text,
+ * surfacing unrelated/redundant footnotes (a description that only ever says
+ * "greatly raises" would also get a spurious plain "raises" footnote).
+ * KeyworkHighlighter.tsx already avoids this by running ONE alternation regex
+ * sorted longest-keyword-first so a longer match wins and consumes those
+ * characters before a shorter one gets a chance — mirror that exact strategy
+ * here so footnotes always correspond 1:1 with what's actually highlighted.
  */
 export function extractKeywordFootnotes(
   description: string,
   glossary: Record<string, string> = mechanicGlossary,
 ): KeywordFootnote[] {
-  const lowerDescription = description.toLowerCase();
-  const matches = Object.entries(glossary)
-    .map(([keyword, meaning]) => {
-      const regex = new RegExp(`\\b${escapeRegex(keyword)}\\b`, "i");
-      const isMatched = regex.test(description);
-      const position = lowerDescription.indexOf(keyword.toLowerCase());
-      return { keyword, meaning, isMatched, position };
-    })
-    .filter((entry) => entry.isMatched)
-    .sort((a, b) => a.position - b.position);
+  const keywords = Object.keys(glossary).sort((a, b) => b.length - a.length);
+  if (keywords.length === 0) return [];
+  const pattern = new RegExp(
+    `\\b(${keywords.map(escapeRegex).join("|")})\\b`,
+    "gi",
+  );
+  const matches = [...description.matchAll(pattern)];
 
   const deduped: KeywordFootnote[] = [];
   const seen = new Set<string>();
-  for (const entry of matches) {
-    const normalized = entry.keyword.toLowerCase();
+  for (const match of matches) {
+    const normalized = match[1].toLowerCase();
     if (seen.has(normalized)) continue;
     seen.add(normalized);
-    deduped.push({ keyword: entry.keyword, meaning: entry.meaning });
+    deduped.push({ keyword: normalized, meaning: glossary[normalized] });
   }
   return deduped;
 }

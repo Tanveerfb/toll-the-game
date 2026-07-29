@@ -50,7 +50,7 @@
   },
   "passive": {
     "name": "Flowing Ruin",
-    "description": "After using a skill, gains 1 Flowing Ruin stack. At 3 stacks, the next skill consumes all stacks, deals 100% more damage, and lowers target ATK by 50% for 2 turns.",
+    "description": "After using a skill, gains 1 Flowing Ruin stack. At 3 stacks, the next skill consumes all stacks, deals 100% more damage, and target ATK 50% falls for 2 turns.",
     "trigger": "afterSkill",
     "mechanics": [
       {
