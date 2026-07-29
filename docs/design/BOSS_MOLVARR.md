@@ -77,8 +77,9 @@
     incremented at OnEnemyTurnStart; reset on transition via `enterBossPhase`).
   - `bossStatSpike` — from turn 10, x2 ATK/DEF/maxHP once, currentHP scaled by
     the ratio, uncancellable.
-  - `bossMaxHpDrain` — from turn 10 (P2), each field enemy takes 10%-of-maxHP
-    damage per turn (healable; cap intact — Tanveer ruling 2026-07-19).
+  - `bossMaxHpDrain` — from turn 10 (P2), each field enemy takes 10%-of-current-HP
+    damage per turn (healable; cap intact — Tanveer ruling 2026-07-19; basis
+    corrected to current HP 2026-07-30, was wrongly computing off max HP).
   - `bossDebuffAtk` — P1 ATK buff = (total enemy debuff STACKS) x 10%,
     recomputed each boss turn (stacks, not entries — Tanveer ruling 2026-07-19).
   - `bossApplyCorrosion` — P2 applies 1 Corrosion (2-turn) to each field enemy

@@ -140,7 +140,7 @@ describe("Gon", () => {
     expect(defBuff?.buffDuration).toBe(1);
   });
 
-  it("Rookie Hunter: 10th attack received flips -50% ATK / +50% DEF exactly once", () => {
+  it("Rookie Hunter: 10th attack received flips -50% ATK / +100% DEF exactly once", () => {
     let gon = fromData(gonData, "player");
     const attacker = makeChar({
       instanceId: "att",
@@ -165,7 +165,7 @@ describe("Gon", () => {
       gonData.atk - Math.floor(gonData.atk * 0.5),
     );
     expect(gon.currentDefense).toBe(
-      gonData.def + Math.floor(gonData.def * 0.5),
+      gonData.def + Math.floor(gonData.def * 1.0),
     );
     expect(gon.passiveState.statShiftTriggered).toBe(true);
     expect(

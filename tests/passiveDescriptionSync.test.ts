@@ -14,6 +14,7 @@ import { getAllCharacters } from "@/lib/game/characterCatalog";
 function collectNumbers(value: unknown, acc: Set<number> = new Set()): Set<number> {
   if (typeof value === "number") {
     acc.add(value);
+    acc.add(Math.abs(value));
   } else if (Array.isArray(value)) {
     value.forEach((v) => collectNumbers(v, acc));
   } else if (value && typeof value === "object") {

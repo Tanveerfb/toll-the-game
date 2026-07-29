@@ -67,7 +67,7 @@
   },
   "passive": {
     "name": "Rookie Hunter",
-    "description": "# After receiving 10 attacks during battle\n- ATK 50% 👇 (Activates only once, Uncancellable)\n- DEF 50% 👆 (Activates only once, Uncancellable)",
+    "description": "- [Collab] allies' all stats 5% 👆 during battle\n\n# After receiving 10 attacks during battle\n- ATK 50% 👇 (Activates only once, Uncancellable)\n- DEF 100% 👆 (Activates only once, Uncancellable)",
     "trigger": "onAttackReceived",
     "worksFromSub": false,
     "mechanics": [
@@ -75,7 +75,7 @@
         "type": "statShiftAfterAttacks",
         "attacksRequired": 10,
         "atkShiftPercent": -50,
-        "defShiftPercent": 50
+        "defShiftPercent": 100
       },
       {
         "type": "synergy",

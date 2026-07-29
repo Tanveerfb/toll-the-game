@@ -253,7 +253,7 @@ function applyMaxHpDrain(
   const percent = mech.percent ?? 10;
   return players.map((p) => {
     if (p.currentHP <= 0 || p.isSub) return p;
-    const dmg = Math.floor((p.hp * percent) / 100);
+    const dmg = Math.floor((p.currentHP * percent) / 100);
     log(`${p.name} loses ${dmg} HP to ${boss.name}'s decay.`);
     return { ...p, currentHP: Math.max(0, p.currentHP - dmg) };
   });

@@ -72,7 +72,7 @@
   },
   "passive": {
     "name": "Kind Hearted Friend",
-    "description": "# When the ally team includes a character whose name includes 'Gon' or 'Killua'\n- All allies' basic stats 10% 👆\n\n# When the team includes both characters 'Gon' and 'Killua'\n- All allies' basic stats 10% 👆",
+    "description": "- [Collab] allies' all stats 5% 👆 during battle\n\n# When the ally team includes a character whose name includes 'Gon' or 'Killua'\n- All allies' basic stats 10% 👆\n\n# When the team includes both characters 'Gon' and 'Killua'\n- All allies' basic stats 10% 👆",
     "trigger": "onBattleStart",
     "worksFromSub": true,
     "mechanics": [

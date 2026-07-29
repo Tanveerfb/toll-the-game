@@ -63,7 +63,7 @@
   },
   "passive": {
     "name": "Momentum",
-    "description": "# After an ally uses a skill\n- Gains 1x buff [Damage 20% 👆] (Max 5)\n\n# After using a skill to deal damage to enemies\n- Removes all [Damage 20% 👆] buffs from self",
+    "description": "# After an ally uses a skill\n- Gains 1 x buff [Damage 20% 👆] (Max 5)\n\n# After using a skill to deal damage to enemies\n- Removes all [Damage 20% 👆] buffs from self",
     "trigger": "onAllySkill",
     "mechanics": [
       {

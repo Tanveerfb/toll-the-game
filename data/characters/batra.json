@@ -58,7 +58,7 @@
   },
   "passive": {
     "name": "Fierce Dedication",
-    "description": "# When using a skill\n- Current HP 5% 👇\n-- This effect cannot cause the character to be defeated\n-- HP cannot go below 1",
+    "description": "- For each allied [KHALSA] character in the team, all allies all stats 10% 👆\n\n# When using a skill\n- Current HP 5% 👇\n-- This effect cannot cause the character to be defeated\n-- HP cannot go below 1",
     "trigger": "beforeSkill",
     "worksFromSub": false,
     "mechanics": [

@@ -58,7 +58,7 @@
   },
   "passive": {
     "name": "Giant's Will",
-    "description": "# At the start of every turn\n- ATK 10% 👆 (Max 5 times) (Uncancellable)",
+    "description": "- [Giant] allies' all stats 5% 👆 during battle\n\n# At the start of every turn\n- ATK 10% 👆 (Max 5 times) (Uncancellable)",
     "trigger": "onNewTurn",
     "worksFromSub": false,
     "mechanics": [

@@ -57,7 +57,7 @@
   },
   "passive": {
     "name": "Charged",
-    "description": "- [Powerful Opponent] allies' all stats 10% 👆 during battle\n\n# After receiving or evading an attack\n- Gains 1x [Charged] stack (Max 6) (Uncancellable)\n-- [Charged]: For each stack, ATK, DEF and evade chance 5% 👆",
+    "description": "- [Powerful Opponent] allies' all stats 10% 👆 during battle\n\n# After receiving or evading an attack\n- Gains 1 x [Charged] stack (Max 6) (Uncancellable)\n-- [Charged]: For each stack, ATK, DEF and evade chance 5% 👆",
     "trigger": "onAttackReceived",
     "worksFromSub": false,
     "mechanics": [

@@ -53,7 +53,7 @@
   },
   "passive": {
     "name": "Nine Lives",
-    "description": "- [Female] allies' damage 5% 👆 during battle\n\n# When taking a lethal blow at 30% HP or higher\n- Removes all debuffs and buffs from self\n- Heals 50% of incoming attack damage (Only once)",
+    "description": "- For each allied [Female] character in the team, all allies damage 5% 👆\n\n# When taking a lethal blow at 30% HP or higher\n- Removes all debuffs and buffs from self\n- Heals 50% of incoming attack damage (Only once)",
     "trigger": "onLethalDamage",
     "worksFromSub": false,
     "mechanics": [

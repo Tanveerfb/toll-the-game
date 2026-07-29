@@ -193,13 +193,18 @@ describe("bossMaxHpDrain (from turn 10)", () => {
     expect(res[0].currentHP).toBe(1000); // turn 9, no drain
   });
 
-  it("drains 10% max HP once turn 10 is reached", () => {
+  it("drains 10% of CURRENT HP (not max HP) once turn 10 is reached", () => {
     const b = boss([{ type: "bossMaxHpDrain", fromTurn: 10, percent: 10 }], {
       passiveState: { phaseTurn: 9 },
     });
-    const res = applyBossTurnStart([b], [char({ currentHP: 1000 })], noop)
-      .playerTeam;
-    expect(res[0].currentHP).toBe(900); // turn 10 -> -100
+    // hp (max) is 1000 but currentHP is only 500 — drain must be 10% of
+    // the 500 remaining (-50), not 10% of the 1000 max (-100).
+    const res = applyBossTurnStart(
+      [b],
+      [char({ hp: 1000, currentHP: 500 })],
+      noop,
+    ).playerTeam;
+    expect(res[0].currentHP).toBe(450); // turn 10 -> -50 (10% of 500)
   });
 });
 

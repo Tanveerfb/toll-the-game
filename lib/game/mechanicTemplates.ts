@@ -134,7 +134,7 @@ export const MECHANIC_INFO: Record<MechanicType, MechanicInfo> = {
     template: { fromTurn: 10, multiplier: 2 },
   },
   bossMaxHpDrain: {
-    desc: "Boss: from phase-turn N, each field enemy takes %-of-maxHP damage per turn.",
+    desc: "Boss: from phase-turn N, each field enemy takes %-of-current-HP damage per turn.",
     template: { fromTurn: 10, percent: 10 },
   },
   bossDebuffAtk: {

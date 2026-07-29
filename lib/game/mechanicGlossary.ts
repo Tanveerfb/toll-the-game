@@ -90,7 +90,18 @@ export type PassiveStatVerb = keyof typeof passiveStatVerbGlossary;
 /**
  * Pill color category per keyword (Tanveer's scheme):
  * offense = red, debuff = purple (incl. attack-applied debuffs),
- * heal = green (heals + cleanses), stance = yellow, cancel = white.
+ * heal = green (heals + cleanses), stance = yellow, cancel = white,
+ * effect = a named mechanic/DoT/status effect (corrosion, ignite, stun,
+ * damage reduction, evade chance, ...).
+ *
+ * IMPORTANT: `buff`/`debuff` are the only two categories KeyworkHighlighter's
+ * `arrowDirectionForKeyword` substitutes for an arrow icon in passives (see
+ * that file). That's correct for genuine tier-word verbs (raises/lowers and
+ * their variants) where the word IS the direction. It silently eats the
+ * keyword's text for anything else — a real bug found on "damage reduction"
+ * and "corrosion" 2026-07-30, both nouns that were mistakenly in this bucket.
+ * Any named effect that isn't itself a verb belongs in `effect` instead, even
+ * if it conceptually reads as offensive/defensive.
  */
 export type KeywordCategory =
   | "offense"
@@ -98,7 +109,8 @@ export type KeywordCategory =
   | "heal"
   | "buff"
   | "stance"
-  | "cancel";
+  | "cancel"
+  | "effect";
 
 export const keywordCategories: Record<MechanicKeyword, KeywordCategory> = {
   amplify: "offense",
@@ -113,28 +125,28 @@ export const keywordCategories: Record<MechanicKeyword, KeywordCategory> = {
   rupture: "offense",
   lifesteal: "offense",
   lifesteals: "offense",
-  corrosion: "debuff",
-  "attack seal": "debuff",
-  "attack seals": "debuff",
-  deplete: "debuff",
-  depletes: "debuff",
-  "damage reduction": "buff",
-  "debuff immunity": "buff",
-  "damage taken": "debuff",
+  corrosion: "effect",
+  "attack seal": "effect",
+  "attack seals": "effect",
+  deplete: "effect",
+  depletes: "effect",
+  "damage reduction": "effect",
+  "debuff immunity": "effect",
+  "damage taken": "effect",
   "damage dealt": "offense",
   deathblow: "offense",
-  stuns: "debuff",
-  stun: "debuff",
-  ignite: "debuff",
-  decay: "debuff",
-  shock: "debuff",
-  bleed: "debuff",
-  taunt: "debuff",
-  taunts: "debuff",
-  extort: "debuff",
-  extorts: "debuff",
-  seal: "debuff",
-  seals: "debuff",
+  stuns: "effect",
+  stun: "effect",
+  ignite: "effect",
+  decay: "effect",
+  shock: "effect",
+  bleed: "effect",
+  taunt: "effect",
+  taunts: "effect",
+  extort: "effect",
+  extorts: "effect",
+  seal: "effect",
+  seals: "effect",
   lowers: "debuff",
   "greatly lowers": "debuff",
   "massively lowers": "debuff",
@@ -151,7 +163,7 @@ export const keywordCategories: Record<MechanicKeyword, KeywordCategory> = {
   cleanses: "heal",
   rejuvenate: "heal",
   charged: "stance",
-  evade: "stance",
+  evade: "effect",
   countered: "stance",
   counters: "stance",
   "cancels buffs and stances": "cancel",

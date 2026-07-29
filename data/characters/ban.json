@@ -61,7 +61,7 @@
   },
   "passive": {
     "name": "Extort Life",
-    "description": "# When finishing a turn without receiving damage\n- All enemies max HP 8% 👇 (Max 5 times) (Uncancellable)\n-- Effects reset after receiving damage",
+    "description": "- [Human] allies' all stats 5% 👆 during battle\n\n# When finishing a turn without receiving damage\n- All enemies max HP 8% 👇 (Max 5 times) (Uncancellable)\n-- Effects reset after receiving damage",
     "trigger": "onRoundEnd",
     "worksFromSub": false,
     "mechanics": [

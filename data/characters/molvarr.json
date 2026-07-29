@@ -45,7 +45,7 @@
   },
   "passive": {
     "name": "Growing Malice",
-    "description": "Increases ATK by 5% for each debuff present on the enemy team.",
+    "description": "- ATK 5% 👆 for each debuff on the enemy team (Uncancellable)",
     "trigger": "always",
     "mechanics": [{ "type": "bossDebuffAtk", "percentPerDebuff": 5 }]
   },
@@ -97,19 +97,19 @@
       "passives": [
         {
           "name": "Growing Malice",
-          "description": "Increases ATK by 5% for each debuff present on the enemy team.",
+          "description": "- ATK 5% 👆 for each debuff on the enemy team (Uncancellable)",
           "trigger": "always",
           "mechanics": [{ "type": "bossDebuffAtk", "percentPerDebuff": 5 }]
         },
         {
           "name": "Ancient Rhythm",
-          "description": "Every 3rd turn, its final action is the SP Skill.",
+          "description": "# Every 3rd turn\n- Final action becomes the SP Skill",
           "trigger": "always",
           "mechanics": [{ "type": "bossAutoSp", "everyNTurns": 3 }]
         },
         {
           "name": "Sunken Awakening",
-          "description": "Basic stats +100%. Cannot be cancelled; only once.",
+          "description": "# On turn 10\n- Basic stats 100% 👆 (Uncancellable, Only once)",
           "trigger": "always",
           "triggerText": "On turn 10",
           "mechanics": [{ "type": "bossStatSpike", "fromTurn": 10, "multiplier": 2 }]
@@ -164,7 +164,7 @@
       "passives": [
         {
           "name": "Corrosive Tide",
-          "description": "Applies 1 Corrosion to each enemy at the start of each turn; deals 20% extra damage to enemies afflicted with Corrosion.",
+          "description": "# At the start of every turn\n- Applies 1 stack of Corrosion to each enemy for 2 turns\n\n# Against enemies afflicted with Corrosion\n- Damage 20% 👆",
           "trigger": "always",
           "mechanics": [
             { "type": "bossApplyCorrosion", "perTurn": 1, "duration": 2 },
@@ -173,20 +173,20 @@
         },
         {
           "name": "Ancient Rhythm",
-          "description": "Every 3rd turn, its final action is the SP Skill.",
+          "description": "# Every 3rd turn\n- Final action becomes the SP Skill",
           "trigger": "always",
           "mechanics": [{ "type": "bossAutoSp", "everyNTurns": 3 }]
         },
         {
           "name": "Sunken Awakening",
-          "description": "Basic stats +100%. Cannot be cancelled; only once.",
+          "description": "# On turn 10\n- Basic stats 100% 👆 (Uncancellable, Only once)",
           "trigger": "always",
           "triggerText": "On turn 10",
           "mechanics": [{ "type": "bossStatSpike", "fromTurn": 10, "multiplier": 2 }]
         },
         {
           "name": "Drowning Depths",
-          "description": "All enemies lose 10% of their max HP at the end of every turn.",
+          "description": "# From turn 10\n- All enemies current HP 10% 👇 at the end of every turn",
           "trigger": "always",
           "triggerText": "From turn 10",
           "mechanics": [{ "type": "bossMaxHpDrain", "fromTurn": 10, "percent": 10 }]

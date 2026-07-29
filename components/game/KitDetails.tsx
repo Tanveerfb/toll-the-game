@@ -223,34 +223,6 @@ function FootnoteList({
   );
 }
 
-function formatSynergyStat(stat?: string): string {
-  if (!stat) return "stats";
-  if (stat.toLowerCase() === "all") return "all stats";
-  if (stat.toLowerCase() === "damagedealt") return "damage dealt";
-  return stat.toUpperCase();
-}
-
-function getSynergyBlocks(passive?: KitPassiveView): string[] {
-  if (!Array.isArray(passive?.mechanics)) return [];
-  return passive.mechanics
-    .filter((entry) => entry.type === "synergy")
-    .map((entry) => {
-      const tagText =
-        Array.isArray(entry.conditionTags) && entry.conditionTags.length > 0
-          ? entry.conditionTags.join(" and ")
-          : Array.isArray(entry.conditionColors) &&
-              entry.conditionColors.length > 0
-            ? entry.conditionColors
-                .map((color) => toTitleCase(color))
-                .join(" and ")
-            : "matched";
-      const value =
-        typeof entry.valuePercent === "number" ? entry.valuePercent : 0;
-      const stat = formatSynergyStat(entry.stat);
-      return `All ${tagText} allies gain +${value}% ${stat}.`;
-    });
-}
-
 function PanelSection({
   title,
   subtitle,
@@ -285,7 +257,7 @@ function UncancellableBadge(): React.JSX.Element {
  * A passive rendered 7DS-style: flowing prose (trigger woven into the sentence,
  * no Trigger/Effect labels), blue mechanics + amber numbers + cyan
  * parenthetical notes via the highlighter, an "Uncancellable" badge when the
- * text says so, and any synergy mechanic appended. Paragraphs split on blank
+ * text says so. Paragraphs split on blank
  * lines; a `※`-prefixed line is a grey-italic clarifier. Shared by the battle
  * info panel and the archive.
  */
@@ -302,7 +274,6 @@ export function PassiveProse({
 }): React.JSX.Element {
   const description = passive?.description?.trim() || "To be added.";
   const uncancellable = /uncancellabl|cannot be cancel/i.test(description);
-  const synergyBlocks = getSynergyBlocks(passive);
   const paragraphs = description
     .split(/\n{2,}|\n/)
     .map((s) => s.trim())
@@ -351,12 +322,13 @@ export function PassiveProse({
                       showStatArrows
                     />
                     {bullet.comments.map((comment, cIdx) => (
-                      <p
+                      <KeyworkHighlighter
                         key={`comment-${cIdx}`}
-                        className="mt-0.5 pl-3 font-body text-xs italic text-zinc-500"
-                      >
-                        {comment}
-                      </p>
+                        text={comment}
+                        className="mt-0.5 block pl-3 font-body text-xs italic text-zinc-500"
+                        glossary={passiveGlossary}
+                        showStatArrows
+                      />
                     ))}
                   </li>
                 ))}
@@ -384,20 +356,6 @@ export function PassiveProse({
           ),
         )
       )}
-
-      {synergyBlocks.length > 0 ? (
-        <div className="mt-1 space-y-1 border-l-2 border-sky-500/40 pl-2.5">
-          {synergyBlocks.map((line, index) => (
-            <KeyworkHighlighter
-              key={`synergy-${index}`}
-              text={line}
-              className="block font-body text-xs text-zinc-300"
-              glossary={passiveGlossary}
-              showStatArrows
-            />
-          ))}
-        </div>
-      ) : null}
 
       <FootnoteList footnotes={extractKeywordFootnotes(description)} />
     </div>
