@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 
 type EffectKind = "damage" | "heal" | "status" | "system";
 
@@ -162,7 +162,7 @@ export default function BattleEffectsOverlay({
     >
       <AnimatePresence>
         {phasePulse ? (
-          <motion.div
+          <m.div
             key="phase-pulse"
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.18 }}
@@ -177,7 +177,7 @@ export default function BattleEffectsOverlay({
         {effects
           .filter((x) => x.kind === "damage" || x.kind === "heal")
           .map((effect) => (
-            <motion.div
+            <m.div
               key={effect.id}
               initial={{ y: 10, opacity: 0, scale: 0.92 }}
               animate={{ y: -24, opacity: 1, scale: 1 }}
@@ -195,7 +195,7 @@ export default function BattleEffectsOverlay({
               }}
             >
               {effect.text}
-            </motion.div>
+            </m.div>
           ))}
       </AnimatePresence>
 
@@ -205,7 +205,7 @@ export default function BattleEffectsOverlay({
             .filter((x) => x.kind === "status" || x.kind === "system")
             .slice(-3)
             .map((effect) => (
-              <motion.div
+              <m.div
                 key={effect.id}
                 initial={{ x: 20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
@@ -218,7 +218,7 @@ export default function BattleEffectsOverlay({
                 }`}
               >
                 {effect.text}
-              </motion.div>
+              </m.div>
             ))}
         </AnimatePresence>
       </div>

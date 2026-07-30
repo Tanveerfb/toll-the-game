@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import type { StoryScene } from "@/types/story";
@@ -100,7 +100,7 @@ export default function StorySceneReader({
       <div className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 md:left-10">
         <AnimatePresence mode="wait">
           {leftArt ? (
-            <motion.div
+            <m.div
               key={scene.portraitId}
               initial={{ opacity: 0, x: -24 }}
               animate={{ opacity: 1, x: 0 }}
@@ -115,7 +115,7 @@ export default function StorySceneReader({
                 priority
                 className="h-56 w-56 border-2 border-zinc-700 object-cover object-top shadow-[0_18px_50px_rgba(0,0,0,0.6)] md:h-80 md:w-80"
               />
-            </motion.div>
+            </m.div>
           ) : null}
         </AnimatePresence>
       </div>
@@ -124,7 +124,7 @@ export default function StorySceneReader({
       <div className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 md:right-10">
         <AnimatePresence mode="wait">
           {rightArt ? (
-            <motion.div
+            <m.div
               key={scene.portraitId}
               initial={{ opacity: 0, x: 24 }}
               animate={{ opacity: 1, x: 0 }}
@@ -139,12 +139,12 @@ export default function StorySceneReader({
                 priority
                 className="h-56 w-56 border-2 border-zinc-700 object-cover object-top shadow-[0_18px_50px_rgba(0,0,0,0.6)] md:h-80 md:w-80"
               />
-            </motion.div>
+            </m.div>
           ) : null}
         </AnimatePresence>
       </div>
 
-      <motion.div
+      <m.div
         key={index}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -167,7 +167,7 @@ export default function StorySceneReader({
             Tap to continue ▸
           </p>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

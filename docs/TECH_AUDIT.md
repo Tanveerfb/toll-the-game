@@ -101,14 +101,22 @@ Skip (unchanged, accepted risk): no validation on a manually-edited localStorage
 Skip (unchanged): no global `window.onerror`/`unhandledrejection` handler, no
 error-reporting/monitoring — not proposed unless Tanveer wants real crash telemetry.
 
-## 7. Bundle/build perf — RESOLVED (quick wins) / DEFERRED (big items)
+## 7. Bundle/build perf — RESOLVED (quick wins + LazyMotion) / DEFERRED (catalog redesign)
 
 - Dead file `lib/game/dataUtils.ts` (zero importers) deleted.
 - `"shadcn"` moved from `dependencies` to `devDependencies` in `package.json`.
 - `next.config.ts` now has `experimental.optimizePackageImports: ["lucide-react"]`.
+- **`LazyMotion`/`domAnimation` adopted (2026-07-30).** New
+  `components/providers/MotionProvider.tsx` wraps the app in `app/layout.tsx`; all 24
+  `motion.xxx` usages across the only 3 files that used framer-motion
+  (`BattleArena.tsx`, `BattleEffectsOverlay.tsx`, `StorySceneReader.tsx`) migrated from
+  `motion` to the lazy-loadable `m`. Every usage was confirmed to only need
+  `domAnimation` (no `layout`/`layoutId`, no SVG motion, no drag/hover/tap variants
+  anywhere) — `domMax` wasn't needed. Verified live via `agent-browser` (system Chrome):
+  a full practice battle (card play, floaters, card-detail popup, defeat screen) and a
+  story scene advance, no console errors, animations unchanged.
 
-Deferred (see bottom of this doc): the full catalog-to-server-component redesign, and
-`LazyMotion`/`domAnimation` adoption for framer-motion.
+Deferred (see bottom of this doc): the full catalog-to-server-component redesign.
 
 ## 8. Gacha/banner system — STILL DESIGN-ONLY, CONFIRMED
 
@@ -133,10 +141,6 @@ Skip (unchanged): full-array-rescan-per-keystroke filtering, unmemoized `Toggle`
 
 ## Deferred (explicit calls, not forgotten)
 
-- **`LazyMotion`+`domAnimation` adoption** — touches every animated component
-  (`BattleArena.tsx`, `BattleEffectsOverlay.tsx`, `StorySceneReader.tsx`) and needs its
-  own dedicated Chrome QA pass. Tanveer's call (2026-07-30): its own future session,
-  not bundled with this pass.
 - **`public/unreleased/` PNGs** (6.7MB, 5 files, zero code references) — Tanveer's
   call (2026-07-30): keep, not staged for deletion.
 - **Full catalog-to-server-component redesign** (moving character catalog resolution

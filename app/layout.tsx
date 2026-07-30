@@ -30,6 +30,7 @@ import { AuthProvider } from "@/hooks/AuthProvider";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import TopNav from "@/components/ui/TopNav";
+import MotionProvider from "@/components/providers/MotionProvider";
 
 export default function RootLayout({
   children,
@@ -46,8 +47,10 @@ export default function RootLayout({
           <AuthProvider>
             <MechanicProvider>
               <BattleProvider>
-                <TopNav />
-                {children}
+                <MotionProvider>
+                  <TopNav />
+                  {children}
+                </MotionProvider>
               </BattleProvider>
             </MechanicProvider>
           </AuthProvider>

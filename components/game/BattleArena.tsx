@@ -23,7 +23,7 @@ import {
   Infinity as InfinityIcon,
   Sparkles,
 } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { useBattleContext } from "@/hooks/BattleProvider";
@@ -931,7 +931,7 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
           ) : null}
 
           {fx.flash ? (
-            <motion.div
+            <m.div
               key={fx.flash.key}
               initial={{ opacity: fx.flash.strong ? 1 : 0.75 }}
               animate={{ opacity: 0 }}
@@ -945,7 +945,7 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
                 className="absolute inset-y-0 left-1/2 w-1 -translate-x-1/2 rotate-[24deg] bg-white/80"
                 style={{ display: fx.flash.strong ? undefined : "none" }}
               />
-            </motion.div>
+            </m.div>
           ) : null}
         </div>
       </div>
@@ -1182,7 +1182,7 @@ export default function BattleArena({
             plays (spec §2); restored automatically once the beat ends. */}
         <AnimatePresence>
           {seq.dim ? (
-            <motion.div
+            <m.div
               key="reveal-dim"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1198,7 +1198,7 @@ export default function BattleArena({
             the ultimate's full-white punch. */}
         <AnimatePresence>
           {seq.screenFlash ? (
-            <motion.div
+            <m.div
               key={`screen-flash-${seq.screenFlash.key}`}
               initial={{
                 opacity:
@@ -1227,7 +1227,7 @@ export default function BattleArena({
 
         <AnimatePresence>
           {seq.ghost ? (
-            <motion.div
+            <m.div
               key={`ghost-${seq.ghost.key}`}
               initial={{
                 x: seq.ghost.fromX - 28,
@@ -1258,13 +1258,13 @@ export default function BattleArena({
                   />
                 ) : null}
               </div>
-            </motion.div>
+            </m.div>
           ) : null}
         </AnimatePresence>
 
         <AnimatePresence>
           {seq.cutIn ? (
-            <motion.div
+            <m.div
               key={`cutin-${seq.cutIn.key}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1273,13 +1273,13 @@ export default function BattleArena({
               className="absolute inset-0 bg-black/65"
             >
               {/* White flash punch on entry */}
-              <motion.div
+              <m.div
                 initial={{ opacity: 0.85 }}
                 animate={{ opacity: 0 }}
                 transition={{ duration: 0.45 / battleSpeed, ease: "easeOut" }}
                 className="absolute inset-0 bg-white"
               />
-              <motion.div
+              <m.div
                 initial={{ x: "-100%", scale: 1.12 }}
                 animate={{ x: 0, scale: 1 }}
                 exit={{ x: "100%" }}
@@ -1303,15 +1303,15 @@ export default function BattleArena({
                     {seq.cutIn.skillName}
                   </p>
                 </div>
-              </motion.div>
-            </motion.div>
+              </m.div>
+            </m.div>
           ) : null}
         </AnimatePresence>
 
         {/* Phase-break flourish — a boss shattering into its next phase */}
         <AnimatePresence>
           {phaseBreak ? (
-            <motion.div
+            <m.div
               key={`phasebreak-${phaseBreak.key}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1319,13 +1319,13 @@ export default function BattleArena({
               transition={{ duration: 0.2 / battleSpeed }}
               className="absolute inset-0 flex items-center justify-center"
             >
-              <motion.div
+              <m.div
                 initial={{ opacity: 0.9 }}
                 animate={{ opacity: 0 }}
                 transition={{ duration: 0.6 / battleSpeed, ease: "easeOut" }}
                 className="absolute inset-0 bg-rose-600/40"
               />
-              <motion.div
+              <m.div
                 initial={{ scale: 1.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
@@ -1338,14 +1338,14 @@ export default function BattleArena({
                 <span className="font-heading text-5xl tracking-[0.16em] text-rose-100 drop-shadow-[0_0_16px_rgba(244,63,94,0.85)] md:text-6xl">
                   PHASE {phaseBreak.phase}
                 </span>
-              </motion.div>
-            </motion.div>
+              </m.div>
+            </m.div>
           ) : null}
         </AnimatePresence>
 
         <AnimatePresence>
           {seq.floaters.map((floater) => (
-            <motion.div
+            <m.div
               key={`floater-${floater.key}`}
               initial={{ opacity: 0, y: 6, scale: 0.85 }}
               animate={{ opacity: 1, y: -26, scale: 1 }}
@@ -1367,7 +1367,7 @@ export default function BattleArena({
               style={{ left: floater.x, top: floater.y }}
             >
               {floater.text}
-            </motion.div>
+            </m.div>
           ))}
         </AnimatePresence>
 
@@ -1381,7 +1381,7 @@ export default function BattleArena({
             const size = burst.strong ? 84 : 58;
             return (
               <React.Fragment key={`burst-${burst.key}`}>
-                <motion.div
+                <m.div
                   initial={{ opacity: 0.85, scale: 0.35 }}
                   animate={{ opacity: 0, scale: burst.strong ? 2.9 : 2 }}
                   exit={{ opacity: 0 }}
@@ -1399,7 +1399,7 @@ export default function BattleArena({
                 />
                 {/* Water's second, slightly-delayed ring — a ripple */}
                 {shape === "ripple" ? (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0.6, scale: 0.2 }}
                     animate={{ opacity: 0, scale: burst.strong ? 2.2 : 1.5 }}
                     exit={{ opacity: 0 }}
@@ -1421,7 +1421,7 @@ export default function BattleArena({
                 {/* Flame's flicker — a smaller inner pulse that pops and
                     dies faster than the main ring, like a lick of fire. */}
                 {shape === "flicker" ? (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0.9, scale: 0.15 }}
                     animate={{ opacity: [0.9, 0.4, 0], scale: 1.1 }}
                     exit={{ opacity: 0 }}
@@ -1447,7 +1447,7 @@ export default function BattleArena({
             longer-held ("beam sweep"/"mega beam" from spec §2). */}
         <AnimatePresence>
           {seq.sweep ? (
-            <motion.div
+            <m.div
               key={`sweep-${seq.sweep.key}`}
               initial={{ opacity: 0, scaleX: 0.15 }}
               animate={{ opacity: [0, 0.9, 0], scaleX: 1 }}
@@ -1526,7 +1526,7 @@ export default function BattleArena({
             {phaseLabel}
           </span>
           <div className="hidden h-1.5 w-28 shrink-0 overflow-hidden border border-zinc-700 bg-zinc-900/70 sm:block">
-            <motion.div
+            <m.div
               className="h-full bg-linear-to-r from-amber-300 via-orange-400 to-yellow-300"
               initial={{ width: 0 }}
               animate={{ width: `${phaseProgress}%` }}
@@ -1697,7 +1697,7 @@ export default function BattleArena({
       <AnimatePresence>
         {isLogOpen ? (
           <>
-            <motion.div
+            <m.div
               key="log-scrim"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1706,7 +1706,7 @@ export default function BattleArena({
               onClick={() => setIsLogOpen(false)}
               className="fixed inset-0 z-40 bg-black/50"
             />
-            <motion.aside
+            <m.aside
               key="log-drawer"
               initial={{ x: 360 }}
               animate={{ x: 0 }}
@@ -1750,7 +1750,7 @@ export default function BattleArena({
                   </p>
                 ))}
               </div>
-            </motion.aside>
+            </m.aside>
           </>
         ) : null}
       </AnimatePresence>
