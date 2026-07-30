@@ -16,10 +16,11 @@ describe("arrowDirectionForKeyword — Dokkan-style stat-change arrows (passives
     expect(arrowDirectionForKeyword("greatly lowers", true)).toBe("down");
   });
 
-  it("renders no arrow for non buff/debuff categories (heal/stance/cancel)", () => {
+  it("renders no arrow for non buff/debuff categories (heal/stance/cancel/chance)", () => {
     expect(arrowDirectionForKeyword("cleanse", true)).toBeNull(); // heal
     expect(arrowDirectionForKeyword("counters", true)).toBeNull(); // stance
     expect(arrowDirectionForKeyword("cancel buffs", true)).toBeNull(); // cancel
+    expect(arrowDirectionForKeyword("medium chance", true)).toBeNull(); // chance
   });
 
   it("renders no arrow for an unrecognized keyword", () => {

@@ -328,3 +328,45 @@ describe("Batra: consumeHpPercent (Fierce Dedication) + KHALSA tag synergy stack
     expect(buff?.valuePercent).toBe(10 * carriers);
   });
 });
+
+describe("Mustafa: lowerUltGauge (Earth Shatter)", () => {
+  it("reduces enemy ult gauge by the R1 ranked value", () => {
+    const mustafa = makeChar({ instanceId: "mustafa", team: "player" });
+    const enemy = makeChar({ instanceId: "enemy", team: "enemy", ultGauge: 5 });
+    const earthShatter: SkillCard = {
+      skillName: "Earth Shatter",
+      characterId: "mustafa",
+      type: "attack",
+      statMultiplier: "def",
+      damageRanked: [325, 400, 500],
+      mechanics: [{ type: "lowerUltGauge", valueRanked: [1, 1, 3] }],
+    };
+    const result = executeSkill(
+      { sourceInstanceId: "mustafa", skill: earthShatter, targetInstanceId: "enemy", rank: 1 },
+      { playerTeam: [mustafa], enemyTeam: [enemy] },
+      noopLog,
+    );
+    const updatedEnemy = result.enemyTeam.find((c) => c.instanceId === "enemy")!;
+    expect(updatedEnemy.ultGauge).toBe(4);
+  });
+
+  it("reduces enemy ult gauge by the R3 ranked value", () => {
+    const mustafa = makeChar({ instanceId: "mustafa", team: "player" });
+    const enemy = makeChar({ instanceId: "enemy", team: "enemy", ultGauge: 5 });
+    const earthShatter: SkillCard = {
+      skillName: "Earth Shatter",
+      characterId: "mustafa",
+      type: "attack",
+      statMultiplier: "def",
+      damageRanked: [325, 400, 500],
+      mechanics: [{ type: "lowerUltGauge", valueRanked: [1, 1, 3] }],
+    };
+    const result = executeSkill(
+      { sourceInstanceId: "mustafa", skill: earthShatter, targetInstanceId: "enemy", rank: 3 },
+      { playerTeam: [mustafa], enemyTeam: [enemy] },
+      noopLog,
+    );
+    const updatedEnemy = result.enemyTeam.find((c) => c.instanceId === "enemy")!;
+    expect(updatedEnemy.ultGauge).toBe(2);
+  });
+});

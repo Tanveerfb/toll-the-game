@@ -60,6 +60,11 @@ export const mechanicGlossary = {
   "permanently lowers": "Reduces the stat by 30% for the rest of battle",
   "permanently greatly lowers": "Reduces the stat by 50% for the rest of battle",
   "permanently massively lowers": "Reduces the stat by 80% for the rest of battle",
+  "very low chance": "A 5% chance for this effect to occur",
+  "low chance": "A 10% chance for this effect to occur",
+  "medium chance": "A 30% chance for this effect to occur",
+  "high chance": "A 50% chance for this effect to occur",
+  "great chance": "A 70% chance for this effect to occur",
 } as const;
 
 export type MechanicKeyword = keyof typeof mechanicGlossary;
@@ -92,7 +97,9 @@ export type PassiveStatVerb = keyof typeof passiveStatVerbGlossary;
  * offense = red, debuff = purple (incl. attack-applied debuffs),
  * heal = green (heals + cleanses), stance = yellow, cancel = white,
  * effect = a named mechanic/DoT/status effect (corrosion, ignite, stun,
- * damage reduction, evade chance, ...).
+ * damage reduction, evade chance, ...), chance = a fixed probability tier
+ * word (very low/low/medium/high/great chance — Tanveer's 5/10/30/50/70%
+ * scale, author_notes.md idea #1), a noun phrase like `effect`, not a verb.
  *
  * IMPORTANT: `buff`/`debuff` are the only two categories KeyworkHighlighter's
  * `arrowDirectionForKeyword` substitutes for an arrow icon in passives (see
@@ -110,7 +117,8 @@ export type KeywordCategory =
   | "buff"
   | "stance"
   | "cancel"
-  | "effect";
+  | "effect"
+  | "chance";
 
 export const keywordCategories: Record<MechanicKeyword, KeywordCategory> = {
   amplify: "offense",
@@ -172,6 +180,11 @@ export const keywordCategories: Record<MechanicKeyword, KeywordCategory> = {
   "cancel buffs": "cancel",
   "cancels stances": "cancel",
   "cancel stances": "cancel",
+  "very low chance": "chance",
+  "low chance": "chance",
+  "medium chance": "chance",
+  "high chance": "chance",
+  "great chance": "chance",
 };
 
 /** Category lookup for the passive-only stat-change verbs above — separate

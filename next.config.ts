@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // components/ui/*.tsx import lucide-react barrel-style throughout;
+    // this rewrites those to per-icon imports so the whole icon set doesn't
+    // ship to the client.
+    optimizePackageImports: ["lucide-react"],
+  },
   images: {
     // Character art URLs carry a cache-busting ?v=N (see lib/game/characterArt.ts).
     // Next 16 blocks query strings on local images unless allowed here.

@@ -81,7 +81,7 @@ function toTitleCase(value: string): string {
 }
 
 const CHIP_BASE =
-  "border-2 px-3 py-1.5 font-body text-xs uppercase tracking-[0.12em] transition-colors";
+  "min-h-11 border-2 px-3 py-1.5 font-body text-xs uppercase tracking-[0.12em] transition-colors";
 const CHIP_ON = "border-amber-300 bg-amber-300/15 text-amber-200";
 const CHIP_OFF =
   "border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200";
@@ -99,6 +99,7 @@ function Toggle({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={`${CHIP_BASE} ${active ? CHIP_ON : CHIP_OFF}`}
     >
       {children}
@@ -201,6 +202,7 @@ export default function CharacterBrowser({
           value={searchValue}
           onChange={(event) => setSearchValue(event.target.value)}
           placeholder="Search name, id, or tag…"
+          aria-label="Search characters"
           className="h-9 w-full max-w-60 rounded-none border-2 border-zinc-700 bg-black/40 text-zinc-100 placeholder:text-zinc-500"
         />
         <div className="flex flex-wrap gap-1">
@@ -237,6 +239,7 @@ export default function CharacterBrowser({
         <button
           type="button"
           onClick={() => setShowFilters((v) => !v)}
+          aria-expanded={showFilters}
           className={`${CHIP_BASE} ml-2 ${showFilters || activeFilterCount > 0 ? CHIP_ON : CHIP_OFF}`}
         >
           Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}

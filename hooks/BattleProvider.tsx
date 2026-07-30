@@ -88,32 +88,32 @@ export default function BattleProvider({
 }) {
   const { processQueue, registerToQueue, clearQueue } = useMechanicContext();
 
-  const store = useGameStore();
-  const {
-    playerTeam,
-    enemyTeam,
-    battlePhase,
-    updateTeams,
-    setBattlePhase,
-    setCurrentTurn,
-    setPlayerTurns,
-    setEnemyTurns,
-    resetBattle,
-    addToBattleLog,
-    initializeDeck,
-    drawCards,
-    setPreviewMode,
-    initializeEnemyDeck,
-    drawEnemyCards,
-    setEnemyDeck,
-    setPhaseBreak,
-    actionQueue,
-    // clearActionQueue is no longer needed; actions are resolved one by one.
-    removeDeadCharacterCards,
-    setActionQueue,
-    snapshotHand,
-    rankUpCharacterCards,
-  } = store;
+  // Per-field selectors instead of the old whole-store `useGameStore()` — that
+  // subscribed this component to every field in the store, re-rendering the
+  // whole battle tree on any change. Action/setter functions are stable
+  // references from the store and don't need selector treatment; only data
+  // fields that change value do (Tanveer's audit finding, 2026-07-30).
+  const battlePhase = useGameStore((s) => s.battlePhase);
+  const actionQueue = useGameStore((s) => s.actionQueue);
+  const updateTeams = useGameStore((s) => s.updateTeams);
+  const setBattlePhase = useGameStore((s) => s.setBattlePhase);
+  const setCurrentTurn = useGameStore((s) => s.setCurrentTurn);
+  const setPlayerTurns = useGameStore((s) => s.setPlayerTurns);
+  const setEnemyTurns = useGameStore((s) => s.setEnemyTurns);
+  const resetBattle = useGameStore((s) => s.resetBattle);
+  const addToBattleLog = useGameStore((s) => s.addToBattleLog);
+  const initializeDeck = useGameStore((s) => s.initializeDeck);
+  const drawCards = useGameStore((s) => s.drawCards);
+  const setPreviewMode = useGameStore((s) => s.setPreviewMode);
+  const initializeEnemyDeck = useGameStore((s) => s.initializeEnemyDeck);
+  const drawEnemyCards = useGameStore((s) => s.drawEnemyCards);
+  const setEnemyDeck = useGameStore((s) => s.setEnemyDeck);
+  const setPhaseBreak = useGameStore((s) => s.setPhaseBreak);
+  // clearActionQueue is no longer needed; actions are resolved one by one.
+  const removeDeadCharacterCards = useGameStore((s) => s.removeDeadCharacterCards);
+  const setActionQueue = useGameStore((s) => s.setActionQueue);
+  const snapshotHand = useGameStore((s) => s.snapshotHand);
+  const rankUpCharacterCards = useGameStore((s) => s.rankUpCharacterCards);
 
   // When a boss breaks a phase DURING the player's turn, the new phase starts
   // like a fresh battle: the boss does NOT get the enemy turn that would
@@ -209,7 +209,10 @@ export default function BattleProvider({
       }
 
       if (automatedPhases.includes(battlePhase)) {
-        let currentTeams = { playerTeam, enemyTeam };
+        let currentTeams = {
+          playerTeam: useGameStore.getState().playerTeam,
+          enemyTeam: useGameStore.getState().enemyTeam,
+        };
 
         if (battlePhase === "OnBattleStart") {
           initializeDeck();
@@ -423,10 +426,13 @@ export default function BattleProvider({
   }, [battlePhase]);
 
   function resolveplayerTurnWrapper() {
-    if (battlePhase !== "PlayerAction") return;
+    if (useGameStore.getState().battlePhase !== "PlayerAction") return;
 
     // Process the entire action queue sequentially.
-    let currentTeams = { playerTeam, enemyTeam };
+    let currentTeams = {
+      playerTeam: useGameStore.getState().playerTeam,
+      enemyTeam: useGameStore.getState().enemyTeam,
+    };
     const remainingQueue = [...actionQueue];
 
     while (remainingQueue.length > 0) {
@@ -532,7 +538,7 @@ export default function BattleProvider({
   }
 
   function resolveEnemyTurnWrapper() {
-    if (battlePhase !== "EnemyAction") return;
+    if (useGameStore.getState().battlePhase !== "EnemyAction") return;
 
     // Refill the enemy hand to capacity first (RNG + auto-merge, same rules as
     // the player deck; merges grant enemy ult gauge). The AI then plays only

@@ -1,13 +1,8 @@
 # Game notes, ideas, bugs, requests by Tanveer Singh
 
-Last updated - 29/07/2026
+Last updated - 30/07/2026
 
 > Entries get removed once implemented/resolved/verified — see `author_notes_report.md` for the log of what happened to each one and when.
-
-## Ideas
-
-- Thinking about developing a probability related tier word system too. Very low chance = 5%, Low chance = 10%, Medium chance = 30%, High chance = 50%, Great chance = 70%,
-  -- we can probably use it for crits or evades and other stuff. for example "Medium chance to evade attacks", "Great chance for critical attacks". Usually passive stuff but may appear in skills too. Eventually having a skill that may do "High chance of massively raising atk and do damage equal to x ATK"
 
 ## Future characters' kit (Not finalized)
 

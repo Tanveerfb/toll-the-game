@@ -748,7 +748,7 @@ function StatusChips({
       }}
       title="View effects"
       aria-label="View status effects"
-      className="flex max-h-[2.15rem] w-full cursor-pointer flex-wrap content-start items-center gap-0.5 overflow-hidden"
+      className="flex min-h-11 max-h-[2.15rem] w-full cursor-pointer flex-wrap content-start items-center gap-0.5 overflow-hidden"
     >
       {rows.map(({ effect, category }, idx) => {
         const style = CHIP_STYLE[category];

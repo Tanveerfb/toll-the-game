@@ -32,7 +32,7 @@ export default function ArchivePage() {
       className="relative min-h-screen overflow-hidden bg-zinc-950"
       style={{
         backgroundImage:
-          "radial-gradient(70% 45% at 90% 0%, rgba(56,189,248,0.18), transparent 75%), radial-gradient(60% 40% at 5% 100%, rgba(245,158,11,0.2), transparent 72%), linear-gradient(155deg, #09090b 0%, #0f172a 50%, #0a0a0a 100%)",
+          "radial-gradient(70% 45% at 90% 0%, rgba(161,161,170,0.15), transparent 75%), radial-gradient(60% 40% at 5% 100%, rgba(245,158,11,0.2), transparent 72%), linear-gradient(155deg, #09090b 0%, #0f172a 50%, #0a0a0a 100%)",
       }}
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-size-[38px_38px] opacity-25" />

@@ -1,105 +1,144 @@
 # Technical / Engineering Audit — 2026-07-21
 
-> Read-only audit pass, outside the existing VFX/roadmap work. Covers the combat engine, battle/story UI layer, character data + test coverage, bundle/build perf, the gacha/banner system, the archive/roster UI, the save/persistence layer, and crash resilience.
+> Read-only audit pass covering the combat engine, battle/story UI layer, character
+> data + test coverage, bundle/build perf, the gacha/banner system, the archive/roster
+> UI, the save/persistence layer, and crash resilience.
 >
-> This is a **backlog**, not yet implemented. Findings that touch gameplay/mechanic intent were confirmed with Tanveer before being written up as bugs (see inline notes) — code-level audits can look like a bug and still be working as designed, so mechanic-affecting findings are not assumed, they're checked.
+> **Status (2026-07-30): closed out.** Almost the entire backlog below turned out to
+> already be fixed by the time implementation started (landed incidentally in an
+> unrelated passive-formatting session, or by Tanveer directly) — each item was
+> re-verified against current code before being marked resolved rather than assumed.
+> The handful of genuinely open items were implemented in the same pass that also
+> added the chance-tier glossary system (`author_notes.md` idea #1). Three items are
+> intentionally deferred (see bottom) and one is confirmed still-design-only (gacha).
 
-## 1. Correctness bugs (combat engine)
+## 1. Correctness bugs (combat engine) — ALL RESOLVED
 
-**Boss Corrosion basis is actually CORRECT — the comment/doc are the bug, not the code.** Confirmed with Tanveer: Corrosion's rule is remaining-HP by default, max-HP only for R3-card/ultimate applications; Molvarr's Corrosive Tide is a recurring passive proc (not a ranked cast or ultimate) and never upgrades to max-HP at any phase. So `lib/game/bossPassives.ts:219-241` (`applyCorrosion`) correctly omits `maxHp`. What's actually wrong: the misleading comment at `bossPassives.ts:14` (`CORROSION_PERCENT = 10; // % max HP per stack per turn`) and `docs/design/BOSS_MOLVARR.md`'s claim ("3 Corrosion = 30% max HP/turn") both state the old, incorrect basis. Fix: correct both to say "remaining HP" — a comment/doc fix only, no logic change.
+- Corrosion comment (`bossPassives.ts:14`) now correctly says "remaining HP"; the
+  logic was already correct.
+- Taunt: same-source override + most-recent-wins + live-taunter fallback — all three
+  implemented (`combat.ts`, `stripOwnEffect` helper + backwards taunt scan).
+- Ignite now resets `debuffDuration` on stack merge, matching the other DoTs.
+- The three "reapply the same effect" implementations (debuff, Extort, Duke's Flowing
+  Ruin) now share one `stripOwnEffect` helper instead of drifting independently.
+- Benched (`isSub`) units were already guarded against DoT/HoT ticks — the original
+  audit claim here was inaccurate, no fix was needed.
 
-**Taunt needs same-source override + most-recent-wins priority + live-taunter fallback** — confirmed with Tanveer: (1) a taunt recast by the same source should override its own prior instance (same rule as debuffs), (2) when multiple different characters have active taunts, the enemy should target whoever cast the *most recently applied* taunt, and (3) if that most-recent taunter is dead, fall through to the next-most-recent still-alive taunter rather than hitting the original target. Current code does none of this: `combat.ts:918-926` pushes taunt unconditionally (stale dupes stack), and `combat.ts:352-362` redirects via `.find()` — which returns the *first* (oldest) taunt debuff in the array, the opposite of "most recent wins" — with no fallback if that owner is dead. Fix: (a) strip-before-push scoped by `sourceId` when a taunt is (re)applied (same pattern as `debuff`), which naturally keeps the array in application order so the most recent taunt is last; (b) change the redirect lookup at `combat.ts:352-362` to scan taunt debuffs from most-recent to oldest and pick the first whose `sourceId` owner is still alive, instead of `.find()`'s first-match.
+Skip (unchanged, still not worth touching): dead `maxTriggers`/`targetSelf` fields,
+non-null-assertion style, spite/deathblow zero-guards. `duke.json`'s ultimate still has
+no `mechanics` array (schema outlier) — harmless, not fixed.
 
-**Ignite merges stacks but never refreshes its timer** — confirmed with Tanveer this should refresh, matching the other DoTs. `combat.ts:772-787`: every other DoT (`shock`, `bleed`, `corrosion`, `decay`) is pushed as an independent fresh-duration entry per application; ignite alone merges `stacks` onto the existing entry (`combat.ts:776-777`) without touching `debuffDuration`. Fix: when `existing` is found, also reset `existing.debuffDuration = mech.duration || 3`.
+## 2. Perf/leak fixes (battle sequencer + store) — RESOLVED
 
-**Three divergent "reapply the same effect" implementations** — generic `debuff` (`combat.ts:899-917`, strip-then-push scoped by `sourceId`+`stat`), Extort (`combat.ts:547-557`, upfront whole-team strip), and Duke's Flowing Ruin proc (a manual copy of the debuff pattern around `combat.ts:930-937`). This is the exact drift pattern that caused the corrosion and debuff bugs fixed earlier this week. Fix: extract one small helper (e.g. `refreshSourceEffect(target, sourceId, matchFn)` in `combat.ts` or a new `lib/game/effectRefresh.ts`) that strips any existing debuff/taunt matching a predicate + `sourceId` before pushing the new one, and use it for `debuff`, `taunt`, Extort, and Flowing Ruin so there's a single rule instead of four.
+- `useBattleSequencer.ts` timer tracking (`scheduleTimeout`/`clearAllTimeouts`) and
+  `skip()` clearing them was already fixed.
+- `BattleArena.tsx` had already been converted to per-field `useGameStore` selectors
+  and `TeamUnitTile` was already `React.memo`-wrapped.
+- `hooks/BattleProvider.tsx`'s whole-store `useGameStore()` subscription (the one
+  genuinely open item) is now per-field selectors. Its `handlePhase` effect and
+  `resolveplayerTurnWrapper` both read `playerTeam`/`enemyTeam`/`battlePhase` via
+  `useGameStore.getState()` at time-of-use (matching the pattern
+  `resolveEnemyTurnWrapper` already used) rather than relying on render-frequency for
+  freshness — correctness no longer depends on how often the component re-renders.
 
-**Benched units keep ticking DoT/HoT** — `tick.ts:25` (`tickTeamBuffs`) and `tick.ts:63` (`tickTeamDebuffs`) both only guard `currentHP <= 0`, not `isSub`. `combat.ts:348` already blocks new debuffs from targeting subs, but existing DoT/Corrosion/HoT on a unit that got subbed out continues ticking (and can kill it) while it can't act or be healed normally. Fix: add `|| original.isSub` to both early-return guards (matches the intent already expressed at `combat.ts:348`).
+Skip (unchanged): the inline-object/no-op-callback churn (`tileFx`, `onMark={() => {}}`)
+— marginal now that `TeamUnitTile` is memoized.
 
-Skip (out of scope, too low-value to touch): dead `maxTriggers`/`targetSelf` type fields, non-null-assertion style, spite/deathblow zero-guards — these are safe today and not worth churn.
+## 3. Mobile/a11y UX — RESOLVED
 
-## 2. Perf/leak fixes (battle sequencer + store)
+- The "SAVE BATTLE LOG" debug button is already gated behind
+  `process.env.NODE_ENV !== "production"`.
+- `UnitDetailPanel` step buttons, the "?" toggle, and the Info button already meet the
+  44px guideline with `aria-label`s in place.
+- `StatusChips` already had `aria-label="View status effects"`; its touch target
+  (previously ≈34px tall) now has `min-h-11` added.
+- `CharacterBrowser.tsx`: search input now has `aria-label="Search characters"`, filter
+  chips (`Toggle`) now expose `aria-pressed`, the Filters disclosure button now exposes
+  `aria-expanded`, and `CHIP_BASE` now includes `min-h-11` so every chip built from it
+  clears the touch-target guideline.
 
-**Sequencer timers untracked across skip/unmount** — `hooks/useBattleSequencer.ts` (`addFloater`/`addBurst`/`addSweep`/`flashUnit`, ~L174-250) each fire a bare `window.setTimeout` with no handle stored and no `alive()`/generation check when the callback runs. `skip()` (~L493) and unmount only reset `view`/bump a generation ref — an in-flight timer from the event that was just skipped can still fire after `view` was reset to `IDLE_VIEW`, or write into state after unmount. Fix: track timeout handles in a ref array, clear them all in `skip()` and the cleanup effect, and/or have each callback check the current generation before applying its state update (mirroring however `alive()` is already used elsewhere in the file).
+## 4. Content/test coverage — RESOLVED
 
-**Whole-store subscription causes full-tree re-renders** — `hooks/BattleProvider.tsx:87` (`const store = useGameStore();`) and `components/game/BattleArena.tsx:626-649` both destructure the entire zustand store instead of per-field selectors, so any HP tick anywhere re-renders the whole battle tree. `TeamUnitTile` (`BattleArena.tsx:450`) isn't memoized, so it re-renders on every floater/burst tick even for unaffected tiles. Fix: convert the highest-traffic reads (team arrays, battle log, battlePhase) to individual `useGameStore((s) => s.field)` selectors, and wrap `TeamUnitTile` in `React.memo`. Do this carefully — `BattleProvider.tsx`'s `handlePhase` effect (~L164-348) currently has `exhaustive-deps` disabled and relies on the wholesale re-render to see fresh `playerTeam`/`enemyTeam`; moving to selectors requires fixing that effect's dependency array in the same change, not leaving it to silently break.
+- `lyra_npc.json` is already synced to playable Lyra (passive % and both shared
+  skills' damage match exactly; only the ultimate's boss-bumped damage differs, which
+  is intentional).
+- `tests/passiveDescriptionSync.test.ts` already exists and guards the exact drift
+  class that caused the original Diane bug.
+- Of the six "missing test" claims, five already had coverage (Master Tao, Leorio,
+  Gon/Killua, Siddiq, Batra all have dedicated tests in `tests/characterMechanics.test.ts`
+  / `tests/hxhKits.test.ts`). Only Mustafa's `lowerUltGauge` was genuinely untested —
+  added two tests (R1/R3 ranked value) to `tests/characterMechanics.test.ts`.
 
-Skip (not worth it): the inline-object/no-op-callback churn noted in the audit (`tileFx`, `onMark={() => {}}`) — real but marginal once `TeamUnitTile` is memoized with a real equality check; revisit only if profiling still shows it hot.
+Skip (unchanged): `duke.json`'s ultimate missing a `mechanics` array — still harmless.
 
-## 3. Mobile/a11y UX
+## 5. Save/persistence layer — RESOLVED
 
-**Debug feature exposed in production victory screen** — `components/game/BattleArena.tsx:786-797`, a "SAVE BATTLE LOG" button that POSTs full battle state to `/api/battle-log` to write a file to disk. Looks like leftover playtest tooling. Fix: keep it for local testing but gate both the button render and the API route handler behind `process.env.NODE_ENV !== "production"`, so it's inert in a production build but still usable in dev.
+- The guest-progress-wipe bug is fixed: `AuthProvider.tsx` now tracks whether the
+  session ever saw an authenticated user and only resets on an actual sign-out
+  transition, not on every anonymous load.
+- `playerStore.ts`/`storyStore.ts` both now have `version`/`migrate` config.
+- `battleSpeed` now persists via the settings store (seeded into and mirrored from
+  `useSettingsStore`), surviving reload.
+- Both stores now expose a `hasHydrated` flag via `onRehydrateStorage`.
 
-**Touch targets under the 44px guideline on the battlefield itself** — `StatusChips` icon buttons (`BattleArena.tsx:399-406`, ~16px), `UnitDetailPanel` step buttons (~L181-198, `p-1` around a 16px icon), the "?" toggle (~L236-243, 28px), and the Info button (~L569-578, no min-height). This is the most-tapped surface in the game and Tanveer plays mid-session on mobile. Fix: bump padding/min-width/min-height on these specific controls to hit ~44px hit targets without changing their visual icon size (padding-only, not a layout redesign).
+Skip (unchanged, accepted risk): no validation on a manually-edited localStorage value
+— still fine to leave at hobby-project scope.
 
-**Icon-only StatusChips button has no `aria-label`** — `BattleArena.tsx:399-406` only sets `title`, which doesn't fire on touch and isn't reliably read by screen readers. Fix: add `aria-label="View effects"` alongside the existing `title`, matching the pattern `UnitDetailPanel`'s nav buttons already use (~L186, L195).
+## 6. Error boundaries / crash resilience — RESOLVED (mostly)
 
-## 4. Content/test coverage
+- `app/error.tsx` exists; both `executeSkill` call sites in `BattleProvider.tsx` are
+  wrapped in try/catch that logs and transitions to a "battle crashed" defeat state
+  instead of throwing uncaught.
+- `characterCatalog.ts`'s `validateCharacters` call is now wrapped in try/catch,
+  logging and dropping only the offending character rather than crashing catalog load
+  for the whole app (Tanveer's call: drop-and-continue, not fail-closed).
+- `app/api/kit-lab/route.ts` no longer exists in the repo (removed/renamed since this
+  audit was written), so the original battle-log-vs-kit-lab comparison is moot.
+  `battle-log/route.ts` already has a dev-only 404 gate and one explicit 400 path; its
+  remaining generic-500 catch-all was left as-is (nothing left to align it to — see
+  deferred items below).
 
-**Sync `lyra_npc` to playable Lyra** — `data/characters/lyra_npc.json` vs `data/characters/lyra.json`. Confirmed real desyncs, not intentional boss tuning: "Unbreakable Ice" passive gives lyra_npc only +100% DEF vs playable's +150%; "Volcanic Frost" R1 damage is lower for the npc (170 vs 230) despite higher stats, while "Magma Shaft" R1 is higher (205 vs 200) — opposite-direction scaling on the two shared skills. Only her ultimate flat damage (600 vs 500) was intentionally bumped for the boss version. Fix: update `lyra_npc.json`'s passive `valuePercent` and both skills' `damageRanked`/relevant mechanic values to mirror playable Lyra's current numbers exactly, keeping only the ultimate's boss-bumped damage and any HP/ATK stat-line differences that are clearly boss-scaling (not kit numbers). Confirmed with Tanveer: match playable Lyra.
+Skip (unchanged): no global `window.onerror`/`unhandledrejection` handler, no
+error-reporting/monitoring — not proposed unless Tanveer wants real crash telemetry.
 
-**No guard against passive description drift** — skill descriptions run through `lib/game/descriptionTranslator.ts` and stay numerically live; passive descriptions are static strings with no equivalent check, which is exactly how the Diane 15%/10% bug happened and could recur silently. Fix: add a test (e.g. `tests/passiveDescriptionSync.test.ts`) that, for a curated list of characters whose passive description contains an explicit `%` number, asserts that number matches the corresponding mechanic's `valuePercent`/`value` field in the JSON. Doesn't need to cover every character/wording variant — just catch the common "N% ..." pattern so a future balance edit that forgets the text trips a test.
+## 7. Bundle/build perf — RESOLVED (quick wins) / DEFERRED (big items)
 
-**Missing tests for live, non-trivial kits** — zero coverage currently for: Master Tao's ignite-consume-into-heal chain (`consumeIgnite`), Leorio's `characterSynergy` (Gon/Killua dual-presence bonus), Gon/Killua's `statShiftAfterAttacks` (once-per-battle flip after 10 hits taken), Mustafa's `lowerUltGauge`, Siddiq's `healLifesteal`, Batra's `consumeHpPercent` (+ its KHALSA synergy stacking). Fix: add one focused test per mechanic in `tests/debuffSkills.test.ts` or a new `tests/characterMechanics.test.ts`, following the existing `executeSkill`/`makeChar` fixture pattern already used throughout `tests/`.
+- Dead file `lib/game/dataUtils.ts` (zero importers) deleted.
+- `"shadcn"` moved from `dependencies` to `devDependencies` in `package.json`.
+- `next.config.ts` now has `experimental.optimizePackageImports: ["lucide-react"]`.
 
-Skip (noted, not fixing): `duke.json`'s ultimate has no `mechanics` array (schema outlier vs rest of roster) — harmless, not touching unless it causes a real bug.
+Deferred (see bottom of this doc): the full catalog-to-server-component redesign, and
+`LazyMotion`/`domAnimation` adoption for framer-motion.
 
-## 5. Save/persistence layer
+## 8. Gacha/banner system — STILL DESIGN-ONLY, CONFIRMED
 
-**Guest progress is silently wiped whenever Firebase auth is enabled** — `hooks/AuthProvider.tsx:41-90`: `onAuthStateChanged`'s `else` branch (fired for any non-logged-in visit) unconditionally calls `resetPlayerState()` (`store/playerStore.ts:35`), overwriting the persisted `toll-player-storage` localStorage roster/inventory/pity back to defaults on every load whenever `NEXT_PUBLIC_FIREBASE_*` env vars are configured (`lib/firebase.ts:16`, `firebaseEnabled`). This is the most impactful finding in the whole audit — it defeats the entire purpose of persisting `playerStore` for anyone not logged in. Fix: only call `resetPlayerState()` on an explicit sign-out transition (previously-logged-in → null), not on every anonymous/guest page load — e.g. track previous-auth-state in a ref and skip the reset if there was no prior authenticated session this app-load.
+No change. `docs/design/GACHA_DESIGN.md` remains the spec; nothing built. Re-confirmed
+2026-07-30, no drift since the original audit.
 
-**No version/migrate config on either persisted store** — `store/playerStore.ts:37-39` and `store/storyStore.ts:74` both call `persist(..., { name })` with no `version`/`migrate`. A future shape change (e.g. a new per-character field) means old localStorage data is spread in as-is — no crash, but silently stale/missing fields. Fix: add `version: 1` now and a no-op `migrate` so the pattern exists before it's actually needed.
+## 9. Archive/roster page UX — RESOLVED
 
-**`battleSpeed` preference doesn't survive reload** — `store/gameStore.ts` isn't wrapped in `persist` at all (correct — keeps ephemeral in-battle state out of localStorage), but that also means the player's chosen `battleSpeed` (1x/2x) resets to `1` every reload despite the comment at `gameStore.ts:230` implying it's meant to persist across battles. Fix: pull `battleSpeed` alone into a tiny persisted settings slice (or into `playerStore`) rather than persisting all of `gameStore`.
+- `CharacterBrowser.tsx`'s search input, filter chips, and Filters button now have the
+  a11y attributes and touch-target sizing described in section 3 above (same fix,
+  filed once).
+- Palette inconsistency fixed: both `/archive` and `/archive/npc` now use the same
+  zinc-toned top-right glow (previously sky-blue vs rose) paired with the existing
+  shared amber glow, matching the rest of the app's amber/zinc identity. The
+  per-character-element theming on `/archive/[id]` detail pages was left alone —
+  that's data-driven coloring, not a fixed page accent.
 
-**No hydration guard** — neither store checks `onRehydrateStorage`/exposes a `hasHydrated` flag, and no component gates render on it. Components reading `roster`/`completed` on first client paint can flash default state before localStorage rehydrates, a known Next.js SSR/CSR mismatch risk. Fix: add a `hasHydrated` flag to `playerStore`/`storyStore` (standard zustand-persist pattern) and gate the archive/team-select screens on it if a flash is actually observed live.
+Skip (unchanged): full-array-rescan-per-keystroke filtering, unmemoized `Toggle` chips
+— still fine at the current 25-character roster scale.
 
-Skip (accepted risk, hobby-project scope): no validation on load means a manually-edited localStorage value can grant characters/currency — fine to leave, but note `TeamSelect.tsx` and similar consumers call array methods directly on `roster` with no shape guard, so a malformed edit (not just a generous one) could crash a screen; a one-line `Array.isArray` fallback would be cheap insurance if this is ever revisited.
+---
 
-## 6. Error boundaries / crash resilience
+## Deferred (explicit calls, not forgotten)
 
-**No React error boundaries anywhere** — confirmed no `app/error.tsx`, `global-error.tsx`, or any `componentDidCatch`/`getDerivedStateFromError` class component in the whole repo. A mid-battle exception (bad mechanic data, null target lookup) thrown from `executeSkill` (called with no try/catch at `hooks/BattleProvider.tsx:367,484`) propagates uncaught with nothing to catch it — the player sees Next's generic "Application error" screen or the dev overlay, never a "return to menu" fallback. Fix: add `app/error.tsx` (route-level) as a baseline, and wrap the `executeSkill` calls in `BattleProvider.tsx` in try/catch that transitions to a "battle crashed — return to menu" state rather than letting the exception bubble.
-
-**`characterCatalog.ts`'s zod validation throws at module load, unguarded** — `lib/game/characterCatalog.ts:109` calls `validateCharacters(rawCharacters)` at top-level import time; since this file is imported by practice/story/archive/battle pages alike, one malformed character JSON throws during module evaluation for effectively every page, not just one route. Combined with the missing error boundaries above, this is the single most likely "whole app goes down from one bad JSON edit" scenario. Fix: wrap the top-level `validateCharacters` call in try/catch, log a clear error, and either fail closed with a dedicated error page or drop only the offending character rather than crashing catalog load entirely — needs a design call on which behavior Tanveer prefers before implementing.
-
-**API route error handling is inconsistent** — `app/api/kit-lab/route.ts` does this right (zod `safeParse`, proper 4xx codes, dev-only 404 in prod); `app/api/battle-log/route.ts` validates its one input field but collapses every failure mode into a generic 500. Low priority given `battle-log` is being dev-gated anyway per section 3, but worth aligning if that route is touched.
-
-Skip (accepted gap for a hobby project, noted not fixed): no global `window.onerror`/`unhandledrejection` handler, no error-reporting/monitoring (Sentry etc). Not proposing one unless Tanveer wants actual crash telemetry.
-
-## 7. Bundle/build perf
-
-**Full character catalog + zod ship to the client on the very first route** — `app/page.tsx:1` is `"use client"` and renders `BattleArena`, which chains into `lib/game/characterCatalog.ts` (all 25 character JSONs + `validateCharacters` zod call, `characterCatalog.ts:1-25,109`). Every visitor downloads and re-validates the entire dataset before any battle starts. Fix: this needs a real design pass (move catalog resolution to a server component / build-time step and pass only the data each client component needs as props), not a quick patch — flag for a future session rather than plan line-by-line here.
-
-**Dead duplicate data loader** — `lib/game/dataUtils.ts:16` uses a dynamic `require(`@/data/characters/${id}.json`)` (not statically analyzable, would force-bundle the whole `data/characters/` directory if ever imported) and has zero importers anywhere. Fix: delete the file — `characterCatalog.ts` already does this job with static imports.
-
-**`framer-motion` imported at full weight everywhere** — `BattleArena.tsx`, `BattleEffectsOverlay.tsx`, `StorySceneReader.tsx` all import full `motion`/`AnimatePresence` with no `LazyMotion`/`domAnimation` anywhere in the repo. Fix: adopt `LazyMotion`+`domAnimation` at the layout level to cut the animation bundle down to the subset actually used — mechanical change once someone commits to it, but touches every animated component so do it as its own isolated pass with visual re-verification in Chrome afterward, not bundled into an unrelated fix.
-
-**Misc quick wins**: `"shadcn"` CLI tool is listed under `dependencies` in `package.json` instead of `devDependencies` (move it); `next.config.ts` has no `experimental.optimizePackageImports` for `lucide-react`/`radix-ui` despite barrel-style imports throughout `components/ui/*.tsx` (add it, one-line config change); `public/unreleased/` has 6.7MB across 5 PNGs with zero references anywhere in source (delete if confirmed unused — check with Tanveer first in case they're staged for an upcoming reveal, don't delete blind).
-
-## 8. Gacha/banner system
-
-**Confirmed not built — design-only, matches memory.** `store/playerStore.ts` has the data shapes (`roster: string[]`, `inventory`, `pity: { standard, limited }`) but zero pull/roll logic reads or writes them. No banner/summon UI anywhere in `app/` or `components/`. No `rarity` field exists on any of the 25 character JSONs yet. `docs/design/GACHA_DESIGN.md` is the full spec (5%/7% rates, 80 hard/70 soft pity, Duke/Lyra free chars) explicitly headed "DESIGN IN PROGRESS — Not built." Nothing to fix here — this section exists only to confirm status, not as a task. When gacha implementation is actually greenlit, that's a brainstorming-worthy design session on its own (new banner UI, pull logic, rarity data model, roster-grant on story completion), not a quick addition to this backlog.
-
-## 9. Archive/roster page UX
-
-**Data completeness and filter logic are solid** — all 25 characters resolve correctly (15 playable in `/archive`, 10 `storyOnly` in `/archive/npc`, no leaks either direction, every detail-page link works), and no dead/no-op filter controls were found. The remaining items are polish:
-
-- **Search input has no `aria-label`** (`components/game/CharacterBrowser.tsx:200`, placeholder-only) — screen readers announce it unnamed. Fix: add `aria-label="Search characters"`.
-- **Filter chips and phase tabs don't expose pressed/selected state to a11y tooling** (color/border only) — add `aria-pressed`/`aria-selected` alongside the existing visual state.
-- **Palette inconsistency**: `/archive` and the detail page use a sky-blue glow, `/archive/npc` uses rose/red — neither is the locked amber/zinc palette, and the mismatch makes the NPC archive read as a different skin. Fix: align both to the amber/zinc convention used in battle.
-- **Filter chips are under the 44px touch-target guideline** (`CHIP_BASE: px-3 py-1.5 text-xs`), most noticeable in the expanded tag/mechanic panel on mobile. Fix: same padding bump treatment as the battlefield touch-target fix in section 3.
-
-Skip (not an issue, no fix needed): the full-array-rescan-per-keystroke filtering and unmemoized `Toggle` chips are fine at the current 25-character scale; only worth revisiting if the roster grows substantially.
-
-## Verification (when this backlog is actually implemented)
-
-- `npm run check` (tsc + eslint + vitest) must stay green after each section; run it after finishing each section rather than only at the end, so a regression is traceable to the section that caused it.
-- Taunt fix (override + most-recent-wins + dead-taunter fallback): add cases to `tests/debuffSkills.test.ts` covering same-source recast (1 instance), two different taunters (most recent targeted), and the most-recent taunter dying (falls through to the next-alive one). The corrosion item is a comment/doc wording fix only — no test needed.
-- Sequencer timer fix + store selector change: no automated test exists for sequencer timing (CDP screenshot timing is unreliable for this), so verify live via Chrome — play a boss battle, hit Skip mid-animation repeatedly, confirm no console errors and no visual glitches after skip.
-- Touch targets + debug button removal: quick manual pass in Chrome DevTools device toolbar (mobile viewport) on the battle screen, victory screen, and archive filter panel.
-- `lyra_npc` sync: replay the "Lyra" story chapter/boss fight in Chrome and confirm the passive/skill numbers shown match playable Lyra's kit.
-- Guest-progress-wipe fix (section 5): with Firebase env vars configured, load the app logged-out, build up roster/inventory, reload without logging in, confirm state survives. Then log in, log out, confirm the old sign-out-reset behavior still fires correctly (no regression the other direction).
-- Error boundaries (section 6): temporarily throw inside `executeSkill` in a dev build to confirm `app/error.tsx` catches it and offers a return-to-menu path, instead of the raw Next.js error screen; remove the induced throw afterward.
-- Bundle/perf quick wins (section 7): `npm run build` and compare output bundle size before/after the `dataUtils.ts` deletion + `optimizePackageImports` config change; no live-play verification needed for these two, they're mechanical.
-- Section 8 (gacha): no verification step — nothing was built.
-- Archive a11y/palette fixes (section 9): manual pass with a screen reader or the axe DevTools extension on `/archive` and `/archive/npc`, plus a visual side-by-side check that both pages now share the amber/zinc glow.
+- **`LazyMotion`+`domAnimation` adoption** — touches every animated component
+  (`BattleArena.tsx`, `BattleEffectsOverlay.tsx`, `StorySceneReader.tsx`) and needs its
+  own dedicated Chrome QA pass. Tanveer's call (2026-07-30): its own future session,
+  not bundled with this pass.
+- **`public/unreleased/` PNGs** (6.7MB, 5 files, zero code references) — Tanveer's
+  call (2026-07-30): keep, not staged for deletion.
+- **Full catalog-to-server-component redesign** (moving character catalog resolution
+  off the client's first route) — still needs its own design session, not a quick
+  patch; unchanged since the original audit.
