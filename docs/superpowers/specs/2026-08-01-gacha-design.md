@@ -102,13 +102,22 @@ In its place, a milestone bar tracks currency *spent* (not pull count), 1:1:
   11-pull = +30).
 - Resets to 0 whenever the active banner changes (**does not carry over**
   between banners, unlike the old pity counter).
-- **300** → a random pull from **every currently-released playable character**
-  (not just this banner's featured list — the full roster, 18 as of this
-  banner). If the result is already owned, it's a dupe → Ultimate Level.
-- **600** → guaranteed pull, **player picks** any one of this banner's featured
-  units. Same dupe→Ultimate Level rule if already owned.
-- After 600 is claimed, the bar resets to 0 and climbs again — **it loops**,
-  so a player who spends enough keeps re-earning both milestones.
+- **300** → unlocks a **Claim** button on the banner screen (not an automatic
+  reward mid-pull). Clicking it grants a random pull from **every
+  currently-released playable character** (not just this banner's featured
+  list — the full roster, 18 as of this banner). If the result is already
+  owned, it's a dupe → Ultimate Level.
+- **600** → unlocks a **Claim** button that opens a picker modal: a grid of
+  this banner's featured units, player clicks the one they want. Same
+  dupe→Ultimate Level rule if already owned.
+- **300 and 600 claim independently** — reaching 600 before claiming 300
+  doesn't forfeit or gate anything; both buttons stay claimable at once if the
+  player has crossed both thresholds without claiming either yet.
+- The bar **only resets on the 600 claim**, not the moment it crosses 600 —
+  so further spend between "600 reached" and "600 claimed" isn't lost, and
+  there's no window where a fast click could double-trigger a reset. Once the
+  600 claim fires, bar → 0 and the whole lap starts over — **it loops**, so a
+  player who spends enough keeps re-earning both milestones every lap.
 
 **Permanent banner:**
 - Bar increases by tickets spent, same 1:1 shape.
@@ -168,9 +177,23 @@ badge (mechanically identical to non-featured on Limited today, since Limited's
 cosmetically now, and will matter functionally once smaller banners return to
 the 5%/7% split rule where non-featured units exist alongside featured ones).
 
-**Pull reveal:** reuses the existing ult-cutin cinematics tech (per
-`GACHA_DESIGN.md`'s own "Reuse notes" section) rather than building new reveal
-animation from scratch.
+**Pull reveal:** two tiers, both reusing existing cinematics tech rather than
+building new animation from scratch.
+- **Miss** (currency/mats) → quick, plain flip. Not exciting, shouldn't pretend
+  to be.
+- **Featured-character hit** → full ult-cutin treatment (flash, cut-in pose,
+  name banner) per `GACHA_DESIGN.md`'s own "Reuse notes" section — makes the
+  5% hit actually feel different from a coin drop.
+- **11-pull:** all 11 results flip in quick sequence (skippable), then the
+  screen re-highlights the single best result (featured hit beats a mats/
+  currency result) with the fuller cutin treatment, instead of forcing the
+  player through 11 full cutins or dumping straight to a results grid.
+- **Milestone claims (300/600) are a separate, decoupled interaction** — not
+  part of the pull-reveal flow at all. See "Milestone bar" above: crossing a
+  threshold unlocks a **Claim** button on the banner screen itself; clicking
+  it is what grants the reward (300 = immediate random grant, 600 = opens a
+  picker modal). No special reveal animation is specified for these — treat
+  the grant like any other reward toast unless a future pass wants to add one.
 
 **Collection browsing:** the existing Archive already serves as the gacha pool
 browser (per `GACHA_DESIGN.md`'s reuse note) — needs an owned/unowned state and
@@ -260,7 +283,10 @@ Every `lib/gacha/` function gets unit tests with an injectable `rng` (same
 pattern as `rollWorldBossRewards`), covering: rate math sums to 1.0 across all
 categories, milestone crossing at exact boundaries and in a single large jump,
 dupe vs new-character resolution, bar reset on banner-id change, Permanent's
-single-milestone behavior vs Limited's two-milestone behavior.
+single-milestone behavior vs Limited's two-milestone behavior, independent
+claimability of 300/600 (crossing one doesn't affect the other's claimable
+state), and reset-only-on-claim (spend after crossing 600 but before claiming
+isn't lost or double-triggered).
 
 ## Out of scope
 
