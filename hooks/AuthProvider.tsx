@@ -60,14 +60,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setPlayerState({
               uid: currentUser.uid,
               roster: data.roster || [],
+              currencies: data.currencies || { gems: 1000, coin: 0 },
               inventory: data.inventory || {},
+              characters: data.characters || {},
+              stamina: data.stamina || { current: 120, updatedAt: Date.now() },
               pity: data.pity || { standard: 0, limited: 0 }
             });
           } else {
             const state = usePlayerStore.getState();
             await setDoc(docRef, {
               roster: state.roster,
+              currencies: state.currencies,
               inventory: state.inventory,
+              characters: state.characters,
+              stamina: state.stamina,
               pity: state.pity
             });
             setPlayerState({ uid: currentUser.uid });
@@ -105,8 +111,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user || !db) return;
     try {
       const docRef = doc(db, "users", user.uid);
-      const { roster, inventory, pity } = { ...usePlayerStore.getState(), ...state };
-      await setDoc(docRef, { roster, inventory, pity }, { merge: true });
+      const { roster, currencies, inventory, characters, stamina, pity } = {
+        ...usePlayerStore.getState(),
+        ...state,
+      };
+      await setDoc(docRef, { roster, currencies, inventory, characters, stamina, pity }, { merge: true });
     } catch (e) {
       console.error("Error saving to Firestore", e);
     }

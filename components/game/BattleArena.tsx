@@ -953,21 +953,26 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
   );
 });
 
-/** Story mode swaps the result screen's actions for chapter-flow ones */
-export interface StoryBattleHandlers {
-  /** Victory → return to the story reader for the outro scenes */
+/** Swaps the result screen's default actions (Rematch/Change Teams/Main Menu)
+ *  for a caller-driven flow — used by both story mode (chapter progression)
+ *  and the world-boss route (reward grant + stamina re-spend on retry). */
+export interface BattleEndHandlers {
+  /** Victory → caller-defined continuation (next story beat / reward screen) */
   onContinue: () => void;
-  /** Defeat → restart the same canon battle */
+  /** Defeat → restart (story: same canon battle; world-boss: re-spend stamina) */
   onRetry: () => void;
-  /** Defeat → abandon and go back to the chapter list */
+  /** Defeat → abandon (story: back to chapter list; world-boss: back to select) */
   onQuit: () => void;
 }
 
 export default function BattleArena({
   story,
+  worldBoss,
 }: {
-  story?: StoryBattleHandlers;
+  story?: BattleEndHandlers;
+  worldBoss?: BattleEndHandlers;
 } = {}): React.JSX.Element {
+  const battleEnd = story ?? worldBoss;
   // Individual selectors (not a whole-store destructure) so this component —
   // the main battle render tree — only re-renders for the specific fields it
   // reads, instead of on every store mutation anywhere (HP ticks, sequencer
@@ -1802,32 +1807,32 @@ export default function BattleArena({
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3 px-6 py-6">
-              {story && battlePhase === "victory" ? (
+              {battleEnd && battlePhase === "victory" ? (
                 <Button
-                  onClick={story.onContinue}
+                  onClick={battleEnd.onContinue}
                   className="h-12 rounded-none border-2 border-amber-300 font-heading text-lg tracking-[0.14em]"
                 >
-                  CONTINUE STORY
+                  {story ? "CONTINUE STORY" : "CLAIM REWARDS"}
                 </Button>
               ) : null}
-              {story && battlePhase === "defeat" ? (
+              {battleEnd && battlePhase === "defeat" ? (
                 <>
                   <Button
-                    onClick={story.onRetry}
+                    onClick={battleEnd.onRetry}
                     className="h-12 rounded-none border-2 border-amber-300 font-heading text-lg tracking-[0.14em]"
                   >
                     RETRY BATTLE
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={story.onQuit}
+                    onClick={battleEnd.onQuit}
                     className="h-12 rounded-none border-2 border-zinc-400 bg-transparent font-heading text-lg tracking-[0.14em] text-zinc-100"
                   >
-                    BACK TO CHAPTERS
+                    {story ? "BACK TO CHAPTERS" : "BACK TO WORLD BOSS"}
                   </Button>
                 </>
               ) : null}
-              {!story && lastBattleConfig ? (
+              {!battleEnd && lastBattleConfig ? (
                 <Button
                   onClick={() =>
                     startCustomBattle(
@@ -1856,7 +1861,7 @@ export default function BattleArena({
                   ) : null}
                 </>
               ) : null}
-              {!story ? (
+              {!battleEnd ? (
                 <>
                   <Button
                     variant="outline"

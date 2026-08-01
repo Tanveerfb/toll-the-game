@@ -1,6 +1,9 @@
 # World Boss + Character Ascension — Implementation Plan
 
-> Status: DESIGN LOCKED (core), NOT BUILT. Drafted 2026-07-18.
+> Status: BUILT 2026-07-31 (character level/ascension, stamina, world-boss
+> encounter + reward loop, dev grant panel). Bands 4-6 and the ult-level
+> per-pull stat step remain future work. See
+> docs/superpowers/specs/2026-07-31-player-inventory-stamina-worldboss-design.md.
 > Owner: Tanveer (design). Kit for the monster is deferred (premium boss pass).
 > This plan covers the *meta* systems that wrap the fight, not the monster's kit.
 
