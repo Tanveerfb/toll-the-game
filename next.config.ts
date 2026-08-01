@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
+import createMDX from "@next/mdx";
 
 const nextConfig: NextConfig = {
+  // Lets Next treat .md/.mdx files as importable modules (content/ dir here,
+  // not routable pages — nothing under app/ uses these extensions).
+  pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],
   experimental: {
     // components/ui/*.tsx import lucide-react barrel-style throughout;
     // this rewrites those to per-icon imports so the whole icon set doesn't
@@ -23,4 +27,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const withMDX = createMDX({
+  options: {
+    remarkPlugins: ["remark-gfm"],
+  },
+});
+
+export default withMDX(nextConfig);

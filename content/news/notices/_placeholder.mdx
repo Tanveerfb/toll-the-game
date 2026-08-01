@@ -1,0 +1,12 @@
+export const metadata = {
+  title: "Placeholder",
+  date: "1970-01-01",
+  summary: "Not a real notice.",
+};
+
+This file exists only so Turbopack's dynamic `import(\`@/content/news/notices/${slug}.mdx\`)`
+glob (in `lib/news/posts.ts`) has at least one real `.mdx` file to resolve against — with
+zero notices, an empty directory makes Turbopack fail the build with "Module not found"
+even though the code path is never reached at runtime. The leading underscore excludes this
+file from `listNoticeSlugs()` (see the filter in `lib/news/posts.ts`), so it never shows up
+as a real notice. Delete this file once a real notice is added.
