@@ -42,6 +42,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // anonymous/guest page load, which previously wiped the persisted
   // toll-player-storage roster/inventory/pity on each visit while logged out.
   const hadUserRef = React.useRef(false);
+  // Set to true immediately before any store write that ORIGINATES from
+  // cloud state (hydrate-on-login, seed-on-first-login, reset-on-logout).
+  // The auto-sync subscriber below checks this synchronously and skips that
+  // one change, so we don't immediately write cloud-sourced data straight
+  // back to Firestore (redundant) or overwrite a real save with reset
+  // defaults during the logout race (subscription can still be bound to the
+  // old user when resetPlayerState fires, since React hasn't re-rendered
+  // with user=null yet).
+  const skipSyncRef = React.useRef(false);
 
   useEffect(() => {
     if (!auth || !db) return;
@@ -57,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (docSnap.exists()) {
             const data = docSnap.data();
+            skipSyncRef.current = true;
             setPlayerState({
               uid: currentUser.uid,
               roster: data.roster || [],
@@ -76,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               stamina: state.stamina,
               pity: state.pity
             });
+            skipSyncRef.current = true;
             setPlayerState({ uid: currentUser.uid });
           }
         } catch (e) {
@@ -96,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // user this session) — a guest who was never logged in keeps their
         // locally-persisted progress instead of getting wiped on every load.
         if (hadUserRef.current) {
+          skipSyncRef.current = true;
           resetPlayerState();
         }
         hadUserRef.current = false;
@@ -107,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, [setPlayerState, resetPlayerState]);
 
-  const saveToCloud = async (state: Partial<PlayerState>) => {
+  const saveToCloud = React.useCallback(async (state: Partial<PlayerState>) => {
     if (!user || !db) return;
     try {
       const docRef = doc(db, "users", user.uid);
@@ -119,7 +131,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error("Error saving to Firestore", e);
     }
-  };
+  }, [user]);
+
+  // Auto-sync: any gameplay action that changes roster/currencies/inventory
+  // /characters/stamina/pity (spending stamina, feeding a manual, ascending,
+  // world-boss rewards, etc.) writes to Firestore a beat after it settles.
+  // Without this, those changes only ever reached the cloud on next login —
+  // a session that ended without logging out first lost all mid-session
+  // progress. Debounced so a burst of changes (e.g. grant + immediate feed)
+  // collapses into one write instead of one per action.
+  useEffect(() => {
+    if (!user || !db) return;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const unsubscribe = usePlayerStore.subscribe(() => {
+      if (skipSyncRef.current) {
+        skipSyncRef.current = false;
+        return;
+      }
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        saveToCloud({});
+      }, 1500);
+    });
+    return () => {
+      unsubscribe();
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [user, saveToCloud]);
 
   const requireAuth = () => {
     if (!auth) throw new Error("Firebase auth is not configured (missing NEXT_PUBLIC_FIREBASE_* env vars).");

@@ -25,8 +25,13 @@ export default function ProfilePage() {
   const router = useRouter();
   const { roster, currencies, inventory, characters, stamina } = usePlayerStore();
 
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/login");
+    }
+  }, [loading, user, router]);
+
   if (!loading && !user) {
-    router.replace("/login");
     return null;
   }
 
