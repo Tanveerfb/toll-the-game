@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { getCharacterArt } from "@/lib/game/characterArt";
+import { usePlayerStore } from "@/store/playerStore";
 
 type CharacterColor = "light" | "red" | "blue" | "green" | "dark";
 
@@ -123,6 +124,10 @@ export default function CharacterBrowser({
     new Set(),
   );
   const [showFilters, setShowFilters] = React.useState(false);
+
+  const roster = usePlayerStore((s) => s.roster);
+  const characterProgress = usePlayerStore((s) => s.characters);
+  const hasHydrated = usePlayerStore((s) => s.hasHydrated);
 
   const allTags = React.useMemo(() => {
     const s = new Set<string>();
@@ -313,6 +318,8 @@ export default function CharacterBrowser({
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {filtered.map((character) => {
             const style = COLOR_STYLES[character.color];
+            const owned = hasHydrated && roster.includes(character.id);
+            const ultLevel = characterProgress[character.id]?.ultLevel ?? 1;
             return (
               <Link
                 key={character.id}
@@ -340,6 +347,16 @@ export default function CharacterBrowser({
                   >
                     {character.color}
                   </span>
+                  {hasHydrated && !owned ? (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/70 font-body text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                      Not Owned
+                    </span>
+                  ) : null}
+                  {owned && ultLevel > 1 ? (
+                    <span className="absolute bottom-1.5 right-1.5 border border-amber-300/70 bg-black/70 px-1.5 py-0.5 font-body text-[9px] font-bold text-amber-200">
+                      Lv.{ultLevel}
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className="border-t border-zinc-800 px-2 py-1.5">

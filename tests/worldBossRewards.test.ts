@@ -39,4 +39,24 @@ describe("rollWorldBossRewards", () => {
     const result = rollWorldBossRewards(() => 0.999999);
     expect(result.coin).toBe(10000);
   });
+
+  it("grants gems minimum (20) when rng is 0", () => {
+    const result = rollWorldBossRewards(() => 0);
+    expect(result.gems).toBe(20);
+  });
+
+  it("grants gems maximum (50) when rng is just under 1", () => {
+    const result = rollWorldBossRewards(() => 0.999999);
+    expect(result.gems).toBe(50);
+  });
+
+  it("grants permanentTicket minimum (1) when rng is 0", () => {
+    const result = rollWorldBossRewards(() => 0);
+    expect(result.permanentTicket).toBe(1);
+  });
+
+  it("grants permanentTicket maximum (3) when rng is just under 1", () => {
+    const result = rollWorldBossRewards(() => 0.999999);
+    expect(result.permanentTicket).toBe(3);
+  });
 });

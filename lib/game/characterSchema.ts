@@ -59,6 +59,7 @@ export const characterSchema = z.looseObject({
   tags: z.array(z.string()).optional(),
   lore: z.string().optional(),
   storyOnly: z.boolean().optional(),
+  permanentPool: z.boolean().optional(),
   tier: z.enum(["elite"]).optional(),
   ultGaugeMax: z.number().positive().optional(),
   ccImmune: z.boolean().optional(),

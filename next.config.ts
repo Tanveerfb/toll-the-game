@@ -23,7 +23,16 @@ const nextConfig: NextConfig = {
         // NPC / enemy / boss art lives in public/npc/ (see characterArt.ts).
         pathname: "/npc/**",
       },
+      {
+        // Gacha banner splash art (see lib/gacha/banners.ts + components/gacha).
+        pathname: "/banners/**",
+      },
     ],
+    // Banner splash art ships as a hand-written placeholder SVG (no query
+    // string, no external source) — safe to allow through the optimizer.
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 };
 

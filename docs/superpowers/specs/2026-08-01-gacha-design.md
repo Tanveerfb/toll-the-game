@@ -229,7 +229,11 @@ banner needs one splash covering all 12 characters.
   old `pity: {standard, limited}` numbers into the new shape (discarding the old
   values is fine — the new bar always starts at 0 anyway, and the old numbers
   were dead scaffolding that no code ever read), and default `ultLevel: 1` on
-  every existing entry in `characters`.
+  every existing entry in `characters`. Because migrations chain (a v1 save
+  runs the v1→v2 step, then falls through to the v3 step in the same call),
+  a player still on v1 goes straight to the full v3 shape in one migration —
+  the existing v1→v2 test assertions need updating to expect that, not just
+  the new v2→v3 cases.
 
 `data/characters/<id>.json`: new optional field `permanentPool: boolean`
 (absent/false = not in the evergreen pool).

@@ -7,7 +7,7 @@ import Link from "next/link";
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/AuthProvider";
-import { usePlayerStore } from "@/store/playerStore";
+import { usePlayerStore, getCharacterProgress } from "@/store/playerStore";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { getCurrentStamina, STAMINA_CAP } from "@/lib/game/stamina";
 import DevGrantPanel from "@/components/game/DevGrantPanel";
@@ -23,7 +23,8 @@ const MATERIAL_LABELS: Record<string, string> = {
 export default function ProfilePage() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
-  const { roster, currencies, inventory, characters, stamina } = usePlayerStore();
+  const store = usePlayerStore();
+  const { roster, currencies, inventory, stamina } = store;
 
   React.useEffect(() => {
     if (!loading && !user) {
@@ -93,7 +94,7 @@ export default function ProfilePage() {
               <CardContent className="flex flex-col gap-1 p-4">
                 {roster.map((id) => {
                   const character = getCharacterById(id);
-                  const progress = characters[id] ?? { level: 1, ascension: 0, xp: 0 };
+                  const progress = getCharacterProgress(store, id);
                   return (
                     <Link
                       key={id}

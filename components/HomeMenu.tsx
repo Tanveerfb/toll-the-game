@@ -112,6 +112,14 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
             </Button>
 
             <Button
+              variant="outline"
+              onClick={() => router.push("/gacha")}
+              className="h-20 justify-start rounded-none border-2 border-pink-400 bg-transparent px-8 font-heading text-2xl tracking-[0.14em] text-pink-200 transition-all hover:bg-pink-400/10 hover:text-pink-100 md:h-24 md:text-3xl"
+            >
+              GACHA
+            </Button>
+
+            <Button
               variant="ghost"
               onClick={() => router.push(authRoute)}
               className="h-20 justify-start rounded-none border-2 border-sky-300 px-8 font-heading text-2xl tracking-[0.14em] text-sky-200 transition-all hover:bg-sky-300/10 hover:text-sky-100 md:h-24 md:text-3xl"

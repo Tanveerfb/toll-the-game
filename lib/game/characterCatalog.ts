@@ -64,6 +64,10 @@ export interface CharacterData {
   lore?: string;
   /** Story-mode enemies: excluded from the practice roster and archive */
   storyOnly?: boolean;
+  /** Evergreen-pool membership for the Permanent gacha banner. Flipped by
+   *  hand per character (docs/superpowers/specs/2026-08-01-gacha-design.md)
+   *  — never set automatically. Absent/false = not in the pool. */
+  permanentPool?: boolean;
   /**
    * Enemy action-economy tier. "elite" (named bosses — Tao/Seras/Lyra_npc)
    * always act 3× per turn even solo; unset/other kits are low-mid and get

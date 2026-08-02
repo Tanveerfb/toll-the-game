@@ -12,7 +12,7 @@ import {
   User
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { usePlayerStore, PlayerState } from "@/store/playerStore";
+import { usePlayerStore, PlayerState, migratePlayerState, CURRENT_PLAYER_STATE_VERSION } from "@/store/playerStore";
 
 interface AuthContextType {
   user: User | null;
@@ -66,15 +66,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (docSnap.exists()) {
             const data = docSnap.data();
+            // Default to 2, not 1: every real doc in this project predates the
+            // `version` field, but was always written in v2 shape (top-level
+            // currencies/characters/stamina already split out — that happened
+            // via an earlier local migration, and saveToCloud has only ever
+            // written that shape). Treating an unversioned doc as v1 would
+            // force the destructive v1->v2 branch in migratePlayerState to
+            // run on already-v2 data: it looks for `gems` nested inside
+            // `inventory` (not there on a v2+ doc), so it resets currencies to
+            // {gems: 1000, coin: 0}, wipes characters to {}, and resets
+            // stamina to defaults — silent permanent data loss. v1 never
+            // existed in production Firestore data, so 2 is the correct and
+            // safe floor.
+            const migrated = migratePlayerState(data, data.version ?? 2);
             skipSyncRef.current = true;
             setPlayerState({
               uid: currentUser.uid,
-              roster: data.roster || [],
-              currencies: data.currencies || { gems: 1000, coin: 0 },
-              inventory: data.inventory || {},
-              characters: data.characters || {},
-              stamina: data.stamina || { current: 120, updatedAt: Date.now() },
-              pity: data.pity || { standard: 0, limited: 0 }
+              roster: migrated.roster,
+              currencies: migrated.currencies,
+              inventory: migrated.inventory,
+              characters: migrated.characters,
+              stamina: migrated.stamina,
+              pity: migrated.pity,
             });
           } else {
             const state = usePlayerStore.getState();
@@ -84,7 +97,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               inventory: state.inventory,
               characters: state.characters,
               stamina: state.stamina,
-              pity: state.pity
+              pity: state.pity,
+              version: CURRENT_PLAYER_STATE_VERSION,
             });
             skipSyncRef.current = true;
             setPlayerState({ uid: currentUser.uid });
@@ -127,7 +141,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...usePlayerStore.getState(),
         ...state,
       };
-      await setDoc(docRef, { roster, currencies, inventory, characters, stamina, pity }, { merge: true });
+      await setDoc(
+        docRef,
+        { roster, currencies, inventory, characters, stamina, pity, version: CURRENT_PLAYER_STATE_VERSION },
+        { merge: true },
+      );
     } catch (e) {
       console.error("Error saving to Firestore", e);
     }

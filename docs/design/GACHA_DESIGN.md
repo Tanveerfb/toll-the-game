@@ -1,73 +1,138 @@
 # Gacha / Summon Design
 
-> Status: DESIGN IN PROGRESS (Tanveer). Drafted 2026-07-18. Not built.
-> Planned since the game's writing began. Part of the monetization core (see PRODUCT_AUDIT.md).
+> Status: BUILT 2026-08-02 (code complete, awaiting Tanveer's commit/deploy). Drafted 2026-07-18,
+> resolved into an implementation spec 2026-08-01 (`docs/superpowers/specs/2026-08-01-gacha-design.md`).
+> Part of the monetization core (see PRODUCT_AUDIT.md).
 
-## Rarities
-Two tiers: **Premium** and **Standard**. Same on-banner pull rate — the difference is **power, not rarity**: Premium units have **higher base stats and stronger, more elaborate kits** than Standard.
+## Banners
+Two banner categories, not one:
+- **Limited banner** — rotates, has a featured roster and an end date. Currently: the **debut banner**,
+  a one-off covering 12 non-collab characters (Duke, Lyra, Batra, Gabrist, Sara, Yalina, Mustafa,
+  Siddiq, Master Tao, Seras, Chiara, Isolde) at a flat **5% total** rate, split evenly (~0.417% each).
+  This 12-unit/5%-flat shape is a **one-off for the debut banner only** — future smaller Limited
+  banners (2-3 featured units) revert to the rate rule below.
+- **Permanent banner** — always available, evergreen pool. Membership is **manual, per-character** (a
+  `permanentPool: true` flag on the character's data file, flipped by hand whenever Tanveer decides —
+  never automatic). Starts **empty** until characters are flagged. Equal odds across the whole pool,
+  no rarity/rate weighting.
 
-## Free (non-gacha) characters
-- **Duke** — starter, given at the beginning.
-- **Lyra** — awarded after clearing **Chapter 2** (story reward, not a pull).
+**Duke and Lyra** keep their existing free-grant paths (Duke = starter, Lyra = Chapter 2 reward) *in
+addition to* being pullable on the debut banner — pulling either is just a dupe.
 
-## Banner structure
-- Each banner runs **3 weeks**.
-- Base pattern: **one Premium + one Standard** featured together on the same banner.
-- **Collab banners** bundle by IP and can break the 1+1 pattern:
-  - **7DS collab:** Meliodas, Ban, Diane — **all Premium**.
-  - **HxH collab:** Gon (Premium), Killua (Premium), Leorio (Standard).
+The 6 collab characters (Meliodas/Ban/Diane, Gon/Killua/Leorio) are **deliberately excluded** from the
+debut banner, reserved for their own future collab banners.
 
-### Planned banners (rarity per unit)
-| Banner | Premium | Standard |
-|---|---|---|
-| Batra / Gabrist | Batra | Gabrist |
-| Sara / Yalina | Sara | Yalina |
-| Mustafa / Siddiq | Mustafa | Siddiq |
-| 7DS collab | Meliodas, Ban, Diane | - |
-| HxH collab | Gon, Killua | Leorio |
+## Rarity is gone
+The old **Premium/Standard** rarity split (a power/prestige tier, never a rate difference) has been
+**dropped entirely** — characters are no longer tagged Premium or Standard anywhere. This is a
+labeling change only: no character stats or kits were rebalanced. Whatever power variance already
+existed between characters stays exactly as it was.
+
+### Planned banners (for future Limited reruns — the debut banner absorbed the original small-pairing plan)
+| Banner | Featured |
+|---|---|
+| Batra / Gabrist | Batra, Gabrist |
+| Sara / Yalina | Sara, Yalina |
+| Mustafa / Siddiq | Mustafa, Siddiq |
+| 7DS collab | Meliodas, Ban, Diane |
+| HxH collab | Gon, Killua, Leorio |
+
+These pairs already appeared together on the debut banner once; future *reruns* of them as their own
+dedicated 2-3-unit Limited banners use the rate rule below, not the debut's 5%-flat one-off.
 
 ## Rates
-- **Featured pull rate depends on unit count, split EQUALLY among featured:**
-  - **2 featured units -> 5% total** (2.5% each; e.g. Sara + Yalina banner).
-  - **3+ featured units -> 7% total** (~2.33% each; e.g. collab banners).
-  - Premium and Standard on the same banner have the **same pull rate** - Premium is a **power/prestige tier, not a rarer pull** (stronger kit / higher investment ceiling; rarity split is NOT a rate difference).
-  - Generous vs Hoyo (Genshin 5-star = 0.6%), closer to 7DSGC. Player-friendly.
-- **Pity:** **hard pity at 80** (guaranteed featured), **soft pity from 70** (rate ramps toward the cap). Counter **carries over between banners**. On a multi-unit banner the hard-pity unit is **player-picked**.
-- **Collab banners:** all featured units on **one banner** at a **constant shared rate** for the full 3-week duration (not staggered).
+- **Limited banner rate rule** (for any banner other than the debut one-off): **2 featured units -> 5%
+  total** (2.5% each), **3+ featured units -> 7% total** (split evenly). Generous vs Hoyo (Genshin
+  5-star = 0.6%), closer to 7DSGC.
+- **Permanent banner:** equal odds across the whole flagged pool, no featured/off-featured distinction.
+- Rate is **flat for the life of a banner** — no soft-pity rate ramp on either banner. The milestone
+  bar below is the sole pity mechanism.
 
-## Economy & pull system (LOCKED 2026-07-18)
-- **Two currencies:** an in-world **money currency** (~rupee; the mora/credits analog, used for ascension/upgrades) and a separate **gacha pull currency** (name TBD - workshop; free + paid).
-- **Pull options:** single pull, or a **multi-pull of 11 for the price of 10** (7DSGC-style discount).
-- **F2P faucet:** roughly **1-2 free pulls per day** from dailies/events.
+## Pity: milestone bar (replaces the old hard/soft pity numbers)
+The originally-drafted "hard pity at 80, soft pity from 70" is **gone**, replaced by a milestone bar
+that tracks currency *spent* (not pull count), 1:1:
 
----
+- **Limited:** bar increases by gems spent (single pull = +3, 11-pull = +30). Resets to 0 whenever the
+  active banner changes — **does not** carry over between banners.
+  - **300** → unlocks a **Claim** button (not automatic). Clicking grants a random pull from **every
+    currently-released playable character**, not just the current banner's featured list.
+  - **600** → unlocks a **Claim** button that opens a picker: player picks any one of the current
+    banner's featured units.
+  - **300 and 600 claim independently** — reaching 600 before claiming 300 doesn't forfeit or gate
+    anything. The bar only resets on the **600 claim** (not the moment it's reached), and resetting
+    forfeits an unclaimed 300 for that lap. It **loops** — claiming 600 restarts the bar at 0.
+- **Permanent:** bar increases by tickets spent (single pull = +1, 11-pull = +10). Only one milestone,
+  at **600** → guaranteed player-picked pull from the Permanent pool. Loops the same way.
 
-## LOCKED (2026-07-18)
+## Economy & pull system
+- **Three currencies:** `gems` (Limited banner pulls), `coin` (in-world money, ascension/leveling — also
+  a possible miss-pull reward), `permanentTicket` (Permanent banner pulls only).
+- **Pull cost:** Limited = 3 gems single / 30 gems for an 11-pull. Permanent = 1 ticket single / 10
+  tickets for an 11-pull (same 7DSGC-style discount shape on both banners).
+- **Faucet:** small gems + tickets rolled into the existing World Boss clear-reward roll (the only
+  reward pipeline that existed when this was built) — amounts are tunable later, same as the
+  materials/coin ranges already are.
 
-- **Non-featured pull outcome:** **currency + materials only** (no off-banner characters; every character obtainable only on their banner, and via re-runs).
-- **Dupes -> Ultimate Level system** (this IS the "ult level-up" long parked as STATUS open issue #6):
-  - Each dupe raises the character's **Ultimate Level**, **max 6**. All characters start at **1/6**.
-  - Higher ult level = **higher ult multiplier**, and **additional effects unlock at Lv 4 and/or 6**.
-  - Distinct from skill card rank (r1->r3), which drives *skill* multipliers.
-- **Currency:** a unique in-world currency, name TBD (Tanveer: maybe rupee-derived).
-- **Materials:** themed drops (e.g. flowers, emblems).
-- **Ascension cost model:** `[boss signature drop] + [local specialty] + [currency]` per band (may expand). Mirrors Genshin (boss drop + local specialty + coin).
-- **Local specialty = broad, theme/backstory-linked per character** (not a strict region system): Duke -> an item found in a village (backstory link); Lyra -> a forest-area item (her first-appearance location). Rest to brainstorm.
-- **Skill rank r1->r3 is NOT meta-progression** - it's a battle-internal mechanic (cards enter deck at r1, merge identical cards in-hand mid-fight to rank up, cap r3; `store/gameStore.ts`). No farm/upgrade path needed. Meta axes are only char level + ascension + ult level.
+## Non-featured pull outcomes (Limited banner only — Permanent never misses)
+A non-featured Limited pull never gives a character. It gives one item from 3 equally-weighted
+categories (~31.67% each), each split evenly within itself:
+- **Currency bundles (coin):** 1,000 / 2,000 / 5,000 / 10,000.
+- **Level-up matz:** the existing Training Manual tiers (`training_manual`/`_advanced`/`_premium`).
+- **Local specialty matz:** 4 shared materials, grouped by each character's existing `color` tag
+  (already used for type-advantage, no new schema needed):
+
+  | Material | Color group | Characters |
+  |---|---|---|
+  | Riverstone Fragment | blue | Duke, Batra, Gabrist |
+  | Scorched Ember | red | Lyra, Sara, Siddiq |
+  | Bramble Thorn | green | Yalina, Mustafa, Master Tao |
+  | Prism Dust | light/dark | Seras, Isolde, Chiara |
+
+  These are deliberately **shared across characters**, not unique-per-character. Resolves the old
+  "local specialty items for the remaining characters" open item below — no per-character brainstorm
+  needed after all, the color-group split covers everyone on the debut banner evenly (3 each).
+
+## Dupes -> Ultimate Level (built)
+- Each dupe raises the character's **Ultimate Level**, **max 6**. All characters start at **1/6**.
+- Reused for every reward source that can land on an owned character: normal pulls, the 300 milestone,
+  and the 600 milestone.
+- **Multiplier/effect tuning per level (1-6) is still Tanveer's open call** — the field and increment
+  mechanic are built, the numbers aren't set yet. Not blocking.
+- Distinct from skill card rank (r1->r3), which drives *skill* multipliers and is a battle-internal
+  merge mechanic (`store/gameStore.ts`), not meta-progression.
+
+## Ascension cost model (unchanged, not part of this build)
+- `[boss signature drop] + [local specialty] + [currency]` per band. Mirrors Genshin.
+- **Not yet wired to the 4 new specialty materials above** — `lib/game/ascension.ts` still only costs
+  `sea_monster_eye` + `corroded_seaweed` + `coin`. Spending the new materials on ascension is a
+  follow-up, not part of this build.
 
 ## OPEN (tuning, non-blocking)
 
-1. **Gacha pull-currency name** (workshop).
-2. **Per-level leveling fuel** — within a band, does Lv->Lv cost currency only, or currency + a common mat? (ascension band gates are fully specced below.)
-3. **Ascension per-band stat-bump distribution** — the +stat granted at each of the 6 ascension unlocks (they sum to take a fully-ascended Lv60 unit to ~3x base; see plan doc).
-4. **Ult per-level multiplier step** — how much the ult multiplier rises per level 1->6 (stat-only for now, no special effects).
-5. **Local specialty items** for the remaining characters (theme/backstory-linked) — brainstorm.
+1. **Per-level leveling fuel** — within a band, does Lv->Lv cost currency only, or currency + a common
+   mat? (ascension band gates are fully specced in `WORLD_BOSS_AND_ASCENSION_PLAN.md`.)
+2. **Ascension per-band stat-bump distribution** — the +stat granted at each of the 6 ascension unlocks.
+3. **Ult per-level multiplier step** — how much the ult multiplier rises per level 1->6, and what (if
+   any) special effects unlock at Lv4/Lv6.
+4. **Wiring the 4 specialty materials into actual ascension costs.**
+5. **Which characters, if any, get flagged into the Permanent pool** — currently empty by design.
 
 ## RESOLVED
-Non-featured pull = currency+mats only; dupes -> Ultimate Level 1/6->6/6 (**stat/multiplier bump only for now**, no Lv4/6 special effects yet; future chars may add them); rate 5% (2 units) / 7% (3+), split equally; **pity 80 hard / 70 soft, carries between banners, hard-pity unit player-picked**; rarity = power-tier not pull-rate (Premium = higher stats + stronger kits); skill rank r1->r3 is an in-battle merge mechanic (not meta); ascension = boss drop + local specialty + currency; local specialty theme-linked per character; free chars Duke (start) + Lyra (Ch2); **pull = single or 11-for-10 multi**; **~1-2 free pulls/day**; collab = one banner, constant shared rate, full duration.
+Two banner categories (Limited rotating + Permanent evergreen); rarity/Premium-Standard dropped
+entirely (labeling only, no rebalance); milestone-bar pity (300/600, independent claims, reset-only-
+on-claim, loops) replaces hard/soft pity; debut banner = 12 non-collab characters at a one-off 5% flat
+rate; collab characters held back for their own banners; non-featured Limited pull = currency/mats/
+specialty-mats only (3-way even split); 4 shared specialty materials grouped by color tag; dupes ->
+Ultimate Level 1/6->6/6 (stat/multiplier bump mechanic built, numbers still open); 3 currencies (gems/
+coin/permanentTicket); pull = single or 11-for-10(ish) multi on both banners; faucet = small gems/
+tickets on World Boss clears; free chars Duke (start) + Lyra (Ch2) unchanged and stack with gacha as
+dupes.
 
-## Reuse notes (from PRODUCT_AUDIT)
-- Archive/codex -> gacha pool browser (owned/unowned + "new!").
-- Ult cut-in / cinematics tech -> summon reveal animations.
-- Art pipeline -> banner splash art.
-- `users/{uid}` doc -> roster ownership + wallet + pity counters.
+## Reuse notes (from PRODUCT_AUDIT) — all landed as planned
+- Archive/codex -> gacha pool browser (owned/unowned + Ultimate Level badge). **Built.**
+- Ult cut-in / cinematics tech -> summon reveal animations (GSAP timeline, not the framer-motion
+  cut-in directly, but the same visual language). **Built.**
+- Art pipeline -> banner splash art. **Not yet** — a placeholder SVG ships in its place, real art
+  pending a ComfyUI session.
+- `users/{uid}` doc -> roster ownership + wallet + pity counters. **Built** (plus a cloud-save
+  migration fix discovered along the way — see the news post / session notes for detail).

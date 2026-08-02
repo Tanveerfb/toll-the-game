@@ -13,6 +13,10 @@ const MATERIAL_IDS = [
   "training_manual",
   "training_manual_advanced",
   "training_manual_premium",
+  "riverstone_fragment",
+  "scorched_ember",
+  "bramble_thorn",
+  "prism_dust",
 ] as const;
 
 /** Dev-only testing tool — same NODE_ENV gate as BattleArena's "SAVE BATTLE
@@ -40,6 +44,7 @@ export default function DevGrantPanel(): React.JSX.Element | null {
           level: Number(levelInput) || 1,
           ascension: Number(ascensionInput) || 0,
           xp: 0,
+          ultLevel: characters[selectedCharId]?.ultLevel ?? 1,
         },
       },
     });
@@ -61,6 +66,35 @@ export default function DevGrantPanel(): React.JSX.Element | null {
               +10 {id}
             </Button>
           ))}
+          <Button variant="outline" onClick={() => grantCurrency({ permanentTicket: 100 })}>+100 Tickets</Button>
+          <Button
+            variant="outline"
+            onClick={() =>
+              setPlayerState({
+                pity: { ...usePlayerStore.getState().pity, limited: { ...usePlayerStore.getState().pity.limited, bar: 300 } },
+              })
+            }
+          >
+            Force Limited bar to 300
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() =>
+              setPlayerState({
+                pity: { ...usePlayerStore.getState().pity, limited: { ...usePlayerStore.getState().pity.limited, bar: 600 } },
+              })
+            }
+          >
+            Force Limited bar to 600
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() =>
+              setPlayerState({ pity: { ...usePlayerStore.getState().pity, permanent: { bar: 600 } } })
+            }
+          >
+            Force Permanent bar to 600
+          </Button>
           <Button variant="outline" onClick={() => spendStaminaAction(40)}>Simulate a run (-40 stamina)</Button>
         </div>
 
