@@ -319,7 +319,13 @@ export default async function CharacterDetailPage({
             </div>
 
             <PreviewButton characterId={character.id} />
-            <CharacterProgressionPanel characterId={character.id} />
+            {/* Growth is ownership-gated and modal — story-only NPC kits have
+                no progression, and an unowned character gets a one-line note
+                instead of controls. */}
+            <CharacterProgressionPanel
+              characterId={character.id}
+              storyOnly={character.storyOnly === true}
+            />
 
             {character.lore ? (
               <div className="border-2 border-zinc-800 bg-black/45 px-4 py-3">

@@ -3,7 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import DetailOverlay from "@/components/game/DetailOverlay";
 import { usePlayerStore, getCharacterProgress } from "@/store/playerStore";
 import { xpToNext } from "@/lib/game/leveling";
 import { getAscensionCost, maxLevelForAscension } from "@/lib/game/ascension";
@@ -14,7 +14,13 @@ const MANUAL_TIERS = [
   { id: "training_manual_premium", label: "Premium Manual" },
 ] as const;
 
-export default function CharacterProgressionPanel({ characterId }: { characterId: string }): React.JSX.Element {
+/** The level/ascension controls themselves — only ever rendered inside the
+ *  modal, for a character the player actually owns. */
+function GrowthControls({
+  characterId,
+}: {
+  characterId: string;
+}): React.JSX.Element {
   const state = usePlayerStore();
   const progress = getCharacterProgress(state, characterId);
   const maxLevel = maxLevelForAscension(progress.ascension);
@@ -23,68 +29,136 @@ export default function CharacterProgressionPanel({ characterId }: { characterId
   const xpNeeded = atMaxLevel ? 0 : xpToNext(progress.level);
 
   return (
-    <Card className="rounded-none border-2 border-zinc-700 bg-black/55 ring-0">
-      <CardHeader className="border-b border-zinc-800 px-4 py-2.5">
-        <CardTitle className="font-heading text-lg tracking-[0.12em] text-zinc-100">
-          Level {progress.level} • Ascension {progress.ascension}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3 p-4">
-        {!atMaxLevel ? (
-          <div>
-            <div className="flex items-center justify-between font-body text-xs uppercase tracking-widest text-zinc-500">
-              <span>XP</span>
-              <span>{progress.xp} / {xpNeeded}</span>
-            </div>
-            <Progress value={(progress.xp / xpNeeded) * 100} className="mt-1" />
-          </div>
-        ) : (
-          <p className="font-body text-xs uppercase tracking-widest text-amber-300">
-            Max level for this ascension tier — ascend to continue leveling.
-          </p>
-        )}
+    <div className="flex flex-col gap-3">
+      <div className="flex items-baseline justify-between gap-2 border border-zinc-800 bg-zinc-900/40 px-3 py-2">
+        <span className="font-heading text-lg tracking-[0.1em] text-zinc-100">
+          Level {progress.level}
+          <span className="font-body text-xs text-zinc-500"> / {maxLevel}</span>
+        </span>
+        <span className="font-body text-xs uppercase tracking-[0.14em] text-amber-200">
+          Ascension {progress.ascension}
+        </span>
+      </div>
 
-        <div className="flex flex-wrap gap-2">
-          {MANUAL_TIERS.map((tier) => {
-            const owned = state.inventory[tier.id] ?? 0;
-            const disabled = atMaxLevel || owned < 1;
-            return (
-              <Button
-                key={tier.id}
-                variant="outline"
-                disabled={disabled}
-                onClick={() => state.feedManualToCharacter(characterId, tier.id)}
-                title={atMaxLevel ? "At max level for this ascension tier" : owned < 1 ? `No ${tier.label} owned` : undefined}
-              >
-                Feed {tier.label} ({owned})
-              </Button>
-            );
-          })}
+      {!atMaxLevel ? (
+        <div>
+          <div className="flex items-center justify-between font-body text-xs uppercase tracking-widest text-zinc-500">
+            <span>XP</span>
+            <span className="tabular-nums">
+              {progress.xp} / {xpNeeded}
+            </span>
+          </div>
+          <Progress value={(progress.xp / xpNeeded) * 100} className="mt-1" />
         </div>
+      ) : (
+        <p className="font-body text-xs uppercase tracking-widest text-amber-300">
+          Max level for this ascension tier — ascend to continue leveling.
+        </p>
+      )}
 
-        {nextCost ? (
-          <div className="border-t border-zinc-800 pt-3">
-            <p className="font-body text-xs uppercase tracking-widest text-zinc-500">
-              Ascend to tier {progress.ascension + 1} (unlocks Lv{maxLevelForAscension(progress.ascension + 1)})
-            </p>
-            <p className="mt-1 font-body text-sm text-zinc-300">
-              {nextCost.sea_monster_eye}x Sea Monster&apos;s Eye ({state.inventory.sea_monster_eye ?? 0} owned) •{" "}
-              {nextCost.corroded_seaweed}x Corroded Sea Weed ({state.inventory.corroded_seaweed ?? 0} owned) •{" "}
-              {nextCost.coin} coin ({state.currencies.coin} owned)
-            </p>
+      <div className="flex flex-wrap gap-2">
+        {MANUAL_TIERS.map((tier) => {
+          const owned = state.inventory[tier.id] ?? 0;
+          const disabled = atMaxLevel || owned < 1;
+          return (
             <Button
-              className="mt-2"
-              onClick={() => state.ascendCharacter(characterId)}
+              key={tier.id}
+              variant="outline"
+              disabled={disabled}
+              onClick={() => state.feedManualToCharacter(characterId, tier.id)}
+              title={
+                atMaxLevel
+                  ? "At max level for this ascension tier"
+                  : owned < 1
+                    ? `No ${tier.label} owned`
+                    : undefined
+              }
             >
-              Ascend
+              Feed {tier.label} ({owned})
             </Button>
-          </div>
-        ) : (
-          <p className="border-t border-zinc-800 pt-3 font-body text-xs uppercase tracking-widest text-zinc-500">
-            No further ascension costed yet (bands 4-6 come in a later update).
+          );
+        })}
+      </div>
+
+      {nextCost ? (
+        <div className="border-t border-zinc-800 pt-3">
+          <p className="font-body text-xs uppercase tracking-widest text-zinc-500">
+            Ascend to tier {progress.ascension + 1} (unlocks Lv
+            {maxLevelForAscension(progress.ascension + 1)})
           </p>
-        )}
-      </CardContent>
-    </Card>
+          <p className="mt-1 font-body text-sm text-zinc-300">
+            {nextCost.sea_monster_eye}x Sea Monster&apos;s Eye (
+            {state.inventory.sea_monster_eye ?? 0} owned) •{" "}
+            {nextCost.corroded_seaweed}x Corroded Sea Weed (
+            {state.inventory.corroded_seaweed ?? 0} owned) • {nextCost.coin} coin
+            ({state.currencies.coin} owned)
+          </p>
+          <Button className="mt-2" onClick={() => state.ascendCharacter(characterId)}>
+            Ascend
+          </Button>
+        </div>
+      ) : (
+        <p className="border-t border-zinc-800 pt-3 font-body text-xs uppercase tracking-widest text-zinc-500">
+          No further ascension costed yet (bands 4-6 come in a later update).
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Growth entry point on the archive detail page.
+ *
+ * Was an always-expanded card that ate most of the sidebar and rendered for
+ * EVERY character — unowned ones and story-only NPCs included, offering to
+ * level things the player has no claim to. Now it's a single button that only
+ * appears for a character the player owns, opening the controls in the shared
+ * DetailOverlay modal.
+ *
+ * Ownership is read after `hasHydrated` so the server render and the first
+ * client render agree (the roster lives in localStorage).
+ */
+export default function CharacterProgressionPanel({
+  characterId,
+  storyOnly = false,
+}: {
+  characterId: string;
+  /** NPC/enemy/boss kits have no progression at all — render nothing. */
+  storyOnly?: boolean;
+}): React.JSX.Element | null {
+  const hasHydrated = usePlayerStore((s) => s.hasHydrated);
+  const roster = usePlayerStore((s) => s.roster);
+  const [open, setOpen] = React.useState(false);
+
+  if (storyOnly) return null;
+  if (!hasHydrated) return null;
+
+  if (!roster.includes(characterId)) {
+    return (
+      <p className="border border-zinc-800 bg-zinc-900/30 px-3 py-2 text-center font-body text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+        Not owned — summon to level up
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex w-full min-h-11 items-center justify-center border border-emerald-400/70 bg-emerald-400/10 font-body text-xs uppercase tracking-widest text-emerald-200 transition-colors hover:bg-emerald-400/20"
+      >
+        Growth — level & ascension
+      </button>
+      {open ? (
+        <DetailOverlay
+          title="Growth"
+          subtitle="Level & ascension"
+          onClose={() => setOpen(false)}
+        >
+          <GrowthControls characterId={characterId} />
+        </DetailOverlay>
+      ) : null}
+    </>
   );
 }

@@ -21,6 +21,15 @@ export const DAMAGE_PREVIEW_DUMMY = {
  */
 export const PRACTICE_DUMMY_ID = "practice_dummy";
 
+/**
+ * Deliberately absurd (Tanveer 2026-08-04). Preview is a sandbox for trying a
+ * kit's whole rank ladder and ultimate — the dummy dying ends the session
+ * early and defeats the point. It used to sit at 400 HP so a Preview battle
+ * "resolved quickly", which was the wrong goal. At 100k nothing in the roster
+ * can drop it: the biggest ultimate in the game is well under 10k per hit.
+ */
+export const PRACTICE_DUMMY_HP = 100_000;
+
 /** Pure builder — a fresh CharacterData each call, registered at runtime via
  *  registerDraftCharacter (same mechanism the old Kit Lab used for its own
  *  draft kit), never persisted to disk and invisible to the static roster. */
@@ -39,7 +48,7 @@ export function buildPracticeDummy(): CharacterData {
     color: "light",
     atk: DAMAGE_PREVIEW_DUMMY.atk,
     def: DAMAGE_PREVIEW_DUMMY.def,
-    hp: 400,
+    hp: PRACTICE_DUMMY_HP,
     storyOnly: true,
     tags: ["Dummy"],
     skills: [fillerSkill, { ...fillerSkill }],

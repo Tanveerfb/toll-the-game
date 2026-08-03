@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Ignore author notes that are stored as markdown content rather than linted source.
     "author_notes.md",
+    // Scratch files written by the `remember` plugin — not project source.
+    ".remember/**",
   ]),
   // Additional overrides: disable rules that cause many false positives in this repo.
   {

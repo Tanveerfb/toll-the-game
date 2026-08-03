@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildPracticeDummy,
+  PRACTICE_DUMMY_HP,
   PRACTICE_DUMMY_ID,
 } from "@/lib/game/damagePreview";
 
@@ -20,11 +21,13 @@ describe("buildPracticeDummy", () => {
     expect(dummy.storyOnly).toBe(true);
   });
 
-  it("has a low HP pool so a Preview battle resolves quickly", () => {
+  it("has an absurd HP pool so a Preview session never ends early", () => {
     const dummy = buildPracticeDummy();
-    // Well under any real playable character's HP (the roster runs ~1800-2800).
-    expect(dummy.hp).toBeLessThan(600);
-    expect(dummy.hp).toBeGreaterThan(0);
+    // Preview exists to try a kit's full rank ladder and ultimate; a dummy
+    // that dies cuts that short. Must stay far above the biggest single hit
+    // in the roster (well under 10k), with headroom for future kits.
+    expect(dummy.hp).toBe(PRACTICE_DUMMY_HP);
+    expect(dummy.hp).toBeGreaterThanOrEqual(100_000);
   });
 
   it("returns a fresh object each call (no shared mutable state)", () => {
