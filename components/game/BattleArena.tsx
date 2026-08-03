@@ -2,8 +2,6 @@
 
 import React from "react";
 import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
-import { getCharacterArt } from "@/lib/game/characterArt";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,52 +10,73 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  ArrowDown,
-  ArrowUp,
-  CheckCircle2,
-  Circle,
-  CircleAlert,
-  ChevronLeft,
-  ChevronRight,
-  Infinity as InfinityIcon,
-  Sparkles,
-} from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import type { BattleCharacter } from "@/types/character";
-import type { Color } from "@/types/color";
-import { getEffectiveAttack, getEffectiveDefense } from "@/lib/game/stats";
-import { getCritChance } from "@/lib/game/combat";
-import { getEvadeChance } from "@/lib/game/evade";
-import { ultGaugeMax } from "@/lib/game/ultGauge";
-import { getPassiveReadout, type PassiveReadout } from "@/lib/game/passiveStacks";
-import {
-  getCharacterById,
-  getCharacterKit,
-  getPlayableCharacters,
-} from "@/lib/game/characterCatalog";
+import { getCharacterArt } from "@/lib/game/characterArt";
 import { getVfxShape, getVfxTint, vfxShapeStyle } from "@/lib/game/characterVfx";
-import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
-import KitDetails, {
-  PassiveDetailSections,
-  SkillBlock,
-  type KitPassiveView,
-} from "@/components/game/KitDetails";
-import type { CharacterSkillData } from "@/lib/game/characterCatalog";
-import SubstatDrawer from "@/components/game/SubstatDrawer";
-import DetailOverlay from "@/components/game/DetailOverlay";
+import { FLASH_TINTS } from "@/lib/game/elementSwatch";
+import { ultGaugeMax } from "@/lib/game/ultGauge";
 import BattleEffectsOverlay from "@/components/game/BattleEffectsOverlay";
-import EffectsQuickPanel, {
-  categorizeEffects,
-  EffectsList,
-} from "@/components/game/EffectsQuickPanel";
-import {
-  useBattleSequencer,
-  type SequencerFlash,
-} from "@/hooks/useBattleSequencer";
+import TeamUnitTile, {
+  type TileFx,
+} from "@/components/game/battle/TeamUnitTile";
+import TeamDetailsList from "@/components/game/battle/TeamDetailsList";
+import UnitDetailPanel from "@/components/game/battle/UnitDetailPanel";
+import { useBattleSequencer } from "@/hooks/useBattleSequencer";
+
+/** Stable no-op so the memoized player tiles don't re-render every frame on a
+ *  fresh inline closure. Player tiles never focus-fire. */
+const noop = (): void => {};
+
+/** Portrait-stack shortcut into one side's roster list. */
+function RosterButton({
+  team,
+  label,
+  className,
+  onClick,
+}: {
+  team: BattleCharacter[];
+  label: string;
+  className: string;
+  onClick: () => void;
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`View ${label.toLowerCase()} details`}
+      className={`flex min-h-11 cursor-pointer items-center gap-1.5 border border-zinc-600 bg-black/75 px-2 py-1.5 backdrop-blur-sm transition-colors ${className}`}
+    >
+      <div className="flex -space-x-2">
+        {team.slice(0, 3).map((unit) => {
+          const art = getCharacterArt(unit.id);
+          return (
+            <span
+              key={unit.instanceId}
+              className="h-6 w-6 overflow-hidden rounded-full border border-zinc-500 bg-zinc-800"
+            >
+              {art ? (
+                <Image
+                  src={art}
+                  alt=""
+                  width={24}
+                  height={24}
+                  className={`h-full w-full object-cover object-top ${unit.currentHP <= 0 ? "grayscale" : ""}`}
+                />
+              ) : null}
+            </span>
+          );
+        })}
+      </div>
+      <span className="font-body text-[10px] uppercase tracking-[0.14em] text-zinc-300">
+        {label}
+      </span>
+    </button>
+  );
+}
 
 function formatPhaseLabel(phase: string): string {
   return phase
@@ -65,893 +84,6 @@ function formatPhaseLabel(phase: string): string {
     .replace(/^./, (s) => s.toUpperCase())
     .trim();
 }
-
-// A big stat callout for the info panel (7DSGC style): label, value, and an
-// optional delta-since-battle-start subline.
-function StatCallout({
-  label,
-  value,
-  sub,
-  subTone,
-  align,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  subTone?: string;
-  align: "left" | "right";
-}): React.JSX.Element {
-  return (
-    <div className={align === "right" ? "text-right" : "text-left"}>
-      <p className="font-body text-[10px] uppercase tracking-[0.18em] text-zinc-400">
-        {label}
-      </p>
-      <p className="font-heading text-2xl leading-tight tracking-[0.04em] text-emerald-300 md:text-3xl">
-        {value}
-      </p>
-      {sub ? (
-        <p className={`font-body text-xs ${subTone ?? "text-zinc-500"}`}>{sub}</p>
-      ) : null}
-    </div>
-  );
-}
-
-// A row in the ?-toggled Detailed Info list.
-function DetailStatRow({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: string;
-}): React.JSX.Element {
-  return (
-    <div className="flex items-center justify-between border-b border-zinc-800 py-1.5 last:border-b-0">
-      <span className="font-body text-xs uppercase tracking-[0.12em] text-zinc-400">
-        {label}
-      </span>
-      <span className={`font-heading text-sm ${tone ?? "text-zinc-100"}`}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-// Activation-mode tag — the exception, not the rule (most passives show
-// none): "buildup" for a stack that itself grants a live, incrementally
-// growing benefit (Seras/Diane/Ban/Yalina); "once" for a genuine
-// once-per-battle trigger (Gon/Killua/Sara/Chiara's rank-up).
-function PassiveActivationTag({
-  mode,
-}: {
-  mode: PassiveReadout["activationMode"];
-}): React.JSX.Element | null {
-  if (mode === "buildup") {
-    return (
-      <span className="inline-flex items-center gap-0.5 border border-zinc-600 bg-zinc-800/80 px-1 py-px text-zinc-300">
-        <InfinityIcon className="h-2.5 w-2.5" strokeWidth={2.6} />
-      </span>
-    );
-  }
-  if (mode === "once") {
-    return (
-      <span className="inline-flex items-center gap-0.5 border border-amber-400/70 bg-amber-400/15 px-1 py-px font-body text-[9px] font-bold text-amber-200">
-        <CircleAlert className="h-2.5 w-2.5" strokeWidth={2.6} />
-        1×
-      </span>
-    );
-  }
-  return null;
-}
-
-/** Icon/number passive status card — see lib/game/passiveStacks.ts for the
- *  per-character mapping this switches on. */
-function PassiveReadoutCard({
-  passive,
-}: {
-  passive: PassiveReadout;
-}): React.JSX.Element {
-  const highlight =
-    passive.ready || (passive.progress !== undefined && passive.fired);
-
-  return (
-    <div
-      className={`border px-3 py-2 ${highlight ? "border-amber-400/70 bg-amber-400/10" : "border-zinc-800 bg-zinc-900/40"}`}
-    >
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="flex items-center gap-1.5 font-heading text-sm tracking-[0.06em] text-zinc-100">
-          {passive.label}
-          <PassiveActivationTag mode={passive.activationMode} />
-        </p>
-        {passive.note ? (
-          <span className="font-body text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-            {passive.note}
-          </span>
-        ) : null}
-      </div>
-
-      {passive.stacks ? (
-        <div className="mt-1 flex items-center gap-1.5">
-          <ArrowUp
-            className={`h-3.5 w-3.5 ${passive.ready ? "text-amber-200" : "text-sky-300"}`}
-            strokeWidth={2.6}
-          />
-          <span
-            className={`font-body text-xs font-semibold ${passive.ready ? "text-amber-200" : "text-zinc-300"}`}
-          >
-            {passive.stacks.current}/{passive.stacks.max}
-          </span>
-          {passive.ready ? (
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
-          ) : null}
-        </div>
-      ) : null}
-
-      {passive.progress ? (
-        passive.fired ? (
-          <div className="mt-1 flex items-center gap-1.5">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
-            <span className="font-body text-xs font-bold uppercase tracking-[0.1em] text-emerald-300">
-              Active
-            </span>
-          </div>
-        ) : (
-          <p className="mt-1 font-body text-xs font-semibold text-zinc-300">
-            {passive.progress.current}/{passive.progress.required}
-          </p>
-        )
-      ) : null}
-
-      {passive.conditionMet !== undefined ? (
-        <div className="mt-1 flex items-center gap-1.5">
-          {passive.conditionMet ? (
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
-          ) : (
-            <Circle className="h-3.5 w-3.5 text-zinc-600" strokeWidth={2.6} />
-          )}
-          <span
-            className={`font-body text-xs font-semibold uppercase tracking-[0.1em] ${passive.conditionMet ? "text-emerald-300" : "text-zinc-500"}`}
-          >
-            {passive.conditionMet ? "Active" : "Inactive"}
-          </span>
-        </div>
-      ) : null}
-
-      {passive.oneShot ? (
-        <div className="mt-1 flex items-center gap-1.5">
-          {passive.oneShot.available ? (
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
-          ) : (
-            <Circle className="h-3.5 w-3.5 text-zinc-600" strokeWidth={2.6} />
-          )}
-          <span
-            className={`font-body text-xs font-bold uppercase tracking-[0.1em] ${passive.oneShot.available ? "text-emerald-300" : "text-zinc-500"}`}
-          >
-            {passive.oneShot.available ? "Available" : "Used"}
-          </span>
-        </div>
-      ) : null}
-
-      {passive.subStates ? (
-        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-          {passive.subStates.map((sub) => (
-            <div key={sub.label} className="flex items-center gap-1.5">
-              {sub.active ? (
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
-              ) : (
-                <Circle className="h-3.5 w-3.5 text-zinc-600" strokeWidth={2.6} />
-              )}
-              <span
-                className={`font-body text-xs ${sub.active ? "text-emerald-300" : "text-zinc-500"}`}
-              >
-                {sub.label}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {passive.alwaysActive ? (
-        <div className="mt-1 flex items-center gap-1.5">
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
-          <span className="font-body text-xs font-bold uppercase tracking-[0.1em] text-emerald-300">
-            Active
-          </span>
-        </div>
-      ) : null}
-
-      {passive.lines && passive.lines.length > 0 ? (
-        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 font-body text-xs text-emerald-300">
-          {passive.lines.map((line) => (
-            <span key={line}>{line}</span>
-          ))}
-        </div>
-      ) : null}
-
-      {passive.readyMessage ? (
-        <p className="mt-1 font-body text-xs font-semibold uppercase tracking-[0.1em] text-amber-200">
-          {passive.readyMessage}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-// Full-screen character info panel (7DSGC-style, Images 2/3): big ATK/DEF/HP
-// callouts flanking the art, teammate nav, a ?-toggle for derived detailed
-// stats, and the full kit below. Buffs/debuffs live in the EffectsQuickPanel.
-function UnitDetailPanel({
-  unit,
-  playerTeam,
-  enemyTeam,
-  currentTurn,
-  onClose,
-}: {
-  unit: BattleCharacter;
-  playerTeam: BattleCharacter[];
-  enemyTeam: BattleCharacter[];
-  currentTurn: number;
-  onClose: () => void;
-}): React.JSX.Element {
-  const ownTeam = unit.team === "player" ? playerTeam : enemyTeam;
-  const teamOnField = ownTeam.filter((u) => !u.isSub);
-  const [selectedId, setSelectedId] = React.useState(unit.instanceId);
-  const [showDetailed, setShowDetailed] = React.useState(false);
-  // Tag chip tapped (spec §5) — opens the Character List overlay for it.
-  const [tagOverlayTag, setTagOverlayTag] = React.useState<string | null>(null);
-  // Super Attack / Passive "Details" buttons (spec §5) open this shared
-  // overlay, parameterized by which kind of content it's showing.
-  const [detailOverlay, setDetailOverlay] = React.useState<
-    | { kind: "ultimate"; skill: CharacterSkillData }
-    | { kind: "passive"; passive: KitPassiveView }
-    | null
-  >(null);
-  const idx = Math.max(
-    0,
-    teamOnField.findIndex((u) => u.instanceId === selectedId),
-  );
-  const selected = teamOnField[idx] ?? unit;
-
-  const step = (dir: number) => {
-    if (teamOnField.length < 2) return;
-    const next = (idx + dir + teamOnField.length) % teamOnField.length;
-    setSelectedId(teamOnField[next].instanceId);
-    setShowDetailed(false);
-  };
-
-  // Phase-aware kit: a multi-phase boss in a later phase shows THAT phase's
-  // skills/ultimate/passives, not the phase-1 catalog entry (Tanveer 2026-07-20).
-  const catalog = getCharacterById(selected.id);
-  const kit = catalog ? getCharacterKit(catalog, selected.phaseIndex ?? 0) : null;
-  const passive = getPassiveReadout(selected, {
-    playerTeam,
-    enemyTeam,
-    currentTurn,
-  });
-  const effAtk = getEffectiveAttack(selected);
-  const effDef = getEffectiveDefense(selected);
-  const atkDelta = effAtk - selected.atk;
-  const defDelta = effDef - selected.def;
-  const crit = Math.round(getCritChance(selected));
-  const evade = Math.round(getEvadeChance(selected));
-  const art = getCharacterArt(selected.id);
-
-  const deltaText = (d: number) =>
-    d === 0 ? undefined : `(${d > 0 ? "+" : ""}${d})`;
-  const deltaTone = (d: number) =>
-    d > 0 ? "text-emerald-400" : d < 0 ? "text-rose-400" : "text-zinc-500";
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6">
-      <Card className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-none border-2 border-zinc-600 bg-zinc-950/95 ring-0">
-        {/* Header: close · name/element/tags · teammate nav */}
-        <CardHeader className="flex flex-row items-center justify-between gap-3 border-b border-zinc-800 px-4 py-3">
-          <Button
-            variant="ghost"
-            onClick={onClose}
-            className="shrink-0 rounded-none border border-zinc-600 px-2 font-body text-xs uppercase tracking-widest"
-          >
-            <ChevronLeft className="h-4 w-4" /> Close
-          </Button>
-          <div className="min-w-0 text-center">
-            <div className="flex items-center justify-center gap-2">
-              <span
-                className={`h-2.5 w-2.5 rotate-45 border border-black/40 ${ELEMENT_SWATCH[selected.color]}`}
-              />
-              <CardTitle className="truncate font-heading text-2xl tracking-[0.08em] text-zinc-100">
-                {selected.name}
-              </CardTitle>
-            </div>
-            {/* Tag chips (spec §5) — tapping one opens the Character List
-                overlay for every playable character carrying that tag. */}
-            <CardDescription className="flex flex-wrap items-center justify-center gap-x-1 gap-y-0.5 font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400">
-              <span>{selected.color}</span>
-              {selected.tier === "elite" ? <span>· Elite</span> : null}
-              {(selected.tags ?? []).map((tag) => (
-                <React.Fragment key={tag}>
-                  <span>·</span>
-                  <button
-                    type="button"
-                    onClick={() => setTagOverlayTag(tag)}
-                    className="cursor-pointer underline decoration-dotted underline-offset-2 transition-colors hover:text-amber-200"
-                  >
-                    {tag}
-                  </button>
-                </React.Fragment>
-              ))}
-            </CardDescription>
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={() => step(-1)}
-              disabled={teamOnField.length < 2}
-              className="flex h-11 w-11 items-center justify-center border border-zinc-600 text-zinc-300 transition-colors hover:border-zinc-400 disabled:opacity-30"
-              aria-label="Previous teammate"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => step(1)}
-              disabled={teamOnField.length < 2}
-              className="flex h-11 w-11 items-center justify-center border border-zinc-600 text-zinc-300 transition-colors hover:border-zinc-400 disabled:opacity-30"
-              aria-label="Next teammate"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </CardHeader>
-
-        <CardContent className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
-          {/* Callouts flanking the art; ? reveals the derived detailed stats */}
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-            <div className="space-y-4">
-              <StatCallout
-                label="Attack"
-                value={String(effAtk)}
-                sub={deltaText(atkDelta)}
-                subTone={deltaTone(atkDelta)}
-                align="left"
-              />
-              <StatCallout
-                label="Defense"
-                value={String(effDef)}
-                sub={deltaText(defDelta)}
-                subTone={deltaTone(defDelta)}
-                align="left"
-              />
-            </div>
-
-            <div className="relative mx-auto h-56 w-40 overflow-hidden border border-zinc-700 bg-zinc-900/60">
-              {art ? (
-                <Image
-                  src={art}
-                  alt={selected.name}
-                  fill
-                  sizes="200px"
-                  className="object-cover object-top"
-                />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center font-heading text-5xl text-white/70">
-                  {selected.name.charAt(0)}
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={() => setShowDetailed((v) => !v)}
-                title="Detailed info"
-                aria-label="Toggle detailed stats"
-                className={`absolute bottom-1 right-1 flex h-11 w-11 items-center justify-center rounded-full border font-heading text-sm ${showDetailed ? "border-amber-300 bg-amber-300/25 text-amber-100" : "border-zinc-400 bg-black/60 text-zinc-100"}`}
-              >
-                ?
-              </button>
-              {showDetailed ? (
-                <div className="absolute inset-0 overflow-y-auto bg-black/85 px-3 py-2">
-                  <p className="mb-1 text-center font-heading text-xs uppercase tracking-[0.16em] text-amber-200">
-                    Detailed Info
-                  </p>
-                  <DetailStatRow
-                    label="Eff. ATK"
-                    value={`${effAtk}${deltaText(atkDelta) ? ` ${deltaText(atkDelta)}` : ""}`}
-                    tone={deltaTone(atkDelta)}
-                  />
-                  <DetailStatRow
-                    label="Eff. DEF"
-                    value={`${effDef}${deltaText(defDelta) ? ` ${deltaText(defDelta)}` : ""}`}
-                    tone={deltaTone(defDelta)}
-                  />
-                  <DetailStatRow label="Crit Chance" value={`${crit}%`} />
-                  <DetailStatRow label="Evade" value={`${evade}%`} />
-                  <DetailStatRow
-                    label="Ult Gauge"
-                    value={`${selected.ultGauge}/${ultGaugeMax(selected)}`}
-                    tone="text-amber-300"
-                  />
-                </div>
-              ) : null}
-            </div>
-
-            <div className="space-y-4">
-              <StatCallout
-                label="Remaining HP"
-                value={String(Math.max(0, selected.currentHP))}
-                align="right"
-              />
-              <StatCallout
-                label="Max HP"
-                value={String(selected.hp)}
-                align="right"
-              />
-            </div>
-          </div>
-
-          <SubstatDrawer unit={selected} />
-
-          {/* Ult gauge pips */}
-          <div className="flex items-center justify-center gap-1">
-            {Array.from({ length: ultGaugeMax(selected) }).map((_, i) => (
-              <span
-                key={i}
-                className={`h-1.5 w-4 -skew-x-12 ${i < selected.ultGauge ? "bg-amber-400" : "bg-zinc-700"}`}
-              />
-            ))}
-          </div>
-
-          {/* Active effects — the full buff/debuff/effect list (incl. grey
-              effects that are hidden on the battlefield tile). */}
-          <div className="space-y-1.5">
-            <p className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-              Active Effects
-            </p>
-            <EffectsList
-              unit={selected}
-              allUnits={[...playerTeam, ...enemyTeam]}
-            />
-          </div>
-
-          {/* Passive readout — icon/number status per lib/game/passiveStacks.ts */}
-          {passive ? <PassiveReadoutCard passive={passive} /> : null}
-
-          {/* Full kit */}
-          {kit ? (
-            <KitDetails
-              skills={kit.skills}
-              ultimate={kit.ultimate}
-              passives={kit.passives as KitPassiveView[]}
-              onUltimateDetails={(skill) =>
-                setDetailOverlay({ kind: "ultimate", skill })
-              }
-              onPassiveDetails={(p) => setDetailOverlay({ kind: "passive", passive: p })}
-            />
-          ) : null}
-        </CardContent>
-      </Card>
-
-      {detailOverlay ? (
-        <DetailOverlay
-          title={
-            detailOverlay.kind === "ultimate"
-              ? "Super Attack Details"
-              : "Passive Details"
-          }
-          subtitle={
-            detailOverlay.kind === "ultimate"
-              ? detailOverlay.skill.skillName
-              : detailOverlay.passive.name
-          }
-          onClose={() => setDetailOverlay(null)}
-        >
-          {detailOverlay.kind === "ultimate" ? (
-            <SkillBlock skill={detailOverlay.skill} tag="ULT" />
-          ) : (
-            <PassiveDetailSections passive={detailOverlay.passive} />
-          )}
-        </DetailOverlay>
-      ) : null}
-
-      {tagOverlayTag ? (
-        <CharacterListOverlay
-          tag={tagOverlayTag}
-          onClose={() => setTagOverlayTag(null)}
-        />
-      ) : null}
-    </div>
-  );
-}
-
-// Team Details list (spec §5) — every party member as a row: portrait
-// thumbnail, element "quick icon", effective ATK/DEF, and a signature skill
-// name. No "Lv" callout — this game has no character-level system, so that
-// Dokkan reference field is dropped rather than invented.
-function TeamDetailsList({
-  playerTeam,
-  onSelectUnit,
-  onClose,
-}: {
-  playerTeam: BattleCharacter[];
-  onSelectUnit: (unit: BattleCharacter) => void;
-  onClose: () => void;
-}): React.JSX.Element {
-  return (
-    <DetailOverlay title="Team Details" onClose={onClose}>
-      <div className="space-y-2">
-        {playerTeam.map((unit) => {
-          const art = getCharacterArt(unit.id);
-          const catalog = getCharacterById(unit.id);
-          const kit = catalog
-            ? getCharacterKit(catalog, unit.phaseIndex ?? 0)
-            : null;
-          const signature = kit?.ultimate?.skillName ?? kit?.skills[0]?.skillName;
-          return (
-            <button
-              key={unit.instanceId}
-              type="button"
-              onClick={() => onSelectUnit(unit)}
-              className="flex w-full items-center gap-3 border border-zinc-800 bg-zinc-900/40 px-3 py-2 text-left transition-colors hover:border-amber-300/60"
-            >
-              <div className="relative h-12 w-12 shrink-0 overflow-hidden border border-zinc-700">
-                {art ? (
-                  <Image
-                    src={art}
-                    alt={unit.name}
-                    fill
-                    sizes="48px"
-                    className="object-cover object-top"
-                  />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center font-heading text-lg text-white/80">
-                    {unit.name.charAt(0)}
-                  </span>
-                )}
-              </div>
-              <span
-                title={unit.color}
-                className={`h-2.5 w-2.5 shrink-0 rotate-45 border border-black/40 ${ELEMENT_SWATCH[unit.color]}`}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-heading text-sm tracking-[0.04em] text-zinc-100">
-                  {unit.name}
-                  {unit.isSub ? (
-                    <span className="ml-1.5 font-body text-[9px] uppercase tracking-widest text-amber-300">
-                      Sub
-                    </span>
-                  ) : null}
-                </p>
-                <p className="truncate font-body text-[10px] uppercase tracking-widest text-zinc-500">
-                  {signature ?? "—"}
-                </p>
-              </div>
-              <div className="shrink-0 text-right font-body text-[10px] uppercase tracking-widest text-zinc-400">
-                <div>ATK {getEffectiveAttack(unit)}</div>
-                <div>DEF {getEffectiveDefense(unit)}</div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </DetailOverlay>
-  );
-}
-
-// Character List overlay (spec §5) — tapping a tag chip opens a grid of
-// every character carrying that tag: portrait + badge only, no stats.
-//
-// Note: uses the full playable catalog rather than gating by the player's
-// owned roster. Ownership/gacha isn't built yet (playerStore.roster is a
-// starter-only stub with no pull system — TeamSelect's own practice roster
-// already ignores it and uses getPlayableCharacters() for the same reason);
-// gating here today would show almost nothing. Revisit once gacha ships.
-function CharacterListOverlay({
-  tag,
-  onClose,
-}: {
-  tag: string;
-  onClose: () => void;
-}): React.JSX.Element {
-  const matches = getPlayableCharacters().filter((c) =>
-    (c.tags ?? []).includes(tag),
-  );
-  return (
-    <DetailOverlay title={`Tag: ${tag}`} onClose={onClose}>
-      {matches.length === 0 ? (
-        <p className="py-6 text-center font-body text-sm uppercase tracking-[0.14em] text-zinc-500">
-          No characters found.
-        </p>
-      ) : (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {matches.map((char) => {
-            const art = getCharacterArt(char.id);
-            return (
-              <div
-                key={char.id}
-                className="flex flex-col items-center gap-1 border border-zinc-800 bg-zinc-900/40 p-1.5"
-              >
-                <div className="relative aspect-square w-full overflow-hidden border border-zinc-700">
-                  {art ? (
-                    <Image
-                      src={art}
-                      alt={char.name}
-                      fill
-                      sizes="100px"
-                      className="object-cover object-top"
-                    />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center font-heading text-2xl text-white/80">
-                      {char.name.charAt(0)}
-                    </span>
-                  )}
-                </div>
-                <Badge
-                  className={`w-full justify-center truncate rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest text-zinc-950 ${ELEMENT_SWATCH[char.color]}`}
-                >
-                  {char.name}
-                </Badge>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </DetailOverlay>
-  );
-}
-
-function getUnitBorderClass(color: BattleCharacter["color"]): string {
-  switch (color) {
-    case "red":
-      return "border-rose-400/80";
-    case "blue":
-      return "border-sky-400/80";
-    case "green":
-      return "border-emerald-400/80";
-    case "dark":
-      return "border-violet-400/80";
-    case "light":
-    default:
-      return "border-amber-300/80";
-  }
-}
-
-const CHIP_STYLE = {
-  buff: { cls: "border-sky-500/60 bg-sky-500/15 text-sky-200", icon: ArrowUp },
-  debuff: {
-    cls: "border-rose-500/60 bg-rose-500/15 text-rose-200",
-    icon: ArrowDown,
-  },
-  effect: {
-    cls: "border-zinc-500/60 bg-zinc-500/15 text-zinc-300",
-    icon: Sparkles,
-  },
-} as const;
-
-// Small colored status squares above the HP bar (blue buff / red debuff / grey
-// effect). The whole cluster is a button that opens the effects quick-panel.
-function StatusChips({
-  unit,
-  onOpen,
-}: {
-  unit: BattleCharacter;
-  onOpen: (unit: BattleCharacter) => void;
-}): React.JSX.Element {
-  // Only buffs/debuffs surface on the battlefield tile; grey "effect"-category
-  // statuses (and the full itemized list) live in the character info panel
-  // (Team list -> character panel). Bar wraps to at most 2 lines.
-  const rows = categorizeEffects(unit).filter((r) => r.category !== "effect");
-  if (rows.length === 0) return <></>;
-  return (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-        onOpen(unit);
-      }}
-      title="View effects"
-      aria-label="View status effects"
-      className="flex min-h-11 max-h-[2.15rem] w-full cursor-pointer flex-wrap content-start items-center gap-0.5 overflow-hidden"
-    >
-      {rows.map(({ effect, category }, idx) => {
-        const style = CHIP_STYLE[category];
-        const Icon = style.icon;
-        const stacks = effect.stacks ?? 1;
-        return (
-          <span
-            key={`${effect.type}-${idx}`}
-            className={`relative flex h-4 w-4 shrink-0 items-center justify-center border ${style.cls}`}
-          >
-            <Icon className="h-2.5 w-2.5" strokeWidth={2.6} />
-            {stacks > 1 ? (
-              <span className="absolute -bottom-1 -right-1 bg-black px-0.5 font-body text-[7px] font-bold leading-none text-zinc-100">
-                {stacks}
-              </span>
-            ) : null}
-          </span>
-        );
-      })}
-    </button>
-  );
-}
-
-const FLASH_TINTS: Record<Color, string> = {
-  red: "rgba(244,63,94,0.55)",
-  blue: "rgba(56,189,248,0.55)",
-  green: "rgba(52,211,153,0.5)",
-  dark: "rgba(167,139,250,0.55)",
-  light: "rgba(252,211,77,0.55)",
-};
-
-interface TileFx {
-  hpOverride?: number;
-  shaking?: boolean;
-  evading?: boolean;
-  flash?: SequencerFlash;
-}
-
-const TeamUnitTile = React.memo(function TeamUnitTile({
-  unit,
-  isEnemy,
-  isMarked,
-  queuedHits,
-  fx,
-  onMark,
-  onOpenEffects,
-}: {
-  unit: BattleCharacter;
-  isEnemy: boolean;
-  isMarked: boolean;
-  queuedHits: number;
-  fx: TileFx;
-  onMark: (instanceId: string) => void;
-  onOpenEffects: (unit: BattleCharacter) => void;
-}): React.JSX.Element {
-  // During playback the sequencer feeds exact per-event HP snapshots so the
-  // bar (and the DOWN stamp) land at the impact moment, not at resolve time
-  const displayHP = fx.hpOverride ?? unit.currentHP;
-  const hpPercent = unit.hp > 0 ? Math.max(0, (displayHP / unit.hp) * 100) : 0;
-  const isDead = displayHP <= 0;
-  const isBenched = unit.isSub === true;
-  const art = getCharacterArt(unit.id);
-  // Enemies get a camera-reticle corner-bracket overlay instead of a
-  // glowing border (spec §3, 7dsgc-enemy-target-marker.jpg) — allies keep
-  // the glow treatment (currently unused: player tiles never mark).
-  const markColorClass = isEnemy
-    ? ""
-    : "border-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.45)]";
-
-  const ultFull = unit.ultGauge >= ultGaugeMax(unit);
-  const showTargetReticle = isMarked && isEnemy;
-
-  return (
-    <div
-      data-battle-instance={unit.instanceId}
-      className={`relative min-h-0 h-full ${fx.shaking ? (fx.flash?.strong ? "battle-shake-strong" : "battle-shake") : ""} ${fx.evading ? "battle-evade" : ""}`}
-    >
-      {/* Camera-reticle target marker (7dsgc-enemy-target-marker.jpg): red
-          corner brackets overlaid directly on the card, not a separate
-          arrow/glow element. */}
-      {showTargetReticle ? (
-        <div className="pointer-events-none absolute inset-0.5 z-20">
-          <span className="absolute left-0 top-0 h-4 w-4 border-l-2 border-t-2 border-red-500" />
-          <span className="absolute right-0 top-0 h-4 w-4 border-r-2 border-t-2 border-red-500" />
-          <span className="absolute bottom-0 left-0 h-4 w-4 border-b-2 border-l-2 border-red-500" />
-          <span className="absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-red-500" />
-        </div>
-      ) : null}
-      <div
-        onClick={() => {
-          if (!isDead && !isBenched) {
-            onMark(unit.instanceId);
-          }
-        }}
-        className={`flex h-full min-h-0 flex-col overflow-hidden border-2 bg-black/55 transition-colors ${isMarked && !isEnemy ? markColorClass : getUnitBorderClass(unit.color)} ${isBenched ? "opacity-60" : ""} ${isDead || isBenched ? "cursor-default" : "cursor-pointer"}`}
-      >
-        {/* HEADER (top): element crest · name · status chips, then HP + ult */}
-        <div
-          className={`shrink-0 space-y-1 border-b border-zinc-800 bg-black/80 px-1.5 py-1 ${isDead ? "opacity-60" : ""}`}
-        >
-          {/* Effects bar (top): buffs/debuffs only, wraps max 2 lines. */}
-          <StatusChips unit={unit} onOpen={onOpenEffects} />
-
-          {/* Identity: element crest + name only — nothing else on this row. */}
-          <div className="flex items-center gap-1">
-            <span
-              title={unit.color}
-              className={`h-2.5 w-2.5 shrink-0 rotate-45 border border-black/40 ${ELEMENT_SWATCH[unit.color]}`}
-            />
-            <span className="min-w-0 flex-1 truncate font-heading text-xs tracking-[0.06em] text-zinc-100">
-              {unit.name.split(" ")[0]}
-            </span>
-          </div>
-
-          <div>
-            {/* HP bar only — exact numbers live in the Info panel */}
-            <div className="h-2 w-full overflow-hidden rounded-full border border-zinc-700/80 bg-zinc-900">
-              <div
-                className={`h-full rounded-full transition-[width] duration-300 ${isDead || hpPercent < 30 ? "bg-red-500" : "bg-emerald-500"}`}
-                style={{ width: `${hpPercent}%` }}
-              />
-            </div>
-            <span className="mt-0.5 flex items-center gap-0.5">
-              {Array.from({ length: ultGaugeMax(unit) }).map((_, i) => (
-                <span
-                  key={i}
-                  className={`h-1 flex-1 -skew-x-12 ${i < unit.ultGauge ? (ultFull ? "bg-amber-300 shadow-[0_0_5px_rgba(252,211,77,0.8)]" : "bg-amber-500/80") : "bg-zinc-700"}`}
-                />
-              ))}
-            </span>
-          </div>
-        </div>
-
-        {/* BODY: character artwork */}
-        <div className="relative min-h-0 flex-1 overflow-hidden bg-zinc-900/60">
-          {art ? (
-            <Image
-              src={art}
-              alt={unit.name}
-              fill
-              sizes="220px"
-              className={`object-cover object-top ${isDead ? "grayscale" : ""}`}
-            />
-          ) : (
-            <span className="absolute inset-0 flex items-center justify-center font-heading text-4xl text-white/80">
-              {unit.name.charAt(0).toUpperCase()}
-            </span>
-          )}
-
-          <div className="absolute left-1 top-1 flex flex-wrap gap-1">
-            {isBenched ? (
-              <Badge className="rounded-none bg-amber-300 px-1 py-0 font-body text-[9px] font-bold uppercase tracking-widest text-zinc-950">
-                Sub
-              </Badge>
-            ) : null}
-            {isMarked && !isEnemy ? (
-              <Badge
-                variant="outline"
-                className="rounded-none border-emerald-300 bg-emerald-300/20 px-1 py-0 font-body text-[9px] uppercase tracking-widest text-emerald-100 backdrop-blur-sm"
-              >
-                Target
-              </Badge>
-            ) : null}
-            {queuedHits > 0 ? (
-              <Badge
-                variant="outline"
-                className="rounded-none border-sky-300 bg-sky-500/25 px-1 py-0 font-body text-[9px] uppercase tracking-widest text-sky-100 backdrop-blur-sm"
-              >
-                {queuedHits}×
-              </Badge>
-            ) : null}
-          </div>
-
-          {isDead ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-              <span className="border border-red-500/80 bg-red-950/70 px-2 py-0.5 font-heading text-sm tracking-[0.2em] text-red-300">
-                DOWN
-              </span>
-            </div>
-          ) : null}
-
-          {fx.flash ? (
-            <m.div
-              key={fx.flash.key}
-              initial={{ opacity: fx.flash.strong ? 1 : 0.75 }}
-              animate={{ opacity: 0 }}
-              transition={{ duration: 0.38, ease: "easeOut" }}
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background: `radial-gradient(75% 75% at 50% 45%, ${FLASH_TINTS[fx.flash.color]}, transparent 78%)`,
-              }}
-            >
-              <div
-                className="absolute inset-y-0 left-1/2 w-1 -translate-x-1/2 rotate-[24deg] bg-white/80"
-                style={{ display: fx.flash.strong ? undefined : "none" }}
-              />
-            </m.div>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-});
 
 /** Swaps the result screen's default actions (Rematch/Change Teams/Main Menu)
  *  for a caller-driven flow — used by both story mode (chapter progression)
@@ -1050,21 +182,27 @@ export default function BattleArena({
   }, [phaseBreak, clearPhaseBreak, battleSpeed]);
 
   const phaseLabel = formatPhaseLabel(battlePhase);
-  const [detailUnit, setDetailUnit] = React.useState<BattleCharacter | null>(
+  // Store the id and resolve the LIVE unit each render: the panel now leads
+  // with HP and the effects list, so a captured snapshot would freeze while
+  // the battle moved underneath it.
+  const [detailUnitId, setDetailUnitId] = React.useState<string | null>(null);
+  const detailUnit = detailUnitId
+    ? ([...playerTeam, ...enemyTeam].find(
+        (u) => u.instanceId === detailUnitId,
+      ) ?? null)
+    : null;
+  // Which side's roster list is open. Enemies previously had no route into
+  // the detail panel at all, even though the panel always handled them.
+  const [rosterSide, setRosterSide] = React.useState<"player" | "enemy" | null>(
     null,
   );
-  const [showTeamList, setShowTeamList] = React.useState(false);
-  // Effects quick-panel: store the id and resolve the LIVE unit so the panel
-  // reflects effect changes if the battle advances while it's open.
-  const [effectsUnitId, setEffectsUnitId] = React.useState<string | null>(null);
-  const effectsUnit = effectsUnitId
-    ? [...playerTeam, ...enemyTeam].find(
-        (u) => u.instanceId === effectsUnitId,
-      ) ?? null
-    : null;
-  const openEffects = React.useCallback(
-    (unit: BattleCharacter) => setEffectsUnitId(unit.instanceId),
-    [setEffectsUnitId],
+  // Tap-to-inspect, identical on both rows — including the status-chip strip,
+  // which used to open a second overlay answering the same
+  // question the detail panel answers. The detail panel now leads with the
+  // effects list, so there is one destination instead of two.
+  const openDetail = React.useCallback(
+    (unit: BattleCharacter) => setDetailUnitId(unit.instanceId),
+    [setDetailUnitId],
   );
   const [isLogOpen, setIsLogOpen] = React.useState(false);
   const [isExitConfirmOpen, setIsExitConfirmOpen] = React.useState(false);
@@ -1487,39 +625,23 @@ export default function BattleArena({
         </button>
       ) : null}
 
-      {/* Bottom-right cluster (Dokkan's "Next Up" stack, spec §5) — opens the
-          Team Details list. */}
-      <button
-        type="button"
-        onClick={() => setShowTeamList(true)}
-        aria-label="View team details"
-        className="absolute bottom-3 right-3 z-30 flex min-h-11 cursor-pointer items-center gap-1.5 border border-zinc-600 bg-black/75 px-2 py-1.5 backdrop-blur-sm transition-colors hover:border-amber-300"
-      >
-        <div className="flex -space-x-2">
-          {playerTeam.slice(0, 3).map((unit) => {
-            const art = getCharacterArt(unit.id);
-            return (
-              <span
-                key={unit.instanceId}
-                className="h-6 w-6 overflow-hidden rounded-full border border-zinc-500 bg-zinc-800"
-              >
-                {art ? (
-                  <Image
-                    src={art}
-                    alt=""
-                    width={24}
-                    height={24}
-                    className="h-full w-full object-cover object-top"
-                  />
-                ) : null}
-              </span>
-            );
-          })}
-        </div>
-        <span className="font-body text-[10px] uppercase tracking-[0.14em] text-zinc-300">
-          Team
-        </span>
-      </button>
+      {/* Roster shortcuts (Dokkan's "Next Up" stack, spec §5) — one per side.
+          The enemy button is new: enemies previously had no route into the
+          detail panel from anywhere on this screen. */}
+      <RosterButton
+        team={enemyTeam}
+        label="Enemy"
+        // top-14, not top-3: the status strip's Speed/Log/Exit cluster lives
+        // in the top-right corner and this would sit on top of it.
+        className="absolute right-3 top-14 z-30 hover:border-red-400"
+        onClick={() => setRosterSide("enemy")}
+      />
+      <RosterButton
+        team={playerTeam}
+        label="Team"
+        className="absolute bottom-3 right-3 z-30 hover:border-amber-300"
+        onClick={() => setRosterSide("player")}
+      />
 
       {/* Slim status strip */}
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-800 bg-black/60 px-3 py-1.5 backdrop-blur-sm">
@@ -1581,7 +703,8 @@ export default function BattleArena({
             <p className="min-w-0 truncate font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
               Enemy{" "}
               <span className="text-zinc-600">
-                — click to focus fire (optional; unmarked attacks pick randomly)
+                — tap to inspect · ◎ to focus fire (optional; unmarked attacks
+                pick randomly)
               </span>
             </p>
             {/* Enemy hidden deck (headless 7DS GC model): face-down cards = the
@@ -1619,8 +742,9 @@ export default function BattleArena({
                   isMarked={selectedEnemyMarker === unit.instanceId}
                   queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
                   fx={tileFx(unit.instanceId)}
+                  onInspect={openDetail}
                   onMark={setEnemyMarker}
-                  onOpenEffects={openEffects}
+                  onOpenEffects={openDetail}
                 />
               </div>
             ))}
@@ -1648,7 +772,7 @@ export default function BattleArena({
           className={`bighit-recede flex min-h-0 flex-col transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.97] opacity-50" : "scale-100 opacity-100"}`}
         >
           <p className="mb-1 shrink-0 font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            Player <span className="text-zinc-600">— tap TEAM for details</span>
+            Player <span className="text-zinc-600">— tap to inspect</span>
           </p>
           <div className="flex min-h-0 flex-1 items-center justify-center gap-2 overflow-hidden">
             {playerTeam.map((unit) => (
@@ -1662,8 +786,9 @@ export default function BattleArena({
                   isMarked={false}
                   queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
                   fx={tileFx(unit.instanceId)}
-                  onMark={() => {}}
-                  onOpenEffects={openEffects}
+                  onInspect={openDetail}
+                  onMark={noop}
+                  onOpenEffects={openDetail}
                 />
               </div>
             ))}
@@ -1893,27 +1018,19 @@ export default function BattleArena({
           playerTeam={playerTeam}
           enemyTeam={enemyTeam}
           currentTurn={currentTurn}
-          onClose={() => setDetailUnit(null)}
+          onClose={() => setDetailUnitId(null)}
         />
       ) : null}
 
-      {showTeamList ? (
+      {rosterSide ? (
         <TeamDetailsList
-          playerTeam={playerTeam}
+          team={rosterSide === "player" ? playerTeam : enemyTeam}
+          title={rosterSide === "player" ? "Team Details" : "Enemy Details"}
           onSelectUnit={(unit) => {
-            setShowTeamList(false);
-            setDetailUnit(unit);
+            setRosterSide(null);
+            setDetailUnitId(unit.instanceId);
           }}
-          onClose={() => setShowTeamList(false)}
-        />
-      ) : null}
-
-      {effectsUnit ? (
-        <EffectsQuickPanel
-          unit={effectsUnit}
-          playerTeam={playerTeam}
-          enemyTeam={enemyTeam}
-          onClose={() => setEffectsUnitId(null)}
+          onClose={() => setRosterSide(null)}
         />
       ) : null}
 
