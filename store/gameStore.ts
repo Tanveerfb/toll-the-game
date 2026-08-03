@@ -18,7 +18,14 @@ import {
 import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { useSettingsStore } from "./settingsStore";
 
-export type SequencedBattleEvent = AnyBattleEvent & { id: number };
+export type SequencedBattleEvent = AnyBattleEvent & {
+  id: number;
+  /** Turn index the event landed in (0-based; UI shows turn + 1). */
+  turn: number;
+  /** Phase it landed in — distinguishes a player action from an enemy one for
+   *  tick events, which carry no team of their own. */
+  phase: BattlePhase;
+};
 
 // Ally-friendly skill that hits ONE ally at this card's rank (no aoe, and
 // aoeRanked inactive at the rank) — the player must mark the ally target.
@@ -257,11 +264,19 @@ export const useGameStore = create<BattleState>()(
   setBattlePhase: (phase) => set({ battlePhase: phase }),
   addToBattleLog: (entry) =>
     set((state) => ({ battleLog: [...state.battleLog, entry] })),
+  // Stamped with the turn and phase it landed in. The engine has no reason to
+  // know about either — they're presentation context — so they're attached
+  // here rather than threaded through executeSkill's emitter.
   addBattleEvent: (event) =>
     set((state) => ({
       battleEvents: [
         ...state.battleEvents,
-        { ...event, id: state.battleEvents.length + 1 },
+        {
+          ...event,
+          id: state.battleEvents.length + 1,
+          turn: state.currentTurn,
+          phase: state.battlePhase,
+        },
       ],
     })),
   // Speed is a player preference — deliberately not reset by resetBattle,

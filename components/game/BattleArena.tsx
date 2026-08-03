@@ -18,13 +18,14 @@ import type { BattleCharacter } from "@/types/character";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { getVfxShape, getVfxTint, vfxShapeStyle } from "@/lib/game/characterVfx";
 import { FLASH_TINTS } from "@/lib/game/elementSwatch";
-import { ultGaugeMax } from "@/lib/game/ultGauge";
 import BattleEffectsOverlay from "@/components/game/BattleEffectsOverlay";
 import TeamUnitTile, {
   type TileFx,
 } from "@/components/game/battle/TeamUnitTile";
 import TeamDetailsList from "@/components/game/battle/TeamDetailsList";
 import UnitDetailPanel from "@/components/game/battle/UnitDetailPanel";
+import BattleLogDrawer from "@/components/game/battle/BattleLogDrawer";
+import { formatBattleLogMarkdown } from "@/lib/game/battleLogMarkdown";
 import { useBattleSequencer } from "@/hooks/useBattleSequencer";
 
 /** Stable no-op so the memoized player tiles don't re-render every frame on a
@@ -117,6 +118,7 @@ export default function BattleArena({
   const enemyTeam = useGameStore((s) => s.enemyTeam);
   const selectedEnemyMarker = useGameStore((s) => s.selectedEnemyMarker);
   const battleLog = useGameStore((s) => s.battleLog);
+  const battleEvents = useGameStore((s) => s.battleEvents);
   const interactionNotice = useGameStore((s) => s.interactionNotice);
   const phaseBreak = useGameStore((s) => s.phaseBreak);
   const clearPhaseBreak = useGameStore((s) => s.clearPhaseBreak);
@@ -206,7 +208,6 @@ export default function BattleArena({
   );
   const [isLogOpen, setIsLogOpen] = React.useState(false);
   const [isExitConfirmOpen, setIsExitConfirmOpen] = React.useState(false);
-  const [showAllEvents, setShowAllEvents] = React.useState(false);
 
   const phaseOrder = [
     "OnBattleStart",
@@ -265,25 +266,19 @@ export default function BattleArena({
     if (!isBattleOver) setLogSaveResult(null);
   }
   const saveBattleLog = async () => {
-    const stamp = new Date()
-      .toISOString()
-      .replace(/[:T]/g, "-")
-      .slice(0, 19);
-    const unitLine = (u: BattleCharacter) =>
-      `  ${u.name} (${u.id})${u.isSub ? " [sub]" : ""} — HP ${u.currentHP}/${u.hp}, ATK ${u.currentAttack}, DEF ${u.currentDefense}, ULT ${u.ultGauge}/${ultGaugeMax(u)}`;
-    const content = [
-      `Battle log — ${new Date().toString()}`,
-      `Result: ${battlePhase.toUpperCase()} on turn ${currentTurn + 1} (${playerTurns} player / ${enemyTurns} enemy turns resolved)`,
-      "",
-      "Player team (final state):",
-      ...playerTeam.map(unitLine),
-      "Enemy team (final state):",
-      ...enemyTeam.map(unitLine),
-      "",
-      `--- Full event log (${battleLog.length} entries) ---`,
-      ...battleLog,
-      "",
-    ].join("\n");
+    const now = new Date();
+    const stamp = now.toISOString().replace(/[:T]/g, "-").slice(0, 19);
+    const content = formatBattleLogMarkdown({
+      result: battlePhase,
+      turn: currentTurn,
+      playerTurns,
+      enemyTurns,
+      playerTeam,
+      enemyTeam,
+      events: battleEvents,
+      rawLog: battleLog,
+      timestamp: now.toString(),
+    });
     try {
       const res = await fetch("/api/battle-log", {
         method: "POST",
@@ -823,67 +818,12 @@ export default function BattleArena({
         )}
       </div>
 
-      {/* Full log drawer */}
-      <AnimatePresence>
-        {isLogOpen ? (
-          <>
-            <m.div
-              key="log-scrim"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              onClick={() => setIsLogOpen(false)}
-              className="fixed inset-0 z-40 bg-black/50"
-            />
-            <m.aside
-              key="log-drawer"
-              initial={{ x: 360 }}
-              animate={{ x: 0 }}
-              exit={{ x: 360 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-              className="fixed right-0 top-0 z-50 flex h-dvh w-[340px] max-w-[90vw] flex-col border-l border-zinc-700 bg-zinc-950/95 backdrop-blur-md"
-            >
-              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-800 px-4 py-3">
-                <p className="font-heading text-lg tracking-[0.12em] text-zinc-100">
-                  BATTLE LOG
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowAllEvents((prev) => !prev)}
-                    className={`cursor-pointer border px-2 py-0.5 font-body text-[10px] uppercase tracking-widest transition-colors ${showAllEvents ? "border-amber-300 bg-amber-300/10 text-amber-200" : "border-zinc-700 text-zinc-400"}`}
-                  >
-                    {showAllEvents ? "All events" : "Actions only"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsLogOpen(false)}
-                    className="cursor-pointer border border-zinc-700 px-2 py-0.5 font-body text-[10px] uppercase tracking-widest text-zinc-300 hover:border-zinc-500"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-              <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-4 py-3 font-body text-sm text-zinc-200">
-                {((showAllEvents ? battleLog : actionLog).length > 0
-                  ? [...(showAllEvents ? battleLog : actionLog)]
-                      .reverse()
-                      .map((entry) => entry.replace(/^\[Action\]\s*/, ""))
-                  : ["No battle events yet."]
-                ).map((entry, idx) => (
-                  <p
-                    key={`${entry}-${idx}`}
-                    className="border-b border-zinc-900 pb-1 last:border-b-0"
-                  >
-                    {entry}
-                  </p>
-                ))}
-              </div>
-            </m.aside>
-          </>
-        ) : null}
-      </AnimatePresence>
+      <BattleLogDrawer
+        open={isLogOpen}
+        events={battleEvents}
+        rawLog={battleLog}
+        onClose={() => setIsLogOpen(false)}
+      />
 
       {isExitConfirmOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
