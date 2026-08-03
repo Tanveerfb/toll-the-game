@@ -1,6 +1,5 @@
 # SERAS — Character Design Sheet
 *Main Villain*
-*(redesign locked 2026-08-02 to `refs/seras-cressida-*.png`)*
 
 ## Concept
 A fairy-human hybrid villain operating in two completely distinct modes.
@@ -16,10 +15,10 @@ This is the form everyone sees. Indistinguishable from an ordinary human — by 
 
 - **Ears:** Naturally pointed (elf-like), but her hybrid physiology is under her direct control, and she keeps them rounded/human-shaped at will.
 - **Eyes:** True color is light reddish; normalized to pale blue-grey in civilian form — sharp against fair skin, but nothing inhuman.
-- **Hair:** Short, wavy strawberry-blonde/copper bob (matches reference — corrected 2026-08-02 from an earlier "platinum blonde" placeholder). Styled with the same sharp, composed precision as Cressida Bright's look — put-together without being ostentatious.
+- **Hair:** Platinum blonde — warm and human-reading in daylight, shifting cold and silver-toned under certain lighting. Styled with the same sharp, composed precision as Cressida Bright's look — put-together without being ostentatious.
 - **Face:** Soft, delicate features — fine nose, slightly full lips, gentle bone structure, porcelain-fair skin with light freckles across the nose. Nothing reads as threatening or severe on its own. The authority is entirely expression-led: composed, cool, and still — the kind of face that's perfectly readable and somehow tells you nothing at the same time.
 - **Lips:** Red lipstick — the one deliberate, striking detail in an otherwise understated professional look. Commands a room without raising a flag.
-- **Outfit:** White/cream power blazer (oversized, structured, buttoned sleeve-borders) over a matching white mini skirt — a coordinated suit set that reads high-status and authoritative without being overtly intimidating. Black sheer tights ground the look and stop it from reading too soft. The one deliberate pop of color is the red lipstick — everything else is controlled and intentional.
+- **Outfit:** White/cream power blazer (oversized, structured, buttoned cuffs) over a matching white mini skirt — a coordinated suit set that reads high-status and authoritative without being overtly intimidating. Black tights ground the look and stop it from reading too soft. The one deliberate pop of color is the red lipstick — everything else is controlled and intentional.
 - **Demeanor:** Calm, composed, exactly as authoritative as her position calls for — and not a hint more. Reads as completely trustworthy.
 
 **Why she stays here:** Not to dodge trouble — it's a tactical choice. Passing as fully human lets her move through society, gather intel, get close to a target, or strike without anyone seeing it coming until it's too late.
@@ -31,7 +30,7 @@ What's underneath, revealed only when she chooses to drop the disguise.
 
 - **Ears:** Natural elf-like points, no longer hidden.
 - **Eyes:** True light reddish color; can spark faintly with electricity in the moment before she strikes.
-- **Hair:** Shifts from the human form's strawberry-blonde/copper to platinum-silver as her power manifests — not a lighting trick, an actual transformation. Worn loose and dramatic, styled/accessorized so part of it forms small horn-like shapes near the crown, a clear fae marker.
+- **Hair:** The same platinum blonde, now worn loose and dramatic — styled/accessorized so part of it forms small horn-like shapes near the crown, a clear fae marker. Under combat lighting it reads fully silver.
 - **Power manifestation:** Branching, crackling lightning surges across her body when she gets serious, lifting her hair and intensifying her whole presence.
 - **Outfit:** Dark, structured silhouette blending kimono-armor formality with a fitted, battle-ready cut — high collar, sharp tailored lines, a flared cape or skirt-piece for drama in motion. (TBD — to be finalised.)
 - **Demeanor:** Cold, composed, narcissistically certain her version of order is correct — the same authority she carries in civilian form, just unmasked and amplified.
@@ -55,13 +54,13 @@ What's underneath, revealed only when she chooses to drop the disguise.
 
 | Trait | Source |
 |---|---|
-| Civilian-form face structure & hair styling | Cressida Bright |
-| Red lipstick detail | Cressida Bright |
-| Civilian outfit (white blazer, mini skirt, black tights) | Cressida Bright |
+| Civilian-form face structure & hair styling | Cressida Bright (007 First Light) |
+| Red lipstick detail | Cressida Bright (007 First Light) |
+| Civilian outfit (white blazer, mini skirt, black tights) | Cressida Bright (007 First Light) |
 | Civilian-form composure & leadership presence | Seras-specific |
 | True-form build & commanding presence | Raiden Shogun |
 | Tyrannical/narcissistic conviction | Raiden Shogun |
-| Hair color (strawberry-blonde/copper human, platinum-silver true) | Cressida Bright (human) + Towa (true-form shift) |
+| Hair color (platinum blonde/silver) | Towa + Cressida Bright (blended) |
 | Fairy-hybrid horn markers (true form) | Towa |
 | Manipulative, calculating personality | Towa |
 | Lightning power manifestation | SSJ2 lightning |

@@ -19,6 +19,11 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 | `docs/STATUS.md` | Living snapshot: what works, open issues |
 | `docs/ROADMAP.md` | Phased plan with completion history |
 | `docs/ART_PIPELINE.md` | AI art generation: model, prompt template, seeds, per-character notes |
+| `docs/design/SKILL_ART_PLAN.md` | Per-skill art (48 shipped) — IP-Adapter recipe, sampler fix, prompt-budget rules |
+| `docs/PRODUCT_AUDIT.md` | What's missing to make this a live game (standing gap analysis) |
+| `docs/TECH_AUDIT.md` | 2026-07-21 engineering pass, closed out |
+| `docs/design/references/INDEX.md` | What each reference screenshot shows (7DSGC / Dokkan / "ref4") |
+| `docs/superpowers/specs/` | Per-feature design specs (kit lab, battle UI, world boss, gacha, patch notes) |
 | `AGENTS.md` | Condensed rules (loaded automatically by most agent harnesses) |
 
 ## Design Rulings Ledger (all from Tanveer, don't re-litigate)
@@ -98,4 +103,10 @@ npm run build   # must pass before commit
 
 ## Where Work Stops Currently
 
-See `docs/ROADMAP.md`. Short version: Phase 2 nearly done (mobile pass + sound remain); Phase 3 (story mode, more characters) blocked on Tanveer's kit/stage designs; Phase 4 = auth persistence + Vercel deploy.
+See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old Phase 0–4 list below it).
+
+**Built and working:** battle engine, 27 kits, story Parts 1–2, archive, auth + Firestore saves, battle cinematics, Kit Lab, Molvarr world boss, leveling/ascension/stamina/inventory, gacha (summon/banners/milestone pity/dupes), `/news` MDX patch notes. `npm run check` green — **532 tests across 52 files**, clean `next build` (43 routes).
+
+**Still missing (the whole gap):** audio, mobile layout pass, FTUE/tutorial, daily loop, analytics, deployment. `docs/PRODUCT_AUDIT.md` is the standing analysis — the fight is strong, the service layer around it is thin.
+
+**Current work (2026-08-04):** a 5-batch UX plan from a full project audit, sequenced homepage-first — (1) homepage → game hub with a live player HUD + unified nav, (2) enemy inspection in battle + `UnitDetailPanel` relayout, (3) structured battle log rendered from `battleEvents` instead of `string[]`, (4) per-character VFX across all 27 kits, (5) archive detail page re-rendered as a typographic document. Kit data **stays JSON** — it's runtime data the engine, tests, Zod and Kit Lab all depend on.

@@ -89,7 +89,7 @@ export default function BannerScreen() {
 
         <div className="relative aspect-[2/1] w-full overflow-hidden border border-zinc-800 bg-zinc-900">
           <Image
-            src="/banners/debut-2026-08-placeholder.svg"
+            src={isLimited ? "/banners/debut-2026-08.png" : "/banners/debut-2026-08-placeholder.svg"}
             alt={isLimited ? limitedBanner.name : "Permanent Banner"}
             fill
             className="object-cover"

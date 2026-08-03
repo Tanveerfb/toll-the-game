@@ -6,8 +6,10 @@
 
 ## Banners
 Two banner categories, not one:
-- **Limited banner** — rotates, has a featured roster and an end date. Currently: the **debut banner**,
-  a one-off covering 12 non-collab characters (Duke, Lyra, Batra, Gabrist, Sara, Yalina, Mustafa,
+- **Limited banner** — rotates, has a featured roster and an end date. Currently: the **debut banner**
+  (in-game display name **"V1. Beta Roster Banner"**, renamed 2026-08-02 — "debut banner" below is the
+  conceptual/doc term, not the player-facing string), a one-off covering 12 non-collab characters (Duke,
+  Lyra, Batra, Gabrist, Sara, Yalina, Mustafa,
   Siddiq, Master Tao, Seras, Chiara, Isolde) at a flat **5% total** rate, split evenly (~0.417% each).
   This 12-unit/5%-flat shape is a **one-off for the debut banner only** — future smaller Limited
   banners (2-3 featured units) revert to the rate rule below.
@@ -132,7 +134,11 @@ dupes.
 - Archive/codex -> gacha pool browser (owned/unowned + Ultimate Level badge). **Built.**
 - Ult cut-in / cinematics tech -> summon reveal animations (GSAP timeline, not the framer-motion
   cut-in directly, but the same visual language). **Built.**
-- Art pipeline -> banner splash art. **Not yet** — a placeholder SVG ships in its place, real art
-  pending a ComfyUI session.
+- Art pipeline -> banner splash art. **Built 2026-08-02** — `public/banners/debut-2026-08.png`, a
+  composite of 6 existing character portraits (Duke, Seras, Lyra, Sara, Chiara, Gabrist) over a
+  generated amber/zinc burst background, not a fresh single-scene AI render (this pipeline generates
+  one character per image; a 12-up group render isn't how it works). See `docs/ART_PIPELINE.md`'s
+  banner-compositing section for the method. Permanent banner still shows the placeholder SVG
+  (empty pool, nothing to feature yet).
 - `users/{uid}` doc -> roster ownership + wallet + pity counters. **Built** (plus a cloud-save
   migration fix discovered along the way — see the news post / session notes for detail).

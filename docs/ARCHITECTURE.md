@@ -166,9 +166,9 @@ Per living enemy, priority order: heal/cleanse if an ally ≤50% HP or debuffed 
 
 ## Character Data (`data/characters/*.json`)
 
-Each character: `id, name, color, atk, def, hp, tags?, skills[2], ultimate?, passive?`. Skills carry `damageRanked [R1, R2, R3]` and a `mechanics[]` array typed by `MechanicType` (24 types — see `types/mechanic.ts`). Rank-scalable mechanic fields use `valueRanked` / `stacksRanked` / `durationRanked`.
+Each character: `id, name, color, atk, def, hp, tags?, skills[2], ultimate?, passive?`. Skills carry `damageRanked [R1, R2, R3]` and a `mechanics[]` array typed by `MechanicType` (**53** types — canonical list is `MECHANIC_TYPES` in `types/mechanic.ts`; the Zod schema rejects anything not in it). Rank-scalable mechanic fields use `valueRanked` / `stacksRanked` / `durationRanked`.
 
-Roster (16): Duke, Lyra, Master Tao (story cast) + Mustafa, Siddiq, Batra, Gabrist, Sara, Yalina (exam-arc side cast; kit specs in `_dev/new_chars_DONE.md`) + Seras (villain) + Meliodas, Ban, Diane (7DS collab) + Gon, Killua, Leorio (HxH collab). New kits arrive via the template at the top of `newchars.md` and are removed from it once implemented. Tags: everyone carries [Human] except Diane ([Giant]) and Meliodas ([Demon]); Seras adds [Fairy]/[Hybrid]; HxH units carry [Male]/[Collab]/[Hunter x Hunter]; synergy tag matching is exact-string ("Female", not "FEMALE").
+Roster: **27 kits — 18 playable + 9 `storyOnly`.** Playable: Duke, Lyra, Master Tao (story cast) + Mustafa, Siddiq, Batra, Gabrist, Sara, Yalina (exam-arc side cast; kit specs in `_dev/new_chars_DONE.md`) + Chiara, Isolde + Seras (villain) + Meliodas, Ban, Diane (7DS collab) + Gon, Killua, Leorio (HxH collab). `storyOnly` (hidden from team select and `/archive`, reachable at `/archive/npc`): raider, road_bandit, wild_beast, frost, gale, iron, prism, lyra_npc, molvarr (world boss). `getPlayableCharacters()` is the filter. New kits arrive via the template at the top of `newchars.md` and are removed from it once implemented. Tags: everyone carries [Human] except Diane ([Giant]) and Meliodas ([Demon]); Seras adds [Fairy]/[Hybrid]; HxH units carry [Male]/[Collab]/[Hunter x Hunter]; synergy tag matching is exact-string ("Female", not "FEMALE").
 
 Skill descriptions support placeholders resolved per rank by `descriptionTranslator.ts`: `[mechanicType.field]` reads `<field>Ranked[rank]` or the scalar field (e.g. `[stance.counterDamagePercent]`, `[seal.duration]`, `[extort.value]`). Unresolvable placeholders like `[Red]` are left as-is. Conditional text: `[aoeRanked? all : one]` resolves against the mechanic's `ranks` array.
 
@@ -180,5 +180,5 @@ Chance-tier wording (2026-07-30, `author_notes.md` idea #1): a fixed probability
 
 - `lib/game/damagePreview.ts` — pre-calculates expected damage for card UI.
 - `lib/game/descriptionTranslator.ts` + `mechanicGlossary.ts` + `KeyworkHighlighter` — turn mechanic data into human-readable, keyword-highlighted card text.
-- `hooks/AuthProvider.tsx` + `lib/firebase.ts` — Firebase auth context (login/profile routes not yet implemented).
+- `hooks/AuthProvider.tsx` + `lib/firebase.ts` — Firebase auth context; `/login` (email + Google) and `/profile` are built, with a guest-mode fallback when `.env.local` is absent.
 - `components/game/BattleEffectsOverlay.tsx` — visual feedback layer.

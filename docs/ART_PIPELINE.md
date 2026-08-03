@@ -44,6 +44,24 @@ photorealistic, 3d, busy background, multiple characters
 | cuffs ("collar and cuffs") | handcuffs + wrist chains | "sleeve borders" |
 | chain ("hair chain") | wrist/neck chains | drop it |
 
+**Standing rule (2026-08-02): keep backgrounds cleanly removable.** Every future gen (new character
+or a redesign) needs its background to lift out cleanly with `remove_background` (BiRefNet
+`BiRefNet_toonout`), with **zero leftover artifacts** — no visible box/rectangle of the old
+background surviving. Learned the hard way building the gacha banner composite:
+BiRefNet treats anything touching/overlapping the character as foreground, including the
+(SIGNATURE PROP/EFFECT:1.25) token — a full-frame swirl or burst that reaches the corners gets kept
+almost entirely, defeating background removal. Two concrete asks to bake into every prompt:
+- Keep the signature effect/prop **contained near the character's body**, not filling the whole
+  frame or touching all four edges (e.g. "water swirling around fists" not "water vortex filling
+  the background").
+- Keep the background itself a **plain, contained gradient** with nothing extending past roughly
+  the character's own silhouette-plus-effect bounds — no particles/streaks drifting into the
+  corners.
+Test with `remove_background` before calling a character's art final; if a visible rectangle of
+old background survives, tighten the effect/background containment and reroll rather than trying
+to fix it in compositing later (that's what the whole gacha-banner session had to do after the
+fact, per `docs/design/GACHA_DESIGN.md`'s banner-splash-art notes).
+
 ## Current Set (v4 — 2026-07-11)
 
 Locked design sheets live in `docs/design/characters/*.md` — they are the source of truth for appearance and override old lore descriptions. Reference photos in `docs/design/characters/refs/`.
@@ -55,7 +73,7 @@ Locked design sheets live in `docs/design/characters/*.md` — they are the sour
 | master_tao | 888002 | design sheet | serious mode: max-power bulk, tank shirt, tidy beard, fire fists |
 | sara | 888003 | design sheet | platinum pigtails + black ribbons, cat-ear hoodie, spectral paws |
 | yalina | 888043 | design sheet + ref photo | v2 redesign: dark-brown curly hair, deep pink shalwar kameez + gold embroidery, green energy fist. Literal side braid won't render at this style weight — loose side curls accepted. "cuffs"/"chain" are trigger words (see rule above) |
-| seras | 888035 | design sheet | villain true form: pointed ears, light-red eyes, kimono-armor, lightning polearm. Horn-like hair tufts didn't render; acceptable v1, revisit later |
+| seras | 888095 | design sheet (redesign 2026-08-02, Cressida Bright ref blend) | v2: true/battle form — pointed ears, light-red eyes, long platinum-silver hair (shifts from human-form copper as power manifests), horn-like tufts, dark kimono-armor, lightning polearm, dark violet bg. Fixed the v1 issue: horn tufts didn't render because the prompt said "near the crown" — "crown" is a trigger word (see rule above) that was forcing a literal gold crown instead. Dropping it let the horn shape render correctly. Civilian/human form (white blazer + mini skirt, Cressida Bright blend) is WIP — outfit/face/bg landed but hair color wouldn't hold copper/strawberry-red across 4 targeted rerolls (kept reverting to yellow-gold or blowing out orange); best attempt parked at `public/unreleased/seras_civilian_wip.png` (seed 888412), hair-color tuning deferred to a dedicated session |
 | mustafa | 777004 | AI-invented | design approved by Tanveer 2026-07-11 |
 | siddiq | 777131 | AI-invented v2 (2026-07-11 redesign per Tanveer) | emerald kurta + gold trim, curly dark hair, nature orb + vines, red bg. Still awaiting his locked sheet |
 | batra | 777132 | Tanveer's direction (2026-07-11): keep turban/facial hair/kesari, drop heavy armour | kesari kurta, navy sash, steel kara, golden lion energy fists |
@@ -89,6 +107,7 @@ Bureau officials introduced in the story (Ch7+). Art locked; game kits deferred 
 | sea_monster_alt.png | sea_monster | living behemoth, taller draping-armed lurker variant (alt to official 82) |
 | sea_monster_golem-core.png | sea_monster | early stone-golem take, centered w/ glowing star-core (pre-"make it alive" direction) |
 | sea_monster_golem-mossy.png | sea_monster | early stone-golem take, hunched mossy brute (pre-"make it alive" direction) |
+| seras_civilian_wip.png | seras | WIP human/civilian-form redesign (Cressida Bright blend, seed 888412) — outfit/face/bg accepted, hair color still wrong (caramel/golden-blonde instead of copper/strawberry-red); not wired anywhere, revisit in a dedicated hair-color tuning pass |
 
 ### Story-only NPC/enemy art (v6 — 2026-07-12)
 
@@ -126,6 +145,39 @@ When an official character appears as a story-battle enemy, it gets a dedicated 
 | Character | Art source | Notes |
 |---|---|---|
 | lyra_npc | copy of `lyra.png` | Part 2 boss. 3300 HP / 250 ATK (Tanveer's tune), elite tier |
+
+## Banner splash art (compositing, not a fresh render)
+
+Gacha banner splash art (`public/banners/*.png`, 1536×768, 2:1) is **not** generated as a single
+txt2img scene — every other prompt in this pipeline negatives "multiple characters", and a real
+12-up group render isn't something this checkpoint/workflow has ever attempted. Instead it's a
+composite built from existing character portraits:
+
+1. Pick up to ~6 of the most appealing/recognizable characters from the banner's featured roster —
+   don't try to fit everyone even if the banner features more.
+2. Background-remove each with ComfyUI's `remove_background` (BiRefNet `BiRefNet_toonout` model,
+   via the `comfyui-rmbg` custom node — `install_custom_node id 'comfyui-rmbg'` + restart if not
+   already installed). **Caveat:** BiRefNet treats a character's signature effect/aura (water
+   swirl, lightning, card-toss particles) as foreground, so it does **not** produce a clean
+   silhouette — only the flat corners of the card's gradient background get removed. Tanveer's
+   call (2026-08-02): that's fine, the leftover aura reads as intentional as long as it doesn't
+   look like a hard rectangle.
+3. Composite in Python (PIL) onto a generated radial burst background (amber-900 → zinc-950,
+   matching the locked UI palette): resize each cutout, apply a radial alpha falloff (`inner_r`/
+   `falloff_span`/`feather` params) so the character's own leftover flat-gradient patch fades into
+   the shared background instead of showing a visible box edge. Characters whose source art has a
+   frame-filling effect (water, lightning) need very little falloff; characters with a plain flat
+   card background need a much tighter `inner_r` (~0.4) and heavier feather (~26) or the rectangle
+   stays visible — this was the main iteration loop building the first banner.
+4. Two most "hero" characters get a bigger scale + lower placement than the rest; add a title
+   wordmark (arialbd, amber-400 fill, dark outline) bottom-center over a bottom shade gradient for
+   legibility.
+5. Script lives session-local (scratchpad), not committed — rebuild from scratch per banner rather
+   than trying to generalize a reusable tool prematurely.
+
+**Debut/V1 banner** (`public/banners/debut-2026-08.png`, 2026-08-02): Duke, Seras (heroes, larger/
+lower), Lyra, Sara, Chiara, Gabrist. Title reads "V1. BETA ROSTER BANNER" (Tanveer's rename from the
+generic "Debut Banner" — see `docs/design/GACHA_DESIGN.md`).
 
 ## Adding a New Character
 
