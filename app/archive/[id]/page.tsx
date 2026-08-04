@@ -62,15 +62,6 @@ const COLOR_STYLES: Record<
   },
 };
 
-function toTitleCase(value: string): string {
-  return value
-    .replace(/_/g, " ")
-    .replace(/([A-Z])/g, " $1")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
 export function generateStaticParams(): Array<{ id: string }> {
   return characterIds.map((id) => ({ id }));
 }
@@ -87,7 +78,18 @@ export default async function CharacterDetailPage({
 
   const style = COLOR_STYLES[character.color] ?? COLOR_STYLES.light;
   const passive = character.passive as KitPassiveView | undefined;
+  // Multi-phase kits return rows tagged with their phase; group them so each
+  // phase gets its own table rather than one undifferentiated list.
   const previewRows = buildCharacterDamagePreview(character);
+  const previewGroups: Array<{
+    phaseLabel?: string;
+    rows: typeof previewRows;
+  }> = [];
+  for (const row of previewRows) {
+    const last = previewGroups[previewGroups.length - 1];
+    if (last && last.phaseLabel === row.phaseLabel) last.rows.push(row);
+    else previewGroups.push({ phaseLabel: row.phaseLabel, rows: [row] });
+  }
   // Multi-phase kits (bosses, and later playable transformations) get a phase
   // switcher instead of the flat Skills + Passive sections.
   const isMultiPhase = getCharacterPhases(character).length > 1;
@@ -229,46 +231,56 @@ export default async function CharacterDetailPage({
             )}
 
             <ProseSection
-              title="Damage Preview"
+              title="Kit Preview"
               note={`vs dummy: ${DAMAGE_PREVIEW_DUMMY.atk} ATK / ${DAMAGE_PREVIEW_DUMMY.def} DEF / ${DAMAGE_PREVIEW_DUMMY.hp} HP`}
             >
-              <ProseTable>
-                <thead>
-                  <tr>
-                    <th className={PROSE.th}>Ability</th>
-                    <th className={PROSE.th}>Tier</th>
-                    <th className={PROSE.th}>Mult</th>
-                    <th className={PROSE.th}>Scenario</th>
-                    <th className={PROSE.th}>Result</th>
-                    <th className={PROSE.th}>Notes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {previewRows.map((row) => (
-                    <tr key={row.id}>
-                      <td
-                        className={`${PROSE.td} font-heading text-sm tracking-wider text-zinc-100`}
-                      >
-                        {row.abilityName}
-                      </td>
-                      <td className={PROSE.td}>{row.rankLabel}</td>
-                      <td className={PROSE.td}>{row.multiplierLabel}</td>
-                      <td className={PROSE.td}>{row.scenarioLabel}</td>
-                      <td
-                        className={`${PROSE.td} font-semibold text-amber-200 tabular-nums`}
-                      >
-                        {row.resultLabel}
-                      </td>
-                      <td className={`${PROSE.td} max-w-70 whitespace-normal`}>
-                        <KeyworkHighlighter
-                          text={row.notes || "No additional modifiers."}
-                          className="font-body text-xs leading-5 text-zinc-400"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </ProseTable>
+              {previewGroups.map(({ phaseLabel, rows }) => (
+                <div key={phaseLabel ?? "base"}>
+                  {phaseLabel ? (
+                    <h3 className={PROSE.h3}>{phaseLabel}</h3>
+                  ) : null}
+                  <ProseTable>
+                    <thead>
+                      <tr>
+                        <th className={PROSE.th}>Ability</th>
+                        <th className={PROSE.th}>Tier</th>
+                        <th className={PROSE.th}>Mult</th>
+                        <th className={PROSE.th}>Scenario</th>
+                        <th className={PROSE.th}>Result</th>
+                        <th className={PROSE.th}>Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row) => (
+                        <tr key={row.id}>
+                          <td
+                            className={`${PROSE.td} font-heading text-sm tracking-wider text-zinc-100`}
+                          >
+                            {row.abilityName}
+                          </td>
+                          <td className={PROSE.td}>{row.rankLabel}</td>
+                          <td className={PROSE.td}>{row.multiplierLabel}</td>
+                          <td className={PROSE.td}>{row.scenarioLabel}</td>
+                          <td
+                            className={`${PROSE.td} font-semibold text-amber-200`}
+                          >
+                            <KeyworkHighlighter
+                              text={row.resultLabel}
+                              className="font-body text-[13px] font-semibold text-amber-200"
+                            />
+                          </td>
+                          <td className={`${PROSE.td} max-w-70 whitespace-normal`}>
+                            <KeyworkHighlighter
+                              text={row.notes || "—"}
+                              className="font-body text-xs leading-5 text-zinc-400"
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </ProseTable>
+                </div>
+              ))}
             </ProseSection>
           </div>
         </div>

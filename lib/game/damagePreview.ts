@@ -1,4 +1,6 @@
 import {
+  getCharacterKit,
+  getCharacterPhases,
   registerDraftCharacter,
   type CharacterData,
   type CharacterPassiveData,
@@ -85,11 +87,14 @@ export interface DamagePreviewRow {
   scenarioLabel: string;
   resultLabel: string;
   notes: string;
+  /** Set only for multi-phase kits — which phase this ability belongs to. */
+  phaseLabel?: string;
 }
 
 interface NormalizedMechanic {
   type: string;
   stat?: string;
+  sealType?: string;
   effect?: string;
   targetSelf?: boolean;
   ranks?: boolean[];
@@ -133,6 +138,8 @@ function normalizeMechanic(
   return {
     type: typeof mechanic.type === "string" ? mechanic.type : "unknown",
     stat: typeof mechanic.stat === "string" ? mechanic.stat : undefined,
+    sealType:
+      typeof mechanic.sealType === "string" ? mechanic.sealType : undefined,
     effect: typeof mechanic.effect === "string" ? mechanic.effect : undefined,
     targetSelf: mechanic.targetSelf === true,
     ranks: Array.isArray(mechanic.ranks)
@@ -755,6 +762,167 @@ function calculateFinalDamage(
   return Math.floor(total);
 }
 
+const EMPTY_SKIP: ReadonlySet<string> = new Set();
+
+/** Mechanics `getExtraEffectNotes` already narrates in prose. Summarising them
+ *  a second time produced "Stuns for 2 turns. … Stuns (2 turns)." */
+const ALREADY_NARRATED: ReadonlySet<string> = new Set(["stun", "seal"]);
+
+const STAT_LABEL: Record<string, string> = {
+  atk: "ATK",
+  def: "DEF",
+  hp: "HP",
+  all: "All stats",
+  damageReduction: "Damage taken",
+  damageDealt: "Damage dealt",
+  evade: "Evade",
+  critChance: "Crit chance",
+  critDamage: "Crit damage",
+  recoveryRate: "Recovery rate",
+  lifesteal: "Lifesteal",
+};
+
+function statLabel(stat: string | undefined): string {
+  if (!stat) return "Stat";
+  return STAT_LABEL[stat] ?? stat.toUpperCase();
+}
+
+function turns(duration: number | undefined): string {
+  if (!duration || duration <= 0) return "";
+  return ` (${duration} turn${duration === 1 ? "" : "s"})`;
+}
+
+/**
+ * Human summary of ONE non-damage mechanic. Returns null for mechanics that
+ * only shape damage (pierce, weakpoint, …) — those already surface through the
+ * damage number itself and the existing notes.
+ */
+function describeSupportMechanic(
+  mechanic: NormalizedMechanic,
+  rankIndex: number,
+): string | null {
+  // Rank-gated mechanics are inactive at ranks where `ranks[i]` is false —
+  // reporting them anyway produced rows reading "No seal at this rank. Seals
+  // skills." on the same line.
+  if (mechanic.ranks && mechanic.ranks[rankIndex] === false) return null;
+  const amount = mechanic.value ?? mechanic.valuePercent;
+  // A zero-value entry is a rank where the effect doesn't apply — "−0 enemy
+  // ult gauge" is noise, not information.
+  if (amount === 0) return null;
+  switch (mechanic.type) {
+    case "buff":
+      return amount === undefined
+        ? null
+        : `${statLabel(mechanic.stat)} +${amount}%${turns(mechanic.duration)}`;
+    case "debuff":
+      return amount === undefined
+        ? null
+        : `${statLabel(mechanic.stat)} −${amount}%${turns(mechanic.duration)}`;
+    case "stance":
+      // A damage-reduction stance reads as less damage taken, not "+60% of
+      // a stat" — the sign flips relative to a plain buff.
+      if (amount === undefined) return null;
+      return mechanic.stat === "damageReduction"
+        ? `Damage taken −${amount}%${turns(mechanic.duration)}`
+        : `${statLabel(mechanic.stat)} +${amount}%${turns(mechanic.duration)}`;
+    case "healOverTime":
+      return amount === undefined
+        ? null
+        : `Regen ${amount}% per turn${turns(mechanic.duration)}`;
+    case "cleanse":
+      return "Cleanses debuffs";
+    case "debuffImmunity":
+      return `Debuff immunity${turns(mechanic.duration)}`;
+    case "taunt":
+      return `Taunts${turns(mechanic.duration)}`;
+    case "stun":
+      return `Stuns${turns(mechanic.duration)}`;
+    case "seal":
+      return `Seals skills${turns(mechanic.duration)}`;
+    case "cancelBuffs":
+      return "Cancels buffs";
+    case "cancelStances":
+      return "Cancels stances";
+    case "gainUltGauge":
+      return amount === undefined ? null : `+${amount} ult gauge`;
+    case "lowerUltGauge":
+      return amount === undefined ? null : `−${amount} enemy ult gauge`;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Every non-damage effect a skill carries, deduped and merged: two buffs with
+ * the same amount and duration (Leorio's ATK and DEF) read as one line rather
+ * than two near-identical ones.
+ */
+/** Stats `applyPreHitSelfBuffs` already folds into the damage number and
+ *  narrates as "Self ATK buff included (+30%)". */
+const PRE_HIT_SELF_STATS: ReadonlySet<string> = new Set(["atk", "def", "hp"]);
+
+function summarizeSupportEffects(
+  mechanics: NormalizedMechanic[],
+  rankIndex = 0,
+  skipTypes: ReadonlySet<string> = EMPTY_SKIP,
+  skipPreHitSelfBuffs = false,
+): string[] {
+  const described = mechanics
+    .filter((mechanic) => !skipTypes.has(mechanic.type))
+    .filter(
+      (mechanic) =>
+        !(
+          skipPreHitSelfBuffs &&
+          mechanic.type === "buff" &&
+          mechanic.targetSelf === true &&
+          mechanic.stat !== undefined &&
+          PRE_HIT_SELF_STATS.has(mechanic.stat)
+        ),
+    )
+    .map((mechanic) => ({
+      mechanic,
+      text: describeSupportMechanic(mechanic, rankIndex),
+    }))
+    .filter((entry): entry is { mechanic: NormalizedMechanic; text: string } =>
+      entry.text !== null,
+    );
+
+  const merged: string[] = [];
+  const usedIndexes = new Set<number>();
+  described.forEach((entry, index) => {
+    if (usedIndexes.has(index)) return;
+    const { mechanic } = entry;
+    const amount = mechanic.value ?? mechanic.valuePercent;
+    // Group sibling stat changes that share type, amount and duration.
+    const siblings = described.filter(
+      (other, otherIndex) =>
+        otherIndex !== index &&
+        !usedIndexes.has(otherIndex) &&
+        other.mechanic.type === mechanic.type &&
+        (other.mechanic.value ?? other.mechanic.valuePercent) === amount &&
+        other.mechanic.duration === mechanic.duration &&
+        other.mechanic.stat !== undefined &&
+        mechanic.stat !== undefined,
+    );
+    if (siblings.length > 0 && mechanic.stat) {
+      const stats = [
+        statLabel(mechanic.stat),
+        ...siblings.map((s) => statLabel(s.mechanic.stat)),
+      ];
+      siblings.forEach((sibling) =>
+        usedIndexes.add(described.indexOf(sibling)),
+      );
+      const sign = mechanic.type === "debuff" ? "−" : "+";
+      merged.push(`${stats.join(" · ")} ${sign}${amount}%${turns(mechanic.duration)}`);
+    } else {
+      merged.push(entry.text);
+    }
+    usedIndexes.add(index);
+  });
+
+  return merged;
+}
+
 function getExtraEffectNotes(
   character: CharacterData,
   skill: CharacterSkillData,
@@ -892,12 +1060,27 @@ function getExtraEffectNotes(
     }
   }
 
-  const sealMechanic = mechanics.find((mechanic) => mechanic.type === "seal");
-  if (sealMechanic) {
-    const duration = sealMechanic.duration ?? 0;
+  // Every seal, not just the first. Chiara's House Rules carries two — a
+  // `debuff` seal (active only at R3) and an `attackDebuff` seal (R2+) — and
+  // reading `find()` reported "No seal at this rank" at R2, contradicting the
+  // skill's own description one section up the page. The seal's `sealType`
+  // is named too, instead of always claiming "attack skills".
+  const sealMechanics = mechanics.filter((mechanic) => mechanic.type === "seal");
+  if (sealMechanics.length > 0) {
+    const active = sealMechanics.filter(
+      (mechanic) => (mechanic.duration ?? 0) > 0,
+    );
     extraNotes.push(
-      duration > 0
-        ? `Seals attack skills for ${duration} turn${duration === 1 ? "" : "s"}.`
+      active.length > 0
+        ? active
+            .map((mechanic) => {
+              const duration = mechanic.duration ?? 0;
+              const kind = mechanic.sealType
+                ? mechanic.sealType.replace(/([A-Z])/g, " $1").toLowerCase()
+                : "attack";
+              return `Seals ${kind} skills for ${duration} turn${duration === 1 ? "" : "s"}.`;
+            })
+            .join(" ")
         : "No seal at this rank.",
     );
   }
@@ -999,6 +1182,41 @@ function buildPreviewRow(
   let multiplierLabel = formatMultiplierLabel(skill, multiplier);
   let scenarioLabel = scenario.label;
   let resultLabel = `${damage} damage`;
+
+  // A skill with no damage multiplier used to report "1 damage" — the engine's
+  // max(1, base - def) floor leaking into a row for a skill that deals none.
+  // Mustafa's Fortress (a team damage-reduction stance) and Leorio's Member of
+  // the Zodiac (a team ATK/DEF buff) both read as "1 damage" with empty notes,
+  // which told the player nothing about what the skill actually does.
+  const dealsNoDamage = multiplier === 0 && !counterMechanic;
+  const supportEffects = summarizeSupportEffects(
+    mechanics,
+    rankIndex ?? 0,
+    // On a damaging skill the prose notes already cover stun/seal and the
+    // self-buffs folded into the damage number; on a support skill they're
+    // the only description there is.
+    dealsNoDamage ? EMPTY_SKIP : ALREADY_NARRATED,
+    !dealsNoDamage,
+  );
+  if (dealsNoDamage) {
+    multiplierLabel = "—";
+    resultLabel = supportEffects[0] ?? "No damage";
+    allNotes.push(...supportEffects.slice(1).map((line) => `${line}.`));
+  } else if (skill.type === "heal") {
+    // Heals reported "0 damage" in the result column with the actual healing
+    // buried in the notes.
+    const healNote = allNotes.find((note) => note.startsWith("Heals "));
+    if (healNote) {
+      resultLabel = healNote.replace(/\.$/, "");
+      allNotes.splice(allNotes.indexOf(healNote), 1);
+    }
+    allNotes.push(...supportEffects.map((line) => `${line}.`));
+  } else if (supportEffects.length > 0) {
+    // A damaging skill that also buffs/debuffs — keep the damage as the result
+    // and list the rest.
+    allNotes.push(...supportEffects.map((line) => `${line}.`));
+  }
+
   if (counterMechanic && multiplier === 0) {
     const counterPercent = counterMechanic.counterDamagePercent ?? 0;
     const counterBase = (character.atk * counterPercent) / 100;
@@ -1029,42 +1247,135 @@ function buildPreviewRow(
   };
 }
 
+/**
+ * The passive's own authored description, flattened to lines.
+ *
+ * Summarising a passive from its `mechanics[]` alone doesn't work: passive
+ * mechanic types (synergy, aura, characterSynergy, turnRamp, chargedStacks, …)
+ * are conditional and stateful, so a mechanical read produced "See kit" for
+ * most of the roster. The authored description is already the accurate,
+ * player-facing statement of what the passive does — the structured
+ * `#`/`-`/`--` format even separates conditions from effects.
+ */
+function describePassiveLines(passive: CharacterPassiveData): {
+  /** `#` heading lines — the condition the passive fires under. */
+  conditions: string[];
+  /** `-` bullets (and plain prose) — what it actually grants. */
+  effects: string[];
+} {
+  const description = (passive.description ?? "").trim();
+  if (!description) return { conditions: [], effects: [] };
+
+  const conditions: string[] = [];
+  const effects: string[] = [];
+  for (const raw of description.split("\n")) {
+    const line = raw.trim();
+    if (!line) continue;
+    // Literal 👆/👇 are a phone-typeable stand-in the UI renders as icons;
+    // this table is plain text, so they become arrows rather than emoji.
+    const text = line
+      .replace(/^#+\s*/, "")
+      .replace(/^-+\s*/, "")
+      .trim()
+      .replace(/👆/g, "↑")
+      .replace(/👇/g, "↓");
+    if (!text) continue;
+    if (line.startsWith("#")) conditions.push(text);
+    else effects.push(text);
+  }
+  return { conditions, effects };
+}
+
+/** One passive summarised as a preview row — what it grants, not what it
+ *  hits for. Multi-phase bosses carry several. */
+function buildPassiveRows(
+  passives: CharacterPassiveData[],
+  phaseLabel?: string,
+): DamagePreviewRow[] {
+  return passives.map((passive, index) => {
+    const { conditions, effects } = describePassiveLines(passive);
+    const mechanics = (passive.mechanics ?? []).map((mechanic) =>
+      normalizeMechanic(mechanic, 0),
+    );
+    // Description first (it's authored and accurate); the mechanical summary
+    // is a fallback for a passive with no description written yet.
+    const fallback = summarizeSupportEffects(mechanics);
+    // The Scenario column is "when", the Result column is "what" — so a
+    // structured passive's `#` condition belongs in Scenario, not Result.
+    const trigger = passive.trigger
+      ? passive.trigger.replace(/^on/, "").replace(/([A-Z])/g, " $1").trim()
+      : "";
+    return {
+      id: `passive-${phaseLabel ?? "base"}-${index}`,
+      abilityName: passive.name || "Passive",
+      rankLabel: "Passive",
+      multiplierLabel: "—",
+      scenarioLabel: conditions[0] ?? trigger ?? "Always",
+      resultLabel: effects[0] ?? fallback[0] ?? "See kit",
+      notes: [...effects.slice(1), ...conditions.slice(1)].join(" · "),
+      phaseLabel,
+    };
+  });
+}
+
+function buildKitRows(
+  character: CharacterData,
+  kit: { skills: CharacterSkillData[]; ultimate?: CharacterSkillData; passives?: CharacterPassiveData[] },
+  phaseLabel?: string,
+): DamagePreviewRow[] {
+  const rows: DamagePreviewRow[] = [];
+  const passive = kit.passives?.[0] ?? character.passive;
+
+  const push = (skill: CharacterSkillData, rankIndex?: number) => {
+    getRelevantScenarios(character, skill).forEach((scenario) => {
+      const row = buildPreviewRow(character, skill, passive, scenario, rankIndex);
+      rows.push(phaseLabel ? { ...row, id: `${phaseLabel}-${row.id}`, phaseLabel } : row);
+    });
+  };
+
+  kit.skills.forEach((skill) => {
+    if (Array.isArray(skill.damageRanked) && skill.damageRanked.length > 0) {
+      skill.damageRanked.forEach((_, rankIndex) => push(skill, rankIndex));
+      return;
+    }
+    push(skill);
+  });
+
+  if (kit.ultimate) push(kit.ultimate);
+
+  rows.push(...buildPassiveRows(kit.passives ?? (character.passive ? [character.passive] : []), phaseLabel));
+
+  return rows;
+}
+
+/**
+ * Every ability in a character's kit, at every rank, under each scenario that
+ * changes the outcome — plus the passives.
+ *
+ * Multi-phase kits used to be silently truncated: this read `character.skills`
+ * and `character.ultimate` directly, so Molvarr's whole second phase (Abyssal
+ * Pierce, Devouring Bite, Tidal Cataclysm) never appeared, on a page that
+ * otherwise showed his phase switcher. Phases are now walked explicitly and
+ * each row carries a `phaseLabel`.
+ */
 export function buildCharacterDamagePreview(
   character: CharacterData,
 ): DamagePreviewRow[] {
-  const passive = character.passive;
-  const rows: DamagePreviewRow[] = [];
+  const phases = getCharacterPhases(character);
 
-  character.skills.forEach((skill) => {
-    const scenarios = getRelevantScenarios(character, skill);
-
-    if (Array.isArray(skill.damageRanked) && skill.damageRanked.length > 0) {
-      skill.damageRanked.forEach((_, rankIndex) => {
-        scenarios.forEach((scenario) => {
-          rows.push(
-            buildPreviewRow(character, skill, passive, scenario, rankIndex),
-          );
-        });
-      });
-      return;
-    }
-
-    scenarios.forEach((scenario) => {
-      rows.push(buildPreviewRow(character, skill, passive, scenario));
-    });
-  });
-
-  if (character.ultimate) {
-    const ultimateScenarios = getRelevantScenarios(
-      character,
-      character.ultimate,
+  if (phases.length > 1) {
+    return phases.flatMap((_, index) =>
+      buildKitRows(
+        character,
+        getCharacterKit(character, index),
+        `Phase ${index + 1}`,
+      ),
     );
-    ultimateScenarios.forEach((scenario) => {
-      rows.push(
-        buildPreviewRow(character, character.ultimate!, passive, scenario),
-      );
-    });
   }
 
-  return rows;
+  return buildKitRows(character, {
+    skills: character.skills,
+    ultimate: character.ultimate,
+    passives: character.passive ? [character.passive] : [],
+  });
 }
