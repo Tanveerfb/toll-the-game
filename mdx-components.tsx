@@ -1,32 +1,17 @@
 import type { MDXComponents } from "mdx/types";
+import { PROSE } from "@/components/ui/prose";
 
+// The styles themselves live in components/ui/prose.tsx so the archive
+// character pages can render the same document look on ordinary JSX — see the
+// note there. This file just maps them onto MDX's element overrides.
 const components: MDXComponents = {
-  h2: ({ children }) => (
-    <h2 className="mt-6 mb-2.5 border-l-4 border-amber-500 pl-2.5 font-body text-[13px] font-bold uppercase tracking-[0.14em] text-amber-400">
-      {children}
-    </h2>
-  ),
-  p: ({ children }) => (
-    <p className="font-body text-sm leading-relaxed text-zinc-300">{children}</p>
-  ),
-  ul: ({ children }) => (
-    <ul className="list-disc space-y-1.5 pl-5 font-body text-sm leading-relaxed text-zinc-300">
-      {children}
-    </ul>
-  ),
-  table: ({ children }) => (
-    <table className="mt-1.5 w-full border-collapse font-body text-[13px]">
-      {children}
-    </table>
-  ),
-  th: ({ children }) => (
-    <th className="border-b border-zinc-700 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
-      {children}
-    </th>
-  ),
-  td: ({ children }) => (
-    <td className="border-b border-zinc-800 px-2 py-1.5 text-zinc-200">{children}</td>
-  ),
+  h2: ({ children }) => <h2 className={PROSE.h2}>{children}</h2>,
+  h3: ({ children }) => <h3 className={PROSE.h3}>{children}</h3>,
+  p: ({ children }) => <p className={PROSE.p}>{children}</p>,
+  ul: ({ children }) => <ul className={PROSE.ul}>{children}</ul>,
+  table: ({ children }) => <table className={PROSE.table}>{children}</table>,
+  th: ({ children }) => <th className={PROSE.th}>{children}</th>,
+  td: ({ children }) => <td className={PROSE.td}>{children}</td>,
 };
 
 export function useMDXComponents(): MDXComponents {

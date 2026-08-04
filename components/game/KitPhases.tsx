@@ -1,7 +1,12 @@
 "use client";
 
 import React from "react";
-import KitDetails, { type KitPassiveView } from "@/components/game/KitDetails";
+import KitDetails, {
+  PassiveProse,
+  type KitPassiveView,
+} from "@/components/game/KitDetails";
+import SkillDocument from "@/components/game/SkillDocument";
+import { PROSE } from "@/components/ui/prose";
 import {
   getCharacterKit,
   getCharacterPhases,
@@ -16,19 +21,21 @@ import {
 const STAT_LABEL =
   "font-body text-[10px] uppercase tracking-[0.16em] text-zinc-500";
 
-export default function KitPhases({
-  character,
-  labels,
-}: {
-  character: CharacterData;
-  /** Optional per-phase names (e.g. transformation states). Defaults to "Phase N". */
-  labels?: string[];
-}): React.JSX.Element {
-  const phaseCount = getCharacterPhases(character).length;
-  const [phase, setPhase] = React.useState(0);
+/**
+ * `compact` is the boxed renderer used in battle overlays; `document` matches
+ * the archive page's typographic layout, so a multi-phase boss doesn't render
+ * as cards on a page where every single-phase character renders as a document.
+ */
+export type KitVariant = "compact" | "document";
 
-  if (phaseCount <= 1) {
-    const kit = getCharacterKit(character, 0);
+function PhaseKit({
+  kit,
+  variant,
+}: {
+  kit: ReturnType<typeof getCharacterKit>;
+  variant: KitVariant;
+}): React.JSX.Element {
+  if (variant === "compact") {
     return (
       <KitDetails
         skills={kit.skills}
@@ -36,6 +43,47 @@ export default function KitPhases({
         passives={kit.passives as KitPassiveView[]}
       />
     );
+  }
+  const passives = kit.passives as KitPassiveView[];
+  return (
+    <div>
+      {kit.skills.map((skill, index) => (
+        <SkillDocument
+          key={skill.skillName}
+          skill={skill}
+          slot={`S${index + 1}`}
+        />
+      ))}
+      {kit.ultimate ? (
+        <SkillDocument skill={kit.ultimate} slot="ULT" />
+      ) : null}
+      {passives.map((passive, index) => (
+        <div key={passive.name ?? index} className="mt-5">
+          <h3 className={PROSE.h3}>
+            {passive.name ? `Passive — ${passive.name}` : "Passive"}
+          </h3>
+          <PassiveProse passive={passive} showName={false} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function KitPhases({
+  character,
+  labels,
+  variant = "compact",
+}: {
+  character: CharacterData;
+  /** Optional per-phase names (e.g. transformation states). Defaults to "Phase N". */
+  labels?: string[];
+  variant?: KitVariant;
+}): React.JSX.Element {
+  const phaseCount = getCharacterPhases(character).length;
+  const [phase, setPhase] = React.useState(0);
+
+  if (phaseCount <= 1) {
+    return <PhaseKit kit={getCharacterKit(character, 0)} variant={variant} />;
   }
 
   const kit = getCharacterKit(character, phase);
@@ -79,11 +127,7 @@ export default function KitPhases({
         </div>
       </div>
 
-      <KitDetails
-        skills={kit.skills}
-        ultimate={kit.ultimate}
-        passives={kit.passives as KitPassiveView[]}
-      />
+      <PhaseKit kit={kit} variant={variant} />
     </div>
   );
 }

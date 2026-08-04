@@ -34,9 +34,11 @@ export default function PreviewButton({
     <button
       type="button"
       onClick={launch}
-      className="flex w-full min-h-11 items-center justify-center border border-amber-300/70 bg-amber-400/10 font-body text-xs uppercase tracking-widest text-amber-200 transition-colors hover:bg-amber-400/20"
+      // Wraps rather than clipping: the label is long and this sits in a
+      // 300px sidebar that becomes full-width on mobile.
+      className="flex w-full min-h-11 items-center justify-center border border-amber-300/70 bg-amber-400/10 px-3 py-2 text-center font-body text-xs uppercase leading-tight tracking-widest text-amber-200 transition-colors hover:bg-amber-400/20"
     >
-      Preview — full rank/ultimate set vs. a training dummy
+      Preview — full rank &amp; ultimate set vs. a training dummy
     </button>
   );
 }

@@ -4,31 +4,17 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { PROSE, ProseSection, ProseTable } from "@/components/ui/prose";
+import SkillDocument from "@/components/game/SkillDocument";
 import {
   characterIds,
   getCharacterById,
   getCharacterPhases,
-  type CharacterSkillData,
 } from "@/lib/game/characterCatalog";
 import KitPhases from "@/components/game/KitPhases";
 import PreviewButton from "@/components/game/PreviewButton";
 import CharacterProgressionPanel from "@/components/game/CharacterProgressionPanel";
 import { PassiveProse, type KitPassiveView } from "@/components/game/KitDetails";
-import {
-  buildRankedSkillDescriptions,
-  buildSingleDescription,
-  buildSkillKeywordGlossary,
-  getMechanicTypes,
-} from "@/lib/game/descriptionTranslator";
-import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
 import {
   buildCharacterDamagePreview,
   DAMAGE_PREVIEW_DUMMY,
@@ -84,129 +70,6 @@ function toTitleCase(value: string): string {
     .trim()
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
-
-function Section({
-  title,
-  children,
-  subtitle,
-}: {
-  title: string;
-  subtitle?: ReactNode;
-  children: ReactNode;
-}): ReactNode {
-  return (
-    <section className="border-2 border-zinc-800 bg-black/45">
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-zinc-800 bg-zinc-900/50 px-4 py-2.5">
-        <h2 className="font-heading text-xl tracking-[0.1em] text-zinc-100">
-          {title}
-        </h2>
-        {subtitle}
-      </div>
-      <div className="p-4">{children}</div>
-    </section>
-  );
-}
-
-function MechanicsTags({ skill }: { skill: CharacterSkillData }): ReactNode {
-  const types = getMechanicTypes(skill);
-  if (types.length === 0) return null;
-
-  return (
-    <div className="flex flex-wrap gap-1">
-      {types.map((type) => (
-        <Badge
-          key={`${skill.skillName}-${type}`}
-          variant="secondary"
-          className="rounded-none px-1.5 py-0 font-body text-[10px] uppercase tracking-widest text-zinc-200"
-        >
-          {toTitleCase(type)}
-        </Badge>
-      ))}
-    </div>
-  );
-}
-
-// Skill tag chips follow the effect-pill color scheme: red = attack,
-// purple = debuff/disable, green = heal/buff, yellow = stance/ultimate.
-const SKILL_TYPE_CHIP: Record<string, string> = {
-  attack: "bg-red-600 text-white",
-  debuff: "bg-purple-600 text-white",
-  disable: "bg-purple-600 text-white",
-  heal: "bg-emerald-600 text-white",
-  cleanse: "bg-emerald-600 text-white",
-  buff: "bg-emerald-600 text-white",
-  stance: "bg-amber-300 text-zinc-950",
-  ultimate: "bg-amber-300 text-zinc-950",
-};
-
-function SkillBlock({
-  skill,
-  tag,
-}: {
-  skill: CharacterSkillData;
-  tag: string;
-}): ReactNode {
-  const rankedLines =
-    skill.type === "ultimate" ? null : buildRankedSkillDescriptions(skill);
-  const chipClass =
-    SKILL_TYPE_CHIP[skill.type] ?? "bg-zinc-700 text-zinc-200";
-  // Heal skills show their recovery amount in green (7DS convention).
-  const numberClassName =
-    skill.type === "heal" ? "font-semibold text-emerald-400" : undefined;
-
-  return (
-    <div className="border border-zinc-800 bg-zinc-950/60">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/70 px-3 py-2">
-        <div className="flex items-center gap-2">
-          <span
-            className={`px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-widest ${chipClass}`}
-          >
-            {tag}
-          </span>
-          <p className="font-heading text-lg tracking-[0.05em] text-zinc-100">
-            {skill.skillName}
-          </p>
-        </div>
-        <MechanicsTags skill={skill} />
-      </div>
-
-      <div className="space-y-1.5 px-3 py-2.5">
-        {rankedLines ? (
-          rankedLines.map((line, index) => (
-            <div
-              key={`${skill.skillName}-rank-${index + 1}`}
-              className="grid grid-cols-[44px_1fr] items-baseline gap-2"
-            >
-              <span className="font-body text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-                R{index + 1}
-              </span>
-              <KeyworkHighlighter
-                text={line}
-                className={UI.textValue}
-                numberClassName={numberClassName}
-                glossary={{
-                  ...mechanicGlossary,
-                  ...buildSkillKeywordGlossary(skill, index),
-                }}
-              />
-            </div>
-          ))
-        ) : (
-          <KeyworkHighlighter
-            text={buildSingleDescription(skill)}
-            className={UI.textValue}
-            numberClassName={numberClassName}
-            glossary={{
-              ...mechanicGlossary,
-              ...buildSkillKeywordGlossary(skill, 0),
-            }}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
 
 export function generateStaticParams(): Array<{ id: string }> {
   return characterIds.map((id) => ({ id }));
@@ -337,95 +200,76 @@ export default async function CharacterDetailPage({
             ) : null}
           </aside>
 
-          {/* Kit details */}
-          <div className="space-y-4">
+          {/* Kit details — a document, not a stack of cards. Same typography
+              as /news via components/ui/prose.tsx. */}
+          <div className="border-2 border-zinc-800 bg-black/45 px-4 pb-5 pt-1 md:px-6">
             {isMultiPhase ? (
-              <Section title="Kit">
-                <KitPhases character={character} />
-              </Section>
+              <ProseSection title="Kit">
+                <KitPhases character={character} variant="document" />
+              </ProseSection>
             ) : (
               <>
-            <Section title="Skills">
-              <div className="space-y-3">
-                {character.skills.map((skill, index) => (
-                  <SkillBlock
-                    key={skill.skillName}
-                    skill={skill}
-                    tag={`S${index + 1}`}
-                  />
-                ))}
-                {character.ultimate ? (
-                  <SkillBlock skill={character.ultimate} tag="ULT" />
-                ) : null}
-              </div>
-            </Section>
+                <ProseSection title="Skills">
+                  {character.skills.map((skill, index) => (
+                    <SkillDocument
+                      key={skill.skillName}
+                      skill={skill}
+                      slot={`S${index + 1}`}
+                    />
+                  ))}
+                  {character.ultimate ? (
+                    <SkillDocument skill={character.ultimate} slot="ULT" />
+                  ) : null}
+                </ProseSection>
 
-            <Section
-              title="Passive"
-              subtitle={
-                passive?.name ? (
-                  <span className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                    {passive.name}
-                  </span>
-                ) : undefined
-              }
-            >
-              <PassiveProse passive={passive} showName={false} />
-            </Section>
+                <ProseSection title="Passive" note={passive?.name}>
+                  <PassiveProse passive={passive} showName={false} />
+                </ProseSection>
               </>
             )}
 
-            <Section
+            <ProseSection
               title="Damage Preview"
-              subtitle={
-                <span className="font-body text-xs uppercase tracking-[0.14em] text-zinc-500">
-                  vs dummy: {DAMAGE_PREVIEW_DUMMY.atk} ATK /{" "}
-                  {DAMAGE_PREVIEW_DUMMY.def} DEF / {DAMAGE_PREVIEW_DUMMY.hp} HP
-                </span>
-              }
+              note={`vs dummy: ${DAMAGE_PREVIEW_DUMMY.atk} ATK / ${DAMAGE_PREVIEW_DUMMY.def} DEF / ${DAMAGE_PREVIEW_DUMMY.hp} HP`}
             >
-              <div className="border border-zinc-800">
-                <Table className="text-zinc-200">
-                  <TableHeader className="bg-zinc-900/60">
-                    <TableRow>
-                      <TableHead className="text-zinc-500">Ability</TableHead>
-                      <TableHead className="text-zinc-500">Tier</TableHead>
-                      <TableHead className="text-zinc-500">Mult</TableHead>
-                      <TableHead className="text-zinc-500">Scenario</TableHead>
-                      <TableHead className="text-zinc-500">Result</TableHead>
-                      <TableHead className="text-zinc-500">Notes</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {previewRows.map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell className="align-top font-heading text-sm tracking-wider text-zinc-100">
-                          {row.abilityName}
-                        </TableCell>
-                        <TableCell className="align-top font-body text-sm">
-                          {row.rankLabel}
-                        </TableCell>
-                        <TableCell className="align-top font-body text-sm">
-                          {row.multiplierLabel}
-                        </TableCell>
-                        <TableCell className="align-top font-body text-sm">
-                          {row.scenarioLabel}
-                        </TableCell>
-                        <TableCell className="align-top font-body text-sm font-semibold text-amber-200">
-                          {row.resultLabel}
-                        </TableCell>
-                        <TableCell className="max-w-70 align-top whitespace-normal">
-                          <KeyworkHighlighter
-                            text={row.notes || "No additional modifiers."}
-                            className="font-body text-xs leading-5 text-zinc-400"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </Section>
+              <ProseTable>
+                <thead>
+                  <tr>
+                    <th className={PROSE.th}>Ability</th>
+                    <th className={PROSE.th}>Tier</th>
+                    <th className={PROSE.th}>Mult</th>
+                    <th className={PROSE.th}>Scenario</th>
+                    <th className={PROSE.th}>Result</th>
+                    <th className={PROSE.th}>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewRows.map((row) => (
+                    <tr key={row.id}>
+                      <td
+                        className={`${PROSE.td} font-heading text-sm tracking-wider text-zinc-100`}
+                      >
+                        {row.abilityName}
+                      </td>
+                      <td className={PROSE.td}>{row.rankLabel}</td>
+                      <td className={PROSE.td}>{row.multiplierLabel}</td>
+                      <td className={PROSE.td}>{row.scenarioLabel}</td>
+                      <td
+                        className={`${PROSE.td} font-semibold text-amber-200 tabular-nums`}
+                      >
+                        {row.resultLabel}
+                      </td>
+                      <td className={`${PROSE.td} max-w-70 whitespace-normal`}>
+                        <KeyworkHighlighter
+                          text={row.notes || "No additional modifiers."}
+                          className="font-body text-xs leading-5 text-zinc-400"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </ProseTable>
+            </ProseSection>
           </div>
         </div>
       </div>
