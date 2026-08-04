@@ -178,7 +178,20 @@ Chance-tier wording (2026-07-30, `author_notes.md` idea #1): a fixed probability
 
 ## Supporting Pieces
 
-- `lib/game/damagePreview.ts` — pre-calculates expected damage for card UI.
+- `lib/game/damagePreview.ts` — **kit preview** (not just damage): every ability at every rank under each scenario that changes the outcome, plus support effects (buffs/stances/heals/cleanses), every phase of a multi-phase kit (rows carry `phaseLabel`), and a row per passive read from its authored description. Backs the `/archive/[id]` Kit Preview table.
 - `lib/game/descriptionTranslator.ts` + `mechanicGlossary.ts` + `KeyworkHighlighter` — turn mechanic data into human-readable, keyword-highlighted card text.
 - `hooks/AuthProvider.tsx` + `lib/firebase.ts` — Firebase auth context; `/login` (email + Google) and `/profile` are built, with a guest-mode fallback when `.env.local` is absent.
 - `components/game/BattleEffectsOverlay.tsx` — visual feedback layer.
+
+## UI Layer Conventions
+
+- **`lib/nav/routes.ts` is the single source of truth for what modes exist.** `TopNav` and `HomeMenu` both render `GAME_ROUTES`. They previously kept separate lists and disagreed, leaving World Boss / Gacha / News unreachable from every page except home. Add a route here, not in a component.
+- **`components/ui/prose.tsx` owns document typography** — headings, tables, lists — and is consumed by BOTH `mdx-components.tsx` (the `/news` MDX posts) and `app/archive/[id]/page.tsx`. That shared source is what makes the two pages actually match. `ProseSection` = ruled heading + optional note; `ProseTable` = horizontally scrollable table.
+- **Two kit renderers, deliberately.** `KitDetails.tsx` is the compact boxed variant used inside battle overlays; `SkillDocument.tsx` is the document variant (ruled heading + metadata line + Rank/Mult/Effect table) used on the archive. `KitPhases` takes a `variant` prop (`compact` | `document`) so a multi-phase boss matches whichever page it's on.
+- **`BattleArena.tsx` is the arena shell only.** Overlays live in `components/game/battle/`: `TeamUnitTile`, `UnitDetailPanel`, `TeamDetailsList`, `BattleLogDrawer`, `EffectsList`. It was a 1964-line monolith holding all of them.
+- **Tap = inspect, on both sides.** `UnitDetailPanel` opens for allies AND enemies (it picks its team from `unit.team`); enemy focus-fire is a separate ◎ button on the enemy tile. One gesture, one meaning.
+- **The battle log renders from `battleEvents`, not `battleLog`.** The typed stream carries per-target damage/crit/evade/kill and exact HP snapshots; `turn` and `phase` are stamped in `gameStore.addBattleEvent` (presentation context the engine has no reason to know). The `battleLog` string array survives behind a Raw toggle because it is still the only record of **which buffs/debuffs an action applied** — the event stream doesn't model effect application yet. Emitting that from `combat.ts` is the known follow-up.
+- **VFX are a registry, not JSX branches.** `lib/game/characterVfx.ts` maps every character to a tint + shape + accent; the arena's burst renderer switches on `getVfxAccent(shape)`. Adding a flavor is a data edit. Tints must sit visibly away from the character's own element tint (`FLASH_TINTS` in `elementSwatch.ts`) or the flavor is invisible — enforced by `tests/characterVfx.test.ts`.
+- **Rank escalation already exists** in `lib/game/revealTier.ts` (basic/R1/R2/R3/ultimate → projectile size, burst strength, shake, flash, wind-up, beam sweep, cutscene). Don't rebuild it.
+- **Ult cut-ins use skill art** via `getSkillArt(characterId, skillName) ?? getCharacterArt(...)`.
+- **Arena spacing between the team rows is deliberate** (Tanveer, 2026-08-04) — room for UI buttons and a fix for v1's congestion. Not dead space; don't compact it.

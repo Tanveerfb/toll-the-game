@@ -105,8 +105,21 @@ npm run build   # must pass before commit
 
 See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old Phase 0–4 list below it).
 
-**Built and working:** battle engine, 27 kits, story Parts 1–2, archive, auth + Firestore saves, battle cinematics, Kit Lab, Molvarr world boss, leveling/ascension/stamina/inventory, gacha (summon/banners/milestone pity/dupes), `/news` MDX patch notes. `npm run check` green — **532 tests across 52 files**, clean `next build` (43 routes).
+**Built and working:** battle engine, 27 kits, story Parts 1–2, archive, auth + Firestore saves, battle cinematics, Kit Lab, Molvarr world boss, leveling/ascension/stamina/inventory, gacha (summon/banners/milestone pity/dupes), `/news` MDX patch notes. `npm run check` green — **561 tests across 55 files**, clean `next build` (44 routes).
 
 **Still missing (the whole gap):** audio, mobile layout pass, FTUE/tutorial, daily loop, analytics, deployment. `docs/PRODUCT_AUDIT.md` is the standing analysis — the fight is strong, the service layer around it is thin.
 
-**Current work (2026-08-04):** a 5-batch UX plan from a full project audit, sequenced homepage-first — (1) homepage → game hub with a live player HUD + unified nav, (2) enemy inspection in battle + `UnitDetailPanel` relayout, (3) structured battle log rendered from `battleEvents` instead of `string[]`, (4) per-character VFX across all 27 kits, (5) archive detail page re-rendered as a typographic document. Kit data **stays JSON** — it's runtime data the engine, tests, Zod and Kit Lab all depend on.
+**Last completed work — UX overhaul, 5 batches (2026-08-04).** From a full project audit; details per batch are in `docs/STATUS.md`, UI conventions they established are in `ARCHITECTURE.md` → "UI Layer Conventions".
+
+1. Homepage → game hub (live player HUD, tiered mode cards, `lib/nav/routes.ts` shared with TopNav).
+2. Enemy inspection in battle + `UnitDetailPanel` relaid out to fit one screen; `BattleArena.tsx` 1964 → ~1020 lines.
+3. Battle log rendered from the typed `battleEvents` stream; markdown export.
+4. Per-character VFX extended from 5 → all 27 kits; ult cut-ins use skill art.
+5. Archive pages re-rendered as documents sharing `/news` typography.
+   Plus: Growth gated to owned characters + moved to a modal, practice dummy 400 → 100k HP, and Damage Preview rebuilt as **Kit Preview** (support skills, passives, and multi-phase kits were all missing or wrong).
+
+**Kit data stays JSON** — settled 2026-08-04. It's runtime data `combat.ts`, `descriptionTranslator`, `damagePreview`, the Zod schema, Kit Lab and ~20 test files all depend on. MDX is for prose (`content/news/`), not for kits.
+
+**Known follow-ups, deliberately not done:**
+- The battle log can't show *which buffs/debuffs an action applied* — the event stream doesn't model effect application. Needs an emit change in `combat.ts`, the most ruling-dense file in the repo.
+- No shared `CharacterGrid` across `CharacterBrowser` / TeamSelect's roster overlay / the gacha pool. They differ in *interaction* (browse vs multi-select-with-order vs read-only rates), so one grid would need a prop per difference. The genuinely shared unit is the character tile.

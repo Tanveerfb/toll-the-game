@@ -30,19 +30,33 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 ## Folder Structure
 
 ```
-app/                  Next.js App Router — /, /practice, /archive, /archive/[id], /login, /profile
+app/                  Next.js App Router — /, /practice, /story, /world-boss, /gacha,
+                      /archive, /archive/[id], /archive/npc, /news, /login, /profile
 components/
-  ui/                 shadcn primitives + KeyworkHighlighter
-  game/               BattleArena, Deck, CharacterBrowser, BattleEffectsOverlay
-hooks/                BattleProvider (phase engine), MechanicProvider (phase queue), AuthProvider
+  ui/                 shadcn primitives + KeyworkHighlighter + prose.tsx (document
+                      typography, shared with mdx-components.tsx)
+  game/               Deck, CharacterBrowser, KitDetails, SkillDocument, TeamSelect,
+                      PlayerHud, BattleArena (arena shell only)
+  game/battle/        Battle overlays split out of BattleArena: TeamUnitTile,
+                      UnitDetailPanel, TeamDetailsList, BattleLogDrawer, EffectsList
+  gacha/              BannerScreen, PullReveal, RatesModal, MilestonePicker
+  news/               NewsFeedTabs, NewsPostLayout
+hooks/                BattleProvider (phase engine), MechanicProvider (phase queue),
+                      AuthProvider, useBattleSequencer (cinematics)
 lib/
   firebase.ts         Optional Firebase init (null exports without env)
-  game/               combat.ts, damage.ts, ai.ts, passive.ts, tick.ts,
-                      damagePreview.ts, descriptionTranslator.ts, characterCatalog.ts
-store/                gameStore.ts (battle + deck), playerStore.ts
+  game/               combat.ts, damage.ts, ai.ts, passive.ts, tick.ts, phases.ts,
+                      damagePreview.ts (kit preview), descriptionTranslator.ts,
+                      characterCatalog.ts, characterVfx.ts, battleLogMarkdown.ts
+  gacha/  news/       Banner + pull logic; MDX post loading
+  nav/routes.ts       GAME_ROUTES — single source of truth for what modes exist
+store/                gameStore.ts (battle + deck), playerStore.ts, storyStore.ts,
+                      settingsStore.ts
+content/news/         MDX patch notes (updates/ + notices/)
 data/characters/      Character kit JSON (source of truth for kits)
+data/story/           Story parts; data/banners/ gacha banners
 types/                Shared TypeScript contracts
-tests/                Vitest unit tests for the battle engine
+tests/                Vitest unit tests (engine, stores, gacha, previews)
 ```
 
 ## Commands
