@@ -15,8 +15,13 @@ import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import type { BattleCharacter } from "@/types/character";
-import { getCharacterArt } from "@/lib/game/characterArt";
-import { getVfxShape, getVfxTint, vfxShapeStyle } from "@/lib/game/characterVfx";
+import { getCharacterArt, getSkillArt } from "@/lib/game/characterArt";
+import {
+  getVfxAccent,
+  getVfxShape,
+  getVfxTint,
+  vfxShapeStyle,
+} from "@/lib/game/characterVfx";
 import { FLASH_TINTS } from "@/lib/game/elementSwatch";
 import BattleEffectsOverlay from "@/components/game/BattleEffectsOverlay";
 import TeamUnitTile, {
@@ -155,6 +160,11 @@ export default function BattleArena({
   const isBattleOver = battlePhase === "victory" || battlePhase === "defeat";
   // Hold the result screen until the cinematic finishes (skip jumps ahead)
   const showBattleOver = isBattleOver && !seq.active;
+
+  const cutInArt = seq.cutIn
+    ? (getSkillArt(seq.cutIn.characterId, seq.cutIn.skillName) ??
+      getCharacterArt(seq.cutIn.characterId))
+    : null;
 
   const tileFx = (instanceId: string): TileFx => ({
     hpOverride: seq.hpOverrides[instanceId],
@@ -424,9 +434,13 @@ export default function BattleArena({
                 transition={{ duration: 0.3 / battleSpeed, ease: "easeOut" }}
                 className="absolute inset-x-0 top-1/2 flex h-32 -translate-y-1/2 items-center gap-4 overflow-hidden border-y-2 border-amber-300 bg-linear-to-r from-amber-950/95 via-zinc-950/95 to-amber-950/95 px-6 shadow-[0_0_60px_rgba(252,211,77,0.5)]"
               >
-                {getCharacterArt(seq.cutIn.characterId) ? (
+                {/* Skill art first, portrait as fallback. All 48 playable +
+                    boss ultimates have their own art already, so every
+                    ultimate's cut-in reads distinctly at zero asset cost —
+                    the cut-in used to show the same portrait for all of them. */}
+                {cutInArt ? (
                   <Image
-                    src={getCharacterArt(seq.cutIn.characterId)!}
+                    src={cutInArt}
                     alt={seq.cutIn.name}
                     width={220}
                     height={220}
@@ -516,6 +530,7 @@ export default function BattleArena({
           {seq.bursts.map((burst) => {
             const tint = getVfxTint(burst.characterId, FLASH_TINTS[burst.color]);
             const shape = getVfxShape(burst.characterId);
+            const accent = getVfxAccent(shape);
             const size = burst.strong ? 84 : 58;
             return (
               <React.Fragment key={`burst-${burst.key}`}>
@@ -535,8 +550,9 @@ export default function BattleArena({
                     ...vfxShapeStyle(shape),
                   }}
                 />
-                {/* Water's second, slightly-delayed ring — a ripple */}
-                {shape === "ripple" ? (
+                {/* Shape-specific accent, resolved from the registry so a
+                    new flavor is a data edit rather than another branch here. */}
+                {accent === "second-ring" ? (
                   <m.div
                     initial={{ opacity: 0.6, scale: 0.2 }}
                     animate={{ opacity: 0, scale: burst.strong ? 2.2 : 1.5 }}
@@ -546,19 +562,18 @@ export default function BattleArena({
                       delay: 0.1 / battleSpeed,
                       ease: "easeOut",
                     }}
-                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    className="absolute -translate-x-1/2 -translate-y-1/2"
                     style={{
                       left: burst.x,
                       top: burst.y,
                       width: size,
                       height: size,
                       border: `2px solid ${tint}`,
+                      ...vfxShapeStyle(shape),
                     }}
                   />
                 ) : null}
-                {/* Flame's flicker — a smaller inner pulse that pops and
-                    dies faster than the main ring, like a lick of fire. */}
-                {shape === "flicker" ? (
+                {accent === "inner-pop" ? (
                   <m.div
                     initial={{ opacity: 0.9, scale: 0.15 }}
                     animate={{ opacity: [0.9, 0.4, 0], scale: 1.1 }}
@@ -572,6 +587,40 @@ export default function BattleArena({
                       height: size * 0.55,
                       background: tint,
                       filter: "blur(2px)",
+                    }}
+                  />
+                ) : null}
+                {accent === "core" ? (
+                  <m.div
+                    initial={{ opacity: 1, scale: 0.1 }}
+                    animate={{ opacity: 0, scale: 0.9 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.22 / battleSpeed, ease: "easeOut" }}
+                    className="absolute -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                      left: burst.x,
+                      top: burst.y,
+                      width: size * 0.7,
+                      height: size * 0.7,
+                      background: "#ffffff",
+                      filter: "blur(1px)",
+                      ...vfxShapeStyle(shape),
+                    }}
+                  />
+                ) : null}
+                {accent === "wave" ? (
+                  <m.div
+                    initial={{ opacity: 0.7, scaleX: 0.2, scaleY: 0.1 }}
+                    animate={{ opacity: 0, scaleX: burst.strong ? 3.2 : 2.2, scaleY: 0.28 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.42 / battleSpeed, ease: "easeOut" }}
+                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    style={{
+                      left: burst.x,
+                      top: burst.y,
+                      width: size,
+                      height: size,
+                      border: `3px solid ${tint}`,
                     }}
                   />
                 ) : null}
@@ -614,7 +663,9 @@ export default function BattleArena({
         <button
           type="button"
           onClick={skipPlayback}
-          className="absolute bottom-10 right-3 z-30 cursor-pointer border border-zinc-500 bg-black/75 px-3 py-1.5 font-body text-[11px] uppercase tracking-[0.16em] text-zinc-200 backdrop-blur-sm transition-colors hover:border-amber-300 hover:text-amber-200"
+          // bottom-16 clears the TEAM roster button at bottom-3; at bottom-10
+          // the two overlapped during playback.
+          className="absolute bottom-16 right-3 z-30 cursor-pointer border border-zinc-500 bg-black/75 px-3 py-1.5 font-body text-[11px] uppercase tracking-[0.16em] text-zinc-200 backdrop-blur-sm transition-colors hover:border-amber-300 hover:text-amber-200"
         >
           Skip ▸▸
         </button>
