@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { loadFirebase } from "@/lib/firebase";
 import { chapterKey } from "@/lib/game/storyCatalog";
 
 interface StoryProgressState {
@@ -30,10 +29,12 @@ interface StoryProgressState {
 // user their own users/{uid} document, so a standalone storyProgress/{uid}
 // collection was always denied and progress never reached the cloud.
 async function pushToCloud(uid: string, completed: Record<string, boolean>) {
-  if (!db) return;
+  const fb = await loadFirebase();
+  if (!fb) return;
+  const { db, dbApi } = fb;
   try {
-    await setDoc(
-      doc(db, "users", uid),
+    await dbApi.setDoc(
+      dbApi.doc(db, "users", uid),
       { storyProgress: { completed } },
       { merge: true },
     );
@@ -59,9 +60,11 @@ export const useStoryStore = create<StoryProgressState>()(
       },
 
       hydrateFromCloud: async (uid) => {
-        if (!db) return;
+        const fb = await loadFirebase();
+        if (!fb) return;
+        const { db, dbApi } = fb;
         try {
-          const snapshot = await getDoc(doc(db, "users", uid));
+          const snapshot = await dbApi.getDoc(dbApi.doc(db, "users", uid));
           const cloud =
             (snapshot.data()?.storyProgress?.completed as
               | Record<string, boolean>

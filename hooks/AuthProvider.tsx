@@ -1,17 +1,10 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { auth, db, firebaseEnabled } from "@/lib/firebase";
-import { 
-  onAuthStateChanged, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword,
-  signOut,
-  User
-} from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { firebaseEnabled, loadFirebase } from "@/lib/firebase";
+// TYPE-ONLY: erased at compile time. A value import of firebase/auth here
+// would pull the SDK back into the shared chunk and undo the lazy loading.
+import type { User } from "firebase/auth";
 import { usePlayerStore, PlayerState, migratePlayerState, CURRENT_PLAYER_STATE_VERSION } from "@/store/playerStore";
 
 interface AuthContextType {
@@ -53,9 +46,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const skipSyncRef = React.useRef(false);
 
   useEffect(() => {
-    if (!auth || !db) return;
-    const firestore = db;
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    if (!firebaseEnabled) return;
+    // The SDK now arrives asynchronously, so the subscription is set up inside
+    // a promise. `cancelled` covers the window where the effect is torn down
+    // before the import resolves; `unsubscribe` is captured for the normal path.
+    let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
+
+    void loadFirebase().then((fb) => {
+      if (!fb || cancelled) {
+        setLoading(false);
+        return;
+      }
+      const { auth, db: firestore, authApi, dbApi } = fb;
+      const { onAuthStateChanged } = authApi;
+      const { doc, getDoc, setDoc } = dbApi;
+
+      unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
 
       if (currentUser) {
@@ -127,14 +134,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         hadUserRef.current = false;
       }
 
-      setLoading(false);
+        setLoading(false);
+      });
     });
 
-    return () => unsubscribe();
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [setPlayerState, resetPlayerState]);
 
   const saveToCloud = React.useCallback(async (state: Partial<PlayerState>) => {
-    if (!user || !db) return;
+    if (!user) return;
+    const fb = await loadFirebase();
+    if (!fb) return;
+    const { db, dbApi } = fb;
+    const { doc, setDoc } = dbApi;
     try {
       const docRef = doc(db, "users", user.uid);
       const { roster, currencies, inventory, characters, stamina, pity } = {
@@ -159,7 +174,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // progress. Debounced so a burst of changes (e.g. grant + immediate feed)
   // collapses into one write instead of one per action.
   useEffect(() => {
-    if (!user || !db) return;
+    // No `db` check needed — saveToCloud loads Firebase itself and no-ops
+    // when it isn't configured.
+    if (!user) return;
     let timeout: ReturnType<typeof setTimeout> | undefined;
     const unsubscribe = usePlayerStore.subscribe(() => {
       if (skipSyncRef.current) {
@@ -177,27 +194,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [user, saveToCloud]);
 
-  const requireAuth = () => {
-    if (!auth) throw new Error("Firebase auth is not configured (missing NEXT_PUBLIC_FIREBASE_* env vars).");
-    return auth;
+  /** Loads the SDK on demand — the first sign-in attempt is what pulls it. */
+  const requireFirebase = async () => {
+    const fb = await loadFirebase();
+    if (!fb) {
+      throw new Error(
+        "Firebase auth is not configured (missing NEXT_PUBLIC_FIREBASE_* env vars).",
+      );
+    }
+    return fb;
   };
 
   const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(requireAuth(), provider);
+    const { auth, authApi } = await requireFirebase();
+    await authApi.signInWithPopup(auth, new authApi.GoogleAuthProvider());
   };
 
   const loginWithEmail = async (e: string, p: string) => {
-    await signInWithEmailAndPassword(requireAuth(), e, p);
+    const { auth, authApi } = await requireFirebase();
+    await authApi.signInWithEmailAndPassword(auth, e, p);
   };
 
   const signupWithEmail = async (e: string, p: string) => {
-    await createUserWithEmailAndPassword(requireAuth(), e, p);
+    const { auth, authApi } = await requireFirebase();
+    await authApi.createUserWithEmailAndPassword(auth, e, p);
   };
 
   const logout = async () => {
-    if (!auth) return;
-    await signOut(auth);
+    const fb = await loadFirebase();
+    if (!fb) return;
+    await fb.authApi.signOut(fb.auth);
   };
 
   return (

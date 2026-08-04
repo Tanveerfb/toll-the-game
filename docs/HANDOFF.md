@@ -105,7 +105,7 @@ npm run build   # must pass before commit
 
 See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old Phase 0–4 list below it).
 
-**Built and working:** battle engine, 27 kits, story Parts 1–2, archive, auth + Firestore saves, battle cinematics, Kit Lab, Molvarr world boss, leveling/ascension/stamina/inventory, gacha (summon/banners/milestone pity/dupes), `/news` MDX patch notes. `npm run check` green — **561 tests across 55 files**, clean `next build` (44 routes).
+**Built and working:** battle engine, 27 kits, story Parts 1–2, archive, auth + Firestore saves, battle cinematics, Kit Lab, Molvarr world boss, leveling/ascension/stamina/inventory, gacha (summon/banners/milestone pity/dupes), `/news` MDX patch notes. `npm run check` green — **564 tests across 56 files**, clean `next build` (44 routes).
 
 **Still missing (the whole gap):** audio, mobile layout pass, FTUE/tutorial, daily loop, analytics, deployment. `docs/PRODUCT_AUDIT.md` is the standing analysis — the fight is strong, the service layer around it is thin.
 

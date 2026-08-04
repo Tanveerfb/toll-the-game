@@ -183,6 +183,13 @@ Chance-tier wording (2026-07-30, `author_notes.md` idea #1): a fixed probability
 - `hooks/AuthProvider.tsx` + `lib/firebase.ts` — Firebase auth context; `/login` (email + Google) and `/profile` are built, with a guest-mode fallback when `.env.local` is absent.
 - `components/game/BattleEffectsOverlay.tsx` — visual feedback layer.
 
+## Loading & Bundle Notes
+
+- **The mechanic engine is already data-driven.** `executeSkill` iterates a skill's OWN `mechanics[]` and branches (`skillMechanics.forEach(m => { if (m.type === "shock") … })`) — a 4v4 only ever executes the mechanics its 8 units carry. There is no "run all 53 mechanics" pass to optimise away.
+- **Per-battle kit loading isn't worth it** (measured 2026-08-04): all 27 kit JSONs are **9.5 KB gzipped combined**. Lazy-loading them per battle saves ~7 KB while adding an async gate before every fight and a resume path that has to re-fetch mid-battle. The whole client bundle is ~2.4 MB; kits are noise.
+- **Firebase is lazy-loaded** (`lib/firebase.ts` → `loadFirebase()`). It used to initialise at module scope and export `auth`/`db` as values, so importing the file anywhere pulled ~555 KB of `@firebase` into the shared chunk — and since `AuthProvider` sits in the root layout, **every route paid for it**, including a practice battle that never touches auth. Now it lives in its own chunk, referenced by no page's initial HTML, and loads after mount. **Rule: never `import { … } from "firebase/*"` as a value.** Type-only imports are fine (erased); a value import anywhere puts the SDK straight back into the shared chunk. Get the API functions off the `FirebaseBundle` (`authApi` / `dbApi`) instead.
+- **`import.meta.glob` does NOT work here.** Turbopack compiles it but throws `.glob is not a function` at runtime, failing the prerender (measured 2026-08-04). Vitest supports it; Turbopack does not. Kit registration in `characterCatalog.ts` therefore stays explicit — an import line plus a `rawCharacters` entry per kit — guarded by `tests/characterCatalogRegistration.test.ts`, which fails if a kit JSON on disk isn't registered (the silent-omission failure mode: no build error, the character just doesn't exist).
+
 ## UI Layer Conventions
 
 - **`lib/nav/routes.ts` is the single source of truth for what modes exist.** `TopNav` and `HomeMenu` both render `GAME_ROUTES`. They previously kept separate lists and disagreed, leaving World Boss / Gacha / News unreachable from every page except home. Add a route here, not in a component.
