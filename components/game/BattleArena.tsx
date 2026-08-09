@@ -106,9 +106,14 @@ export interface BattleEndHandlers {
 export default function BattleArena({
   story,
   worldBoss,
+  contextLabel,
 }: {
   story?: BattleEndHandlers;
   worldBoss?: BattleEndHandlers;
+  /** What this fight belongs to (a story chapter's title, say). Rendered in
+   *  the status strip so a canon battle doesn't look byte-identical to a
+   *  practice sandbox one. */
+  contextLabel?: string;
 } = {}): React.JSX.Element {
   const battleEnd = story ?? worldBoss;
   // Individual selectors (not a whole-store destructure) so this component —
@@ -698,6 +703,14 @@ export default function BattleArena({
           <span className="truncate font-body text-xs uppercase tracking-[0.16em] text-amber-200">
             {phaseLabel}
           </span>
+          {contextLabel ? (
+            <span className="hidden min-w-0 shrink items-center gap-2 lg:flex">
+              <span className="h-3 w-px shrink-0 bg-zinc-700" />
+              <span className="truncate font-body text-[11px] uppercase tracking-[0.16em] text-zinc-400">
+                {contextLabel}
+              </span>
+            </span>
+          ) : null}
           <div className="hidden h-1.5 w-28 shrink-0 overflow-hidden border border-zinc-700 bg-zinc-900/70 sm:block">
             <m.div
               className="h-full bg-linear-to-r from-amber-300 via-orange-400 to-yellow-300"

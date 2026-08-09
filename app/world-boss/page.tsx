@@ -9,6 +9,7 @@ import BattleArena from "@/components/game/BattleArena";
 import Deck from "@/components/game/Deck";
 import OwnedTeamSelect, { toTeamPicks } from "@/components/game/OwnedTeamSelect";
 import { useBattleContext } from "@/hooks/BattleProvider";
+import { useScreenMusic } from "@/hooks/useScreenMusic";
 import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
 import { getCurrentStamina, STAMINA_CAP } from "@/lib/game/stamina";
@@ -37,6 +38,10 @@ export default function WorldBossPage(): React.JSX.Element {
   const [view, setView] = React.useState<View>({ kind: "select" });
   const [team, setTeam] = React.useState<CharacterData[]>([]);
   const [insufficientStaminaNotice, setInsufficientStaminaNotice] = React.useState(false);
+
+  useScreenMusic(
+    view.kind === "battle" ? "battle" : view.kind === "results" ? "victory" : "menu",
+  );
 
   const molvarr = getCharacterById(MOLVARR_ID);
   const phaseCount = molvarr ? getCharacterPhases(molvarr).length || 1 : 1;

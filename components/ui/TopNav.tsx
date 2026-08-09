@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import AudioControl from "@/components/ui/AudioControl";
 import { GAME_ROUTES, isRouteActive } from "@/lib/nav/routes";
 
 export default function TopNav() {
@@ -38,6 +39,7 @@ export default function TopNav() {
             );
           })}
         </div>
+        <AudioControl />
       </div>
     </nav>
   );

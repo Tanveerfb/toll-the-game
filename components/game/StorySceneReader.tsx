@@ -5,26 +5,109 @@ import Image from "next/image";
 import { AnimatePresence, m } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { getCharacterArt } from "@/lib/game/characterArt";
+import {
+  autoAdvanceDelayMs,
+  isNarration,
+  portraitSlotsAt,
+  activeSideAt,
+  revealDurationMs,
+  revealedLength,
+  tapIntent,
+  TYPEWRITER_MS_PER_CHAR,
+} from "@/lib/game/storyScene";
 import type { StoryScene } from "@/types/story";
 
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(onChange: () => void): () => void {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return () => {};
+  }
+  const query = window.matchMedia(REDUCED_MOTION_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+function getReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia(REDUCED_MOTION_QUERY).matches
+  );
+}
+
 /**
- * VN-style scene reader: portrait + name plate + text box, tap/click or
- * Enter/Space to advance, Skip jumps straight to the end of the scene list.
+ * VN-style scene reader.
+ *
+ * Interaction contract (`lib/game/storyScene.ts` owns the logic):
+ *  - tap while the line is revealing → finish it instantly
+ *  - tap once it's finished → next scene
+ * `prefers-reduced-motion` renders every line complete, so the first tap
+ * always advances and the reveal never becomes an obstacle.
  */
 export default function StorySceneReader({
   scenes,
   chapterTitle,
+  /** Uncleared chapters confirm before skipping — one stray tap on a
+   *  top-right control shouldn't destroy an intro you've never seen. Replays
+   *  skip immediately (the brief's SKIP STORY already means that). */
+  confirmSkip = false,
   onFinish,
 }: {
   scenes: StoryScene[];
   chapterTitle: string;
+  confirmSkip?: boolean;
   onFinish: () => void;
 }): React.JSX.Element {
   const [index, setIndex] = React.useState(0);
-  const scene = scenes[index];
+  const [revealed, setRevealed] = React.useState(0);
+  const [instant, setInstant] = React.useState(false);
+  const [auto, setAuto] = React.useState(false);
+  const [historyOpen, setHistoryOpen] = React.useState(false);
+  const [skipPrompt, setSkipPrompt] = React.useState(false);
 
-  // onFinish must fire outside the setIndex updater — parent setState
-  // inside an updater is a setState-during-render violation
+  const scene = scenes[index];
+  const text = scene?.text ?? "";
+
+  // An external store, so useSyncExternalStore rather than effect+setState —
+  // the server snapshot is always false, since there is no matchMedia there.
+  const reducedMotion = React.useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotion,
+    () => false,
+  );
+
+  const showAll = instant || reducedMotion;
+
+  // Reset the reveal when the scene changes, or a completed line leaks into
+  // the next panel. Adjusted during render (React's documented pattern for
+  // resetting state on a changed input) instead of in an effect, which would
+  // paint the previous line's progress for a frame first.
+  const [renderedIndex, setRenderedIndex] = React.useState(index);
+  if (renderedIndex !== index) {
+    setRenderedIndex(index);
+    setRevealed(0);
+    setInstant(false);
+  }
+
+  // Reveal ticker. An interval rather than requestAnimationFrame: rAF stops
+  // entirely when the page isn't being composited (background tab, hidden
+  // pane), which would freeze a line mid-word, and there's no per-frame
+  // animation here to justify it. Position is computed from the wall clock,
+  // so a throttled interval still lands on the right character.
+  React.useEffect(() => {
+    if (showAll || !text) return;
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      const elapsed = Date.now() - startedAt;
+      setRevealed(revealedLength(text, elapsed));
+      if (elapsed >= revealDurationMs(text)) window.clearInterval(timer);
+    }, 16);
+    return () => window.clearInterval(timer);
+  }, [text, showAll]);
+
+  // onFinish must fire outside the setIndex updater — parent setState inside
+  // an updater is a setState-during-render violation.
   const advance = React.useCallback(() => {
     if (index + 1 >= scenes.length) {
       onFinish();
@@ -33,16 +116,41 @@ export default function StorySceneReader({
     }
   }, [index, scenes.length, onFinish]);
 
+  const complete = React.useCallback(() => setInstant(true), []);
+
+  const handleTap = React.useCallback(() => {
+    if (historyOpen || skipPrompt) return;
+    const elapsed = showAll
+      ? Number.MAX_SAFE_INTEGER
+      : revealed * TYPEWRITER_MS_PER_CHAR;
+    if (tapIntent(text, elapsed, showAll) === "advance") advance();
+    else complete();
+  }, [advance, complete, historyOpen, revealed, showAll, skipPrompt, text]);
+
+  const isComplete = showAll || revealed >= text.length;
+
+  // Auto-advance: dwell after the line finishes, cancelled by any manual tap
+  // (which flips `auto` off through the toggle, or lands us on a new index).
+  React.useEffect(() => {
+    if (!auto || !isComplete || historyOpen || skipPrompt) return;
+    const timer = window.setTimeout(advance, autoAdvanceDelayMs(text));
+    return () => window.clearTimeout(timer);
+  }, [auto, isComplete, advance, text, historyOpen, skipPrompt]);
+
   React.useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        advance();
+        handleTap();
+      }
+      if (event.key === "Escape") {
+        setHistoryOpen(false);
+        setSkipPrompt(false);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [advance]);
+  }, [handleTap]);
 
   // Empty scene lists (an outro-less chapter) finish immediately
   React.useEffect(() => {
@@ -54,40 +162,85 @@ export default function StorySceneReader({
     return <div className="flex-1" />;
   }
 
-  const art = scene.portraitId ? getCharacterArt(scene.portraitId) : null;
-  const side = scene.side ?? "left";
+  const narration = isNarration(scene);
+  const slots = portraitSlotsAt(scenes, index);
+  const activeSide = activeSideAt(scenes, index);
+  const visibleText = showAll ? text : text.slice(0, revealed);
 
-  // Two independent, permanently-positioned slots (not one div whose side
-  // flips via className) — a speaker's portrait only ever animates within
-  // its own slot. Previously both sides shared one container, so switching
-  // speakers teleported the container to the new side WHILE the old
-  // portrait was still mid-exit, flashing the wrong character in the new
-  // speaker's spot for a frame (Tanveer 2026-07-20).
-  const leftArt = side === "left" ? art : null;
-  const rightArt = side === "right" ? art : null;
+  const requestSkip = () => {
+    if (confirmSkip) setSkipPrompt(true);
+    else onFinish();
+  };
 
-  // div (not <button>): the Skip control nests inside, and button-in-button
-  // is invalid HTML → hydration error. Enter/Space handled by the window
-  // keydown listener above.
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={advance}
+      onClick={handleTap}
       className="relative flex h-full w-full flex-1 cursor-pointer flex-col justify-center overflow-hidden text-left"
       aria-label="Advance story"
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between px-4 py-3">
+      {/* Letterbox bars. Present for narration only — the cinematic framing is
+          what separates narration from a character speaking now that they no
+          longer share one identical box. */}
+      <AnimatePresence>
+        {narration ? (
+          <>
+            <m.div
+              initial={{ height: 0 }}
+              animate={{ height: 44 }}
+              exit={{ height: 0 }}
+              transition={{ duration: 0.35 }}
+              className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-black"
+            />
+            <m.div
+              initial={{ height: 0 }}
+              animate={{ height: 44 }}
+              exit={{ height: 0 }}
+              transition={{ duration: 0.35 }}
+              className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-black"
+            />
+          </>
+        ) : null}
+      </AnimatePresence>
+
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between px-4 py-3">
         <p className="font-heading text-sm tracking-[0.18em] text-zinc-500">
           {chapterTitle.toUpperCase()}
         </p>
-        <span className="pointer-events-auto">
+        <span className="pointer-events-auto flex items-center gap-1.5">
           <Button
             variant="ghost"
             size="sm"
             onClick={(event) => {
               event.stopPropagation();
-              onFinish();
+              setAuto((v) => !v);
+            }}
+            className={`rounded-none border font-body text-[10px] uppercase tracking-[0.16em] ${
+              auto
+                ? "border-amber-300 text-amber-200"
+                : "border-zinc-700 text-zinc-400"
+            }`}
+          >
+            Auto
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(event) => {
+              event.stopPropagation();
+              setHistoryOpen(true);
+            }}
+            className="rounded-none border border-zinc-700 font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400"
+          >
+            History
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(event) => {
+              event.stopPropagation();
+              requestSkip();
             }}
             className="rounded-none border border-zinc-700 font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400"
           >
@@ -96,78 +249,223 @@ export default function StorySceneReader({
         </span>
       </div>
 
-      {/* Left slot — only ever holds the left speaker's portrait */}
-      <div className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 md:left-10">
-        <AnimatePresence mode="wait">
-          {leftArt ? (
-            <m.div
-              key={scene.portraitId}
-              initial={{ opacity: 0, x: -24 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-            >
-              <Image
-                src={leftArt}
-                alt={scene.speaker ?? scene.portraitId ?? "Portrait"}
-                width={512}
-                height={512}
-                priority
-                className="h-56 w-56 border-2 border-zinc-700 object-cover object-top shadow-[0_18px_50px_rgba(0,0,0,0.6)] md:h-80 md:w-80"
-              />
-            </m.div>
-          ) : null}
-        </AnimatePresence>
-      </div>
-
-      {/* Right slot — only ever holds the right speaker's portrait */}
-      <div className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 md:right-10">
-        <AnimatePresence mode="wait">
-          {rightArt ? (
-            <m.div
-              key={scene.portraitId}
-              initial={{ opacity: 0, x: 24 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-            >
-              <Image
-                src={rightArt}
-                alt={scene.speaker ?? scene.portraitId ?? "Portrait"}
-                width={512}
-                height={512}
-                priority
-                className="h-56 w-56 border-2 border-zinc-700 object-cover object-top shadow-[0_18px_50px_rgba(0,0,0,0.6)] md:h-80 md:w-80"
-              />
-            </m.div>
-          ) : null}
-        </AnimatePresence>
-      </div>
+      {/* Two independent, permanently-positioned slots (not one div whose side
+          flips via className) — a speaker's portrait only ever animates within
+          its own slot. Previously both sides shared one container, so
+          switching speakers teleported the container to the new side WHILE the
+          old portrait was still mid-exit, flashing the wrong character in the
+          new speaker's spot for a frame (Tanveer 2026-07-20). */}
+      <PortraitSlot
+        side="left"
+        portraitId={slots.left}
+        dimmed={activeSide !== "left"}
+      />
+      <PortraitSlot
+        side="right"
+        portraitId={slots.right}
+        dimmed={activeSide !== "right"}
+      />
 
       <m.div
         key={index}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
-        className="relative z-10 mx-auto w-full max-w-3xl px-4"
+        className={`relative z-10 mx-auto w-full px-4 ${
+          narration ? "max-w-2xl" : "max-w-3xl"
+        }`}
       >
-        <div className="border-2 border-zinc-700 bg-zinc-950/90 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
-          <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-2">
-            <p className="font-heading text-lg tracking-[0.14em] text-amber-300">
-              {scene.speaker ? scene.speaker.toUpperCase() : "· · ·"}
+        {narration ? (
+          // No box, no name plate, no "· · ·" filler — narration reads as the
+          // camera talking, not as a character with no name.
+          <p className="text-center font-body text-base leading-loose tracking-wide text-zinc-300 md:text-lg">
+            {visibleText}
+            {!isComplete ? <Caret /> : null}
+          </p>
+        ) : (
+          <div className="border-2 border-zinc-700 bg-zinc-950/90 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
+            <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-2">
+              <p className="font-heading text-lg tracking-[0.14em] text-amber-300">
+                {scene.speaker?.toUpperCase()}
+              </p>
+              <p className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-600">
+                {index + 1} / {scenes.length}
+              </p>
+            </div>
+            <p className="min-h-20 px-5 py-4 font-body text-sm leading-relaxed text-zinc-200 md:text-base">
+              {visibleText}
+              {!isComplete ? <Caret /> : null}
             </p>
-            <p className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-600">
-              {index + 1} / {scenes.length}
+            <p className="border-t border-zinc-900 px-5 py-1.5 text-right font-body text-[10px] uppercase tracking-[0.16em] text-zinc-600">
+              {isComplete ? "Tap to continue ▸" : "Tap to reveal"}
             </p>
           </div>
-          <p className="min-h-20 px-5 py-4 font-body text-sm leading-relaxed text-zinc-200 md:text-base">
-            {scene.text}
+        )}
+        {narration ? (
+          <p className="mt-4 text-center font-body text-[10px] uppercase tracking-[0.16em] text-zinc-600">
+            {index + 1} / {scenes.length} ·{" "}
+            {isComplete ? "Tap to continue ▸" : "Tap to reveal"}
           </p>
-          <p className="border-t border-zinc-900 px-5 py-1.5 text-right font-body text-[10px] uppercase tracking-[0.16em] text-zinc-600">
-            Tap to continue ▸
-          </p>
-        </div>
+        ) : null}
       </m.div>
+
+      {historyOpen ? (
+        <HistoryOverlay
+          scenes={scenes}
+          upTo={index}
+          onClose={() => setHistoryOpen(false)}
+        />
+      ) : null}
+
+      {skipPrompt ? (
+        <SkipPrompt
+          onCancel={() => setSkipPrompt(false)}
+          onConfirm={onFinish}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function Caret(): React.JSX.Element {
+  return (
+    <span className="ml-0.5 inline-block h-4 w-2 animate-pulse bg-amber-300/70 align-middle" />
+  );
+}
+
+/**
+ * One side's portrait. The non-speaking side stays on screen, dimmed and
+ * desaturated, rather than unmounting — that retention is what makes a
+ * two-hander look like a conversation instead of one portrait popping between
+ * two empty slots.
+ */
+function PortraitSlot({
+  side,
+  portraitId,
+  dimmed,
+}: {
+  side: "left" | "right";
+  portraitId: string | null;
+  dimmed: boolean;
+}): React.JSX.Element {
+  const art = portraitId ? getCharacterArt(portraitId) : null;
+  return (
+    <div
+      className={`pointer-events-none absolute bottom-0 z-0 ${
+        side === "left" ? "left-0 md:left-6" : "right-0 md:right-6"
+      }`}
+    >
+      <AnimatePresence mode="wait">
+        {art ? (
+          <m.div
+            key={portraitId}
+            initial={{ opacity: 0, x: side === "left" ? -24 : 24 }}
+            animate={{
+              opacity: dimmed ? 0.35 : 1,
+              x: 0,
+              filter: dimmed ? "grayscale(0.7) brightness(0.6)" : "none",
+            }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="relative"
+          >
+            <Image
+              src={art}
+              alt={portraitId ?? "Portrait"}
+              width={512}
+              height={512}
+              priority
+              // 3:4 rather than square, larger, and no hard border — a bordered
+              // square crop reads as a UI thumbnail, not a character present in
+              // the scene.
+              className="h-72 w-[13.5rem] object-cover object-top md:h-[26rem] md:w-[19.5rem]"
+            />
+            {/* Bottom fade seats the figure instead of letting it end on a cut */}
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(to_top,#09090b_10%,transparent)]" />
+          </m.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function HistoryOverlay({
+  scenes,
+  upTo,
+  onClose,
+}: {
+  scenes: StoryScene[];
+  upTo: number;
+  onClose: () => void;
+}): React.JSX.Element {
+  return (
+    <div
+      className="absolute inset-0 z-40 flex flex-col bg-black/90 backdrop-blur-sm"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-3">
+        <p className="font-heading text-lg tracking-[0.14em] text-zinc-200">
+          HISTORY
+        </p>
+        <Button
+          onClick={onClose}
+          className="h-9 rounded-none border-2 border-amber-300 px-5 font-heading text-sm tracking-[0.14em]"
+        >
+          CLOSE
+        </Button>
+      </div>
+      <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+        {scenes.slice(0, upTo + 1).map((scene, i) => (
+          <div key={i} className="border-l-2 border-zinc-800 pl-3">
+            <p className="font-heading text-xs tracking-[0.14em] text-amber-300/80">
+              {scene.speaker?.toUpperCase() ?? "NARRATION"}
+            </p>
+            <p className="mt-1 font-body text-sm leading-relaxed text-zinc-300">
+              {scene.text}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SkipPrompt({
+  onCancel,
+  onConfirm,
+}: {
+  onCancel: () => void;
+  onConfirm: () => void;
+}): React.JSX.Element {
+  return (
+    <div
+      className="absolute inset-0 z-40 flex items-center justify-center bg-black/85 px-4 backdrop-blur-sm"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <div className="w-full max-w-sm border-2 border-amber-300 bg-zinc-950/95 p-5">
+        <p className="font-heading text-xl tracking-[0.12em] text-amber-200">
+          SKIP THESE SCENES?
+        </p>
+        <p className="mt-2 font-body text-sm text-zinc-400">
+          You haven&apos;t seen this chapter yet. You can replay it later from
+          the chapter list.
+        </p>
+        <div className="mt-4 flex gap-2">
+          <Button
+            onClick={onCancel}
+            variant="ghost"
+            className="h-10 flex-1 rounded-none border-2 border-zinc-700 font-heading text-sm tracking-[0.14em] text-zinc-300"
+          >
+            KEEP READING
+          </Button>
+          <Button
+            onClick={onConfirm}
+            className="h-10 flex-1 rounded-none border-2 border-amber-300 font-heading text-sm tracking-[0.14em]"
+          >
+            SKIP
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

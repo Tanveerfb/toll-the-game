@@ -5,11 +5,16 @@ import BattleArena from "@/components/game/BattleArena";
 import Deck from "@/components/game/Deck";
 import StorySceneReader from "@/components/game/StorySceneReader";
 import ChapterBrief from "@/components/game/story/ChapterBrief";
+import ChapterCompleteCard from "@/components/game/story/ChapterCompleteCard";
+import ChapterTitleCard from "@/components/game/story/ChapterTitleCard";
 import StoryChapterList from "@/components/game/story/StoryChapterList";
 import StoryPartSelect from "@/components/game/story/StoryPartSelect";
 import StoryRewardsScreen from "@/components/game/story/StoryRewardsScreen";
+import VersusSplash from "@/components/game/story/VersusSplash";
 import { useAuth } from "@/hooks/AuthProvider";
 import { useBattleContext } from "@/hooks/BattleProvider";
+import { useScreenMusic } from "@/hooks/useScreenMusic";
+import type { MusicRole } from "@/lib/audio/tracks";
 import { getCurrentStamina } from "@/lib/game/stamina";
 import {
   chapterKey,
@@ -26,27 +31,68 @@ import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
 import { useStoryStore } from "@/store/storyStore";
 
+/**
+ * chapters → brief → title → intro → versus → battle → outro → complete → rewards
+ *                      └────────── skip scenes (cleared) ──────────┘        ↑ first clear only
+ *
+ * The skip path keeps `versus` deliberately: it's short, it's the beat that
+ * makes a fight feel like a fight, and it covers the battle's start-up.
+ */
 type View =
   | { kind: "parts" }
   | { kind: "chapters"; partId: string }
   | { kind: "brief"; partId: string; chapterId: string }
+  | { kind: "title"; partId: string; chapterId: string; picks: string[] }
   | { kind: "intro"; partId: string; chapterId: string; picks: string[] }
+  | {
+      kind: "versus";
+      partId: string;
+      chapterId: string;
+      picks: string[];
+      skipScenes: boolean;
+    }
   | {
       kind: "battle";
       partId: string;
       chapterId: string;
       picks: string[];
       /** Set from the brief's SKIP STORY button — skips the outro too, so a
-       *  farm run goes brief → battle → rewards. */
+       *  farm run goes brief → versus → battle → rewards. */
       skipScenes: boolean;
     }
   | { kind: "outro"; partId: string; chapterId: string }
+  | {
+      kind: "complete";
+      partId: string;
+      chapterId: string;
+      result: StoryClearResult;
+    }
   | { kind: "rewards"; partId: string; chapterId: string; result: StoryClearResult };
 
 const PAGE_BG = {
   backgroundImage:
     "radial-gradient(70% 50% at 50% 0%, rgba(245,158,11,0.2), transparent 72%), linear-gradient(140deg, #09090b 0%, #111827 52%, #0a0a0a 100%)",
 };
+
+/** Which track each step of the flow asks for. Requesting the role that's
+ *  already playing is a no-op in the controller, so walking parts → chapters →
+ *  brief is one continuous piece of music rather than three restarts. */
+function musicRoleFor(view: View): MusicRole {
+  switch (view.kind) {
+    case "title":
+    case "intro":
+    case "outro":
+      return "storyScene";
+    case "versus":
+    case "battle":
+      return "battle";
+    case "complete":
+    case "rewards":
+      return "victory";
+    default:
+      return "story";
+  }
+}
 
 export default function StoryPage(): React.JSX.Element {
   const { user } = useAuth();
@@ -58,6 +104,8 @@ export default function StoryPage(): React.JSX.Element {
   const spendStaminaAction = usePlayerStore((s) => s.spendStaminaAction);
   const grantStoryRewards = usePlayerStore((s) => s.grantStoryRewards);
   const [view, setView] = React.useState<View>({ kind: "parts" });
+
+  useScreenMusic(musicRoleFor(view));
 
   React.useEffect(() => {
     if (user) void hydrateFromCloud(user.uid);
@@ -91,7 +139,13 @@ export default function StoryPage(): React.JSX.Element {
       const result = rollStoryRewards(chapter.rewards, isFirstClear);
       grantStoryRewards(result.total);
       markChapterComplete(partId, chapterId, user?.uid);
-      setView({ kind: "rewards", partId, chapterId, result });
+      // The completion beat is for finishing a chapter, not for finishing a
+      // farm run — a fanfare on the fortieth clear is noise.
+      setView(
+        isFirstClear
+          ? { kind: "complete", partId, chapterId, result }
+          : { kind: "rewards", partId, chapterId, result },
+      );
     },
     [completed, grantStoryRewards, markChapterComplete, user?.uid],
   );
@@ -116,15 +170,16 @@ export default function StoryPage(): React.JSX.Element {
     (partId: string, chapterId: string, picks: string[], skipScenes: boolean): boolean => {
       if (!chargeAttempt(partId, chapterId)) return false;
 
-      if (skipScenes) {
-        launchBattle(partId, chapterId, picks);
-        setView({ kind: "battle", partId, chapterId, picks, skipScenes: true });
-      } else {
-        setView({ kind: "intro", partId, chapterId, picks });
-      }
+      // A farm run jumps the title card and the scenes but still gets the VS
+      // beat, which also covers the battle's start-up.
+      setView(
+        skipScenes
+          ? { kind: "versus", partId, chapterId, picks, skipScenes: true }
+          : { kind: "title", partId, chapterId, picks },
+      );
       return true;
     },
-    [chargeAttempt, launchBattle],
+    [chargeAttempt],
   );
 
   /** Restarts the same battle after a defeat, without replaying the scenes. */
@@ -146,6 +201,7 @@ export default function StoryPage(): React.JSX.Element {
       >
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-size-[36px_36px]" />
         <BattleArena
+          contextLabel={getStoryChapter(view.partId, view.chapterId)?.title}
           story={{
             onContinue: () => {
               resetBattle();
@@ -178,6 +234,96 @@ export default function StoryPage(): React.JSX.Element {
     );
   }
 
+  // ---- Chapter title card ----
+  if (view.kind === "title") {
+    const part = getStoryPart(view.partId);
+    const chapter = getStoryChapter(view.partId, view.chapterId);
+    if (!part || !chapter) {
+      setView({ kind: "parts" });
+      return <main className="min-h-screen bg-zinc-950" />;
+    }
+    const chapterNumber = part.chapters.findIndex((c) => c.id === chapter.id) + 1;
+    return (
+      <main
+        className="relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden text-zinc-100"
+        style={PAGE_BG}
+      >
+        <ChapterTitleCard
+          chapterNumber={chapterNumber}
+          title={chapter.title}
+          partTitle={part.title}
+          onDone={() =>
+            setView({
+              kind: "intro",
+              partId: view.partId,
+              chapterId: view.chapterId,
+              picks: view.picks,
+            })
+          }
+        />
+      </main>
+    );
+  }
+
+  // ---- VS splash ----
+  if (view.kind === "versus") {
+    const chapter = getStoryChapter(view.partId, view.chapterId);
+    if (!chapter) {
+      setView({ kind: "parts" });
+      return <main className="min-h-screen bg-zinc-950" />;
+    }
+    return (
+      <main
+        className="relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden bg-zinc-950 text-zinc-100"
+        style={PAGE_BG}
+      >
+        <VersusSplash
+          playerTeam={resolveStoryTeam(chapter, view.picks)}
+          enemyTeam={chapter.battle.enemyTeam}
+          chapterTitle={chapter.title}
+          onDone={() => {
+            launchBattle(view.partId, view.chapterId, view.picks);
+            setView({
+              kind: "battle",
+              partId: view.partId,
+              chapterId: view.chapterId,
+              picks: view.picks,
+              skipScenes: view.skipScenes,
+            });
+          }}
+        />
+      </main>
+    );
+  }
+
+  // ---- Chapter complete (first clear only) ----
+  if (view.kind === "complete") {
+    const part = getStoryPart(view.partId);
+    const chapter = getStoryChapter(view.partId, view.chapterId);
+    const chapterNumber = part
+      ? part.chapters.findIndex((c) => c.id === view.chapterId) + 1
+      : 0;
+    return (
+      <main
+        className="relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden text-zinc-100"
+        style={PAGE_BG}
+      >
+        <ChapterCompleteCard
+          chapterNumber={chapterNumber}
+          title={chapter?.title ?? ""}
+          onContinue={() =>
+            setView({
+              kind: "rewards",
+              partId: view.partId,
+              chapterId: view.chapterId,
+              result: view.result,
+            })
+          }
+        />
+      </main>
+    );
+  }
+
   // ---- Scene reader views (intro / outro) ----
   if (view.kind === "intro" || view.kind === "outro") {
     const chapter = getStoryChapter(view.partId, view.chapterId);
@@ -197,11 +343,13 @@ export default function StoryPage(): React.JSX.Element {
           key={`${view.partId}-${view.chapterId}-${view.kind}`}
           scenes={isIntro ? chapter.intro : chapter.outro}
           chapterTitle={chapter.title}
+          // Only guard scenes the player has never seen; a replay's skip is
+          // already an explicit choice made on the brief.
+          confirmSkip={completed[chapterKey(view.partId, view.chapterId)] !== true}
           onFinish={() => {
             if (isIntro) {
-              launchBattle(view.partId, view.chapterId, picks);
               setView({
-                kind: "battle",
+                kind: "versus",
                 partId: view.partId,
                 chapterId: view.chapterId,
                 picks,

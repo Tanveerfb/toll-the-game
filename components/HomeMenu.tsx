@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/AuthProvider";
+import { useScreenMusic } from "@/hooks/useScreenMusic";
 import { useGameStore } from "@/store/gameStore";
 import { useStoryStore } from "@/store/storyStore";
 import BattleArena from "@/components/game/BattleArena";
@@ -154,6 +155,17 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
   const { user } = useAuth();
   const battlePhase = useGameStore((s) => s.battlePhase);
   const router = useRouter();
+
+  // HomeMenu also hosts a practice battle inline — "initializing" is the
+  // no-battle state (see the render branch below), so the hub's theme gives
+  // way to the battle track rather than playing under a fight.
+  useScreenMusic(
+    battlePhase === "initializing"
+      ? "menu"
+      : battlePhase === "victory"
+        ? "victory"
+        : "battle",
+  );
 
   const completed = useStoryStore((s) => s.completed);
   const storyHydrated = useStoryStore((s) => s.hasHydrated);
