@@ -30,3 +30,36 @@ Last updated - 30/07/2026
 - Skill 1 Rank 3 - Does [Power Strike] damage equal to [400]% to one enemy.
 - Skill 2 Rank 3 - Does [Rupture] damage equal to [300]% to all enemies
 - Ultimate - Does [Power Strike] damage equal to [500]% to one enemy and fills own ult gauge by 2.
+
+### Confirmed behaviour — answers from Tanveer, 2026-08-10
+
+**Knuckle / [APR]**
+
+- **[APR] is ONE uncancellable effect bundling three things**: the growing counter, the 20% basic-stat-down, and the taunt. Not three separate entries. Deliberate exception to ruling #60 (debuffs are cancellable) — cleanse and Debuff Immunity do **not** strip it.
+- **Knuckle's taunt is high priority and uncancellable, but only for the [APR] enemy.** That enemy ignores all other taunts; every other enemy may or may not target him normally.
+- **vs bosses:** IRS may one-shot **one phase**, never the whole boss. When IRS triggers a phase shift, **[APR] is removed** and Knuckle starts over on the new phase.
+- **Enemy removes [APR] by dealing full damage to Knuckle** — reduction equals the damage dealt. At 0 it drops and he may re-apply on his next hit. The swinginess is intentional and anime-faithful: hold aggro, survive without losing the counter, trade blows occasionally.
+- **[APR] does not survive Knuckle's death** — all passive effects he caused disappear with him.
+- Ultimate's ATK/DEF raise is plain-tier (**30%**) and resolves **before** its own damage (ruling #22). Confirmed intentional.
+
+**Netero**
+
+- **He still draws cards while [Suppressed]** — rendered greyed-out/disabled, unplayable. Clogging the shared hand for 3 turns **is the cost**; the team plays around him until he comes online.
+- **[Suppressed] is uncancellable** — no cleansing into an early [Pinnacle of Nen Mastery].
+- **Stat-decrease immunity is NOT Debuff Immunity.** He still takes DoTs like Ignite/Corrosion; only *stat decreases* fail, including those from enemy passives (Knuckle's [APR] stat-down among them).
+- **Follow-up attack:** auto-triggers, **max 1 per skill use**, same target as the parent hit. Does **not** proc if the parent hit killed the target, and does **not** count as an attack for attack-counting passives (Seras' Charged, Meliodas' Full Counter, Gon's Rookie Hunter).
+- **type-neutral here is DEFENSIVE only** — an enemy's type advantage is neutralised when dealing damage *to* Netero; his own outgoing advantage is unaffected. This differs from the existing glossary entry in `docs/ARCHITECTURE.md`, which defines type-neutral as both directions — needs a separate defensive variant.
+- `[Power Strike]` is already defined: +1% damage per 2 points of enemy DEF (`docs/ARCHITECTURE.md` Design Glossary). Defined, not yet implemented as a mechanic type.
+
+**Rank ladders — DRAFT, awaiting approval.** Only R3 was authored; these follow the roster's 65/80/100 convention (Chiara 260/320/400, Killua 230/280/350, Gon 195/240/300).
+
+| Skill | R1 | R2 | R3 |
+| --- | --- | --- | --- |
+| Knuckle S1 (+20% vs [APR] stays flat) | 390 | 480 | **600** |
+| Knuckle S2 [Detonate] | 325 | 400 | **500** |
+| Netero S1 [Power Strike] | 260 | 320 | **400** |
+| Netero S2 [Rupture] AoE | 195 | 240 | **300** |
+
+Ultimates don't rank: Knuckle 500, Netero 500.
+
+Open concern: Knuckle's S1 at 390% R1 would be the **highest R1 single-target on the roster** (next is Chiara at 260). Deliberate, since [APR]'s ramp keys off that first hit — but it's the number to cut if he tests too strong.

@@ -258,6 +258,13 @@ function applyCorrosion(
   const duration = mech.duration ?? 2;
   return players.map((p) => {
     if (p.currentHP <= 0 || p.isSub) return p;
+    // Debuff Immunity (Isolde's Starbound Ward) blocks this too. Boss passives
+    // apply debuffs outside the skill path, so they skipped the gate in
+    // combat.ts entirely and corroded immune units (Tanveer, 2026-08-09).
+    if (p.buffs.some((b) => b.debuffImmune)) {
+      log(`${p.name} resists ${boss.name}'s corrosion (Debuff Immunity).`);
+      return p;
+    }
     const debuffs = [...p.debuffs];
     for (let i = 0; i < perTurn; i++) {
       debuffs.push({

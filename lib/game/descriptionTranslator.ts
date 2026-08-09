@@ -47,11 +47,26 @@ function inferTargetFromMechanics(
   skill: CharacterSkillData,
 ): string | undefined {
   const lowerTypes = getMechanicTypes(skill).map((type) => type.toLowerCase());
-  if (lowerTypes.includes("aoe")) {
-    return "to all enemies";
-  }
+  if (!lowerTypes.includes("aoe")) return undefined;
 
-  return undefined;
+  // `aoe` only means "everyone on the other side" for a hostile skill. On a
+  // supportive one it means the caster's own team, and calling that "to all
+  // enemies" read as though Isolde's Starbound Ward attacked the party.
+  const friendly = ["buff", "cleanse", "heal", "healovertime",
+    "debuffimmunity", "stance"];
+  const hasAllyMechanic = getMechanics(skill).some(
+    (entry) =>
+      typeof entry.type === "string" &&
+      friendly.includes(entry.type.toLowerCase()) &&
+      entry.targetSelf !== true,
+  );
+  // Must also deal no damage, matching the engine's own rule — Chiara's All In
+  // buffs (targetSelf) and then hits everyone, and stays "to all enemies".
+  const dealsDamage =
+    (typeof skill.damage === "number" && skill.damage > 0) ||
+    (Array.isArray(skill.damageRanked) &&
+      skill.damageRanked.some((value) => value > 0));
+  return hasAllyMechanic && !dealsDamage ? "to all allies" : "to all enemies";
 }
 
 function getRankDamage(

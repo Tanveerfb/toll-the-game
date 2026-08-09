@@ -177,16 +177,12 @@ describe("Ally-wide buff bakes HP for stat 'hp'/'all' (Isolde's Starbound Ward)"
     );
     const updatedAlly = result.playerTeam.find((c) => c.instanceId === "ally")!;
     expect(updatedAlly.hp).toBe(1300);
-    // Ultimates are always isAttack (even at damage: 0), and damage.ts floors
-    // effectiveBaseDamage at a minimum of 1 — a pre-existing, unrelated
-    // engine rule ("a fully-weakened unit still deals chip damage"), so a
-    // support-only ultimate still chips 1 HP off each target it touches.
-    //
-    // 1298, not 1299: max-HP changes scale current HP with them to preserve
-    // the ratio (Tanveer, 2026-08-09), so the chipped 999/1000 becomes
-    // 999 * 1.3 = 1298.7 -> 1298. The old engine added the max-HP delta
-    // (999 + 300 = 1299), which quietly handed back the chipped point.
-    expect(updatedAlly.currentHP).toBe(1298);
+    // A support-only ultimate does NOT attack (Tanveer, 2026-08-09: "it is
+    // only a buff based ultimate"). This used to assert 1298: every ultimate
+    // counted as isAttack even at damage: 0, and damage.ts floors damage at 1,
+    // so Starbound Ward chipped a point off each ALLY it buffed before the
+    // buff landed. Now the ally is untouched, so a clean 1000 * 1.3 = 1300.
+    expect(updatedAlly.currentHP).toBe(1300);
   });
 });
 
@@ -445,7 +441,11 @@ describe("Chiara's Cut the Deck (randomTurnEffect)", () => {
       expect(updatedEnemy.debuffs).toHaveLength(1);
       expect(updatedEnemy.debuffs[0].stat).toBe("atk");
       expect(updatedEnemy.debuffs[0].valuePercent).toBe(20);
-      expect(updatedEnemy.debuffs[0].debuffDuration).toBe(1);
+      // 2 turns, not 1 (Tanveer, 2026-08-09).
+      expect(updatedEnemy.debuffs[0].debuffDuration).toBe(2);
+      // A passive-rolled debuff is an ordinary cancellable one, so Debuff
+      // Immunity and cleanses can remove it.
+      expect(updatedEnemy.debuffs[0].uncancellable).toBeFalsy();
     } finally {
       randomSpy.mockRestore();
     }
@@ -583,5 +583,87 @@ describe("Archive-page description rendering (the actual bug Tanveer caught)", (
     const { mechanicGlossary } = await import("@/lib/game/mechanicGlossary");
     expect(mechanicGlossary.rejuvenate).toMatch(/30%/);
     expect(mechanicGlossary.rejuvenate).toMatch(/heal/i);
+  });
+});
+
+describe("Starbound Ward is buff-only (2026-08-09)", () => {
+  const supportUlt: UltimateCard = {
+    skillName: "Starbound Ward",
+    characterId: "isolde",
+    type: "ultimate",
+    statMultiplier: "atk",
+    damage: 0,
+    mechanics: [
+      { type: "debuffImmunity", duration: 3 },
+      { type: "buff", stat: "all", valuePercent: 30, duration: 3 },
+      { type: "aoe" },
+    ],
+  };
+
+  it("deals no damage to the enemy team", () => {
+    const isolde = makeChar({ instanceId: "isolde", team: "player" });
+    const ally = makeChar({ instanceId: "ally", team: "player" });
+    const foe = makeChar({
+      instanceId: "foe",
+      team: "enemy",
+      hp: 1000,
+      currentHP: 1000,
+    });
+    const result = executeSkill(
+      { sourceInstanceId: "isolde", skill: supportUlt, targetInstanceId: "ally" },
+      { playerTeam: [isolde, ally], enemyTeam: [foe] },
+      noopLog,
+    );
+    // Previously every ultimate ran an attack pass, so this landed a floored
+    // 1 damage on each enemy before buffing.
+    expect(result.enemyTeam[0].currentHP).toBe(1000);
+  });
+
+  it("still buffs the caster's own team", () => {
+    const isolde = makeChar({ instanceId: "isolde", team: "player" });
+    const ally = makeChar({
+      instanceId: "ally",
+      team: "player",
+      hp: 1000,
+      currentHP: 1000,
+    });
+    const result = executeSkill(
+      { sourceInstanceId: "isolde", skill: supportUlt, targetInstanceId: "ally" },
+      { playerTeam: [isolde, ally], enemyTeam: [] },
+      noopLog,
+    );
+    const buffed = result.playerTeam.find((c) => c.instanceId === "ally")!;
+    expect(buffed.hp).toBe(1300);
+    expect(buffed.currentHP).toBe(1300);
+  });
+
+  it("leaves a damage-dealing ultimate attacking as authored", () => {
+    // Chiara's All In buffs herself and then hits everyone — the zero-damage
+    // requirement is what keeps it hostile.
+    const chiara = makeChar({ instanceId: "chiara", team: "player", atk: 100 });
+    const foe = makeChar({
+      instanceId: "foe",
+      team: "enemy",
+      hp: 5000,
+      currentHP: 5000,
+      def: 0,
+    });
+    const allIn: UltimateCard = {
+      skillName: "All In",
+      characterId: "chiara",
+      type: "ultimate",
+      statMultiplier: "atk",
+      damage: 333,
+      mechanics: [
+        { type: "buff", stat: "atk", valuePercent: 30, duration: 3, targetSelf: true },
+        { type: "aoe" },
+      ],
+    };
+    const result = executeSkill(
+      { sourceInstanceId: "chiara", skill: allIn, targetInstanceId: "foe" },
+      { playerTeam: [chiara], enemyTeam: [foe] },
+      noopLog,
+    );
+    expect(result.enemyTeam[0].currentHP).toBeLessThan(5000);
   });
 });

@@ -401,11 +401,21 @@ export function executeSkill(
   // A skill deals damage whenever its numbers say so, regardless of type —
   // e.g. debuff-type skills with damageRanked > 0 hit AND debuff. Heal-type
   // skills reuse damageRanked as the heal amount, so they are excluded.
+  const skillDamagePercent = getSkillDamagePercent(action.skill, rankIndex);
+  // A purely supportive ultimate is NOT an attack. Without this an ally-
+  // directed ultimate still ran an attack pass at the enemy team first —
+  // Isolde's Starbound Ward logged a 0-damage hit on every enemy before
+  // granting its buffs (Tanveer, 2026-08-09: "it is only a buff based
+  // ultimate"). Requiring 0 damage keeps a future buff-and-damage ultimate
+  // attacking as authored.
+  const isSupportUltimate =
+    action.skill.type === "ultimate" &&
+    hasFriendlyAllyMechanic &&
+    skillDamagePercent <= 0;
   const isAttack =
     action.skill.type === "attack" ||
-    action.skill.type === "ultimate" ||
-    (!isHealOrBuff &&
-      getSkillDamagePercent(action.skill, (action.rank ?? 1) - 1) > 0);
+    (action.skill.type === "ultimate" && !isSupportUltimate) ||
+    (!isHealOrBuff && skillDamagePercent > 0);
   // Offensive skills apply their hostile mechanics even when damage is 0
   // (e.g. Draw Fire: 0 damage, taunts all enemies).
   const isOffensive =
@@ -483,7 +493,6 @@ export function executeSkill(
   else if (statMulti === "def") baseStat = getEffectiveDefense(updatedSource);
   else if (statMulti === "hp") baseStat = updatedSource.hp; // Max HP scaling per user comment
 
-  const skillDamagePercent = getSkillDamagePercent(action.skill, rankIndex);
   let baseDamage = (baseStat * skillDamagePercent) / 100;
 
   // -- DYNAMIC DAMAGE MULTIPLIERS

@@ -4,30 +4,23 @@ import { Action, ActionCard } from "@/types/action";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
-
-/** Cap on actions the enemy side takes per enemy turn — any living enemy may act, in any order, no fixed pattern. */
-export const ENEMY_ACTIONS_PER_TURN = 3;
+import { ACTIONS_PER_TURN, actionsForTurn } from "@/lib/game/actionEconomy";
 
 /**
- * Enemy action economy (ruling 2026-07-12, amends #39/#4). Counting only
- * living field members (subs grant none):
+ * Cap on actions either side takes per turn — any living unit may act, in any
+ * order, no fixed pattern.
  *
- *  - Elite tier present (named bosses — `tier: "elite"`): the side always
- *    takes the full 3 actions, even a lone boss like Lyra/Tao/Seras.
- *  - Otherwise (low-mid mobs): the side gets its member count +1, so a
- *    single mob acts twice and two mobs act three times.
- *
- * Either branch is capped at ENEMY_ACTIONS_PER_TURN (3), so 3+ living
- * members — up to a 5-enemy pack — still take 3 actions.
+ * @deprecated Prefer `ACTIONS_PER_TURN` from `lib/game/actionEconomy` — the
+ * rule is no longer enemy-specific.
+ */
+export const ENEMY_ACTIONS_PER_TURN = ACTIONS_PER_TURN;
+
+/**
+ * Enemy action economy. Thin alias for the shared `actionsForTurn`, which
+ * both sides now use (see `lib/game/actionEconomy.ts` for the rule).
  */
 export function enemyActionsForTurn(enemyTeam: BattleCharacter[]): number {
-  const livingField = enemyTeam.filter((e) => e.currentHP > 0 && !e.isSub);
-  if (livingField.length === 0) return 0;
-  const hasElite = livingField.some((e) => e.tier === "elite");
-  const actions = hasElite
-    ? ENEMY_ACTIONS_PER_TURN
-    : livingField.length + 1;
-  return Math.min(ENEMY_ACTIONS_PER_TURN, actions);
+  return actionsForTurn(enemyTeam);
 }
 
 /**

@@ -192,6 +192,149 @@ Everything here was decided live with Tanveer; don't re-litigate or re-attempt.
 - Everything since 2026-08-09's presentation batch is verified by types, lint,
   tests and a clean build — **not** by browser. Tanveer does the visual pass now.
 
+## Session log — 2026-08-09 (part 2): duel play session
+
+Four duel games plus a boss stat-test run. Everything below is **uncommitted**
+in the working tree at checkpoint time — 732 tests, lint and a clean build.
+
+### Shipped
+
+- **Symmetric action economy** — new `lib/game/actionEconomy.ts` owns
+  `actionsForTurn(team)`: living field members +1, capped at 3, elite tier
+  always 3. The player was pinned at a flat **3** in four places
+  (`store/gameStore.ts` ×3 guards, `components/game/Deck.tsx` auto-execute,
+  empty-slot rendering and queue-full state) while the enemy already scaled.
+  Tanveer confirmed the flat 3 was a testing shortcut, not design.
+  `enemyActionsForTurn` is now a thin alias. Ruling **#59** in HANDOFF; the
+  engine-rules bullet in `AGENTS.md` was rewritten (it still said "Enemy side
+  takes 3 actions per enemy turn").
+  **Verified live**: solo Molvarr correctly got 3 (elite), a 1-unit non-elite
+  side got 2.
+- **Starbound Ward is buff-only** — `combat.ts` hardcoded *every*
+  `skill.type === "ultimate"` as `isAttack`, so Isolde's support ultimate ran
+  an attack pass first; `damage.ts` floors damage at 1, so it chipped **1 HP
+  off each ally it buffed**. `isHealOrBuff` already classified it correctly —
+  `isAttack` ignored that. New `isSupportUltimate` gate requires
+  `hasFriendlyAllyMechanic && skillDamagePercent <= 0`, so a future
+  buff-and-damage ultimate still attacks (Chiara's All In self-buffs then hits
+  — verified by test). `descriptionTranslator.ts` said "to all enemies" for any
+  `aoe`; now says "to all allies" for zero-damage support skills.
+  **An existing test asserted the buggy 1298 value and documented the chip as
+  expected** — rewritten to 1300, plus 3 regression tests.
+- **Corrosion respects Debuff Immunity** — `applyCorrosion` in
+  `bossPassives.ts` never checked `debuffImmune`. Boss passives apply debuffs
+  outside the skill path, so they bypassed `combat.ts`'s gate entirely and
+  corroded warded units. Fixed + test.
+- **Duel rejections are visible** — a rejected move now writes
+  `.duel/rejected.md` (cleared when the next state posts). Previously the only
+  record was `duel-log.md`, which is how a whole turn got silently handed to
+  the scripted AI mid-game without me noticing.
+- **eslint ignores `.next-*/**`** — `npm run check` was reporting 12,182
+  problems from `.next-verify` build output. Source was always clean.
+
+- **Passive-rolled debuffs are cancellable** — `registerRandomTurnEffect` in
+  `passive.ts` stamped `uncancellable: true` on the *debuff* branch too.
+  Tanveer: "it shouldn't carry uncancellable, even from passive proc — it
+  should be a cancellable debuff and therefore tackled by debuff immunity."
+  Flag dropped, and the branch now skips Debuff-Immune targets. Ally buffs from
+  the same helper stay uncancellable. Chiara's Cut the Deck ATK-down option
+  also went **1 → 2 turns** (kit JSON + its hardcoded passive description
+  string; the translator does not generate passive text).
+
+### Deliberately NOT done
+
+- **Stun on a side's last living unit denies the whole turn.** Surfaced in game
+  1 (Tanveer: "you won because i couldn't play any cards"). Options were
+  offered; he did not pick one. Still open, still intended-by-default.
+
+### Balance observations from play (data, not decisions — Tanveer owns these)
+
+- **Duke's Flowing Ruin 3-stack payoff on Slide** decided game 3 outright. The
+  bonus reads as a single-target reward, but Slide is AoE, so it lands +100%
+  damage **and** the −50% ATK on all four targets in one action, with lifesteal
+  on every hit (~500 self-heal). The opposing team spent the rest of the fight
+  at half attack.
+- **Chiara's House Rules shuts off Molvarr phase 1 entirely** — Corrosive Surge
+  is his only debuff applicator, Growing Malice reads debuff count for ATK, and
+  phase 2's Corrosive Tide keys off Corrosion. One Attack-Debuff seal disables
+  all three; he sat at 120 ATK. Phase 2 is immune to this because Corrosive
+  Tide is a passive, not a skill.
+- **Yalina's Attention Drawer is anti-synergy vs Rupture kits** — its damage
+  reduction registers as a *buff*, so Diane's Rupture doubled on the taunter
+  (731 vs ~500 on everyone else). Taunt also only redirects single-target, so
+  it did nothing against an all-AoE comp.
+
+### Engine facts confirmed by logs (previously assumed wrong)
+
+- **Stance-cancel resolves before the attack lands.** Killua's Lightning Palm
+  into a Full Counter Meliodas took **zero** counter damage. Attacking a
+  counter-stance unit with a cancel skill is free.
+- Rupture checks for `[buff]` entries specifically — synergy/aura `[effect]`
+  entries do not trigger it.
+- Detonate scales off banked ult gauge (~+20%/point; ~+100% at 5).
+
+### Duel mode coverage
+
+Series went **2–1 to Tanveer** (game 1 Claude, games 2–3 Tanveer; a 4th
+"winner takes all" match became a boss stat-test and then died to hot reload).
+Now exercised: three 4v4s, a **3v1 vs a phased boss**, forced-SP auto-fire
+(Ancient Rhythm took the last action as designed), phase-break transition
+(Molvarr phase 1 → phase 2 with a fresh 4000 HP bar), healer/support comps,
+stance-counter kits, HP-scaling units, and the elite action-count branch.
+
+**Still untested:** duel mode against a boss with a *forced SP that Claude
+tries to override* (the branch exists, only the cooperative path ran).
+
+### Gotchas worth keeping
+
+- **Editing engine files mid-duel kills the battle** — hot reload dropped a
+  live fight. Finish the game or accept the restart.
+- `.duel/state.md` is **not** deleted when a move is consumed, so a watcher
+  polling "state exists && move gone" fires on stale state. Poll on **mtime
+  change**, and read the action-budget line **every turn** — assuming a carried
+  -over budget got a 3-action move rejected wholesale (only 2 were legal),
+  which handed the turn to the AI and lost game 2.
+
+### Kit audit + future-character Q&A (2026-08-10)
+
+Chat-only session (Tanveer had no UI access). Two parts, **no code changed**:
+
+**Roster audit — clean.** Scripted sweep of all 28 kits incl. boss phases and SP
+skills found: no `uncancellable` hostile mechanics remaining, no heal-type skill
+carrying damage, no zero-value or duration-less buff/debuff entries beyond the
+intended ones (Gon/Killua's permanent ATK buffs). Tier words are roster-wide
+consistent: **plain "raises/lowers" = 30, "greatly" = 50**, zero violations.
+Chiara's Marked Card `[30,50,50]` was the one flag and turned out to be correct
+design — ruling #58 was too narrow and now carries the carve-out (a ladder may
+step *between* tier words; what's forbidden is a ladder *inside* one).
+`"massively"` is reserved with **no value assigned** — do not invent one.
+`"slightly"` was **my** invention, not Tanveer's vocabulary; it appears nowhere
+in kits or rulings.
+
+**Knuckle Bine + Isaac Netero** (`author_notes.md`, HxH collab, not finalized) —
+13 behaviour questions answered and written into `author_notes.md` under
+"Confirmed behaviour — answers from Tanveer, 2026-08-10". Highlights that will
+bite whoever implements them:
+
+- **[APR] is ONE uncancellable effect** bundling counter + 20% basic-stat-down +
+  taunt. Deliberate exception to ruling #60 — **#60 still needs this carve-out
+  written in.**
+- IRS one-shots **one boss phase**, never a whole boss; a phase shift clears
+  [APR] and Knuckle restarts.
+- Netero **draws unplayable, greyed-out cards** during [Suppressed] — clogging
+  the shared hand for 3 turns is the intended cost, not an oversight.
+- Netero's `type-neutral` is **defensive only** (neutralises an enemy's type
+  advantage against him). This **contradicts the existing Design Glossary entry**
+  in `docs/ARCHITECTURE.md`, which defines it bidirectionally — needs a separate
+  variant. **Undecided.**
+- Modelling correction worth keeping: I judged APR "too fast" off R3 values.
+  Priced at R1 (roster convention R1 ≈ 65% of R3) it's 3 turns vs a 1210 body,
+  7 vs a 4000 boss — the intended slow burn. **Price new mechanics at R1.**
+
+**Rank ladders for both characters are my DRAFT, unapproved** (table in
+`author_notes.md`). Knuckle S1 at 390% R1 would be the roster's highest R1
+single-target — the number to cut first if he tests strong.
+
 ## Open Issues
 
 | # | Issue | Where | Severity |

@@ -10,6 +10,7 @@ import path from "path";
  *
  *   state.md     written when it becomes Claude's turn — what Claude reads
  *   move.json    written by Claude — the actions to take
+ *   rejected.md  why a move was thrown out and the AI took the turn instead
  *   duel-log.md  append-only history of states, moves and reasoning
  *
  * Development only, enforced server-side on every verb: this must not exist in
@@ -64,6 +65,9 @@ export async function POST(req: Request) {
     // A new battle starts clean — a stale result must not look like this
     // fight's outcome.
     await fs.rm(duelPath("result.md"), { force: true });
+    // Likewise a rejection from a previous turn — it's been surfaced already,
+    // and leaving it would make the next turn look rejected too.
+    await fs.rm(duelPath("rejected.md"), { force: true });
     await fs.mkdir(duelPath(), { recursive: true });
 
     // A move from an earlier turn must never be applied to this one. The turn
@@ -103,9 +107,17 @@ export async function DELETE(req: Request) {
   if (blocked) return blocked;
 
   try {
-    const note = new URL(req.url).searchParams.get("note");
+    const params = new URL(req.url).searchParams;
+    const note = params.get("note");
     await fs.rm(duelPath("move.json"), { force: true });
     if (note) await appendLog(`\n> ${note}\n`);
+    // A rejected move is otherwise invisible until someone greps the log —
+    // which is how a whole turn got silently handed to the AI mid-duel on
+    // 2026-08-09. Give watchers a file they can poll for instead.
+    if (params.get("rejected") === "1" && note) {
+      await fs.mkdir(duelPath(), { recursive: true });
+      await fs.writeFile(duelPath("rejected.md"), `${note}\n`, "utf8");
+    }
     return NextResponse.json({ cleared: true });
   } catch {
     return NextResponse.json({ cleared: false }, { status: 500 });

@@ -16,6 +16,7 @@ import {
   refillHand,
 } from "@/lib/game/deck";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
+import { actionsForTurn } from "@/lib/game/actionEconomy";
 import { useSettingsStore } from "./settingsStore";
 
 export type SequencedBattleEvent = AnyBattleEvent & {
@@ -440,8 +441,9 @@ export const useGameStore = create<BattleState>()(
       selectedEnemyMarker,
       queuedNullCount,
     } = get();
-    if (actionQueue.length + queuedNullCount >= 3) {
-      set({ interactionNotice: "Action queue is full (3/3)." });
+    const cap = actionsForTurn(playerTeam);
+    if (actionQueue.length + queuedNullCount >= cap) {
+      set({ interactionNotice: `Action queue is full (${cap}/${cap}).` });
       return;
     }
 
@@ -509,9 +511,10 @@ export const useGameStore = create<BattleState>()(
       set({ pendingAllyCardId: null });
       return;
     }
-    if (actionQueue.length + queuedNullCount >= 3) {
+    const cap = actionsForTurn(playerTeam);
+    if (actionQueue.length + queuedNullCount >= cap) {
       set({
-        interactionNotice: "Action queue is full (3/3).",
+        interactionNotice: `Action queue is full (${cap}/${cap}).`,
         pendingAllyCardId: null,
       });
       return;
@@ -532,8 +535,8 @@ export const useGameStore = create<BattleState>()(
   cancelAllyTarget: () => set({ pendingAllyCardId: null }),
 
   addNullAction: () => {
-    const { actionQueue, queuedNullCount } = get();
-    if (actionQueue.length + queuedNullCount >= 3) return;
+    const { actionQueue, queuedNullCount, playerTeam } = get();
+    if (actionQueue.length + queuedNullCount >= actionsForTurn(playerTeam)) return;
     set({ queuedNullCount: queuedNullCount + 1, interactionNotice: null });
   },
 

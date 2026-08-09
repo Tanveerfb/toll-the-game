@@ -203,8 +203,12 @@ describe("deck flow (7DS GC draw behavior)", () => {
 
 describe("null/pass actions", () => {
   it("addNullAction fills slots up to the 3-slot cap alongside real cards", () => {
+    // Two living units -> cap 3 (members +1). See actionEconomy.
     useGameStore.setState({
-      playerTeam: [makeChar({ instanceId: "unit" })],
+      playerTeam: [
+        makeChar({ instanceId: "unit" }),
+        makeChar({ instanceId: "unit2" }),
+      ],
       enemyTeam: [makeChar({ instanceId: "foe", team: "enemy" })],
       selectedEnemyMarker: "foe",
       deck: [{ id: "a1", sourceInstanceId: "unit", skill: skillA, rank: 1 }],
@@ -217,6 +221,47 @@ describe("null/pass actions", () => {
     const state = useGameStore.getState();
     expect(state.actionQueue).toHaveLength(1);
     expect(state.queuedNullCount).toBe(2);
+  });
+
+  it("the player's action cap scales with living field members, like the enemy's", () => {
+    // Ruling 2026-08-09: the player was pinned at a flat 3 while the enemy
+    // already scaled, so a player on their last unit kept full tempo.
+    const queueCap = () => {
+      useGameStore.setState({ queuedNullCount: 0, battlePhase: "PlayerAction" });
+      for (let i = 0; i < 5; i++) useGameStore.getState().addNullAction();
+      return useGameStore.getState().queuedNullCount;
+    };
+
+    useGameStore.setState({ playerTeam: [makeChar({ instanceId: "solo" })] });
+    expect(queueCap()).toBe(2);
+
+    useGameStore.setState({
+      playerTeam: [
+        makeChar({ instanceId: "a" }),
+        makeChar({ instanceId: "b" }),
+      ],
+    });
+    expect(queueCap()).toBe(3);
+
+    // A dead member grants nothing; two living of three is still 3.
+    useGameStore.setState({
+      playerTeam: [
+        makeChar({ instanceId: "a" }),
+        makeChar({ instanceId: "b" }),
+        makeChar({ instanceId: "c", currentHP: 0 }),
+      ],
+    });
+    expect(queueCap()).toBe(3);
+
+    // Down to one survivor, the player loses the action too.
+    useGameStore.setState({
+      playerTeam: [
+        makeChar({ instanceId: "a" }),
+        makeChar({ instanceId: "b", currentHP: 0 }),
+        makeChar({ instanceId: "c", currentHP: 0 }),
+      ],
+    });
+    expect(queueCap()).toBe(2);
   });
 
   it("passes grant no ult gauge and removeNullAction takes one back", () => {

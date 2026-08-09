@@ -493,6 +493,12 @@ function registerRandomTurnEffect(
           ],
         };
       }
+      // A debuff rolled by a passive is still an ordinary, cancellable debuff
+      // (Tanveer, 2026-08-09: "it shouldn't carry uncancellable, even from
+      // passive proc"). It therefore has to respect Debuff Immunity, which
+      // passive-applied entries were bypassing because they never went
+      // through combat.ts's gate. Ally buffs above stay uncancellable.
+      if (c.buffs.some((b) => b.debuffImmune)) return c;
       return {
         ...c,
         debuffs: [
@@ -502,7 +508,6 @@ function registerRandomTurnEffect(
             stat,
             valuePercent,
             debuffDuration: duration,
-            uncancellable: true,
             name,
           },
         ],

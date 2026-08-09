@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
 import { getCardFrameStyle } from "@/lib/game/cardFrameStyle";
+import { actionsForTurn } from "@/lib/game/actionEconomy";
 import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
 import type { BattleCharacter } from "@/types/character";
 import {
@@ -184,21 +185,25 @@ export default function Deck() {
   } = useGameStore();
 
   const slotsUsed = actionQueue.length + queuedNullCount;
+  // Living field members +1, capped at 3 — same rule as the enemy side, so a
+  // player down to their last unit loses tempo exactly as an enemy would.
+  const actionCap = actionsForTurn(playerTeam);
 
   const isPlayerActionPhase = battlePhase === "PlayerAction";
 
-  // Auto-execute when the queue reaches its maximum size (3 actions), and
-  // auto-pass when there are no cards left to play (e.g. the whole field
-  // died and a sub is waiting for the next turn to enter).
+  // Auto-execute when the queue reaches this turn's action cap, and auto-pass
+  // when there are no cards left to play (e.g. the whole field died and a sub
+  // is waiting for the next turn to enter).
   const { resolveplayerTurnWrapper } = useBattleContext();
   React.useEffect(() => {
     if (!isPlayerActionPhase) return;
-    // All three slots filled (real actions + passes), or no cards left to play.
-    if (slotsUsed === 3 || deck.length === 0) {
+    // Every slot filled (real actions + passes), or no cards left to play.
+    if (slotsUsed >= actionCap || deck.length === 0) {
       resolveplayerTurnWrapper();
     }
   }, [
     slotsUsed,
+    actionCap,
     deck.length,
     isPlayerActionPhase,
     resolveplayerTurnWrapper,
@@ -410,7 +415,7 @@ export default function Deck() {
             </button>
           ))}
           {/* Empty slots — tap to pass */}
-          {Array.from({ length: Math.max(0, 3 - slotsUsed) }).map((_, i) => (
+          {Array.from({ length: Math.max(0, actionCap - slotsUsed) }).map((_, i) => (
             <button
               key={`empty-${i}`}
               type="button"
@@ -461,7 +466,7 @@ export default function Deck() {
           // Enemy targeting is optional (unmarked = random at execution).
           // Single-target ally skills open the ally chooser on select, so no
           // pre-selection marker is needed here.
-          const queueFull = slotsUsed >= 3;
+          const queueFull = slotsUsed >= actionCap;
           const frame = getCardFrameStyle(card.rank, isUlt);
 
           return (

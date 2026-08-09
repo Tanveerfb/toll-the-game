@@ -85,7 +85,7 @@ export async function requestDuelMove(
         if (!parsed.ok) {
           // Don't corrupt a live battle with a bad move — say why and let the
           // AI play this turn.
-          await clearMove(`Move rejected: ${parsed.reason}`);
+          await clearMove(`Move rejected: ${parsed.reason}`, true);
           setStatus(`Move rejected: ${parsed.reason}`);
           return finish(null);
         }
@@ -145,8 +145,7 @@ export async function publishDuelResult(input: {
   }).catch(() => null);
 }
 
-async function clearMove(note: string) {
-  await fetch(`/api/dev/duel?note=${encodeURIComponent(note)}`, {
-    method: "DELETE",
-  }).catch(() => null);
+async function clearMove(note: string, rejected = false) {
+  const query = `note=${encodeURIComponent(note)}${rejected ? "&rejected=1" : ""}`;
+  await fetch(`/api/dev/duel?${query}`, { method: "DELETE" }).catch(() => null);
 }

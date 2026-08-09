@@ -2,7 +2,11 @@
   "id": "chiara",
   "name": "Chiara",
   "color": "dark",
-  "tags": ["Human", "Female", "Bureau"],
+  "tags": [
+    "Human",
+    "Female",
+    "Bureau"
+  ],
   "lore": "Bureau official who deals in cards, dice, and fortune as much as ledgers. Runs her exam encounters like a game she's already rigged in her favor.",
   "atk": 191,
   "def": 99,
@@ -14,14 +18,30 @@
       "characterId": "chiara",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [260, 320, 400],
+      "damageRanked": [
+        260,
+        320,
+        400
+      ],
       "mechanics": [
         {
           "type": "debuff",
           "stat": "def",
-          "valueRanked": [30, 50, 50],
-          "durationRanked": [1, 1, 2],
-          "ranks": [false, true, true]
+          "valueRanked": [
+            30,
+            50,
+            50
+          ],
+          "durationRanked": [
+            1,
+            1,
+            2
+          ],
+          "ranks": [
+            false,
+            true,
+            true
+          ]
         }
       ]
     },
@@ -31,17 +51,29 @@
       "characterId": "chiara",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [260, 320, 375],
+      "damageRanked": [
+        260,
+        320,
+        375
+      ],
       "mechanics": [
         {
           "type": "seal",
           "sealType": "debuff",
-          "durationRanked": [0, 0, 2]
+          "durationRanked": [
+            0,
+            0,
+            2
+          ]
         },
         {
           "type": "seal",
           "sealType": "attackDebuff",
-          "durationRanked": [0, 1, 2]
+          "durationRanked": [
+            0,
+            1,
+            2
+          ]
         }
       ]
     }
@@ -75,7 +107,7 @@
   },
   "passive": {
     "name": "Cut the Deck",
-    "description": "# At the start of every turn, gain one of the following effects\n- All enemies ATK 20% 👇 for 1 turn\n- All allies ATK 15% 👆 and DEF 15% 👆 for 1 turn\n- Damage reduction 30% 👆 for 1 turn\n# At the start of turn 3\n- Ranks up own cards in the deck by 1 level (Once only)",
+    "description": "# At the start of every turn, gain one of the following effects\n- All enemies ATK 20% 👇 for 2 turns\n- All allies ATK 15% 👆 and DEF 15% 👆 for 1 turn\n- Damage reduction 30% 👆 for 1 turn\n# At the start of turn 3\n- Ranks up own cards in the deck by 1 level (Once only)",
     "trigger": "onNewTurn",
     "worksFromSub": false,
     "mechanics": [
@@ -86,7 +118,7 @@
             "target": "enemies",
             "stat": "atk",
             "valuePercent": 20,
-            "duration": 1,
+            "duration": 2,
             "kind": "debuff"
           },
           {

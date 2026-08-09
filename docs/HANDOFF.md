@@ -119,12 +119,25 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
     A conclusion from one format is not a conclusion. Duke read as overtuned from a 1v1 duel and is mid-pack in a team — see the "1v1 distortion" section of `docs/superpowers/specs/2026-08-09-claude-duel-mode-design.md` for which archetypes each format over- and under-rates.
 58. **What is and isn't rank-scaled — read the notation, not the kit** (2026-08-09). Two rules, and they settle every case:
-    1. **Tier words are never rank-scaled.** If an effect is written with "raises / greatly raises / massively raises" (or lowers), it is **flat** — one value at every rank. A tier word and a rank ladder are mutually exclusive.
+    1. **A tier word names a fixed value; the value never moves.** "raises" *is* 30%, "greatly raises" *is* 50% (roster-verified 2026-08-09 — every kit obeys this, no exceptions). You cannot write "lowers DEF" and have it mean 50; if you want 50 you write "greatly lowers".
+
+       The vocabulary is exactly **"raises/lowers" (30)** and **"greatly" (50)**. **"massively" is reserved — Tanveer plans it but has assigned it no value yet, so do not invent one.** No other intensifier exists; don't coin one.
+
+       **Carve-out (Tanveer, 2026-08-09):** a rank ladder MAY step *between* tier words, because the tiers themselves stay fixed. Chiara's Marked Card is the reference case — `valueRanked [30,50,50]` with `ranks:[false,true,true]`, so R1 reads "lowers DEF" (30%, 1 turn), R2 reads "greatly lowers DEF" (50%, 1 turn), R3 keeps "greatly" but extends to 2 turns via `durationRanked`. His alternative for R3 would have been "massively lowers DEF for 1 turn" — a further tier step rather than a duration step. What remains forbidden is a ladder *inside* one tier word (e.g. "lowers" meaning 30/40/50).
     2. **In Tanveer's kit drafts, only values written `x/y/z` are rank-scaled.** Everything else is flat *unless he writes a note saying otherwise.* Don't infer scaling from a skill's type, from what a similar character does, or from it "feeling like" it should ramp — author `valuePercent`, not `valueRanked`, unless the draft used slashes.
 
     Consequence, not a separate rule: attack skills carry tier-worded self-buffs (flat, applied before the hit per #22 — Duke's Surge +30% ATK and DEF, Gon's Rock +50% ATK, both HxH ultimates), while support skills state explicit `x/y/z` numbers so a rarer card buffs allies harder (Leorio's Member of the Zodiac, 20/30/50% for 1/1/2 turns).
 
     Roster verified 2026-08-09: every attack-type self-buff is flat, the only rank-scaled ATK/DEF buff is Leorio's, and `damageReduction` stances (Mustafa's Fortress, Iron Wall, Yalina's Attention Drawer) are numeric and ranked as their own family.
+
+59. **Action economy is symmetric — living field members + 1, capped at 3** (2026-08-09, amends the enemy-only 2026-07-12 ruling). The player was pinned at a flat 3 while the enemy already scaled; Tanveer confirmed that was a testing shortcut, not a design choice. Both sides now read `actionsForTurn` in `lib/game/actionEconomy.ts`:
+    - Subs and the dead grant nothing, so a side on its last unit gets **2** actions, two units get 3, and 3+ stays 3.
+    - **A side with a `tier: "elite"` member always gets the full 3**, alone or not — bosses never lose tempo. This is why the elite branch exists and must survive any future refactor of this rule.
+    - Consequence worth knowing before tuning: the losing side now sheds actions as it sheds units, which compounds a losing position. Same snowball as a stun landing on a side's last living unit (that one is still open — full turn denial, undecided).
+
+60. **Debuffs are cancellable no matter what applied them** (2026-08-09). A debuff rolled by a passive, or applied by a boss passive, is an *ordinary* debuff — it carries no `uncancellable` flag and it must respect Debuff Immunity. Tanveer: "it shouldn't carry uncancellable, even from passive proc." The trap is that passive and boss-passive code applies debuffs **outside** `executeSkill`, so it never passes the immunity gate in `combat.ts` — each such site has to check `buffs.some(b => b.debuffImmune)` itself. Two sites were fixed this way (`applyCorrosion` in `bossPassives.ts`, `registerRandomTurnEffect` in `passive.ts`); **any new out-of-combat debuff applier needs the same guard.** Ally-facing *buffs* from those same helpers stay uncancellable — the rule is about debuffs only.
+
+61. **A support ultimate does not attack** (2026-08-09). `skill.type === "ultimate"` alone never means hostile. An ultimate whose friendly, non-self mechanics carry **zero damage** (Isolde's Starbound Ward) is ally-directed: it deals no damage, targets no enemy, and reads "to all allies". Because `damage.ts` floors damage at a minimum of 1, treating one as an attack silently chipped a point off each ally it buffed. An ultimate that buffs *and* deals damage (Chiara's All In) stays hostile — the zero-damage requirement is what separates them.
 
 ## Working Style He Expects
 

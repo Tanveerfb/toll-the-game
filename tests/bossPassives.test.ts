@@ -181,6 +181,19 @@ describe("bossApplyCorrosion", () => {
     expect(res[0].debuffs[0].debuffDuration).toBe(2);
     expect(res[1].debuffs).toHaveLength(0); // sub untouched
   });
+
+  it("does not corrode a unit holding Debuff Immunity", () => {
+    // Boss passives apply debuffs outside the skill path, so they used to
+    // bypass combat.ts's immunity gate entirely (Tanveer, 2026-08-09).
+    const b = boss([{ type: "bossApplyCorrosion", perTurn: 1, duration: 2 }]);
+    const players = [
+      char({ instanceId: "warded", buffs: [{ type: "buff", debuffImmune: true, buffDuration: 3 }] }),
+      char({ instanceId: "plain" }),
+    ];
+    const res = applyBossTurnStart([b], players, noop).playerTeam;
+    expect(res[0].debuffs.filter((d) => d.type === "corrosion")).toHaveLength(0);
+    expect(res[1].debuffs.filter((d) => d.type === "corrosion")).toHaveLength(1);
+  });
 });
 
 describe("bossMaxHpDrain (from turn 10)", () => {

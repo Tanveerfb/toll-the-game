@@ -68,7 +68,9 @@ tests/                Vitest unit tests (engine, stores, gacha, previews)
 - `executeSkill` (lib/game/combat.ts) is pure: takes teams, returns new teams.
 - `Action.rank` (1–3) scales `damageRanked` and `*Ranked` mechanic values; flat mechanic values do not scale; ultimates have no rank.
 - Any non-heal skill with damageRanked > 0 deals damage regardless of skill type.
-- Enemy side takes 3 actions per enemy turn — any living enemy, any order.
+- Actions per turn = living field members + 1, capped at 3 — **both sides**
+  (`lib/game/actionEconomy.ts`). A side with `tier: "elite"` present always gets
+  the full 3, so a lone boss still acts three times. Any living unit, any order.
 - Effect durations: duration N survives N−1 turn-start ticks.
 - Sub (bench) units (`BattleCharacter.isSub`): passive active, no cards, untargetable, can't act; promoted to field only at turn start after a teammate died (`lib/game/sub.ts`). Battle format (4v4/3v3) sets the field cap; the 4th unit in 3v3 is the sub automatically.
 
