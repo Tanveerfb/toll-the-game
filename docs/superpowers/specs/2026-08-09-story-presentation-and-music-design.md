@@ -95,14 +95,20 @@ The slider is a native `<input type="range">` styled with Tailwind rather than a
 
 `StorySceneReader.tsx` is rewritten. Its testable logic moves to `lib/game/storyScene.ts` (pure), keeping the component to rendering and event wiring.
 
-### Typewriter reveal
+### Text reveal
 
-Text reveals at ~28ms/character. The interaction contract is the visual-novel standard and fixes the wall-of-text problem directly:
+**Revised 2026-08-09 after Tanveer played it.** The first implementation was a character-by-character typewriter, and his verdict was *"I have to wait for it to complete to start reading."* That is not a speed problem — it's structural. Slicing the string reflows the paragraph on every wrap, so the text keeps moving under the reader, and the eye can't parse a half-finished word, so there is nothing useful to read until the line lands. Tuning ms/char cannot fix either.
 
-- **Tap while revealing** → complete the line instantly.
-- **Tap once complete** → advance to the next scene.
+The reveal is now **per word, over final layout**: the full line is laid out from the first frame and only opacity animates, word by word on a stagger. Nothing reflows, so the line can be read *ahead of* the animation rather than after it. The stagger is capped at `MAX_REVEAL_MS` (650ms), so a 300-character narration block reveals no slower than a one-line reply — the effect is a sense of arrival, not a reading speed limit.
 
-`prefers-reduced-motion` renders every line complete immediately and the first tap advances, so the reveal never becomes an obstacle.
+The stagger is CSS (`.story-word` + per-word inline `animation-delay`), so a 60-word paragraph costs one React render instead of sixty, and one timer marks the line complete rather than a ticker updating state per character.
+
+The interaction contract is unchanged and is the visual-novel standard:
+
+- **Tap while revealing** → settle the line instantly.
+- **Tap once settled** → advance to the next scene.
+
+`prefers-reduced-motion` renders every line settled immediately and the first tap advances, so the reveal never becomes an obstacle.
 
 An **AUTO** toggle advances on its own after a dwell proportional to line length (a floor plus ~45ms/character), cancelled by any manual tap. Cheap once the reveal state machine exists, and it is what makes a long narration sequence watchable rather than tappable.
 

@@ -5,49 +5,89 @@ import {
   AUTO_ADVANCE_FLOOR_MS,
   isNarration,
   isRevealComplete,
+  MAX_REVEAL_MS,
   portraitSlotsAt,
   revealDurationMs,
-  revealedLength,
+  splitWords,
+  staggerDurationMs,
   tapIntent,
-  TYPEWRITER_MS_PER_CHAR,
+  WORD_FADE_MS,
+  WORD_STAGGER_MS,
+  wordDelayMs,
 } from "@/lib/game/storyScene";
 import type { StoryScene } from "@/types/story";
 
 const TEXT = "Six words of narration right here.";
+const LONG = "word ".repeat(80).trim();
 
-describe("typewriter reveal", () => {
-  it("shows nothing at t=0", () => {
-    expect(revealedLength(TEXT, 0)).toBe(0);
+describe("word splitting", () => {
+  it("keeps trailing whitespace so re-joining reproduces the source", () => {
+    expect(splitWords("a b  c").join("")).toBe("a b  c");
   });
 
-  it("reveals one character per tick", () => {
-    expect(revealedLength(TEXT, TYPEWRITER_MS_PER_CHAR * 5)).toBe(5);
+  it("splits into one entry per word", () => {
+    expect(splitWords(TEXT)).toHaveLength(6);
   });
 
-  it("never runs past the end of the string", () => {
-    expect(revealedLength(TEXT, 10_000_000)).toBe(TEXT.length);
+  it("handles an empty line", () => {
+    expect(splitWords("")).toEqual([]);
+  });
+});
+
+describe("word reveal pacing", () => {
+  it("staggers each word by the per-word step on a short line", () => {
+    // 6 words → 5 gaps
+    expect(staggerDurationMs(TEXT)).toBe(5 * WORD_STAGGER_MS);
+  });
+
+  it("caps the stagger so a long paragraph is no slower than a short one", () => {
+    // The whole point of the cap: reading shouldn't be rate-limited by length.
+    expect(staggerDurationMs(LONG)).toBe(MAX_REVEAL_MS);
+    expect(revealDurationMs(LONG)).toBe(MAX_REVEAL_MS + WORD_FADE_MS);
+  });
+
+  it("never takes longer than the cap plus one word's fade", () => {
+    expect(revealDurationMs(LONG)).toBeLessThanOrEqual(MAX_REVEAL_MS + WORD_FADE_MS);
+  });
+
+  it("starts the first word immediately and the last at the end of the stagger", () => {
+    expect(wordDelayMs(0, TEXT)).toBe(0);
+    expect(wordDelayMs(5, TEXT)).toBeCloseTo(staggerDurationMs(TEXT), 5);
+  });
+
+  it("spreads delays monotonically across the line", () => {
+    const delays = splitWords(LONG).map((_, i) => wordDelayMs(i, LONG));
+    const ascending = delays.every((d, i) => i === 0 || d >= delays[i - 1]);
+    expect(ascending).toBe(true);
+  });
+
+  it("clamps an out-of-range index to the last word", () => {
+    expect(wordDelayMs(999, TEXT)).toBeCloseTo(staggerDurationMs(TEXT), 5);
+  });
+
+  it("has no stagger for a single word", () => {
+    expect(staggerDurationMs("alone")).toBe(0);
+    expect(wordDelayMs(0, "alone")).toBe(0);
+  });
+
+  it("treats an empty line as instantly complete", () => {
+    expect(revealDurationMs("")).toBe(0);
+    expect(isRevealComplete("", 0)).toBe(true);
   });
 
   it("completes instantly when asked — reduced motion or tap-to-complete", () => {
-    expect(revealedLength(TEXT, 0, true)).toBe(TEXT.length);
     expect(isRevealComplete(TEXT, 0, true)).toBe(true);
   });
 
-  it("reports completion only once the whole line is out", () => {
-    expect(isRevealComplete(TEXT, TYPEWRITER_MS_PER_CHAR * (TEXT.length - 1))).toBe(
-      false,
-    );
+  it("reports completion only once the last word has finished fading", () => {
+    expect(isRevealComplete(TEXT, revealDurationMs(TEXT) - 1)).toBe(false);
     expect(isRevealComplete(TEXT, revealDurationMs(TEXT))).toBe(true);
-  });
-
-  it("treats an empty line as already complete", () => {
-    expect(isRevealComplete("", 0)).toBe(true);
   });
 });
 
 describe("tap contract", () => {
   it("first tap completes a line still revealing", () => {
-    expect(tapIntent(TEXT, TYPEWRITER_MS_PER_CHAR * 2)).toBe("complete");
+    expect(tapIntent(TEXT, 10)).toBe("complete");
   });
 
   it("tap on a finished line advances", () => {

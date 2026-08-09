@@ -1,13 +1,24 @@
 import type { StoryScene } from "@/types/story";
 
 /**
- * Reveal speed. Story prose runs long — Part 1 opens with a ~300-character
- * narration block — so this is tuned against a paragraph, not a one-line
- * quip: 14ms/char puts that block a little over 4 seconds, brisk enough to
- * read with the reveal rather than wait on it. Tap-to-complete covers anyone
- * who still finds it slow.
+ * Reveal pacing.
+ *
+ * A character-by-character typewriter was the first attempt and it read badly
+ * (Tanveer, 2026-08-09: *"I have to wait for it to complete to start
+ * reading"*). Two reasons, both structural rather than a matter of speed:
+ * the eye can't parse a half-finished word, and slicing the string reflows
+ * the paragraph on every wrap, so the text keeps moving under you.
+ *
+ * So: reveal by **word**, with the full text laid out from the first frame and
+ * only its opacity animating. Nothing reflows, which means the line can be
+ * read ahead of the animation instead of after it. The stagger is also capped
+ * — past `MAX_REVEAL_MS` a long paragraph reveals no slower than a short one,
+ * because the point is a sense of arrival, not a reading speed limit.
  */
-export const TYPEWRITER_MS_PER_CHAR = 14;
+export const WORD_STAGGER_MS = 22;
+export const MAX_REVEAL_MS = 650;
+/** How long one word takes to fade up, once its turn arrives. */
+export const WORD_FADE_MS = 220;
 
 /** Auto-advance dwell once a line is fully revealed: a floor so short lines
  *  don't flash past, plus time proportional to how much there is to read. */
@@ -15,19 +26,34 @@ export const AUTO_ADVANCE_FLOOR_MS = 900;
 export const AUTO_ADVANCE_MS_PER_CHAR = 45;
 
 /**
- * How much of `text` is visible `elapsed` ms into the reveal.
- *
- * `instant` (reduced motion, or the player tapping to complete) short-circuits
- * to the whole string — the reveal must never become an obstacle.
+ * Splits into words with their trailing whitespace attached, so re-joining the
+ * pieces reproduces the source exactly and no space is lost between spans.
  */
-export function revealedLength(
-  text: string,
-  elapsed: number,
-  instant = false,
-): number {
-  if (instant) return text.length;
-  if (elapsed <= 0) return 0;
-  return Math.min(text.length, Math.floor(elapsed / TYPEWRITER_MS_PER_CHAR));
+export function splitWords(text: string): string[] {
+  return text.match(/\S+\s*/g) ?? [];
+}
+
+/** Total stagger across every word, before each word's own fade. */
+export function staggerDurationMs(text: string): number {
+  const words = splitWords(text).length;
+  if (words <= 1) return 0;
+  return Math.min((words - 1) * WORD_STAGGER_MS, MAX_REVEAL_MS);
+}
+
+/** When the last word has finished fading in — what "complete" means. */
+export function revealDurationMs(text: string): number {
+  if (!text) return 0;
+  return staggerDurationMs(text) + WORD_FADE_MS;
+}
+
+/**
+ * Delay before word `index` starts fading. Spread across the capped window, so
+ * word count changes the density of the stagger rather than its length.
+ */
+export function wordDelayMs(index: number, text: string): number {
+  const words = splitWords(text).length;
+  if (words <= 1) return 0;
+  return (staggerDurationMs(text) * Math.min(index, words - 1)) / (words - 1);
 }
 
 export function isRevealComplete(
@@ -35,12 +61,8 @@ export function isRevealComplete(
   elapsed: number,
   instant = false,
 ): boolean {
-  return revealedLength(text, elapsed, instant) >= text.length;
-}
-
-/** Total time a full reveal takes, used to schedule auto-advance. */
-export function revealDurationMs(text: string): number {
-  return text.length * TYPEWRITER_MS_PER_CHAR;
+  if (instant) return true;
+  return elapsed >= revealDurationMs(text);
 }
 
 export function autoAdvanceDelayMs(text: string): number {

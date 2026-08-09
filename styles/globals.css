@@ -216,11 +216,43 @@ h6 {
   animation: battle-evade 0.4s ease-out;
 }
 
+/* Story scene text reveals a word at a time (components/game/
+   StorySceneReader.tsx). The whole line is laid out from the first frame and
+   only opacity animates — a character-by-character slice reflowed the
+   paragraph on every wrap and left the eye on half-words, so the line could
+   only be read after the animation finished rather than during it.
+   `animation-delay` per word is set inline; keeping the keyframes here means
+   the stagger costs no React renders. */
+@keyframes story-word-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.story-word {
+  display: inline;
+  white-space: pre-wrap;
+  opacity: 0;
+  animation-name: story-word-in;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .battle-shake,
   .battle-shake-strong,
   .battle-evade {
     animation: none;
+  }
+
+  /* The reader already renders text settled under reduced motion; this is the
+     belt-and-braces CSS opt-out, matching the pattern above. */
+  .story-word {
+    animation: none;
+    opacity: 1;
   }
 
   /* Big-hit focus recede (spec §1) — keep the opacity dim (not motion-

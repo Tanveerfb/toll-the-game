@@ -11,9 +11,9 @@ import {
   portraitSlotsAt,
   activeSideAt,
   revealDurationMs,
-  revealedLength,
-  tapIntent,
-  TYPEWRITER_MS_PER_CHAR,
+  splitWords,
+  wordDelayMs,
+  WORD_FADE_MS,
 } from "@/lib/game/storyScene";
 import type { StoryScene } from "@/types/story";
 
@@ -60,7 +60,7 @@ export default function StorySceneReader({
   onFinish: () => void;
 }): React.JSX.Element {
   const [index, setIndex] = React.useState(0);
-  const [revealed, setRevealed] = React.useState(0);
+  const [revealDone, setRevealDone] = React.useState(false);
   const [instant, setInstant] = React.useState(false);
   const [auto, setAuto] = React.useState(false);
   const [historyOpen, setHistoryOpen] = React.useState(false);
@@ -86,24 +86,18 @@ export default function StorySceneReader({
   const [renderedIndex, setRenderedIndex] = React.useState(index);
   if (renderedIndex !== index) {
     setRenderedIndex(index);
-    setRevealed(0);
+    setRevealDone(false);
     setInstant(false);
   }
 
-  // Reveal ticker. An interval rather than requestAnimationFrame: rAF stops
-  // entirely when the page isn't being composited (background tab, hidden
-  // pane), which would freeze a line mid-word, and there's no per-frame
-  // animation here to justify it. Position is computed from the wall clock,
-  // so a throttled interval still lands on the right character.
+  // One timer for the whole line, not a ticker: the stagger itself is CSS
+  // (per-word animation-delay), so React doesn't re-render per word. This only
+  // needs to know when the line counts as fully revealed, for the tap contract
+  // and auto-advance.
   React.useEffect(() => {
     if (showAll || !text) return;
-    const startedAt = Date.now();
-    const timer = window.setInterval(() => {
-      const elapsed = Date.now() - startedAt;
-      setRevealed(revealedLength(text, elapsed));
-      if (elapsed >= revealDurationMs(text)) window.clearInterval(timer);
-    }, 16);
-    return () => window.clearInterval(timer);
+    const timer = window.setTimeout(() => setRevealDone(true), revealDurationMs(text));
+    return () => window.clearTimeout(timer);
   }, [text, showAll]);
 
   // onFinish must fire outside the setIndex updater — parent setState inside
@@ -118,16 +112,13 @@ export default function StorySceneReader({
 
   const complete = React.useCallback(() => setInstant(true), []);
 
+  const isComplete = showAll || revealDone;
+
   const handleTap = React.useCallback(() => {
     if (historyOpen || skipPrompt) return;
-    const elapsed = showAll
-      ? Number.MAX_SAFE_INTEGER
-      : revealed * TYPEWRITER_MS_PER_CHAR;
-    if (tapIntent(text, elapsed, showAll) === "advance") advance();
+    if (isComplete) advance();
     else complete();
-  }, [advance, complete, historyOpen, revealed, showAll, skipPrompt, text]);
-
-  const isComplete = showAll || revealed >= text.length;
+  }, [advance, complete, historyOpen, isComplete, skipPrompt]);
 
   // Auto-advance: dwell after the line finishes, cancelled by any manual tap
   // (which flips `auto` off through the toggle, or lands us on a new index).
@@ -165,7 +156,6 @@ export default function StorySceneReader({
   const narration = isNarration(scene);
   const slots = portraitSlotsAt(scenes, index);
   const activeSide = activeSideAt(scenes, index);
-  const visibleText = showAll ? text : text.slice(0, revealed);
 
   const requestSkip = () => {
     if (confirmSkip) setSkipPrompt(true);
@@ -279,8 +269,7 @@ export default function StorySceneReader({
           // No box, no name plate, no "· · ·" filler — narration reads as the
           // camera talking, not as a character with no name.
           <p className="text-center font-body text-base leading-loose tracking-wide text-zinc-300 md:text-lg">
-            {visibleText}
-            {!isComplete ? <Caret /> : null}
+            <RevealedText text={text} settled={showAll} />
           </p>
         ) : (
           <div className="border-2 border-zinc-700 bg-zinc-950/90 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
@@ -293,8 +282,7 @@ export default function StorySceneReader({
               </p>
             </div>
             <p className="min-h-20 px-5 py-4 font-body text-sm leading-relaxed text-zinc-200 md:text-base">
-              {visibleText}
-              {!isComplete ? <Caret /> : null}
+              <RevealedText text={text} settled={showAll} />
             </p>
             <p className="border-t border-zinc-900 px-5 py-1.5 text-right font-body text-[10px] uppercase tracking-[0.16em] text-zinc-600">
               {isComplete ? "Tap to continue ▸" : "Tap to reveal"}
@@ -327,9 +315,48 @@ export default function StorySceneReader({
   );
 }
 
-function Caret(): React.JSX.Element {
+/**
+ * The line, laid out in full from the first frame, with each word fading up on
+ * a staggered delay.
+ *
+ * Slicing the string character by character (the first attempt) meant the
+ * paragraph reflowed on every wrap and the eye kept landing on half-words, so
+ * the only way to read was to wait for the animation to finish — exactly what
+ * Tanveer reported. Animating opacity over final layout inverts that: the text
+ * never moves, so it can be read ahead of the animation.
+ *
+ * `settled` renders everything at full opacity with no animation at all — used
+ * for reduced motion and for tap-to-complete.
+ *
+ * The stagger is CSS, so revealing a 60-word paragraph costs one React render
+ * rather than sixty.
+ */
+function RevealedText({
+  text,
+  settled,
+}: {
+  text: string;
+  settled: boolean;
+}): React.JSX.Element {
+  const words = React.useMemo(() => splitWords(text), [text]);
+
+  if (settled) return <>{text}</>;
+
   return (
-    <span className="ml-0.5 inline-block h-4 w-2 animate-pulse bg-amber-300/70 align-middle" />
+    <>
+      {words.map((word, i) => (
+        <span
+          key={`${i}-${word}`}
+          className="story-word"
+          style={{
+            animationDelay: `${wordDelayMs(i, text)}ms`,
+            animationDuration: `${WORD_FADE_MS}ms`,
+          }}
+        >
+          {word}
+        </span>
+      ))}
+    </>
   );
 }
 
