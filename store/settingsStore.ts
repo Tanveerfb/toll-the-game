@@ -18,6 +18,10 @@ interface SettingsState {
   setMusicVolume: (volume: number) => void;
   musicMuted: boolean;
   setMusicMuted: (muted: boolean) => void;
+  /** Dev-only: Claude plays the enemy side instead of the scripted AI.
+   *  Persisted so it survives the reloads a dev session is full of. */
+  duelMode: boolean;
+  setDuelMode: (on: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -33,6 +37,8 @@ export const useSettingsStore = create<SettingsState>()(
         set({ musicVolume: Math.max(0, Math.min(1, volume)) }),
       musicMuted: false,
       setMusicMuted: (muted) => set({ musicMuted: muted }),
+      duelMode: false,
+      setDuelMode: (on) => set({ duelMode: on }),
     }),
     { name: "toll-settings" },
   ),

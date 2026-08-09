@@ -2,7 +2,11 @@
   "id": "ban",
   "name": "Ban",
   "color": "green",
-  "tags": ["Collab", "Human", "Seven Deadly Sins"],
+  "tags": [
+    "Collab",
+    "Human",
+    "Seven Deadly Sins"
+  ],
   "lore": "Fox Sin of Greed. An undying human who takes what he wants — including your stats. Collab unit.",
   "atk": 140,
   "def": 35,
@@ -14,7 +18,11 @@
       "characterId": "ban",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [200, 250, 400],
+      "damageRanked": [
+        200,
+        250,
+        400
+      ],
       "mechanics": [
         {
           "type": "aoe"
@@ -31,15 +39,27 @@
       "characterId": "ban",
       "type": "debuff",
       "statMultiplier": "atk",
-      "damageRanked": [0, 0, 0],
+      "damageRanked": [
+        0,
+        0,
+        0
+      ],
       "mechanics": [
         {
           "type": "aoe"
         },
         {
           "type": "extort",
-          "valueRanked": [20, 30, 50],
-          "durationRanked": [1, 1, 2]
+          "valueRanked": [
+            20,
+            30,
+            50
+          ],
+          "durationRanked": [
+            1,
+            1,
+            2
+          ]
         }
       ]
     }
@@ -61,7 +81,7 @@
   },
   "passive": {
     "name": "Extort Life",
-    "description": "- [Human] allies' all stats 5% 👆 during battle\n\n# When finishing a turn without receiving damage\n- All enemies max HP 8% 👇 (Max 5 times) (Uncancellable)\n-- Effects reset after receiving damage",
+    "description": "- [Human] allies' basic stats 5% 👆 during battle\n\n# When finishing a turn without receiving damage\n- All enemies max HP 8% 👇 (Max 5 times) (Uncancellable)\n-- Effects reset after receiving damage",
     "trigger": "onRoundEnd",
     "worksFromSub": false,
     "mechanics": [
@@ -72,10 +92,16 @@
       },
       {
         "type": "synergy",
-        "conditionTags": ["Human"],
-        "stat": "all",
+        "conditionTags": [
+          "Human"
+        ],
         "valuePercent": 5,
-        "flatBonus": true
+        "flatBonus": true,
+        "stats": [
+          "atk",
+          "def",
+          "hp"
+        ]
       }
     ]
   }

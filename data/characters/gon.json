@@ -2,7 +2,12 @@
   "id": "gon",
   "name": "Gon Freecss",
   "color": "green",
-  "tags": ["Collab", "Human", "Male", "Hunter x Hunter"],
+  "tags": [
+    "Collab",
+    "Human",
+    "Male",
+    "Hunter x Hunter"
+  ],
   "lore": "A rookie Hunter with monstrous potential. Nen type: Enhancer. Collab unit.",
   "atk": 195,
   "def": 90,
@@ -14,7 +19,11 @@
       "characterId": "gon",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [195, 240, 300],
+      "damageRanked": [
+        195,
+        240,
+        300
+      ],
       "mechanics": [
         {
           "type": "buff",
@@ -32,11 +41,19 @@
       "characterId": "gon",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [230, 280, 350],
+      "damageRanked": [
+        230,
+        280,
+        350
+      ],
       "mechanics": [
         {
           "type": "gainUltGauge",
-          "valueRanked": [1, 1, 2]
+          "valueRanked": [
+            1,
+            1,
+            2
+          ]
         }
       ]
     }
@@ -67,7 +84,7 @@
   },
   "passive": {
     "name": "Rookie Hunter",
-    "description": "- [Collab] allies' all stats 5% 👆 during battle\n\n# After receiving 10 attacks during battle\n- ATK 50% 👇 (Activates only once, Uncancellable)\n- DEF 100% 👆 (Activates only once, Uncancellable)",
+    "description": "- [Collab] allies' basic stats 5% 👆 during battle\n\n# After receiving 10 attacks during battle\n- ATK 50% 👇 (Activates only once, Uncancellable)\n- DEF 100% 👆 (Activates only once, Uncancellable)",
     "trigger": "onAttackReceived",
     "worksFromSub": false,
     "mechanics": [
@@ -79,10 +96,16 @@
       },
       {
         "type": "synergy",
-        "conditionTags": ["Collab"],
-        "stat": "all",
+        "conditionTags": [
+          "Collab"
+        ],
         "valuePercent": 5,
-        "flatBonus": true
+        "flatBonus": true,
+        "stats": [
+          "atk",
+          "def",
+          "hp"
+        ]
       }
     ]
   }

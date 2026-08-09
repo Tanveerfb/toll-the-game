@@ -1,9 +1,8 @@
 {
-  "id": "lyra_npc",
+  "id": "lyra_npc_2",
   "name": "Lyra",
   "color": "red",
   "storyOnly": true,
-  "boss": true,
   "tier": "elite",
   "tags": [
     "Human"
@@ -73,7 +72,7 @@
   },
   "passive": {
     "name": "First Action: Unbreakable Ice",
-    "description": "# When performing first in a turn\n- DEF 150% 👆 for 1 turn (Activates once per turn, Unstackable, Uncancellable)\n# Always\n- Immune to ATK 👇",
+    "description": "# When performing first in a turn\n- DEF 150% 👆 for 1 turn (Activates once per turn, Unstackable, Uncancellable)\n# Always\n- Immune to ATK 👇\n- All stats 5% 👆",
     "trigger": "onFirstAction",
     "mechanics": [
       {
@@ -89,6 +88,11 @@
         "stats": [
           "atk"
         ]
+      },
+      {
+        "type": "aura",
+        "stat": "all",
+        "valuePercent": 5
       }
     ]
   }

@@ -2,7 +2,11 @@
   "id": "meliodas",
   "name": "Meliodas",
   "color": "red",
-  "tags": ["Collab", "Demon", "Seven Deadly Sins"],
+  "tags": [
+    "Collab",
+    "Demon",
+    "Seven Deadly Sins"
+  ],
   "lore": "Captain of the Seven Deadly Sins. A demon wielding dark purgatory energy. Collab unit.",
   "atk": 255,
   "def": 100,
@@ -14,7 +18,11 @@
       "characterId": "meliodas",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [150, 210, 300],
+      "damageRanked": [
+        150,
+        210,
+        300
+      ],
       "mechanics": [
         {
           "type": "weakpoint"
@@ -27,14 +35,26 @@
       "characterId": "meliodas",
       "type": "stance",
       "statMultiplier": "atk",
-      "damageRanked": [0, 0, 0],
+      "damageRanked": [
+        0,
+        0,
+        0
+      ],
       "mechanics": [
         {
           "type": "stance",
           "targetSelf": true,
           "name": "Full Counter",
-          "counterDamagePercentRanked": [250, 300, 400],
-          "durationRanked": [1, 1, 2]
+          "counterDamagePercentRanked": [
+            250,
+            300,
+            400
+          ],
+          "durationRanked": [
+            1,
+            1,
+            2
+          ]
         }
       ]
     }
@@ -58,7 +78,7 @@
   },
   "passive": {
     "name": "Deathblow",
-    "description": "- [Demon] allies' all stats 5% 👆 during battle\n\n# When attacking, for every 3% of maxHP lost\n- Damage 2% 👆 (Uncancellable)\n- Critical chance 2% 👆 (Uncancellable)",
+    "description": "- [Demon] allies' basic stats 5% 👆 during battle\n\n# When attacking, for every 3% of maxHP lost\n- Damage 2% 👆 (Uncancellable)\n- Critical chance 2% 👆 (Uncancellable)",
     "trigger": "always",
     "worksFromSub": false,
     "mechanics": [
@@ -70,10 +90,16 @@
       },
       {
         "type": "synergy",
-        "conditionTags": ["Demon"],
-        "stat": "all",
+        "conditionTags": [
+          "Demon"
+        ],
         "valuePercent": 5,
-        "flatBonus": true
+        "flatBonus": true,
+        "stats": [
+          "atk",
+          "def",
+          "hp"
+        ]
       }
     ]
   }

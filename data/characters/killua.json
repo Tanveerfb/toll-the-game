@@ -78,7 +78,7 @@
   },
   "passive": {
     "name": "Prodigy Assassin",
-    "description": "- [Collab] allies' all stats 5% 👆 during battle\n\n# After receiving 10 attacks during battle\n- DEF 50% 👇 (Activates only once, Uncancellable)\n- ATK 100% 👆 (Activates only once, Uncancellable)",
+    "description": "- [Collab] allies' basic stats 5% 👆 during battle\n\n# After receiving 10 attacks during battle\n- DEF 50% 👇 (Activates only once, Uncancellable)\n- ATK 100% 👆 (Activates only once, Uncancellable)",
     "trigger": "onAttackReceived",
     "worksFromSub": false,
     "mechanics": [
@@ -93,9 +93,13 @@
         "conditionTags": [
           "Collab"
         ],
-        "stat": "all",
         "valuePercent": 5,
-        "flatBonus": true
+        "flatBonus": true,
+        "stats": [
+          "atk",
+          "def",
+          "hp"
+        ]
       }
     ]
   }

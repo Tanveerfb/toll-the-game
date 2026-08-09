@@ -47,6 +47,10 @@ export const MECHANIC_INFO: Record<MechanicType, MechanicInfo> = {
     desc: "Cleanses debuffs and blocks all new debuffs for N turns.",
     template: { duration: 2 },
   },
+  statDebuffImmunity: {
+    desc: "Permanent immunity to the named stats being lowered. Passive-only, not cleansable.",
+    template: { stats: ["atk"] },
+  },
   healOverTime: {
     desc: "HoT worth % of this cast's heal amount, per turn for N turns.",
     template: { valuePercent: 30, duration: 2 },

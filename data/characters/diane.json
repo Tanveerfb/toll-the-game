@@ -2,7 +2,11 @@
   "id": "diane",
   "name": "Diane",
   "color": "blue",
-  "tags": ["Collab", "Giant", "Seven Deadly Sins"],
+  "tags": [
+    "Collab",
+    "Giant",
+    "Seven Deadly Sins"
+  ],
   "lore": "Serpent Sin of Envy. A giant commanding the earth itself. Collab unit.",
   "atk": 238,
   "def": 90,
@@ -14,7 +18,11 @@
       "characterId": "diane",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [200, 250, 350],
+      "damageRanked": [
+        200,
+        250,
+        350
+      ],
       "mechanics": [
         {
           "type": "aoe"
@@ -30,12 +38,20 @@
       "characterId": "diane",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [250, 310, 420],
+      "damageRanked": [
+        250,
+        310,
+        420
+      ],
       "mechanics": [
         {
           "type": "seal",
           "sealType": "attack",
-          "durationRanked": [0, 1, 2]
+          "durationRanked": [
+            0,
+            1,
+            2
+          ]
         }
       ]
     }
@@ -58,7 +74,7 @@
   },
   "passive": {
     "name": "Giant's Will",
-    "description": "- [Giant] allies' all stats 5% 👆 during battle\n\n# At the start of every turn\n- ATK 10% 👆 (Max 5 times) (Uncancellable)",
+    "description": "- [Giant] allies' basic stats 5% 👆 during battle\n\n# At the start of every turn\n- ATK 10% 👆 (Max 5 times) (Uncancellable)",
     "trigger": "onNewTurn",
     "worksFromSub": false,
     "mechanics": [
@@ -69,10 +85,16 @@
       },
       {
         "type": "synergy",
-        "conditionTags": ["Giant"],
-        "stat": "all",
+        "conditionTags": [
+          "Giant"
+        ],
         "valuePercent": 5,
-        "flatBonus": true
+        "flatBonus": true,
+        "stats": [
+          "atk",
+          "def",
+          "hp"
+        ]
       }
     ]
   }

@@ -181,7 +181,12 @@ describe("Ally-wide buff bakes HP for stat 'hp'/'all' (Isolde's Starbound Ward)"
     // effectiveBaseDamage at a minimum of 1 — a pre-existing, unrelated
     // engine rule ("a fully-weakened unit still deals chip damage"), so a
     // support-only ultimate still chips 1 HP off each target it touches.
-    expect(updatedAlly.currentHP).toBe(1299);
+    //
+    // 1298, not 1299: max-HP changes scale current HP with them to preserve
+    // the ratio (Tanveer, 2026-08-09), so the chipped 999/1000 becomes
+    // 999 * 1.3 = 1298.7 -> 1298. The old engine added the max-HP delta
+    // (999 + 300 = 1299), which quietly handed back the chipped point.
+    expect(updatedAlly.currentHP).toBe(1298);
   });
 });
 

@@ -136,6 +136,21 @@ export interface DebuffImmunityMechanic extends MechanicBase {
   type: "debuffImmunity";
   targetSelf?: boolean;
 }
+/**
+ * Permanent immunity to stat-lowering debuffs on the named stats — narrower
+ * than `debuffImmunity`, which is a temporary blanket block on every debuff
+ * type. Read straight off a passive, so it is always on and cannot be
+ * cleansed or cancelled.
+ *
+ * Exists for boss-exclusive passives: a boss whose whole fight is decided by
+ * one attacker halving its ATK has no counterplay otherwise
+ * (Tanveer, 2026-08-09 — Duke's Flowing Ruin vs Lyra).
+ */
+export interface StatDebuffImmunityMechanic extends MechanicBase {
+  type: "statDebuffImmunity";
+  /** Stats that can't be lowered, e.g. ["atk"]. */
+  stats: string[];
+}
 /** Applies a Heal-over-Time worth `valuePercent`% of THIS cast's heal
  * amount, per turn, for `duration` turns. Isolde's "Threads of Renewal"
  * rejuvenate. */
@@ -202,14 +217,20 @@ export interface SynergyMechanic extends MechanicBase {
   type: "synergy";
   conditionTags?: string[];
   conditionColors?: string[];
-  stat: string;
+  stat?: string;
+  /** Several stats as ONE effect. Synergies target BASIC stats
+   *  (`["atk","def","hp"]`); only Seras's and Batra's use `stat: "all"`,
+   *  which also reaches substats (Tanveer, 2026-08-09). */
+  stats?: string[];
   valuePercent: number;
   /** true = flat % per carrier; absent = scales with carrier count (ruling #35). */
   flatBonus?: boolean;
 }
 export interface AuraMechanic extends MechanicBase {
   type: "aura";
-  stat: string;
+  stat?: string;
+  /** Several stats as ONE effect, e.g. ["atk","def","hp"] for basic stats. */
+  stats?: string[];
   valuePercent: number;
   conditionNoDeadAllies?: boolean;
 }
@@ -217,8 +238,13 @@ export interface CharacterSynergyMechanic extends MechanicBase {
   type: "characterSynergy";
   requiredCharacterIds: string[];
   stat?: string;
+  /** Stats the BASE bond raises — basic stats by default. */
+  stats?: string[];
   valuePercent?: number;
   bothAliveBonusPercent?: number;
+  /** Stats the both-alive bonus raises; "all" reaches substats too. The two
+   *  halves target differently on purpose (Tanveer, 2026-08-09). */
+  bothAliveStat?: string;
 }
 export interface ChargedStacksMechanic extends MechanicBase {
   type: "chargedStacks";
@@ -367,6 +393,7 @@ export type Mechanic =
   | CancelBuffsMechanic
   | CancelStancesMechanic
   | DebuffImmunityMechanic
+  | StatDebuffImmunityMechanic
   | HealOverTimeMechanic
   | StunMechanic
   | TauntMechanic
@@ -425,6 +452,7 @@ export const MECHANIC_TYPES = [
   "cancelBuffs",
   "cancelStances",
   "debuffImmunity",
+  "statDebuffImmunity",
   "healOverTime",
   "stun",
   "taunt",
@@ -510,6 +538,15 @@ export interface StatusEffect {
   uncancellable?: boolean;
   /** Display badge for a gain already baked into current stats. */
   preApplied?: boolean;
+  /**
+   * Percent by which this entry scaled the holder's MAX HP when it landed.
+   *
+   * Max HP isn't read through `effectiveStat` the way ATK/DEF are — it's a
+   * baked number — so a durationed HP buff has to record what it did in order
+   * for expiry to undo it. Without this a "+30% all stats for 3 turns" left
+   * the HP raise behind forever (Tanveer, 2026-08-09).
+   */
+  hpScalePercent?: number;
   /** Counter stance: % of ATK dealt back to attackers. */
   counterDamagePercent?: number;
   sealType?: string;

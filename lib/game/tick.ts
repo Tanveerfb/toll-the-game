@@ -1,3 +1,4 @@
+import { scaleMaxHp, inverseHpPercent } from "@/lib/game/maxHp";
 import { BattleCharacter } from "@/types/character";
 import { trySurviveLethal } from "./lethal";
 import { applyHeal } from "./heal";
@@ -48,12 +49,24 @@ export function tickTeamBuffs(
       if (healed > 0) log(`[System] ${char.name} heals ${healed} HP from HoT.`);
     }
 
-    char.buffs = char.buffs
-      .map((b) => ({
-        ...b,
-        buffDuration: b.buffDuration ? b.buffDuration - 1 : undefined,
-      }))
-      .filter((b) => b.buffDuration === undefined || b.buffDuration > 0);
+    const ticked = char.buffs.map((b) => ({
+      ...b,
+      buffDuration: b.buffDuration ? b.buffDuration - 1 : undefined,
+    }));
+    char.buffs = ticked.filter(
+      (b) => b.buffDuration === undefined || b.buffDuration > 0,
+    );
+    // A max-HP raise is baked, not read dynamically, so when the buff that
+    // granted it expires the HP has to be unwound or it stays forever
+    // (Tanveer, 2026-08-09). Stacked raises unwind one at a time, each by its
+    // own inverse.
+    ticked
+      .filter((b) => b.buffDuration !== undefined && b.buffDuration <= 0)
+      .forEach((expired) => {
+        if (typeof expired.hpScalePercent !== "number") return;
+        Object.assign(char, scaleMaxHp(char, inverseHpPercent(expired.hpScalePercent)));
+        log(`${char.name}'s ${expired.name ?? "buff"} fades — max HP returns to ${char.hp}.`);
+      });
 
     return char;
   });
@@ -124,12 +137,21 @@ export function tickTeamDebuffs(
     }
 
     if (!survivedLethalDot) {
-      char.debuffs = char.debuffs
-        .map((d) => ({
-          ...d,
-          debuffDuration: d.debuffDuration ? d.debuffDuration - 1 : undefined,
-        }))
-        .filter((d) => d.debuffDuration === undefined || d.debuffDuration > 0);
+      const tickedDebuffs = char.debuffs.map((d) => ({
+        ...d,
+        debuffDuration: d.debuffDuration ? d.debuffDuration - 1 : undefined,
+      }));
+      char.debuffs = tickedDebuffs.filter(
+        (d) => d.debuffDuration === undefined || d.debuffDuration > 0,
+      );
+      // Same unwind for a max-HP shrink (see the buff side above).
+      tickedDebuffs
+        .filter((d) => d.debuffDuration !== undefined && d.debuffDuration <= 0)
+        .forEach((expired) => {
+          if (typeof expired.hpScalePercent !== "number") return;
+          Object.assign(char, scaleMaxHp(char, inverseHpPercent(expired.hpScalePercent)));
+          log(`${char.name}'s ${expired.name ?? "debuff"} fades — max HP returns to ${char.hp}.`);
+        });
     }
 
     return char;

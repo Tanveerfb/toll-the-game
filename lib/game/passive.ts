@@ -1,4 +1,5 @@
 ﻿import { BattleCharacter } from "@/types/character";
+import { scaleMaxHp } from "@/lib/game/maxHp";
 import { QueueItem } from "@/hooks/MechanicProvider";
 import { BattlePhase, StatusEffect } from "@/types/mechanic";
 
@@ -85,15 +86,11 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
                 if (mech.stat === "all") {
                   t.currentAttack += Math.floor(t.atk * (totalPercent/100));
                   t.currentDefense += Math.floor(t.def * (totalPercent/100));
-                  const hpBoost = Math.floor(t.hp * (totalPercent/100));
-                  t.hp += hpBoost;
-                  t.currentHP += hpBoost;
+                  Object.assign(t, scaleMaxHp(t, totalPercent));
                 } else if (mech.stat === "def") {
                   t.currentDefense += Math.floor(t.def * (totalPercent/100));
                 } else if (mech.stat === "hp") {
-                  const hpBoost = Math.floor(t.hp * (totalPercent/100));
-                  t.hp += hpBoost;
-                  t.currentHP += hpBoost;
+                  Object.assign(t, scaleMaxHp(t, totalPercent));
                 }
                 mutateTeam[idx] = t;
                 changed = true;
@@ -111,13 +108,19 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
           if (mech.type === "aura") {
             mutateTeam.forEach((ally, idx) => {
               const buff: StatusEffect = {
-                type: "buff", stat: mech.stat, valuePercent: mech.valuePercent, uncancellable: true, name: source.passive!.name
+                type: "buff", stat: mech.stat, stats: mech.stats, valuePercent: mech.valuePercent, uncancellable: true, name: source.passive!.name
               };
               const t = { ...mutateTeam[idx], buffs: [...mutateTeam[idx].buffs, buff] };
-              if (mech.stat === "hp") {
-                const hpBoost = Math.floor(t.hp * (mech.valuePercent/100));
-                t.hp += hpBoost;
-                t.currentHP += hpBoost;
+              // ATK/DEF ride the buff dynamically through effectiveStat, but HP
+              // is not read that way and has to be baked. "all" covers HP too
+              // (ruling #55: basic stats = ATK/DEF/HP), and used to silently
+              // skip it here — only a literal "hp" aura raised health.
+              if (
+                mech.stat === "hp" ||
+                mech.stat === "all" ||
+                (mech.stats ?? []).includes("hp")
+              ) {
+                Object.assign(t, scaleMaxHp(t, mech.valuePercent));
               }
               mutateTeam[idx] = t;
               changed = true;
@@ -164,12 +167,21 @@ function registerCharacterSynergy(
   const baseName = `${passiveName} (bond)`;
   const extraName = `${passiveName} (bond+)`;
 
+  // The bond's two halves target different things (Tanveer, 2026-08-09): the
+  // base bond is basic stats, while the both-alive bonus is narrow enough to
+  // justify reaching substats too.
+  const baseTarget: { stat?: string; stats?: string[] } =
+    mech.stats ? { stats: mech.stats } : { stats: ["atk", "def", "hp"] };
+  const extraTarget: { stat?: string; stats?: string[] } =
+    mech.bothAliveStat ? { stat: mech.bothAliveStat } : { stat: "all" };
+
   const applyPercentToTeam = (
     team: BattleCharacter[],
     percent: number,
     name: string,
     log: (e: string) => void,
     logText: string,
+    target: { stat?: string; stats?: string[] },
   ) => {
     return team.map((ally) => {
       if (ally.buffs.some((b) => b.name === name)) return ally;
@@ -179,9 +191,11 @@ function registerCharacterSynergy(
           ...ally.buffs,
           {
             type: "buff" as const,
-            stat: "all",
+            ...target,
             valuePercent: percent,
             uncancellable: true,
+            // Basic stats are baked below, so effectiveStat must skip this
+            // entry; substats aren't baked and are read from it dynamically.
             preApplied: true,
             name,
           },
@@ -189,9 +203,7 @@ function registerCharacterSynergy(
       };
       t.currentAttack += Math.floor(t.atk * (percent / 100));
       t.currentDefense += Math.floor(t.def * (percent / 100));
-      const hpBoost = Math.floor(t.hp * (percent / 100));
-      t.hp += hpBoost;
-      t.currentHP += hpBoost;
+      Object.assign(t, scaleMaxHp(t, percent));
       log(`${t.name} ${logText}`);
       return t;
     });
@@ -230,7 +242,8 @@ function registerCharacterSynergy(
         basePercent,
         baseName,
         log,
-        `gains +${basePercent}% all stats from ${source.name}'s ${passiveName}!`,
+        `gains +${basePercent}% basic stats from ${source.name}'s ${passiveName}!`,
+        baseTarget,
       );
       return { ...teams, [teamKey]: boosted };
     },
@@ -258,6 +271,7 @@ function registerCharacterSynergy(
           extraName,
           log,
           `gains an extra +${extraPercent}% all stats — the friends fight together!`,
+          extraTarget,
         );
         return { ...teams, [teamKey]: boosted };
       }

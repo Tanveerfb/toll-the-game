@@ -32,6 +32,9 @@ import UnitDetailPanel from "@/components/game/battle/UnitDetailPanel";
 import BattleLogDrawer from "@/components/game/battle/BattleLogDrawer";
 import { formatBattleLogMarkdown } from "@/lib/game/battleLogMarkdown";
 import { useBattleSequencer } from "@/hooks/useBattleSequencer";
+import DuelWaitingOverlay from "@/components/game/battle/DuelWaitingOverlay";
+import { publishDuelResult } from "@/lib/duel/client";
+import { useSettingsStore } from "@/store/settingsStore";
 
 /** Stable no-op so the memoized player tiles don't re-render every frame on a
  *  fresh inline closure. Player tiles never focus-fire. */
@@ -145,6 +148,8 @@ export default function BattleArena({
   const resetBattle = useGameStore((s) => s.resetBattle);
   const setBattlePhase = useGameStore((s) => s.setBattlePhase);
   const bigHitFocus = useGameStore((s) => s.bigHitFocus);
+  // Dev-only duel mode: shows who is actually piloting the enemy side.
+  const duelMode = useSettingsStore((s) => s.duelMode);
 
   // Exit Battle (player-initiated forfeit) — ends the fight as a loss. Ordinary
   // reloads resume the battle (persistence); this is the deliberate way out.
@@ -187,6 +192,27 @@ export default function BattleArena({
 
     return () => window.clearTimeout(timer);
   }, [battlePhase, resolveEnemyTurnWrapper, battleSpeed]);
+
+  // A finished duel writes no further state, so without this the watcher on
+  // the other side waits forever and never learns the result (hit in the first
+  // duel, 2026-08-09). Fires once per battle.
+  const duelResultSentRef = React.useRef(false);
+  React.useEffect(() => {
+    if (!duelMode) return;
+    if (battlePhase !== "victory" && battlePhase !== "defeat") {
+      duelResultSentRef.current = false;
+      return;
+    }
+    if (duelResultSentRef.current) return;
+    duelResultSentRef.current = true;
+    void publishDuelResult({
+      outcome: battlePhase,
+      enemyTeam,
+      playerTeam,
+      turn: currentTurn,
+      recentEvents: battleLog.slice(-15),
+    });
+  }, [duelMode, battlePhase, enemyTeam, playerTeam, currentTurn, battleLog]);
 
   // Auto-dismiss the phase-break flourish after it plays
   React.useEffect(() => {
@@ -320,6 +346,7 @@ export default function BattleArena({
       ref={arenaRef}
       className={`relative flex min-h-0 flex-1 flex-col ${screenShakeClass}`}
     >
+      <DuelWaitingOverlay />
       <BattleEffectsOverlay
         battleLog={overlayLog}
         battlePhase={battlePhase}
@@ -703,6 +730,11 @@ export default function BattleArena({
           <span className="truncate font-body text-xs uppercase tracking-[0.16em] text-amber-200">
             {phaseLabel}
           </span>
+          {duelMode ? (
+            <span className="hidden shrink-0 border border-violet-400/70 px-1.5 py-0.5 font-body text-[10px] uppercase tracking-[0.14em] text-violet-200 sm:inline">
+              Duel
+            </span>
+          ) : null}
           {contextLabel ? (
             <span className="hidden min-w-0 shrink items-center gap-2 lg:flex">
               <span className="h-3 w-px shrink-0 bg-zinc-700" />

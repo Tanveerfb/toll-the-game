@@ -4,8 +4,10 @@ import { BattleCharacter } from "@/types/character";
 import { BattlePhase } from "@/types/mechanic";
 import React, { useEffect } from "react";
 import { useMechanicContext } from "./MechanicProvider";
+import { requestDuelMove } from "@/lib/duel/client";
+import { useSettingsStore } from "@/store/settingsStore";
 import { useGameStore } from "@/store/gameStore";
-import { TurnActions } from "@/types/action";
+import { TurnActions, type Action } from "@/types/action";
 import { executeSkill } from "@/lib/game/combat";
 import {
   enemyActionsForTurn,
@@ -537,7 +539,7 @@ export default function BattleProvider({
     advancePhase();
   }
 
-  function resolveEnemyTurnWrapper() {
+  async function resolveEnemyTurnWrapper() {
     if (useGameStore.getState().battlePhase !== "EnemyAction") return;
 
     // Refill the enemy hand to capacity first (RNG + auto-merge, same rules as
@@ -554,6 +556,31 @@ export default function BattleProvider({
     // decision sees the post-previous-action state and the shrinking hand.
     const actionCount = enemyActionsForTurn(currentTeams.enemyTeam);
     const aiContext = freshAITurnContext();
+
+    // Duel mode (dev only): Claude picks this turn's actions instead of the
+    // scripted AI. It submits the whole turn at once, so this awaits once
+    // rather than per action. `null` back — aborted, timed out, or an invalid
+    // move — means the AI plays the turn exactly as it always has, which is
+    // what keeps a battle from ever getting stuck.
+    // Spec: docs/superpowers/specs/2026-08-09-claude-duel-mode-design.md
+    let duelActions: Array<Action | null> | null = null;
+    if (useSettingsStore.getState().duelMode) {
+      duelActions = await requestDuelMove({
+        enemyTeam: currentTeams.enemyTeam,
+        playerTeam: currentTeams.playerTeam,
+        hand,
+        turn: useGameStore.getState().currentTurn,
+        actionBudget: actionCount,
+        recentEvents: useGameStore.getState().battleLog.slice(-12),
+      });
+      // The battle may have ended (or been exited) while waiting.
+      if (useGameStore.getState().battlePhase !== "EnemyAction") return;
+      currentTeams = {
+        playerTeam: useGameStore.getState().playerTeam,
+        enemyTeam: useGameStore.getState().enemyTeam,
+      };
+    }
+
     for (let i = 0; i < actionCount; i++) {
       // A boss due its SP this turn forces the phase's SP Skill as the final
       // action (bossAutoSp) — it's not in the deck, so no card is consumed.
@@ -561,15 +588,24 @@ export default function BattleProvider({
         i === actionCount - 1
           ? bossForcedSpAction(currentTeams.enemyTeam, currentTeams.playerTeam)
           : null;
+      // Forced SP still wins in duel mode: it's a boss MECHANIC, not a
+      // decision, so Claude doesn't get to suppress it (Tanveer, 2026-08-09).
       const action =
         forcedSp ??
-        getAIMove(
-          currentTeams.enemyTeam,
-          currentTeams.playerTeam,
-          aiContext,
-          hand,
-        );
-      if (!action) break;
+        (duelActions
+          ? (duelActions[i] ?? null)
+          : getAIMove(
+              currentTeams.enemyTeam,
+              currentTeams.playerTeam,
+              aiContext,
+              hand,
+            ));
+      if (!action) {
+        // A duelled turn can deliberately pass a slot; the AI returning null
+        // means it has nothing playable at all, which ends the turn.
+        if (duelActions) continue;
+        break;
+      }
       noteAIAction(aiContext, action.skill.type);
 
       try {

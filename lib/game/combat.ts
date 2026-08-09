@@ -9,6 +9,8 @@ import { ultGaugeMax } from "./ultGauge";
 import { bossDamageMultiplierVsTarget } from "./bossPassives";
 import { getEffectiveCritResist, getEffectiveLifesteal } from "./substats";
 import { applyHeal } from "./heal";
+import { scaleMaxHp } from "./maxHp";
+import { isImmuneToStatDebuff } from "./immunity";
 import { DEFAULT_BLEED_TURNS, DEFAULT_IGNITE_TURNS } from "./dotDurations";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
@@ -1052,6 +1054,18 @@ export function executeSkill(
           }
         }
         if (mech.type === "debuff") {
+          // Permanent per-stat immunity from a passive (boss-exclusive) —
+          // narrower than Debuff Immunity and not cleansable.
+          const blockedStats = [
+            ...(mech.stats ?? []),
+            ...(mech.stat ? [mech.stat] : []),
+          ].filter((st) => isImmuneToStatDebuff(updatedTarget, st));
+          if (blockedStats.length > 0) {
+            targetEffects.push(
+              `resisted ${blockedStats.join("/")} down (immune)`,
+            );
+            return;
+          }
           // Re-applying an ATK/DEF-lower debuff on the SAME stat OVERRIDES
           // this source's own previous instance instead of stacking a
           // second one (Tanveer 2026-07-21) — a different source's debuff
@@ -1062,13 +1076,28 @@ export function executeSkill(
             updatedSource.instanceId,
             (d) => d.type === "debuff" && d.stat === mech.stat,
           );
+          const downPercent = mech.valuePercent || mech.value;
+          // A stat debuff naming hp (or "all") shrinks MAX HP, scaling current
+          // HP with it so the ratio holds. Max HP is baked rather than read
+          // dynamically, so like the buff path this records what it did and
+          // tick.ts unwinds it on expiry (Tanveer, 2026-08-09 — build for
+          // debuffs that don't exist yet).
+          const shrinksHp =
+            downPercent &&
+            (mech.stat === "hp" || mech.stat === "all" ||
+              (mech.stats ?? []).includes("hp"));
           updatedTarget.debuffs.push({
             type: "debuff",
             stat: mech.stat,
-            valuePercent: mech.valuePercent || mech.value,
+            stats: mech.stats,
+            valuePercent: downPercent,
             debuffDuration: mech.duration,
             sourceId: updatedSource.instanceId,
+            hpScalePercent: shrinksHp ? -downPercent : undefined,
           });
+          if (shrinksHp) {
+            Object.assign(updatedTarget, scaleMaxHp(updatedTarget, -downPercent));
+          }
           targetEffects.push(
             `lowered ${mech.stat || "stat"} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim(),
           );
@@ -1097,16 +1126,24 @@ export function executeSkill(
           updatedSource.instanceId,
           (d) => d.type === "debuff" && d.stat === "atk",
         );
-        updatedTarget.debuffs.push({
-          type: "debuff",
-          stat: "atk",
-          valuePercent: flowingRuinMech.atkDownPercent ?? 20,
-          debuffDuration: flowingRuinMech.atkDownDuration ?? 2,
-          sourceId: updatedSource.instanceId,
-        });
-        targetEffects.push(
-          `lowered atk by ${flowingRuinMech.atkDownPercent ?? 20}%${formatTurns(flowingRuinMech.atkDownDuration ?? 2)}`,
-        );
+        if (isImmuneToStatDebuff(updatedTarget, "atk")) {
+          // Flowing Ruin applies its ATK-down through its own path, not the
+          // generic debuff mechanic, so the immunity has to be checked here
+          // too or a boss immune "to ATK decrease" would still be halved by
+          // the single most common source of it.
+          targetEffects.push("resisted atk down (immune)");
+        } else {
+          updatedTarget.debuffs.push({
+            type: "debuff",
+            stat: "atk",
+            valuePercent: flowingRuinMech.atkDownPercent ?? 20,
+            debuffDuration: flowingRuinMech.atkDownDuration ?? 2,
+            sourceId: updatedSource.instanceId,
+          });
+          targetEffects.push(
+            `lowered atk by ${flowingRuinMech.atkDownPercent ?? 20}%${formatTurns(flowingRuinMech.atkDownDuration ?? 2)}`,
+          );
+        }
       }
     }
 
@@ -1129,6 +1166,9 @@ export function executeSkill(
       }
       if ((mech.type === "buff" || mech.type === "stance") && !mech.targetSelf) {
         const percent = mech.valuePercent || mech.value;
+        const scalesHp =
+          percent && (mech.stat === "hp" || mech.stat === "all" ||
+            (mech.stats ?? []).includes("hp"));
         updatedTarget.buffs.push({
           type: mech.type,
           stat: mech.stat,
@@ -1138,15 +1178,15 @@ export function executeSkill(
           name: mech.name,
           unstackable: mech.unstackable,
           uncancellable: mech.uncancellable,
+          // Recorded so expiry can unwind the max-HP change (tick.ts).
+          hpScalePercent: scalesHp ? percent : undefined,
         });
         // "hp"/"all" aren't read dynamically (unlike atk/def via
         // effectiveStat) — bake the gain now, mirroring how passive.ts's
         // synergy/aura handlers already do this for the OnBattleStart path.
         // Isolde's ultimate is the first ally-wide buff to need it here.
-        if (percent && (mech.stat === "hp" || mech.stat === "all")) {
-          const hpBoost = Math.floor(updatedTarget.hp * (percent / 100));
-          updatedTarget.hp += hpBoost;
-          updatedTarget.currentHP += hpBoost;
+        if (scalesHp) {
+          Object.assign(updatedTarget, scaleMaxHp(updatedTarget, percent));
         }
         targetEffects.push(
           `applied ${mech.type} to ${mech.stat || "stat"} by ${toPercentText(percent)}${formatTurns(mech.duration)}`.trim(),

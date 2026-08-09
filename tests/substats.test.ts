@@ -5,6 +5,9 @@ import {
   getEffectiveLifesteal,
   getEffectiveCritResist,
 } from "@/lib/game/substats";
+import { getDamageReductionMultiplier } from "@/lib/game/stats";
+import { scaleMaxHp, inverseHpPercent } from "@/lib/game/maxHp";
+import { getCharacterById } from "@/lib/game/characterCatalog";
 import type { BattleCharacter } from "@/types/character";
 import type { SkillCard } from "@/types/skillCard";
 import { getEffectiveHealAmount, applyHeal } from "@/lib/game/heal";
@@ -68,24 +71,52 @@ describe("substat buff/debuff stacking (multiplicative)", () => {
     expect(getEffectiveRecoveryRate(c)).toBe(120);
   });
 
-  it("two +10% critDamage buffs compound multiplicatively (not additively)", () => {
+  it("two +10% critDamage buffs add ten points each", () => {
+    // Substats are percentages, so modifiers add POINTS rather than scaling
+    // (Tanveer, 2026-08-09) — 50% crit damage buffed twice by 10% is 70%.
     const c = makeChar();
     c.buffs.push({ type: "buff", stat: "critDamage", valuePercent: 10 });
     c.buffs.push({ type: "buff", stat: "critDamage", valuePercent: 10 });
-    // 50 * 1.1 * 1.1 = 60.5 -> floor 60
-    expect(getEffectiveCritDamage(c)).toBe(60);
+    expect(getEffectiveCritDamage(c)).toBe(70);
   });
 
-  it("a -50% lifesteal debuff halves the base 5", () => {
+  it("a -50% lifesteal debuff wipes out a 5% base and floors at zero", () => {
+    // 5 points - 50 points is negative; substats clamp at 0 rather than
+    // going inverse.
     const c = makeChar();
     c.debuffs.push({ type: "debuff", stat: "lifesteal", valuePercent: 50 });
-    expect(getEffectiveLifesteal(c)).toBe(2);
+    expect(getEffectiveLifesteal(c)).toBe(0);
   });
 
-  it("a generic 'all' buff does NOT affect substats (basic-stats-only per 2026-07-24 ruling)", () => {
+  it("a -2% lifesteal debuff shaves two points off a 5% base", () => {
+    const c = makeChar();
+    c.debuffs.push({ type: "debuff", stat: "lifesteal", valuePercent: 2 });
+    expect(getEffectiveLifesteal(c)).toBe(3);
+  });
+
+  it("Isolde's +10% lifesteal aura actually does something now", () => {
+    // Under the old multiplicative reading this computed 5 * 1.1 = 5.5 and
+    // floored back to 5 — the aura was a no-op in every shipped battle.
+    const c = makeChar();
+    c.buffs.push({ type: "buff", stat: "lifesteal", valuePercent: 10 });
+    expect(getEffectiveLifesteal(c)).toBe(15);
+  });
+
+  it("a generic 'all' buff DOES affect substats (reversed 2026-08-09, ruling #55)", () => {
+    // Was asserted the other way under a 2026-07-24 basic-stats-only reading.
+    // Tanveer's definition, restated 2026-08-09: "all stats" = basic stats
+    // PLUS substats, excluding damage reduction and evade chance.
     const c = makeChar();
     c.buffs.push({ type: "buff", stat: "all", valuePercent: 50 });
-    expect(getEffectiveCritResist(c)).toBe(10);
+    expect(getEffectiveCritResist(c)).toBe(60); // 10 base + 50 points
+  });
+
+  it("still cannot reach damage reduction or evade — those are excluded by name", () => {
+    const c = makeChar();
+    c.buffs.push({ type: "buff", stat: "all", valuePercent: 50 });
+    // Both are read by exact stat name elsewhere (stats.ts / evade.ts), so an
+    // "all" entry never touches them.
+    expect(getDamageReductionMultiplier(c)).toBe(1);
   });
 });
 
@@ -311,5 +342,158 @@ describe("Recovery Rate applied at existing heal call sites", () => {
     // 1000 incoming * 50% = 500 raw heal, * 200% recovery rate = 1000
     expect(healAmount).toBe(1000);
     expect(char.currentHP).toBe(1000);
+  });
+});
+
+describe("max-HP changes preserve the HP ratio (Tanveer, 2026-08-09)", () => {
+  it("raising max HP 50% takes 1500/2000 to 2250/3000", () => {
+    expect(scaleMaxHp({ hp: 2000, currentHP: 1500 }, 50)).toEqual({
+      hp: 3000,
+      currentHP: 2250,
+    });
+  });
+
+  it("lowering max HP 30% takes 1500/2000 to 1050/1400", () => {
+    expect(scaleMaxHp({ hp: 2000, currentHP: 1500 }, -30)).toEqual({
+      hp: 1400,
+      currentHP: 1050,
+    });
+  });
+
+  it("keeps the ratio rather than adding the max-HP delta", () => {
+    // The old behaviour added the delta to both, turning 75% into 83%.
+    const after = scaleMaxHp({ hp: 2000, currentHP: 1500 }, 50);
+    expect(after.currentHP / after.hp).toBeCloseTo(0.75, 5);
+  });
+
+  it("never rounds a living unit down to zero", () => {
+    expect(scaleMaxHp({ hp: 100, currentHP: 1 }, -99).currentHP).toBe(1);
+  });
+
+  it("leaves a downed unit at zero rather than reviving it", () => {
+    expect(scaleMaxHp({ hp: 100, currentHP: 0 }, 50).currentHP).toBe(0);
+  });
+
+  it("never lets current exceed the new max", () => {
+    const after = scaleMaxHp({ hp: 100, currentHP: 100 }, -50);
+    expect(after.currentHP).toBeLessThanOrEqual(after.hp);
+  });
+});
+
+describe("max-HP changes unwind when their effect expires", () => {
+  const mkChar = (hp: number, currentHP: number): BattleCharacter =>
+    makeChar({ hp, currentHP, name: "Subject" }) as BattleCharacter;
+
+  it("a durationed HP buff raises max HP, then gives it back on expiry", () => {
+    // "+30% all stats for 1 turn" used to leave the HP raise behind forever,
+    // because max HP is baked rather than read through effectiveStat.
+    let c = mkChar(2000, 1000);
+    c.buffs.push({
+      type: "buff", stat: "all", valuePercent: 30, buffDuration: 1,
+      hpScalePercent: 30, name: "Test Ward",
+    });
+    Object.assign(c, scaleMaxHp(c, 30));
+    expect(c.hp).toBe(2600);
+    expect(c.currentHP).toBe(1300);
+
+    c = tickTeamBuffs([c], () => {})[0];
+    expect(c.buffs).toHaveLength(0);
+    expect(c.hp).toBe(2000); // back where it started
+    expect(c.currentHP).toBe(1000);
+  });
+
+  it("undoes a raise by its inverse, not by the same percent", () => {
+    // +50% is undone by -33.3%, not -50%; otherwise 3000 would fall to 1500.
+    expect(inverseHpPercent(50)).toBeCloseTo(-33.333, 2);
+    let c = mkChar(2000, 1500);
+    c.buffs.push({
+      type: "buff", stat: "hp", valuePercent: 50, buffDuration: 1,
+      hpScalePercent: 50, name: "Test",
+    });
+    Object.assign(c, scaleMaxHp(c, 50));
+    expect(c.hp).toBe(3000);
+    c = tickTeamBuffs([c], () => {})[0];
+    expect(c.hp).toBe(2000);
+  });
+
+  it("leaves a permanent (undurationed) HP raise alone", () => {
+    let c = mkChar(2000, 1000);
+    c.buffs.push({ type: "buff", stat: "hp", valuePercent: 30, hpScalePercent: 30 });
+    Object.assign(c, scaleMaxHp(c, 30));
+    c = tickTeamBuffs([c], () => {})[0];
+    expect(c.hp).toBe(2600); // no duration = never expires = never unwinds
+  });
+
+  it("keeps the HP ratio across raise and expiry", () => {
+    let c = mkChar(2000, 1500); // 75%
+    c.buffs.push({
+      type: "buff", stat: "all", valuePercent: 40, buffDuration: 1,
+      hpScalePercent: 40,
+    });
+    Object.assign(c, scaleMaxHp(c, 40));
+    expect(c.currentHP / c.hp).toBeCloseTo(0.75, 2);
+    c = tickTeamBuffs([c], () => {})[0];
+    expect(c.currentHP / c.hp).toBeCloseTo(0.75, 2);
+  });
+});
+
+describe("synergies target basic stats; only Seras and Batra reach substats", () => {
+  const synergyOf = (id: string) =>
+    (getCharacterById(id)?.passive?.mechanics ?? []).find(
+      (m) => m.type === "synergy" || m.type === "characterSynergy",
+    ) as { stat?: string; stats?: string[] } | undefined;
+
+  it.each(["ban", "diane", "gon", "killua", "leorio", "meliodas"])(
+    "%s's synergy names basic stats, not 'all'",
+    (id) => {
+      const m = synergyOf(id);
+      expect(m?.stat).toBeUndefined();
+      expect(m?.stats).toEqual(["atk", "def", "hp"]);
+    },
+  );
+
+  it.each(["seras", "batra"])("%s's synergy keeps 'all' and reaches substats", (id) => {
+    expect(synergyOf(id)?.stat).toBe("all");
+  });
+
+  it("Sara's is damageDealt — a damage modifier, not a stat change", () => {
+    expect(synergyOf("sara")?.stat).toBe("damageDealt");
+  });
+
+  it("Mustafa's targets DEF only", () => {
+    expect(synergyOf("mustafa")?.stat).toBe("def");
+  });
+});
+
+describe("Kind Hearted Friend's two halves target differently", () => {
+  it("the base bond names basic stats and the both-alive bonus names all", () => {
+    // Tanveer, 2026-08-09: the bond's base is basic stats, but the both-alive
+    // half is restrictive enough to justify reaching substats.
+    const m = (getCharacterById("leorio")?.passive?.mechanics ?? []).find(
+      (x) => x.type === "characterSynergy",
+    ) as { stats?: string[]; bothAliveStat?: string };
+    expect(m.stats).toEqual(["atk", "def", "hp"]);
+    expect(m.bothAliveStat).toBe("all");
+  });
+
+  it("the passive wording matches what each half actually targets", () => {
+    const text = getCharacterById("leorio")?.passive?.description ?? "";
+    // Base bond
+    expect(text).toContain("All allies' basic stats 10%");
+    // Both-alive bonus
+    expect(text).toContain("All allies' all stats 10%");
+    // And the [Collab] tag synergy is basic like every other tag synergy
+    expect(text).toContain("[Collab] allies' basic stats 5%");
+  });
+
+  it.each(["ban", "diane", "gon", "killua", "meliodas"])(
+    "%s's passive says 'basic stats', matching its retargeted synergy",
+    (id) => {
+      expect(getCharacterById(id)?.passive?.description).toContain("basic stats");
+    },
+  );
+
+  it.each(["seras", "batra"])("%s's passive still says 'all stats'", (id) => {
+    expect(getCharacterById(id)?.passive?.description).toContain("all stats");
   });
 });
