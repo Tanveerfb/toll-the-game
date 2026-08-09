@@ -85,7 +85,8 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
 - Work **batch by batch**; commit per batch with tests + lint + build green; update `docs/` in the same commit.
 - Use up-to-date packages; verify with context7 MCP, not training data. Firebase MCP has access to his account (project `toll-the-game`) for env/config.
-- He was burned by this project before ("more headaches than progression") — don't create friction: verify in-browser (Playwright MCP) before claiming done, keep the engine pure/testable.
+- He was burned by this project before ("more headaches than progression") — don't create friction: keep the engine pure/testable, and never claim done on something you haven't checked.
+- **Don't browser-verify UI work (2026-08-09).** Tanveer does the visual pass himself on his own dev server and reports issues one at a time; driving a browser to confirm what he's already looking at is wasted effort. `npm run check` (tsc + eslint + vitest) and a clean build stay mandatory — report what you actually verified rather than saying "browser-verified".
 - Repo history note: the repo was once "decommissioned" (`027843f`) and resurrected (`c3040f7`). If something looks deleted, check git history before recreating it.
 
 ## Dev Loop
