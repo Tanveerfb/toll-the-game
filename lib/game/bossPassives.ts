@@ -17,6 +17,17 @@ export function isBoss(char: { phases?: CharacterPhase[] }): boolean {
   return (char.phases?.length ?? 0) > 0;
 }
 
+/** Mechanics `applyBossTurnStart` resolves. Despite the `boss` prefix these
+ *  are encounter mechanics, not boss-exclusive ones — any enemy kit may
+ *  author them (the prefix predates that and isn't worth a rename across the
+ *  schema, Molvarr's kit and its tests). */
+const TURN_START_MECHANICS = new Set<Mechanic["type"]>([
+  "bossStatSpike",
+  "bossDebuffAtk",
+  "bossApplyCorrosion",
+  "bossMaxHpDrain",
+]);
+
 export function activePhase(char: BattleCharacter): CharacterPhase | undefined {
   return char.phases?.[char.phaseIndex ?? 0];
 }
@@ -115,17 +126,36 @@ export function applyBossTurnStart(
   let players = playerTeam;
 
   const enemies = enemyTeam.map((unit) => {
-    if (!isBoss(unit) || unit.currentHP <= 0 || unit.isSub) return unit;
+    if (unit.currentHP <= 0 || unit.isSub) return unit;
+
+    // A phased boss always runs — `phaseTurn` has to keep counting even for a
+    // boss whose only mechanic is `bossAutoSp`, since `bossForcedSpThisTurn`
+    // reads that counter.
+    //
+    // Beyond that, an ordinary enemy runs if it carries a turn-start mechanic.
+    // `activeBossMechanics` already falls back to a non-phased unit's single
+    // `passive`, but that fallback was unreachable from here while the gate
+    // was `isBoss` alone — so a mob could author one of these and it would
+    // silently never fire. Part 1's mobs use `bossStatSpike` as an anti-stall
+    // (Tanveer, 2026-08-09) and have no phases.
+    const mechs = activeBossMechanics(unit);
+    if (
+      !isBoss(unit) &&
+      !mechs.some((m) => TURN_START_MECHANICS.has(m.type))
+    ) {
+      return unit;
+    }
 
     const boss: BattleCharacter = {
       ...unit,
       buffs: [...unit.buffs],
       passiveState: { ...unit.passiveState },
     };
+    // For a phased boss this counts turns within the current phase; for a
+    // plain enemy there is only one "phase", so it counts enemy turns since
+    // the battle started — which is what "after turn N" means for them.
     const phaseTurn = ((boss.passiveState.phaseTurn as number) ?? 0) + 1;
     boss.passiveState.phaseTurn = phaseTurn;
-
-    const mechs = activeBossMechanics(boss);
 
     // 1. Stat spike first, so a same-turn debuff-ATK recompute keys off the
     //    already-doubled base ATK.

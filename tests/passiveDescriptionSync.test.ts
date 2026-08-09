@@ -25,6 +25,27 @@ function collectNumbers(value: unknown, acc: Set<number> = new Set()): Set<numbe
   return acc;
 }
 
+/**
+ * Percentages a mechanic *means* without literally storing them. `bossStatSpike`
+ * carries a multiplier (x3) while the description — and the badge the engine
+ * pushes onto the unit — states the increase (200%). Same number, different
+ * expression, so the raw-value sweep above would flag a correct description.
+ */
+function collectDerivedPercents(
+  mechanics: readonly unknown[] = [],
+  acc: Set<number> = new Set(),
+): Set<number> {
+  mechanics.forEach((mechanic) => {
+    if (!mechanic || typeof mechanic !== "object") return;
+    const m = mechanic as { type?: string; multiplier?: number };
+    if (m.type === "bossStatSpike") {
+      // Mirrors applyStatSpike's badge: valuePercent = (mult - 1) * 100.
+      acc.add(Math.round(((m.multiplier ?? 2) - 1) * 100));
+    }
+  });
+  return acc;
+}
+
 describe("passive description percentages stay in sync with mechanic data", () => {
   const characters = getAllCharacters();
 
@@ -38,6 +59,7 @@ describe("passive description percentages stay in sync with mechanic data", () =
 
     it(`${char.id}'s passive ("${passive.name}") description percentages are backed by real mechanic values`, () => {
       const pool = collectNumbers(passive.mechanics ?? []);
+      collectDerivedPercents(passive.mechanics ?? [], pool);
       percents.forEach((p) => {
         expect(
           pool.has(p),

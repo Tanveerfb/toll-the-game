@@ -80,6 +80,9 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 49. **Story repeat drops roll a range per entry** (2026-08-09): `{min, max}` inclusive — not fixed amounts, not a weighted table.
 50. **Story environment backgrounds are deferred** (2026-08-09): scene art is the biggest lever on "scenes look cheap", and Tanveer isn't committing the art direction yet. No generated plates, no blurred-character fallback, no stylised abstract backdrops. Don't add them unprompted.
 51. **Audio is music only, and Tanveer supplies it** (2026-08-09): background OST, no SFX of any kind — no battle sounds, no UI clicks, no text blips. The system shipped; `public/audio/` is empty and the game is silent by design until he adds the files listed in `docs/AUDIO.md`.
+52. **DoT default durations** (2026-08-09): Ignite lasts **3 turns** and Bleed **2**, unless a kit says otherwise (`lib/game/dotDurations.ts`). Descriptions state the duration automatically — it's derived from the mechanic by the translator, never authored into the prose, so text can't drift from data. Bleed is a flat 2 at every rank roster-wide; no kit scales it any more.
+53. **Ordinary story enemies are tanky, not deadly** (2026-08-09): low ATK, large HP pools, plus an anti-stall passive that triples their stats at turn 10 (`bossStatSpike`, multiplier 3) so a fight can't be stalled out. `applyBossTurnStart` runs for any enemy carrying a turn-start mechanic, not just phased bosses.
+54. **Story NPC copies are for encounter tuning** (2026-08-09): a `storyOnly` NPC kit may diverge from its playable twin in stats, multipliers and ultimate damage — that's why it exists. `lyra_npc` runs far lower multipliers than playable Lyra. Passives stay in sync.
 
 ## Working Style He Expects
 
@@ -114,7 +117,7 @@ npm run build   # must pass before commit
 
 See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old Phase 0–4 list below it).
 
-**Built and working:** battle engine, 27 kits, story Parts 1–2 (with rewards + per-chapter team modes), archive, auth + Firestore saves, battle cinematics, Kit Lab, Molvarr world boss, leveling/ascension/stamina/inventory, gacha (summon/banners/milestone pity/dupes), `/news` MDX patch notes. `npm run check` green — **638 tests across 60 files**, clean `next build` (44 routes).
+**Built and working:** battle engine, 27 kits, story Parts 1–2 (with rewards + per-chapter team modes), archive, auth + Firestore saves, battle cinematics, Kit Lab, Molvarr world boss, leveling/ascension/stamina/inventory, gacha (summon/banners/milestone pity/dupes), `/news` MDX patch notes. `npm run check` green — **665 tests across 61 files**, clean `next build` (44 routes).
 
 **Still missing (the whole gap):** audio, mobile layout pass, FTUE/tutorial, daily loop, analytics, deployment. `docs/PRODUCT_AUDIT.md` is the standing analysis — the fight is strong, the service layer around it is thin.
 

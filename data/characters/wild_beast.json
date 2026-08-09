@@ -3,11 +3,13 @@
   "name": "Wild Beast",
   "color": "green",
   "storyOnly": true,
-  "tags": ["Beast"],
+  "tags": [
+    "Beast"
+  ],
   "lore": "Predators of the deep wilderness where Duke trained alone for nine years. They do not test you. They collect you.",
   "atk": 130,
   "def": 40,
-  "hp": 700,
+  "hp": 2000,
   "skills": [
     {
       "skillName": "Savage Bite",
@@ -15,12 +17,16 @@
       "characterId": "wild_beast",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [140, 170, 210],
+      "damageRanked": [
+        140,
+        170,
+        210
+      ],
       "mechanics": [
         {
           "type": "bleed",
           "damagePercent": 50,
-          "duration": 1
+          "duration": 2
         }
       ]
     },
@@ -30,7 +36,11 @@
       "characterId": "wild_beast",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [110, 140, 180],
+      "damageRanked": [
+        110,
+        140,
+        180
+      ],
       "mechanics": [
         {
           "type": "debuff",
@@ -40,5 +50,18 @@
         }
       ]
     }
-  ]
+  ],
+  "passive": {
+    "name": "Cornered",
+    "description": "# On turn 10\n- Basic stats 200% 👆 (Uncancellable, Only once)",
+    "trigger": "always",
+    "triggerText": "On turn 10",
+    "mechanics": [
+      {
+        "type": "bossStatSpike",
+        "fromTurn": 10,
+        "multiplier": 3
+      }
+    ]
+  }
 }

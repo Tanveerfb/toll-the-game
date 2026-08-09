@@ -9,6 +9,7 @@ import { ultGaugeMax } from "./ultGauge";
 import { bossDamageMultiplierVsTarget } from "./bossPassives";
 import { getEffectiveCritResist, getEffectiveLifesteal } from "./substats";
 import { applyHeal } from "./heal";
+import { DEFAULT_BLEED_TURNS, DEFAULT_IGNITE_TURNS } from "./dotDurations";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
 import {
@@ -310,13 +311,30 @@ export function executeSkill(
       log(
         `${updatedSource.name}'s passive '${updatedSource.passive.name}' triggered!`,
       );
-      updatedSource.buffs.push({
-        type: "buff",
-        stat: "def",
-        valuePercent: 50,
-        buffDuration: 1,
-        unstackable: true,
-        uncancellable: true,
+      // Read the buff off the kit rather than hardcoding it. This used to push
+      // a literal `valuePercent: 50` while both Lyra kits authored 150, so the
+      // passive silently applied a third of its stated strength and no amount
+      // of editing the JSON changed anything (Tanveer, 2026-08-09).
+      const firstActionBuffs = (updatedSource.passive.mechanics ?? []).filter(
+        (m) => m.type === "buff",
+      );
+      const applied = firstActionBuffs.length > 0
+        ? firstActionBuffs
+        : // A kit with the trigger but no buff mechanic keeps the historical
+          // behaviour instead of silently doing nothing.
+          [{ stat: "def", valuePercent: 50, duration: 1 } as const];
+
+      applied.forEach((mech) => {
+        updatedSource.buffs.push({
+          type: "buff",
+          stat: mech.stat ?? "def",
+          valuePercent: mech.valuePercent,
+          value: "value" in mech ? mech.value : undefined,
+          buffDuration: mech.duration ?? 1,
+          unstackable: "unstackable" in mech ? mech.unstackable : true,
+          uncancellable: "uncancellable" in mech ? mech.uncancellable : true,
+          name: updatedSource.passive?.name,
+        });
       });
       updatedSource.passiveState.firstActionTriggeredThisTurn = true;
     }
@@ -911,15 +929,15 @@ export function executeSkill(
           );
           if (existing) {
             existing.stacks = (existing.stacks || 1) + (mech.stacks || 1);
-            existing.debuffDuration = mech.duration || 3;
+            existing.debuffDuration = mech.duration ?? DEFAULT_IGNITE_TURNS;
           } else
             updatedTarget.debuffs.push({
               type: "ignite",
               stacks: mech.stacks,
-              debuffDuration: mech.duration || 3,
+              debuffDuration: mech.duration ?? DEFAULT_IGNITE_TURNS,
             });
           targetEffects.push(
-            `applied ignite (${mech.stacks || 1} stack${(mech.stacks || 1) > 1 ? "s" : ""})${formatTurns(mech.duration || 3)}`,
+            `applied ignite (${mech.stacks || 1} stack${(mech.stacks || 1) > 1 ? "s" : ""})${formatTurns(mech.duration ?? DEFAULT_IGNITE_TURNS)}`,
           );
         }
         if (mech.type === "lowerUltGauge") {
@@ -954,7 +972,7 @@ export function executeSkill(
           const bleedDmg = Math.floor(
             dealtDamage * ((mech.damagePercent || 90) / 100),
           );
-          const bleedDuration = mech.duration ?? 1;
+          const bleedDuration = mech.duration ?? DEFAULT_BLEED_TURNS;
           if (bleedDmg > 0 && bleedDuration > 0) {
             updatedTarget.debuffs.push({
               type: "damageOverTime",

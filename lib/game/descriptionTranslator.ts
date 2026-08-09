@@ -1,4 +1,5 @@
 import type { CharacterSkillData } from "@/lib/game/characterCatalog";
+import { resolveDotDuration } from "@/lib/game/dotDurations";
 
 const TARGET_PATTERN =
   /\bto\s+(?:1|one|all)\s+enemies?\b|\bto\s+a\s+single\s+enemy\b/i;
@@ -304,6 +305,48 @@ function injectDamagePercent(
     );
 }
 
+/**
+ * Appends "for N turns" to an Ignite or Bleed mention that doesn't already
+ * state one.
+ *
+ * These descriptions are hand-authored strings ("applies Ignite.", "Bleed."),
+ * so the duration was simply never stated — the player had no way to know an
+ * Ignite lasts 3 turns and a Bleed 2 (Tanveer, 2026-08-09). Deriving it from
+ * the mechanic rather than editing every kit's prose means the text can't
+ * drift from the data, and it covers every current and future proc for free.
+ *
+ * Skipped when the author already wrote a duration, so a hand-written phrasing
+ * always wins.
+ */
+function annotateDotDurations(
+  description: string,
+  skill: CharacterSkillData,
+  rankIndex: number,
+): string {
+  const mechanics = getMechanics(skill);
+  let text = description;
+
+  (["ignite", "bleed"] as const).forEach((type) => {
+    const mechanic = mechanics.find((m) => m.type === type);
+    if (!mechanic) return;
+    const turns = resolveDotDuration(mechanic, rankIndex);
+    if (turns <= 0) return;
+
+    const label = type === "ignite" ? "Ignite" : "Bleed";
+    // (?!...) — leave any mention the author already qualified alone.
+    const pattern = new RegExp(
+      `\\b${label}\\b(?!\\s+for\\s+\\d+\\s+turns?)`,
+      "i",
+    );
+    text = text.replace(
+      pattern,
+      `${label} for ${turns} turn${turns > 1 ? "s" : ""}`,
+    );
+  });
+
+  return text;
+}
+
 function ensureTargetText(text: string, targetText?: string): string {
   if (!targetText || TARGET_PATTERN.test(text)) {
     return text;
@@ -340,6 +383,7 @@ export function buildDescriptionForRank(
     );
   }
 
+  description = annotateDotDurations(description, skill, rankIndex);
   description = ensureTargetText(description, inferTargetFromMechanics(skill));
   description = removeDuplicateTarget(description);
 

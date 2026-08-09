@@ -2,7 +2,12 @@
   "id": "leorio",
   "name": "Leorio Paradinight",
   "color": "red",
-  "tags": ["Collab", "Human", "Male", "Hunter x Hunter"],
+  "tags": [
+    "Collab",
+    "Human",
+    "Male",
+    "Hunter x Hunter"
+  ],
   "lore": "Aspiring doctor and member of the Zodiacs. Nen type: Emitter. Collab unit.",
   "atk": 183,
   "def": 92,
@@ -14,33 +19,61 @@
       "characterId": "leorio",
       "type": "buff",
       "statMultiplier": "atk",
-      "damageRanked": [0, 0, 0],
+      "damageRanked": [
+        0,
+        0,
+        0
+      ],
       "mechanics": [
         {
           "type": "aoeRanked",
-          "ranks": [false, true, true]
+          "ranks": [
+            false,
+            true,
+            true
+          ]
         },
         {
           "type": "buff",
           "stat": "atk",
-          "valueRanked": [15, 25, 40],
-          "durationRanked": [1, 1, 2]
+          "valueRanked": [
+            15,
+            25,
+            40
+          ],
+          "durationRanked": [
+            1,
+            1,
+            2
+          ]
         },
         {
           "type": "buff",
           "stat": "def",
-          "valueRanked": [15, 25, 40],
-          "durationRanked": [1, 1, 2]
+          "valueRanked": [
+            15,
+            25,
+            40
+          ],
+          "durationRanked": [
+            1,
+            1,
+            2
+          ]
         }
       ]
     },
     {
       "skillName": "Switchblade Attack",
-      "description": "Does Pierce damage equal to ATK-scaled to one enemy; applies Bleed for [bleed.duration] turn(s).",
+      "description": "Does Pierce damage equal to ATK-scaled to one enemy; applies Bleed.",
       "characterId": "leorio",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [195, 240, 300],
+      "damageRanked": [
+        195,
+        240,
+        300
+      ],
       "mechanics": [
         {
           "type": "pierce"
@@ -48,7 +81,7 @@
         {
           "type": "bleed",
           "damagePercent": 90,
-          "durationRanked": [1, 1, 2]
+          "duration": 2
         }
       ]
     }
@@ -78,14 +111,19 @@
     "mechanics": [
       {
         "type": "characterSynergy",
-        "requiredCharacterIds": ["gon", "killua"],
+        "requiredCharacterIds": [
+          "gon",
+          "killua"
+        ],
         "stat": "all",
         "valuePercent": 10,
         "bothAliveBonusPercent": 10
       },
       {
         "type": "synergy",
-        "conditionTags": ["Collab"],
+        "conditionTags": [
+          "Collab"
+        ],
         "stat": "all",
         "valuePercent": 5,
         "flatBonus": true

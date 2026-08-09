@@ -227,6 +227,94 @@ describe("bossStatSpike (turn-10 x2, once)", () => {
   });
 });
 
+describe("turn-start passives on ordinary (non-phased) enemies", () => {
+  /** A plain enemy kit — no phases — carrying the mechanic on its single
+   *  `passive`. Part 1's mobs are shaped exactly like this. */
+  const mob = (over: Partial<BattleCharacter> = {}) =>
+    char({
+      team: "enemy",
+      atk: 150,
+      def: 50,
+      hp: 2400,
+      currentHP: 2400,
+      currentAttack: 150,
+      currentDefense: 50,
+      passive: {
+        name: "Cornered",
+        description: "# On turn 10\n- Basic stats 200% 👆",
+        trigger: "always",
+        mechanics: [{ type: "bossStatSpike", fromTurn: 10, multiplier: 3 }],
+      },
+      ...over,
+    } as Partial<BattleCharacter>);
+
+  it("fires the spike for an enemy with no phases at all", () => {
+    // The engine used to gate this on `isBoss`, so a mob's passive silently
+    // never ran.
+    let m = mob({ passiveState: { phaseTurn: 9 }, currentHP: 300 });
+    m = applyBossTurnStart([m], [char()], noop).enemyTeam[0];
+    expect(m.atk).toBe(450);
+    expect(m.def).toBe(150);
+    expect(m.hp).toBe(7200);
+    expect(m.currentHP).toBe(900); // a nearly-dead staller comes back
+    expect(m.passiveState.statSpikeDone).toBe(true);
+  });
+
+  it("does not fire before its turn", () => {
+    let m = mob({ passiveState: { phaseTurn: 8 } });
+    m = applyBossTurnStart([m], [char()], noop).enemyTeam[0];
+    expect(m.atk).toBe(150);
+    expect(m.passiveState.statSpikeDone).toBeUndefined();
+  });
+
+  it("counts enemy turns from the start of the battle", () => {
+    let m = mob();
+    for (let turn = 1; turn <= 9; turn++) {
+      m = applyBossTurnStart([m], [char()], noop).enemyTeam[0];
+      expect(m.atk).toBe(150);
+    }
+    m = applyBossTurnStart([m], [char()], noop).enemyTeam[0]; // turn 10
+    expect(m.atk).toBe(450);
+  });
+
+  it("records a 200% badge for a x3 multiplier", () => {
+    let m = mob({ passiveState: { phaseTurn: 9 } });
+    m = applyBossTurnStart([m], [char()], noop).enemyTeam[0];
+    const badge = m.buffs.find((b) => b.stat === "all");
+    expect(badge?.valuePercent).toBe(200);
+    expect(badge?.uncancellable).toBe(true);
+  });
+
+  it("leaves an enemy with no turn-start mechanics untouched", () => {
+    const plain = char({ team: "enemy" });
+    const out = applyBossTurnStart([plain], [char()], noop).enemyTeam[0];
+    expect(out).toBe(plain); // same reference — no needless copy
+    expect(out.passiveState.phaseTurn).toBeUndefined();
+  });
+
+  it("skips the dead and the benched", () => {
+    const dead = mob({ currentHP: 0, passiveState: { phaseTurn: 9 } });
+    const benched = mob({ isSub: true, passiveState: { phaseTurn: 9 } });
+    const res = applyBossTurnStart([dead, benched], [char()], noop).enemyTeam;
+    expect(res[0].atk).toBe(150);
+    expect(res[1].atk).toBe(150);
+  });
+});
+
+describe("Part 1 mobs carry the anti-stall passive", () => {
+  it.each(["raider", "wild_beast", "road_bandit"])(
+    "%s spikes at turn 10",
+    (id) => {
+      const kit = getCharacterById(id);
+      const spike = kit?.passive?.mechanics?.find(
+        (m) => m.type === "bossStatSpike",
+      );
+      expect(spike).toBeDefined();
+      expect(spike).toMatchObject({ fromTurn: 10, multiplier: 3 });
+    },
+  );
+});
+
 describe("heal missingHpPercent (SP Skill)", () => {
   it("heals 30% of diminished HP", () => {
     const healer = char({
@@ -388,5 +476,68 @@ describe("Molvarr kit loads from data", () => {
     expect(phases).toHaveLength(2);
     expect(phases![0].spSkill?.skillName).toBe("Devour the Tide");
     expect(phases![1].spSkill?.skillName).toBe("Iron Carapace");
+  });
+});
+
+describe("onFirstAction reads the buff from the kit", () => {
+  const lyraish = (mechanics: unknown[]) =>
+    char({
+      instanceId: "L",
+      team: "enemy",
+      def: 100,
+      currentDefense: 100,
+      passive: {
+        name: "First Action: Unbreakable Ice",
+        trigger: "onFirstAction",
+        mechanics,
+      },
+      skills: [] as unknown as BattleCharacter["skills"],
+    } as Partial<BattleCharacter>);
+
+  const strike: SkillCard = {
+    skillName: "Poke",
+    characterId: "L",
+    type: "attack",
+    statMultiplier: "atk",
+    damageRanked: [100, 100, 100],
+    mechanics: [],
+  };
+
+  it("applies the kit's stated percentage, not a hardcoded 50", () => {
+    // The engine used to push a literal valuePercent: 50 while both Lyra kits
+    // authored 150, so editing the JSON changed nothing.
+    const lyra = lyraish([
+      { type: "buff", stat: "def", valuePercent: 150, duration: 1 },
+    ]);
+    const target = char({ instanceId: "T", team: "player" });
+    const res = executeSkill(
+      { sourceInstanceId: "L", skill: strike, targetInstanceId: "T" },
+      { playerTeam: [target], enemyTeam: [lyra] },
+      noop,
+    );
+    const buff = res.enemyTeam[0].buffs.find((b) => b.stat === "def");
+    expect(buff?.valuePercent).toBe(150);
+    expect(buff?.buffDuration).toBe(1);
+    expect(buff?.uncancellable).toBe(true);
+  });
+
+  it("keeps the historical 50% for a kit with the trigger but no buff mechanic", () => {
+    const lyra = lyraish([]);
+    const target = char({ instanceId: "T", team: "player" });
+    const res = executeSkill(
+      { sourceInstanceId: "L", skill: strike, targetInstanceId: "T" },
+      { playerTeam: [target], enemyTeam: [lyra] },
+      noop,
+    );
+    expect(res.enemyTeam[0].buffs.find((b) => b.stat === "def")?.valuePercent).toBe(50);
+  });
+
+  it("both Lyra kits author the same 150% DEF passive", () => {
+    const playable = getCharacterById("lyra");
+    const npc = getCharacterById("lyra_npc");
+    const pct = (c: typeof playable) =>
+      c?.passive?.mechanics?.find((m) => m.type === "buff")?.valuePercent;
+    expect(pct(playable)).toBe(150);
+    expect(pct(npc)).toBe(150);
   });
 });
