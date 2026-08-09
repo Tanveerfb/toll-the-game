@@ -127,6 +127,71 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 - **Fixes (2026-07-12/13)** — Mustafa's Earth Stance: Fortress is a team-wide (aoe) DR stance, no ally pick; single-target attacks retarget to a living enemy when their marked target died mid-queue (focus-fire no longer wastes cards on a corpse).
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
 
+## Session log — 2026-08-09: decisions, reversals and dead ends
+
+Recorded because a future session cannot infer *why we didn't do X* from silence.
+Everything here was decided live with Tanveer; don't re-litigate or re-attempt.
+
+### Rejected outright
+
+- **Duke's S2 replacement.** Four options were proposed — weakpoint (×3 vs a
+  debuffed target), ult-gauge drain, cancel-buffs, rupture. Tanveer rejected all
+  four: *"weak point would be too powerful and others are not good enough."* He
+  specified the replacement himself (self-buff then strike), which became
+  **Surge**. Don't re-pitch those four.
+- **SFX of any kind.** Audio is music only, supplied by him. No battle sounds,
+  no UI clicks, no text blips (ruling #51).
+- **Story environment backgrounds.** Deferred by his call — they are the biggest
+  lever on "scenes look cheap" but the art direction isn't settled. No generated
+  plates, no blurred-character fallback, no stylised backdrops (ruling #50).
+- **Navigation depth.** Offered as one of four candidate story-UX problems; he
+  explicitly dismissed it. Part → chapter → brief stays.
+
+### Reversed mid-session (the second answer is current)
+
+- **Text reveal:** character-by-character typewriter → **per-word over final
+  layout**. Not a speed problem — slicing the string reflows the paragraph and
+  leaves the eye on half-words. No ms/char value fixes it.
+- **"Flowing Ruin is overtuned"** → **retracted**. Drawn from a 1v1 duel, where
+  Duke's cards are ~100% of the hand; in 4v4 they're ~25% and his empowerment
+  fires 4× less often. He is a 1v1 specialist, mid-pack in a team. No nerf.
+- **Substat modifiers:** multiplicative → **additive percentage points**. This
+  reverses a "2026-07-24 ruling" recorded in `substats.ts` and locked by a test;
+  Tanveer's read is that it predates the substat system existing.
+- **Synergy targeting:** `stat: "all"` → **basic stats**, except Seras and Batra.
+  Applied after "all" was made to reach substats, which would otherwise have
+  handed every synergy a large hidden substat buff.
+- **Duke's Surge multipliers:** 400% R3 → **335%**. At 400 an empowered R3 hit
+  2276, beating his own bare ultimate (2175) and breaking ruling #2.
+
+### Tuned by iteration (final values only — intermediate ones are not meaningful)
+
+- **Lyra (`lyra_npc`)**: target went 8 turns → **~4 turns**; ATK 250 → 50 → 140;
+  HP 3300 → 4800 → 7000 → **8000**; multipliers cut then restored to the midpoint
+  between mob and playable. Final fight: Duke wins turn 4 on 215/1500.
+- **Part 1 mobs**: ~3× health, ATK untouched — longer fights, not deadlier ones.
+
+### Deviations from what was originally specced
+
+- The duel spec's `state.md` was specified without opponent kits or scheduled
+  behaviour. Tanveer asked for full kit visibility ("you should have kits of your
+  own characters in mind too"), so it now carries both sides' kits, the active
+  phase for a boss, and when forced SP / stat spikes fire.
+- Story rewards: a first clear grants the one-time bundle **and** a drop roll.
+  Flagged as an assumption at the time; never overruled, so it stands.
+
+### Unverified / assumed
+
+- **Duel mode has only been played twice, both 1v1 practice-shaped story
+  fights.** Never exercised in 3v1, 3v3 or 4v4, never against a phased boss, and
+  the forced-SP interaction with a Claude-controlled turn is untested live.
+- **Isolde's lifesteal aura fix has not been playtested** — proven by unit test
+  only. Same for the max-HP unwind on expiry and HP-shrinking debuffs (no kit
+  authors one yet).
+- **Lyra's second-fight variant (`lyra_npc_2`) has not been played.**
+- Everything since 2026-08-09's presentation batch is verified by types, lint,
+  tests and a clean build — **not** by browser. Tanveer does the visual pass now.
+
 ## Open Issues
 
 | # | Issue | Where | Severity |
