@@ -39,8 +39,16 @@
         }
       ],
       "battle": {
-        "playerTeam": [{ "id": "duke" }],
-        "enemyTeam": [{ "id": "lyra_npc" }]
+        "playerTeam": [
+          {
+            "id": "duke"
+          }
+        ],
+        "enemyTeam": [
+          {
+            "id": "lyra_npc"
+          }
+        ]
       },
       "outro": [
         {
@@ -55,7 +63,30 @@
         {
           "text": "Then looks at her. Neither speaks. Both have seen the other's ceiling — and neither knows where it actually ends."
         }
-      ]
+      ],
+      "teamMode": "canon",
+      "rewards": {
+        "firstClear": {
+          "gems": 75,
+          "coin": 2500,
+          "materials": {
+            "training_manual": 3
+          }
+        },
+        "repeat": {
+          "coin": {
+            "min": 500,
+            "max": 1200
+          },
+          "materials": {
+            "training_manual": {
+              "min": 1,
+              "max": 2
+            }
+          }
+        },
+        "replayStamina": 6
+      }
     },
     {
       "id": "p2c2",
@@ -72,8 +103,16 @@
         }
       ],
       "battle": {
-        "playerTeam": [{ "id": "duke" }],
-        "enemyTeam": [{ "id": "lyra_npc" }]
+        "playerTeam": [
+          {
+            "id": "duke"
+          }
+        ],
+        "enemyTeam": [
+          {
+            "id": "lyra_npc"
+          }
+        ]
       },
       "outro": [
         {
@@ -147,7 +186,30 @@
           "portraitId": "duke",
           "text": "Duke. Likewise."
         }
-      ]
+      ],
+      "teamMode": "canon",
+      "rewards": {
+        "firstClear": {
+          "gems": 75,
+          "coin": 2500,
+          "materials": {
+            "training_manual": 3
+          }
+        },
+        "repeat": {
+          "coin": {
+            "min": 500,
+            "max": 1200
+          },
+          "materials": {
+            "training_manual": {
+              "min": 1,
+              "max": 2
+            }
+          }
+        },
+        "replayStamina": 6
+      }
     }
   ]
 }

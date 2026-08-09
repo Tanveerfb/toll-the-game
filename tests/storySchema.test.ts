@@ -23,6 +23,15 @@ const validPart = {
         enemyTeam: [{ id: "wild_beast" }],
       },
       outro: [{ speaker: "Narrator", text: "Closing narration." }],
+      teamMode: "canon",
+      rewards: {
+        firstClear: { gems: 50, coin: 1500, materials: { training_manual: 2 } },
+        repeat: {
+          coin: { min: 300, max: 800 },
+          materials: { training_manual: { min: 0, max: 2 } },
+        },
+        replayStamina: 5,
+      },
     },
   ],
 };
@@ -64,6 +73,64 @@ describe("story part validation (fail loudly at load, same as kits)", () => {
     const broken = structuredClone(validPart);
     broken.chapters[0].battle.playerTeam = [];
     expect(() => validateStoryParts([broken])).toThrow(/test_part/);
+  });
+
+  it("rejects a chapter with no teamMode — a silent default hides an unfinished chapter", () => {
+    const broken = structuredClone(validPart) as Record<string, unknown>;
+    delete (broken.chapters as Record<string, unknown>[])[0].teamMode;
+    expect(() => validateStoryParts([broken])).toThrow(/test_part.*teamMode/);
+  });
+
+  it("rejects an unknown teamMode", () => {
+    const broken = structuredClone(validPart);
+    (broken.chapters[0] as Record<string, unknown>).teamMode = "coop";
+    expect(() => validateStoryParts([broken])).toThrow(/test_part.*teamMode/);
+  });
+
+  it("rejects a chapter with no rewards block", () => {
+    const broken = structuredClone(validPart) as Record<string, unknown>;
+    delete (broken.chapters as Record<string, unknown>[])[0].rewards;
+    expect(() => validateStoryParts([broken])).toThrow(/test_part.*rewards/);
+  });
+
+  it("rejects a drop range whose min exceeds its max", () => {
+    const broken = structuredClone(validPart);
+    broken.chapters[0].rewards.repeat.coin = { min: 900, max: 100 };
+    expect(() => validateStoryParts([broken])).toThrow(/test_part.*coin/);
+  });
+
+  it("rejects a negative replay stamina cost", () => {
+    const broken = structuredClone(validPart);
+    broken.chapters[0].rewards.replayStamina = -1;
+    expect(() => validateStoryParts([broken])).toThrow(
+      /test_part.*replayStamina/,
+    );
+  });
+
+  it("rejects a replay cost the stamina bar can never reach", () => {
+    const broken = structuredClone(validPart);
+    broken.chapters[0].rewards.replayStamina = 999;
+    expect(() => validateStoryParts([broken])).toThrow(
+      /test_part.*replayStamina/,
+    );
+  });
+
+  it("rejects an unknown material id in the first-clear bundle", () => {
+    const broken = structuredClone(validPart);
+    // The fixture's literal type pins the known material keys; the point of
+    // the test is data that never went through TypeScript in the first place.
+    broken.chapters[0].rewards.firstClear.materials = {
+      dragon_scale: 1,
+    } as unknown as typeof broken.chapters[0]["rewards"]["firstClear"]["materials"];
+    expect(() => validateStoryParts([broken])).toThrow(/test_part.*materials/);
+  });
+
+  it("rejects an unknown material id in the repeat drops", () => {
+    const broken = structuredClone(validPart);
+    broken.chapters[0].rewards.repeat.materials = {
+      dragon_scale: { min: 1, max: 2 },
+    } as unknown as typeof broken.chapters[0]["rewards"]["repeat"]["materials"];
+    expect(() => validateStoryParts([broken])).toThrow(/test_part.*materials/);
   });
 });
 

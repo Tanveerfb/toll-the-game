@@ -40,8 +40,19 @@
         }
       ],
       "battle": {
-        "playerTeam": [{ "id": "duke" }],
-        "enemyTeam": [{ "id": "raider" }, { "id": "raider" }]
+        "playerTeam": [
+          {
+            "id": "duke"
+          }
+        ],
+        "enemyTeam": [
+          {
+            "id": "raider"
+          },
+          {
+            "id": "raider"
+          }
+        ]
       },
       "outro": [
         {
@@ -56,7 +67,30 @@
           "speaker": "Narrator",
           "text": "He was seventeen years old."
         }
-      ]
+      ],
+      "teamMode": "canon",
+      "rewards": {
+        "firstClear": {
+          "gems": 50,
+          "coin": 1500,
+          "materials": {
+            "training_manual": 2
+          }
+        },
+        "repeat": {
+          "coin": {
+            "min": 300,
+            "max": 800
+          },
+          "materials": {
+            "training_manual": {
+              "min": 0,
+              "max": 2
+            }
+          }
+        },
+        "replayStamina": 5
+      }
     },
     {
       "id": "p1c2",
@@ -74,8 +108,16 @@
         }
       ],
       "battle": {
-        "playerTeam": [{ "id": "duke" }],
-        "enemyTeam": [{ "id": "wild_beast" }]
+        "playerTeam": [
+          {
+            "id": "duke"
+          }
+        ],
+        "enemyTeam": [
+          {
+            "id": "wild_beast"
+          }
+        ]
       },
       "outro": [
         {
@@ -86,7 +128,30 @@
           "speaker": "Narrator",
           "text": "Toll awakens when the body spends it without permission. When survival demands more than a person has. Duke didn't unlock it. He wore the lock down."
         }
-      ]
+      ],
+      "teamMode": "canon",
+      "rewards": {
+        "firstClear": {
+          "gems": 50,
+          "coin": 1500,
+          "materials": {
+            "training_manual": 2
+          }
+        },
+        "repeat": {
+          "coin": {
+            "min": 300,
+            "max": 800
+          },
+          "materials": {
+            "training_manual": {
+              "min": 0,
+              "max": 2
+            }
+          }
+        },
+        "replayStamina": 5
+      }
     },
     {
       "id": "p1c3",
@@ -104,15 +169,49 @@
         }
       ],
       "battle": {
-        "playerTeam": [{ "id": "duke" }],
-        "enemyTeam": [{ "id": "wild_beast" }, { "id": "wild_beast" }]
+        "playerTeam": [
+          {
+            "id": "duke"
+          }
+        ],
+        "enemyTeam": [
+          {
+            "id": "wild_beast"
+          },
+          {
+            "id": "wild_beast"
+          }
+        ]
       },
       "outro": [
         {
           "speaker": "Narrator",
           "text": "He trained for nine years. Not to become a fighter. He already was one. He trained because standing still felt like surrender."
         }
-      ]
+      ],
+      "teamMode": "canon",
+      "rewards": {
+        "firstClear": {
+          "gems": 50,
+          "coin": 1500,
+          "materials": {
+            "training_manual": 2
+          }
+        },
+        "repeat": {
+          "coin": {
+            "min": 300,
+            "max": 800
+          },
+          "materials": {
+            "training_manual": {
+              "min": 0,
+              "max": 2
+            }
+          }
+        },
+        "replayStamina": 5
+      }
     },
     {
       "id": "p1c4",
@@ -134,8 +233,19 @@
         }
       ],
       "battle": {
-        "playerTeam": [{ "id": "duke" }],
-        "enemyTeam": [{ "id": "road_bandit" }, { "id": "road_bandit" }]
+        "playerTeam": [
+          {
+            "id": "duke"
+          }
+        ],
+        "enemyTeam": [
+          {
+            "id": "road_bandit"
+          },
+          {
+            "id": "road_bandit"
+          }
+        ]
       },
       "outro": [
         {
@@ -150,7 +260,30 @@
           "speaker": "Narrator",
           "text": "It's the door."
         }
-      ]
+      ],
+      "teamMode": "canon",
+      "rewards": {
+        "firstClear": {
+          "gems": 50,
+          "coin": 1500,
+          "materials": {
+            "training_manual": 2
+          }
+        },
+        "repeat": {
+          "coin": {
+            "min": 300,
+            "max": 800
+          },
+          "materials": {
+            "training_manual": {
+              "min": 0,
+              "max": 2
+            }
+          }
+        },
+        "replayStamina": 5
+      }
     }
   ]
 }

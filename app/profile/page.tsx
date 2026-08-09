@@ -11,14 +11,11 @@ import { usePlayerStore, getCharacterProgress } from "@/store/playerStore";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { getCurrentStamina, STAMINA_CAP } from "@/lib/game/stamina";
 import DevGrantPanel from "@/components/game/DevGrantPanel";
-
-const MATERIAL_LABELS: Record<string, string> = {
-  sea_monster_eye: "Sea Monster's Eye",
-  corroded_seaweed: "Corroded Sea Weed",
-  training_manual: "Training Manual",
-  training_manual_advanced: "Advanced Training Manual",
-  training_manual_premium: "Premium Training Manual",
-};
+// Moved to lib/game/materials.ts so the story reward schema can validate
+// authored material ids against the same list this page renders. Now covers
+// the gacha's local-specialty materials too, which a player could own but
+// this page never showed.
+import { MATERIAL_LABELS } from "@/lib/game/materials";
 
 export default function ProfilePage() {
   const { user, loading, logout } = useAuth();

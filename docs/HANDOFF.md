@@ -72,6 +72,11 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 42. **Damage modifiers shape direct hits only** (2026-07-11): damageDealt/damageReduction apply to attacks and counters; DoT ticks (Shock, Bleed, Decay, Ignite) use the damage locked in at application and are NOT modified. Confirmed current behavior.
 43. **Victory fizzles the remaining queue** (2026-07-11): once the last enemy dies mid-queue, the leftover queued cards are discarded — no Momentum, no ult gauge, straight to the win screen.
 44. **Zero-value clauses are hidden** (2026-07-11, closes old STATUS #16): a description clause whose ranked placeholder resolves to 0 at the current rank is dropped entirely — a rank-1 Lightning Palm doesn't mention the stun; rank 2+ does (`dropZeroValueClauses` in the translator, clauses = ruling #28 semicolon segments).
+45. **Story team agency is per chapter** (2026-08-09): every chapter declares `teamMode` — `canon` (exactly the authored team, no picker), `anchored` (canon leads fixed, player fills the rest), or `free` (player brings 1–4 owned units, canon team as prefill). Parts 1–2 stay `canon` as authored. Canon anchors are playable **regardless of ownership** — a fresh account is never locked out of its own story.
+46. **Story reward model** (2026-08-09): a one-time `firstClear` bundle plus `repeat` drops, with the drop roll happening on every clear, first clear included. No mission-objective layer this batch.
+47. **Story payout mix** (2026-08-09): repeat drops are `coin` + `training_manual` tiers; `gems` are first-clear-only; ascension materials (`sea_monster_eye`, `corroded_seaweed`) stay world-boss exclusive. Story is the levelling-fuel farm; the boss is the gacha-currency and ascension farm.
+48. **Stamina gates story replays only** (2026-08-09): an uncleared chapter is free however many attempts it takes — the narrative can never be stamina-locked. Replaying a cleared chapter for drops costs `replayStamina`.
+49. **Story repeat drops roll a range per entry** (2026-08-09): `{min, max}` inclusive — not fixed amounts, not a weighted table.
 
 ## Working Style He Expects
 
@@ -105,11 +110,15 @@ npm run build   # must pass before commit
 
 See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old Phase 0–4 list below it).
 
-**Built and working:** battle engine, 27 kits, story Parts 1–2, archive, auth + Firestore saves, battle cinematics, Kit Lab, Molvarr world boss, leveling/ascension/stamina/inventory, gacha (summon/banners/milestone pity/dupes), `/news` MDX patch notes. `npm run check` green — **564 tests across 56 files**, clean `next build` (44 routes).
+**Built and working:** battle engine, 27 kits, story Parts 1–2 (with rewards + per-chapter team modes), archive, auth + Firestore saves, battle cinematics, Kit Lab, Molvarr world boss, leveling/ascension/stamina/inventory, gacha (summon/banners/milestone pity/dupes), `/news` MDX patch notes. `npm run check` green — **597 tests across 58 files**, clean `next build` (44 routes).
 
 **Still missing (the whole gap):** audio, mobile layout pass, FTUE/tutorial, daily loop, analytics, deployment. `docs/PRODUCT_AUDIT.md` is the standing analysis — the fight is strong, the service layer around it is thin.
 
-**Last completed work — UX overhaul, 5 batches (2026-08-04).** From a full project audit; details per batch are in `docs/STATUS.md`, UI conventions they established are in `ARCHITECTURE.md` → "UI Layer Conventions".
+**Last completed work — story rewards + team agency (2026-08-09).** Story chapters now pay out (first-clear bundle + range-rolled repeat drops), gate replays behind stamina while leaving uncleared attempts free, and carry a per-chapter `teamMode`. Full detail in `docs/STATUS.md`; design decisions are rulings #45–49 above; spec at `docs/superpowers/specs/2026-08-09-story-rewards-and-team-agency-design.md`.
+
+**All story reward numbers are placeholders awaiting Tanveer.** They live in `data/story/*.json` (`rewards.firstClear`, `rewards.repeat`, `rewards.replayStamina`) and were derived from the world-boss payout and summon costs, not chosen by him. Same for `teamMode`: Parts 1–2 ship `canon`, and opening a chapter up is a one-word edit.
+
+**Previously — UX overhaul, 5 batches (2026-08-04).** From a full project audit; details per batch are in `docs/STATUS.md`, UI conventions they established are in `ARCHITECTURE.md` → "UI Layer Conventions".
 
 1. Homepage → game hub (live player HUD, tiered mode cards, `lib/nav/routes.ts` shared with TopNav).
 2. Enemy inspection in battle + `UnitDetailPanel` relaid out to fit one screen; `BattleArena.tsx` 1964 → ~1020 lines.

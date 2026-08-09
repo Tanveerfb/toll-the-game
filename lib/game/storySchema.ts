@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { getCharacterById } from "@/lib/game/characterCatalog";
+import { isKnownMaterial } from "@/lib/game/materials";
+import { STAMINA_CAP } from "@/lib/game/stamina";
 import type { StoryPart } from "@/types/story";
 
 const sceneSchema = z.object({
@@ -14,6 +16,45 @@ const teamPickSchema = z.object({
   isSub: z.boolean().optional(),
 });
 
+const dropRangeSchema = z
+  .object({
+    min: z.number().int().nonnegative(),
+    max: z.number().int().nonnegative(),
+  })
+  .refine((range) => range.min <= range.max, {
+    message: "drop range min must be <= max",
+  });
+
+/** Material ids are validated against the canonical registry — an unvalidated
+ *  typo becomes a silent inventory key that nothing displays and nothing
+ *  spends. */
+const materialAmountsSchema = z
+  .record(z.string().min(1), z.number().int().nonnegative())
+  .refine((materials) => Object.keys(materials).every(isKnownMaterial), {
+    message: "unknown material id",
+  });
+
+const materialRangesSchema = z
+  .record(z.string().min(1), dropRangeSchema)
+  .refine((materials) => Object.keys(materials).every(isKnownMaterial), {
+    message: "unknown material id",
+  });
+
+const rewardsSchema = z.object({
+  firstClear: z.object({
+    gems: z.number().int().nonnegative().optional(),
+    coin: z.number().int().nonnegative().optional(),
+    permanentTicket: z.number().int().nonnegative().optional(),
+    materials: materialAmountsSchema.optional(),
+  }),
+  repeat: z.object({
+    coin: dropRangeSchema.optional(),
+    materials: materialRangesSchema.optional(),
+  }),
+  // A replay cost the bar can never reach would be an unplayable chapter.
+  replayStamina: z.number().int().nonnegative().max(STAMINA_CAP),
+});
+
 const chapterSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
@@ -23,6 +64,8 @@ const chapterSchema = z.object({
     enemyTeam: z.array(teamPickSchema).min(1).max(4),
   }),
   outro: z.array(sceneSchema),
+  teamMode: z.enum(["canon", "anchored", "free"]),
+  rewards: rewardsSchema,
 });
 
 const partSchema = z.object({

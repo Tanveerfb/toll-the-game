@@ -16,6 +16,7 @@ import {
   resetPermanentLap,
 } from "@/lib/gacha/milestone";
 import { resolvePullResult } from "@/lib/gacha/dupes";
+import type { StoryPayout } from "@/lib/game/storyRewards";
 import { getPlayableCharacters } from "@/lib/game/characterCatalog";
 
 const LIMITED_COST_SINGLE = 3;
@@ -55,6 +56,7 @@ export interface PlayerState {
   feedManualToCharacter: (characterId: string, manualTier: ManualTier) => boolean;
   ascendCharacter: (characterId: string) => boolean;
   grantWorldBossRewards: (rewards: WorldBossRewards) => void;
+  grantStoryRewards: (payout: StoryPayout) => void;
   pullLimited: (count: 1 | 11) => PullOutcome[] | false;
   pullPermanent: (count: 1 | 11) => PullOutcome[] | false;
   claimLimited300: () => PullOutcome | false;
@@ -79,6 +81,7 @@ export type PersistedPlayerData = Omit<
   | "feedManualToCharacter"
   | "ascendCharacter"
   | "grantWorldBossRewards"
+  | "grantStoryRewards"
   | "pullLimited"
   | "pullPermanent"
   | "claimLimited300"
@@ -268,6 +271,15 @@ export const usePlayerStore = create<PlayerState>()(
       grantWorldBossRewards: (rewards) => {
         const { coin, gems, permanentTicket, ...materials } = rewards;
         get().grantMaterials(materials);
+        if (coin || gems || permanentTicket) get().grantCurrency({ coin, gems, permanentTicket });
+      },
+
+      /** Story clear payout. Same split as the world boss above, but the
+       *  materials arrive as an open map rather than fixed keys — story
+       *  chapters author their own drop table in `data/story/*.json`. */
+      grantStoryRewards: (payout) => {
+        const { coin, gems, permanentTicket, materials } = payout;
+        if (Object.keys(materials).length > 0) get().grantMaterials(materials);
         if (coin || gems || permanentTicket) get().grantCurrency({ coin, gems, permanentTicket });
       },
 

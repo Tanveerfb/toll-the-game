@@ -15,6 +15,9 @@
 
 # next.js
 /.next/
+# scratch build dir used with NEXT_DIST_DIR to verify a build while a dev
+# server is holding /.next (see next.config.ts)
+/.next-verify/
 /out/
 
 # production

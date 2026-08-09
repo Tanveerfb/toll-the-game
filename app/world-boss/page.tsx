@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import BattleArena from "@/components/game/BattleArena";
 import Deck from "@/components/game/Deck";
-import WorldBossTeamSelect, { toWorldBossTeamPicks } from "@/components/game/WorldBossTeamSelect";
+import OwnedTeamSelect, { toTeamPicks } from "@/components/game/OwnedTeamSelect";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
@@ -50,7 +50,7 @@ export default function WorldBossPage(): React.JSX.Element {
       return;
     }
     setInsufficientStaminaNotice(false);
-    startCustomBattle(toWorldBossTeamPicks(team), [{ id: MOLVARR_ID }]);
+    startCustomBattle(toTeamPicks(team), [{ id: MOLVARR_ID }]);
     setView({ kind: "battle" });
   }, [spendStaminaAction, startCustomBattle, team]);
 
@@ -148,7 +148,7 @@ export default function WorldBossPage(): React.JSX.Element {
           </CardContent>
         </Card>
 
-        <WorldBossTeamSelect ownedIds={roster} team={team} onChange={setTeam} />
+        <OwnedTeamSelect ownedIds={roster} team={team} onChange={setTeam} />
 
         {insufficientStaminaNotice ? (
           <p className="font-body text-sm text-red-400">Not enough stamina — wait for it to regenerate.</p>

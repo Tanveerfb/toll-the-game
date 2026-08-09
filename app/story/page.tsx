@@ -1,39 +1,47 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import BattleArena from "@/components/game/BattleArena";
 import Deck from "@/components/game/Deck";
 import StorySceneReader from "@/components/game/StorySceneReader";
+import ChapterBrief from "@/components/game/story/ChapterBrief";
+import StoryChapterList from "@/components/game/story/StoryChapterList";
+import StoryPartSelect from "@/components/game/story/StoryPartSelect";
+import StoryRewardsScreen from "@/components/game/story/StoryRewardsScreen";
 import { useAuth } from "@/hooks/AuthProvider";
 import { useBattleContext } from "@/hooks/BattleProvider";
-import { getCharacterArt } from "@/lib/game/characterArt";
+import { getCurrentStamina } from "@/lib/game/stamina";
 import {
   chapterKey,
   getStoryChapter,
   getStoryPart,
-  getStoryParts,
-  isChapterUnlocked,
-  isPartUnlocked,
-  UPCOMING_PARTS,
 } from "@/lib/game/storyCatalog";
+import {
+  rollStoryRewards,
+  storyAttemptCost,
+  type StoryClearResult,
+} from "@/lib/game/storyRewards";
+import { resolveStoryTeam } from "@/lib/game/storyTeam";
 import { useGameStore } from "@/store/gameStore";
+import { usePlayerStore } from "@/store/playerStore";
 import { useStoryStore } from "@/store/storyStore";
 
 type View =
   | { kind: "parts" }
   | { kind: "chapters"; partId: string }
-  | { kind: "intro"; partId: string; chapterId: string }
-  | { kind: "battle"; partId: string; chapterId: string }
-  | { kind: "outro"; partId: string; chapterId: string };
+  | { kind: "brief"; partId: string; chapterId: string }
+  | { kind: "intro"; partId: string; chapterId: string; picks: string[] }
+  | {
+      kind: "battle";
+      partId: string;
+      chapterId: string;
+      picks: string[];
+      /** Set from the brief's SKIP STORY button — skips the outro too, so a
+       *  farm run goes brief → battle → rewards. */
+      skipScenes: boolean;
+    }
+  | { kind: "outro"; partId: string; chapterId: string }
+  | { kind: "rewards"; partId: string; chapterId: string; result: StoryClearResult };
 
 const PAGE_BG = {
   backgroundImage:
@@ -45,6 +53,10 @@ export default function StoryPage(): React.JSX.Element {
   const { startCustomBattle } = useBattleContext();
   const { resetBattle } = useGameStore();
   const { completed, markChapterComplete, hydrateFromCloud } = useStoryStore();
+  const roster = usePlayerStore((s) => s.roster);
+  const stamina = usePlayerStore((s) => s.stamina);
+  const spendStaminaAction = usePlayerStore((s) => s.spendStaminaAction);
+  const grantStoryRewards = usePlayerStore((s) => s.grantStoryRewards);
   const [view, setView] = React.useState<View>({ kind: "parts" });
 
   React.useEffect(() => {
@@ -52,13 +64,77 @@ export default function StoryPage(): React.JSX.Element {
   }, [user, hydrateFromCloud]);
 
   const launchBattle = React.useCallback(
-    (partId: string, chapterId: string) => {
+    (partId: string, chapterId: string, picks: string[]) => {
       const chapter = getStoryChapter(partId, chapterId);
       if (!chapter) return;
-      startCustomBattle(chapter.battle.playerTeam, chapter.battle.enemyTeam);
-      setView({ kind: "battle", partId, chapterId });
+      startCustomBattle(resolveStoryTeam(chapter, picks), chapter.battle.enemyTeam);
     },
     [startCustomBattle],
+  );
+
+  /**
+   * Rolls and grants the chapter payout, then marks it cleared.
+   *
+   * Everything happens inside this transition callback rather than an effect:
+   * an effect that grants rewards would run twice under React's development
+   * double-invoke, and "was this a first clear" has to be read *before*
+   * `markChapterComplete` flips it.
+   */
+  const finishChapter = React.useCallback(
+    (partId: string, chapterId: string) => {
+      const chapter = getStoryChapter(partId, chapterId);
+      if (!chapter) {
+        setView({ kind: "parts" });
+        return;
+      }
+      const isFirstClear = completed[chapterKey(partId, chapterId)] !== true;
+      const result = rollStoryRewards(chapter.rewards, isFirstClear);
+      grantStoryRewards(result.total);
+      markChapterComplete(partId, chapterId, user?.uid);
+      setView({ kind: "rewards", partId, chapterId, result });
+    },
+    [completed, grantStoryRewards, markChapterComplete, user?.uid],
+  );
+
+  /** Pays for one attempt. Uncleared chapters cost nothing however many times
+   *  they are retried, so the narrative can never be stamina-locked — only
+   *  farming a cleared chapter is gated (Tanveer, 2026-08-09). */
+  const chargeAttempt = React.useCallback(
+    (partId: string, chapterId: string): boolean => {
+      const chapter = getStoryChapter(partId, chapterId);
+      if (!chapter) return false;
+      const cleared = completed[chapterKey(partId, chapterId)] === true;
+      const cost = storyAttemptCost(chapter.rewards, cleared);
+      return cost === 0 || spendStaminaAction(cost);
+    },
+    [completed, spendStaminaAction],
+  );
+
+  /** Brief → battle. Returns false when the player can't afford the attempt,
+   *  leaving them on the brief with its insufficient-stamina notice. */
+  const beginAttempt = React.useCallback(
+    (partId: string, chapterId: string, picks: string[], skipScenes: boolean): boolean => {
+      if (!chargeAttempt(partId, chapterId)) return false;
+
+      if (skipScenes) {
+        launchBattle(partId, chapterId, picks);
+        setView({ kind: "battle", partId, chapterId, picks, skipScenes: true });
+      } else {
+        setView({ kind: "intro", partId, chapterId, picks });
+      }
+      return true;
+    },
+    [chargeAttempt, launchBattle],
+  );
+
+  /** Restarts the same battle after a defeat, without replaying the scenes. */
+  const retryAttempt = React.useCallback(
+    (partId: string, chapterId: string, picks: string[]): boolean => {
+      if (!chargeAttempt(partId, chapterId)) return false;
+      launchBattle(partId, chapterId, picks);
+      return true;
+    },
+    [chargeAttempt, launchBattle],
   );
 
   // ---- Battle view: same single-viewport shell as /practice ----
@@ -73,13 +149,24 @@ export default function StoryPage(): React.JSX.Element {
           story={{
             onContinue: () => {
               resetBattle();
-              setView({
-                kind: "outro",
-                partId: view.partId,
-                chapterId: view.chapterId,
-              });
+              if (view.skipScenes) {
+                finishChapter(view.partId, view.chapterId);
+              } else {
+                setView({
+                  kind: "outro",
+                  partId: view.partId,
+                  chapterId: view.chapterId,
+                });
+              }
             },
-            onRetry: () => launchBattle(view.partId, view.chapterId),
+            // A retry is a fresh attempt: it re-charges stamina if the chapter
+            // is already cleared, and drops back to the brief if it can't be
+            // paid for. It restarts the battle directly — replaying the intro
+            // scenes on every defeat would be punishing.
+            onRetry: () => {
+              if (retryAttempt(view.partId, view.chapterId, view.picks)) return;
+              setView({ kind: "brief", partId: view.partId, chapterId: view.chapterId });
+            },
             onQuit: () => {
               resetBattle();
               setView({ kind: "chapters", partId: view.partId });
@@ -99,6 +186,7 @@ export default function StoryPage(): React.JSX.Element {
       return <main className="min-h-screen bg-zinc-950" />;
     }
     const isIntro = view.kind === "intro";
+    const picks = isIntro ? view.picks : [];
     return (
       <main
         className="relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden text-zinc-100"
@@ -111,12 +199,61 @@ export default function StoryPage(): React.JSX.Element {
           chapterTitle={chapter.title}
           onFinish={() => {
             if (isIntro) {
-              launchBattle(view.partId, view.chapterId);
+              launchBattle(view.partId, view.chapterId, picks);
+              setView({
+                kind: "battle",
+                partId: view.partId,
+                chapterId: view.chapterId,
+                picks,
+                skipScenes: false,
+              });
             } else {
-              markChapterComplete(view.partId, view.chapterId, user?.uid);
-              setView({ kind: "chapters", partId: view.partId });
+              finishChapter(view.partId, view.chapterId);
             }
           }}
+        />
+      </main>
+    );
+  }
+
+  // ---- Rewards ----
+  if (view.kind === "rewards") {
+    const chapter = getStoryChapter(view.partId, view.chapterId);
+    return (
+      <main
+        className="relative flex min-h-screen items-center justify-center overflow-hidden bg-zinc-950 px-4 py-8"
+        style={PAGE_BG}
+      >
+        <StoryRewardsScreen
+          chapterTitle={chapter?.title ?? ""}
+          result={view.result}
+          onContinue={() => setView({ kind: "chapters", partId: view.partId })}
+        />
+      </main>
+    );
+  }
+
+  // ---- Chapter brief ----
+  if (view.kind === "brief") {
+    const part = getStoryPart(view.partId);
+    const chapter = getStoryChapter(view.partId, view.chapterId);
+    if (!part || !chapter) {
+      setView({ kind: "parts" });
+      return <main className="min-h-screen bg-zinc-950" />;
+    }
+    const chapterNumber = part.chapters.findIndex((c) => c.id === chapter.id) + 1;
+    return (
+      <main className="relative min-h-screen overflow-hidden bg-zinc-950" style={PAGE_BG}>
+        <ChapterBrief
+          chapter={chapter}
+          chapterNumber={chapterNumber}
+          cleared={completed[chapterKey(part.id, chapter.id)] === true}
+          ownedIds={roster}
+          currentStamina={getCurrentStamina(stamina)}
+          onStart={(picks, skipScenes) =>
+            beginAttempt(view.partId, view.chapterId, picks, skipScenes)
+          }
+          onBack={() => setView({ kind: "chapters", partId: view.partId })}
         />
       </main>
     );
@@ -131,183 +268,25 @@ export default function StoryPage(): React.JSX.Element {
     }
     return (
       <main className="relative min-h-screen overflow-hidden bg-zinc-950" style={PAGE_BG}>
-        <section className="relative z-10 mx-auto w-full max-w-4xl px-4 py-8 md:px-8">
-          <Card className="rounded-none border-2 border-zinc-700 bg-black/55 ring-0">
-            <CardHeader className="border-b border-zinc-700 px-6 py-5">
-              <div className="flex items-end justify-between gap-3">
-                <div>
-                  <p className="font-body text-xs uppercase tracking-[0.16em] text-amber-300">
-                    Part {part.order}
-                  </p>
-                  <CardTitle className="mt-1 font-heading text-4xl tracking-[0.12em] text-zinc-100 md:text-5xl">
-                    {part.title.toUpperCase()}
-                  </CardTitle>
-                  <p className="mt-2 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                    {part.tagline}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  onClick={() => setView({ kind: "parts" })}
-                  className="rounded-none border border-zinc-700 font-heading tracking-[0.12em] text-zinc-300"
-                >
-                  ◂ PARTS
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2 p-4 md:p-6">
-              {part.chapters.map((chapter, index) => {
-                const unlocked = isChapterUnlocked(
-                  completed,
-                  part.id,
-                  chapter.id,
-                );
-                const cleared =
-                  completed[chapterKey(part.id, chapter.id)] === true;
-                return (
-                  <button
-                    key={chapter.id}
-                    type="button"
-                    disabled={!unlocked}
-                    onClick={() =>
-                      setView({
-                        kind: "intro",
-                        partId: part.id,
-                        chapterId: chapter.id,
-                      })
-                    }
-                    className={`flex items-center justify-between gap-3 border-2 px-4 py-3 text-left transition-colors ${
-                      unlocked
-                        ? "border-zinc-600 bg-zinc-900/60 hover:border-amber-300 hover:bg-amber-300/5"
-                        : "cursor-not-allowed border-zinc-800 bg-zinc-950/60 opacity-50"
-                    }`}
-                  >
-                    <div className="flex min-w-0 items-center gap-4">
-                      <span className="font-heading text-3xl text-zinc-600">
-                        {index + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate font-heading text-xl tracking-[0.08em] text-zinc-100">
-                          {chapter.title}
-                        </p>
-                        <p className="font-body text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                          {chapter.battle.enemyTeam.length} enem
-                          {chapter.battle.enemyTeam.length === 1 ? "y" : "ies"}
-                        </p>
-                      </div>
-                    </div>
-                    {cleared ? (
-                      <div className="flex flex-col items-end gap-1">
-                        <Badge className="rounded-none border border-amber-300 bg-amber-300/10 font-body text-[10px] uppercase tracking-widest text-amber-200">
-                          ✓ Cleared
-                        </Badge>
-                        <span className="font-body text-[9px] uppercase tracking-[0.16em] text-zinc-400">
-                          Replay ▸
-                        </span>
-                      </div>
-                    ) : !unlocked ? (
-                      <Badge
-                        variant="secondary"
-                        className="rounded-none font-body text-[10px] uppercase tracking-widest"
-                      >
-                        Locked
-                      </Badge>
-                    ) : null}
-                  </button>
-                );
-              })}
-            </CardContent>
-          </Card>
-        </section>
+        <StoryChapterList
+          part={part}
+          completed={completed}
+          onSelectChapter={(chapterId) =>
+            setView({ kind: "brief", partId: part.id, chapterId })
+          }
+          onBack={() => setView({ kind: "parts" })}
+        />
       </main>
     );
   }
 
   // ---- Part select ----
-  const parts = getStoryParts();
   return (
     <main className="relative min-h-screen overflow-hidden bg-zinc-950" style={PAGE_BG}>
-      <section className="relative z-10 mx-auto w-full max-w-5xl px-4 py-8 md:px-8">
-        <h1 className="font-heading text-4xl tracking-[0.14em] text-zinc-100 md:text-6xl">
-          MAIN STORY
-        </h1>
-        <p className="mt-1 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-          Arc One — clear chapters in order to unlock the next
-        </p>
-
-        <div className="mt-6 flex flex-col gap-4">
-          {parts.map((part) => {
-            const unlocked = isPartUnlocked(completed, part.id);
-            const clearedCount = part.chapters.filter(
-              (chapter) => completed[chapterKey(part.id, chapter.id)] === true,
-            ).length;
-            const art = getCharacterArt(part.coverCharacterId);
-            return (
-              <button
-                key={part.id}
-                type="button"
-                disabled={!unlocked}
-                onClick={() => setView({ kind: "chapters", partId: part.id })}
-                className={`group relative flex h-36 items-center overflow-hidden border-2 text-left transition-colors md:h-44 ${
-                  unlocked
-                    ? "border-zinc-600 bg-zinc-900/60 hover:border-amber-300"
-                    : "cursor-not-allowed border-zinc-800 bg-zinc-950/60"
-                }`}
-              >
-                {art ? (
-                  <Image
-                    src={art}
-                    alt={part.title}
-                    width={512}
-                    height={512}
-                    className={`absolute right-0 h-full w-40 object-cover object-top md:w-64 ${
-                      unlocked
-                        ? "opacity-80 transition-opacity group-hover:opacity-100"
-                        : "opacity-25 grayscale"
-                    }`}
-                  />
-                ) : null}
-                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(9,9,11,0.95)_45%,transparent_85%)]" />
-                <div className={`relative z-10 px-6 ${unlocked ? "" : "opacity-50"}`}>
-                  <p className="font-body text-xs uppercase tracking-[0.16em] text-amber-300">
-                    Part {part.order}
-                  </p>
-                  <p className="mt-1 font-heading text-3xl tracking-[0.1em] text-zinc-100 md:text-4xl">
-                    {part.title.toUpperCase()}
-                  </p>
-                  <p className="mt-1 max-w-md font-body text-xs uppercase tracking-[0.12em] text-zinc-400">
-                    {part.tagline}
-                  </p>
-                  <p className="mt-2 font-body text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-                    {unlocked
-                      ? `${clearedCount} / ${part.chapters.length} chapters cleared`
-                      : "Locked — clear the previous part"}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-
-          {UPCOMING_PARTS.map((upcoming) => (
-            <div
-              key={upcoming.order}
-              className="flex h-24 items-center border-2 border-zinc-800 bg-zinc-950/60 px-6 opacity-50"
-            >
-              <div>
-                <p className="font-body text-xs uppercase tracking-[0.16em] text-zinc-500">
-                  Part {upcoming.order}
-                </p>
-                <p className="mt-1 font-heading text-2xl tracking-[0.1em] text-zinc-400">
-                  {upcoming.title.toUpperCase()}
-                </p>
-                <p className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-600">
-                  Coming soon
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <StoryPartSelect
+        completed={completed}
+        onSelectPart={(partId) => setView({ kind: "chapters", partId })}
+      />
     </main>
   );
 }
