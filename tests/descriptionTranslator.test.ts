@@ -40,23 +40,41 @@ describe("description placeholders", () => {
     expect(combo["greatly raises def"]).toBe("Increases DEF by 50%");
   });
 
-  it("wording tiers: <50 raises, 50-79 greatly, 80+ massively; debuffs use lowers", () => {
-    const skill = {
-      skillName: "T",
-      characterId: "t",
-      type: "buff",
-      statMultiplier: "atk",
-      mechanics: [
-        { type: "buff", stat: "atk", valuePercent: 85 },
-        { type: "debuff", stat: "def", valuePercent: 50, duration: 2 },
-      ],
-    } as unknown as CharacterSkillData;
-    const glossary = buildSkillKeywordGlossary(skill, 0);
-    // Undurationed buff = permanent, prefixed; durationed debuff is not
-    expect(glossary["permanently massively raises atk"]).toBe(
-      "Increases ATK by 85%",
-    );
-    expect(glossary["greatly lowers def"]).toBe("Reduces DEF by 50%");
+  it("wording tiers are asymmetric: massively is 100%+ up, but 80%+ down", () => {
+    // Tanveer, 2026-08-09: canonical tiers are 30/50/100 raising and 30/50/80
+    // lowering — a stat can never be reduced to zero in battle, so 80% is the
+    // ceiling a "lowers" effect is written against.
+    const glossaryFor = (mechanics: unknown[]) =>
+      buildSkillKeywordGlossary(
+        {
+          skillName: "T",
+          characterId: "t",
+          type: "buff",
+          statMultiplier: "atk",
+          mechanics,
+        } as unknown as CharacterSkillData,
+        0,
+      );
+
+    // 85% up is "greatly", not "massively" — it hasn't reached 100.
+    const under = glossaryFor([{ type: "buff", stat: "atk", valuePercent: 85 }]);
+    expect(under["permanently greatly raises atk"]).toBe("Increases ATK by 85%");
+
+    // 100% up is where "massively" starts.
+    const at = glossaryFor([{ type: "buff", stat: "atk", valuePercent: 100 }]);
+    expect(at["permanently massively raises atk"]).toBe("Increases ATK by 100%");
+
+    // Down, 80% is already "massively".
+    const down = glossaryFor([
+      { type: "debuff", stat: "def", valuePercent: 80, duration: 2 },
+    ]);
+    expect(down["massively lowers def"]).toBe("Reduces DEF by 80%");
+
+    // ...and 50% down is still only "greatly".
+    const mid = glossaryFor([
+      { type: "debuff", stat: "def", valuePercent: 50, duration: 2 },
+    ]);
+    expect(mid["greatly lowers def"]).toBe("Reduces DEF by 50%");
   });
 
   it("same-tier multi-stat phrases get a combined key ('raises atk and def')", () => {

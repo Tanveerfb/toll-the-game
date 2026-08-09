@@ -356,6 +356,26 @@ function ensureTargetText(text: string, targetText?: string): string {
   return `${trimmed} ${targetText}`;
 }
 
+/**
+ * "1 turns" → "1 turn", and the same for stacks.
+ *
+ * Authored descriptions write a fixed plural around a `[…]` placeholder
+ * ("for [buff.duration] turns"), which reads wrong whenever the value resolves
+ * to 1. Kits used to dodge it by writing "turn(s)". Normalising here means the
+ * prose can just say "turns" and come out right at every rank.
+ */
+function fixSingulars(text: string): string {
+  return (
+    text
+      // Collapse the hand-written "(s)" hedge FIRST — otherwise "1 turn(s)"
+      // becomes "1 turns" after the singular fix has already run.
+      .replace(/\bturn\(s\)/g, "turns")
+      .replace(/\bstack\(s\)/g, "stacks")
+      .replace(/\b1 turns\b/g, "1 turn")
+      .replace(/\b1 stacks\b/g, "1 stack")
+  );
+}
+
 function removeDuplicateTarget(text: string): string {
   return text
     .replace(/(to\s+(?:1|one|all)\s+enemies?)(?:\s+\1)+/gi, "$1")
@@ -386,6 +406,7 @@ export function buildDescriptionForRank(
   description = annotateDotDurations(description, skill, rankIndex);
   description = ensureTargetText(description, inferTargetFromMechanics(skill));
   description = removeDuplicateTarget(description);
+  description = fixSingulars(description);
 
   return `${cleanText(description)}.`;
 }
@@ -400,9 +421,20 @@ const STAT_LABELS: Record<string, string> = {
 
 // Dokkan-style tier words (Tanveer's scheme, mirrors the lowers glossary):
 // <50% plain, 50–79% "greatly", 80%+ "massively".
+/**
+ * Canonical tiers are 30 / 50 / 100 going up and 30 / 50 / 80 going down
+ * (Tanveer, 2026-08-09). The top tier differs by direction on purpose: a stat
+ * can never be reduced to zero in battle, so 80% is the ceiling a "lowers"
+ * effect is written against, while a raise has no such cap and reserves
+ * "massively" for 100%+.
+ *
+ * Thresholds rather than exact matches, so an off-tier value still picks the
+ * nearest honest word instead of falling through to the plain one.
+ */
 function tierWord(value: number, falling: boolean): string {
   const base = falling ? "lowers" : "raises";
-  if (value >= 80) return `massively ${base}`;
+  const massivelyAt = falling ? 80 : 100;
+  if (value >= massivelyAt) return `massively ${base}`;
   if (value >= 50) return `greatly ${base}`;
   return base;
 }
@@ -421,7 +453,13 @@ export function buildSkillKeywordGlossary(
 
   for (const mech of getMechanics(skill)) {
     if (mech.type !== "buff" && mech.type !== "debuff") continue;
-    const stat = typeof mech.stat === "string" ? mech.stat : undefined;
+    // A combined entry ("raises ATK and DEF") is ONE effect covering several
+    // stats, so it gets one glossary key — not one per stat.
+    const stat = Array.isArray(mech.stats) && mech.stats.length > 0
+      ? mech.stats.join("+")
+      : typeof mech.stat === "string"
+        ? mech.stat
+        : undefined;
     if (!stat) continue;
 
     const value =
@@ -441,7 +479,12 @@ export function buildSkillKeywordGlossary(
     const permanent = duration === undefined;
 
     const tier = `${permanent ? "permanently " : ""}${tierWord(value, mech.type === "debuff")}`;
-    const statLabel = STAT_LABELS[stat] ?? stat.toUpperCase();
+    const statLabel = stat.includes("+")
+      ? stat
+          .split("+")
+          .map((part) => STAT_LABELS[part] ?? part.toUpperCase())
+          .join(" and ")
+      : (STAT_LABELS[stat] ?? stat.toUpperCase());
     const verb = mech.type === "debuff" ? "Reduces" : "Increases";
 
     (collected[tier] ??= []).push({

@@ -94,6 +94,8 @@ export interface DamagePreviewRow {
 interface NormalizedMechanic {
   type: string;
   stat?: string;
+  /** Stats a single combined entry covers ("raises ATK and DEF"). */
+  stats?: string[];
   sealType?: string;
   effect?: string;
   targetSelf?: boolean;
@@ -138,6 +140,9 @@ function normalizeMechanic(
   return {
     type: typeof mechanic.type === "string" ? mechanic.type : "unknown",
     stat: typeof mechanic.stat === "string" ? mechanic.stat : undefined,
+    stats: Array.isArray(mechanic.stats)
+      ? (mechanic.stats as string[])
+      : undefined,
     sealType:
       typeof mechanic.sealType === "string" ? mechanic.sealType : undefined,
     effect: typeof mechanic.effect === "string" ? mechanic.effect : undefined,
@@ -782,7 +787,13 @@ const STAT_LABEL: Record<string, string> = {
   lifesteal: "Lifesteal",
 };
 
-function statLabel(stat: string | undefined): string {
+function statLabel(stat: string | undefined, stats?: string[]): string {
+  // A combined entry ("raises ATK and DEF") is one effect covering several
+  // stats — render it as one label. The preview used to build this by merging
+  // two sibling rows; now the kit says it in a single entry.
+  if (stats && stats.length > 0) {
+    return stats.map((s) => STAT_LABEL[s] ?? s.toUpperCase()).join(" · ");
+  }
   if (!stat) return "Stat";
   return STAT_LABEL[stat] ?? stat.toUpperCase();
 }
@@ -813,18 +824,18 @@ function describeSupportMechanic(
     case "buff":
       return amount === undefined
         ? null
-        : `${statLabel(mechanic.stat)} +${amount}%${turns(mechanic.duration)}`;
+        : `${statLabel(mechanic.stat, mechanic.stats)} +${amount}%${turns(mechanic.duration)}`;
     case "debuff":
       return amount === undefined
         ? null
-        : `${statLabel(mechanic.stat)} −${amount}%${turns(mechanic.duration)}`;
+        : `${statLabel(mechanic.stat, mechanic.stats)} −${amount}%${turns(mechanic.duration)}`;
     case "stance":
       // A damage-reduction stance reads as less damage taken, not "+60% of
       // a stat" — the sign flips relative to a plain buff.
       if (amount === undefined) return null;
       return mechanic.stat === "damageReduction"
         ? `Damage taken −${amount}%${turns(mechanic.duration)}`
-        : `${statLabel(mechanic.stat)} +${amount}%${turns(mechanic.duration)}`;
+        : `${statLabel(mechanic.stat, mechanic.stats)} +${amount}%${turns(mechanic.duration)}`;
     case "healOverTime":
       return amount === undefined
         ? null
@@ -906,8 +917,8 @@ function summarizeSupportEffects(
     );
     if (siblings.length > 0 && mechanic.stat) {
       const stats = [
-        statLabel(mechanic.stat),
-        ...siblings.map((s) => statLabel(s.mechanic.stat)),
+        statLabel(mechanic.stat, mechanic.stats),
+        ...siblings.map((s) => statLabel(s.mechanic.stat, s.mechanic.stats)),
       ];
       siblings.forEach((sibling) =>
         usedIndexes.add(described.indexOf(sibling)),

@@ -38,10 +38,13 @@ function makeChar(
   } as BattleCharacter;
 }
 
-// Duke's Weaken per ruling: damage + ATK-down [15/25/40]% for 2 turns
+// Generic "damage + ATK-down [15/25/40]% for 2 turns" fixture for the debuff
+// machinery. Was named after Duke's Weaken, which no longer exists — that
+// skill became Fist of Flowing Ruin : Surge, a self-buff, on 2026-08-09. The
+// numbers here were never his anyway.
 const weaken: SkillCard = {
-  skillName: "Fist of Flowing Ruin : Weaken",
-  characterId: "duke",
+  skillName: "Test Weaken",
+  characterId: "test",
   type: "debuff",
   statMultiplier: "atk",
   damageRanked: [110, 145, 205],

@@ -15,7 +15,7 @@
   "skills": [
     {
       "skillName": "Member of the Zodiac",
-      "description": "[aoeRanked? Targets all allies and increases their : Targets one chosen ally and increases that ally's] ATK and DEF by [buff.value]% for [buff.duration] turn(s).",
+      "description": "[aoeRanked? Targets all allies and increases their : Targets one chosen ally and increases that ally's] ATK and DEF by [buff.value]% for [buff.duration] turns.",
       "characterId": "leorio",
       "type": "buff",
       "statMultiplier": "atk",
@@ -35,25 +35,14 @@
         },
         {
           "type": "buff",
-          "stat": "atk",
-          "valueRanked": [
-            15,
-            25,
-            40
+          "stats": [
+            "atk",
+            "def"
           ],
-          "durationRanked": [
-            1,
-            1,
-            2
-          ]
-        },
-        {
-          "type": "buff",
-          "stat": "def",
           "valueRanked": [
-            15,
-            25,
-            40
+            20,
+            30,
+            50
           ],
           "durationRanked": [
             1,

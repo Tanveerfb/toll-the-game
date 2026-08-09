@@ -29,11 +29,22 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
 ## Design Rulings Ledger (all from Tanveer, don't re-litigate)
 
+> **The kit JSON outranks this list.** Balance passes have changed authored
+> numbers without the ledger being updated (see #5). Before you plan a fight or
+> quote a value, read `data/characters/*.json`. The ledger records *intent and
+> semantics*; the data records the current numbers.
+>
+> Engine defaults that no ruling covers but that change every fight:
+> **every unit has 5% lifesteal** (`DEFAULT_LIFESTEAL_PERCENT`, `lib/game/substats.ts`)
+> and **base crit/evade are 0%**. The lifesteal is easy to miss and quietly
+> lengthens fights — Duke recovered a sixth of his bar from it in a 3-turn duel
+> with no heal skill in his kit.
+
 1. Card rank (R1–R3 via merging, 7DSGC style): scales `damageRanked` AND `*Ranked` mechanic values; flat values (weakpoint ×3, amplify 10%) never scale; ultimates have no ranks (ult level-up system MAY come later).
 2. Ultimates are stronger than any R3 skill in power and utility.
 3. Any non-heal skill with `damageRanked > 0` deals damage regardless of skill type.
 4. Enemy side takes **3 actions per turn** — any living field enemy, any order, no pattern.
-5. Duke's Flowing Ruin: skills AND ultimate build stacks (max 3) and can consume; empowered action = +50% damage + 20% ATK-down (2 turns) on **every** target hit.
+5. Duke's Flowing Ruin: skills AND ultimate build stacks (max 3) and can consume; empowered action = **+100% damage + 50% ATK-down** (2 turns) on **every** target hit. *(Corrected 2026-08-09 — read 50%/20% until then. The roster balance pass in `3f7d248` moved it to 100%/50% and the ledger was never updated; planning a story fight against the stale figure under-estimated Duke's burst by half. `data/characters/duke.json` is the source of truth.)*
 6. Teams: any 1–4 units. Format 4v4 = all field; 3v3 = 4th member is the sub **automatically**. Lone sub auto-converts to field.
 7. Subs: passive active from bench; no cards; untargetable; enter the field **only at the start of a new turn** after a teammate died.
 8. Deck: loads field units' cards at battle start; **never resets**; refills one random card at a time with **auto-merge on adjacent identical cards** (+1 gauge per merge) until full; no deck interaction outside the player's turn; a gauge filled mid-refill guarantees the ult **next turn**, never the same refill.
@@ -83,10 +94,27 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 52. **DoT default durations** (2026-08-09): Ignite lasts **3 turns** and Bleed **2**, unless a kit says otherwise (`lib/game/dotDurations.ts`). Descriptions state the duration automatically — it's derived from the mechanic by the translator, never authored into the prose, so text can't drift from data. Bleed is a flat 2 at every rank roster-wide; no kit scales it any more.
 53. **Ordinary story enemies are tanky, not deadly** (2026-08-09): low ATK, large HP pools, plus an anti-stall passive that triples their stats at turn 10 (`bossStatSpike`, multiplier 3) so a fight can't be stalled out. `applyBossTurnStart` runs for any enemy carrying a turn-start mechanic, not just phased bosses.
 54. **Story NPC copies are for encounter tuning** (2026-08-09): a `storyOnly` NPC kit may diverge from its playable twin in stats, multipliers and ultimate damage — that's why it exists. `lyra_npc` runs far lower multipliers than playable Lyra. Passives stay in sync.
+55. **Stat vocabulary is exact** (2026-08-09) — Tanveer is deliberate about these words; don't use them loosely:
+    - **"basic stats"** = ATK, DEF, HP.
+    - **"all stats"** = basic stats **plus substats**, excluding damage reduction and evade chance.
+    - **"raises ATK"** = one buff on ATK. **"raises DEF"** = one buff on DEF. **"raises ATK and DEF"** = **ONE** buff covering both — not two entries, and *not* `stat: "all"` (which would sweep in HP and substats). Author it as `stats: ["atk","def"]`; the engine reads it via `entryAffectsStat` (`lib/game/stats.ts`). One effect = one entry = one pill = one thing to cleanse.
+56. **Tier words and chance words are fixed scales** (2026-08-09, amends #26) — but they constrain the **wording**, not the values.
+    - Magnitude going **up**: **30% "raises"**, **50% "greatly raises"**, **100% "massively raises"**.
+    - Magnitude going **down**: **30% "lowers"**, **50% "greatly lowers"**, **80% "massively lowers"**. The top tier is lower on purpose — a stat can never be reduced to zero in battle, so 80% is the ceiling a "lowers" effect is written against. `tierWord` in `lib/game/descriptionTranslator.ts` treats these as thresholds so an off-tier value still picks the nearest honest word.
+    - Probability (`lib/game/mechanicGlossary.ts`): **5% "very low chance"**, **10% "low chance"**, **30% "medium chance"**, **50% "high chance"**, **70% "great chance"**. No kit uses these yet.
+    **Values are free.** A number that doesn't land on a tier is intentional, not a bug — Lyra's 150% DEF is just 150%. Don't audit kit numbers against this scale or infer a word from a value on your own; the standard applies only when a description actually uses one of these words (Tanveer, 2026-08-09).
+57. **What is and isn't rank-scaled — read the notation, not the kit** (2026-08-09). Two rules, and they settle every case:
+    1. **Tier words are never rank-scaled.** If an effect is written with "raises / greatly raises / massively raises" (or lowers), it is **flat** — one value at every rank. A tier word and a rank ladder are mutually exclusive.
+    2. **In Tanveer's kit drafts, only values written `x/y/z` are rank-scaled.** Everything else is flat *unless he writes a note saying otherwise.* Don't infer scaling from a skill's type, from what a similar character does, or from it "feeling like" it should ramp — author `valuePercent`, not `valueRanked`, unless the draft used slashes.
+
+    Consequence, not a separate rule: attack skills carry tier-worded self-buffs (flat, applied before the hit per #22 — Duke's Surge +30% ATK and DEF, Gon's Rock +50% ATK, both HxH ultimates), while support skills state explicit `x/y/z` numbers so a rarer card buffs allies harder (Leorio's Member of the Zodiac, 20/30/50% for 1/1/2 turns).
+
+    Roster verified 2026-08-09: every attack-type self-buff is flat, the only rank-scaled ATK/DEF buff is Leorio's, and `damageReduction` stances (Mustafa's Fortress, Iron Wall, Yalina's Attention Drawer) are numeric and ranked as their own family.
 
 ## Working Style He Expects
 
 - Work **batch by batch**; commit per batch with tests + lint + build green; update `docs/` in the same commit.
+- **Tanveer decides where a batch ends (2026-08-09).** Don't commit or push on your own initiative — apply the change, run `npm run check`, report it, and leave it in the working tree until he says the batch is good. During a playtest loop he iterates on the same numbers, and committing each pass puts scratch work in the history (five commits in an hour, two partly undoing each other, had to be squashed).
 - Use up-to-date packages; verify with context7 MCP, not training data. Firebase MCP has access to his account (project `toll-the-game`) for env/config.
 - He was burned by this project before ("more headaches than progression") — don't create friction: keep the engine pure/testable, and never claim done on something you haven't checked.
 - **Don't browser-verify UI work (2026-08-09).** Tanveer does the visual pass himself on his own dev server and reports issues one at a time; driving a browser to confirm what he's already looking at is wasted effort. `npm run check` (tsc + eslint + vitest) and a clean build stay mandatory — report what you actually verified rather than saying "browser-verified".

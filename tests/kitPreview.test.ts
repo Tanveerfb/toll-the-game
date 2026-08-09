@@ -94,7 +94,7 @@ describe("kit preview correctness", () => {
     const zodiac = rowsFor("leorio").filter(
       (r) => r.abilityName === "Member of the Zodiac",
     );
-    expect(zodiac[2].resultLabel).toBe("ATK · DEF +40% (2 turns)");
+    expect(zodiac[2].resultLabel).toBe("ATK · DEF +50% (2 turns)");
   });
 
   it("puts the healed amount in the result, not buried in the notes", () => {

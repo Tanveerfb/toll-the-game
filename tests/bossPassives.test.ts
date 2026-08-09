@@ -280,7 +280,10 @@ describe("turn-start passives on ordinary (non-phased) enemies", () => {
   it("records a 200% badge for a x3 multiplier", () => {
     let m = mob({ passiveState: { phaseTurn: 9 } });
     m = applyBossTurnStart([m], [char()], noop).enemyTeam[0];
-    const badge = m.buffs.find((b) => b.stat === "all");
+    // The spike moves ATK/DEF/HP — "basic stats", not "all stats" (which also
+    // covers substats). One entry naming exactly those three.
+    const badge = m.buffs.find((b) => b.stats?.includes("atk"));
+    expect(badge?.stats).toEqual(["atk", "def", "hp"]);
     expect(badge?.valuePercent).toBe(200);
     expect(badge?.uncancellable).toBe(true);
   });

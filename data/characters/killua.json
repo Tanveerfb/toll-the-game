@@ -2,7 +2,12 @@
   "id": "killua",
   "name": "Killua Zoldyck",
   "color": "blue",
-  "tags": ["Collab", "Human", "Male", "Hunter x Hunter"],
+  "tags": [
+    "Collab",
+    "Human",
+    "Male",
+    "Hunter x Hunter"
+  ],
   "lore": "Heir of the Zoldyck assassin family. Nen type: Transmuter — his aura becomes electricity. Collab unit.",
   "atk": 199,
   "def": 99,
@@ -14,14 +19,22 @@
       "characterId": "killua",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [230, 280, 350],
+      "damageRanked": [
+        230,
+        280,
+        350
+      ],
       "mechanics": [
         {
           "type": "cancelStances"
         },
         {
           "type": "stun",
-          "durationRanked": [0, 1, 2]
+          "durationRanked": [
+            0,
+            1,
+            2
+          ]
         }
       ]
     },
@@ -31,7 +44,11 @@
       "characterId": "killua",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [195, 240, 300],
+      "damageRanked": [
+        195,
+        240,
+        300
+      ],
       "mechanics": [
         {
           "type": "detonate"
@@ -50,14 +67,10 @@
       {
         "type": "buff",
         "targetSelf": true,
-        "stat": "atk",
-        "valuePercent": 30,
-        "uncancellable": true
-      },
-      {
-        "type": "buff",
-        "targetSelf": true,
-        "stat": "def",
+        "stats": [
+          "atk",
+          "def"
+        ],
         "valuePercent": 30,
         "uncancellable": true
       }
@@ -77,7 +90,9 @@
       },
       {
         "type": "synergy",
-        "conditionTags": ["Collab"],
+        "conditionTags": [
+          "Collab"
+        ],
         "stat": "all",
         "valuePercent": 5,
         "flatBonus": true

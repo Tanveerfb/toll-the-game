@@ -1,3 +1,4 @@
+import { entryAffectsStat } from "./stats";
 import { BattleCharacter } from "@/types/character";
 import { Action, ActionCard } from "@/types/action";
 import { SkillCard } from "@/types/skillCard";
@@ -64,7 +65,7 @@ function buffAddsSomethingNew(
   const stat = buffMech?.stat;
   if (!stat) return true; // can't tell — let it through
   return !enemy.buffs.some(
-    (b) => !b.preApplied && b.type === "buff" && b.stat === stat,
+    (b) => !b.preApplied && b.type === "buff" && entryAffectsStat(b, stat),
   );
 }
 

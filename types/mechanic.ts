@@ -77,6 +77,9 @@ export interface CriticalMechanic extends MechanicBase {
 export interface BuffMechanic extends MechanicBase {
   type: "buff";
   stat?: string;
+  /** Stats this one entry covers when it modifies more than one — "raises ATK
+   *  and DEF" is a single effect. See StatusEffect.stats. */
+  stats?: string[];
   valuePercent?: number;
   targetSelf?: boolean;
   unstackable?: boolean;
@@ -86,12 +89,18 @@ export interface BuffMechanic extends MechanicBase {
 export interface DebuffMechanic extends MechanicBase {
   type: "debuff";
   stat?: string;
+  /** Stats this one entry covers when it modifies more than one — "raises ATK
+   *  and DEF" is a single effect. See StatusEffect.stats. */
+  stats?: string[];
   valuePercent?: number;
   targetSelf?: boolean;
 }
 export interface StanceMechanic extends MechanicBase {
   type: "stance";
   stat?: string;
+  /** Stats this one entry covers when it modifies more than one — "raises ATK
+   *  and DEF" is a single effect. See StatusEffect.stats. */
+  stats?: string[];
   valuePercent?: number;
   targetSelf?: boolean;
   unstackable?: boolean;
@@ -474,6 +483,16 @@ export type StatusEffectType =
 export interface StatusEffect {
   type: StatusEffectType;
   stat?: string;
+  /**
+   * Stats this ONE entry modifies, when it covers more than one.
+   *
+   * "Raises ATK and DEF" is a single effect, not two — one entry, one pill,
+   * one thing to cleanse (Tanveer, 2026-08-09). Distinct from `stat: "all"`,
+   * which means literally every stat; `stats: ["atk","def"]` means exactly
+   * those two. Read through `entryAffectsStat` in lib/game/stats.ts, never by
+   * comparing `.stat` directly.
+   */
+  stats?: string[];
   /** Percent stat modifier (buff/debuff/stance). */
   valuePercent?: number;
   /** Flat per-tick damage/heal (DoT/HoT) or flat stat points context-free. */

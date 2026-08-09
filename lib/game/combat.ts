@@ -108,7 +108,8 @@ function gainAttackReceivedShift(
   char.currentDefense = Math.max(0, char.currentDefense + defShift);
   char.buffs.push({
     type: "buff",
-    stat: "all",
+    // Shifts ATK and DEF only — not HP, so not "basic stats" either.
+    stats: ["atk", "def"],
     uncancellable: true,
     preApplied: true,
     name: char.passive.name,
@@ -454,6 +455,7 @@ export function executeSkill(
       updatedSource.buffs.push({
         type: mech.type,
         stat: mech.stat,
+        stats: mech.stats,
         // Counter stances carry no stat percent — their number is the
         // counter damage, not a stat modifier
         valuePercent: mech.counterDamagePercent
@@ -1130,6 +1132,7 @@ export function executeSkill(
         updatedTarget.buffs.push({
           type: mech.type,
           stat: mech.stat,
+          stats: mech.stats,
           valuePercent: percent,
           buffDuration: mech.duration,
           name: mech.name,

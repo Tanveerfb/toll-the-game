@@ -17,19 +17,40 @@ import { BattleCharacter } from "@/types/character";
  * A single ≥100% debuff still floors the stat to 0. Flat values apply after
  * the percent product.
  */
+/**
+ * Whether one status entry modifies `stat`.
+ *
+ * Three ways an entry can say yes, and they mean different things:
+ *  - `stat: "atk"`            — exactly that stat
+ *  - `stats: ["atk", "def"]`  — exactly those, as ONE effect ("raises ATK and
+ *                               DEF" is a single buff, not two — Tanveer,
+ *                               2026-08-09)
+ *  - `stat: "all"`            — literally every stat
+ *
+ * Every consumer must go through this rather than comparing `.stat`, or a
+ * combined entry silently stops applying to one of its own stats.
+ */
+export function entryAffectsStat(
+  entry: { stat?: string; stats?: string[] },
+  stat: string,
+): boolean {
+  if (entry.stat === stat || entry.stat === "all") return true;
+  return entry.stats?.includes(stat) ?? false;
+}
+
 function effectiveStat(char: BattleCharacter, stat: "atk" | "def", current: number): number {
   let buffMult = 1;
   let flat = 0;
   for (const buff of char.buffs) {
     if (buff.preApplied) continue;
-    if ((buff.type === "buff" || buff.type === "stance") && (buff.stat === stat || buff.stat === "all")) {
+    if ((buff.type === "buff" || buff.type === "stance") && entryAffectsStat(buff, stat)) {
       buffMult *= 1 + (buff.valuePercent ?? buff.value ?? 0) / 100;
       flat += buff.flatValue ?? 0;
     }
   }
   let debuffMult = 1;
   for (const debuff of char.debuffs) {
-    if (debuff.type === "debuff" && (debuff.stat === stat || debuff.stat === "all")) {
+    if (debuff.type === "debuff" && entryAffectsStat(debuff, stat)) {
       const reduction = debuff.valuePercent ?? debuff.value ?? 0;
       debuffMult *= Math.max(0, 1 - reduction / 100);
       flat -= debuff.flatValue ?? 0;

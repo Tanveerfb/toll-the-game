@@ -109,9 +109,9 @@ describe("single-ally targeting (Leorio's Member of the Zodiac)", () => {
     const skill = zodiacSkill as unknown as CharacterSkillData;
     const r1 = buildDescriptionForRank(skill, 0);
     expect(r1).toContain("one chosen ally");
-    expect(r1).toContain("15% for 1 turn");
+    expect(r1).toContain("20% for 1 turn");
     const r3 = buildDescriptionForRank(skill, 2);
     expect(r3).toContain("all allies");
-    expect(r3).toContain("40% for 2 turn");
+    expect(r3).toContain("50% for 2 turns");
   });
 });

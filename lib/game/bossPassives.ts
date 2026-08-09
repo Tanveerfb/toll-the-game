@@ -205,14 +205,16 @@ function applyStatSpike(
 
   boss.buffs.push({
     type: "buff",
-    stat: "all",
+    // Basic stats = ATK/DEF/HP, which is exactly what the spike multiplies.
+    // NOT "all", which additionally covers substats (Tanveer, 2026-08-09).
+    stats: ["atk", "def", "hp"],
     valuePercent: (mult - 1) * 100,
     uncancellable: true,
     preApplied: true,
     name: mech.name ?? "Awakening",
   });
   log(
-    `${boss.name} AWAKENS — ${Math.floor((mult - 1) * 100)}% increase to all stats!`,
+    `${boss.name} AWAKENS — ${Math.floor((mult - 1) * 100)}% increase to basic stats!`,
   );
 }
 

@@ -2,7 +2,9 @@
   "id": "duke",
   "name": "Duke",
   "color": "blue",
-  "tags": ["Human"],
+  "tags": [
+    "Human"
+  ],
   "atk": 210,
   "def": 85,
   "hp": 1500,
@@ -13,7 +15,11 @@
       "characterId": "duke",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [195, 240, 300],
+      "damageRanked": [
+        195,
+        240,
+        300
+      ],
       "mechanics": [
         {
           "type": "aoe"
@@ -24,18 +30,27 @@
       ]
     },
     {
-      "skillName": "Fist of Flowing Ruin : Weaken",
-      "description": "Does damage equal to ATK-scaled to one enemy; reduces ATK by [debuff.value]% for [debuff.duration] turns.",
+      "skillName": "Fist of Flowing Ruin : Surge",
+      "description": "Raises ATK and DEF for 1 turn; then does damage equal to ATK-scaled to one enemy.",
       "characterId": "duke",
-      "type": "debuff",
+      "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [260, 320, 400],
+      "damageRanked": [
+        220,
+        270,
+        335
+      ],
       "mechanics": [
         {
-          "type": "debuff",
-          "stat": "atk",
-          "valueRanked": [15, 25, 40],
-          "duration": 2
+          "type": "buff",
+          "targetSelf": true,
+          "stats": [
+            "atk",
+            "def"
+          ],
+          "valuePercent": 30,
+          "duration": 1,
+          "uncancellable": true
         }
       ]
     }

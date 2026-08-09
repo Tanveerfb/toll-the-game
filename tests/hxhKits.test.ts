@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getEffectiveAttack, getEffectiveDefense } from "@/lib/game/stats";
 import { executeSkill } from "@/lib/game/combat";
 import { registerCharacterPassives } from "@/lib/game/passive";
 import type { BattleCharacter } from "@/types/character";
@@ -219,8 +220,21 @@ describe("Killua", () => {
       noopLog,
     );
     const buffs = teams.playerTeam[0].buffs;
-    expect(buffs.filter((b) => b.buffDuration === undefined)).toHaveLength(2);
+    // "Permanently raises ATK and DEF" is ONE effect covering two stats, not
+    // two effects (Tanveer, 2026-08-09). It used to be authored as a pair.
+    const permanent = buffs.filter((b) => b.buffDuration === undefined);
+    expect(permanent).toHaveLength(1);
+    expect(permanent[0].stats).toEqual(["atk", "def"]);
     expect(buffs.every((b) => b.uncancellable)).toBe(true);
+
+    // ...and the single entry still has to move both stats.
+    const killuaAfter = teams.playerTeam[0];
+    expect(getEffectiveAttack(killuaAfter)).toBeGreaterThan(
+      killuaAfter.currentAttack,
+    );
+    expect(getEffectiveDefense(killuaAfter)).toBeGreaterThan(
+      killuaAfter.currentDefense,
+    );
   });
 });
 
@@ -243,9 +257,13 @@ describe("Leorio", () => {
     );
     const buffed = r1.playerTeam.find((c) => c.instanceId === "a1")!;
     const notBuffed = r1.playerTeam.find((c) => c.instanceId === "a2")!;
-    expect(buffed.buffs.filter((b) => b.type === "buff")).toHaveLength(2);
-    expect(buffed.buffs[0].valuePercent).toBe(15);
-    expect(buffed.buffs[0].buffDuration).toBe(1);
+    // "increases ATK and DEF" is ONE entry covering both stats, not a pair
+    // (Tanveer, 2026-08-09).
+    const zodiacBuffs = buffed.buffs.filter((b) => b.type === "buff");
+    expect(zodiacBuffs).toHaveLength(1);
+    expect(zodiacBuffs[0].stats).toEqual(["atk", "def"]);
+    expect(zodiacBuffs[0].valuePercent).toBe(20);
+    expect(zodiacBuffs[0].buffDuration).toBe(1);
     expect(notBuffed.buffs).toHaveLength(0);
 
     const r3 = executeSkill(
@@ -259,9 +277,19 @@ describe("Leorio", () => {
       noopLog,
     );
     for (const c of r3.playerTeam) {
-      const atkBuff = c.buffs.find((b) => b.stat === "atk");
-      expect(atkBuff?.valuePercent).toBe(40);
-      expect(atkBuff?.buffDuration).toBe(2);
+      // Found by the combined `stats`, not by `stat === "atk"` — one entry
+      // covers both stats now.
+      const buff = c.buffs.find((b) => b.stats?.includes("atk"));
+      expect(buff?.stats).toEqual(["atk", "def"]);
+      expect(buff?.valuePercent).toBe(50);
+      expect(buff?.buffDuration).toBe(2);
+      // ...and the single entry has to actually move a stat. The dummy allies
+      // are built with def 0, where a percentage buff is unprovable, so assert
+      // on ATK for everyone and DEF on Leorio, who has a real one.
+      expect(getEffectiveAttack(c)).toBeGreaterThan(c.currentAttack);
+      if (c.currentDefense > 0) {
+        expect(getEffectiveDefense(c)).toBeGreaterThan(c.currentDefense);
+      }
     }
   });
 
