@@ -7,8 +7,7 @@ import StorySceneReader from "@/components/game/StorySceneReader";
 import ChapterBrief from "@/components/game/story/ChapterBrief";
 import ChapterCompleteCard from "@/components/game/story/ChapterCompleteCard";
 import ChapterTitleCard from "@/components/game/story/ChapterTitleCard";
-import StoryChapterList from "@/components/game/story/StoryChapterList";
-import StoryPartSelect from "@/components/game/story/StoryPartSelect";
+import StoryIndex from "@/components/game/story/StoryIndex";
 import StoryRewardsScreen from "@/components/game/story/StoryRewardsScreen";
 import VersusSplash from "@/components/game/story/VersusSplash";
 import { useAuth } from "@/hooks/AuthProvider";
@@ -32,15 +31,18 @@ import { usePlayerStore } from "@/store/playerStore";
 import { useStoryStore } from "@/store/storyStore";
 
 /**
- * chapters → brief → title → intro → versus → battle → outro → complete → rewards
- *                      └────────── skip scenes (cleared) ──────────┘        ↑ first clear only
+ * index → brief → title → intro → versus → battle → outro → complete → rewards
+ *                  └────────── skip scenes (cleared) ──────────┘        ↑ first clear only
  *
  * The skip path keeps `versus` deliberately: it's short, it's the beat that
  * makes a fight feel like a fight, and it covers the battle's start-up.
+ *
+ * `index` used to be two views — a part grid and a per-part chapter list. With
+ * sealed chapters redacted the second screen had nothing left to show, so both
+ * collapsed into one page (Tanveer, 2026-08-11).
  */
 type View =
-  | { kind: "parts" }
-  | { kind: "chapters"; partId: string }
+  | { kind: "index" }
   | { kind: "brief"; partId: string; chapterId: string }
   | { kind: "title"; partId: string; chapterId: string; picks: string[] }
   | { kind: "intro"; partId: string; chapterId: string; picks: string[] }
@@ -68,11 +70,6 @@ type View =
       result: StoryClearResult;
     }
   | { kind: "rewards"; partId: string; chapterId: string; result: StoryClearResult };
-
-const PAGE_BG = {
-  backgroundImage:
-    "radial-gradient(70% 50% at 50% 0%, rgba(245,158,11,0.2), transparent 72%), linear-gradient(140deg, #09090b 0%, #111827 52%, #0a0a0a 100%)",
-};
 
 /** Which track each step of the flow asks for. Requesting the role that's
  *  already playing is a no-op in the controller, so walking parts → chapters →
@@ -103,7 +100,7 @@ export default function StoryPage(): React.JSX.Element {
   const stamina = usePlayerStore((s) => s.stamina);
   const spendStaminaAction = usePlayerStore((s) => s.spendStaminaAction);
   const grantStoryRewards = usePlayerStore((s) => s.grantStoryRewards);
-  const [view, setView] = React.useState<View>({ kind: "parts" });
+  const [view, setView] = React.useState<View>({ kind: "index" });
 
   useScreenMusic(musicRoleFor(view));
 
@@ -134,7 +131,7 @@ export default function StoryPage(): React.JSX.Element {
     (partId: string, chapterId: string) => {
       const chapter = getStoryChapter(partId, chapterId);
       if (!chapter) {
-        setView({ kind: "parts" });
+        setView({ kind: "index" });
         return;
       }
       const isFirstClear = completed[chapterKey(partId, chapterId)] !== true;
@@ -198,8 +195,7 @@ export default function StoryPage(): React.JSX.Element {
   if (view.kind === "battle") {
     return (
       <main
-        className="relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden text-zinc-100"
-        style={PAGE_BG}
+        className="terminal-grid relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden bg-void text-readout"
       >
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-size-[36px_36px]" />
         <BattleArena
@@ -227,7 +223,7 @@ export default function StoryPage(): React.JSX.Element {
             },
             onQuit: () => {
               resetBattle();
-              setView({ kind: "chapters", partId: view.partId });
+              setView({ kind: "index" });
             },
           }}
         />
@@ -241,14 +237,13 @@ export default function StoryPage(): React.JSX.Element {
     const part = getStoryPart(view.partId);
     const chapter = getStoryChapter(view.partId, view.chapterId);
     if (!part || !chapter) {
-      setView({ kind: "parts" });
-      return <main className="min-h-screen bg-zinc-950" />;
+      setView({ kind: "index" });
+      return <main className="min-h-screen bg-void" />;
     }
     const chapterNumber = part.chapters.findIndex((c) => c.id === chapter.id) + 1;
     return (
       <main
-        className="relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden text-zinc-100"
-        style={PAGE_BG}
+        className="terminal-grid relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden bg-void text-readout"
       >
         <ChapterTitleCard
           chapterNumber={chapterNumber}
@@ -271,13 +266,12 @@ export default function StoryPage(): React.JSX.Element {
   if (view.kind === "versus") {
     const chapter = getStoryChapter(view.partId, view.chapterId);
     if (!chapter) {
-      setView({ kind: "parts" });
-      return <main className="min-h-screen bg-zinc-950" />;
+      setView({ kind: "index" });
+      return <main className="min-h-screen bg-void" />;
     }
     return (
       <main
-        className="relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden bg-zinc-950 text-zinc-100"
-        style={PAGE_BG}
+        className="terminal-grid relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden bg-void text-readout"
       >
         <VersusSplash
           playerTeam={resolveStoryTeam(chapter, view.picks)}
@@ -307,8 +301,7 @@ export default function StoryPage(): React.JSX.Element {
       : 0;
     return (
       <main
-        className="relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden text-zinc-100"
-        style={PAGE_BG}
+        className="terminal-grid relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden bg-void text-readout"
       >
         <ChapterCompleteCard
           chapterNumber={chapterNumber}
@@ -330,15 +323,14 @@ export default function StoryPage(): React.JSX.Element {
   if (view.kind === "intro" || view.kind === "outro") {
     const chapter = getStoryChapter(view.partId, view.chapterId);
     if (!chapter) {
-      setView({ kind: "parts" });
-      return <main className="min-h-screen bg-zinc-950" />;
+      setView({ kind: "index" });
+      return <main className="min-h-screen bg-void" />;
     }
     const isIntro = view.kind === "intro";
     const picks = isIntro ? view.picks : [];
     return (
       <main
-        className="relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden text-zinc-100"
-        style={PAGE_BG}
+        className="terminal-grid relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden bg-void text-readout"
       >
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-size-[36px_36px]" />
         <StorySceneReader
@@ -371,13 +363,12 @@ export default function StoryPage(): React.JSX.Element {
     const chapter = getStoryChapter(view.partId, view.chapterId);
     return (
       <main
-        className="relative flex min-h-screen items-center justify-center overflow-hidden bg-zinc-950 px-4 py-8"
-        style={PAGE_BG}
+        className="terminal-grid relative flex min-h-screen items-center justify-center overflow-hidden bg-void px-4 py-8"
       >
         <StoryRewardsScreen
           chapterTitle={chapter?.title ?? ""}
           result={view.result}
-          onContinue={() => setView({ kind: "chapters", partId: view.partId })}
+          onContinue={() => setView({ kind: "index" })}
         />
       </main>
     );
@@ -388,54 +379,36 @@ export default function StoryPage(): React.JSX.Element {
     const part = getStoryPart(view.partId);
     const chapter = getStoryChapter(view.partId, view.chapterId);
     if (!part || !chapter) {
-      setView({ kind: "parts" });
-      return <main className="min-h-screen bg-zinc-950" />;
+      setView({ kind: "index" });
+      return <main className="min-h-screen bg-void" />;
     }
     const chapterNumber = part.chapters.findIndex((c) => c.id === chapter.id) + 1;
     return (
-      <main className="relative min-h-screen overflow-hidden bg-zinc-950" style={PAGE_BG}>
+      <main className="terminal-grid relative min-h-screen bg-void">
         <ChapterBrief
           chapter={chapter}
           chapterNumber={chapterNumber}
+          partOrder={part.order}
           cleared={completed[chapterKey(part.id, chapter.id)] === true}
           ownedIds={roster}
           currentStamina={getCurrentStamina(stamina)}
           onStart={(picks, skipScenes) =>
             beginAttempt(view.partId, view.chapterId, picks, skipScenes)
           }
-          onBack={() => setView({ kind: "chapters", partId: view.partId })}
+          onBack={() => setView({ kind: "index" })}
         />
       </main>
     );
   }
 
-  // ---- Chapter list ----
-  if (view.kind === "chapters") {
-    const part = getStoryPart(view.partId);
-    if (!part) {
-      setView({ kind: "parts" });
-      return <main className="min-h-screen bg-zinc-950" />;
-    }
-    return (
-      <main className="relative min-h-screen overflow-hidden bg-zinc-950" style={PAGE_BG}>
-        <StoryChapterList
-          part={part}
-          completed={completed}
-          onSelectChapter={(chapterId) =>
-            setView({ kind: "brief", partId: part.id, chapterId })
-          }
-          onBack={() => setView({ kind: "parts" })}
-        />
-      </main>
-    );
-  }
-
-  // ---- Part select ----
+  // ---- Index: every part and its visible chapters, one page ----
   return (
-    <main className="relative min-h-screen overflow-hidden bg-zinc-950" style={PAGE_BG}>
-      <StoryPartSelect
+    <main className="terminal-grid relative min-h-screen bg-void">
+      <StoryIndex
         completed={completed}
-        onSelectPart={(partId) => setView({ kind: "chapters", partId })}
+        onSelectChapter={(partId, chapterId) =>
+          setView({ kind: "brief", partId, chapterId })
+        }
       />
     </main>
   );

@@ -135,6 +135,97 @@ h6 {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ── Game tokens — "Combat Terminal" (Tanveer, 2026-08-11) ─────────────────
+   The archive is the pilot screen for this palette; every other screen still
+   runs on hardcoded zinc/amber utilities until its own turn in the UI pass.
+   Two rules keep the palette legible: `signal` cyan is system chrome only
+   (nav, focus, active state, counts) and the five element hues belong to
+   units and nothing else. The shadcn `--background`/`--card` vars above are
+   still stock greyscale and still unused — they go when the last screen
+   migrates. */
+@theme {
+  /* Surfaces. The void is the page; panels sit on it. */
+  --color-void: #06090c;
+  --color-panel: #0d141b;
+  --color-panel-raised: #111a23;
+  --color-inset: #080d12;
+
+  /* Lines, weakest to strongest. */
+  --color-gridline: #0e1720;
+  --color-hairline: #16212b;
+  --color-edge: #1c2a36;
+  --color-edge-strong: #31596b;
+
+  /* Text. `readout-strong` is achromatic on purpose — it's what numbers
+     inside skill text use, so a value can shout without adding a sixth hue
+     to a page that already carries an element colour and a skill-type
+     colour. */
+  --color-readout-strong: #eaf2f8;
+  --color-readout: #cbd8e2;
+  --color-readout-dim: #8ea6b8;
+  --color-readout-muted: #5d7285;
+
+  /* System chrome. */
+  --color-signal: #4fd3e8;
+  --color-signal-dim: #31596b;
+
+  /* Element identity. */
+  --color-el-light: #e8d174;
+  --color-el-red: #ff5a4e;
+  --color-el-blue: #37a6ff;
+  --color-el-green: #35d48b;
+  --color-el-dark: #a874ff;
+
+  /* Skill semantics deliberately alias the element hues rather than adding
+     new ones: red is aggression, green restoration, violet affliction, gold
+     the climax. Five clash colours plus signal is the whole vocabulary. The
+     two readings never sit next to each other — element appears once, in the
+     identity panel; skill-type accents live in the kit document. */
+  --color-role-attack: var(--color-el-red);
+  --color-role-heal: var(--color-el-green);
+  --color-role-control: var(--color-el-dark);
+  --color-role-ultimate: var(--color-el-light);
+}
+
+/* The faint 44px ground the terminal reads on. */
+.terminal-grid {
+  background-image:
+    linear-gradient(var(--color-gridline) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-gridline) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* Chamfered corners are the direction's signature. `clip-path` clips a
+   focus outline along with everything else, so chamfered controls take an
+   inset ring instead — same 2px read, actually visible. */
+.chamfer {
+  clip-path: polygon(
+    7px 0,
+    100% 0,
+    100% calc(100% - 7px),
+    calc(100% - 7px) 100%,
+    0 100%,
+    0 7px
+  );
+}
+
+.chamfer-lg {
+  clip-path: polygon(
+    11px 0,
+    100% 0,
+    100% calc(100% - 11px),
+    calc(100% - 11px) 100%,
+    0 100%,
+    0 11px
+  );
+}
+
+.chamfer:focus-visible,
+.chamfer-lg:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--color-signal);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

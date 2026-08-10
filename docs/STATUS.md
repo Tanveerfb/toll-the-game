@@ -564,6 +564,183 @@ so a loss costs only time. Do not nerf it.
 everything except NPC Lyra (Molvarr, trash mobs). Molvarr's pacing remains
 untested.
 
+## Session log — 2026-08-11: UI/UX overhaul, screen by screen
+
+Tanveer's brief was "one screen at a time" plus "the project color tokens are
+also up for a change". Five screens landed: archive index, archive detail,
+news feed + post, story index, chapter brief, story flow beats. Battle is
+explicitly **deferred to its own session** — he wants "to optimize the battle
+UI more if possible", not a rewrite, and it needs scoping first.
+
+Every direction was chosen by him from a mockup before any code was written.
+The mockups are published artifacts (links in the batch's chat); they are not
+in the repo, so this section is the durable record of what was decided.
+
+### The palette: "Combat Terminal" (globals.css `@theme`)
+
+Direction B of three, picked 2026-08-11. The archive was the pilot; every
+later screen inherited it.
+
+Why it exists at all: `styles/globals.css` carried stock shadcn greyscale
+(`oklch(0.145 0 0)` …) that **nothing consumed**. The real palette was 884
+hardcoded `zinc-*`/`amber-*` utilities across 53 files. There was no token
+layer to change.
+
+Token groups: surfaces (`void` `panel` `panel-raised` `inset`), lines
+(`gridline` `hairline` `edge` `edge-strong`), text (`readout-strong` `readout`
+`readout-dim` `readout-muted`), chrome (`signal` `signal-dim`), elements
+(`el-light` `el-red` `el-blue` `el-green` `el-dark`), and the semantic aliases
+(`role-attack` `role-control` `role-heal` `role-ultimate`).
+
+**Two rules the palette depends on. Breaking either makes the game unreadable
+rather than merely ugly:**
+
+1. **`signal` cyan is system chrome only** — nav, focus, active state, counts,
+   section rules. Never a unit, never a stat.
+2. **The five element hues belong to units and nothing else.**
+
+The `role-*` tokens deliberately **alias** the element hues (red aggression,
+green restoration, violet affliction, gold climax) rather than introducing a
+second colour vocabulary. The two readings never appear adjacent: element
+shows once in a character's identity block, skill-type accents live in the kit
+document. Five hues plus signal is the entire language.
+
+`readout-strong` is achromatic on purpose. Numbers inside skill text used to
+be amber; a kit line already carries a keyword hue *under* a skill-type
+accent, so a third colour on every digit was noise. Bright-on-dim separates
+them without spending a hue.
+
+Also added: `.terminal-grid` (the 44px ground) and `.chamfer` / `.chamfer-lg`.
+**Chamfered controls take an inset focus ring, not `outline`** — `clip-path`
+clips an outline along with everything else, so the focus state would be
+invisible.
+
+### Overlay portal fix + guard (the Growth-modal bug)
+
+Tanveer hit the Growth modal rendering *behind* the kit document. Cause:
+`position: sticky` **always** creates a stacking context, the archive detail
+rail is `lg:sticky`, and the modal's `fixed inset-0` was therefore scoped to
+the rail. `z-[60]` couldn't help — it was competing inside the wrong context.
+
+`DetailOverlay` now renders through `createPortal` into `document.body`, so
+placement can't break it again. Hydration guard is `useSyncExternalStore`, not
+set-state-in-an-effect — the effect version trips
+`react-hooks/set-state-in-effect`. Escape closes it (it was previously a
+keyboard trap).
+
+`tests/overlayStacking.test.ts` enforces the rule structurally: every
+component painting a `fixed inset-0` overlay must either portal or appear in
+an allowlist **with a written reason it's safe where it sits**. It also
+asserts the detected-overlay count hasn't collapsed, so a regex that quietly
+stops matching can't make the suite vacuously pass.
+
+**Still latent, deliberately left for the battle session:** `BattleArena`
+applies `battle-shake-strong` to its wrapper, and an active `transform`
+creates a containing block — so the log drawer and battle modals become
+arena-relative for ~0.4s on heavy hits. Same class of bug, self-correcting,
+not worth touching mid-screen.
+
+### Screens
+
+**Archive index** — `Card` wrapper dropped for a signal-rule masthead;
+chamfered controls; raw stats became micro-bars. Bars scale against the
+**whole population, never the filtered view** — otherwise filtering to tanks
+makes a unit look stronger because the others were hidden.
+
+**Archive detail** — Layout 1 of three ("Dossier"): sticky identity rail, kit
+document right. Bars here scale against the **playable roster peak**, so 245
+ATK reads as "middling attacker"; NPC kits above that ceiling clamp at 100%
+and honestly read as off the scale. The element hue is allowed to speak in
+exactly three places: the identity code chip, the stat bars, and the Result
+column of the kit preview. `SkillDocument`'s Mult column was **removed** at
+his request — the multiplier already appears inside the translated
+description, so the column printed it twice per row.
+
+**News** — Feed A of two ("Changelog"): month rules, day in the left gutter,
+kind tag per row. The Updates/Notices **tab pair is gone**: `content/news/
+notices/` holds only `_placeholder.mdx` (which exists so Turbopack's dynamic
+import resolves), so half the control did nothing but reveal an empty list.
+The filter row only renders when both kinds actually exist. Unread went from
+one nav dot to per-post — the catch is that `markNewsViewed` fires on mount,
+so last-viewed is captured in a **lazy `useState` initialiser before that
+effect runs**, or opening the page clears the pips in the paint that draws
+them. Post pages gained a standfirst (the frontmatter `summary`, promoted),
+real reading time, and Older/Newer walking the **merged** feed.
+
+**Story index** — Reading 1 of three, chosen after Tanveer pushed back with
+"you are not thinking long term, assume I have 24 chapters". The 6-chapter
+design didn't survive that; the 24-chapter one does, because the lead part
+never renders more than **one** row whatever it contains, so 24 chapters costs
+four more collapsed bars than 6 does.
+
+Newest-first: current part leads with cover + only the current chapter +
+"All chapters in this part (N)"; everything unreachable collapses to one line;
+finished parts collapse to one bar each, newest first, **each opening the same
+modal** — one interaction pattern, not inline-expand for history and a modal
+for everything else.
+
+Locked chapters are **redacted, not hidden** (his call, from three options).
+The row keeps its number and position; title and enemies do not. Redaction is
+**fixed-width** — blocking out the real title character-for-character leaks
+its length, and "Nine Years" against "The World That Toll Built" is most of
+the guess. Sealed parts and `UPCOMING_PARTS` titles are hidden too.
+
+The parts→chapters drill-down was **deleted** (`StoryPartSelect`,
+`StoryChapterList`): with sealing on, the second screen showed one live row and
+three redacted ones. `{kind:"parts"}` and `{kind:"chapters"}` collapsed into
+`{kind:"index"}`.
+
+Chapter select is scoped by **part chips, not a flat paginated list** — at 24
+chapters a flat list means paging past whole parts to reach a chapter you can
+already name. Pagination (shared `lib/pagination.ts`, extracted from the news
+feed when the second consumer appeared) therefore only fires on search, which
+genuinely crosses every part.
+
+> **`searchChapters` must never match a sealed chapter.** Typing an unreleased
+> chapter's exact title returns nothing. This is a correctness property, not a
+> nicety: without it, search becomes an enumeration tool and walks straight
+> past the redaction the whole index is built around. Asserted directly in
+> `tests/storyIndex.test.ts`, including a loop over every progress point.
+
+**Chapter brief** — Option B of two ("Decision"): team select leads, because
+on a replay it is the only thing the player actually changes. The four stacked
+bordered boxes each held one label and one value — four borders for four short
+facts, with the only interactive control pushed below them. Now: signal-ruled
+header, team, an "Against" block with enemy **portraits** (the index shows
+portraits two clicks earlier; the brief was still joining names into a
+string), then a three-cell fact strip.
+
+**Story flow beats** — Reader **Option A** (keep the dialogue box) chosen;
+Option B (no box, portrait left, ruled line) was rejected outright — do not
+revive it. Timings preserved exactly: the 1400ms title-card hold, tap-to-
+dismiss, the letter-spacing animation on complete. VS takes gold
+(`role-ultimate`) since that already means climax in the kit document; the
+split halves become element-blue against role-red. Rewards uses gold for
+first-clear and neutral for ordinary drops, so a first clear reads differently
+from a farm run before you read a word. The amber `PAGE_BG` gradient is gone
+from every story view.
+
+**Survived untouched, as required:** the scene reader's word-at-a-time reveal,
+its `prefers-reduced-motion` opt-out, and confirm-skip on unseen scenes.
+
+### Shared components pulled along (flagged at the time)
+
+`prose.tsx` is `/news`'s typography too, so its section rules going signal
+took the news pages with it. `TopNav` went cyan because it sits directly above
+the pilot screen. `KeyworkHighlighter`, `PassiveProse` and `KitDetails`'
+skill-type chips migrated with the archive — which means **battle currently
+reads half-cyan**, and that debt lands in the battle session, not as a
+surprise.
+
+`OwnedTeamSelect` migrated with the brief (it *is* the lead element of Option
+B) and is shared with `/practice`, which now has a cyan team picker on an
+amber page until its turn.
+
+### Not migrated yet
+
+`/practice`, `/gacha`, `/world-boss`, `/profile`, `/login`, `/`, and the
+battle arena proper.
+
 ## Open Issues
 
 | # | Issue | Where | Severity |

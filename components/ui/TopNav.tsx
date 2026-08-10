@@ -10,12 +10,12 @@ export default function TopNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky top-0 z-50 border-b-2 border-zinc-800 bg-zinc-950/90 backdrop-blur-sm">
+    <nav className="sticky top-0 z-50 border-b border-edge bg-void/90 backdrop-blur-sm">
       {/* Fixed h-11: the battle screen sizes itself to 100dvh minus this bar */}
       <div className="mx-auto flex h-11 w-full max-w-6xl items-center gap-4 px-4 md:gap-6 md:px-8">
         <Link
           href="/"
-          className="shrink-0 font-heading text-xl tracking-[0.2em] text-amber-300"
+          className="shrink-0 font-heading text-xl tracking-[0.2em] text-signal"
         >
           TOLL
         </Link>
@@ -31,8 +31,8 @@ export default function TopNav() {
                 href={route.href}
                 className={`shrink-0 font-body text-xs font-semibold uppercase tracking-[0.16em] transition-colors ${
                   active
-                    ? "text-amber-200"
-                    : "text-zinc-400 hover:text-zinc-100"
+                    ? "text-signal"
+                    : "text-readout-dim hover:text-readout"
                 }`}
               >
                 {route.navLabel ?? route.label}

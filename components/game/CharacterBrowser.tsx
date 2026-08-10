@@ -41,35 +41,22 @@ const SORT_FIELDS: Array<{ id: Exclude<SortField, "none">; label: string }> = [
   { id: "hp", label: "HP" },
 ];
 
-const COLOR_STYLES: Record<
-  CharacterColor,
-  { frame: string; gradient: string; chip: string }
-> = {
-  light: {
-    frame: "border-amber-200/70",
-    gradient: "from-amber-200/25 to-transparent",
-    chip: "bg-amber-200 text-zinc-900",
-  },
-  red: {
-    frame: "border-red-500/70",
-    gradient: "from-red-600/30 to-transparent",
-    chip: "bg-red-500 text-zinc-950",
-  },
-  blue: {
-    frame: "border-sky-500/70",
-    gradient: "from-sky-600/30 to-transparent",
-    chip: "bg-sky-500 text-zinc-950",
-  },
-  green: {
-    frame: "border-emerald-500/70",
-    gradient: "from-emerald-600/30 to-transparent",
-    chip: "bg-emerald-500 text-zinc-950",
-  },
-  dark: {
-    frame: "border-violet-500/70",
-    gradient: "from-violet-600/30 to-transparent",
-    chip: "bg-violet-500 text-zinc-950",
-  },
+// One hue per element, and nothing else in the UI is allowed to use them —
+// system chrome is `signal` cyan. The 3-letter codes ride in the tile corner
+// where the word wouldn't fit at a 5-column density.
+const EL_HUE: Record<CharacterColor, string> = {
+  light: "var(--color-el-light)",
+  red: "var(--color-el-red)",
+  blue: "var(--color-el-blue)",
+  green: "var(--color-el-green)",
+  dark: "var(--color-el-dark)",
+};
+const EL_CODE: Record<CharacterColor, string> = {
+  light: "LGT",
+  red: "RED",
+  blue: "BLU",
+  green: "GRN",
+  dark: "DRK",
 };
 
 function toTitleCase(value: string): string {
@@ -82,29 +69,67 @@ function toTitleCase(value: string): string {
 }
 
 const CHIP_BASE =
-  "min-h-11 border-2 px-3 py-1.5 font-body text-xs uppercase tracking-[0.12em] transition-colors";
-const CHIP_ON = "border-amber-300 bg-amber-300/15 text-amber-200";
+  "chamfer min-h-11 border px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] transition-colors";
 const CHIP_OFF =
-  "border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200";
+  "border-edge bg-void/60 text-readout-dim hover:border-edge-strong hover:text-readout";
 
 function Toggle({
   active,
+  hue,
   onClick,
   children,
 }: {
   active: boolean;
+  hue?: string;
   onClick: () => void;
   children: React.ReactNode;
 }): React.JSX.Element {
+  const tint = hue ?? "var(--color-signal)";
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`${CHIP_BASE} ${active ? CHIP_ON : CHIP_OFF}`}
+      className={`${CHIP_BASE} ${active ? "text-void" : CHIP_OFF}`}
+      style={
+        active ? { backgroundColor: tint, borderColor: tint } : undefined
+      }
     >
       {children}
     </button>
+  );
+}
+
+/** Labelled micro-bar. The raw number stays — the bar only adds the shape. */
+function StatBar({
+  label,
+  value,
+  max,
+  hue,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  hue: string;
+}): React.JSX.Element {
+  return (
+    <div className="mt-0.5 grid grid-cols-[22px_1fr_auto] items-center gap-1.5">
+      <span className="font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+        {label}
+      </span>
+      <span className="block h-[3px] bg-hairline">
+        <span
+          className="block h-full"
+          style={{
+            width: `${Math.round((value / max) * 100)}%`,
+            backgroundColor: hue,
+          }}
+        />
+      </span>
+      <span className="font-body text-[11px] font-semibold tabular-nums text-readout-dim">
+        {value.toLocaleString()}
+      </span>
+    </div>
   );
 }
 
@@ -138,6 +163,19 @@ export default function CharacterBrowser({
     const s = new Set<string>();
     characters.forEach((c) => (c.mechanics ?? []).forEach((m) => s.add(m)));
     return [...s].sort();
+  }, [characters]);
+
+  // Bars are scaled against the whole population, never the filtered view —
+  // otherwise every filter click silently rescales the bars and a unit looks
+  // stronger just because the tanks were filtered out.
+  const statMax = React.useMemo(() => {
+    const peak = (pick: (c: CharacterBrowserItem) => number) =>
+      Math.max(1, ...characters.map(pick));
+    return {
+      hp: peak((c) => c.hp),
+      atk: peak((c) => c.atk),
+      def: peak((c) => c.def),
+    };
   }, [characters]);
 
   const toggleIn = (
@@ -200,35 +238,40 @@ export default function CharacterBrowser({
   };
 
   return (
-    <section className="space-y-4">
-      {/* Search + element + sort */}
+    <section className="space-y-3">
+      {/* Query + element */}
       <div className="flex flex-wrap items-center gap-2">
+        {/* `dark:bg-input/30` ships inside the shadcn Input and the app is
+            permanently in dark mode, so the panel fill has to be restated as a
+            dark: variant or the plain utility loses the merge. */}
         <Input
           value={searchValue}
           onChange={(event) => setSearchValue(event.target.value)}
-          placeholder="Search name, id, or tag…"
+          placeholder="Query name, id, tag"
           aria-label="Search characters"
-          className="h-9 w-full max-w-60 rounded-none border-2 border-zinc-700 bg-black/40 text-zinc-100 placeholder:text-zinc-500"
+          className="chamfer h-11 w-full max-w-52 rounded-none border border-edge bg-panel font-body text-readout placeholder:text-readout-muted focus-visible:border-signal focus-visible:ring-0 dark:bg-panel"
         />
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {COLOR_OPTIONS.map((option) => (
             <Toggle
               key={option.id}
               active={selectedColor === option.id}
+              hue={option.id === "all" ? undefined : EL_HUE[option.id]}
               onClick={() => setSelectedColor(option.id)}
             >
               {option.label}
             </Toggle>
           ))}
         </div>
-        <span className="ml-auto font-body text-xs uppercase tracking-[0.14em] text-zinc-500">
-          {filtered.length} / {characters.length} units
+        <span className="ml-auto font-body text-[11px] font-bold uppercase tracking-[0.2em] tabular-nums text-readout-muted">
+          <b className="font-bold text-signal">{filtered.length}</b> /{" "}
+          {characters.length} units
         </span>
       </div>
 
       {/* Sort + filter controls */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="mr-1 font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
           Sort
         </span>
         {SORT_FIELDS.map((f) => (
@@ -241,37 +284,31 @@ export default function CharacterBrowser({
             {sortField === f.id ? (sortDir === "asc" ? " ↑" : " ↓") : ""}
           </Toggle>
         ))}
-        <button
-          type="button"
+        <Toggle
+          active={showFilters || activeFilterCount > 0}
           onClick={() => setShowFilters((v) => !v)}
-          aria-expanded={showFilters}
-          className={`${CHIP_BASE} ml-2 ${showFilters || activeFilterCount > 0 ? CHIP_ON : CHIP_OFF}`}
         >
           Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-        </button>
+        </Toggle>
         {(activeFilterCount > 0 ||
           selectedColor !== "all" ||
           sortField !== "none" ||
           searchValue) && (
-          <button
-            type="button"
-            onClick={clearAll}
-            className={`${CHIP_BASE} ${CHIP_OFF}`}
-          >
+          <Toggle active={false} onClick={clearAll}>
             Clear
-          </button>
+          </Toggle>
         )}
       </div>
 
       {/* Expandable tag + mechanic filters */}
       {showFilters ? (
-        <div className="space-y-3 border-2 border-zinc-800 bg-black/40 p-3">
+        <div className="chamfer-lg space-y-3 border border-edge bg-panel p-3">
           {allTags.length > 0 ? (
             <div className="space-y-1.5">
-              <p className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+              <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
                 Tags
               </p>
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {allTags.map((tag) => (
                   <Toggle
                     key={tag}
@@ -288,10 +325,10 @@ export default function CharacterBrowser({
           ) : null}
           {allMechs.length > 0 ? (
             <div className="space-y-1.5">
-              <p className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+              <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
                 Mechanics
               </p>
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {allMechs.map((mech) => (
                   <Toggle
                     key={mech}
@@ -311,72 +348,87 @@ export default function CharacterBrowser({
 
       {/* Unit grid */}
       {filtered.length === 0 ? (
-        <p className="border border-zinc-800 bg-black/40 py-10 text-center font-body text-sm uppercase tracking-[0.14em] text-zinc-500">
-          No characters found.
+        <p className="chamfer-lg border border-edge bg-panel py-10 text-center font-body text-sm font-bold uppercase tracking-[0.2em] text-readout-muted">
+          No units match this query.
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {filtered.map((character) => {
-            const style = COLOR_STYLES[character.color];
+            const hue = EL_HUE[character.color];
+            const art = getCharacterArt(character.id);
             const owned = hasHydrated && roster.includes(character.id);
             const ultLevel = characterProgress[character.id]?.ultLevel ?? 1;
+            // Pre-hydration we don't know what's owned, so the tile shows no
+            // state label at all rather than flashing "Locked" on an owned unit.
+            const locked = hasHydrated && !owned;
             return (
+              // `hover:border-(--el)` emits nothing: `border-` is ambiguous
+              // between width and colour, so the `color:` hint is required.
+              // `text-(--el)` below needs no hint — it defaults to colour.
               <Link
                 key={character.id}
                 href={`/archive/${character.id}`}
-                className={`group flex flex-col border-2 ${style.frame} bg-zinc-950/80 transition-transform hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,0,0,0.6)]`}
+                className="chamfer-lg group flex flex-col border border-edge bg-panel transition-colors hover:border-(color:--el)"
+                style={{ "--el": hue } as React.CSSProperties}
               >
-                <div
-                  className={`relative flex aspect-square items-center justify-center overflow-hidden bg-linear-to-b ${style.gradient}`}
-                >
-                  {getCharacterArt(character.id) ? (
+                <div className="relative aspect-square overflow-hidden bg-inset">
+                  {art ? (
                     <Image
-                      src={getCharacterArt(character.id)!}
+                      src={art}
                       alt={character.name}
                       width={512}
                       height={512}
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      className={`h-full w-full object-cover transition-transform group-hover:scale-105 ${
+                        locked ? "grayscale brightness-50" : ""
+                      }`}
                     />
                   ) : (
-                    <span className="font-heading text-6xl text-white/85 drop-shadow-[0_0_12px_rgba(255,255,255,0.25)]">
+                    <span className="flex h-full w-full items-center justify-center font-heading text-6xl text-readout-dim">
                       {character.name.charAt(0)}
                     </span>
                   )}
                   <span
-                    className={`absolute left-1.5 top-1.5 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-widest ${style.chip}`}
+                    className="absolute left-0 top-0 px-1.5 py-0.5 font-body text-[10px] font-bold tracking-[0.14em] text-void"
+                    style={{ backgroundColor: hue }}
                   >
-                    {character.color}
+                    {EL_CODE[character.color]}
                   </span>
-                  {hasHydrated && !owned ? (
-                    <span className="absolute inset-0 flex items-center justify-center bg-black/70 font-body text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-                      Not Owned
-                    </span>
-                  ) : null}
-                  {owned && ultLevel > 1 ? (
-                    <span className="absolute bottom-1.5 right-1.5 border border-amber-300/70 bg-black/70 px-1.5 py-0.5 font-body text-[9px] font-bold text-amber-200">
-                      Lv.{ultLevel}
+                  {hasHydrated ? (
+                    <span
+                      className="absolute bottom-0 right-0 border-l border-t border-edge bg-void/85 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-[0.18em]"
+                      style={{
+                        color: owned ? hue : "var(--color-readout-muted)",
+                      }}
+                    >
+                      {owned
+                        ? `Active${ultLevel > 1 ? ` · U${ultLevel}` : ""}`
+                        : "Locked"}
                     </span>
                   ) : null}
                 </div>
 
-                <div className="border-t border-zinc-800 px-2 py-1.5">
-                  <p className="truncate font-heading text-lg tracking-[0.05em] text-zinc-100 group-hover:text-amber-200">
+                <div className="border-t border-hairline px-2 py-2">
+                  <p className="truncate font-heading text-lg tracking-[0.06em] text-readout group-hover:text-(--el)">
                     {character.name}
                   </p>
-                  <div className="mt-0.5 grid grid-cols-3 gap-1 font-body text-[10px] uppercase tracking-wider text-zinc-400">
-                    <span>
-                      <span className="text-zinc-600">ATK </span>
-                      {character.atk}
-                    </span>
-                    <span>
-                      <span className="text-zinc-600">DEF </span>
-                      {character.def}
-                    </span>
-                    <span>
-                      <span className="text-zinc-600">HP </span>
-                      {character.hp}
-                    </span>
-                  </div>
+                  <StatBar
+                    label="Hp"
+                    value={character.hp}
+                    max={statMax.hp}
+                    hue={hue}
+                  />
+                  <StatBar
+                    label="Atk"
+                    value={character.atk}
+                    max={statMax.atk}
+                    hue={hue}
+                  />
+                  <StatBar
+                    label="Def"
+                    value={character.def}
+                    max={statMax.def}
+                    hue={hue}
+                  />
                 </div>
               </Link>
             );

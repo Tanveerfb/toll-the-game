@@ -57,20 +57,22 @@ export interface KitPassiveView {
 }
 
 const UI = {
-  fieldLabel: "font-body text-[10px] uppercase tracking-[0.16em] text-zinc-500",
-  textValue: "font-body text-sm text-zinc-200",
+  fieldLabel:
+    "font-body text-[10px] font-bold uppercase tracking-[0.2em] text-readout-muted",
+  textValue: "font-body text-sm text-readout",
 } as const;
 
-// red = attack, purple = debuff/disable, green = heal/buff, yellow = stance/ult
+// The `role-*` tokens: aggression / affliction / restoration / climax. They
+// alias the element hues on purpose — see the palette note in globals.css.
 const SKILL_TYPE_CHIP: Record<string, string> = {
-  attack: "bg-red-600 text-white",
-  debuff: "bg-purple-600 text-white",
-  disable: "bg-purple-600 text-white",
-  heal: "bg-emerald-600 text-white",
-  cleanse: "bg-emerald-600 text-white",
-  buff: "bg-emerald-600 text-white",
-  stance: "bg-amber-300 text-zinc-950",
-  ultimate: "bg-amber-300 text-zinc-950",
+  attack: "bg-role-attack text-void",
+  debuff: "bg-role-control text-void",
+  disable: "bg-role-control text-void",
+  heal: "bg-role-heal text-void",
+  cleanse: "bg-role-heal text-void",
+  buff: "bg-role-heal text-void",
+  stance: "bg-role-ultimate text-void",
+  ultimate: "bg-role-ultimate text-void",
 };
 
 function toTitleCase(value: string): string {
@@ -155,7 +157,7 @@ export function SkillBlock({
             <button
               type="button"
               onClick={onDetails}
-              className="shrink-0 border border-zinc-600 px-2 py-1 font-body text-[10px] uppercase tracking-widest text-zinc-300 transition-colors hover:border-amber-300 hover:text-amber-200"
+              className="shrink-0 chamfer border border-edge px-2 py-1 font-body text-[10px] uppercase tracking-widest text-zinc-300 transition-colors hover:border-edge-strong hover:text-signal"
             >
               Details
             </button>
@@ -255,7 +257,7 @@ function UncancellableBadge(): React.JSX.Element {
 
 /**
  * A passive rendered 7DS-style: flowing prose (trigger woven into the sentence,
- * no Trigger/Effect labels), blue mechanics + amber numbers + cyan
+ * no Trigger/Effect labels), signal mechanics + bright numbers + dimmed
  * parenthetical notes via the highlighter, an "Uncancellable" badge when the
  * text says so. Paragraphs split on blank
  * lines; a `※`-prefixed line is a grey-italic clarifier. Shared by the battle
@@ -285,7 +287,7 @@ export function PassiveProse({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             {showName && passive?.name ? (
-              <p className="font-heading text-sm tracking-[0.08em] text-amber-200/90">
+              <p className="font-heading text-sm tracking-[0.08em] text-signal">
                 {passive.name}
               </p>
             ) : null}
@@ -295,7 +297,7 @@ export function PassiveProse({
             <button
               type="button"
               onClick={onDetails}
-              className="shrink-0 border border-zinc-600 px-2 py-1 font-body text-[10px] uppercase tracking-widest text-zinc-300 transition-colors hover:border-amber-300 hover:text-amber-200"
+              className="shrink-0 chamfer border border-edge px-2 py-1 font-body text-[10px] uppercase tracking-widest text-zinc-300 transition-colors hover:border-edge-strong hover:text-signal"
             >
               Details
             </button>
@@ -308,11 +310,11 @@ export function PassiveProse({
           {parsePassiveMarkup(description).map((section, sIdx) => (
             <div key={`section-${sIdx}`} className="space-y-1">
               {section.heading ? (
-                <p className="font-body text-[11px] font-bold uppercase tracking-[0.14em] text-amber-200/80">
+                <p className="font-body text-[11px] font-bold uppercase tracking-[0.14em] text-readout-dim">
                   {section.heading}
                 </p>
               ) : null}
-              <ul className="space-y-1.5 border-l-2 border-zinc-700 pl-3">
+              <ul className="space-y-1.5 border-l border-edge pl-3">
                 {section.bullets.map((bullet, bIdx) => (
                   <li key={`bullet-${bIdx}`} className="list-none">
                     <KeyworkHighlighter
@@ -325,7 +327,7 @@ export function PassiveProse({
                       <KeyworkHighlighter
                         key={`comment-${cIdx}`}
                         text={comment}
-                        className="mt-0.5 block pl-3 font-body text-xs italic text-zinc-500"
+                        className="mt-0.5 block pl-3 font-body text-xs italic text-readout-muted"
                         glossary={passiveGlossary}
                         showStatArrows
                       />
@@ -341,7 +343,7 @@ export function PassiveProse({
           para.startsWith("※") ? (
             <p
               key={`para-${index}`}
-              className="font-body text-xs italic text-zinc-500"
+              className="font-body text-xs italic text-readout-muted"
             >
               {para}
             </p>
@@ -459,16 +461,16 @@ export function PassiveDetailSections({
   return (
     <div className="space-y-4">
       {passive.name ? (
-        <p className="font-heading text-sm tracking-[0.08em] text-amber-200/90">
+        <p className="font-heading text-sm tracking-[0.08em] text-signal">
           {passive.name}
         </p>
       ) : null}
       {sections.map((section) => (
         <div key={section.header}>
-          <h4 className="mb-1.5 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-amber-200/80">
+          <h4 className="mb-1.5 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-readout-dim">
             {section.header}
           </h4>
-          <ul className="space-y-1 border-l-2 border-zinc-700 pl-3">
+          <ul className="space-y-1 border-l border-edge pl-3">
             {section.bullets.map((bullet, index) => (
               <li key={index} className="list-none">
                 <KeyworkHighlighter

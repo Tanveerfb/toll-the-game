@@ -1,15 +1,15 @@
-﻿import { notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
-import { Badge } from "@/components/ui/badge";
 import { PROSE, ProseSection, ProseTable } from "@/components/ui/prose";
 import SkillDocument from "@/components/game/SkillDocument";
 import {
   characterIds,
   getCharacterById,
   getCharacterPhases,
+  getPlayableCharacters,
 } from "@/lib/game/characterCatalog";
 import KitPhases from "@/components/game/KitPhases";
 import PreviewButton from "@/components/game/PreviewButton";
@@ -25,42 +25,67 @@ interface CharacterPageProps {
   params: Promise<{ id: string }>;
 }
 
-const UI = {
-  fieldLabel:
-    "font-body text-[10px] uppercase tracking-[0.16em] text-zinc-500",
-  textValue: "font-body text-sm text-zinc-200",
-} as const;
-
-const COLOR_STYLES: Record<
-  string,
-  { frame: string; gradient: string; chip: string }
-> = {
-  light: {
-    frame: "border-amber-200/70",
-    gradient: "from-amber-200/25 to-transparent",
-    chip: "bg-amber-200 text-zinc-900",
-  },
-  red: {
-    frame: "border-red-500/70",
-    gradient: "from-red-600/30 to-transparent",
-    chip: "bg-red-500 text-zinc-950",
-  },
-  blue: {
-    frame: "border-sky-500/70",
-    gradient: "from-sky-600/30 to-transparent",
-    chip: "bg-sky-500 text-zinc-950",
-  },
-  green: {
-    frame: "border-emerald-500/70",
-    gradient: "from-emerald-600/30 to-transparent",
-    chip: "bg-emerald-500 text-zinc-950",
-  },
-  dark: {
-    frame: "border-violet-500/70",
-    gradient: "from-violet-600/30 to-transparent",
-    chip: "bg-violet-500 text-zinc-950",
-  },
+const EL_HUE: Record<string, string> = {
+  light: "var(--color-el-light)",
+  red: "var(--color-el-red)",
+  blue: "var(--color-el-blue)",
+  green: "var(--color-el-green)",
+  dark: "var(--color-el-dark)",
 };
+const EL_CODE: Record<string, string> = {
+  light: "LGT",
+  red: "RED",
+  blue: "BLU",
+  green: "GRN",
+  dark: "DRK",
+};
+
+// Stat bars read against the playable roster's peak, not against this
+// character — a 245 ATK bar meaning "middling attacker" is the thing a raw
+// number never told you. NPC/boss kits sit above the playable ceiling, so the
+// fill clamps at 100% and their bar honestly reads as off the scale.
+const ROSTER_PEAK = (() => {
+  const roster = getPlayableCharacters();
+  const peak = (pick: (c: (typeof roster)[number]) => number) =>
+    Math.max(1, ...roster.map(pick));
+  return {
+    hp: peak((c) => c.hp),
+    atk: peak((c) => c.atk),
+    def: peak((c) => c.def),
+  };
+})();
+
+function StatBar({
+  label,
+  value,
+  max,
+  hue,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  hue: string;
+}): ReactNode {
+  return (
+    <div className="mt-1 grid grid-cols-[26px_1fr_auto] items-center gap-2">
+      <span className="font-body text-[9px] font-bold uppercase tracking-[0.12em] text-readout-muted">
+        {label}
+      </span>
+      <span className="block h-1 bg-hairline">
+        <span
+          className="block h-full"
+          style={{
+            width: `${Math.min(100, Math.round((value / max) * 100))}%`,
+            backgroundColor: hue,
+          }}
+        />
+      </span>
+      <span className="font-heading text-base leading-none tabular-nums text-readout-strong">
+        {value.toLocaleString()}
+      </span>
+    </div>
+  );
+}
 
 export function generateStaticParams(): Array<{ id: string }> {
   return characterIds.map((id) => ({ id }));
@@ -76,7 +101,8 @@ export default async function CharacterDetailPage({
     notFound();
   }
 
-  const style = COLOR_STYLES[character.color] ?? COLOR_STYLES.light;
+  const hue = EL_HUE[character.color] ?? EL_HUE.light;
+  const art = getCharacterArt(character.id);
   const passive = character.passive as KitPassiveView | undefined;
   // Multi-phase kits return rows tagged with their phase; group them so each
   // phase gets its own table rather than one undifferentiated list.
@@ -95,33 +121,24 @@ export default async function CharacterDetailPage({
   const isMultiPhase = getCharacterPhases(character).length > 1;
 
   return (
-    <main
-      className="relative min-h-screen overflow-hidden bg-zinc-950"
-      style={{
-        backgroundImage:
-          "radial-gradient(70% 45% at 90% 0%, rgba(56,189,248,0.15), transparent 75%), radial-gradient(65% 45% at 0% 100%, rgba(245,158,11,0.18), transparent 72%), linear-gradient(155deg, #09090b 0%, #0f172a 52%, #0a0a0a 100%)",
-      }}
-    >
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-size-[38px_38px] opacity-25" />
-
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-6 md:px-8">
+    <main className="terminal-grid min-h-screen bg-void">
+      <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8">
         <Link
           href="/archive"
-          className="font-body text-xs uppercase tracking-[0.16em] text-zinc-400 hover:text-amber-200"
+          className="chamfer inline-block border border-edge px-3 py-2 font-body text-[11px] font-bold uppercase tracking-[0.2em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
         >
-          ← Character Archive
+          ← Character archive
         </Link>
 
-        <div className="mt-3 grid gap-4 lg:grid-cols-[300px_1fr]">
-          {/* Identity panel */}
-          <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-            <div className={`border-2 ${style.frame} bg-zinc-950/85`}>
-              <div
-                className={`relative flex aspect-square items-center justify-center overflow-hidden bg-linear-to-b ${style.gradient}`}
-              >
-                {getCharacterArt(character.id) ? (
+        <div className="mt-3 grid gap-3.5 lg:grid-cols-[290px_minmax(0,1fr)]">
+          {/* Identity rail. Sticky so the statline stays beside whatever
+              multiplier you're reading further down a long kit. */}
+          <aside className="flex flex-col gap-2.5 lg:sticky lg:top-4 lg:self-start">
+            <div className="chamfer-lg border border-edge bg-panel">
+              <div className="relative aspect-square overflow-hidden bg-inset">
+                {art ? (
                   <Image
-                    src={getCharacterArt(character.id)!}
+                    src={art}
                     alt={character.name}
                     width={1024}
                     height={1024}
@@ -129,57 +146,61 @@ export default async function CharacterDetailPage({
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="font-heading text-8xl text-white/85 drop-shadow-[0_0_16px_rgba(255,255,255,0.25)]">
+                  <span className="flex h-full w-full items-center justify-center font-heading text-8xl text-readout-dim">
                     {character.name.charAt(0)}
                   </span>
                 )}
                 <span
-                  className={`absolute left-2 top-2 px-2 py-0.5 font-body text-[10px] font-bold uppercase tracking-widest ${style.chip}`}
+                  className="absolute left-0 top-0 px-2 py-0.5 font-body text-[11px] font-bold tracking-[0.14em] text-void"
+                  style={{ backgroundColor: hue }}
                 >
-                  {character.color}
+                  {EL_CODE[character.color] ?? character.color}
                 </span>
               </div>
 
-              <div className="border-t border-zinc-800 px-4 py-3">
-                <h1 className="font-heading text-4xl tracking-[0.08em] text-zinc-100">
+              <div className="border-t border-hairline px-3 py-2.5">
+                <h1 className="font-heading text-4xl leading-none tracking-[0.06em] text-readout-strong">
                   {character.name}
                 </h1>
-                <p className="font-body text-xs uppercase tracking-[0.16em] text-zinc-500">
+                <p className="mt-0.5 font-body text-[11px] font-bold uppercase tracking-[0.2em] text-readout-muted">
                   {character.id}
                 </p>
                 {Array.isArray(character.tags) && character.tags.length > 0 ? (
-                  <div className="mt-2 flex flex-wrap gap-1">
+                  <div className="mt-2 flex flex-wrap gap-1.5">
                     {character.tags.map((tag) => (
-                      <Badge
+                      <span
                         key={tag}
-                        variant="outline"
-                        className="rounded-none border-zinc-600 px-1.5 py-0 font-body text-[10px] uppercase tracking-widest text-zinc-300"
+                        className="chamfer border border-edge px-2 py-0.5 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim"
                       >
                         {tag}
-                      </Badge>
+                      </span>
                     ))}
                   </div>
                 ) : null}
               </div>
 
-              <div className="grid grid-cols-3 border-t border-zinc-800 text-center">
-                {(
-                  [
-                    ["ATK", character.atk],
-                    ["DEF", character.def],
-                    ["HP", character.hp],
-                  ] as const
-                ).map(([label, value], i) => (
-                  <div
-                    key={label}
-                    className={`py-2.5 ${i > 0 ? "border-l border-zinc-800" : ""}`}
-                  >
-                    <p className={UI.fieldLabel}>{label}</p>
-                    <p className="font-heading text-2xl text-zinc-100">
-                      {value}
-                    </p>
-                  </div>
-                ))}
+              <div className="border-t border-hairline px-3 py-2.5">
+                <p className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+                  Against the roster
+                </p>
+                <StatBar
+                  label="Hp"
+                  value={character.hp}
+                  max={ROSTER_PEAK.hp}
+                  hue={hue}
+                />
+                <StatBar
+                  label="Atk"
+                  value={character.atk}
+                  max={ROSTER_PEAK.atk}
+                  hue={hue}
+                />
+                <StatBar
+                  label="Def"
+                  value={character.def}
+                  max={ROSTER_PEAK.def}
+                  hue={hue}
+                />
               </div>
             </div>
 
@@ -193,9 +214,11 @@ export default async function CharacterDetailPage({
             />
 
             {character.lore ? (
-              <div className="border-2 border-zinc-800 bg-black/45 px-4 py-3">
-                <p className={UI.fieldLabel}>Lore</p>
-                <p className="mt-1 font-body text-sm leading-relaxed text-zinc-300">
+              <div className="chamfer-lg border border-edge bg-panel px-3 py-2.5">
+                <p className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+                  Lore
+                </p>
+                <p className="mt-1 font-body text-sm leading-relaxed text-readout-dim">
                   {character.lore}
                 </p>
               </div>
@@ -204,7 +227,7 @@ export default async function CharacterDetailPage({
 
           {/* Kit details — a document, not a stack of cards. Same typography
               as /news via components/ui/prose.tsx. */}
-          <div className="border-2 border-zinc-800 bg-black/45 px-4 pb-5 pt-1 md:px-6">
+          <div className="chamfer-lg border border-edge bg-panel px-4 pb-5 pt-1 md:px-6">
             {isMultiPhase ? (
               <ProseSection title="Kit">
                 <KitPhases character={character} variant="document" />
@@ -254,25 +277,27 @@ export default async function CharacterDetailPage({
                       {rows.map((row) => (
                         <tr key={row.id}>
                           <td
-                            className={`${PROSE.td} font-heading text-sm tracking-wider text-zinc-100`}
+                            className={`${PROSE.td} font-heading text-sm tracking-wider text-readout-strong`}
                           >
                             {row.abilityName}
                           </td>
                           <td className={PROSE.td}>{row.rankLabel}</td>
                           <td className={PROSE.td}>{row.multiplierLabel}</td>
                           <td className={PROSE.td}>{row.scenarioLabel}</td>
-                          <td
-                            className={`${PROSE.td} font-semibold text-amber-200`}
-                          >
+                          {/* The result is the one number the whole row exists
+                              to produce, so it carries the element hue — the
+                              only place on this page besides the identity chip
+                              where the element speaks. */}
+                          <td className={PROSE.td} style={{ color: hue }}>
                             <KeyworkHighlighter
                               text={row.resultLabel}
-                              className="font-body text-[13px] font-semibold text-amber-200"
+                              className="font-body text-[13px] font-bold tabular-nums"
                             />
                           </td>
                           <td className={`${PROSE.td} max-w-70 whitespace-normal`}>
                             <KeyworkHighlighter
                               text={row.notes || "—"}
-                              className="font-body text-xs leading-5 text-zinc-400"
+                              className="font-body text-xs leading-5 text-readout-muted"
                             />
                           </td>
                         </tr>

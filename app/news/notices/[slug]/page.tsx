@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import type { ComponentType } from "react";
-import { listNoticeSlugs, type NewsPostMetadata } from "@/lib/news/posts";
+import {
+  getPostContext,
+  listNoticeSlugs,
+  type NewsPostMetadata,
+} from "@/lib/news/posts";
 import NewsPostLayout from "@/components/news/NewsPostLayout";
 
 interface NoticeDetailPageProps {
@@ -27,8 +31,21 @@ export default async function NoticeDetailPage({ params }: NoticeDetailPageProps
     metadata: NewsPostMetadata;
   };
 
+  const { readingMinutes, older, newer } = await getPostContext(
+    "notice",
+    slug,
+  );
+
   return (
-    <NewsPostLayout title={metadata.title} date={metadata.date}>
+    <NewsPostLayout
+      title={metadata.title}
+      date={metadata.date}
+      summary={metadata.summary}
+      kind="notice"
+      readingMinutes={readingMinutes}
+      older={older}
+      newer={newer}
+    >
       <Post />
     </NewsPostLayout>
   );

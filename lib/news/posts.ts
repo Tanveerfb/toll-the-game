@@ -1,6 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { sortByDateDesc } from "@/lib/news/sortByDateDesc";
+import {
+  buildFeed,
+  estimateReadingMinutes,
+  type NewsFeedEntry,
+  type NewsKind,
+} from "@/lib/news/feed";
 
 export interface NewsPostSummary {
   slug: string;
@@ -69,6 +75,39 @@ export function listUpdateSlugs(): string[] {
 
 export function listNoticeSlugs(): string[] {
   return listSlugs(NOTICES_DIR);
+}
+
+/**
+ * Everything the post page needs beyond the MDX itself: how long it reads,
+ * and where it sits in the stream.
+ *
+ * Adjacency runs over the MERGED feed, not just the post's own kind, so
+ * walking prev/next follows the same chronology the /news list shows. The feed
+ * is newest-first, so the older post is the next index along.
+ */
+export async function getPostContext(
+  kind: NewsKind,
+  slug: string,
+): Promise<{
+  readingMinutes: number;
+  older: NewsFeedEntry | null;
+  newer: NewsFeedEntry | null;
+}> {
+  const dir = kind === "update" ? UPDATES_DIR : NOTICES_DIR;
+  const source = fs.readFileSync(path.join(dir, `${slug}.mdx`), "utf8");
+
+  const [updates, notices] = await Promise.all([
+    getAllUpdates(),
+    getAllNotices(),
+  ]);
+  const feed = buildFeed(updates, notices);
+  const index = feed.findIndex((e) => e.kind === kind && e.slug === slug);
+
+  return {
+    readingMinutes: estimateReadingMinutes(source),
+    older: index >= 0 ? (feed[index + 1] ?? null) : null,
+    newer: index > 0 ? (feed[index - 1] ?? null) : null,
+  };
 }
 
 export async function getLatestNewsDate(): Promise<string | null> {

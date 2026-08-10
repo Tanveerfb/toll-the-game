@@ -43,7 +43,7 @@ export default function ChapterTitleCard({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="font-body text-xs uppercase tracking-[0.3em] text-zinc-500"
+          className="font-body text-[10px] font-bold uppercase tracking-[0.34em] text-readout-muted"
         >
           {partTitle}
         </m.p>
@@ -51,7 +51,7 @@ export default function ChapterTitleCard({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="mt-3 font-body text-sm uppercase tracking-[0.3em] text-amber-300"
+          className="mt-3 font-body text-[11px] font-bold uppercase tracking-[0.34em] text-signal"
         >
           Chapter {chapterNumber}
         </m.p>
@@ -59,7 +59,7 @@ export default function ChapterTitleCard({
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="mt-2 font-heading text-4xl tracking-[0.1em] text-zinc-100 md:text-6xl"
+          className="mt-2 font-heading text-5xl tracking-[0.08em] text-readout-strong md:text-6xl"
         >
           {title}
         </m.h2>
@@ -67,7 +67,7 @@ export default function ChapterTitleCard({
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="mx-auto mt-5 h-px w-40 bg-amber-300/70"
+          className="mx-auto mt-5 h-px w-40 bg-signal/70"
         />
       </div>
     </div>

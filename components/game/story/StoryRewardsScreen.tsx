@@ -32,11 +32,11 @@ function RewardSection({
   if (rows.length === 0) return null;
   return (
     <div className="flex flex-col gap-2">
-      <p className={`font-body text-[10px] uppercase tracking-[0.16em] ${accent}`}>{heading}</p>
+      <p className={`font-body text-[9px] font-bold uppercase tracking-[0.22em] ${accent}`}>{heading}</p>
       {rows.map(([label, value]) => (
-        <div key={label} className="flex items-center justify-between border-b border-zinc-800 pb-2">
-          <span className="font-body text-sm uppercase tracking-[0.12em] text-zinc-400">{label}</span>
-          <span className="font-heading text-xl text-zinc-100">+{value}</span>
+        <div key={label} className="flex items-center justify-between border-b border-hairline pb-2">
+          <span className="font-body text-[11px] font-bold uppercase tracking-[0.16em] text-readout-dim">{label}</span>
+          <span className="font-heading text-xl tabular-nums text-readout-strong">+{value}</span>
         </div>
       ))}
     </div>
@@ -57,12 +57,12 @@ export default function StoryRewardsScreen({
   const nothingDropped = !result.firstClear && isEmptyPayout(result.drops);
 
   return (
-    <Card className="w-full max-w-md rounded-none border-2 border-amber-300 bg-black/70 ring-0">
-      <CardHeader className="border-b border-zinc-800 px-6 py-5">
-        <p className="font-body text-xs uppercase tracking-[0.16em] text-zinc-500">
+    <Card className="chamfer-lg w-full max-w-md rounded-none border border-signal bg-panel ring-0">
+      <CardHeader className="border-b border-hairline bg-inset px-6 py-5">
+        <p className="font-body text-[10px] font-bold uppercase tracking-[0.28em] text-signal">
           {chapterTitle}
         </p>
-        <CardTitle className="mt-1 font-heading text-3xl tracking-[0.14em] text-amber-300">
+        <CardTitle className="mt-1 font-heading text-3xl tracking-[0.14em] text-signal">
           REWARDS
         </CardTitle>
       </CardHeader>
@@ -71,16 +71,16 @@ export default function StoryRewardsScreen({
           <RewardSection
             heading="First clear bonus"
             payout={result.firstClear}
-            accent="text-amber-300"
+            accent="text-role-ultimate"
           />
         ) : null}
-        <RewardSection heading="Drops" payout={result.drops} accent="text-sky-300" />
+        <RewardSection heading="Drops" payout={result.drops} accent="text-readout-muted" />
         {nothingDropped ? (
-          <p className="font-body text-sm text-zinc-500">No drops this run.</p>
+          <p className="font-body text-sm text-readout-muted">No drops this run.</p>
         ) : null}
         <Button
           onClick={onContinue}
-          className="mt-2 h-12 rounded-none border-2 border-amber-300 font-heading text-lg tracking-[0.14em]"
+          className="chamfer mt-2 h-12 rounded-none border border-signal bg-signal font-heading text-lg tracking-[0.12em] text-void"
         >
           CONTINUE
         </Button>

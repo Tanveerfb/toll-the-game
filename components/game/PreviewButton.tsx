@@ -36,7 +36,7 @@ export default function PreviewButton({
       onClick={launch}
       // Wraps rather than clipping: the label is long and this sits in a
       // 300px sidebar that becomes full-width on mobile.
-      className="flex w-full min-h-11 items-center justify-center border border-amber-300/70 bg-amber-400/10 px-3 py-2 text-center font-body text-xs uppercase leading-tight tracking-widest text-amber-200 transition-colors hover:bg-amber-400/20"
+      className="chamfer flex w-full min-h-11 items-center justify-center border border-signal-dim bg-signal/8 px-3 py-2 text-center font-body text-[11px] font-bold uppercase leading-tight tracking-[0.16em] text-signal transition-colors hover:bg-signal/16"
     >
       Preview — full rank &amp; ultimate set vs. a training dummy
     </button>

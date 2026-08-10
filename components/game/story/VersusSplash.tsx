@@ -48,7 +48,7 @@ export default function VersusSplash({
 
       {/* Diagonal split; the two sides read as colliding rather than sitting
           side by side. */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(105deg,rgba(56,189,248,0.16)_0%,transparent_45%,transparent_55%,rgba(244,63,94,0.16)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(105deg,rgba(55,166,255,0.18)_0%,transparent_45%,transparent_55%,rgba(255,90,78,0.18)_100%)]" />
 
       <m.div
         initial={{ opacity: 0, scale: 1.6 }}
@@ -56,10 +56,10 @@ export default function VersusSplash({
         transition={{ duration: 0.32, ease: "easeOut" }}
         className="relative z-20 text-center"
       >
-        <p className="font-heading text-7xl tracking-[0.08em] text-amber-300 drop-shadow-[0_6px_24px_rgba(0,0,0,0.9)] md:text-9xl">
+        <p className="font-heading text-7xl tracking-[0.06em] text-role-ultimate drop-shadow-[0_6px_24px_rgba(0,0,0,0.9)] md:text-9xl">
           VS
         </p>
-        <p className="mt-2 font-body text-xs uppercase tracking-[0.24em] text-zinc-300">
+        <p className="mt-2 font-body text-[11px] font-bold uppercase tracking-[0.26em] text-readout-dim">
           {chapterTitle}
         </p>
       </m.div>
@@ -72,7 +72,7 @@ export default function VersusSplash({
         className="pointer-events-none absolute inset-0 z-30 bg-white"
       />
 
-      <p className="pointer-events-none absolute inset-x-0 bottom-4 z-20 text-center font-body text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+      <p className="pointer-events-none absolute inset-x-0 bottom-4 z-20 text-center font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
         Tap to begin ▸
       </p>
     </div>
@@ -121,11 +121,11 @@ function TeamSide({
             <div
               className={`absolute inset-0 ${
                 isLeft
-                  ? "bg-[linear-gradient(to_right,transparent_40%,#09090b_100%)]"
-                  : "bg-[linear-gradient(to_left,transparent_40%,#09090b_100%)]"
+                  ? "bg-[linear-gradient(to_right,transparent_40%,#06090c_100%)]"
+                  : "bg-[linear-gradient(to_left,transparent_40%,#06090c_100%)]"
               }`}
             />
-            <div className="absolute inset-x-0 bottom-0 bg-black/70 px-1 py-0.5 text-center font-heading text-[10px] tracking-[0.06em] text-zinc-200">
+            <div className="absolute inset-x-0 bottom-0 bg-void/75 px-1 py-0.5 text-center font-heading text-[10px] tracking-[0.06em] text-readout">
               {character?.name ?? pick.id}
             </div>
           </div>

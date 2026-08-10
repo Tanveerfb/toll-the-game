@@ -30,19 +30,19 @@ function GrowthControls({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-baseline justify-between gap-2 border border-zinc-800 bg-zinc-900/40 px-3 py-2">
-        <span className="font-heading text-lg tracking-[0.1em] text-zinc-100">
+      <div className="flex items-baseline justify-between gap-2 chamfer border border-edge bg-panel px-3 py-2">
+        <span className="font-heading text-lg tracking-[0.1em] text-readout-strong">
           Level {progress.level}
-          <span className="font-body text-xs text-zinc-500"> / {maxLevel}</span>
+          <span className="font-body text-xs text-readout-muted"> / {maxLevel}</span>
         </span>
-        <span className="font-body text-xs uppercase tracking-[0.14em] text-amber-200">
+        <span className="font-body text-xs uppercase tracking-[0.14em] text-signal">
           Ascension {progress.ascension}
         </span>
       </div>
 
       {!atMaxLevel ? (
         <div>
-          <div className="flex items-center justify-between font-body text-xs uppercase tracking-widest text-zinc-500">
+          <div className="flex items-center justify-between font-body text-xs uppercase tracking-widest text-readout-muted">
             <span>XP</span>
             <span className="tabular-nums">
               {progress.xp} / {xpNeeded}
@@ -51,7 +51,7 @@ function GrowthControls({
           <Progress value={(progress.xp / xpNeeded) * 100} className="mt-1" />
         </div>
       ) : (
-        <p className="font-body text-xs uppercase tracking-widest text-amber-300">
+        <p className="font-body text-xs uppercase tracking-widest text-signal">
           Max level for this ascension tier — ascend to continue leveling.
         </p>
       )}
@@ -81,12 +81,12 @@ function GrowthControls({
       </div>
 
       {nextCost ? (
-        <div className="border-t border-zinc-800 pt-3">
-          <p className="font-body text-xs uppercase tracking-widest text-zinc-500">
+        <div className="border-t border-hairline pt-3">
+          <p className="font-body text-xs uppercase tracking-widest text-readout-muted">
             Ascend to tier {progress.ascension + 1} (unlocks Lv
             {maxLevelForAscension(progress.ascension + 1)})
           </p>
-          <p className="mt-1 font-body text-sm text-zinc-300">
+          <p className="mt-1 font-body text-sm text-readout">
             {nextCost.sea_monster_eye}x Sea Monster&apos;s Eye (
             {state.inventory.sea_monster_eye ?? 0} owned) •{" "}
             {nextCost.corroded_seaweed}x Corroded Sea Weed (
@@ -98,7 +98,7 @@ function GrowthControls({
           </Button>
         </div>
       ) : (
-        <p className="border-t border-zinc-800 pt-3 font-body text-xs uppercase tracking-widest text-zinc-500">
+        <p className="border-t border-hairline pt-3 font-body text-xs uppercase tracking-widest text-readout-muted">
           No further ascension costed yet (bands 4-6 come in a later update).
         </p>
       )}
@@ -135,7 +135,7 @@ export default function CharacterProgressionPanel({
 
   if (!roster.includes(characterId)) {
     return (
-      <p className="border border-zinc-800 bg-zinc-900/30 px-3 py-2 text-center font-body text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+      <p className="chamfer border border-edge bg-panel px-3 py-2 text-center font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
         Not owned — summon to level up
       </p>
     );
@@ -146,7 +146,7 @@ export default function CharacterProgressionPanel({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full min-h-11 items-center justify-center border border-emerald-400/70 bg-emerald-400/10 font-body text-xs uppercase tracking-widest text-emerald-200 transition-colors hover:bg-emerald-400/20"
+        className="chamfer flex w-full min-h-11 items-center justify-center border border-role-heal/60 bg-role-heal/8 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-role-heal transition-colors hover:bg-role-heal/16"
       >
         Growth — level & ascension
       </button>

@@ -19,7 +19,7 @@ import {
 // phase. A single-phase character renders the plain kit with no tabs.
 
 const STAT_LABEL =
-  "font-body text-[10px] uppercase tracking-[0.16em] text-zinc-500";
+  "font-body text-[10px] font-bold uppercase tracking-[0.2em] text-readout-muted";
 
 /**
  * `compact` is the boxed renderer used in battle overlays; `document` matches
@@ -100,10 +100,10 @@ export default function KitPhases({
                 key={i}
                 type="button"
                 onClick={() => setPhase(i)}
-                className={`border-2 px-3 py-1.5 font-body text-xs uppercase tracking-[0.12em] transition-colors ${
+                className={`chamfer min-h-11 border px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] transition-colors ${
                   active
-                    ? "border-amber-300 bg-amber-300/15 text-amber-200"
-                    : "border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+                    ? "border-signal bg-signal text-void"
+                    : "border-edge bg-void/60 text-readout-dim hover:border-edge-strong hover:text-readout"
                 }`}
               >
                 {tabLabel(i)}
@@ -121,7 +121,9 @@ export default function KitPhases({
           ).map(([label, value]) => (
             <span key={label} className={STAT_LABEL}>
               {label}{" "}
-              <span className="font-heading text-sm text-zinc-100">{value}</span>
+              <span className="font-heading text-sm text-readout-strong">
+                {value}
+              </span>
             </span>
           ))}
         </div>

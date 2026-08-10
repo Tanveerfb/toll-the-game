@@ -1,10 +1,9 @@
 "use client";
 
 import React from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Image from "next/image";
 import OwnedTeamSelect from "@/components/game/OwnedTeamSelect";
+import { getCharacterArt } from "@/lib/game/characterArt";
 import { getCharacterById, type CharacterData } from "@/lib/game/characterCatalog";
 import { materialLabel } from "@/lib/game/materials";
 import {
@@ -16,6 +15,17 @@ import { STAMINA_CAP } from "@/lib/game/stamina";
 import { storyAttemptCost } from "@/lib/game/storyRewards";
 import { storyAnchors, storyOpenSlots } from "@/lib/game/storyTeam";
 import type { StoryChapter } from "@/types/story";
+
+/**
+ * The pre-fight screen, arranged as a decision rather than a document
+ * (Tanveer, 2026-08-11).
+ *
+ * Team select leads because on a replay it is the only thing the player
+ * actually changes; everything else is reference. The four stacked bordered
+ * boxes this replaced each held one label and one value, so the screen spent
+ * four borders saying four short facts and pushed the only interactive control
+ * below the fold.
+ */
 
 const TEAM_MODE_NOTE: Record<StoryChapter["teamMode"], string> = {
   canon: "Canon battle — the story fixes this team",
@@ -51,9 +61,32 @@ function useRewardLines(chapter: StoryChapter, cleared: boolean): string[] {
   }, [chapter, cleared]);
 }
 
+/** One cell of the fact strip. Opposition isn't here — it has portraits of its
+ *  own below, and printing the same names twice was what made the old stack of
+ *  boxes feel padded. */
+function Fact({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <div className="bg-panel px-3 py-2.5">
+      <p className="font-body text-[9px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+        {label}
+      </p>
+      <p className="mt-0.5 font-heading text-lg leading-tight tracking-[0.04em] text-readout-strong">
+        {children}
+      </p>
+    </div>
+  );
+}
+
 export default function ChapterBrief({
   chapter,
   chapterNumber,
+  partOrder,
   cleared,
   ownedIds,
   currentStamina,
@@ -62,6 +95,9 @@ export default function ChapterBrief({
 }: {
   chapter: StoryChapter;
   chapterNumber: number;
+  /** Shown in the header line — the index leads with the part, so the brief
+   *  shouldn't quietly drop it. */
+  partOrder?: number;
   cleared: boolean;
   ownedIds: string[];
   currentStamina: number;
@@ -84,22 +120,36 @@ export default function ChapterBrief({
   const affordable = currentStamina >= cost;
   const rewardLines = useRewardLines(chapter, cleared);
 
-  const enemies = chapter.battle.enemyTeam
-    .map((pick) => getCharacterById(pick.id)?.name ?? pick.id)
-    .join(" · ");
+  const enemies = chapter.battle.enemyTeam.map((pick) => ({
+    id: pick.id,
+    name: getCharacterById(pick.id)?.name ?? pick.id,
+    art: getCharacterArt(pick.id),
+  }));
 
-  // Stage effects render as three sections — enemy-only, both sides, then
-  // player-only (Tanveer, 2026-08-10). A standard fight has none and the
-  // whole block is omitted.
+  // Stage effects keep their three groupings (Tanveer, 2026-08-10) but move
+  // off hardcoded rose/zinc/emerald onto the role tokens: a debuff on you is
+  // aggression, a boon for you is restoration.
   const stage = groupStageEffects(chapter.stageEffects);
   const stageSections: {
     label: string;
     tone: string;
     effects: StageEffect[];
   }[] = [
-    { label: "Enemy", tone: "border-rose-400/50 text-rose-200", effects: stage.enemy },
-    { label: "Both sides", tone: "border-zinc-500/60 text-zinc-200", effects: stage.both },
-    { label: "Your team", tone: "border-emerald-400/50 text-emerald-200", effects: stage.player },
+    {
+      label: "Enemy",
+      tone: "border-role-attack/50 text-role-attack",
+      effects: stage.enemy,
+    },
+    {
+      label: "Both sides",
+      tone: "border-edge text-readout-dim",
+      effects: stage.both,
+    },
+    {
+      label: "Your team",
+      tone: "border-role-heal/50 text-role-heal",
+      effects: stage.player,
+    },
   ].filter((section) => section.effects.length > 0);
 
   const start = (skipScenes: boolean) => {
@@ -108,138 +158,134 @@ export default function ChapterBrief({
   };
 
   return (
-    <section className="relative z-10 mx-auto w-full max-w-3xl space-y-4 px-4 py-8 md:px-8">
-      <Card className="rounded-none border-2 border-zinc-700 bg-black/55 ring-0">
-        <CardHeader className="border-b border-zinc-700 px-6 py-5">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <p className="font-body text-xs uppercase tracking-[0.16em] text-amber-300">
-                Chapter {chapterNumber}
-                {cleared ? " · Cleared" : ""}
-              </p>
-              <CardTitle className="mt-1 font-heading text-3xl tracking-[0.12em] text-zinc-100 md:text-4xl">
-                {chapter.title}
-              </CardTitle>
-              <p className="mt-2 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
-                {TEAM_MODE_NOTE[chapter.teamMode]}
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              onClick={onBack}
-              className="rounded-none border border-zinc-700 font-heading tracking-[0.12em] text-zinc-300"
+    <section className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-8">
+      <button
+        type="button"
+        onClick={onBack}
+        className="chamfer border border-edge px-3 py-2 font-body text-[11px] font-bold uppercase tracking-[0.2em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+      >
+        ← Chapter select
+      </button>
+
+      <header className="mt-4 border-l-2 border-signal pl-3">
+        <p className="font-body text-[10px] font-bold uppercase tracking-[0.28em] text-signal">
+          {partOrder ? `Part ${partOrder} · ` : ""}Chapter {chapterNumber}
+          {cleared ? " · Cleared" : ""}
+        </p>
+        <h1 className="mt-0.5 font-heading text-3xl leading-none tracking-[0.06em] text-readout-strong md:text-4xl">
+          {chapter.title}
+        </h1>
+      </header>
+
+      <div className="mt-4">
+        <p className="mb-1.5 font-body text-[11px] leading-relaxed text-readout-dim">
+          {TEAM_MODE_NOTE[chapter.teamMode]}
+        </p>
+        <OwnedTeamSelect
+          ownedIds={ownedIds}
+          team={picked}
+          onChange={setPicked}
+          anchors={anchors}
+          openSlots={openSlots}
+          title={openSlots === 0 ? "STORY TEAM" : "YOUR TEAM"}
+        />
+      </div>
+
+      {/* Opposition and the stage rules read as one block: both describe what
+          you're walking into rather than what you bring. */}
+      <div className="mt-2.5 border border-edge bg-panel px-3 py-2.5">
+        <p className="font-body text-[9px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+          Against
+        </p>
+        <div className="mt-1.5 flex flex-wrap gap-2">
+          {enemies.map((enemy, index) => (
+            <span
+              key={`${enemy.id}-${index}`}
+              className="w-14 text-center"
             >
-              ◂ BACK
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 p-4 md:p-6">
-          <div className="flex items-center justify-between border border-zinc-800 px-4 py-3">
-            <span className="font-body text-xs uppercase tracking-[0.14em] text-zinc-500">
-              Opposition
-            </span>
-            <span className="font-heading text-sm tracking-[0.06em] text-rose-200">{enemies}</span>
-          </div>
-
-          {stageSections.length > 0 ? (
-            <div className="border border-zinc-800 px-4 py-3">
-              <p className="font-body text-xs uppercase tracking-[0.14em] text-zinc-500">
-                Stage effects
-              </p>
-              <div className="mt-2 space-y-2">
-                {stageSections.map((section) => (
-                  <div key={section.label}>
-                    <p className="font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-                      {section.label}
-                    </p>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      {section.effects.map((effect: StageEffect, i: number) => (
-                        <Badge
-                          key={`${section.label}-${i}`}
-                          className={`rounded-none border bg-transparent font-body text-[10px] uppercase tracking-widest ${section.tone}`}
-                        >
-                          {describeStageEffect(effect)}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          <div className="border border-zinc-800 px-4 py-3">
-            <p className="font-body text-xs uppercase tracking-[0.14em] text-zinc-500">
-              {cleared ? "Drops per clear" : "First clear bonus"}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {rewardLines.length === 0 ? (
-                <span className="font-body text-sm text-zinc-500">Nothing</span>
-              ) : (
-                rewardLines.map((line) => (
-                  <Badge
-                    key={line}
-                    className="rounded-none border border-amber-300/60 bg-amber-300/10 font-body text-[10px] uppercase tracking-widest text-amber-200"
-                  >
-                    {line}
-                  </Badge>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between border border-zinc-800 px-4 py-3">
-            <span className="font-body text-xs uppercase tracking-[0.14em] text-zinc-500">
-              Stamina
-            </span>
-            <span className="font-heading text-sm text-zinc-100">
-              {cost === 0 ? "FREE — first clear" : `−${cost}`}
-              <span className="ml-2 text-zinc-500">
-                ({currentStamina} / {STAMINA_CAP})
+              <span className="block h-14 w-14 overflow-hidden border border-role-attack bg-inset">
+                {enemy.art ? (
+                  <Image
+                    src={enemy.art}
+                    alt=""
+                    width={128}
+                    height={128}
+                    className="h-full w-full object-cover object-top"
+                  />
+                ) : null}
+              </span>
+              <span className="mt-0.5 block truncate font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-dim">
+                {enemy.name}
               </span>
             </span>
-          </div>
-        </CardContent>
-      </Card>
+          ))}
+        </div>
 
-      <OwnedTeamSelect
-        ownedIds={ownedIds}
-        team={picked}
-        onChange={setPicked}
-        anchors={anchors}
-        openSlots={openSlots}
-        title={openSlots === 0 ? "STORY TEAM" : "YOUR TEAM"}
-      />
+        {stageSections.length > 0 ? (
+          <div className="mt-2.5 flex flex-wrap gap-1.5 border-t border-hairline pt-2.5">
+            {stageSections.map((section) =>
+              section.effects.map((effect: StageEffect, i: number) => (
+                <span
+                  key={`${section.label}-${i}`}
+                  className={`border px-2 py-0.5 font-body text-[10px] font-bold uppercase tracking-[0.12em] ${section.tone}`}
+                >
+                  {section.label}: {describeStageEffect(effect)}
+                </span>
+              )),
+            )}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="mt-2.5 grid grid-cols-2 gap-px border border-edge bg-edge sm:grid-cols-3">
+        <Fact label="Stamina">
+          {cost === 0 ? (
+            "Free"
+          ) : (
+            <>
+              −{cost}
+              <span className="ml-2 font-body text-xs font-semibold tabular-nums text-readout-muted">
+                {currentStamina} / {STAMINA_CAP}
+              </span>
+            </>
+          )}
+        </Fact>
+        <Fact label={cleared ? "Drops per clear" : "First clear bonus"}>
+          {rewardLines.length === 0 ? "Nothing" : rewardLines.join(" · ")}
+        </Fact>
+        <Fact label="Scenes">
+          {chapter.intro.length + chapter.outro.length} panels
+        </Fact>
+      </div>
 
       {!affordable ? (
-        <p className="font-body text-sm text-red-400">
+        <p className="mt-2.5 border border-role-attack/50 bg-role-attack/8 px-3 py-2 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-role-attack">
           Not enough stamina — wait for it to regenerate.
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Button
-          size="lg"
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <button
+          type="button"
           disabled={!affordable}
           onClick={() => start(false)}
-          className="h-12 flex-1 rounded-none border-2 border-amber-300 bg-[linear-gradient(90deg,#b45309_0%,#d97706_38%,#f59e0b_70%,#facc15_100%)] font-heading text-lg tracking-[0.14em] text-zinc-950"
+          className="chamfer h-12 flex-1 border border-signal bg-signal font-heading text-xl tracking-[0.12em] text-void transition-opacity disabled:pointer-events-none disabled:opacity-40"
         >
-          {cleared ? "REPLAY" : "BEGIN"}
-          {cost > 0 ? ` (${cost} STAMINA)` : ""}
-        </Button>
+          {cleared ? "Replay" : "Begin"}
+          {cost > 0 ? ` · ${cost} stamina` : ""}
+        </button>
         {/* Farming a cleared chapter through eight VN panels every run would
             make the loop unusable — skipping is offered only once the player
             has actually seen the scenes. */}
         {cleared ? (
-          <Button
-            size="lg"
-            variant="ghost"
+          <button
+            type="button"
             disabled={!affordable}
             onClick={() => start(true)}
-            className="h-12 rounded-none border-2 border-zinc-700 px-6 font-heading text-base tracking-[0.14em] text-zinc-300"
+            className="chamfer h-12 border border-edge px-6 font-heading text-lg tracking-[0.12em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:pointer-events-none disabled:opacity-40"
           >
-            SKIP STORY
-          </Button>
+            Skip story
+          </button>
         ) : null}
       </div>
     </section>

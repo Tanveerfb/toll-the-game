@@ -195,7 +195,7 @@ export default function StorySceneReader({
       </AnimatePresence>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between px-4 py-3">
-        <p className="font-heading text-sm tracking-[0.18em] text-zinc-500">
+        <p className="font-heading text-sm tracking-[0.18em] text-readout-muted">
           {chapterTitle.toUpperCase()}
         </p>
         <span className="pointer-events-auto flex items-center gap-1.5">
@@ -208,8 +208,8 @@ export default function StorySceneReader({
             }}
             className={`rounded-none border font-body text-[10px] uppercase tracking-[0.16em] ${
               auto
-                ? "border-amber-300 text-amber-200"
-                : "border-zinc-700 text-zinc-400"
+                ? "chamfer border-signal bg-signal text-void"
+                : "chamfer border-edge text-readout-dim hover:text-readout"
             }`}
           >
             Auto
@@ -221,7 +221,7 @@ export default function StorySceneReader({
               event.stopPropagation();
               setHistoryOpen(true);
             }}
-            className="rounded-none border border-zinc-700 font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400"
+            className="chamfer rounded-none border border-edge font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-dim hover:text-signal"
           >
             History
           </Button>
@@ -232,7 +232,7 @@ export default function StorySceneReader({
               event.stopPropagation();
               requestSkip();
             }}
-            className="rounded-none border border-zinc-700 font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400"
+            className="chamfer rounded-none border border-edge font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-dim hover:text-signal"
           >
             Skip ▸▸
           </Button>
@@ -268,29 +268,29 @@ export default function StorySceneReader({
         {narration ? (
           // No box, no name plate, no "· · ·" filler — narration reads as the
           // camera talking, not as a character with no name.
-          <p className="text-center font-body text-base leading-loose tracking-wide text-zinc-300 md:text-lg">
+          <p className="text-center font-body text-base italic leading-loose tracking-wide text-readout-dim md:text-lg">
             <RevealedText text={text} settled={showAll} />
           </p>
         ) : (
-          <div className="border-2 border-zinc-700 bg-zinc-950/90 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
-            <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-2">
-              <p className="font-heading text-lg tracking-[0.14em] text-amber-300">
+          <div className="chamfer-lg border border-edge bg-panel/95 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
+            <div className="flex items-center justify-between border-b border-hairline px-5 py-2">
+              <p className="font-heading text-lg tracking-[0.14em] text-signal">
                 {scene.speaker?.toUpperCase()}
               </p>
-              <p className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-600">
+              <p className="font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
                 {index + 1} / {scenes.length}
               </p>
             </div>
-            <p className="min-h-20 px-5 py-4 font-body text-sm leading-relaxed text-zinc-200 md:text-base">
+            <p className="min-h-20 px-5 py-4 font-body text-sm leading-relaxed text-readout md:text-base">
               <RevealedText text={text} settled={showAll} />
             </p>
-            <p className="border-t border-zinc-900 px-5 py-1.5 text-right font-body text-[10px] uppercase tracking-[0.16em] text-zinc-600">
+            <p className="border-t border-hairline px-5 py-1.5 text-right font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
               {isComplete ? "Tap to continue ▸" : "Tap to reveal"}
             </p>
           </div>
         )}
         {narration ? (
-          <p className="mt-4 text-center font-body text-[10px] uppercase tracking-[0.16em] text-zinc-600">
+          <p className="mt-4 text-center font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
             {index + 1} / {scenes.length} ·{" "}
             {isComplete ? "Tap to continue ▸" : "Tap to reveal"}
           </p>
@@ -430,24 +430,24 @@ function HistoryOverlay({
       className="absolute inset-0 z-40 flex flex-col bg-black/90 backdrop-blur-sm"
       onClick={(event) => event.stopPropagation()}
     >
-      <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-3">
-        <p className="font-heading text-lg tracking-[0.14em] text-zinc-200">
+      <div className="flex items-center justify-between border-b border-hairline bg-inset px-5 py-3">
+        <p className="font-heading text-lg tracking-[0.14em] text-readout-strong">
           HISTORY
         </p>
         <Button
           onClick={onClose}
-          className="h-9 rounded-none border-2 border-amber-300 px-5 font-heading text-sm tracking-[0.14em]"
+          className="chamfer h-11 rounded-none border border-signal bg-signal px-5 font-heading text-sm tracking-[0.12em] text-void"
         >
           CLOSE
         </Button>
       </div>
       <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
         {scenes.slice(0, upTo + 1).map((scene, i) => (
-          <div key={i} className="border-l-2 border-zinc-800 pl-3">
-            <p className="font-heading text-xs tracking-[0.14em] text-amber-300/80">
+          <div key={i} className="border-l border-edge pl-3">
+            <p className="font-heading text-xs tracking-[0.14em] text-signal">
               {scene.speaker?.toUpperCase() ?? "NARRATION"}
             </p>
-            <p className="mt-1 font-body text-sm leading-relaxed text-zinc-300">
+            <p className="mt-1 font-body text-sm leading-relaxed text-readout-dim">
               {scene.text}
             </p>
           </div>
@@ -469,11 +469,11 @@ function SkipPrompt({
       className="absolute inset-0 z-40 flex items-center justify-center bg-black/85 px-4 backdrop-blur-sm"
       onClick={(event) => event.stopPropagation()}
     >
-      <div className="w-full max-w-sm border-2 border-amber-300 bg-zinc-950/95 p-5">
-        <p className="font-heading text-xl tracking-[0.12em] text-amber-200">
+      <div className="chamfer-lg w-full max-w-sm border border-signal bg-panel p-5">
+        <p className="font-heading text-xl tracking-[0.12em] text-signal">
           SKIP THESE SCENES?
         </p>
-        <p className="mt-2 font-body text-sm text-zinc-400">
+        <p className="mt-2 font-body text-sm text-readout-dim">
           You haven&apos;t seen this chapter yet. You can replay it later from
           the chapter list.
         </p>
@@ -481,13 +481,13 @@ function SkipPrompt({
           <Button
             onClick={onCancel}
             variant="ghost"
-            className="h-10 flex-1 rounded-none border-2 border-zinc-700 font-heading text-sm tracking-[0.14em] text-zinc-300"
+            className="chamfer h-11 flex-1 rounded-none border border-edge font-heading text-sm tracking-[0.12em] text-readout-dim hover:text-signal"
           >
             KEEP READING
           </Button>
           <Button
             onClick={onConfirm}
-            className="h-10 flex-1 rounded-none border-2 border-amber-300 font-heading text-sm tracking-[0.14em]"
+            className="chamfer h-11 flex-1 rounded-none border border-signal bg-signal font-heading text-sm tracking-[0.12em] text-void"
           >
             SKIP
           </Button>

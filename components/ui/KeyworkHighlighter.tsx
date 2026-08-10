@@ -16,16 +16,21 @@ import {
 const ARROW_CATEGORIES = { ...keywordCategories, ...passiveStatVerbCategories };
 
 // Description highlighter, 7DS-style (Tanveer 2026-07-20): mechanic keywords
-// render as blue text with a hover tooltip; every number (damage %, durations,
-// stacks, gauge counts) renders as amber; multi-word parenthetical limiter
-// notes — "(Resets upon taking damage)", "(max 5 stacks, uncancellable)" —
-// render as cyan. No category pills. A `keywordClassName` override keeps the
-// deck-preview chip look.
+// render as signal text with a hover tooltip; every number (damage %,
+// durations, stacks, gauge counts) renders bright; multi-word parenthetical
+// limiter notes — "(Resets upon taking damage)", "(max 5 stacks,
+// uncancellable)" — render dimmed. No category pills. A `keywordClassName`
+// override keeps the deck-preview chip look.
+//
+// Numbers used to be amber. Under the Combat Terminal palette they're
+// achromatic instead (`readout-strong`): a skill line already carries a
+// keyword hue and sits under a skill-type accent, so a third colour on every
+// digit was noise. Bright-on-dim separates them without competing.
 
 const KEYWORD_CLASS =
-  "cursor-help font-semibold text-sky-400 underline decoration-dotted decoration-sky-400/40 underline-offset-2";
-const NUMBER_CLASS = "font-semibold text-amber-400";
-const PAREN_CLASS = "text-cyan-300";
+  "cursor-help font-semibold text-signal underline decoration-dotted decoration-signal/40 underline-offset-2";
+const NUMBER_CLASS = "font-semibold text-readout-strong";
+const PAREN_CLASS = "text-readout-muted";
 
 // A standalone number, optionally a percentage (180%, 2, 2.5).
 const NUMBER_SRC = "\\d+(?:\\.\\d+)?%?";
@@ -115,7 +120,7 @@ export default function KeyworkHighlighter({
       nodes.push(
         <ArrowDown
           key={`e-${i}`}
-          className="inline h-3.5 w-3.5 text-rose-400"
+          className="inline h-3.5 w-3.5 text-role-attack"
           strokeWidth={3}
         />,
       );
@@ -123,7 +128,7 @@ export default function KeyworkHighlighter({
       nodes.push(
         <ArrowUp
           key={`e-${i}`}
-          className="inline h-3.5 w-3.5 text-emerald-400"
+          className="inline h-3.5 w-3.5 text-role-heal"
           strokeWidth={3}
         />,
       );
@@ -147,12 +152,12 @@ export default function KeyworkHighlighter({
           <TooltipTrigger asChild>
             {arrow === "up" ? (
               <ArrowUp
-                className="inline h-3.5 w-3.5 cursor-help text-emerald-400"
+                className="inline h-3.5 w-3.5 cursor-help text-role-heal"
                 strokeWidth={3}
               />
             ) : arrow === "down" ? (
               <ArrowDown
-                className="inline h-3.5 w-3.5 cursor-help text-rose-400"
+                className="inline h-3.5 w-3.5 cursor-help text-role-attack"
                 strokeWidth={3}
               />
             ) : (
