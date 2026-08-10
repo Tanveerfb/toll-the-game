@@ -32,7 +32,7 @@
     },
     {
       "skillName": "Severed Ledger",
-      "description": "Does damage equal to ATK-scaled to all enemies; depletes [lowerUltGauge.value] ultimate gauge from each.",
+      "description": "Does damage equal to ATK-scaled to all enemies; depletes [lowerUltGauge.value] ultimate gauge(s).",
       "characterId": "isolde",
       "type": "attack",
       "statMultiplier": "atk",
@@ -73,7 +73,7 @@
   },
   "passive": {
     "name": "Woven Blessing",
-    "description": "All allies max HP, Recovery Rate and Lifesteal 10% 👆 during battle (Uncancellable)",
+    "description": "All allies max HP, Recovery Rate and Lifesteal 10% 👆 during battle",
     "trigger": "aura",
     "worksFromSub": true,
     "mechanics": [

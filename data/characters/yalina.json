@@ -49,7 +49,7 @@
   ],
   "ultimate": {
     "skillName": "Devastating Blow",
-    "description": "Does Amplify damage equal to HP-Scaled to one enemy.",
+    "description": "Does Amplify damage equal to HP-scaled to one enemy.",
     "characterId": "yalina",
     "type": "ultimate",
     "statMultiplier": "hp",

@@ -14,7 +14,7 @@
   "skills": [
     {
       "skillName": "Drain",
-      "description": "Does damage equal to ATK-scaled to all enemies; Lifesteal 30% of the damage dealt.",
+      "description": "Does damage equal to ATK-scaled to all enemies; lifesteals [lifesteal.valuePercent]% of damage dealt.",
       "characterId": "ban",
       "type": "attack",
       "statMultiplier": "atk",
@@ -35,7 +35,7 @@
     },
     {
       "skillName": "Snatch",
-      "description": "Applies [extort.value]% Extort effect ",
+      "description": "Applies [extort.value]% Extort effect to all enemies for [extort.duration] turns.",
       "characterId": "ban",
       "type": "debuff",
       "statMultiplier": "atk",
@@ -66,7 +66,7 @@
   ],
   "ultimate": {
     "skillName": "Fox Hunt",
-    "description": "Does damage equal to ATK-scaled to one enemy; Extorts 50% of their ATK and DEF for 2 turns.",
+    "description": "Does damage equal to ATK-scaled to one enemy; extorts [extort.value]% of their ATK and DEF for [extort.duration] turns.",
     "characterId": "ban",
     "type": "ultimate",
     "statMultiplier": "atk",

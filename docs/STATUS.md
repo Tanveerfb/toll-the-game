@@ -335,6 +335,104 @@ bite whoever implements them:
 `author_notes.md`). Knuckle S1 at 390% R1 would be the roster's highest R1
 single-target — the number to cut first if he tests strong.
 
+### Kit-design teaching session (2026-08-10, in progress)
+
+Tanveer is teaching his kit-design method so Claude can draft **collab and
+pop-culture-inspired units**; he keeps designing the **OG roster** himself.
+Captured in **`docs/design/KIT_DESIGN.md`** (new) — read that, not this summary.
+
+Rules established that weren't written down anywhere before:
+
+- **Three roles: DPS / support / defense.** Role comes from **kit identity**;
+  the scaling stat is irrelevant to it. Sara is DPS at 34 ATK (HP-scaled damage),
+  Lyra is defense at 195 ATK. Never read role off the numbers. All 18 playable
+  characters are now assigned (10 DPS / 4 defense / 4 support); `storyOnly`
+  enemies unassigned.
+- Stat bands are a **tendency**: DPS 200+ ATK, support mid-100s, defense <100 —
+  but 200 is soft (Gon 195, Killua 199 are functionally DPS).
+- **Lore anchors the numbers** where a real reference exists (Netero's 287 ATK =
+  287th Hunter Exam; his 110 DEF = his age).
+- **1–2 new mechanics per batch of 2–3 characters**, given to at least one of
+  them. Knuckle+Netero are currently **over budget at four**.
+- **Standard/Premium collab designation is discontinued** — ignore it.
+- **Price a mechanic's pacing at R1, not R3** (R1 ≈ 65%, R2 ≈ 80% of R3). I
+  called APR "too fast" off R3 and was wrong; at R1 it's the intended slow burn.
+- **An after-effect does not proc on a target the hit killed** — stated twice
+  independently (Netero's follow-up, and a "damage then Freeze" ultimate).
+
+**Practice runs — not going into the game.** A 7DS **Jericho** draft was done as
+an exercise and deliberately NOT written into `author_notes.md`. Tanveer's
+verdict: "good try", with one correction — her ultimate should hit **one** target
+then Freeze it, rather than my AoE-damage-plus-single-freeze. **[Freeze] is
+already on his future-mechanics list**, so don't invent a competing keyword.
+
+A second practice kit, 7DS **Estarossa**, scored **9/10** — the highest-value
+feedback being how the score works: *the last point is a bonus reserved for
+beating his own vision, not a deduction.* 9/10 is a clean pass; don't chase the
+tenth point by adding complexity. Its new mechanic **[Hellblaze]** (target
+cannot be healed) he identified as **Infect from 7DS Grand Cross** — proven, not
+exotic. Estarossa is **not official**; nothing from it was written to the repo.
+
+**He names the character. Every time.** I picked King (7DS) for the third
+practice kit and started drafting; he stopped it: *"don't go on your own. i will
+give you characters."* He works from a roster plan and stays inside the anime he
+knows (7DS, HxH). **One practice kit is still owed**, waiting on his pick.
+
+### Description audit — every skill and passive (2026-08-10)
+
+Tanveer asked for a full audit of skill/passive description text. All 30 kits
+rendered at R1/R2/R3 (231 lines) and diffed rather than eyeballed in JSON.
+
+**Wording rules he settled** (ruling #62–#65 in `docs/HANDOFF.md`):
+
+- **No "each" on an AoE after-effect.** An effect written after the attack
+  already applies to everyone hit: "depletes 3 ultimate gauges", never "from
+  each".
+- **Author with semicolons; the game prints prose.** `dropZeroValueClauses`
+  hides on semicolon segments (ruling #28), so the separator must survive into
+  the JSON — but `joinClausesAsProse` now renders survivors as "A and B" /
+  "A, B and C". Writing "and" into the JSON merges the clauses and deletes the
+  damage text at a rank where the effect is 0 (Isolde's Severed Ledger R1 —
+  I broke exactly this and he caught it).
+- **Effects sharing a duration share a clause**: "seals Debuff and Attack Debuff
+  skills for 2 turns". Keyed on the *resolved* duration, so Chiara's R2 (where
+  only one category is sealed) stays unmerged.
+- **Never restate a target the prose already names.** Ally-facing skills name
+  their target in prose, so they need a looser guard than the "to all X" shape.
+- **Tier words are NOT mandatory** — explicit percentages are equally legal and
+  are correct when 30/50 are the wrong size. Leorio's 20/30/50 stands. I had
+  been applying tier words as the only legal form; corrected.
+- **Never name an unimplemented mechanic.** Frost's Glacial Bind said "Freezes"
+  while running `stun`.
+- Attack seal reads "**attack seals for N turns**". Lifesteal and Extort are
+  mechanics, so "**lifesteals** / **extorts** X% of damage dealt".
+
+**Bugs found and fixed** (12 kit JSONs + the translator):
+
+- Durations that existed in data but were invisible to the player: Ban's Snatch,
+  Road Bandit's Sand Throw, Wild Beast's Rending Claws.
+- Prism's Blessing Light rendered "…cleanses their debuffs **to all enemies**" —
+  a heal skill stores its heal amount in `damageRanked`, which the target
+  inference read as hostile. Now `skill.type === "heal"` is never "damage".
+- Yalina's Attention Drawer appended "to all enemies" onto text that already
+  said "taunts all enemies" — the guard only matched the literal "to all X".
+- "Applies 3 Ignite for 2 turns **stacks**" (Batra, Master Tao) — duration was
+  injected mid-phrase.
+- Singular/plural: "Stance lasts 2 **turn**", "1 ultimate **gauge(s)**",
+  "3 ultimate **gauge**". The singular-fixer assumed the count touched the noun;
+  it now allows up to two words in between.
+- **Duke's Flowing Ruin said "(Only once)" — the text was wrong, not the code.**
+  `combat.ts` already re-applies the ATK-down on every enhanced attack, which is
+  the intended behaviour. Removed the marker rather than "fixing" the engine.
+- Isolde's Woven Blessing repeated "(Uncancellable)" that the UI already shows as
+  a badge above the text.
+- Ban's Fox Hunt had `50%` / `2 turns` hardcoded in prose; parameterised to
+  `[extort.value]` / `[extort.duration]` so it can't drift from the data.
+
+**Not a bug, corrected by him:** Ban's Snatch and Fox Hunt word Extort
+differently *because they are different cards* — Snatch is a zero-damage debuff
+skill, Fox Hunt damages first then extorts. I proposed unifying them; wrong.
+
 ## Open Issues
 
 | # | Issue | Where | Severity |

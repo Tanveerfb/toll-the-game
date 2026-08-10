@@ -1,8 +1,23 @@
 import type { CharacterSkillData } from "@/lib/game/characterCatalog";
 import { resolveDotDuration } from "@/lib/game/dotDurations";
 
-const TARGET_PATTERN =
-  /\bto\s+(?:1|one|all)\s+enemies?\b|\bto\s+a\s+single\s+enemy\b/i;
+/**
+ * Any mention of an enemy counts as the target already being stated. Loose on
+ * purpose, and symmetric with ALLY_TARGET_PATTERN below: Yalina's Attention
+ * Drawer says "taunts all enemies" without the word "to", and still had "to
+ * all enemies" stapled onto the end (Tanveer, 2026-08-10).
+ */
+const TARGET_PATTERN = /\benem(?:y|ies)\b/i;
+
+/**
+ * The ally-side twin of TARGET_PATTERN. Deliberately looser: an ally-facing
+ * skill names its target in prose ("Grants all allies…", "Heals the lowest-HP
+ * ally"), not in the fixed "to all X" shape hostile skills use. Any mention of
+ * an ally means the target is already stated and the suffix must not be added
+ * — "Grants all allies Debuff Immunity … to all allies" said it twice
+ * (Tanveer, 2026-08-10).
+ */
+const ALLY_TARGET_PATTERN = /\ballies?\b/i;
 
 const LETTER_INDEX: Record<string, number> = {
   x: 0,
@@ -62,10 +77,14 @@ function inferTargetFromMechanics(
   );
   // Must also deal no damage, matching the engine's own rule — Chiara's All In
   // buffs (targetSelf) and then hits everyone, and stays "to all enemies".
+  // A heal skill's `damageRanked` is the HEAL amount, not damage: Prism's
+  // Blessing Light read "…cleanses their debuffs to all enemies" because its
+  // 90/120/170 heal looked hostile here (Tanveer, 2026-08-10).
   const dealsDamage =
-    (typeof skill.damage === "number" && skill.damage > 0) ||
-    (Array.isArray(skill.damageRanked) &&
-      skill.damageRanked.some((value) => value > 0));
+    skill.type !== "heal" &&
+    ((typeof skill.damage === "number" && skill.damage > 0) ||
+      (Array.isArray(skill.damageRanked) &&
+        skill.damageRanked.some((value) => value > 0)));
   return hasAllyMechanic && !dealsDamage ? "to all allies" : "to all enemies";
 }
 
@@ -363,7 +382,10 @@ function annotateDotDurations(
 }
 
 function ensureTargetText(text: string, targetText?: string): string {
-  if (!targetText || TARGET_PATTERN.test(text)) {
+  const pattern = targetText?.includes("allies")
+    ? ALLY_TARGET_PATTERN
+    : TARGET_PATTERN;
+  if (!targetText || pattern.test(text)) {
     return text;
   }
 
@@ -386,16 +408,92 @@ function fixSingulars(text: string): string {
       // becomes "1 turns" after the singular fix has already run.
       .replace(/\bturn\(s\)/g, "turns")
       .replace(/\bstack\(s\)/g, "stacks")
-      .replace(/\b1 turns\b/g, "1 turn")
-      .replace(/\b1 stacks\b/g, "1 stack")
+      .replace(/\bgauge\(s\)/g, "gauges")
+      // An adjective can sit between the count and the noun ("1 ultimate
+      // gauge"), so allow up to two words in between.
+      .replace(/\b1 ((?:\w+ ){0,2})turns\b/g, "1 $1turn")
+      .replace(/\b1 ((?:\w+ ){0,2})stacks\b/g, "1 $1stack")
+      .replace(/\b1 ((?:\w+ ){0,2})gauges\b/g, "1 $1gauge")
   );
 }
 
 function removeDuplicateTarget(text: string): string {
   return text
     .replace(/(to\s+(?:1|one|all)\s+enemies?)(?:\s+\1)+/gi, "$1")
+    .replace(/(to\s+(?:1|one|all)\s+all(?:y|ies))(?:\s+\1)+/gi, "$1")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/** "A" / "A and B" / "A, B and C". */
+function joinList(items: string[]): string {
+  if (items.length < 2) return items[0] ?? "";
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
+/**
+ * Collapses seal clauses that share a duration into one: "seals Debuff skills
+ * for 2 turns; seals Attack Debuff skills for 2 turns" becomes "seals Debuff
+ * and Attack Debuff skills for 2 turns" (Tanveer, 2026-08-10).
+ *
+ * Has to run at render time, not in the JSON. Chiara's House Rules seals the
+ * two categories on different rank ladders ([0,0,2] and [0,1,2]) — at R2 only
+ * Attack Debuff is sealed, so the merged sentence is only correct at R3.
+ */
+function mergeSealClauses(text: string): string {
+  const SEAL = /^seals\s+(.+?)\s+skills\s+for\s+(\d+)\s+turns?$/i;
+  type SealGroup = { subjects: string[]; duration: string };
+  const parts: (string | SealGroup)[] = [];
+  const byDuration = new Map<string, SealGroup>();
+
+  for (const clause of text.split(";").map((c) => c.trim()).filter(Boolean)) {
+    const match = clause.match(SEAL);
+    if (!match) {
+      parts.push(clause);
+      continue;
+    }
+    const [, subject, duration] = match;
+    const existing = byDuration.get(duration);
+    if (existing) {
+      existing.subjects.push(subject);
+      continue;
+    }
+    const group: SealGroup = { subjects: [subject], duration };
+    byDuration.set(duration, group);
+    parts.push(group);
+  }
+
+  return parts
+    .map((part) =>
+      typeof part === "string"
+        ? part
+        : `seals ${joinList(part.subjects)} skills for ${part.duration} turns`,
+    )
+    .join("; ");
+}
+
+/**
+ * Renders the surviving clauses as prose: two become "A and B", three or more
+ * "A, B and C" (Tanveer, 2026-08-10 — "can do 'and' and comma over semicolon").
+ *
+ * Kits still AUTHOR with semicolons. Ruling #28's semicolon segments are what
+ * `dropZeroValueClauses` hides on, so the separator has to survive until after
+ * that pass — this runs last and only changes what the player reads. Writing
+ * "and" into the JSON instead merges the clauses and takes the damage text down
+ * with the zero-value effect (Isolde's Severed Ledger at R1).
+ */
+function joinClausesAsProse(text: string): string {
+  const clauses = text
+    .split(";")
+    .map((clause) => clause.trim())
+    .filter(Boolean);
+  if (clauses.length < 2) return clauses[0] ?? "";
+  const last = clauses[clauses.length - 1];
+  // A final clause that already carries its own "and" ("seals Debuff and
+  // Attack Debuff skills…") takes a comma instead — "X and seals A and B"
+  // reads as one list too many.
+  const separator = / and /i.test(last) ? ", " : " and ";
+  return `${clauses.slice(0, -1).join(", ")}${separator}${last}`;
 }
 
 export function buildDescriptionForRank(
@@ -419,6 +517,8 @@ export function buildDescriptionForRank(
   }
 
   description = annotateDotDurations(description, skill, rankIndex);
+  description = mergeSealClauses(description);
+  description = joinClausesAsProse(description);
   description = ensureTargetText(description, inferTargetFromMechanics(skill));
   description = removeDuplicateTarget(description);
   description = fixSingulars(description);

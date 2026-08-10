@@ -6,6 +6,7 @@ import type { ActionCard } from "@/types/action";
 import type { SkillCard } from "@/types/skillCard";
 import type { CharacterSkillData } from "@/lib/game/characterCatalog";
 import leorioData from "@/data/characters/leorio.json";
+import isoldeData from "@/data/characters/isolde.json";
 
 const zodiacSkill = leorioData.skills[0] as unknown as SkillCard;
 
@@ -103,6 +104,17 @@ describe("single-ally targeting (Leorio's Member of the Zodiac)", () => {
     });
     useGameStore.getState().selectCard("card-2");
     expect(useGameStore.getState().actionQueue).toHaveLength(1);
+  });
+
+  it("does not repeat a target an ally-facing description already names", () => {
+    // Ruling: "Grants all allies … to all allies" said it twice — the target
+    // guard only recognised enemy phrasings (Tanveer, 2026-08-10).
+    const ward = isoldeData.ultimate as unknown as CharacterSkillData;
+    const text = buildDescriptionForRank(ward, 2);
+    expect(text).toBe(
+      "Grants all allies Debuff Immunity and raises their basic stats for 3 turns.",
+    );
+    expect(text.match(/all allies/g)).toHaveLength(1);
   });
 
   it("description reads single-target at rank 1, all allies at rank 2+", () => {

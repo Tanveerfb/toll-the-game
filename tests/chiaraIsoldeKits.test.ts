@@ -556,8 +556,11 @@ describe("Archive-page description rendering (the actual bug Tanveer caught)", (
     // "debuff" seal is still inactive at R2 — only "attack debuff" shows
     expect(lines[1]).not.toMatch(/seals debuff skills/i);
     expect(lines[1]).toMatch(/seals attack debuff skills for 1 turns?/i);
-    expect(lines[2]).toMatch(/seals debuff skills for 2 turns?/i);
-    expect(lines[2]).toMatch(/seals attack debuff skills for 2 turns?/i);
+    // R3 seals both for the SAME duration, so the two clauses merge into one
+    // (Tanveer, 2026-08-10). Different durations would stay separate.
+    expect(lines[2]).toMatch(
+      /seals debuff and attack debuff skills for 2 turns?/i,
+    );
   });
 
   it("Isolde's Threads of Renewal: no inline HoT percentage, Rejuvenate is a bare glossary keyword", async () => {

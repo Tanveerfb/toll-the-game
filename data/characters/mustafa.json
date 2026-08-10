@@ -29,7 +29,7 @@
     },
     {
       "skillName": "Earth Shatter",
-      "description": "Does damage equal to DEF-scaled to one enemy; depletes [lowerUltGauge.value] ultimate gauge.",
+      "description": "Does damage equal to DEF-scaled to one enemy; depletes [lowerUltGauge.value] ultimate gauge(s).",
       "characterId": "mustafa",
       "type": "attack",
       "statMultiplier": "def",

@@ -20,7 +20,7 @@
     },
     {
       "skillName": "Blessing Light",
-      "description": "Heals all allies ATK-scaled and cleanses their debuffs.",
+      "description": "Heals all allies equal to ATK-scaled and cleanses their debuffs.",
       "characterId": "prism",
       "type": "heal",
       "statMultiplier": "atk",

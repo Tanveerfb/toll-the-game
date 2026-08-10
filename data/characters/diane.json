@@ -34,7 +34,7 @@
     },
     {
       "skillName": "Rush Rock",
-      "description": "Does damage equal to ATK-scaled to one enemy; applies [seal.duration] turn Attack Seal effect on the target.",
+      "description": "Does damage equal to ATK-scaled to one enemy; attack seals for [seal.duration] turns.",
       "characterId": "diane",
       "type": "attack",
       "statMultiplier": "atk",

@@ -418,11 +418,12 @@ describe("zero-value clauses hidden per rank (STATUS #16)", () => {
     ) as never;
 
     const r1 = buildDescriptionForRank(rushRock, 0);
-    expect(r1).not.toMatch(/Attack Seal/);
+    expect(r1).not.toMatch(/attack seals/i);
     expect(r1).not.toMatch(/0 turn/);
 
+    // House style is "attack seals for N turns" (ruling #65, 2026-08-10).
     const r2 = buildDescriptionForRank(rushRock, 1);
-    expect(r2).toMatch(/1 turn Attack Seal/);
+    expect(r2).toMatch(/attack seals for 1 turn\b/i);
   });
 });
 

@@ -5,6 +5,8 @@ import {
 } from "@/lib/game/descriptionTranslator";
 import meliodasData from "@/data/characters/meliodas.json";
 import gonData from "@/data/characters/gon.json";
+import chiaraData from "@/data/characters/chiara.json";
+import isoldeData from "@/data/characters/isolde.json";
 import type { CharacterSkillData } from "@/lib/game/characterCatalog";
 
 describe("description placeholders", () => {
@@ -109,6 +111,38 @@ describe("description placeholders", () => {
     expect(glossary["permanently raises atk and def"]).toBe(
       "Increases ATK by 30%; Increases DEF by 30%",
     );
+  });
+
+  describe("clause prose (rulings #62/#63, Tanveer 2026-08-10)", () => {
+    const houseRules = chiaraData.skills[1] as unknown as CharacterSkillData;
+
+    it("joins two clauses with 'and' and hides a zero-value one", () => {
+      const ledger = isoldeData.skills[1] as unknown as CharacterSkillData;
+      expect(buildDescriptionForRank(ledger, 0)).toBe(
+        "Does damage equal to 280% ATK to all enemies.",
+      );
+      expect(buildDescriptionForRank(ledger, 2)).toBe(
+        "Does damage equal to 400% ATK to all enemies and depletes 3 ultimate gauges.",
+      );
+    });
+
+    it("joins three clauses as 'A, B and C'", () => {
+      const evilSpirit = meliodasData.ultimate as unknown as CharacterSkillData;
+      expect(buildDescriptionForRank(evilSpirit, 2)).toBe(
+        "Cancels buffs and stances, does damage equal to 700% ATK to one enemy and stuns for 2 turns.",
+      );
+    });
+
+    it("merges seals that share a duration, and only then", () => {
+      // R2 seals only Attack Debuff (durations [0,0,2] and [0,1,2]) — nothing
+      // to merge. R3 seals both for 2 turns, so they become one clause.
+      expect(buildDescriptionForRank(houseRules, 1)).toBe(
+        "Does damage equal to 320% ATK to one enemy and seals Attack Debuff skills for 1 turn.",
+      );
+      expect(buildDescriptionForRank(houseRules, 2)).toBe(
+        "Does damage equal to 375% ATK to one enemy, seals Debuff and Attack Debuff skills for 2 turns.",
+      );
+    });
   });
 
   it("leaves unresolvable placeholders (keyword highlights) untouched", () => {

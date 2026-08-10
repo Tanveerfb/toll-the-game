@@ -36,7 +36,7 @@
   ],
   "ultimate": {
     "skillName": "Sunken Verdict",
-    "description": "Does damage equal to ATK-scaled to one enemy and attack seals for 2 turns.",
+    "description": "Does damage equal to ATK-scaled to one enemy; attack seals for [seal.duration] turns.",
     "characterId": "molvarr",
     "type": "ultimate",
     "statMultiplier": "atk",
