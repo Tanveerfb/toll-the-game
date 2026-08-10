@@ -76,4 +76,8 @@ tests/                Vitest unit tests (engine, stores, gacha, previews)
 
 ## Design Ownership
 
-Tanveer owns skill names, mechanical effects, damage multipliers, and character-kit JSON decisions. Do not invent or rebalance mechanics unprompted — ask.
+Tanveer owns skill names, mechanical effects, damage multipliers, and character-kit JSON decisions. Do not invent or rebalance mechanics unprompted — ask. **He also picks which characters get drafted** — never self-select one.
+
+**Before drafting or rebalancing any kit, read `docs/design/KIT_DESIGN.md`.** It carries the stat bands, the wording rules, and the constraints that are easy to get wrong: buffs multiply so magnitudes stay small (self-buff 25/50/75, team-wide 20/30/50), one scaling stat per kit including heals, skill ranks never exceed 3, and inflating a stat silently buffs anything that scales off it.
+
+**Character stat bands changed on 2026-08-10** (ruling #68): HP now sits at 2900–4000, ATK broadly unchanged, DEF ~1.6x its old value. `data/characters/*.json` is the source of truth — statlines quoted in older docs and in `author_notes.md` predate this.

@@ -6,6 +6,13 @@ Last updated - 30/07/2026
 
 ## Future characters' kit (Not finalized)
 
+> **Every statline below predates the roster stat rebalance of 2026-08-10
+> (ruling #68).** They were written against the old scale, where a DPS carried
+> ~1500 HP and ~250 ATK. The live roster now runs **2900–4000 HP** with ATK
+> broadly unchanged. Any kit here must have its HP (and any HP/DEF-scaled skill
+> percentages) re-derived from the current bands in `docs/design/KIT_DESIGN.md`
+> before implementation — do **not** copy these numbers into JSON as-is.
+
 ### Knuckle Bine - HxH | Human | Collab - Standard
 
 - HP - 1450 ; ATK - 200 (ref to manga chapter debut): DEF - 86 (Ref to anime episode debut)

@@ -45,34 +45,38 @@ one is wasted turns.
 Where he has used them: Netero's **287 ATK** (287th Hunter Exam) and **110 DEF**
 (his age); Knuckle's stats from his debut chapter/episode numbers.
 
-The role bands (roster-verified 2026-08-10):
+The role bands, **post-rebalance** (ruling #68, applied 2026-08-10 — every number
+below re-read from `data/characters/*.json` after the change):
 
 Every character is one of **three roles: damage dealer, support, or defense.**
 Decide the role first — it sets the whole statline.
 
-| Role | ATK | DEF | HP | Examples |
+| Role | ATK | DEF | HP | Examples (ATK/DEF/HP) |
 | --- | --- | --- | --- | --- |
-| **Damage dealer** | **200+** | 70–100 | 1040–1740 | Tao 275/75/1040, Meliodas 255/100/1620, Seras 245/80/1740 |
-| **Support** | **mid 100s** | 35–115 | 720–1900 | Isolde 184/77/1333, Siddiq 110/75/1315, Gabrist 117/75/1690 |
-| **Defense** | **<100** | highest | largest | Mustafa 65/120/1040, Sara 34/68/2100, Yalina 30/59/1830 |
+| **Damage dealer** | 190–300 | 80–160 | 2900–3600 | Tao 300/140/2900, Meliodas 285/155/3200, Ban 190/80/3600 |
+| **Support** | 155–205 | 145–155 | 3000–3200 | Chiara 205/155/3000, Isolde 195/145/3100, Siddiq 155/145/3200 |
+| **Defense** | 110–175 | 210–240 | 3600–4000 | Lyra 175/210/3600, Mustafa 120/240/3900, Yalina 110/230/4000 |
 
-DEF and HP follow the same logic: dealers are glassier, defense units are the
-wall. **200 is a soft boundary** — Gon 195, Killua 199, Lyra 195 and Chiara 191
-are functionally dealers sitting just under it.
+Dealers are glassier and hit hardest; defense units are the wall and carry the
+top DEF. Time-to-kill sits at ~4.3 hits against these numbers.
 
-**The bands are a tendency, not a rule.** Role is decided by *what the kit does*,
-and Tanveer's own assignments (2026-08-10) cut across the numbers:
+**The bands are a tendency, not a rule.** Role is decided by *what the kit does*:
 
-- **Sara is a DPS at 34 ATK** — she deals damage as a percentage of her 2310 HP.
-- **Lyra is defense at 195 ATK** — her identity is First Action: Unbreakable Ice
-  (+150% DEF), not her attack stat.
-- **Gabrist is defense at 117** with the roster's second-largest HP pool.
+- **Sara is a DPS** whose damage is a percentage of her 3500 HP, not her ATK.
+- **Lyra is defense** despite the roster's highest defense-role ATK — her
+  identity is First Action: Unbreakable Ice (+150% DEF).
+- **Ban is a DPS** at 80 DEF, the lowest on the roster, because his kit is
+  lifesteal and attrition rather than survivability.
 
 **Role comes from kit identity. The scaling stat is irrelevant to it**
 (Tanveer, 2026-08-10). `statMultiplier` is a damage source — HP-scaling appears
 in both DPS (Sara) and defense (Yalina) and says nothing about the role. Decide
 what the kit's job is, then use the band as a starting point for the statline.
 Never read the role off the numbers.
+
+**HP scalers still get a real, below-average ATK** (Sara 190, Yalina 110). Their
+damage reads from HP; the ATK exists so ATK-down and Extort have something to
+bite on.
 
 Full playable roster: **DPS** — Batra, Seras, Duke, Meliodas, Diane, Gon,
 Killua, Sara, Ban, Master Tao. **Defense** — Mustafa, Lyra, Gabrist, Yalina.

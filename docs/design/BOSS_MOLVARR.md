@@ -13,8 +13,15 @@
 - **Multi-phase "hearts"** (7DSGC Ragnarok demonic-beast model): a phase ends
   when its HP bar hits 0, then the next phase begins with a fresh bar.
 
+> **Stats verified against `data/characters/molvarr.json` on 2026-08-10.** The
+> phase HP/ATK/DEF here changed in the roster stat rebalance (ruling #68), and
+> the per-skill multipliers listed below had already drifted from the JSON
+> before that (the doc claimed P1 S1 was 140/170/225 when the kit shipped
+> 120/145/190). **The JSON is the source of truth** — re-verify before quoting
+> these numbers.
+
 ## Phase transition rules
-- P2 starts when P1's HP reaches 0 (fresh 4000 bar).
+- P2 starts when P1's HP reaches 0 (fresh 7200 bar).
 - **Boss fully resets:** its own buffs, debuffs on it, and its per-phase timers.
 - **Persists:** player team state (HP, their buffs/debuffs), the **global battle
   turn counter**, and **Corrosion stacks already on the players** (boss-applied
@@ -22,10 +29,10 @@
 - The boss's **per-phase trigger counters** ("every 3 turns", "turn 10") reset
   to 0 at phase entry. (Global battle counter keeps running independently.)
 
-## Phase 1 — HP 3000 | ATK 150 | DEF 110
-- **Skill 1:** [140/170/225] damage to all enemies; applies **Corrosion** for
-  [1/1/2] turns.
-- **Skill 2:** [300/335/400] damage to one enemy.
+## Phase 1 — HP 5400 | ATK 285 | DEF 175
+- **Skill 1 (Corrosive Surge):** [120/145/190] damage to all enemies; applies
+  **Corrosion** for [1/1/2] turns.
+- **Skill 2 (Crushing Maw):** [260/290/350] damage to one enemy.
 - **SP Skill:** heals self for 30% of **missing** HP (maxHP - currentHP).
 - **Passive [Main]:** +10% ATK per debuff across ALL enemies, linear
   (5 debuffs = +50% ATK), recalculated live as debuff count changes.
@@ -34,14 +41,15 @@
 - **SP Passive 2:** immune to crowd control — **stun/freeze** only (freeze = a
   stun variant). Seal is NOT blocked. Future CC types join this list.
 - **SP Passive 3:** from **turn 10** (of the phase): x2 ATK, DEF, **and max HP**;
-  current HP scales by the same ratio (e.g. 1000/3000 -> 2000/6000).
+  current HP scales by the same ratio (e.g. 1800/5400 -> 3600/10800).
   **Uncancellable, fires once.**
-- **Ultimate:** 500% ATK to one enemy; **disables attack skills for 2 turns**
-  (seal, sealType attack).
+- **Ultimate (Sunken Verdict):** 500% ATK to one enemy; **disables attack
+  skills for 2 turns** (seal, sealType attack).
 
-## Phase 2 — HP 4000 | ATK 210 | DEF 145
-- **Skill 1:** **Pierce** [150/180/250] damage to all enemies.
-- **Skill 2:** [200/250/350] damage to one enemy; lifesteals 30% of damage.
+## Phase 2 — HP 7200 | ATK 400 | DEF 230
+- **Skill 1 (Abyssal Pierce):** **Pierce** [130/155/210] damage to all enemies.
+- **Skill 2 (Devouring Bite):** [180/220/300] damage to one enemy; lifesteals
+  30% of damage.
 - **SP Skill:** raises own ATK and DEF by 50% for 2 turns.
 - **Passive [Main]:** applies 1 Corrosion to each enemy at the start of each
   (boss) turn; deals +30% damage to enemies that have Corrosion.
@@ -49,7 +57,8 @@
   CC immunity; turn-10 x2 spike).
 - **SP Passive 4:** from **turn 10** (of the phase), all enemies lose 10% of
   their max HP every turn.
-- **Ultimate:** 600% ATK to one enemy; **fills own ult gauge by 3**.
+- **Ultimate (Tidal Cataclysm):** 600% ATK to one enemy; **fills own ult gauge
+  by 3**.
 
 ## New mechanic: Corrosion
 - DoT debuff. Each stack deals **10% of the target's REMAINING HP per turn**

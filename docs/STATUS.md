@@ -346,14 +346,17 @@ Captured in **`docs/design/KIT_DESIGN.md`** (new) — read that, not this summar
 Rules established that weren't written down anywhere before:
 
 - **Three roles: DPS / support / defense.** Role comes from **kit identity**;
-  the scaling stat is irrelevant to it. Sara is DPS at 34 ATK (HP-scaled damage),
-  Lyra is defense at 195 ATK. Never read role off the numbers. All 18 playable
-  characters are now assigned (10 DPS / 4 defense / 4 support); `storyOnly`
+  the scaling stat is irrelevant to it. Never read role off the numbers. All 18
+  playable characters are assigned (10 DPS / 4 defense / 4 support); `storyOnly`
   enemies unassigned.
-- Stat bands are a **tendency**: DPS 200+ ATK, support mid-100s, defense <100 —
-  but 200 is soft (Gon 195, Killua 199 are functionally DPS).
-- **Lore anchors the numbers** where a real reference exists (Netero's 287 ATK =
-  287th Hunter Exam; his 110 DEF = his age).
+- Stat bands are a **tendency**, not a rule. **The band figures quoted in this
+  section were pre-rebalance and are now wrong** — the roster stat rebalance
+  later the same day (ruling #68) moved every statline. **Current bands live in
+  `docs/design/KIT_DESIGN.md`**, re-read from JSON after the change.
+- **Lore anchors** were later downgraded: Tanveer, 2026-08-10 — "no need to
+  factor lore numbers in the kit". They're a flourish he applies himself
+  (Netero's 287 ATK = 287th Hunter Exam), never a requirement, and not something
+  to ask him for.
 - **1–2 new mechanics per batch of 2–3 characters**, given to at least one of
   them. Knuckle+Netero are currently **over budget at four**.
 - **Standard/Premium collab designation is discontinued** — ignore it.
