@@ -17,6 +17,8 @@ import {
 } from "@/lib/game/deck";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { actionsForTurn } from "@/lib/game/actionEconomy";
+import { bonusActionsFor } from "@/lib/game/stageEffects";
+import type { StageEffect } from "@/types/stageEffects";
 import { useSettingsStore } from "./settingsStore";
 
 export type SequencedBattleEvent = AnyBattleEvent & {
@@ -72,6 +74,9 @@ function moveCardById(
 interface BattleState {
   playerTeam: BattleCharacter[];
   enemyTeam: BattleCharacter[];
+  /** Encounter-level modifiers for this battle (stage effects). Empty = a
+   *  standard fight, which is the default for everything. */
+  stageEffects: StageEffect[];
   currentTurn: number;
   playerTurns: number;
   enemyTurns: number;
@@ -126,6 +131,7 @@ interface BattleState {
     playerTeam: BattleCharacter[],
     enemyTeam: BattleCharacter[],
   ) => void;
+  setStageEffects: (effects: StageEffect[]) => void;
   setCurrentTurn: (turn: number | ((prev: number) => number)) => void;
   setPlayerTurns: (turn: number | ((prev: number) => number)) => void;
   setEnemyTurns: (turn: number | ((prev: number) => number)) => void;
@@ -224,6 +230,7 @@ export const useGameStore = create<BattleState>()(
     (set, get) => ({
   playerTeam: [],
   enemyTeam: [],
+  stageEffects: [],
   currentTurn: 0,
   playerTurns: 0,
   enemyTurns: 0,
@@ -247,6 +254,7 @@ export const useGameStore = create<BattleState>()(
   phaseBreak: null,
   handSnapshot: null,
 
+  setStageEffects: (effects) => set({ stageEffects: effects }),
   setPlayerTeam: (team) => set({ playerTeam: team }),
   setEnemyTeam: (team) => set({ enemyTeam: team }),
   updateTeams: (playerTeam, enemyTeam) => set({ playerTeam, enemyTeam }),
@@ -292,6 +300,7 @@ export const useGameStore = create<BattleState>()(
     set({
       playerTeam: [],
       enemyTeam: [],
+      stageEffects: [],
       currentTurn: 0,
       playerTurns: 0,
       enemyTurns: 0,
@@ -441,7 +450,10 @@ export const useGameStore = create<BattleState>()(
       selectedEnemyMarker,
       queuedNullCount,
     } = get();
-    const cap = actionsForTurn(playerTeam);
+    const cap = actionsForTurn(
+      playerTeam,
+      bonusActionsFor(get().stageEffects, "player"),
+    );
     if (actionQueue.length + queuedNullCount >= cap) {
       set({ interactionNotice: `Action queue is full (${cap}/${cap}).` });
       return;
@@ -511,7 +523,10 @@ export const useGameStore = create<BattleState>()(
       set({ pendingAllyCardId: null });
       return;
     }
-    const cap = actionsForTurn(playerTeam);
+    const cap = actionsForTurn(
+      playerTeam,
+      bonusActionsFor(get().stageEffects, "player"),
+    );
     if (actionQueue.length + queuedNullCount >= cap) {
       set({
         interactionNotice: `Action queue is full (${cap}/${cap}).`,
@@ -536,7 +551,8 @@ export const useGameStore = create<BattleState>()(
 
   addNullAction: () => {
     const { actionQueue, queuedNullCount, playerTeam } = get();
-    if (actionQueue.length + queuedNullCount >= actionsForTurn(playerTeam)) return;
+    if (actionQueue.length + queuedNullCount >=
+      actionsForTurn(playerTeam, bonusActionsFor(get().stageEffects, "player"))) return;
     set({ queuedNullCount: queuedNullCount + 1, interactionNotice: null });
   },
 

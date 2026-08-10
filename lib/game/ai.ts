@@ -19,8 +19,11 @@ export const ENEMY_ACTIONS_PER_TURN = ACTIONS_PER_TURN;
  * Enemy action economy. Thin alias for the shared `actionsForTurn`, which
  * both sides now use (see `lib/game/actionEconomy.ts` for the rule).
  */
-export function enemyActionsForTurn(enemyTeam: BattleCharacter[]): number {
-  return actionsForTurn(enemyTeam);
+export function enemyActionsForTurn(
+  enemyTeam: BattleCharacter[],
+  bonusActions = 0,
+): number {
+  return actionsForTurn(enemyTeam, bonusActions);
 }
 
 /**

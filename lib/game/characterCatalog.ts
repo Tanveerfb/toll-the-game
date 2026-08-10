@@ -13,7 +13,6 @@ import killua from "@/data/characters/killua.json";
 import leorio from "@/data/characters/leorio.json";
 import lyra from "@/data/characters/lyra.json";
 import lyraNpc from "@/data/characters/lyra_npc.json";
-import lyraNpc2 from "@/data/characters/lyra_npc_2.json";
 import masterTao from "@/data/characters/master_tao.json";
 import meliodas from "@/data/characters/meliodas.json";
 import molvarr from "@/data/characters/molvarr.json";
@@ -103,7 +102,6 @@ const rawCharacters = [
   leorio,
   lyra,
   lyraNpc,
-  lyraNpc2,
   masterTao,
   meliodas,
   molvarr,

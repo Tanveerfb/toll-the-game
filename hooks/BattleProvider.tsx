@@ -24,6 +24,11 @@ import { tickTeamBuffs, tickTeamDebuffs } from "@/lib/game/tick";
 import { syncExtortLinks } from "@/lib/game/effects";
 import { ensureFieldUnit, promoteSubs } from "@/lib/game/sub";
 import { getCharacterById } from "@/lib/game/characterCatalog";
+import {
+  bonusActionsFor,
+  stageAdjustedStats,
+} from "@/lib/game/stageEffects";
+import type { StageEffect } from "@/types/stageEffects";
 import type { AnyBattleEvent } from "@/types/battleEvent";
 
 /**
@@ -64,7 +69,7 @@ interface BattleContextType {
   startCustomBattle: (
     playerPicks: TeamPick[],
     enemyPicks: TeamPick[],
-    options?: { preview?: boolean },
+    options?: { preview?: boolean; stageEffects?: StageEffect[] },
   ) => void;
   lastBattleConfig: { playerPicks: TeamPick[]; enemyPicks: TeamPick[] } | null;
   resolveplayerTurnWrapper: () => void;
@@ -107,6 +112,7 @@ export default function BattleProvider({
   const initializeDeck = useGameStore((s) => s.initializeDeck);
   const drawCards = useGameStore((s) => s.drawCards);
   const setPreviewMode = useGameStore((s) => s.setPreviewMode);
+  const setStageEffects = useGameStore((s) => s.setStageEffects);
   const initializeEnemyDeck = useGameStore((s) => s.initializeEnemyDeck);
   const drawEnemyCards = useGameStore((s) => s.drawEnemyCards);
   const setEnemyDeck = useGameStore((s) => s.setEnemyDeck);
@@ -554,7 +560,10 @@ export default function BattleProvider({
 
     // Ruling #39: 1 action per living field member, max 3 (elite = 3). Each
     // decision sees the post-previous-action state and the shrinking hand.
-    const actionCount = enemyActionsForTurn(currentTeams.enemyTeam);
+    const actionCount = enemyActionsForTurn(
+      currentTeams.enemyTeam,
+      bonusActionsFor(useGameStore.getState().stageEffects, "enemy"),
+    );
     const aiContext = freshAITurnContext();
 
     // Duel mode (dev only): Claude picks this turn's actions instead of the
@@ -702,21 +711,31 @@ export default function BattleProvider({
   const startCustomBattle = (
     rawPlayerPicks: TeamPick[],
     rawEnemyPicks: TeamPick[],
-    options?: { preview?: boolean },
+    options?: { preview?: boolean; stageEffects?: StageEffect[] },
   ) => {
     const preview = options?.preview === true;
+    const stageEffects = options?.stageEffects ?? [];
     // A lone sub (or all-sub team) auto-converts to a field unit
     const playerPicks = ensureFieldUnit(rawPlayerPicks);
     const enemyPicks = ensureFieldUnit(rawEnemyPicks);
 
     resetBattle();
     clearQueue();
+    setStageEffects(stageEffects);
     setPreviewMode(preview);
     skipEnemyTurnRef.current = false;
 
     // Single boundary cast: kit JSON is loose CharacterData, validated by
     // the Zod schema at load (incl. mechanic types + passive triggers) —
     // beyond this point everything is strictly typed.
+    // Stage effects are baked into BASE stats here, not applied as buffs:
+    // a stage is not something `cancelBuffs` may strip, nor something Rupture
+    // should count as a buff to punish (Tanveer, 2026-08-10).
+    const stageStats = (
+      team: "player" | "enemy",
+      raw: { atk: number; def: number; hp: number },
+    ) => stageAdjustedStats(raw, stageEffects, team);
+
     const buildBattleChar = (
       raw: ReturnType<typeof getCharacterById>,
       team: "player" | "enemy",
@@ -737,9 +756,10 @@ export default function BattleProvider({
         | "isSub"
       >),
       instanceId,
-      currentAttack: raw!.atk,
-      currentDefense: raw!.def,
-      currentHP: raw!.hp,
+      ...stageStats(team, raw!),
+      currentAttack: stageStats(team, raw!).atk,
+      currentDefense: stageStats(team, raw!).def,
+      currentHP: stageStats(team, raw!).hp,
       ultGauge: 0,
       buffs: [],
       debuffs: [],

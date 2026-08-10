@@ -115,7 +115,9 @@ export default function StoryPage(): React.JSX.Element {
     (partId: string, chapterId: string, picks: string[]) => {
       const chapter = getStoryChapter(partId, chapterId);
       if (!chapter) return;
-      startCustomBattle(resolveStoryTeam(chapter, picks), chapter.battle.enemyTeam);
+      startCustomBattle(resolveStoryTeam(chapter, picks), chapter.battle.enemyTeam, {
+        stageEffects: chapter.stageEffects,
+      });
     },
     [startCustomBattle],
   );

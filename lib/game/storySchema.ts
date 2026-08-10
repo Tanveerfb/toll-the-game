@@ -55,6 +55,27 @@ const rewardsSchema = z.object({
   replayStamina: z.number().int().nonnegative().max(STAMINA_CAP),
 });
 
+/**
+ * Stage effects — encounter-level modifiers, so a fight can be tuned without
+ * editing a character kit (Tanveer, 2026-08-10). Optional everywhere: absent
+ * means a standard fight.
+ */
+const stageEffectSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("statBoost"),
+    target: z.enum(["player", "enemy", "both"]),
+    stat: z.enum(["all", "atk", "def", "hp"]),
+    valuePercent: z.number(),
+    description: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("bonusActions"),
+    target: z.enum(["player", "enemy", "both"]),
+    value: z.number().int().positive(),
+    description: z.string().optional(),
+  }),
+]);
+
 const chapterSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
@@ -65,6 +86,7 @@ const chapterSchema = z.object({
   }),
   outro: z.array(sceneSchema),
   teamMode: z.enum(["canon", "anchored", "free"]),
+  stageEffects: z.array(stageEffectSchema).optional(),
   rewards: rewardsSchema,
 });
 

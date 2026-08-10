@@ -21,10 +21,16 @@ export const ACTIONS_PER_TURN = 3;
  * in, and it meant a player down to their last unit kept full tempo while
  * an enemy in the same spot lost an action.
  */
-export function actionsForTurn(team: BattleCharacter[]): number {
+export function actionsForTurn(
+  team: BattleCharacter[],
+  bonusActions = 0,
+): number {
   const livingField = team.filter((u) => u.currentHP > 0 && !u.isSub);
   if (livingField.length === 0) return 0;
   const hasElite = livingField.some((u) => u.tier === "elite");
   const actions = hasElite ? ACTIONS_PER_TURN : livingField.length + 1;
-  return Math.min(ACTIONS_PER_TURN, actions);
+  // Stage effects can lift a side that is UNDER the cap (a lone unit at 2);
+  // they never raise the ceiling (Tanveer, 2026-08-10: "it does respect the
+  // hard cap of 3").
+  return Math.min(ACTIONS_PER_TURN, actions + bonusActions);
 }

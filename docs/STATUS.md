@@ -513,6 +513,57 @@ Process note: Tanveer's feedback that kit talk is *creative*, not a spec queue �
 "sometimes you take things too literally… try to enjoy the culture like me."
 Saying an ult is cool because it beat Frieza is not a request to add [Pierce].
 
+### Stage effects (2026-08-10) — rulings #69/#70
+
+Encounter difficulty now lives on the **stage**, not in character kits.
+Authored per chapter in `data/story/*.json`:
+
+```json
+"stageEffects": [
+  { "type": "statBoost",    "target": "enemy",  "stat": "all", "valuePercent": 5 },
+  { "type": "bonusActions", "target": "player", "value": 1 }
+]
+```
+
+- `target` is `player` / `enemy` / `both`. **Absent or empty = a standard
+  fight**, the default everywhere; Tanveer names which fights get effects.
+- `bonusActions` **respects the hard cap of 3** — it lifts a side that is under
+  the cap (a lone unit at 2), never raises the ceiling.
+- `statBoost` is **baked into base stats at battle start**, not applied as a
+  buff, so `cancelBuffs` can't strip the arena and Rupture doesn't count it as
+  a buff to punish. `stageAdjustedStats` in `lib/game/stageEffects.ts` does it,
+  extracted from the provider so it is unit-testable.
+- The fight brief renders **three sections — enemy / both / player** in the
+  roster's arrow idiom ("All stats 5% 👆 during battle").
+
+**Why it exists.** Playtesting Part 2 Chapter 2, Tanveer hit a fight he could
+not win: a canon *solo* team gets `1 + 1 = 2` actions while the boss's
+`tier: "elite"` grants a flat 3 — a permanent 50% action deficit, every turn.
+His idea was to fix it at the stage level so future encounters can be tuned
+without touching kits.
+
+**`lyra_npc_2` is deleted.** It was a byte-identical copy of `lyra_npc` whose
+only difference was a passive granting "All stats 5% up" — now a stage effect.
+That duplicate had already drifted: it was never registered in `characterArt`,
+so the 2-2 boss rendered with **no art at all**, which is the bug that started
+this. Removed from the catalog, the VFX registry and its obsolete tests.
+`tests/characterArt.test.ts` now walks every kit and asserts it resolves to an
+art file that exists on disk, so the next unregistered kit fails in
+`npm run check` instead of in a playtest.
+
+**Boss balance, verified in play.** NPC Lyra is **3x the playable version's HP**
+(10800 vs 3600) by Tanveer's rule, 11340 after her 5%. Duke wins on **turn 4
+with 428/3150 HP (13.6%)** — he deals ~2,960/turn to her ~1,490 by turn 3, and
+she would kill him on turn 5. The variance is deliberate and lives in *which
+card Duke's 3rd Flowing Ruin stack lands on*: the +100% proc contributed 4,332
+across two casts, 38% of her bar. **Losing a few times is the intent** — "good
+way to learn the battle system too" — and uncleared chapters cost no stamina,
+so a loss costs only time. Do not nerf it.
+
+**Not done:** the enemy HP over-scaling from ruling #68 is still live for
+everything except NPC Lyra (Molvarr, trash mobs). Molvarr's pacing remains
+untested.
+
 ## Open Issues
 
 | # | Issue | Where | Severity |

@@ -110,7 +110,7 @@
         ],
         "enemyTeam": [
           {
-            "id": "lyra_npc_2"
+            "id": "lyra_npc"
           }
         ]
       },
@@ -188,6 +188,19 @@
         }
       ],
       "teamMode": "canon",
+      "stageEffects": [
+        {
+          "type": "statBoost",
+          "target": "enemy",
+          "stat": "all",
+          "valuePercent": 5
+        },
+        {
+          "type": "bonusActions",
+          "target": "player",
+          "value": 1
+        }
+      ],
       "rewards": {
         "firstClear": {
           "gems": 75,

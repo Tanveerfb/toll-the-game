@@ -1,3 +1,4 @@
+import type { StageEffect } from "./stageEffects";
 /**
  * Dokkan-style story structure: Parts contain Chapters. Each chapter is
  * intro scenes → one canon-team battle → outro scenes. Parts map 1:1 to the
@@ -79,6 +80,9 @@ export interface StoryChapter {
   /** Required: a chapter that silently defaults is a chapter someone forgot
    *  to finish, and the schema should say so at load. */
   teamMode: StoryTeamMode;
+  /** Encounter-level modifiers for this fight. Absent or empty = a standard
+   *  fight, which is the default (Tanveer, 2026-08-10). */
+  stageEffects?: StageEffect[];
   rewards: StoryChapterRewards;
 }
 

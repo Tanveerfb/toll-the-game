@@ -30,6 +30,7 @@ import {
 import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
 import { getCardFrameStyle } from "@/lib/game/cardFrameStyle";
 import { actionsForTurn } from "@/lib/game/actionEconomy";
+import { bonusActionsFor } from "@/lib/game/stageEffects";
 import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
 import type { BattleCharacter } from "@/types/character";
 import {
@@ -187,7 +188,11 @@ export default function Deck() {
   const slotsUsed = actionQueue.length + queuedNullCount;
   // Living field members +1, capped at 3 — same rule as the enemy side, so a
   // player down to their last unit loses tempo exactly as an enemy would.
-  const actionCap = actionsForTurn(playerTeam);
+  const stageEffects = useGameStore((s) => s.stageEffects);
+  const actionCap = actionsForTurn(
+    playerTeam,
+    bonusActionsFor(stageEffects, "player"),
+  );
 
   const isPlayerActionPhase = battlePhase === "PlayerAction";
 

@@ -40,7 +40,6 @@ const CHARACTER_VFX: Record<string, CharacterVfx> = {
   lyra: { tint: "rgba(232,65,199,0.8)", shape: "shard" }, // Red Ice — magenta, away from her red element
   lyra_npc: { tint: "rgba(232,65,199,0.8)", shape: "shard" },
   // Chapter 2's second Lyra — same character, so same VFX identity.
-  lyra_npc_2: { tint: "rgba(232,65,199,0.8)", shape: "shard" },
   batra: { tint: "rgba(251,146,60,0.75)", shape: "flicker" }, // golden-lion flame — orange, away from blue
   gabrist: { tint: "rgba(167,139,250,0.75)", shape: "blot" }, // ink — violet, away from blue
 

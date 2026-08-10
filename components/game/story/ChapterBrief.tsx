@@ -7,6 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OwnedTeamSelect from "@/components/game/OwnedTeamSelect";
 import { getCharacterById, type CharacterData } from "@/lib/game/characterCatalog";
 import { materialLabel } from "@/lib/game/materials";
+import {
+  describeStageEffect,
+  groupStageEffects,
+} from "@/lib/game/stageEffects";
+import type { StageEffect } from "@/types/stageEffects";
 import { STAMINA_CAP } from "@/lib/game/stamina";
 import { storyAttemptCost } from "@/lib/game/storyRewards";
 import { storyAnchors, storyOpenSlots } from "@/lib/game/storyTeam";
@@ -83,6 +88,20 @@ export default function ChapterBrief({
     .map((pick) => getCharacterById(pick.id)?.name ?? pick.id)
     .join(" · ");
 
+  // Stage effects render as three sections — enemy-only, both sides, then
+  // player-only (Tanveer, 2026-08-10). A standard fight has none and the
+  // whole block is omitted.
+  const stage = groupStageEffects(chapter.stageEffects);
+  const stageSections: {
+    label: string;
+    tone: string;
+    effects: StageEffect[];
+  }[] = [
+    { label: "Enemy", tone: "border-rose-400/50 text-rose-200", effects: stage.enemy },
+    { label: "Both sides", tone: "border-zinc-500/60 text-zinc-200", effects: stage.both },
+    { label: "Your team", tone: "border-emerald-400/50 text-emerald-200", effects: stage.player },
+  ].filter((section) => section.effects.length > 0);
+
   const start = (skipScenes: boolean) => {
     if (!affordable) return;
     onStart(picked.map((c) => c.id), skipScenes);
@@ -121,6 +140,33 @@ export default function ChapterBrief({
             </span>
             <span className="font-heading text-sm tracking-[0.06em] text-rose-200">{enemies}</span>
           </div>
+
+          {stageSections.length > 0 ? (
+            <div className="border border-zinc-800 px-4 py-3">
+              <p className="font-body text-xs uppercase tracking-[0.14em] text-zinc-500">
+                Stage effects
+              </p>
+              <div className="mt-2 space-y-2">
+                {stageSections.map((section) => (
+                  <div key={section.label}>
+                    <p className="font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+                      {section.label}
+                    </p>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {section.effects.map((effect: StageEffect, i: number) => (
+                        <Badge
+                          key={`${section.label}-${i}`}
+                          className={`rounded-none border bg-transparent font-body text-[10px] uppercase tracking-widest ${section.tone}`}
+                        >
+                          {describeStageEffect(effect)}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="border border-zinc-800 px-4 py-3">
             <p className="font-body text-xs uppercase tracking-[0.14em] text-zinc-500">

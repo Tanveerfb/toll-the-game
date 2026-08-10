@@ -49,9 +49,22 @@ const NPC_ART = new Set([
   "lyra_npc",
 ]);
 
+/**
+ * Ids that render another character's art file. Empty right now — the Part 2
+ * rematch used to need one (`lyra_npc_2`), but that duplicate kit was replaced
+ * by a stage effect on 2026-08-10 and deleted.
+ */
+const ART_ALIAS: Record<string, string> = {};
+
+function resolveArtId(id: string): string {
+  return ART_ALIAS[id] ?? id;
+}
+
 export function getCharacterArt(id: string): string | null {
-  if (NPC_ART.has(id)) return `/npc/${id}.png?v=${ART_VERSION}`;
-  if (CHARACTERS_WITH_ART.has(id)) return `/characters/${id}.png?v=${ART_VERSION}`;
+  const artId = resolveArtId(id);
+  if (NPC_ART.has(artId)) return `/npc/${artId}.png?v=${ART_VERSION}`;
+  if (CHARACTERS_WITH_ART.has(artId))
+    return `/characters/${artId}.png?v=${ART_VERSION}`;
   return null;
 }
 
@@ -136,8 +149,9 @@ export function skillArtSlug(skillName: string): string {
 /** Skill-specific card art, or null if none is generated yet (caller falls
  *  back to getCharacterArt). */
 export function getSkillArt(id: string, skillName: string): string | null {
-  const key = `${id}__${skillArtSlug(skillName)}`;
+  const artId = resolveArtId(id);
+  const key = `${artId}__${skillArtSlug(skillName)}`;
   if (!SKILLS_WITH_ART.has(key)) return null;
-  const dir = NPC_ART.has(id) ? "npc" : "characters";
+  const dir = NPC_ART.has(artId) ? "npc" : "characters";
   return `/${dir}/skills/${key}.png?v=${ART_VERSION}`;
 }
