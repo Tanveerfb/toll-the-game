@@ -520,16 +520,18 @@ describe("rankUpCharacterCards store action", () => {
   });
 });
 
-describe("Chiara/Isolde stat sanity (matches author_notes.md)", () => {
+// Numbers updated by the 2026-08-10 roster stat rebalance (ruling #68) —
+// HP moved to the 3-4k band so time-to-kill is ~3.8 hits instead of ~2.1.
+describe("Chiara/Isolde stat sanity", () => {
   it("Chiara", () => {
-    expect(chiaraData.atk).toBe(191);
-    expect(chiaraData.def).toBe(99);
-    expect(chiaraData.hp).toBe(1100);
+    expect(chiaraData.atk).toBe(205);
+    expect(chiaraData.def).toBe(155);
+    expect(chiaraData.hp).toBe(3000);
   });
   it("Isolde", () => {
-    expect(isoldeData.atk).toBe(184);
-    expect(isoldeData.def).toBe(77);
-    expect(isoldeData.hp).toBe(1333);
+    expect(isoldeData.atk).toBe(195);
+    expect(isoldeData.def).toBe(145);
+    expect(isoldeData.hp).toBe(3100);
   });
 });
 

@@ -8,9 +8,9 @@
     "Seven Deadly Sins"
   ],
   "lore": "Captain of the Seven Deadly Sins. A demon wielding dark purgatory energy. Collab unit.",
-  "atk": 255,
-  "def": 100,
-  "hp": 1620,
+  "atk": 285,
+  "def": 155,
+  "hp": 3200,
   "skills": [
     {
       "skillName": "Triple Strike",

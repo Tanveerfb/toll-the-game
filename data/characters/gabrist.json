@@ -4,9 +4,9 @@
   "color": "blue",
   "tags": ["Human"],
   "lore": "Artist, friend of Batra, ledger exam participant, calm and cool.",
-  "atk": 117,
-  "def": 75,
-  "hp": 1690,
+  "atk": 140,
+  "def": 220,
+  "hp": 3800,
   "skills": [
     {
       "skillName": "Ink Slash",

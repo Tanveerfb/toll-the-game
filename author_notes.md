@@ -63,3 +63,97 @@ Last updated - 30/07/2026
 Ultimates don't rank: Knuckle 500, Netero 500.
 
 Open concern: Knuckle's S1 at 390% R1 would be the **highest R1 single-target on the roster** (next is Chiara at 260). Deliberate, since [APR]'s ramp keys off that first hit — but it's the number to cut if he tests too strong.
+
+## DBZ brainstorm drafts — PARKED, not queued for implementation
+
+> Tanveer, 2026-08-10: *"wouldn't implement it anytime soon… don't want it
+> interfering with work."* These three are **brainstorming output**, kept for
+> reference only. Unlike Knuckle and Netero above, nothing here is planned —
+> **do not build, balance, or reference them as roster facts.** Delete freely.
+
+### Son Goku (Saiyan Saga) - DBZ | Saiyan | Collab
+
+Drafted by Claude 2026-08-10 under Tanveer's direction, then tuned by him. Damage scales off **ATK** only.
+
+- Role: **DPS (glass cannon)** ; Color - red ; HP - 1600 ; ATK - 240 ; DEF - 80
+
+- Passive [Zenkai] : [Collab] allies' basic stats 5% up during battle
+  -- When taking a lethal blow: survives with 1 HP and permanently raises ATK by 50% (Only once, Uncancellable)
+  - Skill 1 [Kamehameha] : Does [Concentrate] damage equal to 230/280/350% ATK to one enemy.
+  - Skill 2 [Kaio-ken] : Raises own ATK by 25/50/75% for 1 turn; consumes 10% of own current HP.
+  - Ultimate [Kaio-ken x4 Kamehameha] : Massively raises ATK for 3 turns and then does [Pierce] damage equal to 350% ATK to one enemy; consumes 25% of own current HP.
+
+Design notes: the source-material multiplier is **flavour on the name, not the number** — Kaio-ken x3 is a 75% ATK buff. Skill ranks never exceed 3, so x4 lives in the ultimate, where "massively" (100%, ruling #56) stacks multiplicatively with an active Kaio-ken for the burst ceiling (~2,940 at R3 into R3).
+
+**Open:** (1) whether to push the statline further into glass cannon (1400 HP / 250 ATK / 75 DEF) now that Vegeta is explicitly the balanced one; (2) whether Kaio-ken's recoil can take him to 0 HP or floors at 1 like Batra's.
+
+### Vegeta (Saiyan Saga) - DBZ | Saiyan | Collab
+
+Drafted by Claude 2026-08-10, tuned by Tanveer. Scored 8/10. Damage scales off **ATK** only.
+
+- Role: **Defense (sub-DPS)** ; Color - blue ; HP - 1700 ; ATK - 165 ; DEF - 115
+
+- Passive [Saiyan Genetics] (on attack received) : Gains 1 x [Zenkai] stack (Max 5) (Uncancellable)
+  -- [Zenkai]: For each stack, ATK and DEF 8% up
+  - Skill 1 [Galick Gun] : Does [Pierce] damage equal to 230/280/350% ATK to one enemy.
+  - Skill 2 [Power Ball] : Greatly raises own DEF for 2 turns and then does damage equal to 150/200/250% ATK to all enemies.
+  - Ultimate [Great Ape] : Does [Rupture] damage equal to 400% ATK to all enemies and massively lowers their DEF for 2 turns.
+
+Design notes: **he deliberately has no ally-synergy line** — every other collab opens with "[Tag] allies' basic stats 5% up"; its absence is the "ruthless Saiyan who doesn't need teammates" read, at zero engine cost. Blue is chosen so the type chart says he beats red (Goku). His ramp requires being hit, which is what makes a defense unit want to be targeted — the inverse of Goku, who spends his own HP. Great Ape would be the **roster's first use of "massively"** (80% lowering, ruling #56).
+
+**Open:** whether 8% x 5 stacks sits far enough from Seras' [Charged] (5% x 6 across ATK/DEF/evade).
+
+### Super Saiyan Goku (Namek Saga) - DBZ | Saiyan | Collab
+
+Drafted by Claude 2026-08-10, directed by Tanveer. Already transformed — **no Kaio-ken, no Spirit Bomb, no transformation step** (both are pre-Super-Saiyan tools). Damage scales off **ATK** only.
+
+- Role: **DPS (duelist)** ; Color - light ; HP - 1550 ; ATK - 265 ; DEF - 90
+
+- Passive [Super Saiyan] : Damage reduction 10% up during battle
+  -- While an ally has been defeated: ATK 50% up (Uncancellable) [Krillin]
+  -- When facing only 1 enemy: Damage 30% up, Damage reduction 25% up
+  - Skill 1 [Kamehameha] : Does [Concentrate] damage equal to 230/280/350% ATK to one enemy.
+  - Skill 2 [Meteor Combination] : Raises ATK and greatly raises DEF for 2 turns and then does [Weakpoint] damage equal to 150/190/250% ATK to one enemy.
+  - Ultimate [Angry Kamehameha] : Does [Desperation] damage equal to 600% ATK to one enemy.
+
+The ult is **meant to be overpowered on raw power alone** (Tanveer, 2026-08-10): canonically it beats Frieza, who has an extremely durable body — Goku can't win the even clash and wins with this. No DEF-ignore or extra damage type; the 600% multiplier plus [Desperation]'s scaling is the whole statement.
+
+**[Desperation] — proposed new mechanic, unimplemented.** Damage increases by **3% for every 2% of HP lost** (1.5% per 1% missing), uncapped. For calibration that is 2.25x steeper than Meliodas' `deathblow` (2% per 3% lost), which is justified because Deathblow is always-on and this fires once off an ult gauge.
+
+Ult ceiling, accepted as fine by Tanveer: 1,590 at full HP → ~5,600 at 10% HP with an ally down → ~7,300 if the solo-enemy clause is also live. Single target only, and he is two hits from death to get there.
+
+**Engine work this kit would need** (none of it exists):
+- `aura` condition "while an ally is defeated" — the inverse of the existing `conditionNoDeadAllies` (Gabrist), so a small addition to a mechanic that already exists.
+- A "only 1 enemy on the field" condition — new, but **Netero's kit needs the identical condition**, so one implementation serves both.
+- `[Desperation]` as a damage type in the mechanic union + Design Glossary.
+
+### Final Form Freeza (Full Power) - DBZ | Frieza Force | Collab
+
+Drafted by Claude 2026-08-10, passive written by Tanveer. **This is the 100% Full Power version** — Tanveer's call, and correct: the decaying passive *is* that form. 100% is the one Frieza cannot sustain, so a kit that opens at maximum and slides every turn is exactly it. The arms-folded, not-trying-yet Final Form would never decay; if he is ever drafted separately, that's the difference. Damage scales off **ATK** only.
+
+- Role: **DPS (executioner)** ; Color - dark (opposite SSJ Goku's light — mutual advantage both ways) ; HP - 1650 ; ATK - 270 ; DEF - 105
+
+- Passive [Emperor of the Universe] :
+  -- At the start of battle: Damage reduction 50% up, ATK and DEF 50% up (Uncancellable)
+  -- At the start of each turn: Damage reduction 10% down, ATK and DEF 10% down (up to a max of 30%)
+  -- When this unit defeats an enemy: ATK 10% up (Uncancellable)
+  - Skill 1 [Death Beam] : Does [Execution] damage equal to 230/280/350% ATK to one enemy.
+  - Skill 2 [Death Saucer] : Does damage equal to 150/190/250% ATK to one enemy and applies Bleed for 2 turns; consumes 10% of own current HP.
+  - Ultimate [Supernova] : Does damage equal to 500% ATK to all enemies.
+
+Design notes: **two clocks running opposite directions.** He peaks on turn 1 — 50% DR and 405 ATK before the player has done anything to deserve it — and decays to a 20% floor by turn 4. The only thing that reverses the slide is killing your units, and each kill buys back exactly one turn of decay. Stall him out and you win; feed him and it snowballs. The kill bonus needs no "Max N" because the enemy team is finite (4 units = natural cap).
+
+| Turn | 1 | 2 | 3 | 4+ |
+| --- | --- | --- | --- | --- |
+| DR / ATK / DEF bonus | 50% | 40% | 30% | 20% |
+| ATK, no kills | 405 | 378 | 351 | 324 |
+| ATK after 2 kills | — | 457 | 425 | 392 |
+
+Death Saucer's 10% self-damage is the joke, not the balance — his own disc is what cuts him in half.
+
+**A boss variant exists in the same character:** keep the DR decay but make ATK/DEF a flat +100% that never drops. Reach for that if he is ever built as an `elite` fight. Careful — passive buffs multiply (#66), so flat +100% with kill stacks compounds fast.
+
+**Engine work this kit would need** (none of it exists):
+- `[Execution]` — defeats a target left below 20% HP after the hit. Should be **barred against `elite`/boss units**, the same bound Tanveer put on Knuckle's [IRS].
+- An "when this unit defeats an enemy" hook.
+- A self-decaying passive value on the turn tick (DR/ATK/DEF sliding 10% per turn to a floor).

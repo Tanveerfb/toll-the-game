@@ -4,9 +4,9 @@
   "color": "green",
   "tags": ["Human"],
   "lore": "South Asian male, ledger exam participant, likes to drink tea, India-themed attacks.",
-  "atk": 65,
-  "def": 120,
-  "hp": 1040,
+  "atk": 120,
+  "def": 240,
+  "hp": 3900,
   "skills": [
     {
       "skillName": "Earth Stance: Fortress",
@@ -33,7 +33,7 @@
       "characterId": "mustafa",
       "type": "attack",
       "statMultiplier": "def",
-      "damageRanked": [325, 400, 500],
+      "damageRanked": [165, 200, 250],
       "mechanics": [
         {
           "type": "lowerUltGauge",
@@ -48,7 +48,7 @@
     "characterId": "mustafa",
     "type": "ultimate",
     "statMultiplier": "def",
-    "damage": 450,
+    "damage": 225,
     "mechanics": [
       {
         "type": "buff",

@@ -9,9 +9,9 @@
     "Hunter x Hunter"
   ],
   "lore": "Aspiring doctor and member of the Zodiacs. Nen type: Emitter. Collab unit.",
-  "atk": 183,
-  "def": 92,
-  "hp": 1430,
+  "atk": 190,
+  "def": 150,
+  "hp": 3150,
   "skills": [
     {
       "skillName": "Member of the Zodiac",

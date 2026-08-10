@@ -4,9 +4,9 @@
   "color": "red",
   "tags": ["Human"],
   "lore": "She is a bow user who can also do some hand-to-hand combat when needed. Her true power lies in her usage of Red Ice—a unique, volatile mix of ice and lava that freezes enemies on contact and burns fiercely if broken.",
-  "atk": 195,
-  "def": 95,
-  "hp": 1375,
+  "atk": 175,
+  "def": 210,
+  "hp": 3600,
   "skills": [
     {
       "skillName": "Red Ice: Volcanic Frost",

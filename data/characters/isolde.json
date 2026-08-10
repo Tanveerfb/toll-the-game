@@ -4,9 +4,9 @@
   "color": "light",
   "tags": ["Fairy", "Female", "Bureau"],
   "lore": "Bureau official who weaves protective thread-magic around her allies. Elegant, sharp-eyed, and unhurried even mid-battle.",
-  "atk": 184,
-  "def": 77,
-  "hp": 1333,
+  "atk": 195,
+  "def": 145,
+  "hp": 3100,
   "skills": [
     {
       "skillName": "Threads of Renewal",

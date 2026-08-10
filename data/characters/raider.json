@@ -7,9 +7,9 @@
     "Human"
   ],
   "lore": "The kind of people who burn villages because someone paid them to. Duke never saw their faces. In his dreams, they have none.",
-  "atk": 150,
-  "def": 50,
-  "hp": 2400,
+  "atk": 285,
+  "def": 80,
+  "hp": 3600,
   "skills": [
     {
       "skillName": "Torch Swing",

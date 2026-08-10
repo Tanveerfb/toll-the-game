@@ -4,9 +4,9 @@
   "color": "red",
   "tags": ["Human", "Female"],
   "lore": "Ledger exam examinee, girl, animal control theme.",
-  "atk": 34,
-  "def": 68,
-  "hp": 2100,
+  "atk": 190,
+  "def": 145,
+  "hp": 3500,
   "skills": [
     {
       "skillName": "Animal Strike",
@@ -14,7 +14,7 @@
       "characterId": "sara",
       "type": "attack",
       "statMultiplier": "hp",
-      "damageRanked": [23, 28, 35],
+      "damageRanked": [14, 17, 21],
       "mechanics": []
     },
     {
@@ -23,7 +23,7 @@
       "characterId": "sara",
       "type": "attack",
       "statMultiplier": "hp",
-      "damageRanked": [20, 25, 30],
+      "damageRanked": [12, 15, 18],
       "mechanics": [
         {
           "type": "aoe"
@@ -40,7 +40,7 @@
     "characterId": "sara",
     "type": "ultimate",
     "statMultiplier": "hp",
-    "damage": 40,
+    "damage": 24,
     "mechanics": [
       {
         "type": "buff",

@@ -5,9 +5,9 @@
   "storyOnly": true,
   "tags": ["Human"],
   "lore": "Cleared Phase 1 by outlasting everyone sent at him. No flourish, no wasted motion — just a wall that eventually walked forward.",
-  "atk": 120,
-  "def": 95,
-  "hp": 1150,
+  "atk": 230,
+  "def": 150,
+  "hp": 1700,
   "skills": [
     {
       "skillName": "Crushing Blow",

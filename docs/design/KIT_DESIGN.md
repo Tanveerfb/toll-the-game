@@ -34,14 +34,18 @@ roster.
 If you can't name the scene or ability a mechanic came from, it's probably a
 generic kit wearing a character's name.
 
-## 2. Stats: lore first, band second
+## 2. Stats: role band first
 
-Numbers take a nod at the character's lore wherever one exists.
+Pick the statline from the role band. **Do not hunt for lore numbers**
+(Tanveer, 2026-08-10: "no need to factor lore numbers in the kit — it's only
+character kit we are working with"). Anchors are a flourish he applies himself
+when one happens to fit; they are never a requirement, and asking him to supply
+one is wasted turns.
 
-- Netero — **287 ATK** (head of the 287th Hunter Exam), **110 DEF** (his age).
-- Knuckle — HP/ATK/DEF from his manga-chapter and anime-episode debut numbers.
+Where he has used them: Netero's **287 ATK** (287th Hunter Exam) and **110 DEF**
+(his age); Knuckle's stats from his debut chapter/episode numbers.
 
-Then sanity-check against the role bands (roster-verified 2026-08-10):
+The role bands (roster-verified 2026-08-10):
 
 Every character is one of **three roles: damage dealer, support, or defense.**
 Decide the role first — it sets the whole statline.
@@ -74,6 +78,10 @@ Full playable roster: **DPS** — Batra, Seras, Duke, Meliodas, Diane, Gon,
 Killua, Sara, Ban, Master Tao. **Defense** — Mustafa, Lyra, Gabrist, Yalina.
 **Support** — Isolde, Chiara, Siddiq, Leorio. (`storyOnly` enemies unassigned.)
 
+**One scaling stat per kit** (ruling #67). ATK *or* HP *or* DEF, heals included.
+A defense unit doesn't earn its DEF back by scaling a skill off it — it earns it
+by surviving and by passive ramps. Mixing reads as two half-characters.
+
 ## 3. Shape of a kit
 
 - **2 skills + 1 ultimate + 1 passive.** Bosses add `phases`, an SP skill on a
@@ -98,8 +106,9 @@ A batch where every character invents something is over budget.
 See `docs/HANDOFF.md` rulings #55–58 for the full statements.
 
 - **Tier words name fixed values**: plain "raises/lowers" = **30**, "greatly" =
-  **50**. `"massively"` is **reserved with no value assigned — do not invent
-  one.** No other intensifier exists; don't coin one.
+  **50**, "massively" = **100 raising / 80 lowering** (asymmetric on purpose —
+  a stat can never be reduced to zero). No other intensifier exists; don't coin
+  one. Full scale in ruling #56, implemented by `tierWord`.
 - **Tier words and explicit percentages are both legal** (Tanveer, 2026-08-10 —
   "don't see everything via one lens"). A tier word is not required, and forcing
   one can wreck a skill: Leorio's Member of the Zodiac is 20/30/50% because
@@ -128,6 +137,28 @@ See `docs/HANDOFF.md` rulings #55–58 for the full statements.
 
 Ruling #57: judge every character in **1v1, 3v1 (team vs boss), 3v3 and 4v4**.
 A kit that looks strong solo can starve for cards in a team — the deck is shared.
+
+**Buff magnitudes stay small, and self-buffs beat team-buffs** (Tanveer,
+2026-08-10). Stat modifiers **multiply** (`stats.ts` — `mult *= 1 + v/100`), so
+two stacked buffs compound: +200% and +100% is ×6, not ×4. That is exactly why
+he doesn't allow big buff skills.
+
+| Buff scope | Typical ladder | Reference |
+| --- | --- | --- |
+| **Self only** | **25/50/75%** | one unit, so it may be clearly stronger |
+| **All allies** | **20/30/50%** | Leorio's Member of the Zodiac |
+
+A self-buff is stronger per point because it touches one character; a team-wide
+buff at the same numbers would be several times the value. A "×3 power-up" from
+the source material does **not** become +200% — it becomes a modest percentage
+and the multiplier stays flavour.
+
+**Separate the two ladders clearly.** Tanveer revised a 25/40/60 self ladder up
+to **25/50/75** because 60 sat too close to Leorio's 50 to read as a different
+class of effect (2026-08-10). The shape to aim for: self-R2 *equals* the
+team-buff ceiling, and self-R3 goes visibly past it. Note this ladder crosses
+tier words at R2 and stays inside "greatly" at R3 (50–79), so it must be written
+as explicit percentages — a ladder inside one tier word is forbidden (#58).
 
 **Price pacing at R1, not R3.** R3 is the rarest card; a mechanic evaluated on it
 will read far faster than it plays. Roster convention is **R1 ≈ 65%, R2 ≈ 80%**
@@ -159,8 +190,11 @@ mid-turn DEF changes.
 ## 8. Draft checklist
 
 1. Name the scene/ability the mechanic comes from.
-2. Pick the role — damage dealer, support or defense — then pick stats from lore
-   where possible and check them against that role's band.
+2. Pick the role — damage dealer, support or defense — then take the statline
+   from that role's band. No lore-number hunting.
+2b. **Check every number you invent against the roster**, not just damage.
+   Buffs especially: the ceiling is 50% (Leorio), and they multiply. A skill
+   whose value has no precedent is the number that gets tuned out.
 3. 2 skills + ultimate + passive; passive carries the story.
 4. Reuse existing mechanics unless this is the batch's new-mechanic slot.
 5. Write tier words at their fixed values; mark rank ladders as `x/y/z`.

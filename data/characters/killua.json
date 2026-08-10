@@ -9,9 +9,9 @@
     "Hunter x Hunter"
   ],
   "lore": "Heir of the Zoldyck assassin family. Nen type: Transmuter — his aura becomes electricity. Collab unit.",
-  "atk": 199,
-  "def": 99,
-  "hp": 1865,
+  "atk": 235,
+  "def": 160,
+  "hp": 3450,
   "skills": [
     {
       "skillName": "Lightning Palm",

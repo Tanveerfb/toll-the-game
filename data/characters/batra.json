@@ -4,9 +4,9 @@
   "color": "blue",
   "tags": ["Human", "KHALSA"],
   "lore": "Ledger exam participant, Sikh, turban, lion-themed attacks.",
-  "atk": 245,
-  "def": 70,
-  "hp": 1455,
+  "atk": 270,
+  "def": 135,
+  "hp": 3050,
   "skills": [
     {
       "skillName": "Lion's Charge",

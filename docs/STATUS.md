@@ -307,7 +307,9 @@ consistent: **plain "raises/lowers" = 30, "greatly" = 50**, zero violations.
 Chiara's Marked Card `[30,50,50]` was the one flag and turned out to be correct
 design — ruling #58 was too narrow and now carries the carve-out (a ladder may
 step *between* tier words; what's forbidden is a ladder *inside* one).
-`"massively"` is reserved with **no value assigned** — do not invent one.
+`"massively"` = **100% raising, 80% lowering** (ruling #56; asymmetric because a
+stat can never be reduced to zero). Corrected 2026-08-10 — this section
+previously claimed it had no value assigned, contradicting #56 and `tierWord`.
 `"slightly"` was **my** invention, not Tanveer's vocabulary; it appears nowhere
 in kits or rulings.
 
@@ -432,6 +434,81 @@ rendered at R1/R2/R3 (231 lines) and diffed rather than eyeballed in JSON.
 **Not a bug, corrected by him:** Ban's Snatch and Fox Hunt word Extort
 differently *because they are different cards* — Snatch is a zero-damage debuff
 skill, Fox Hunt damages first then extorts. I proposed unifying them; wrong.
+
+### Roster stat rebalance (2026-08-10) — ruling #68
+
+Benchmarked our statlines against 7DSGC numbers Tanveer supplied. Theirs cluster
+at **HP ≈ 12.2 × ATK, DEF ≈ 0.63 × ATK**; ours were **7.1 / 0.39**. Time-to-kill
+was **2.1 hits**, so with three actions a turn a focused unit died before acting
+— the reason taunts, DR, heals and cleanses so rarely paid for their card.
+
+**Applied**: HP into the 3–4k band (roughly doubled), DEF ×1.6, **ATK left
+alone** because every skill multiplier is tuned to it. Measured through
+`executeSkill` afterwards: **4.3 hits** (Meliodas R3 → Chiara 700 damage into
+3000 HP). Slightly past the 3.8 target because DEF rose too and subtracts flat —
+if playtest says slow, shave DEF ~15% rather than touching HP.
+
+Decisions worth keeping:
+
+- **Role templates, not per-character ratio maths.** Deriving HP from ATK gave
+  Mustafa (65 ATK) a 910 HP "tank" — nonsense. Bands instead: DPS ~2900–3600 HP,
+  support ~3000–3200, defense ~3600–4000 with the top DEF.
+- **HP scalers get a real but below-average ATK** (Sara 190, Yalina 110, from 34
+  and 30). 7DSGC's HP scalers have ordinary statlines — the scaling stat decides
+  what the *skill reads from*, not whether the character has stats. Side benefit:
+  ATK-down and Extort finally bite on them.
+- **Inflating a stat silently buffs whatever scales off it**, so the companion
+  deflation was mandatory: Sara %HP 23/28/35 → 14/17/21 (ult 40 → 24), Yalina
+  20/25/30 → 9/12/14 (40 → 18), Mustafa's DEF-scaled 325/400/500 → 165/200/250
+  (450 → 225). ATK-scaled *heals* went the other way against doubled bars:
+  Siddiq 260/320/400 → 440/540/680, Prism 90/120/170 → 150/200/290. Isolde needed
+  nothing (her heal is %HP and self-corrects), same for Molvarr's %max-HP
+  Corrosion. **Verified**: Sara now deals 83% of Meliodas' damage, against 84%
+  before — relative position preserved.
+- **DEF is flat subtraction** (`damage.ts`), so matching 7DSGC's DEF/ATK ratio is
+  mostly cosmetic for us — even doubled DEF removes ~18% of a 350% skill. HP is
+  the ratio that decides how the game feels.
+- Enemies scaled to hold encounter difficulty: trash HP ×1.5 / ATK ×1.9 / DEF
+  ×1.6 (stays trash, still threatens doubled bars), Lyra duel NPCs 14500/265/185,
+  Molvarr P1 5400/285/175 and P2 7200/400/230.
+
+**Untested:** Molvarr's pacing. Phases are ~1.8x longer now and his turn-10 stat
+spike and max-HP drain were tuned against a shorter fight. Needs a world-boss
+playtest, not more arithmetic.
+
+### DBZ kit brainstorm (2026-08-10)
+
+Four kits drafted with Tanveer and filed in `author_notes.md` under a **PARKED —
+not queued for implementation** header. They are brainstorming output; Knuckle
+and Netero above them remain the only planned future characters.
+
+Base Goku (glass-cannon DPS, spends own HP), Vegeta (defense/sub-DPS, ramps from
+being hit, scored 8/10), Super Saiyan Goku (duelist, ally-death and solo-enemy
+clauses, proposes `[Desperation]`), Final Form Freeza Full Power (executioner
+whose DR/ATK/DEF start at +50% and decay 10% a turn to a 20% floor — the decay
+*is* the 100% form burning out).
+
+Design rules this produced, all now in `docs/design/KIT_DESIGN.md`:
+
+- **Buffs multiply** (`stats.ts`), so magnitudes stay small: self-buff ladder
+  **25/50/75%**, team-wide **20/30/50%** (Leorio). Self-R2 should equal the
+  team ceiling and self-R3 clear it — 60% sat too close to 50 to read as a
+  different class of effect. A source-material "x3" is flavour on the name, not
+  the number (ruling #66).
+- **One scaling stat per kit**, heals included (ruling #67). Roster check found
+  **Isolde genuinely violates it** — heal `hp`, damage/ult `atk`. Siddiq heals
+  off ATK, so ATK is the established form; direction of the fix is Tanveer's
+  call and her numbers move either way. **Still open.** Yalina and Iron only
+  declare a second stat on zero-damage skills, where it's inert — cosmetic.
+- **Skill ranks never exceed 3.** Escalation past that belongs in the ultimate.
+- **No lore-number hunting** for statlines — anchors are a flourish he applies
+  himself, never a requirement.
+- **"Massively" = 100% raising / 80% lowering** and always has (ruling #56).
+  Three documents wrongly said it was reserved with no value; corrected.
+
+Process note: Tanveer's feedback that kit talk is *creative*, not a spec queue —
+"sometimes you take things too literally… try to enjoy the culture like me."
+Saying an ult is cool because it beat Frieza is not a request to add [Pierce].
 
 ## Open Issues
 

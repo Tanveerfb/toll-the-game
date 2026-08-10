@@ -5,9 +5,9 @@
   "tags": [
     "Human"
   ],
-  "atk": 210,
-  "def": 85,
-  "hp": 1500,
+  "atk": 245,
+  "def": 145,
+  "hp": 3150,
   "skills": [
     {
       "skillName": "Fist of Flowing Ruin : Slide",

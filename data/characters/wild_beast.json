@@ -7,9 +7,9 @@
     "Beast"
   ],
   "lore": "Predators of the deep wilderness where Duke trained alone for nine years. They do not test you. They collect you.",
-  "atk": 130,
-  "def": 40,
-  "hp": 2000,
+  "atk": 245,
+  "def": 65,
+  "hp": 3000,
   "skills": [
     {
       "skillName": "Savage Bite",

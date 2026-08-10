@@ -4,9 +4,9 @@
   "color": "light",
   "tags": ["Human", "Fairy", "Hybrid", "Female", "Powerful Opponent"],
   "lore": "Hybrid of fairy and human, wielding lightning.",
-  "atk": 245,
-  "def": 80,
-  "hp": 1740,
+  "atk": 265,
+  "def": 145,
+  "hp": 3350,
   "skills": [
     {
       "skillName": "Static Lance",

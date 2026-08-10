@@ -5,9 +5,9 @@
   "storyOnly": true,
   "tags": ["Human"],
   "lore": "One of the twenty who cleared Phase 1 without ever being named on the board. Fast enough that most opponents only registered the wind, not the hit.",
-  "atk": 165,
-  "def": 45,
-  "hp": 720,
+  "atk": 310,
+  "def": 70,
+  "hp": 1100,
   "skills": [
     {
       "skillName": "Gust Flurry",

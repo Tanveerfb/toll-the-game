@@ -5,9 +5,9 @@
   "storyOnly": true,
   "tags": ["Human"],
   "lore": "Passed Phase 1 without landing a single finishing blow herself. Every candidate she teamed with in the forest simply refused to fall.",
-  "atk": 115,
-  "def": 70,
-  "hp": 900,
+  "atk": 220,
+  "def": 110,
+  "hp": 1350,
   "skills": [
     {
       "skillName": "Radiant Bolt",
@@ -24,7 +24,7 @@
       "characterId": "prism",
       "type": "heal",
       "statMultiplier": "atk",
-      "damageRanked": [90, 120, 170],
+      "damageRanked": [150, 200, 290],
       "mechanics": [
         {
           "type": "aoe"

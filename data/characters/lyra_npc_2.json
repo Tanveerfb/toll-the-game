@@ -8,9 +8,9 @@
     "Human"
   ],
   "lore": "Story-battle version of Lyra. Same Red Ice kit as the playable card, but with a boss's stamina — a longer, multi-turn duel. Elite tier: acts three times per turn even alone.",
-  "atk": 140,
-  "def": 115,
-  "hp": 8000,
+  "atk": 265,
+  "def": 185,
+  "hp": 14500,
   "skills": [
     {
       "skillName": "Red Ice: Volcanic Frost",

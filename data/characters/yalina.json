@@ -4,9 +4,9 @@
   "color": "green",
   "tags": ["Human", "Female"],
   "lore": "Ledger exam examinee, teammate and friend of Sara.",
-  "atk": 30,
-  "def": 59,
-  "hp": 1830,
+  "atk": 110,
+  "def": 230,
+  "hp": 4000,
   "skills": [
     {
       "skillName": "Attention Drawer",
@@ -38,7 +38,7 @@
       "characterId": "yalina",
       "type": "attack",
       "statMultiplier": "hp",
-      "damageRanked": [20, 25, 30],
+      "damageRanked": [9, 12, 14],
       "mechanics": [
         {
           "type": "amplify",
@@ -53,7 +53,7 @@
     "characterId": "yalina",
     "type": "ultimate",
     "statMultiplier": "hp",
-    "damage": 40,
+    "damage": 18,
     "mechanics": [
       {
         "type": "amplify",

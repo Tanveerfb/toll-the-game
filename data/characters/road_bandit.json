@@ -7,9 +7,9 @@
     "Human"
   ],
   "lore": "They work the jungle roads near the exam city, picking off travelers who look like they carry something worth taking.",
-  "atk": 140,
-  "def": 55,
-  "hp": 2300,
+  "atk": 265,
+  "def": 90,
+  "hp": 3450,
   "skills": [
     {
       "skillName": "Ambush Strike",

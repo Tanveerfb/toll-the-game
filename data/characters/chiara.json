@@ -8,9 +8,9 @@
     "Bureau"
   ],
   "lore": "Bureau official who deals in cards, dice, and fortune as much as ledgers. Runs her exam encounters like a game she's already rigged in her favor.",
-  "atk": 191,
-  "def": 99,
-  "hp": 1100,
+  "atk": 205,
+  "def": 155,
+  "hp": 3000,
   "skills": [
     {
       "skillName": "Marked Card",

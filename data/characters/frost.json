@@ -5,9 +5,9 @@
   "storyOnly": true,
   "tags": ["Human"],
   "lore": "A quiet Phase 1 qualifier who never threw the first strike. She just made sure the second one never landed.",
-  "atk": 130,
-  "def": 60,
-  "hp": 820,
+  "atk": 250,
+  "def": 95,
+  "hp": 1250,
   "skills": [
     {
       "skillName": "Frost Lance",

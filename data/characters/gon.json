@@ -9,9 +9,9 @@
     "Hunter x Hunter"
   ],
   "lore": "A rookie Hunter with monstrous potential. Nen type: Enhancer. Collab unit.",
-  "atk": 195,
-  "def": 90,
-  "hp": 1800,
+  "atk": 230,
+  "def": 155,
+  "hp": 3400,
   "skills": [
     {
       "skillName": "Jajanken: Rock",
