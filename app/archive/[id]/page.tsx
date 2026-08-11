@@ -14,6 +14,7 @@ import {
 import KitPhases from "@/components/game/KitPhases";
 import PreviewButton from "@/components/game/PreviewButton";
 import CharacterProgressionPanel from "@/components/game/CharacterProgressionPanel";
+import CharacterStatBars from "@/components/game/CharacterStatBars";
 import { PassiveProse, type KitPassiveView } from "@/components/game/KitDetails";
 import {
   buildCharacterDamagePreview,
@@ -54,38 +55,6 @@ const ROSTER_PEAK = (() => {
     def: peak((c) => c.def),
   };
 })();
-
-function StatBar({
-  label,
-  value,
-  max,
-  hue,
-}: {
-  label: string;
-  value: number;
-  max: number;
-  hue: string;
-}): ReactNode {
-  return (
-    <div className="mt-1 grid grid-cols-[26px_1fr_auto] items-center gap-2">
-      <span className="font-body text-[9px] font-bold uppercase tracking-[0.12em] text-readout-muted">
-        {label}
-      </span>
-      <span className="block h-1 bg-hairline">
-        <span
-          className="block h-full"
-          style={{
-            width: `${Math.min(100, Math.round((value / max) * 100))}%`,
-            backgroundColor: hue,
-          }}
-        />
-      </span>
-      <span className="font-heading text-base leading-none tabular-nums text-readout-strong">
-        {value.toLocaleString()}
-      </span>
-    </div>
-  );
-}
 
 export function generateStaticParams(): Array<{ id: string }> {
   return characterIds.map((id) => ({ id }));
@@ -179,26 +148,17 @@ export default async function CharacterDetailPage({
                 ) : null}
               </div>
 
+              {/* Client island: the numbers carry the player's own level and
+                  ascension, which this statically-generated page can't see. */}
               <div className="border-t border-hairline px-3 py-2.5">
-                <p className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
-                  Against the roster
-                </p>
-                <StatBar
-                  label="Hp"
-                  value={character.hp}
-                  max={ROSTER_PEAK.hp}
-                  hue={hue}
-                />
-                <StatBar
-                  label="Atk"
-                  value={character.atk}
-                  max={ROSTER_PEAK.atk}
-                  hue={hue}
-                />
-                <StatBar
-                  label="Def"
-                  value={character.def}
-                  max={ROSTER_PEAK.def}
+                <CharacterStatBars
+                  characterId={character.id}
+                  base={{
+                    hp: character.hp,
+                    atk: character.atk,
+                    def: character.def,
+                  }}
+                  peak={ROSTER_PEAK}
                   hue={hue}
                 />
               </div>

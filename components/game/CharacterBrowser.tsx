@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { usePlayerStore } from "@/store/playerStore";
 import { useSettingsStore } from "@/store/settingsStore";
+import { progressedStats } from "@/lib/game/progression";
 
 type CharacterColor = "light" | "red" | "blue" | "green" | "dark";
 
@@ -105,11 +106,16 @@ function Toggle({
 function StatBar({
   label,
   value,
+  barValue = value,
   max,
   hue,
 }: {
   label: string;
+  /** The number shown — the player's progressed stat on an owned unit. */
   value: number;
+  /** What the bar fills from; the catalog base, so the roster comparison
+   *  stays level-invariant. See CharacterStatBars for the full reasoning. */
+  barValue?: number;
   max: number;
   hue: string;
 }): React.JSX.Element {
@@ -122,7 +128,7 @@ function StatBar({
         <span
           className="block h-full"
           style={{
-            width: `${Math.round((value / max) * 100)}%`,
+            width: `${Math.min(100, Math.round((barValue / max) * 100))}%`,
             backgroundColor: hue,
           }}
         />
@@ -422,6 +428,12 @@ export default function CharacterBrowser({
             // Pre-hydration we don't know what's owned, so the tile shows no
             // state label at all rather than flashing "Locked" on an owned unit.
             const locked = hasHydrated && !owned;
+            // The tile's numbers are what this unit actually fights at. Sort
+            // and the bar fills stay on base stats — one progression curve
+            // scales all three equally, so ordering never changes, and mixing
+            // owned and locked units on one axis would.
+            const shown =
+              owned && progress ? progressedStats(character, progress) : character;
             return (
               // `hover:border-(--el)` emits nothing: `border-` is ambiguous
               // between width and colour, so the `color:` hint is required.
@@ -482,19 +494,22 @@ export default function CharacterBrowser({
                   </p>
                   <StatBar
                     label="Hp"
-                    value={character.hp}
+                    value={shown.hp}
+                    barValue={character.hp}
                     max={statMax.hp}
                     hue={hue}
                   />
                   <StatBar
                     label="Atk"
-                    value={character.atk}
+                    value={shown.atk}
+                    barValue={character.atk}
                     max={statMax.atk}
                     hue={hue}
                   />
                   <StatBar
                     label="Def"
-                    value={character.def}
+                    value={shown.def}
+                    barValue={character.def}
                     max={statMax.def}
                     hue={hue}
                   />

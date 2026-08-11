@@ -1195,6 +1195,65 @@ so her lines are credited to "Unknown female voice" in both part 6 and part 10.
 - Preset naming still uses `window.prompt`.
 
 
+## Session log — 2026-08-12 (part 4): first real playtest
+
+Short session. Tanveer played the game for the first time since the overhaul —
+"I actually like playing the game now" — and reported two things. One was not a
+bug; one was.
+
+### The world boss "doesn't consume stamina"
+
+It does. `enter()` in `app/events/page.tsx` charges `spendStaminaAction(40)`
+before the battle starts, and has all along.
+
+What hid it: a boss clear pays a flat **100 account XP**
+(`WORLD_BOSS_ACCOUNT_XP`), a rank-up **refills stamina to the cap** (ruling,
+2026-08-11), and early ranks cost 100 / 110 / 121 XP. So nearly every clear
+ranks you up, which refills to 120, and the next entry drops you to 80. The bar
+reads 80 every time you look at it and nothing appears to have been spent.
+
+**There is a real economy hole under this, deliberately left in place.** A
+refill is 120 stamina = three runs, so stamina stops being effectively infinite
+only once one rank costs more than three clears' XP (300) — around **account
+rank 13**. The reasoning at `lib/game/worldBossRewards.ts:32` budgets 100 XP
+against "288 stamina a day, ~7 runs", which assumes stamina is the limiter; the
+refill removes the limiter for the first dozen ranks. Three fixes were offered
+(band-only refills, a fixed +40, or dropping the refill); Tanveer took none —
+**"nah its fine"**. Don't re-raise it as a bug. It's a known, accepted state.
+
+Also confirmed in the same exchange: boss clears keep their full drop table.
+Molvarr is the only faucet for `sea_monster_eye` and `corroded_seaweed`
+(character ascension) and the only gem/ticket faucet outside the starter grant,
+so "only gives account XP" was checked before acting and meant the clear
+shouldn't touch stamina — not that the drops should go.
+
+### Archive stats ignored character level (fixed)
+
+`/archive/[id]` is a statically generated **server** component and read
+`character.hp/atk/def` straight off the catalog JSON. Progression lives in
+localStorage, so the statline could not see the player's level under any
+circumstances — `progressedStats` was never called there. The `/archive` grid
+had the same defect, showing base numbers directly beside a `Lv 24 · A2` badge.
+
+Fixed with a client island, `components/game/CharacterStatBars.tsx`, plus the
+equivalent change to the browser tiles.
+
+**The number is progressed; the bar fill is still base.** This is deliberate and
+easy to "fix" wrongly. `progressedStats` scales all three stats by one
+multiplier, so a character's standing against the roster is level-invariant —
+filling from the progressed number pegs every owned unit at 100% and destroys
+the comparison the bar exists for. Sorting stays on base for the same reason,
+and because mixing owned and locked units on a progressed axis would order them
+by investment rather than by kit. Both views gate on `hasHydrated` so the static
+render and first client render agree.
+
+**Known and left alone:** the Kit Preview table on the same page is still
+base-stat and ignores ult level, so a levelled character's preview understates
+its real damage (`lib/game/damagePreview.ts:1145`). Making a fixed-dummy
+reference table personal is a design call, not plumbing. Tanveer: "its fine for
+now."
+
+
 ## Open Issues
 
 | # | Issue | Where | Severity |
@@ -1204,6 +1263,7 @@ so her lines are credited to "Unknown female voice" in both part 6 and part 10.
 | 14 | Design feedback 2026-07-11: Mustafa approved; Siddiq redesigned (v2, still AI-invented — awaiting his sheet); Batra reworked per his direction (turban/beard/kesari, no armour). He loves Lyra/Sara/Gabrist; Duke/Yalina/Seras fine for now, iterate later | `docs/ART_PIPELINE.md` | Pending input |
 | 20 | Battle screen overhaul: cinematics shipped 2026-07-12; the 2026-08-04 UX batches did the layout, enemy inspection, info panel, structured log and per-character VFX. **Remaining: mobile pass + sound hooks only** | `components/game/*` | Mostly done |
 | 21 | Enemy AI: skill-selection priority rewritten 2026-07-13 (team-wide tiers + per-turn caps). Target-choice heuristics (currently lowest-HP/taunt) may still want tuning per playtest | `lib/game/ai.ts` | Mostly done |
+| 23 | Stamina is effectively unlimited below ~account rank 13: a boss clear pays 100 XP, nearly every early clear ranks up, and a rank-up refills the bar to 120 (three runs). Raised 2026-08-12 with three fixes; Tanveer declined all three — **accepted, not a bug** | `store/playerStore.ts:463`, `lib/game/worldBossRewards.ts` | Design note (accepted) |
 | 22 | Battle log can't show **which buffs/debuffs an action applied** — `battleEvents` doesn't model effect application, so the Raw string-log toggle remains the only record. Needs an `emit` change in `combat.ts` | `lib/game/combat.ts`, `types/battleEvent.ts` | Open |
 
 Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier stats wired, ruling #36), #16 (zero clauses hidden, ruling #44), #15 (firestore.rules deployed live via Firebase MCP 2026-07-11 — cloud saves work for signed-in users; minimal `firebase.json` added), #7 (Mechanic discriminated union — see Working).
