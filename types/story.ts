@@ -18,6 +18,15 @@ export interface StoryScene {
 export interface StoryTeamPick {
   id: string;
   isSub?: boolean;
+  /**
+   * Progression this unit fights at, mirroring `TeamPick` in BattleProvider.
+   * Authored on an enemy to raise a fight's difficulty; filled in at resolve
+   * time for a story lead the player doesn't own (see `DEFAULT_TRIAL_LEVEL`).
+   * Absent means level 1 — the bare catalog statline.
+   */
+  level?: number;
+  ascension?: number;
+  ultLevel?: number;
 }
 
 export interface StoryBattle {
@@ -52,6 +61,11 @@ export interface StoryFirstClearBundle {
   permanentTicket?: number;
   /** Material id → fixed quantity */
   materials?: Record<string, number>;
+  /** Account XP. First clears are the only source for now (Tanveer,
+   *  2026-08-11), so this rises as the story goes on rather than staying flat,
+   *  and it's multiplied by the difficulty's reward multiplier like everything
+   *  else in the bundle. */
+  accountXp?: number;
 }
 
 /** Rolled on every clear. Ranges rather than fixed amounts or a weighted
@@ -75,7 +89,13 @@ export interface StoryChapter {
   id: string;
   title: string;
   intro: StoryScene[];
-  battle: StoryBattle;
+  /**
+   * Omitted for a scene-only chapter — a debrief, a reveal, a comedown.
+   * Those still pay first-clear rewards; they just have nothing to fight
+   * (Tanveer, 2026-08-11). The flow skips the versus splash and the battle
+   * and runs intro → outro → complete → rewards.
+   */
+  battle?: StoryBattle;
   outro: StoryScene[];
   /** Required: a chapter that silently defaults is a chapter someone forgot
    *  to finish, and the schema should say so at load. */
@@ -83,6 +103,11 @@ export interface StoryChapter {
   /** Encounter-level modifiers for this fight. Absent or empty = a standard
    *  fight, which is the default (Tanveer, 2026-08-10). */
   stageEffects?: StageEffect[];
+  /** Level a story lead is lent at when the player doesn't own them. Rises as
+   *  the story goes on — "level 10 for now, ofc it would go higher as we go
+   *  deep into story" (Tanveer, 2026-08-11). Defaults to
+   *  `DEFAULT_TRIAL_LEVEL`. */
+  trialLevel?: number;
   rewards: StoryChapterRewards;
 }
 

@@ -11,6 +11,8 @@ export interface StoryPayout {
   coin: number;
   permanentTicket: number;
   materials: Record<string, number>;
+  /** Account XP — first clears only, so this is 0 on every replay. */
+  accountXp: number;
 }
 
 export interface StoryClearResult {
@@ -23,7 +25,7 @@ export interface StoryClearResult {
 }
 
 function emptyPayout(): StoryPayout {
-  return { gems: 0, coin: 0, permanentTicket: 0, materials: {} };
+  return { gems: 0, coin: 0, permanentTicket: 0, materials: {}, accountXp: 0 };
 }
 
 /** Inclusive on both bounds. A range whose min exceeds its max is rejected by
@@ -38,6 +40,7 @@ function fromBundle(bundle: StoryFirstClearBundle): StoryPayout {
     coin: bundle.coin ?? 0,
     permanentTicket: bundle.permanentTicket ?? 0,
     materials: { ...(bundle.materials ?? {}) },
+    accountXp: bundle.accountXp ?? 0,
   };
 }
 
@@ -64,6 +67,7 @@ function addPayouts(a: StoryPayout, b: StoryPayout): StoryPayout {
     gems: a.gems + b.gems,
     coin: a.coin + b.coin,
     permanentTicket: a.permanentTicket + b.permanentTicket,
+    accountXp: a.accountXp + b.accountXp,
     materials,
   };
 }
@@ -81,13 +85,38 @@ export function rollStoryRewards(
   rewards: StoryChapterRewards,
   isFirstClear: boolean,
   rng: () => number = Math.random,
+  /** Difficulty reward multiplier — 1 at world level 1, which is every
+   *  encounter today. Applied to the whole payout, account XP included
+   *  (Tanveer, 2026-08-11). */
+  rewardMultiplier: number = 1,
 ): StoryClearResult {
-  const firstClear = isFirstClear ? fromBundle(rewards.firstClear) : null;
-  const drops = rollDrops(rewards.repeat, rng);
+  const firstClear = isFirstClear
+    ? scalePayout(fromBundle(rewards.firstClear), rewardMultiplier)
+    : null;
+  const drops = scalePayout(rollDrops(rewards.repeat, rng), rewardMultiplier);
   return {
     firstClear,
     drops,
     total: firstClear ? addPayouts(firstClear, drops) : drops,
+  };
+}
+
+/** Scales a rolled payout. A multiplier of 1 is a strict no-op, so nothing
+ *  currently authored moves by a single point. */
+export function scalePayout(
+  payout: StoryPayout,
+  multiplier: number,
+): StoryPayout {
+  if (multiplier === 1) return payout;
+  const scale = (n: number) => Math.round(n * multiplier);
+  return {
+    gems: scale(payout.gems),
+    coin: scale(payout.coin),
+    permanentTicket: scale(payout.permanentTicket),
+    accountXp: scale(payout.accountXp),
+    materials: Object.fromEntries(
+      Object.entries(payout.materials).map(([id, qty]) => [id, scale(qty)]),
+    ),
   };
 }
 

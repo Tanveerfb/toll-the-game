@@ -741,6 +741,211 @@ amber page until its turn.
 `/practice`, `/gacha`, `/world-boss`, `/profile`, `/login`, `/`, and the
 battle arena proper.
 
+## Session log — 2026-08-11 (part 2): progression, format, one picker, account rank
+
+Started as "I need a team preset system", turned into six systems because the
+first question exposed three things that were stored but never used. Everything
+below is on `master`. 876 tests, lint and build green.
+
+### The finding that reframed the whole batch
+
+`buildBattleChar` read stats **straight from the catalog JSON**. `level`,
+`ascension` and `ultLevel` had been sitting in `playerStore` since the world-
+boss batch, consumed by nothing. A maxed character fought exactly as hard as a
+freshly pulled one, and a "trial" story unit was mechanically identical to an
+owned one. Tanveer's ask ("trial chars but a bit levelled up, say level 10")
+was impossible to answer coherently until that was fixed, so progression came
+first and everything else built on it.
+
+### Progression (`lib/game/progression.ts`) — ruling: approved 2026-08-11
+
+The curve was **already specced** in `docs/design/WORLD_BOSS_AND_ASCENSION_PLAN.md`
+lines 22-24 and 73-76, written long before this session. It was implemented as
+written with two departures, both approved:
+
+1. The doc computes a rounded per-level constant, `round(base / 59)`. Integer
+   rounding systematically shortchanges small stats — Ban's 80 DEF reaches
+   **1.74x** at Lv60 while Yalina's 4000 HP reaches exactly 2.00x, so the stat
+   a character has least of grows slowest, punishing the characters built
+   around a low stat. Implemented as `round(base * (1 + (level-1)/59))`
+   instead: every stat lands on 2.00x regardless of magnitude.
+2. The per-band ascension bump was marked "tuning TODO". It is **+1/6 of base
+   per band, six bands**, summing to the +1x the doc asks for → ~3x at fully
+   ascended Lv60.
+
+**Ult levels** (ruled 2026-08-11): an ultimate's multiplier grows 60% of its
+own value across the six levels — a 500% ult reads 500 / 560 / 620 / 680 /
+740 / 800. One rule for every playable ult. `MAX_ULT_LEVEL` was already in
+`lib/gacha/dupes.ts` and is now exported and reused rather than redefined.
+
+**Nothing currently in the game changed.** Default progress is level 1 /
+ascension 0, and ascension 0 caps max level at 1, so every character sits at
+exactly 1.000x. All 810 tests at the time passed unchanged, which is the
+empirical proof rather than the argument.
+
+Order of application in `buildBattleChar`: **catalog base → progression →
+stage effects**. Progression is intrinsic to the unit; a stage effect is the
+encounter modifying whatever turned up. Player units read `getCharacterProgress`
+once at battle start (never mid-battle); an explicit `level` on the pick
+overrides it, which is the hook trial characters use.
+
+`BattleCharacter.ultLevel` is **optional** — required broke ten hand-built test
+fixtures for no benefit, and absent-means-1 is a true no-op.
+
+### 3 field + 1 sub (`lib/game/format.ts`)
+
+Tanveer: "all battles are meant to be 3 + 1 sub vs enemy, not 4 vs enemy like
+we have been playing." Confirmed to constrain **both sides**, as a default with
+an override ("unless I say otherwise").
+
+The rule had lived **only inside `components/game/TeamSelect.tsx`**, the
+practice sandbox. `OwnedTeamSelect` — story and world boss — had no format
+concept at all, which is exactly why those battles shipped four on the field.
+It now lives in lib and is applied in `startCustomBattle`, where teams are
+assembled and no screen can forget it. `options.fieldCap` is the documented
+override and the practice bench passes it, so its 4v4 still works.
+
+A pick that **already declares `isSub` keeps that answer** — an authored
+encounter that deliberately benches its second unit isn't overruled by
+position.
+
+**Balance consequence, deliberately accepted:** world boss and non-canon story
+chapters now field three. Molvarr was tuned against four attackers. No current
+chapter has more than 2 enemies, so the enemy-side half of the cap bites
+nothing today.
+
+### One team picker (`components/game/TeamPicker.tsx`)
+
+Tanveer: "a global team picker used everywhere across the game, not duplicated
+instances specially made for certain sections."
+
+`OwnedTeamSelect` is **deleted**. `TeamSelect` lost ~250 lines of duplicated
+slot grid and roster overlay and now composes two `TeamPicker`s (both
+`source="catalog"`, presets off on the enemy side) plus the boss selector and
+the format switcher — the three things genuinely specific to a bench.
+
+Props: `anchors` (unremovable, ownership-exempt), `openSlots`, `source`
+(`roster` | `catalog`), `showPresets`, `fieldCap`, `trialIds`. The fourth slot
+renders as **Sub**, greyed, because the bench is real now.
+
+### Team presets + sticky last team (`lib/game/teamPresets.ts`)
+
+**One global list** shared by every mode (his call), capped at 8 — beyond that
+the chip row stops being scannable, which was its point. Chips carry member
+portraits so a team is picked by recognition rather than by name.
+
+Conflict rules, all tested: an anchored or unowned member **leaves its slot
+open and says why**; never silently dropped, never refuses to load, and the
+stored preset is **never edited behind the player's back**. Order is preserved
+because with 3-on-field a reorder would silently change who benches.
+
+**Sticky last team** is the actual fix for "tired of picking chars manually
+each time" — the brief reset `picked` to `[]` on every visit. Saved **on
+launch, not on selection**: a team you assembled and then abandoned isn't the
+one you want back.
+
+Known rough edge: preset naming/renaming uses `window.prompt`. Functional,
+ugly, flagged to Tanveer, not yet replaced.
+
+### Trial characters (`lib/game/storyTeam.ts`)
+
+The *behaviour* already existed — `storyAnchors` bypasses the ownership check
+on purpose so a fresh account can play Duke's story without pulling Duke. What
+was missing is that **nothing told the player**, so an unowned character
+silently appearing read as a bug.
+
+Now: a Trial badge on the slot plus one line explaining it's lent for this
+battle only, and the unit fights at the chapter's `trialLevel` (default 10,
+per-chapter so it can rise deeper into the story). An **owned** lead is never
+overridden — the player's own progression applies, so an invested copy always
+beats the loaner. Tested at the crossover: Lv11 already beats the Lv10 loaner,
+so there's no band where investing makes a character worse.
+
+### Account rank + world level (`lib/game/accountRank.ts`, `lib/game/worldLevel.ts`)
+
+Bands of **20** to a cap of **60**, walls at 20 and 40 cleared by ascension
+trials (Genshin model). Mirrors character ascension deliberately — same shape
+learned once, applied twice.
+
+XP bar: **100 for the first rank, compounding 10%** per rank. That is steep and
+the consequence is documented rather than hidden: rank 59→60 alone costs
+25,164, and the full climb is **275,798**.
+
+**XP banks at a wall rather than being discarded**, and clearing the trial pays
+out everything earned while stuck. Throwing it away would punish players for
+continuing to play, which is the opposite of what a retention gate is for.
+
+**A rank-up refills stamina** (his call).
+
+World level: WL1 from the start, WL2 at rank 20, WL3 at 40, WL4 at 60.
+`effectiveDifficulty` implements the floor/ceiling rule — a chapter's
+`baseDifficulty` is a **floor** even for a low-rank player, the account's rank
+is the ceiling, so the floor rises with the story and the ceiling with the
+account, and the dial only ever *adds* an option. `baseDifficultyForPart`:
+difficulty 1 through part 5, 2 from part 6 to 10, holding at 2 past that.
+
+**XP sources** (his ruling): story chapters pay on **first clear only** —
+p1c1..p2c2 = 10/11/12/13/15/16 — and world boss pays **100 per clear, every
+clear**. That number was chosen against the stamina economy, not picked: 40
+stamina a run and 288 regenerated daily is ~7 runs and ~720 XP/day, reaching
+the first wall in a week, the second in ~2 months, and rank 60 in ~1 year. At
+50 the same climb takes over two years. **First clears are flavour; repeatables
+are the ladder** — the six existing chapters total 77 XP, which doesn't reach
+rank 2.
+
+Reward multiplier applies to the whole payout **including account XP**.
+
+**Near-miss worth recording:** `grantWorldBossRewards` rest-spreads its
+argument into the materials map. Adding `accountXp` without destructuring it
+out would have created an inventory item called "accountXp" that nothing
+displays and nothing spends. Caught, fixed, and pinned with a test.
+
+**Still provisional, marked as such in code:** `ENEMY_LEVEL_PER_DIFFICULTY = 8`
+and `REWARD_BONUS_PER_DIFFICULTY = 0.35`. A test asserts rewards always outpace
+enemy stat growth — if that ever inverts, raising world level becomes work for
+no gain and nobody opts in. Keep the test.
+
+### Scene-only chapters
+
+Ruled 2026-08-11: **a chapter may have no battle** and still pays first-clear
+rewards. `StoryChapter.battle` is now optional; such a chapter runs brief →
+title → intro → outro → complete → rewards.
+
+Guarded in seven places: type, schema (a *half-filled* `battle` key is still a
+load-time failure), `storyAnchors`, `resolveStoryTeam`, the index's enemy list,
+the brief, and the flow. Two traps closed: **Skip Story** would have jumped to
+a versus beat that never resolves (now falls back to the title card), and the
+versus view bounces to the index rather than rendering a splash for a fight
+that doesn't exist. The brief hides the picker and the Against block entirely
+and its CTA reads **Read**.
+
+### Persistence
+
+`playerStore` went **v3 → v5** in one session. v4 added `presets` and
+`lastTeam`; v5 added `account` and `worldLevel`. Both purely additive, both
+with tests proving an older save comes through at today's behaviour (rank 1 /
+world level 1, empty lists) and that a current-version doc passes through
+untouched.
+
+### Story adaptation draft
+
+`docs/design/STORY_PARTS_3_TO_6_DRAFT.md` — parts 3–6 mapped from
+`E:\Toll - Web toon` chapters 3–6, at Tanveer's invitation. **Nothing written
+to `data/story/`**, no dialogue drafted, no new characters. Three rulings are
+folded in: scene-only chapters allowed, ignited Tao is a levelled `master_tao`
+rather than a second phase, and the Seris closing scene gets no battle
+("intrigue only, not villain identification").
+
+### Not done
+
+- **#24 battle UI** beyond the info panel — arena, tiles, deck, log drawer.
+- **#31's UI half**: chapter `baseDifficulty` in data, the difficulty picker on
+  the brief, feeding `enemyLevelForDifficulty` through at launch, a rank/XP
+  display, and the two ascension trials (encounters — Tanveer's design).
+- Preset naming still uses `window.prompt`.
+- `/practice`, `/gacha`, `/world-boss`, `/profile`, `/login`, `/` are still on
+  the pre-token palette.
+
 ## Open Issues
 
 | # | Issue | Where | Severity |

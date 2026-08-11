@@ -10,6 +10,8 @@ import { bossDamageMultiplierVsTarget } from "./bossPassives";
 import { getEffectiveCritResist, getEffectiveLifesteal } from "./substats";
 import { applyHeal } from "./heal";
 import { scaleMaxHp } from "./maxHp";
+import { scaledUltDamage } from "./progression";
+import { MAX_ULT_LEVEL } from "@/lib/gacha/dupes";
 import { isImmuneToStatDebuff } from "./immunity";
 import { DEFAULT_BLEED_TURNS, DEFAULT_IGNITE_TURNS } from "./dotDurations";
 import { SkillCard } from "@/types/skillCard";
@@ -133,9 +135,20 @@ function handleAttackReceived(char: BattleCharacter, log: (e: string) => void) {
 function getSkillDamagePercent(
   skill: SkillCard | UltimateCard,
   rankIndex: number,
+  /** Caster's gacha dupe level. Ultimates scale with it; ordinary skills rank
+   *  up instead and ignore it entirely. */
+  ultLevel: number = 1,
 ): number {
   if (skill.type === "ultimate") {
-    return (skill as UltimateCard).damage;
+    // Ruling 2026-08-11: an ultimate's multiplier grows 60% of its own value
+    // across the six ult levels — a 500% ultimate reads 500 at level 1 and
+    // 800 at level 6. Ranks don't apply to ultimates, so this is the only
+    // number that moves.
+    return scaledUltDamage(
+      (skill as UltimateCard).damage,
+      ultLevel,
+      MAX_ULT_LEVEL,
+    );
   } else {
     // Heal/buff skills (e.g. Molvarr's SP Skills) carry no damageRanked — no
     // damage. Treat a missing/short array as 0% rather than crashing.
@@ -401,7 +414,11 @@ export function executeSkill(
   // A skill deals damage whenever its numbers say so, regardless of type —
   // e.g. debuff-type skills with damageRanked > 0 hit AND debuff. Heal-type
   // skills reuse damageRanked as the heal amount, so they are excluded.
-  const skillDamagePercent = getSkillDamagePercent(action.skill, rankIndex);
+  const skillDamagePercent = getSkillDamagePercent(
+    action.skill,
+    rankIndex,
+    source.ultLevel ?? 1,
+  );
   // A purely supportive ultimate is NOT an attack. Without this an ally-
   // directed ultimate still ran an attack pass at the enemy team first —
   // Isolde's Starbound Ward logged a 0-damage hit on every enemy before

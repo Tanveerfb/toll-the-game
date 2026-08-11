@@ -102,6 +102,23 @@ describe("ascendCharacter", () => {
 describe("grantWorldBossRewards", () => {
   beforeEach(resetToKnownState);
 
+  it("never leaks account XP into the inventory as a material", () => {
+    // The action rest-spreads its argument into the materials map, so a new
+    // non-material field silently becomes an inventory key nothing can spend.
+    usePlayerStore.getState().grantWorldBossRewards({
+      sea_monster_eye: 0,
+      corroded_seaweed: 0,
+      training_manual: 0,
+      coin: 0,
+      gems: 0,
+      permanentTicket: 0,
+      accountXp: 250,
+    });
+    const state = usePlayerStore.getState();
+    expect(state.inventory.accountXp).toBeUndefined();
+    expect(state.account.xp + state.account.rank).toBeGreaterThan(1);
+  });
+
   it("adds materials and coin to the existing totals", () => {
     usePlayerStore.getState().grantWorldBossRewards({
       sea_monster_eye: 2,
@@ -110,6 +127,7 @@ describe("grantWorldBossRewards", () => {
       coin: 5000,
       gems: 25,
       permanentTicket: 1,
+      accountXp: 0,
     });
     const state = usePlayerStore.getState();
     expect(state.inventory.sea_monster_eye).toBe(7);

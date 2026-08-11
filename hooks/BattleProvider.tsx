@@ -23,7 +23,13 @@ import { applyBossTurnStart, bossForcedSpAction } from "@/lib/game/bossPassives"
 import { tickTeamBuffs, tickTeamDebuffs } from "@/lib/game/tick";
 import { syncExtortLinks } from "@/lib/game/effects";
 import { ensureFieldUnit, promoteSubs } from "@/lib/game/sub";
+import { applyFieldCap, FIELD_CAP } from "@/lib/game/format";
 import { getCharacterById } from "@/lib/game/characterCatalog";
+import {
+  BASE_PROGRESSION,
+  progressedStats,
+} from "@/lib/game/progression";
+import { getCharacterProgress, usePlayerStore } from "@/store/playerStore";
 import {
   bonusActionsFor,
   stageAdjustedStats,
@@ -60,6 +66,18 @@ export interface TeamPick {
   id: string;
   /** Bench slot: passive active, no cards, enters field when a teammate dies */
   isSub?: boolean;
+  /**
+   * Progression this unit fights at. Omitted means level 1 / ascension 0 —
+   * exactly the catalog statline, which is what every enemy and every
+   * unspecified unit gets.
+   *
+   * Set explicitly for a story trial character (a fixed level, regardless of
+   * whether the player owns them) or an authored enemy level. For the player's
+   * own units it is filled in from `playerStore` at battle start.
+   */
+  level?: number;
+  ascension?: number;
+  ultLevel?: number;
 }
 
 interface BattleContextType {
@@ -69,7 +87,12 @@ interface BattleContextType {
   startCustomBattle: (
     playerPicks: TeamPick[],
     enemyPicks: TeamPick[],
-    options?: { preview?: boolean; stageEffects?: StageEffect[] },
+    options?: {
+      preview?: boolean;
+      stageEffects?: StageEffect[];
+      /** Overrides the default 3-on-field rule — practice bench only. */
+      fieldCap?: number;
+    },
   ) => void;
   lastBattleConfig: { playerPicks: TeamPick[]; enemyPicks: TeamPick[] } | null;
   resolveplayerTurnWrapper: () => void;
@@ -711,13 +734,24 @@ export default function BattleProvider({
   const startCustomBattle = (
     rawPlayerPicks: TeamPick[],
     rawEnemyPicks: TeamPick[],
-    options?: { preview?: boolean; stageEffects?: StageEffect[] },
+    options?: {
+      preview?: boolean;
+      stageEffects?: StageEffect[];
+      fieldCap?: number;
+    },
   ) => {
     const preview = options?.preview === true;
     const stageEffects = options?.stageEffects ?? [];
+    // Both sides field at most `FIELD_CAP`; the rest bench. Applied here
+    // rather than in a picker so no screen can ship a battle that forgot the
+    // rule — which is exactly how story and world-boss fights ran four units
+    // on the field (Tanveer, 2026-08-11). `options.fieldCap` is the documented
+    // escape hatch for the practice bench and any authored encounter that
+    // wants a different board.
+    const fieldCap = options?.fieldCap ?? FIELD_CAP;
     // A lone sub (or all-sub team) auto-converts to a field unit
-    const playerPicks = ensureFieldUnit(rawPlayerPicks);
-    const enemyPicks = ensureFieldUnit(rawEnemyPicks);
+    const playerPicks = ensureFieldUnit(applyFieldCap(rawPlayerPicks, fieldCap));
+    const enemyPicks = ensureFieldUnit(applyFieldCap(rawEnemyPicks, fieldCap));
 
     resetBattle();
     clearQueue();
@@ -736,37 +770,64 @@ export default function BattleProvider({
       raw: { atk: number; def: number; hp: number },
     ) => stageAdjustedStats(raw, stageEffects, team);
 
+    // Catalog base → progression → stage effects, in that order. Progression
+    // is intrinsic to the unit; a stage effect is the encounter modifying
+    // whatever the unit turned up as.
     const buildBattleChar = (
       raw: ReturnType<typeof getCharacterById>,
       team: "player" | "enemy",
       instanceId: string,
       isSub: boolean,
-    ): BattleCharacter => ({
-      ...(raw as unknown as Omit<
-        BattleCharacter,
-        | "instanceId"
-        | "currentAttack"
-        | "currentDefense"
-        | "currentHP"
-        | "ultGauge"
-        | "buffs"
-        | "debuffs"
-        | "passiveState"
-        | "team"
-        | "isSub"
-      >),
-      instanceId,
-      ...stageStats(team, raw!),
-      currentAttack: stageStats(team, raw!).atk,
-      currentDefense: stageStats(team, raw!).def,
-      currentHP: stageStats(team, raw!).hp,
-      ultGauge: 0,
-      buffs: [],
-      debuffs: [],
-      passiveState: {},
-      team,
-      isSub,
-    });
+      pick: TeamPick,
+    ): BattleCharacter => {
+      // A player unit fights at whatever the save says, unless the pick names
+      // a level explicitly — which is how a story trial character gets a fixed
+      // level regardless of whether the player owns them. Read once, here: the
+      // team's progression must not shift mid-battle if the store changes.
+      const saved =
+        team === "player" && pick.level === undefined
+          ? getCharacterProgress(usePlayerStore.getState(), pick.id)
+          : null;
+      const progressed = progressedStats(
+        { hp: raw!.hp, atk: raw!.atk, def: raw!.def },
+        {
+          level: pick.level ?? saved?.level ?? BASE_PROGRESSION.level,
+          ascension:
+            pick.ascension ?? saved?.ascension ?? BASE_PROGRESSION.ascension,
+        },
+      );
+      const staged = stageStats(team, progressed);
+      return {
+        ...(raw as unknown as Omit<
+          BattleCharacter,
+          | "instanceId"
+          | "currentAttack"
+          | "currentDefense"
+          | "currentHP"
+          | "ultGauge"
+          | "ultLevel"
+          | "buffs"
+          | "debuffs"
+          | "passiveState"
+          | "team"
+          | "isSub"
+        >),
+        instanceId,
+        ...staged,
+        currentAttack: staged.atk,
+        currentDefense: staged.def,
+        currentHP: staged.hp,
+        ultGauge: 0,
+        // Carried onto the unit so combat can scale the ultimate and the info
+        // panel can show it, rather than re-reading the store mid-battle.
+        ultLevel: pick.ultLevel ?? saved?.ultLevel ?? 1,
+        buffs: [],
+        debuffs: [],
+        passiveState: {},
+        team,
+        isSub,
+      };
+    };
 
     const players = playerPicks.map((pick, i) =>
       buildBattleChar(
@@ -774,6 +835,7 @@ export default function BattleProvider({
         "player",
         `p${i + 1}_${pick.id}`,
         pick.isSub === true,
+        pick,
       ),
     );
     const enemies = enemyPicks.map((pick, i) =>
@@ -782,6 +844,7 @@ export default function BattleProvider({
         "enemy",
         `e${i + 1}_${pick.id}`,
         pick.isSub === true,
+        pick,
       ),
     );
 

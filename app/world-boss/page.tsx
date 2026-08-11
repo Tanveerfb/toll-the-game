@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import BattleArena from "@/components/game/BattleArena";
 import Deck from "@/components/game/Deck";
-import OwnedTeamSelect, { toTeamPicks } from "@/components/game/OwnedTeamSelect";
+import TeamPicker, { toTeamPicks } from "@/components/game/TeamPicker";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import { useScreenMusic } from "@/hooks/useScreenMusic";
 import { useGameStore } from "@/store/gameStore";
@@ -33,6 +33,7 @@ export default function WorldBossPage(): React.JSX.Element {
   const roster = usePlayerStore((s) => s.roster);
   const stamina = usePlayerStore((s) => s.stamina);
   const spendStaminaAction = usePlayerStore((s) => s.spendStaminaAction);
+  const rememberLastTeam = usePlayerStore((s) => s.rememberLastTeam);
   const grantWorldBossRewards = usePlayerStore((s) => s.grantWorldBossRewards);
 
   const [view, setView] = React.useState<View>({ kind: "select" });
@@ -55,9 +56,11 @@ export default function WorldBossPage(): React.JSX.Element {
       return;
     }
     setInsufficientStaminaNotice(false);
+    // Remembered on launch, not on selection — see the story brief.
+    if (team.length > 0) rememberLastTeam(team.map((c) => c.id));
     startCustomBattle(toTeamPicks(team), [{ id: MOLVARR_ID }]);
     setView({ kind: "battle" });
-  }, [spendStaminaAction, startCustomBattle, team]);
+  }, [spendStaminaAction, startCustomBattle, team, rememberLastTeam]);
 
   if (view.kind === "battle") {
     return (
@@ -153,7 +156,7 @@ export default function WorldBossPage(): React.JSX.Element {
           </CardContent>
         </Card>
 
-        <OwnedTeamSelect ownedIds={roster} team={team} onChange={setTeam} />
+        <TeamPicker ownedIds={roster} team={team} onChange={setTeam} />
 
         {insufficientStaminaNotice ? (
           <p className="font-body text-sm text-red-400">Not enough stamina — wait for it to regenerate.</p>

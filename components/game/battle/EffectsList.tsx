@@ -14,18 +14,18 @@ const CATEGORY_STYLE: Record<
   { row: string; chip: string; icon: React.ElementType }
 > = {
   buff: {
-    row: "border-sky-500/50 bg-sky-950/40",
-    chip: "text-sky-300",
+    row: "border-el-blue/50 bg-el-blue/8",
+    chip: "text-el-blue",
     icon: ArrowUp,
   },
   debuff: {
-    row: "border-rose-500/50 bg-rose-950/40",
-    chip: "text-rose-300",
+    row: "border-role-attack/50 bg-role-attack/8",
+    chip: "text-role-attack",
     icon: ArrowDown,
   },
   effect: {
-    row: "border-zinc-500/50 bg-zinc-900/60",
-    chip: "text-zinc-400",
+    row: "border-edge bg-inset",
+    chip: "text-readout-muted",
     icon: Sparkles,
   },
 };
@@ -50,7 +50,7 @@ export function categorizeEffects(unit: BattleCharacter): CategorizedEffect[] {
   return [...buffs, ...debuffs, ...effects];
 }
 
-function prettyName(effect: StatusEffect): string {
+export function prettyName(effect: StatusEffect): string {
   if (effect.name) return effect.name;
   return effect.type
     .replace(/([A-Z])/g, " $1")
@@ -85,14 +85,15 @@ function effectDescription(effect: StatusEffect): string {
   return "";
 }
 
-/** Highlight numeric tokens (e.g. "+30%", "10") in amber. */
+/** Highlight numeric tokens (e.g. "+30%", "10") — achromatic, so a number
+ *  doesn't compete with the row's own buff/debuff hue. */
 function DescriptionText({ text }: { text: string }): React.JSX.Element {
   const parts = text.split(/([+-]?\d[\d,.]*%?)/g);
   return (
     <>
       {parts.map((part, i) =>
         /^[+-]?\d/.test(part) ? (
-          <span key={i} className="font-semibold text-amber-300">
+          <span key={i} className="font-semibold text-readout-strong">
             {part}
           </span>
         ) : (
@@ -128,7 +129,7 @@ export function EffectsList({
   };
   if (rows.length === 0) {
     return (
-      <p className="py-6 text-center font-body text-sm uppercase tracking-[0.14em] text-zinc-500">
+      <p className="py-6 text-center font-body text-sm font-bold uppercase tracking-[0.18em] text-readout-muted">
         No active effects.
       </p>
     );
@@ -148,35 +149,35 @@ export function EffectsList({
             className={`flex items-center gap-2.5 border px-2.5 py-2 ${style.row}`}
           >
             <div
-              className={`flex h-8 w-8 shrink-0 items-center justify-center border border-white/10 bg-black/30 ${style.chip}`}
+              className={`flex h-8 w-8 shrink-0 items-center justify-center border border-hairline bg-void/40 ${style.chip}`}
             >
               <Icon className="h-4 w-4" strokeWidth={2.4} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                <span className="font-heading text-sm tracking-[0.04em] text-zinc-100">
+                <span className="font-heading text-sm tracking-[0.04em] text-readout-strong">
                   {prettyName(effect)}
                 </span>
                 {duration ? (
-                  <span className="flex items-center gap-0.5 font-body text-[10px] uppercase tracking-widest text-zinc-400">
+                  <span className="flex items-center gap-0.5 font-body text-[10px] font-bold uppercase tracking-widest text-readout-dim">
                     <Hourglass className="h-3 w-3" />
                     {duration}
                   </span>
                 ) : null}
                 {stacks > 1 ? (
-                  <span className="border border-zinc-600 bg-black/40 px-1 font-body text-[10px] font-bold text-zinc-200">
+                  <span className="border border-edge bg-void/50 px-1 font-body text-[10px] font-bold text-readout">
                     ×{stacks}
                   </span>
                 ) : null}
               </div>
               {desc ? (
-                <p className="font-body text-xs text-zinc-300">
+                <p className="font-body text-xs text-readout-dim">
                   <DescriptionText text={desc} />
                 </p>
               ) : null}
             </div>
             {art ? (
-              <div className="h-9 w-9 shrink-0 overflow-hidden border border-zinc-700">
+              <div className="h-9 w-9 shrink-0 overflow-hidden border border-edge">
                 <Image
                   src={art}
                   alt=""

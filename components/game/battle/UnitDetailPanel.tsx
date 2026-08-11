@@ -1,19 +1,19 @@
 "use client";
 
 import React from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import {
-  ArrowUp,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Circle,
   CircleAlert,
   Infinity as InfinityIcon,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { getCharacterArt, getSkillArt } from "@/lib/game/characterArt";
 import {
   getCharacterById,
@@ -29,7 +29,11 @@ import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { getPassiveReadout, type PassiveReadout } from "@/lib/game/passiveStacks";
 import SubstatDrawer from "@/components/game/SubstatDrawer";
 import DetailOverlay from "@/components/game/DetailOverlay";
-import { EffectsList } from "@/components/game/battle/EffectsList";
+import {
+  categorizeEffects,
+  EffectsList,
+  prettyName,
+} from "@/components/game/battle/EffectsList";
 import {
   PassiveDetailSections,
   PassiveProse,
@@ -37,6 +41,11 @@ import {
   type KitPassiveView,
 } from "@/components/game/KitDetails";
 import type { BattleCharacter } from "@/types/character";
+
+// Never resubscribes — the store has no updates, it exists only so the server
+// snapshot and the client snapshot differ (see DetailOverlay for the same
+// pattern and why an effect isn't used).
+const NO_SUBSCRIBE = () => () => {};
 
 /** Activation-mode tag — the exception, not the rule (most passives show
  *  none): "buildup" for a stack that grants a live, incrementally growing
@@ -49,14 +58,14 @@ function PassiveActivationTag({
 }): React.JSX.Element | null {
   if (mode === "buildup") {
     return (
-      <span className="inline-flex items-center gap-0.5 border border-zinc-600 bg-zinc-800/80 px-1 py-px text-zinc-300">
+      <span className="inline-flex items-center gap-0.5 border border-edge bg-inset px-1 py-px text-readout-dim">
         <InfinityIcon className="h-2.5 w-2.5" strokeWidth={2.6} />
       </span>
     );
   }
   if (mode === "once") {
     return (
-      <span className="inline-flex items-center gap-0.5 border border-amber-400/70 bg-amber-400/15 px-1 py-px font-body text-[9px] font-bold text-amber-200">
+      <span className="inline-flex items-center gap-0.5 border border-role-ultimate/70 bg-role-ultimate/15 px-1 py-px font-body text-[9px] font-bold text-role-ultimate">
         <CircleAlert className="h-2.5 w-2.5" strokeWidth={2.6} />
         1×
       </span>
@@ -78,13 +87,23 @@ function PassiveReadoutRow({
   const state: React.ReactNode[] = [];
   if (passive.stacks) {
     state.push(
-      <span key="stacks" className="flex items-center gap-1">
-        <ArrowUp
-          className={`h-3.5 w-3.5 ${passive.ready ? "text-amber-200" : "text-sky-300"}`}
-          strokeWidth={2.6}
-        />
+      <span key="stacks" className="flex items-center gap-1.5">
+        <span className="flex gap-0.5" aria-hidden="true">
+          {Array.from({ length: passive.stacks.max }).map((_, i) => (
+            <span
+              key={i}
+              className={`block h-1.5 w-2.5 ${
+                i < passive.stacks!.current
+                  ? passive.ready
+                    ? "bg-role-ultimate"
+                    : "bg-signal"
+                  : "bg-hairline"
+              }`}
+            />
+          ))}
+        </span>
         <span
-          className={`font-body text-xs font-semibold tabular-nums ${passive.ready ? "text-amber-200" : "text-zinc-300"}`}
+          className={`font-body text-xs font-semibold tabular-nums ${passive.ready ? "text-role-ultimate" : "text-readout"}`}
         >
           {passive.stacks.current}/{passive.stacks.max}
         </span>
@@ -95,15 +114,15 @@ function PassiveReadoutRow({
     state.push(
       passive.fired ? (
         <span key="progress" className="flex items-center gap-1">
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
-          <span className="font-body text-xs font-bold uppercase tracking-[0.1em] text-emerald-300">
+          <CheckCircle2 className="h-3.5 w-3.5 text-role-heal" strokeWidth={2.6} />
+          <span className="font-body text-xs font-bold uppercase tracking-[0.1em] text-role-heal">
             Active
           </span>
         </span>
       ) : (
         <span
           key="progress"
-          className="font-body text-xs font-semibold text-zinc-300 tabular-nums"
+          className="font-body text-xs font-semibold tabular-nums text-readout"
         >
           {passive.progress.current}/{passive.progress.required}
         </span>
@@ -114,40 +133,14 @@ function PassiveReadoutRow({
     state.push(
       <span key="cond" className="flex items-center gap-1">
         {passive.conditionMet ? (
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
+          <CheckCircle2 className="h-3.5 w-3.5 text-role-heal" strokeWidth={2.6} />
         ) : (
-          <Circle className="h-3.5 w-3.5 text-zinc-600" strokeWidth={2.6} />
+          <Circle className="h-3.5 w-3.5 text-readout-muted" strokeWidth={2.6} />
         )}
         <span
-          className={`font-body text-xs font-semibold uppercase tracking-[0.1em] ${passive.conditionMet ? "text-emerald-300" : "text-zinc-500"}`}
+          className={`font-body text-xs font-semibold uppercase tracking-[0.1em] ${passive.conditionMet ? "text-role-heal" : "text-readout-muted"}`}
         >
           {passive.conditionMet ? "Active" : "Inactive"}
-        </span>
-      </span>,
-    );
-  }
-  if (passive.oneShot) {
-    state.push(
-      <span key="oneshot" className="flex items-center gap-1">
-        {passive.oneShot.available ? (
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
-        ) : (
-          <Circle className="h-3.5 w-3.5 text-zinc-600" strokeWidth={2.6} />
-        )}
-        <span
-          className={`font-body text-xs font-bold uppercase tracking-[0.1em] ${passive.oneShot.available ? "text-emerald-300" : "text-zinc-500"}`}
-        >
-          {passive.oneShot.available ? "Available" : "Used"}
-        </span>
-      </span>,
-    );
-  }
-  if (passive.alwaysActive) {
-    state.push(
-      <span key="always" className="flex items-center gap-1">
-        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
-        <span className="font-body text-xs font-bold uppercase tracking-[0.1em] text-emerald-300">
-          Active
         </span>
       </span>,
     );
@@ -156,12 +149,12 @@ function PassiveReadoutRow({
     state.push(
       <span key={`sub-${sub.label}`} className="flex items-center gap-1">
         {sub.active ? (
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" strokeWidth={2.6} />
+          <CheckCircle2 className="h-3.5 w-3.5 text-role-heal" strokeWidth={2.6} />
         ) : (
-          <Circle className="h-3.5 w-3.5 text-zinc-600" strokeWidth={2.6} />
+          <Circle className="h-3.5 w-3.5 text-readout-muted" strokeWidth={2.6} />
         )}
         <span
-          className={`font-body text-xs ${sub.active ? "text-emerald-300" : "text-zinc-500"}`}
+          className={`font-body text-xs ${sub.active ? "text-role-heal" : "text-readout-muted"}`}
         >
           {sub.label}
         </span>
@@ -170,7 +163,7 @@ function PassiveReadoutRow({
   });
   passive.lines?.forEach((line) => {
     state.push(
-      <span key={`line-${line}`} className="font-body text-xs text-emerald-300">
+      <span key={`line-${line}`} className="font-body text-xs text-role-heal">
         {line}
       </span>,
     );
@@ -178,21 +171,21 @@ function PassiveReadoutRow({
 
   return (
     <div
-      className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border px-2.5 py-1.5 ${highlight ? "border-amber-400/70 bg-amber-400/10" : "border-zinc-800 bg-zinc-900/40"}`}
+      className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border px-2.5 py-1.5 ${highlight ? "border-role-ultimate/70 bg-role-ultimate/10" : "border-edge bg-inset"}`}
     >
-      <p className="flex min-w-0 items-center gap-1.5 font-heading text-sm tracking-[0.06em] text-zinc-100">
+      <p className="flex min-w-0 items-center gap-1.5 font-heading text-sm tracking-[0.06em] text-readout-strong">
         <span className="truncate">{passive.label}</span>
         <PassiveActivationTag mode={passive.activationMode} />
       </p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {state}
         {passive.readyMessage ? (
-          <span className="font-body text-xs font-semibold uppercase tracking-[0.1em] text-amber-200">
+          <span className="font-body text-xs font-semibold uppercase tracking-[0.1em] text-role-ultimate">
             {passive.readyMessage}
           </span>
         ) : null}
         {passive.note ? (
-          <span className="font-body text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+          <span className="font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-muted">
             {passive.note}
           </span>
         ) : null}
@@ -201,40 +194,36 @@ function PassiveReadoutRow({
   );
 }
 
-/** A stat pinned over the art. Layered on a scrim so it stays legible against
- *  whatever the portrait happens to be behind it. */
-function OverlayStat({
+/** One stat, read as a single line: effective value, its delta, and the base
+ *  it came from. The old panel printed base and effective as four separate
+ *  rows behind a "?" toggle — six numbers for two facts. */
+function Stat({
   label,
-  value,
-  delta,
-  align,
+  base,
+  effective,
 }: {
   label: string;
-  value: string;
-  delta?: number;
-  align: "left" | "right";
+  base: number;
+  effective: number;
 }): React.JSX.Element {
-  const tone =
-    delta === undefined || delta === 0
-      ? null
-      : delta > 0
-        ? "text-emerald-400"
-        : "text-rose-400";
+  const delta = effective - base;
   return (
-    <div className={align === "right" ? "text-right" : "text-left"}>
-      <p className="font-body text-[9px] uppercase tracking-[0.18em] text-zinc-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+    <span className="flex items-baseline gap-1.5">
+      <span className="font-body text-[9px] font-bold uppercase tracking-[0.16em] text-readout-muted">
         {label}
-      </p>
-      <p className="font-heading text-xl leading-none tracking-[0.04em] text-zinc-50 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] tabular-nums md:text-2xl">
-        {value}
-        {tone ? (
-          <span className={`ml-1 font-body text-[11px] ${tone}`}>
-            {delta! > 0 ? "+" : ""}
-            {delta}
-          </span>
-        ) : null}
-      </p>
-    </div>
+      </span>
+      <span className="font-heading text-lg leading-none tabular-nums text-readout-strong">
+        {effective}
+      </span>
+      {delta !== 0 ? (
+        <span
+          className={`font-body text-[11px] font-bold tabular-nums ${delta > 0 ? "text-role-heal" : "text-role-attack"}`}
+        >
+          {delta > 0 ? "+" : ""}
+          {delta}
+        </span>
+      ) : null}
+    </span>
   );
 }
 
@@ -246,14 +235,24 @@ type KitTab = { key: string; label: string; art: string | null } & (
 /**
  * Full-screen unit inspector, opened by tapping any tile on either side.
  *
- * Laid out by DECISION RELEVANCE rather than by data type. The previous
- * version was a single scrolling column ordered stats -> substats -> ult ->
- * effects -> passive -> every skill at every rank, which put the volatile,
- * decision-driving state (HP, effects, ult gauge) underneath static numbers
- * and above a kit dump that never changes — you saw roughly a third of it at
- * once. Now: threat state and live stats sit together over the art, effects
- * and passive follow as compact rows, and the kit lives in a tab strip so it
- * costs constant height no matter how big the kit is.
+ * Split into a **pinned state block and a scrolling kit** (Tanveer,
+ * 2026-08-11: "the info panel bothers me the most, not good layout and it's a
+ * mess"). What changed and why:
+ *
+ * - Stats had been drawn over the portrait behind a `?` toggle that covered
+ *   the whole art band, so the character and their numbers were mutually
+ *   exclusive and the toggle was an undiscoverable mode. Stats now have a real
+ *   place and are always on.
+ * - The pinned block's height is **constant**. The effect strip scrolls
+ *   sideways rather than wrapping, so a unit carrying ten effects doesn't push
+ *   the kit off screen; the expander below opens the itemised list with
+ *   descriptions and sources.
+ * - The kit tab strip is sticky inside the scroll zone, so a long rank table
+ *   can't scroll the tabs away.
+ *
+ * Portalled to `document.body`: `BattleArena` puts `battle-shake-strong` on
+ * its wrapper during heavy hits, and an active transform creates a containing
+ * block that would otherwise scope this `fixed` overlay to the arena.
  */
 export default function UnitDetailPanel({
   unit,
@@ -267,13 +266,13 @@ export default function UnitDetailPanel({
   enemyTeam: BattleCharacter[];
   currentTurn: number;
   onClose: () => void;
-}): React.JSX.Element {
+}): React.JSX.Element | null {
   // Walks whichever side the tapped unit belongs to — the enemy row navigates
   // enemies, the player row navigates allies.
   const ownTeam = unit.team === "player" ? playerTeam : enemyTeam;
   const teamOnField = ownTeam.filter((u) => !u.isSub);
   const [selectedId, setSelectedId] = React.useState(unit.instanceId);
-  const [showDetailed, setShowDetailed] = React.useState(false);
+  const [effectsOpen, setEffectsOpen] = React.useState(false);
   const [tagOverlayTag, setTagOverlayTag] = React.useState<string | null>(null);
   const [detailOverlay, setDetailOverlay] = React.useState<
     | { kind: "ultimate"; skill: CharacterSkillData }
@@ -282,19 +281,52 @@ export default function UnitDetailPanel({
   >(null);
   const [activeTab, setActiveTab] = React.useState(0);
 
+  const mounted = React.useSyncExternalStore(
+    NO_SUBSCRIBE,
+    () => true,
+    () => false,
+  );
+
   const idx = Math.max(
     0,
     teamOnField.findIndex((u) => u.instanceId === selectedId),
   );
   const selected = teamOnField[idx] ?? unit;
 
+  // Plain function, not `useCallback`: `teamOnField` is derived inline, so
+  // manual memoization can't be preserved and the React Compiler refuses to
+  // optimize the component. The compiler memoizes this for us.
   const step = (dir: number) => {
     if (teamOnField.length < 2) return;
     const next = (idx + dir + teamOnField.length) % teamOnField.length;
     setSelectedId(teamOnField[next].instanceId);
-    setShowDetailed(false);
+    setEffectsOpen(false);
     setActiveTab(0);
   };
+
+  // Keyboard: Escape closes, arrows walk the side. The panel was previously
+  // mouse-only. Suppressed while a nested overlay owns the keyboard.
+  //
+  // The handler goes through a ref rather than the effect's dependency list:
+  // `step` can't be a `useCallback` (see above) and listing it would re-bind
+  // the listener on every render.
+  const nestedOpen = detailOverlay !== null || tagOverlayTag !== null;
+  const keyHandler = React.useRef<(event: KeyboardEvent) => void>(undefined);
+  // Refs can't be written during render, so the latest closure is stored in
+  // its own dependency-free effect.
+  React.useEffect(() => {
+    keyHandler.current = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+      else if (event.key === "ArrowLeft") step(-1);
+      else if (event.key === "ArrowRight") step(1);
+    };
+  });
+  React.useEffect(() => {
+    if (nestedOpen) return;
+    const onKey = (event: KeyboardEvent) => keyHandler.current?.(event);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [nestedOpen]);
 
   // Phase-aware kit: a multi-phase boss in a later phase shows THAT phase's
   // skills/ultimate/passives, not the phase-1 catalog entry.
@@ -313,6 +345,7 @@ export default function UnitDetailPanel({
   const gaugeMax = ultGaugeMax(selected);
   const hpPercent =
     selected.hp > 0 ? Math.max(0, (selected.currentHP / selected.hp) * 100) : 0;
+  const effects = categorizeEffects(selected);
 
   const tabs: KitTab[] = [];
   kit?.skills.forEach((skill, i) => {
@@ -346,228 +379,239 @@ export default function UnitDetailPanel({
   });
   const tab = tabs[Math.min(activeTab, tabs.length - 1)];
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-3 py-4">
-      <Card className="flex max-h-[92vh] w-full max-w-2xl flex-col gap-0 overflow-hidden rounded-none border-2 border-zinc-600 bg-zinc-950/95 py-0 ring-0">
-        {/* Header: close · name/element/tags · team nav */}
-        <CardHeader className="flex shrink-0 flex-row items-center justify-between gap-2 border-b border-zinc-800 px-3 py-2">
-          <Button
-            variant="ghost"
+  if (!mounted) return null;
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${selected.name} details`}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-void/85 px-3 py-4 backdrop-blur-sm"
+    >
+      <div className="chamfer-lg flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden border border-edge-strong bg-panel">
+        {/* Header — two rows, so identity never fights the controls for space.
+            The old single row put the name between two button clusters. */}
+        <div className="grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-px border-b border-hairline bg-inset px-3 py-2">
+          <button
+            type="button"
             onClick={onClose}
-            className="h-9 shrink-0 rounded-none border border-zinc-600 px-2 font-body text-xs uppercase tracking-widest"
+            aria-label="Close"
+            className="row-span-2 flex h-9 w-9 items-center justify-center border border-edge text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
           >
-            <ChevronLeft className="h-4 w-4" /> Close
-          </Button>
-          <div className="min-w-0 text-center">
-            <div className="flex items-center justify-center gap-2">
-              <span
-                className={`h-2.5 w-2.5 rotate-45 border border-black/40 ${ELEMENT_SWATCH[selected.color]}`}
-              />
-              <CardTitle className="truncate font-heading text-xl tracking-[0.08em] text-zinc-100">
-                {selected.name}
-              </CardTitle>
-              <span
-                className={`shrink-0 border px-1 py-px font-body text-[9px] font-bold uppercase tracking-widest ${
-                  selected.team === "player"
-                    ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-200"
-                    : "border-rose-500/60 bg-rose-500/15 text-rose-200"
-                }`}
-              >
-                {selected.team === "player" ? "Ally" : "Enemy"}
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-0.5 font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400">
-              <span>{selected.color}</span>
-              {selected.tier === "elite" ? <span>· Elite</span> : null}
-              {(selected.tags ?? []).map((tag) => (
-                <React.Fragment key={tag}>
-                  <span>·</span>
-                  <button
-                    type="button"
-                    onClick={() => setTagOverlayTag(tag)}
-                    className="cursor-pointer underline decoration-dotted underline-offset-2 transition-colors hover:text-amber-200"
-                  >
-                    {tag}
-                  </button>
-                </React.Fragment>
-              ))}
-            </div>
+            <X className="h-4 w-4" />
+          </button>
+
+          <div className="flex min-w-0 items-baseline gap-2">
+            <span
+              className={`h-2.5 w-2.5 shrink-0 rotate-45 border border-void/40 ${ELEMENT_SWATCH[selected.color]}`}
+            />
+            <h2 className="truncate font-heading text-xl leading-none tracking-[0.08em] text-readout-strong">
+              {selected.name}
+            </h2>
+            <span
+              className={`shrink-0 border px-1 py-px font-body text-[9px] font-bold uppercase tracking-widest ${
+                selected.team === "player"
+                  ? "border-role-heal/60 text-role-heal"
+                  : "border-role-attack/60 text-role-attack"
+              }`}
+            >
+              {selected.team === "player" ? "Ally" : "Enemy"}
+            </span>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
+
+          <div className="row-span-2 flex shrink-0 items-center gap-1">
             <button
               type="button"
               onClick={() => step(-1)}
               disabled={teamOnField.length < 2}
-              className="flex h-9 w-9 items-center justify-center border border-zinc-600 text-zinc-300 transition-colors hover:border-zinc-400 disabled:opacity-30"
+              className="flex h-9 w-9 items-center justify-center border border-edge text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:opacity-30"
               aria-label="Previous unit on this side"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
+            {/* Position readout — with four units on a side, stepping blind
+                gave no sense of where you were. */}
+            <span className="min-w-8 text-center font-body text-[10px] font-bold tabular-nums text-readout-muted">
+              {idx + 1}/{teamOnField.length}
+            </span>
             <button
               type="button"
               onClick={() => step(1)}
               disabled={teamOnField.length < 2}
-              className="flex h-9 w-9 items-center justify-center border border-zinc-600 text-zinc-300 transition-colors hover:border-zinc-400 disabled:opacity-30"
+              className="flex h-9 w-9 items-center justify-center border border-edge text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:opacity-30"
               aria-label="Next unit on this side"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
-        </CardHeader>
 
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-2.5">
-          {/* THREAT STATE + LIVE STATS — art band with everything overlaid.
-              Stats used to flank a 40x56 thumbnail; putting them over a
-              full-bleed portrait fits strictly more on one screen. */}
-          <div className="relative h-40 overflow-hidden border border-zinc-700 bg-zinc-900/60 sm:h-48">
-            {art ? (
-              <Image
-                src={art}
-                alt={selected.name}
-                fill
-                sizes="672px"
-                priority
-                className="object-cover object-[50%_18%]"
-              />
-            ) : (
-              <span className="flex h-full w-full items-center justify-center font-heading text-6xl text-white/60">
-                {selected.name.charAt(0)}
-              </span>
-            )}
-            {/* Two scrims: sideways for the stat columns, upward for the
-                HP/ult block, which sits over whatever the portrait's lower
-                third happens to be. */}
-            <span className="absolute inset-0 bg-linear-to-r from-black/85 via-black/40 to-black/85" />
-            <span className="absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-black/90 to-transparent" />
-
-            <div className="absolute inset-0 flex flex-col justify-between p-2.5">
-              <div className="flex items-start justify-between gap-2">
-                <div className="space-y-2">
-                  <OverlayStat
-                    label="Attack"
-                    value={String(effAtk)}
-                    delta={effAtk - selected.atk}
-                    align="left"
-                  />
-                  <OverlayStat
-                    label="Defense"
-                    value={String(effDef)}
-                    delta={effDef - selected.def}
-                    align="left"
-                  />
-                </div>
+          <div className="col-start-2 flex flex-wrap items-center gap-x-1 font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+            <span>{selected.color}</span>
+            {selected.tier === "elite" ? <span>· Elite</span> : null}
+            {(selected.tags ?? []).map((tag) => (
+              <React.Fragment key={tag}>
+                <span>·</span>
                 <button
                   type="button"
-                  onClick={() => setShowDetailed((v) => !v)}
-                  title="Detailed info"
-                  aria-label="Toggle detailed stats"
-                  aria-pressed={showDetailed}
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border font-heading text-sm ${showDetailed ? "border-amber-300 bg-amber-300/25 text-amber-100" : "border-zinc-400 bg-black/70 text-zinc-100"}`}
+                  onClick={() => setTagOverlayTag(tag)}
+                  className="cursor-pointer underline decoration-dotted underline-offset-2 transition-colors hover:text-signal"
                 >
-                  ?
+                  {tag}
                 </button>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+
+        {/* PINNED STATE — fixed height whatever the unit is carrying. */}
+        <div className="shrink-0 border-b border-edge bg-inset px-3 py-2.5">
+          <div className="grid grid-cols-[76px_minmax(0,1fr)] gap-3">
+            <span className="block h-19 w-19 overflow-hidden border border-edge bg-void">
+              {art ? (
+                <Image
+                  src={art}
+                  alt=""
+                  width={152}
+                  height={152}
+                  priority
+                  className="h-full w-full object-cover object-[50%_12%]"
+                />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center font-heading text-3xl text-readout-dim">
+                  {selected.name.charAt(0)}
+                </span>
+              )}
+            </span>
+
+            <div className="min-w-0">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+                  HP
+                </span>
+                <span className="font-heading text-xl leading-none tabular-nums text-readout-strong">
+                  {Math.max(0, selected.currentHP)}
+                  <span className="font-body text-xs font-semibold text-readout-muted">
+                    /{selected.hp}
+                  </span>
+                </span>
+              </div>
+              <span className="mt-1 block h-1.5 w-full bg-hairline">
+                <span
+                  className={`block h-full transition-[width] duration-300 ${hpPercent < 30 ? "bg-role-attack" : "bg-role-heal"}`}
+                  style={{ width: `${hpPercent}%` }}
+                />
+              </span>
+
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <span className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+                  Ult
+                </span>
+                <span className="flex flex-1 items-center gap-0.5">
+                  {Array.from({ length: gaugeMax }).map((_, i) => (
+                    <span
+                      key={i}
+                      className={`h-1.5 flex-1 -skew-x-12 ${i < selected.ultGauge ? "bg-role-ultimate" : "bg-hairline"}`}
+                    />
+                  ))}
+                </span>
+                <span className="font-body text-[10px] font-bold tabular-nums text-role-ultimate">
+                  {selected.ultGauge}/{gaugeMax}
+                </span>
               </div>
 
-              {/* HP + ult gauge — the volatile pair, given the bottom band */}
-              <div className="space-y-1">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-body text-[9px] uppercase tracking-[0.18em] text-zinc-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                    HP
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <Stat label="Atk" base={selected.atk} effective={effAtk} />
+                <Stat label="Def" base={selected.def} effective={effDef} />
+                <span className="font-body text-[11px] font-semibold tabular-nums text-readout-dim">
+                  <span className="mr-1 text-[9px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+                    Crit
                   </span>
-                  <span className="font-heading text-lg leading-none text-zinc-50 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] tabular-nums">
-                    {Math.max(0, selected.currentHP)}
-                    <span className="font-body text-xs text-zinc-400">
-                      /{selected.hp}
-                    </span>
+                  {crit}%
+                </span>
+                <span className="font-body text-[11px] font-semibold tabular-nums text-readout-dim">
+                  <span className="mr-1 text-[9px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+                    Evade
                   </span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full border border-zinc-700/80 bg-zinc-900/80">
-                  <div
-                    className={`h-full rounded-full transition-[width] duration-300 ${hpPercent < 30 ? "bg-red-500" : "bg-emerald-500"}`}
-                    style={{ width: `${hpPercent}%` }}
-                  />
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-body text-[9px] uppercase tracking-[0.18em] text-zinc-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                    Ult
-                  </span>
-                  <span className="flex flex-1 items-center gap-0.5">
-                    {Array.from({ length: gaugeMax }).map((_, i) => (
-                      <span
-                        key={i}
-                        className={`h-1.5 flex-1 -skew-x-12 ${i < selected.ultGauge ? "bg-amber-400" : "bg-zinc-700/80"}`}
-                      />
-                    ))}
-                  </span>
-                  <span className="font-body text-[10px] font-semibold text-amber-200 tabular-nums">
-                    {selected.ultGauge}/{gaugeMax}
-                  </span>
-                </div>
+                  {evade}%
+                </span>
               </div>
             </div>
+          </div>
 
-            {showDetailed ? (
-              <div className="absolute inset-0 grid grid-cols-2 content-start gap-x-4 gap-y-1 bg-black/90 px-4 py-3">
-                <p className="col-span-2 text-center font-heading text-xs uppercase tracking-[0.16em] text-amber-200">
-                  Detailed Info
-                </p>
-                {(
-                  [
-                    ["Base ATK", String(selected.atk), undefined],
-                    ["Eff. ATK", String(effAtk), effAtk - selected.atk],
-                    ["Base DEF", String(selected.def), undefined],
-                    ["Eff. DEF", String(effDef), effDef - selected.def],
-                    ["Crit Chance", `${crit}%`, undefined],
-                    ["Evade", `${evade}%`, undefined],
-                  ] as const
-                ).map(([label, value, delta]) => (
-                  <div
-                    key={label}
-                    className="flex items-center justify-between border-b border-zinc-800 py-1"
+          {/* Effect strip: one line, scrolls sideways, never wraps — the whole
+              point of pinning this block is that its height can't move. */}
+          <div className="mt-2 flex items-center gap-2">
+            <div className="hud-scroll flex min-w-0 flex-1 gap-1 overflow-x-auto">
+              {effects.length === 0 ? (
+                <span className="font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+                  No active effects
+                </span>
+              ) : (
+                effects.map(({ effect, category }, i) => (
+                  <span
+                    key={`${effect.type}-${i}`}
+                    className={`shrink-0 border px-1.5 py-0.5 font-body text-[10px] font-bold uppercase tracking-[0.1em] ${
+                      category === "buff"
+                        ? "border-el-blue/50 text-el-blue"
+                        : category === "debuff"
+                          ? "border-role-attack/50 text-role-attack"
+                          : "border-edge text-readout-muted"
+                    }`}
                   >
-                    <span className="font-body text-[10px] uppercase tracking-[0.12em] text-zinc-400">
-                      {label}
-                    </span>
-                    <span className="font-heading text-sm text-zinc-100 tabular-nums">
-                      {value}
-                      {delta ? (
-                        <span
-                          className={`ml-1 font-body text-[10px] ${delta > 0 ? "text-emerald-400" : "text-rose-400"}`}
-                        >
-                          {delta > 0 ? "+" : ""}
-                          {delta}
-                        </span>
-                      ) : null}
-                    </span>
-                  </div>
-                ))}
-                <div className="col-span-2 mt-1">
-                  <SubstatDrawer unit={selected} />
-                </div>
-              </div>
-            ) : null}
+                    {prettyName(effect)}
+                    {effect.buffDuration ?? effect.debuffDuration ? (
+                      <span className="ml-1 tabular-nums opacity-80">
+                        {effect.buffDuration ?? effect.debuffDuration}t
+                      </span>
+                    ) : null}
+                  </span>
+                ))
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setEffectsOpen((v) => !v)}
+              aria-expanded={effectsOpen}
+              className={`flex h-7 shrink-0 items-center gap-1 border px-2 font-body text-[10px] font-bold uppercase tracking-[0.14em] transition-colors ${
+                effectsOpen
+                  ? "border-signal text-signal"
+                  : "border-edge text-readout-dim hover:border-edge-strong hover:text-readout"
+              }`}
+            >
+              Detail
+              <ChevronDown
+                className={`h-3 w-3 transition-transform ${effectsOpen ? "rotate-180" : ""}`}
+              />
+            </button>
           </div>
+        </div>
 
-          {/* ACTIVE EFFECTS — merged in from what used to be a separate
-              separate overlay answering the same question. */}
-          <div className="space-y-1">
-            <p className="font-body text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-              Active Effects
-            </p>
-            <EffectsList
-              unit={selected}
-              allUnits={[...playerTeam, ...enemyTeam]}
-            />
-          </div>
-
-          {passive ? <PassiveReadoutRow passive={passive} /> : null}
+        {/* SCROLL ZONE — everything that can grow without limit. */}
+        <div className="hud-scroll min-h-0 flex-1 overflow-y-auto">
+          {effectsOpen ? (
+            <div className="space-y-2 border-b border-hairline p-3">
+              <p className="font-body text-[9px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+                Active effects
+              </p>
+              <EffectsList
+                unit={selected}
+                allUnits={[...playerTeam, ...enemyTeam]}
+              />
+              {passive ? <PassiveReadoutRow passive={passive} /> : null}
+              <SubstatDrawer unit={selected} />
+            </div>
+          ) : passive ? (
+            <div className="border-b border-hairline p-3">
+              <PassiveReadoutRow passive={passive} />
+            </div>
+          ) : null}
 
           {/* KIT — a tab strip, so a 2-skill kit and an 8-skill boss phase
-              cost the same vertical space. Tabs carry the skill art that
-              already exists for all 48 playable/boss skills. */}
+              cost the same vertical space. The strip is sticky: a long rank
+              table used to scroll the tabs out of reach. */}
           {tabs.length > 0 && tab ? (
-            <div className="border border-zinc-800">
-              <div className="flex gap-px overflow-x-auto border-b border-zinc-800 bg-zinc-900/60 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div>
+              <div className="hud-scroll sticky top-0 z-10 flex gap-px overflow-x-auto border-b border-hairline bg-inset">
                 {tabs.map((t, i) => {
                   const active = t.key === tab.key;
                   return (
@@ -578,12 +622,12 @@ export default function UnitDetailPanel({
                       aria-pressed={active}
                       className={`flex min-h-11 shrink-0 items-center gap-1.5 px-2.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.12em] transition-colors ${
                         active
-                          ? "bg-amber-300/15 text-amber-200"
-                          : "text-zinc-400 hover:text-zinc-100"
+                          ? "bg-signal/10 text-signal shadow-[inset_0_-2px_0_var(--color-signal)]"
+                          : "text-readout-dim hover:text-readout"
                       }`}
                     >
                       {t.art ? (
-                        <span className="relative h-6 w-6 shrink-0 overflow-hidden border border-zinc-700">
+                        <span className="relative h-6 w-6 shrink-0 overflow-hidden border border-edge">
                           <Image
                             src={t.art}
                             alt=""
@@ -598,7 +642,7 @@ export default function UnitDetailPanel({
                   );
                 })}
               </div>
-              <div className="p-2">
+              <div className="p-3">
                 {tab.kind === "skill" ? (
                   <SkillBlock
                     skill={tab.skill}
@@ -626,7 +670,7 @@ export default function UnitDetailPanel({
             </div>
           ) : null}
         </div>
-      </Card>
+      </div>
 
       {detailOverlay ? (
         <DetailOverlay
@@ -656,7 +700,8 @@ export default function UnitDetailPanel({
           onClose={() => setTagOverlayTag(null)}
         />
       ) : null}
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -681,7 +726,7 @@ function CharacterListOverlay({
   return (
     <DetailOverlay title={`Tag: ${tag}`} onClose={onClose}>
       {matches.length === 0 ? (
-        <p className="py-6 text-center font-body text-sm uppercase tracking-[0.14em] text-zinc-500">
+        <p className="py-6 text-center font-body text-sm font-bold uppercase tracking-[0.18em] text-readout-muted">
           No characters found.
         </p>
       ) : (
@@ -691,9 +736,9 @@ function CharacterListOverlay({
             return (
               <div
                 key={char.id}
-                className="flex flex-col items-center gap-1 border border-zinc-800 bg-zinc-900/40 p-1.5"
+                className="flex flex-col items-center gap-1 border border-edge bg-inset p-1.5"
               >
-                <div className="relative aspect-square w-full overflow-hidden border border-zinc-700">
+                <div className="relative aspect-square w-full overflow-hidden border border-hairline">
                   {charArt ? (
                     <Image
                       src={charArt}
@@ -703,13 +748,13 @@ function CharacterListOverlay({
                       className="object-cover object-top"
                     />
                   ) : (
-                    <span className="flex h-full w-full items-center justify-center font-heading text-2xl text-white/80">
+                    <span className="flex h-full w-full items-center justify-center font-heading text-2xl text-readout-dim">
                       {char.name.charAt(0)}
                     </span>
                   )}
                 </div>
                 <Badge
-                  className={`w-full justify-center truncate rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest text-zinc-950 ${ELEMENT_SWATCH[char.color]}`}
+                  className={`w-full justify-center truncate rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest text-void ${ELEMENT_SWATCH[char.color]}`}
                 >
                   {char.name}
                 </Badge>

@@ -71,7 +71,8 @@
           "coin": 2500,
           "materials": {
             "training_manual": 3
-          }
+          },
+          "accountXp": 15
         },
         "repeat": {
           "coin": {
@@ -207,7 +208,8 @@
           "coin": 2500,
           "materials": {
             "training_manual": 3
-          }
+          },
+          "accountXp": 16
         },
         "repeat": {
           "coin": {

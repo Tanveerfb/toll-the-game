@@ -7,7 +7,7 @@ import {
 import type { StoryChapterRewards } from "@/types/story";
 
 const REWARDS: StoryChapterRewards = {
-  firstClear: { gems: 50, coin: 1500, materials: { training_manual: 2 } },
+  firstClear: { gems: 50, coin: 1500, materials: { training_manual: 2 }, accountXp: 0 },
   repeat: {
     coin: { min: 300, max: 800 },
     materials: { training_manual: { min: 0, max: 2 } },
@@ -40,6 +40,7 @@ describe("rollStoryRewards", () => {
       gems: 50,
       coin: 1500,
       permanentTicket: 0,
+      accountXp: 0,
       materials: { training_manual: 2 },
     });
   });
@@ -54,6 +55,7 @@ describe("rollStoryRewards", () => {
       gems: 50,
       coin: 1500 + 800,
       permanentTicket: 0,
+      accountXp: 0,
       materials: { training_manual: 2 + 2 },
     });
   });
@@ -74,6 +76,7 @@ describe("rollStoryRewards", () => {
       gems: 0,
       coin: 0,
       permanentTicket: 0,
+      accountXp: 0,
       materials: {},
     });
     expect(Number.isNaN(result.total.coin)).toBe(false);
@@ -109,7 +112,7 @@ describe("storyAttemptCost", () => {
 describe("isEmptyPayout", () => {
   it("is true for a payout that grants nothing", () => {
     expect(
-      isEmptyPayout({ gems: 0, coin: 0, permanentTicket: 0, materials: {} }),
+      isEmptyPayout({ gems: 0, coin: 0, permanentTicket: 0, materials: {}, accountXp: 0 }),
     ).toBe(true);
   });
 
@@ -119,6 +122,7 @@ describe("isEmptyPayout", () => {
         gems: 0,
         coin: 0,
         permanentTicket: 0,
+        accountXp: 0,
         materials: { training_manual: 1 },
       }),
     ).toBe(false);

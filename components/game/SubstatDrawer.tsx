@@ -30,12 +30,12 @@ export default function SubstatDrawer({
   ];
 
   return (
-    <div className="border border-zinc-800 bg-zinc-900/40">
+    <div className="border border-edge bg-inset">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full min-h-11 items-center justify-between px-3 py-2 font-body text-xs uppercase tracking-[0.14em] text-zinc-300 transition-colors hover:text-zinc-100"
+        className="flex w-full min-h-11 items-center justify-between px-3 py-2 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout-dim transition-colors hover:text-signal"
       >
         <span>Substats</span>
         <ChevronDown
@@ -43,16 +43,16 @@ export default function SubstatDrawer({
         />
       </button>
       {open ? (
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-zinc-800 px-3 py-2">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-hairline px-3 py-2">
           {rows.map((row) => (
             <div
               key={row.label}
               className="flex items-center justify-between gap-2"
             >
-              <span className="min-w-0 truncate font-body text-[10px] uppercase tracking-[0.1em] text-zinc-500">
+              <span className="min-w-0 truncate font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-muted">
                 {row.label}
               </span>
-              <span className="shrink-0 font-body text-xs font-semibold text-amber-200">
+              <span className="shrink-0 font-body text-xs font-semibold tabular-nums text-readout-strong">
                 {row.value}%
               </span>
             </div>

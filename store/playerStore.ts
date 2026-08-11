@@ -18,6 +18,19 @@ import {
 import { resolvePullResult } from "@/lib/gacha/dupes";
 import type { StoryPayout } from "@/lib/game/storyRewards";
 import { getPlayableCharacters } from "@/lib/game/characterCatalog";
+import { grantAccountXp } from "@/lib/game/accountRank";
+import {
+  MIN_WORLD_LEVEL,
+  worldLevelCapForRank,
+} from "@/lib/game/worldLevel";
+import {
+  addPreset,
+  deletePreset,
+  notePresetUsed,
+  presetFromTeam,
+  renamePreset,
+  type TeamPreset,
+} from "@/lib/game/teamPresets";
 
 const LIMITED_COST_SINGLE = 3;
 const LIMITED_COST_MULTI = 30;
@@ -37,6 +50,17 @@ export interface PlayerState {
   currencies: { gems: number; coin: number; permanentTicket: number };
   inventory: Record<string, number>; // materials only: sea_monster_eye, corroded_seaweed, training_manual(_advanced|_premium)
   characters: Record<string, CharacterProgress>;
+  /** Saved loadouts, shared by every mode. See lib/game/teamPresets.ts. */
+  presets: TeamPreset[];
+  /** Ordered ids of the last team taken into battle, so a picker can open
+   *  on it instead of empty. */
+  lastTeam: string[];
+  /** Account-level ladder — see lib/game/accountRank.ts. Distinct from
+   *  character level; gates world level and walls at ranks 20 and 40. */
+  account: { rank: number; xp: number; clearedWalls: number[] };
+  /** Difficulty the player has dialled in, never above what their rank
+   *  unlocked. Adjustable down — see lib/game/worldLevel.ts. */
+  worldLevel: number;
   stamina: { current: number; updatedAt: number };
   pity: {
     limited: { bannerId: string | null; bar: number; claimed300: boolean };
@@ -57,6 +81,14 @@ export interface PlayerState {
   ascendCharacter: (characterId: string) => boolean;
   grantWorldBossRewards: (rewards: WorldBossRewards) => void;
   grantStoryRewards: (payout: StoryPayout) => void;
+  saveTeamPreset: (name: string, memberIds: string[]) => boolean;
+  renameTeamPreset: (id: string, name: string) => void;
+  deleteTeamPreset: (id: string) => void;
+  noteTeamPresetUsed: (id: string) => void;
+  rememberLastTeam: (memberIds: string[]) => void;
+  grantAccountXpAction: (amount: number) => void;
+  clearRankWall: (rank: number) => void;
+  setWorldLevel: (level: number) => void;
   pullLimited: (count: 1 | 11) => PullOutcome[] | false;
   pullPermanent: (count: 1 | 11) => PullOutcome[] | false;
   claimLimited300: () => PullOutcome | false;
@@ -82,6 +114,14 @@ export type PersistedPlayerData = Omit<
   | "ascendCharacter"
   | "grantWorldBossRewards"
   | "grantStoryRewards"
+  | "saveTeamPreset"
+  | "renameTeamPreset"
+  | "deleteTeamPreset"
+  | "noteTeamPresetUsed"
+  | "rememberLastTeam"
+  | "grantAccountXpAction"
+  | "clearRankWall"
+  | "setWorldLevel"
   | "pullLimited"
   | "pullPermanent"
   | "claimLimited300"
@@ -112,6 +152,10 @@ const defaultState = {
   currencies: { gems: 1000, coin: 0, permanentTicket: 0 }, // Starter currency
   inventory: {} as Record<string, number>,
   characters: {} as Record<string, CharacterProgress>,
+  presets: [] as TeamPreset[],
+  lastTeam: [] as string[],
+  account: { rank: 1, xp: 0, clearedWalls: [] as number[] },
+  worldLevel: 1,
   stamina: { current: STAMINA_CAP, updatedAt: Date.now() },
   pity: DEFAULT_PITY,
 };
@@ -143,6 +187,10 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     roster: [] as string[],
     inventory: {} as Record<string, number>,
     characters: {} as Record<string, CharacterProgress>,
+    presets: [] as TeamPreset[],
+    lastTeam: [] as string[],
+    account: { rank: 1, xp: 0, clearedWalls: [] as number[] },
+    worldLevel: 1,
     stamina: { current: STAMINA_CAP, updatedAt: Date.now() },
     currencies: { gems: 1000, coin: 0, permanentTicket: 0 },
     pity: DEFAULT_PITY,
@@ -177,10 +225,37 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     };
   }
 
+  if (version < 4) {
+    // v3 → v4: team presets and the sticky last team. Both are purely
+    // additive, so an existing save just gains two empty lists — the
+    // defensive baseline above has already supplied them.
+    state = {
+      ...state,
+      presets: (state.presets as TeamPreset[] | undefined) ?? [],
+      lastTeam: (state.lastTeam as string[] | undefined) ?? [],
+    };
+  }
+
+  if (version < 5) {
+    // v4 → v5: account rank and world level. Additive; the defensive baseline
+    // above already supplied both, so an existing save simply starts at rank 1
+    // / world level 1 — which is exactly today's behaviour.
+    state = {
+      ...state,
+      account:
+        (state.account as PlayerState["account"] | undefined) ?? {
+          rank: 1,
+          xp: 0,
+          clearedWalls: [],
+        },
+      worldLevel: (state.worldLevel as number | undefined) ?? 1,
+    };
+  }
+
   return state as unknown as PersistedPlayerData;
 }
 
-export const CURRENT_PLAYER_STATE_VERSION = 3;
+export const CURRENT_PLAYER_STATE_VERSION = 5;
 
 export const usePlayerStore = create<PlayerState>()(
   persist(
@@ -269,19 +344,96 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       grantWorldBossRewards: (rewards) => {
-        const { coin, gems, permanentTicket, ...materials } = rewards;
+        // `accountXp` MUST be destructured out: the rest-spread below becomes
+        // the materials map, and anything left in it turns into an inventory
+        // key that nothing displays and nothing spends.
+        const { coin, gems, permanentTicket, accountXp, ...materials } = rewards;
         get().grantMaterials(materials);
         if (coin || gems || permanentTicket) get().grantCurrency({ coin, gems, permanentTicket });
+        if (accountXp) get().grantAccountXpAction(accountXp);
       },
 
       /** Story clear payout. Same split as the world boss above, but the
        *  materials arrive as an open map rather than fixed keys — story
        *  chapters author their own drop table in `data/story/*.json`. */
       grantStoryRewards: (payout) => {
-        const { coin, gems, permanentTicket, materials } = payout;
+        const { coin, gems, permanentTicket, materials, accountXp } = payout;
         if (Object.keys(materials).length > 0) get().grantMaterials(materials);
         if (coin || gems || permanentTicket) get().grantCurrency({ coin, gems, permanentTicket });
+        if (accountXp) get().grantAccountXpAction(accountXp);
       },
+
+      /** Returns false when the preset cap is reached — the caller surfaces
+       *  that rather than silently evicting a team the player still wants. */
+      saveTeamPreset: (name, memberIds) => {
+        const next = addPreset(
+          get().presets,
+          presetFromTeam(name, memberIds),
+        );
+        if (!next) return false;
+        set({ presets: next });
+        return true;
+      },
+
+      renameTeamPreset: (id, name) =>
+        set((state) => ({ presets: renamePreset(state.presets, id, name) })),
+
+      deleteTeamPreset: (id) =>
+        set((state) => ({ presets: deletePreset(state.presets, id) })),
+
+      noteTeamPresetUsed: (id) =>
+        set((state) => ({ presets: notePresetUsed(state.presets, id) })),
+
+      /** Called when a battle actually starts, not when the picker changes —
+       *  a team you assembled and then abandoned isn't the one you want back. */
+      rememberLastTeam: (memberIds) => set({ lastTeam: [...memberIds] }),
+
+      /** A rank-up refills stamina (Tanveer, 2026-08-11) — the reward for
+       *  progressing is being able to keep playing. */
+      grantAccountXpAction: (amount) =>
+        set((state) => {
+          const next = grantAccountXp(
+            state.account,
+            amount,
+            state.account.clearedWalls,
+          );
+          const rankedUp = next.rank > state.account.rank;
+          return {
+            account: { ...state.account, ...next },
+            ...(rankedUp
+              ? { stamina: { current: STAMINA_CAP, updatedAt: Date.now() } }
+              : {}),
+          };
+        }),
+
+      /** Marks a rank wall's trial as cleared, then immediately re-applies the
+       *  banked XP so the ranks earned while stuck land at once. */
+      clearRankWall: (rank) =>
+        set((state) => {
+          if (state.account.clearedWalls.includes(rank)) return {};
+          const clearedWalls = [...state.account.clearedWalls, rank];
+          // Re-applying zero XP lets the banked overflow cash in at once, so
+          // the ranks earned while stuck all land the moment the wall falls.
+          const next = grantAccountXp(
+            { rank: state.account.rank, xp: state.account.xp },
+            0,
+            clearedWalls,
+          );
+          return {
+            account: { clearedWalls, ...next },
+            ...(next.rank > state.account.rank
+              ? { stamina: { current: STAMINA_CAP, updatedAt: Date.now() } }
+              : {}),
+          };
+        }),
+
+      setWorldLevel: (level) =>
+        set((state) => ({
+          worldLevel: Math.min(
+            worldLevelCapForRank(state.account.rank),
+            Math.max(MIN_WORLD_LEVEL, Math.floor(level) || MIN_WORLD_LEVEL),
+          ),
+        })),
 
       pullLimited: (count) => {
         const state = get();

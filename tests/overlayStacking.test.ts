@@ -29,14 +29,9 @@ describe("full-viewport overlays escape their stacking context", () => {
     "components/gacha/PullReveal.tsx":
       "Mounted at the gacha page root — no sticky/transformed ancestor.",
     "components/game/battle/BattleLogDrawer.tsx":
-      "Child of BattleArena, which deliberately carries no z-index or transform on its wrapper.",
-    "components/game/battle/UnitDetailPanel.tsx":
-      "Child of BattleArena, same as the drawer.",
+      "Child of BattleArena, which deliberately carries no z-index on its wrapper. NOTE: the arena does take a transform while `battle-shake-strong` runs, which scopes this drawer to the arena for ~0.4s. Harmless today because the arena is near-viewport-sized; portal it if that stops being true.",
     "components/game/BattleArena.tsx":
       "The arena's own result/confirm modals; the arena wrapper is plain `relative`.",
-    "components/game/OwnedTeamSelect.tsx":
-      "Rendered at page root on /practice and /story.",
-    "components/game/TeamSelect.tsx": "Rendered at page root on /practice.",
   };
 
   function walk(dir: string): string[] {
@@ -60,7 +55,11 @@ describe("full-viewport overlays escape their stacking context", () => {
   it("finds the overlays it is meant to be guarding", () => {
     // A regex that silently stops matching would make every assertion below
     // vacuously pass.
-    expect(overlays.length).toBeGreaterThanOrEqual(7);
+    // Dropped from 8 to 6 on 2026-08-11 when OwnedTeamSelect was deleted and
+    // TeamSelect's hand-rolled roster overlay moved onto DetailOverlay, which
+    // portals. A FALL below this floor is the signal worth catching — either
+    // the regex broke, or an overlay quietly stopped being one.
+    expect(overlays.length).toBeGreaterThanOrEqual(6);
   });
 
   it("either portals or is a documented root-level overlay", () => {
@@ -69,6 +68,18 @@ describe("full-viewport overlays escape their stacking context", () => {
       return !fs.readFileSync(rel, "utf8").includes("createPortal");
     });
     expect(unaccounted).toEqual([]);
+  });
+
+  it("portals the unit info panel, which the battle shake would otherwise trap", () => {
+    // `BattleArena` puts `battle-shake-strong` on its wrapper during heavy
+    // hits; an active transform creates a containing block, which would scope
+    // this fixed overlay to the arena mid-animation.
+    const src = fs.readFileSync(
+      "components/game/battle/UnitDetailPanel.tsx",
+      "utf8",
+    );
+    expect(src).toContain("createPortal");
+    expect(src).toContain("document.body");
   });
 
   it("portals the shared DetailOverlay into document.body", () => {

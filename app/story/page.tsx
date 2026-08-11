@@ -100,6 +100,7 @@ export default function StoryPage(): React.JSX.Element {
   const stamina = usePlayerStore((s) => s.stamina);
   const spendStaminaAction = usePlayerStore((s) => s.spendStaminaAction);
   const grantStoryRewards = usePlayerStore((s) => s.grantStoryRewards);
+  const rememberLastTeam = usePlayerStore((s) => s.rememberLastTeam);
   const [view, setView] = React.useState<View>({ kind: "index" });
 
   useScreenMusic(musicRoleFor(view));
@@ -111,12 +112,16 @@ export default function StoryPage(): React.JSX.Element {
   const launchBattle = React.useCallback(
     (partId: string, chapterId: string, picks: string[]) => {
       const chapter = getStoryChapter(partId, chapterId);
-      if (!chapter) return;
-      startCustomBattle(resolveStoryTeam(chapter, picks), chapter.battle.enemyTeam, {
-        stageEffects: chapter.stageEffects,
-      });
+      if (!chapter?.battle) return;
+      // `roster` decides which story leads are lent as trial units — an owned
+      // lead keeps the player's own progression instead.
+      startCustomBattle(
+        resolveStoryTeam(chapter, picks, roster),
+        chapter.battle.enemyTeam,
+        { stageEffects: chapter.stageEffects },
+      );
     },
-    [startCustomBattle],
+    [startCustomBattle, roster],
   );
 
   /**
@@ -168,17 +173,25 @@ export default function StoryPage(): React.JSX.Element {
   const beginAttempt = React.useCallback(
     (partId: string, chapterId: string, picks: string[], skipScenes: boolean): boolean => {
       if (!chargeAttempt(partId, chapterId)) return false;
+      // Remembered on launch, not on selection — a team you assembled and then
+      // abandoned isn't the one you want back next time.
+      if (picks.length > 0) rememberLastTeam(picks);
+
+      // A scene-only chapter has nothing to fight, so it can't skip to a VS
+      // beat that will never resolve — it always opens on the title card and
+      // walks intro → outro → complete → rewards (Tanveer, 2026-08-11).
+      const sceneOnly = !getStoryChapter(partId, chapterId)?.battle;
 
       // A farm run jumps the title card and the scenes but still gets the VS
       // beat, which also covers the battle's start-up.
       setView(
-        skipScenes
+        skipScenes && !sceneOnly
           ? { kind: "versus", partId, chapterId, picks, skipScenes: true }
           : { kind: "title", partId, chapterId, picks },
       );
       return true;
     },
-    [chargeAttempt],
+    [chargeAttempt, rememberLastTeam],
   );
 
   /** Restarts the same battle after a defeat, without replaying the scenes. */
@@ -265,7 +278,9 @@ export default function StoryPage(): React.JSX.Element {
   // ---- VS splash ----
   if (view.kind === "versus") {
     const chapter = getStoryChapter(view.partId, view.chapterId);
-    if (!chapter) {
+    // A scene-only chapter can never legitimately reach this view; bouncing
+    // to the index beats rendering a splash for a fight that doesn't exist.
+    if (!chapter?.battle) {
       setView({ kind: "index" });
       return <main className="min-h-screen bg-void" />;
     }
@@ -341,7 +356,9 @@ export default function StoryPage(): React.JSX.Element {
           // already an explicit choice made on the brief.
           confirmSkip={completed[chapterKey(view.partId, view.chapterId)] !== true}
           onFinish={() => {
-            if (isIntro) {
+            if (!isIntro) {
+              finishChapter(view.partId, view.chapterId);
+            } else if (chapter.battle) {
               setView({
                 kind: "versus",
                 partId: view.partId,
@@ -350,7 +367,13 @@ export default function StoryPage(): React.JSX.Element {
                 skipScenes: false,
               });
             } else {
-              finishChapter(view.partId, view.chapterId);
+              // Scene-only chapter: the intro runs straight into the outro,
+              // with no versus beat and nothing to fight.
+              setView({
+                kind: "outro",
+                partId: view.partId,
+                chapterId: view.chapterId,
+              });
             }
           }}
         />

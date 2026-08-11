@@ -65,6 +65,16 @@ export interface BattleCharacter extends Character {
   currentAttack: number;
   currentDefense: number;
   ultGauge: number; // For Detonate checking
+  /**
+   * Gacha dupe level for this unit's ultimate, 1–`MAX_ULT_LEVEL`. Carried onto
+   * the battle unit rather than re-read from the player store mid-fight, so an
+   * enemy or trial unit can fight at a fixed ult level without owning one.
+   * Scales the ultimate's multiplier — see `lib/game/progression.ts`.
+   *
+   * Optional so the many hand-built test fixtures stay valid; absent means
+   * level 1, which is a no-op on the curve.
+   */
+  ultLevel?: number;
   buffs: StatusEffect[];
   debuffs: StatusEffect[];
   passiveState: Record<string, unknown>;

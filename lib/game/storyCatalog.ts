@@ -138,7 +138,7 @@ export function buildStoryIndex(
         number: index + 1,
         title: chapter.title,
         state: getChapterState(completed, part.id, chapter.id),
-        enemyIds: chapter.battle.enemyTeam.map((unit) => unit.id),
+        enemyIds: chapter.battle?.enemyTeam.map((unit) => unit.id) ?? [],
         replayStamina: chapter.rewards.replayStamina,
       }),
     );

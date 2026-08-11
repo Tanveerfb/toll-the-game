@@ -91,7 +91,7 @@ describe("buildStoryIndex", () => {
   it("carries the enemy ids each visible row needs", () => {
     const chapter = buildStoryIndex({})[0].chapters[0];
     expect(chapter.enemyIds).toEqual(
-      first.chapters[0].battle.enemyTeam.map((unit) => unit.id),
+      first.chapters[0].battle!.enemyTeam.map((unit) => unit.id),
     );
   });
 });

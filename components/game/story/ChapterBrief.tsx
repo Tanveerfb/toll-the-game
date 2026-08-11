@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import OwnedTeamSelect from "@/components/game/OwnedTeamSelect";
+import TeamPicker from "@/components/game/TeamPicker";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { getCharacterById, type CharacterData } from "@/lib/game/characterCatalog";
 import { materialLabel } from "@/lib/game/materials";
@@ -13,7 +13,11 @@ import {
 import type { StageEffect } from "@/types/stageEffects";
 import { STAMINA_CAP } from "@/lib/game/stamina";
 import { storyAttemptCost } from "@/lib/game/storyRewards";
-import { storyAnchors, storyOpenSlots } from "@/lib/game/storyTeam";
+import {
+  storyAnchors,
+  storyOpenSlots,
+  storyTrialIds,
+} from "@/lib/game/storyTeam";
 import type { StoryChapter } from "@/types/story";
 
 /**
@@ -116,11 +120,15 @@ export default function ChapterBrief({
     [chapter],
   );
   const openSlots = storyOpenSlots(chapter);
+  const trialIds = React.useMemo(
+    () => storyTrialIds(chapter, ownedIds),
+    [chapter, ownedIds],
+  );
   const cost = storyAttemptCost(chapter.rewards, cleared);
   const affordable = currentStamina >= cost;
   const rewardLines = useRewardLines(chapter, cleared);
 
-  const enemies = chapter.battle.enemyTeam.map((pick) => ({
+  const enemies = (chapter.battle?.enemyTeam ?? []).map((pick) => ({
     id: pick.id,
     name: getCharacterById(pick.id)?.name ?? pick.id,
     art: getCharacterArt(pick.id),
@@ -177,22 +185,28 @@ export default function ChapterBrief({
         </h1>
       </header>
 
+      {chapter.battle ? (
       <div className="mt-4">
         <p className="mb-1.5 font-body text-[11px] leading-relaxed text-readout-dim">
           {TEAM_MODE_NOTE[chapter.teamMode]}
         </p>
-        <OwnedTeamSelect
+        <TeamPicker
           ownedIds={ownedIds}
           team={picked}
           onChange={setPicked}
           anchors={anchors}
           openSlots={openSlots}
-          title={openSlots === 0 ? "STORY TEAM" : "YOUR TEAM"}
+          trialIds={trialIds}
+          title={openSlots === 0 ? "Story team" : "Your team"}
         />
       </div>
+      ) : null}
 
       {/* Opposition and the stage rules read as one block: both describe what
-          you're walking into rather than what you bring. */}
+          you're walking into rather than what you bring. A scene-only chapter
+          has neither, so the whole block goes rather than rendering an empty
+          "Against" header. */}
+      {chapter.battle ? (
       <div className="mt-2.5 border border-edge bg-panel px-3 py-2.5">
         <p className="font-body text-[9px] font-bold uppercase tracking-[0.22em] text-readout-muted">
           Against
@@ -236,6 +250,12 @@ export default function ChapterBrief({
           </div>
         ) : null}
       </div>
+      ) : (
+        <p className="mt-2.5 border-l-2 border-signal bg-panel px-3 py-2.5 font-body text-[11px] leading-relaxed text-readout-dim">
+          No battle in this chapter — it plays as scenes, and still pays its
+          first-clear rewards.
+        </p>
+      )}
 
       <div className="mt-2.5 grid grid-cols-2 gap-px border border-edge bg-edge sm:grid-cols-3">
         <Fact label="Stamina">
@@ -271,7 +291,7 @@ export default function ChapterBrief({
           onClick={() => start(false)}
           className="chamfer h-12 flex-1 border border-signal bg-signal font-heading text-xl tracking-[0.12em] text-void transition-opacity disabled:pointer-events-none disabled:opacity-40"
         >
-          {cleared ? "Replay" : "Begin"}
+          {chapter.battle ? (cleared ? "Replay" : "Begin") : "Read"}
           {cost > 0 ? ` · ${cost} stamina` : ""}
         </button>
         {/* Farming a cleared chapter through eight VN panels every run would

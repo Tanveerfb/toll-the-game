@@ -84,7 +84,7 @@ describe("stage effects (Tanveer, 2026-08-10)", () => {
   it("Part 2 Chapter 2 carries the effects that replaced lyra_npc_2", () => {
     const [part] = validateStoryParts([part2]);
     const chapter = part.chapters.find((c) => c.id === "p2c2");
-    expect(chapter?.battle.enemyTeam).toEqual([{ id: "lyra_npc" }]);
+    expect(chapter?.battle?.enemyTeam).toEqual([{ id: "lyra_npc" }]);
     expect(chapter?.stageEffects).toEqual(P2C2);
   });
 });

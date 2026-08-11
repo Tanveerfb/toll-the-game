@@ -3,7 +3,10 @@ export interface DupeResolution {
   ultLevel: number;
 }
 
-const MAX_ULT_LEVEL = 6;
+/** The ceiling dupes can award, and the ceiling the ultimate damage curve
+ *  scales against (`lib/game/progression.ts`). One definition — two copies of
+ *  this number would drift. */
+export const MAX_ULT_LEVEL = 6;
 
 /** A pull result lands on a character already owned (dupe) or not owned
  *  (new). Reused by every reward source — normal pulls, the 300 milestone,

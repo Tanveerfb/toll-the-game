@@ -14,6 +14,11 @@ const sceneSchema = z.object({
 const teamPickSchema = z.object({
   id: z.string().min(1),
   isSub: z.boolean().optional(),
+  // Authored progression — raises an enemy's level for a harder encounter.
+  // Absent means level 1, the bare catalog statline.
+  level: z.number().int().positive().optional(),
+  ascension: z.number().int().nonnegative().optional(),
+  ultLevel: z.number().int().positive().optional(),
 });
 
 const dropRangeSchema = z
@@ -46,6 +51,9 @@ const rewardsSchema = z.object({
     coin: z.number().int().nonnegative().optional(),
     permanentTicket: z.number().int().nonnegative().optional(),
     materials: materialAmountsSchema.optional(),
+    // Account XP. First clears are the only source for now, so this rises as
+    // the story goes on rather than staying flat.
+    accountXp: z.number().int().nonnegative().optional(),
   }),
   repeat: z.object({
     coin: dropRangeSchema.optional(),
@@ -80,13 +88,18 @@ const chapterSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
   intro: z.array(sceneSchema),
-  battle: z.object({
-    playerTeam: z.array(teamPickSchema).min(1).max(4),
-    enemyTeam: z.array(teamPickSchema).min(1).max(4),
-  }),
+  // Absent = a scene-only chapter. Present = it must be a real battle, so a
+  // half-filled `battle` key is still a load-time failure.
+  battle: z
+    .object({
+      playerTeam: z.array(teamPickSchema).min(1).max(4),
+      enemyTeam: z.array(teamPickSchema).min(1).max(4),
+    })
+    .optional(),
   outro: z.array(sceneSchema),
   teamMode: z.enum(["canon", "anchored", "free"]),
   stageEffects: z.array(stageEffectSchema).optional(),
+  trialLevel: z.number().int().positive().optional(),
   rewards: rewardsSchema,
 });
 
@@ -122,7 +135,10 @@ export function validateStoryParts(parts: unknown[]): StoryPart[] {
 
   validated.forEach((part) => {
     part.chapters.forEach((chapter) => {
-      [...chapter.battle.playerTeam, ...chapter.battle.enemyTeam].forEach(
+      const picks = chapter.battle
+        ? [...chapter.battle.playerTeam, ...chapter.battle.enemyTeam]
+        : [];
+      picks.forEach(
         (pick) => {
           if (!getCharacterById(pick.id)) {
             throw new Error(

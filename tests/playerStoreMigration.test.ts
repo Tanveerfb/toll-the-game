@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { migratePlayerState } from "@/store/playerStore";
+import {
+  CURRENT_PLAYER_STATE_VERSION,
+  migratePlayerState,
+} from "@/store/playerStore";
 
 describe("migratePlayerState — v1 (inventory.gems) to v2 (currencies split)", () => {
   it("moves inventory.gems into currencies.gems and clears inventory to materials only", () => {
@@ -41,17 +44,60 @@ describe("migratePlayerState — v1 (inventory.gems) to v2 (currencies split)", 
   });
 
   it("passes through unchanged when already at the current version", () => {
-    const v3 = {
+    const v4 = {
       uid: null,
       roster: ["duke"],
       currencies: { gems: 500, coin: 10000, permanentTicket: 5 },
       inventory: { sea_monster_eye: 3 },
       characters: { duke: { level: 5, ascension: 1, xp: 20, ultLevel: 2 } },
+      presets: [],
+      lastTeam: ["duke"],
+      account: { rank: 1, xp: 0, clearedWalls: [] },
+      worldLevel: 1,
       stamina: { current: 80, updatedAt: 12345 },
       pity: { limited: { bannerId: "debut-2026-08", bar: 30, claimed300: false }, permanent: { bar: 0 } },
     };
-    const result = migratePlayerState(v3, 3);
-    expect(result).toEqual(v3);
+    const result = migratePlayerState(v4, CURRENT_PLAYER_STATE_VERSION);
+    expect(result).toEqual(v4);
+  });
+
+  it("starts a pre-v5 save at rank 1 / world level 1 — today's behaviour", () => {
+    const older = {
+      uid: null,
+      roster: ["duke"],
+      currencies: { gems: 0, coin: 0, permanentTicket: 0 },
+      inventory: {},
+      characters: {},
+      stamina: { current: 80, updatedAt: 1 },
+      pity: { limited: { bannerId: null, bar: 0, claimed300: false }, permanent: { bar: 0 } },
+    };
+    const result = migratePlayerState(older, 4) as unknown as {
+      account: { rank: number; xp: number; clearedWalls: number[] };
+      worldLevel: number;
+    };
+    expect(result.account).toEqual({ rank: 1, xp: 0, clearedWalls: [] });
+    expect(result.worldLevel).toBe(1);
+  });
+
+  it("adds empty presets and lastTeam to a v3 save", () => {
+    const v3 = {
+      uid: null,
+      roster: ["duke"],
+      currencies: { gems: 500, coin: 10000, permanentTicket: 5 },
+      inventory: {},
+      characters: {},
+      stamina: { current: 80, updatedAt: 12345 },
+      pity: { limited: { bannerId: null, bar: 0, claimed300: false }, permanent: { bar: 0 } },
+    };
+    const result = migratePlayerState(v3, 3) as unknown as {
+      presets: unknown[];
+      lastTeam: string[];
+      roster: string[];
+    };
+    expect(result.presets).toEqual([]);
+    expect(result.lastTeam).toEqual([]);
+    // Purely additive — nothing else is disturbed.
+    expect(result.roster).toEqual(["duke"]);
   });
 });
 
@@ -154,16 +200,28 @@ describe("migratePlayerState — defensive defaults for missing fields regardles
   });
 
   it("still passes through a fully-populated current-version doc unchanged (no regression)", () => {
-    const v3 = {
+    const current = {
       uid: null,
       roster: ["duke"],
       currencies: { gems: 500, coin: 10000, permanentTicket: 5 },
       inventory: { sea_monster_eye: 3 },
       characters: { duke: { level: 5, ascension: 1, xp: 20, ultLevel: 2 } },
+      presets: [
+        {
+          id: "p1",
+          name: "Main",
+          memberIds: ["duke"],
+          createdAt: 1,
+          useCount: 4,
+        },
+      ],
+      lastTeam: ["duke"],
+      account: { rank: 21, xp: 120, clearedWalls: [20] },
+      worldLevel: 2,
       stamina: { current: 80, updatedAt: 12345 },
       pity: { limited: { bannerId: "debut-2026-08", bar: 30, claimed300: false }, permanent: { bar: 0 } },
     };
-    const result = migratePlayerState(v3, 3);
-    expect(result).toEqual(v3);
+    const result = migratePlayerState(current, CURRENT_PLAYER_STATE_VERSION);
+    expect(result).toEqual(current);
   });
 });
