@@ -22,13 +22,17 @@ export default function DuelWaitingOverlay(): React.JSX.Element | null {
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-24 z-40 flex justify-center px-4">
-      <div className="pointer-events-auto flex items-center gap-3 border-2 border-violet-400/70 bg-zinc-950/95 px-4 py-2.5 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
+      {/* Dev-only, and deliberately the one thing on the battle screen wearing
+          a colour the palette doesn't otherwise use — it should never be
+          mistakable for normal play. Surfaces are on tokens; the violet
+          accent stays as the tell. */}
+      <div className="pointer-events-auto flex items-center gap-3 border-2 border-violet-400/70 bg-panel/95 px-4 py-2.5 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
         <span className="h-2 w-2 animate-pulse bg-violet-300" />
         <div className="min-w-0">
           <p className="font-heading text-sm tracking-[0.12em] text-violet-200">
             CLAUDE IS THINKING
           </p>
-          <p className="truncate font-body text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+          <p className="truncate font-body text-[10px] uppercase tracking-[0.14em] text-readout-muted">
             {status || "Waiting for a move…"}
           </p>
         </div>
@@ -36,7 +40,7 @@ export default function DuelWaitingOverlay(): React.JSX.Element | null {
           size="sm"
           variant="ghost"
           onClick={() => abort?.()}
-          className="shrink-0 rounded-none border border-zinc-700 font-body text-[10px] uppercase tracking-[0.14em] text-zinc-300"
+          className="shrink-0 rounded-none border border-edge font-body text-[10px] uppercase tracking-[0.14em] text-readout"
         >
           Let AI play
         </Button>

@@ -1,92 +1,150 @@
 "use client";
 
 import React from "react";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
 import MilestonePicker from "@/components/gacha/MilestonePicker";
 
-gsap.registerPlugin(useGSAP);
+/**
+ * The milestone rewards, always on screen.
+ *
+ * This block used to carry `hidden` until something was claimable, so the
+ * entire 300/600 system was invisible right up until it fired — a player had
+ * no way to learn it existed, or how far off it was (Tanveer, 2026-08-11).
+ *
+ * It also encodes the rule that replaced the old reset-on-final behaviour: the
+ * lap only wraps once *every* reward on it has been taken, so an unclaimed
+ * first milestone can no longer be destroyed by claiming the final one.
+ */
 
-interface ClaimSectionProps {
-  claimable300: boolean;
-  claimable600: boolean;
-  isLimited: boolean;
-  featured: string[];
-  claimLimited300: () => void;
-  claimLimited600: (characterId: string) => void;
-  claimPermanent600: (characterId: string) => void;
+function Row({
+  threshold,
+  title,
+  detail,
+  bar,
+  claimable,
+  claimed,
+  onClaim,
+}: {
+  threshold: number;
+  title: string;
+  detail: string;
+  bar: number;
+  claimable: boolean;
+  claimed: boolean;
+  onClaim: () => void;
+}): React.JSX.Element {
+  const remaining = Math.max(0, threshold - bar);
+  return (
+    <div
+      className={`flex items-center gap-3 border px-3 py-2.5 ${
+        claimable ? "border-el-light bg-el-light/8" : "border-hairline bg-panel"
+      }`}
+    >
+      <span className="w-12 shrink-0 font-heading text-xl leading-none tabular-nums text-readout-strong">
+        {threshold}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-body text-sm font-semibold text-readout-strong">
+          {title}
+        </span>
+        <span className="block font-body text-[11px] text-readout-muted">
+          {claimed
+            ? "Claimed this lap"
+            : remaining > 0
+              ? `${detail} · ${remaining.toLocaleString()} gems to go`
+              : detail}
+        </span>
+      </span>
+      {claimable ? (
+        <button
+          type="button"
+          onClick={onClaim}
+          className="shrink-0 border border-el-light bg-el-light/12 px-4 py-2 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-el-light transition-colors hover:bg-el-light/20"
+        >
+          Claim
+        </button>
+      ) : (
+        <span className="shrink-0 font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+          {claimed ? "Taken" : "Locked"}
+        </span>
+      )}
+    </div>
+  );
 }
 
 export default function ClaimSection({
-  claimable300,
-  claimable600,
-  isLimited,
+  bar,
+  firstThreshold,
+  finalThreshold,
+  firstTitle,
+  firstDetail,
+  claimableFirst,
+  claimedFirst,
+  claimableFinal,
+  claimedFinal,
   featured,
-  claimLimited300,
-  claimLimited600,
-  claimPermanent600,
-}: ClaimSectionProps) {
-  const [showPicker600, setShowPicker600] = React.useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const claim300Ref = React.useRef<HTMLButtonElement>(null);
-  const claim600Ref = React.useRef<HTMLButtonElement>(null);
+  onClaimFirst,
+  onClaimFinal,
+}: {
+  bar: number;
+  firstThreshold: number | null;
+  finalThreshold: number;
+  firstTitle: string;
+  firstDetail: string;
+  claimableFirst: boolean;
+  claimedFirst: boolean;
+  claimableFinal: boolean;
+  claimedFinal: boolean;
+  featured: string[];
+  onClaimFirst: () => void;
+  onClaimFinal: (characterId: string) => void;
+}): React.JSX.Element {
+  const [showPicker, setShowPicker] = React.useState(false);
 
-  useGSAP(
-    () => {
-      [
-        { ref: claim300Ref, active: claimable300 },
-        { ref: claim600Ref, active: claimable600 },
-      ].forEach(({ ref, active }) => {
-        if (!ref.current) return;
-        gsap.killTweensOf(ref.current);
-        if (active) {
-          gsap.to(ref.current, {
-            boxShadow: "0 0 16px rgba(251,191,36,0.75)",
-            repeat: -1,
-            yoyo: true,
-            duration: 0.8,
-          });
-        } else {
-          gsap.set(ref.current, { boxShadow: "none" });
-        }
-      });
-    },
-    { dependencies: [claimable300, claimable600], scope: containerRef },
-  );
+  // The bar has reached the end but something on it is still unclaimed — so
+  // it isn't going to wrap yet, and the player should know why.
+  const heldOpen =
+    bar >= finalThreshold &&
+    ((firstThreshold !== null && !claimedFirst) || !claimedFinal);
 
   return (
     <>
-      <div
-        ref={containerRef}
-        className={`mt-3 flex gap-2 border-t border-zinc-800 pt-3 ${claimable300 || claimable600 ? "" : "hidden"}`}
-      >
-        <button
-          ref={claim300Ref}
-          disabled={!claimable300}
-          onClick={() => claimLimited300()}
-          className={`flex-1 rounded border border-amber-400 py-2 font-body text-[11px] font-bold uppercase tracking-[0.08em] text-amber-200 ${claimable300 ? "" : "hidden"}`}
-        >
-          Claim 300
-        </button>
-        <button
-          ref={claim600Ref}
-          disabled={!claimable600}
-          onClick={() => setShowPicker600(true)}
-          className={`flex-1 rounded border border-amber-400 bg-amber-400/10 py-2 font-body text-[11px] font-bold uppercase tracking-[0.08em] text-amber-200 ${claimable600 ? "" : "hidden"}`}
-        >
-          Claim 600
-        </button>
+      <div className="flex flex-col gap-2">
+        {firstThreshold !== null ? (
+          <Row
+            threshold={firstThreshold}
+            title={firstTitle}
+            detail={firstDetail}
+            bar={bar}
+            claimable={claimableFirst}
+            claimed={claimedFirst}
+            onClaim={onClaimFirst}
+          />
+        ) : null}
+        <Row
+          threshold={finalThreshold}
+          title="Pick any featured unit"
+          detail="Your choice from the banner"
+          bar={bar}
+          claimable={claimableFinal}
+          claimed={claimedFinal}
+          onClaim={() => setShowPicker(true)}
+        />
+        {heldOpen ? (
+          <p className="border-l-2 border-signal bg-signal/5 px-3 py-2 font-body text-[11px] leading-snug text-readout-dim">
+            The bar keeps running until every reward on this lap is taken —
+            claiming the last one first can&rsquo;t cost you the other.
+          </p>
+        ) : null}
       </div>
 
-      {showPicker600 ? (
+      {showPicker ? (
         <MilestonePicker
           characterIds={featured}
           onPick={(characterId) => {
-            if (isLimited) claimLimited600(characterId);
-            else claimPermanent600(characterId);
-            setShowPicker600(false);
+            onClaimFinal(characterId);
+            setShowPicker(false);
           }}
-          onClose={() => setShowPicker600(false)}
+          onClose={() => setShowPicker(false)}
         />
       ) : null}
     </>

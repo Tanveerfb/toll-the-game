@@ -1,11 +1,17 @@
 "use client";
 
 import React from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { AnimatePresence, m } from "framer-motion";
 import { ChevronDown, Skull, Sparkles, Wind, Zap } from "lucide-react";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import type { SequencedBattleEvent } from "@/store/gameStore";
+
+// Never resubscribes — it exists only so the server snapshot and the client
+// snapshot differ (same pattern as DetailOverlay/UnitDetailPanel, and the
+// same reason an effect isn't used: setState-in-effect).
+const NO_SUBSCRIBE = () => () => {};
 
 /** One turn's worth of events, in the order they resolved. */
 interface TurnGroup {
@@ -51,40 +57,40 @@ function TargetRow({
 }): React.JSX.Element {
   return (
     <div className="flex items-baseline gap-1.5 pl-4 font-body text-xs">
-      <span className="text-zinc-600">→</span>
-      <span className="min-w-0 flex-1 truncate text-zinc-400">{name}</span>
+      <span className="text-readout-muted">→</span>
+      <span className="min-w-0 flex-1 truncate text-readout-dim">{name}</span>
       {evaded ? (
-        <span className="flex shrink-0 items-center gap-0.5 font-semibold uppercase tracking-widest text-sky-300">
+        <span className="flex shrink-0 items-center gap-0.5 font-semibold uppercase tracking-widest text-signal">
           <Wind className="h-3 w-3" strokeWidth={2.6} />
           Dodged
         </span>
       ) : null}
       {damage !== undefined && damage > 0 ? (
-        <span className="shrink-0 font-semibold text-rose-300 tabular-nums">
+        <span className="shrink-0 font-semibold text-role-attack tabular-nums">
           −{damage.toLocaleString()}
         </span>
       ) : null}
       {heal !== undefined && heal > 0 ? (
-        <span className="shrink-0 font-semibold text-emerald-300 tabular-nums">
+        <span className="shrink-0 font-semibold text-role-heal tabular-nums">
           +{heal.toLocaleString()}
         </span>
       ) : null}
       {crit ? (
         <span
           title="Critical"
-          className="flex shrink-0 items-center gap-0.5 border border-amber-400/70 bg-amber-400/15 px-1 font-bold uppercase tracking-widest text-amber-200"
+          className="flex shrink-0 items-center gap-0.5 border border-edge-strong bg-readout-strong/10 px-1 font-bold uppercase tracking-widest text-readout-strong"
         >
           <Zap className="h-2.5 w-2.5" strokeWidth={3} />
           Crit
         </span>
       ) : null}
       {survivedLethal ? (
-        <span className="shrink-0 border border-emerald-400/60 bg-emerald-400/10 px-1 font-bold uppercase tracking-widest text-emerald-200">
+        <span className="shrink-0 border border-role-heal/60 bg-role-heal/10 px-1 font-bold uppercase tracking-widest text-role-heal">
           Survived
         </span>
       ) : null}
       {killed ? (
-        <span className="flex shrink-0 items-center gap-0.5 font-bold uppercase tracking-widest text-red-400">
+        <span className="flex shrink-0 items-center gap-0.5 font-bold uppercase tracking-widest text-el-red">
           <Skull className="h-3 w-3" strokeWidth={2.6} />
           Down
         </span>
@@ -104,7 +110,7 @@ function ActionEntry({
     <div className="space-y-0.5 py-1.5">
       <div className="flex items-center gap-1.5">
         <span
-          className={`relative h-5 w-5 shrink-0 overflow-hidden border ${isPlayer ? "border-emerald-500/60" : "border-rose-500/60"}`}
+          className={`relative h-5 w-5 shrink-0 overflow-hidden border ${isPlayer ? "border-role-heal/60" : "border-role-attack/60"}`}
         >
           {art ? (
             <Image
@@ -117,19 +123,19 @@ function ActionEntry({
           ) : null}
         </span>
         <span
-          className={`min-w-0 shrink-0 truncate font-heading text-xs tracking-[0.06em] ${isPlayer ? "text-emerald-200" : "text-rose-200"}`}
+          className={`min-w-0 shrink-0 truncate font-heading text-xs tracking-[0.06em] ${isPlayer ? "text-role-heal" : "text-role-attack"}`}
         >
           {event.sourceName}
         </span>
-        <span className="min-w-0 flex-1 truncate font-body text-xs text-zinc-200">
+        <span className="min-w-0 flex-1 truncate font-body text-xs text-readout">
           {event.skillName}
         </span>
         {event.isUlt ? (
-          <span className="shrink-0 border border-amber-300/70 bg-amber-300/15 px-1 font-body text-[9px] font-bold uppercase tracking-widest text-amber-200">
+          <span className="shrink-0 border border-el-light/70 bg-el-light/15 px-1 font-body text-[9px] font-bold uppercase tracking-widest text-el-light">
             Ult
           </span>
         ) : event.rank ? (
-          <span className="shrink-0 font-body text-[9px] font-bold uppercase tracking-widest text-zinc-500">
+          <span className="shrink-0 font-body text-[9px] font-bold uppercase tracking-widest text-readout-muted">
             R{event.rank}
           </span>
         ) : null}
@@ -144,15 +150,15 @@ function ActionEntry({
           key={`counter-${i}`}
           className="flex items-baseline gap-1.5 pl-4 font-body text-xs"
         >
-          <span className="text-amber-400/70">↩</span>
-          <span className="min-w-0 flex-1 truncate text-amber-200/80">
+          <span className="text-readout-muted">↩</span>
+          <span className="min-w-0 flex-1 truncate text-readout-dim">
             {counter.byName} counters
           </span>
-          <span className="shrink-0 font-semibold text-rose-300 tabular-nums">
+          <span className="shrink-0 font-semibold text-role-attack tabular-nums">
             −{counter.damage.toLocaleString()}
           </span>
           {counter.killedAttacker ? (
-            <span className="flex shrink-0 items-center gap-0.5 font-bold uppercase tracking-widest text-red-400">
+            <span className="flex shrink-0 items-center gap-0.5 font-bold uppercase tracking-widest text-el-red">
               <Skull className="h-3 w-3" strokeWidth={2.6} />
               Down
             </span>
@@ -171,10 +177,10 @@ function TickEntry({
   return (
     <div className="space-y-0.5 py-1.5">
       <div className="flex items-center gap-1.5">
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center border border-zinc-700 bg-zinc-900/60">
-          <Sparkles className="h-3 w-3 text-zinc-400" strokeWidth={2.4} />
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center border border-edge bg-inset">
+          <Sparkles className="h-3 w-3 text-readout-dim" strokeWidth={2.4} />
         </span>
-        <span className="font-body text-xs uppercase tracking-[0.12em] text-zinc-400">
+        <span className="font-body text-xs uppercase tracking-[0.12em] text-readout-dim">
           {event.label}
         </span>
       </div>
@@ -185,18 +191,18 @@ function TickEntry({
             key={`${target.instanceId}-${i}`}
             className="flex items-baseline gap-1.5 pl-4 font-body text-xs"
           >
-            <span className="text-zinc-600">→</span>
-            <span className="min-w-0 flex-1 truncate text-zinc-400">
+            <span className="text-readout-muted">→</span>
+            <span className="min-w-0 flex-1 truncate text-readout-dim">
               {target.name}
             </span>
             <span
-              className={`shrink-0 font-semibold tabular-nums ${delta < 0 ? "text-rose-300" : "text-emerald-300"}`}
+              className={`shrink-0 font-semibold tabular-nums ${delta < 0 ? "text-role-attack" : "text-role-heal"}`}
             >
               {delta < 0 ? "−" : "+"}
               {Math.abs(delta).toLocaleString()}
             </span>
             {target.hpAfter <= 0 ? (
-              <span className="flex shrink-0 items-center gap-0.5 font-bold uppercase tracking-widest text-red-400">
+              <span className="flex shrink-0 items-center gap-0.5 font-bold uppercase tracking-widest text-el-red">
                 <Skull className="h-3 w-3" strokeWidth={2.6} />
                 Down
               </span>
@@ -234,10 +240,22 @@ export default function BattleLogDrawer({
 }): React.JSX.Element {
   const [showRaw, setShowRaw] = React.useState(false);
   const [collapsed, setCollapsed] = React.useState<Record<number, boolean>>({});
+  const mounted = React.useSyncExternalStore(
+    NO_SUBSCRIBE,
+    () => true,
+    () => false,
+  );
 
   const groups = groupEventsByTurn(events);
 
-  return (
+  if (!mounted) return <></>;
+
+  // Portalled to the body rather than left in the arena. `battle-shake-strong`
+  // puts a transform on the arena wrapper during heavy hits, and an active
+  // transform is a containing block — which scoped this drawer to the arena
+  // for the ~0.4s the shake ran. It was survivable while the arena was
+  // near-viewport-sized; layout B's rail means it no longer is.
+  return createPortal(
     <AnimatePresence>
       {open ? (
         <>
@@ -248,7 +266,7 @@ export default function BattleLogDrawer({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/50"
+            className="fixed inset-0 z-40 bg-void/70"
           />
           <m.aside
             key="log-drawer"
@@ -256,10 +274,10 @@ export default function BattleLogDrawer({
             animate={{ x: 0 }}
             exit={{ x: 380 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="fixed right-0 top-0 z-50 flex h-dvh w-[360px] max-w-[92vw] flex-col border-l border-zinc-700 bg-zinc-950/95 backdrop-blur-md"
+            className="fixed right-0 top-0 z-50 flex h-dvh w-[360px] max-w-[92vw] flex-col border-l border-edge bg-panel/95 backdrop-blur-md"
           >
-            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-800 px-4 py-3">
-              <p className="font-heading text-lg tracking-[0.12em] text-zinc-100">
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-hairline px-4 py-3">
+              <p className="font-heading text-lg tracking-[0.12em] text-readout-strong">
                 BATTLE LOG
               </p>
               <div className="flex items-center gap-2">
@@ -267,14 +285,14 @@ export default function BattleLogDrawer({
                   type="button"
                   onClick={() => setShowRaw((prev) => !prev)}
                   aria-pressed={showRaw}
-                  className={`min-h-11 cursor-pointer border px-2 py-0.5 font-body text-[10px] uppercase tracking-widest transition-colors ${showRaw ? "border-amber-300 bg-amber-300/10 text-amber-200" : "border-zinc-700 text-zinc-400"}`}
+                  className={`min-h-11 cursor-pointer border px-2 py-0.5 font-body text-[10px] uppercase tracking-widest transition-colors ${showRaw ? "border-signal bg-signal/10 text-signal" : "border-edge text-readout-dim"}`}
                 >
                   {showRaw ? "Raw" : "Grouped"}
                 </button>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="min-h-11 cursor-pointer border border-zinc-700 px-2 py-0.5 font-body text-[10px] uppercase tracking-widest text-zinc-300 hover:border-zinc-500"
+                  className="min-h-11 cursor-pointer border border-edge px-2 py-0.5 font-body text-[10px] uppercase tracking-widest text-readout hover:border-edge-strong"
                 >
                   Close
                 </button>
@@ -283,26 +301,26 @@ export default function BattleLogDrawer({
 
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
               {showRaw ? (
-                <div className="space-y-1 font-body text-xs text-zinc-300">
+                <div className="space-y-1 font-body text-xs text-readout">
                   {rawLog.length > 0 ? (
                     [...rawLog]
                       .reverse()
                       .map((entry, idx) => (
                         <p
                           key={`${entry}-${idx}`}
-                          className="border-b border-zinc-900 pb-1 last:border-b-0"
+                          className="border-b border-hairline pb-1 last:border-b-0"
                         >
                           {entry.replace(/^\[Action\]\s*/, "")}
                         </p>
                       ))
                   ) : (
-                    <p className="py-6 text-center uppercase tracking-widest text-zinc-500">
+                    <p className="py-6 text-center uppercase tracking-widest text-readout-muted">
                       No battle events yet.
                     </p>
                   )}
                 </div>
               ) : groups.length === 0 ? (
-                <p className="py-6 text-center font-body text-xs uppercase tracking-widest text-zinc-500">
+                <p className="py-6 text-center font-body text-xs uppercase tracking-widest text-readout-muted">
                   No battle events yet.
                 </p>
               ) : (
@@ -310,7 +328,7 @@ export default function BattleLogDrawer({
                   {groups.map(({ turn, events: turnEvents }) => {
                     const isCollapsed = collapsed[turn] === true;
                     return (
-                      <section key={turn} className="border border-zinc-800">
+                      <section key={turn} className="border border-hairline">
                         <button
                           type="button"
                           onClick={() =>
@@ -320,10 +338,10 @@ export default function BattleLogDrawer({
                             }))
                           }
                           aria-expanded={!isCollapsed}
-                          className="flex min-h-11 w-full items-center justify-between gap-2 bg-zinc-900/60 px-2.5 py-1.5 font-body text-[10px] uppercase tracking-[0.16em] text-zinc-400 transition-colors hover:text-zinc-100"
+                          className="flex min-h-11 w-full items-center justify-between gap-2 bg-inset px-2.5 py-1.5 font-body text-[10px] uppercase tracking-[0.16em] text-readout-dim transition-colors hover:text-readout-strong"
                         >
                           <span>Turn {turn + 1}</span>
-                          <span className="flex items-center gap-1.5 text-zinc-600">
+                          <span className="flex items-center gap-1.5 text-readout-muted">
                             {turnEvents.length}
                             <ChevronDown
                               className={`h-3.5 w-3.5 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
@@ -331,7 +349,7 @@ export default function BattleLogDrawer({
                           </span>
                         </button>
                         {!isCollapsed ? (
-                          <div className="divide-y divide-zinc-900 px-2.5">
+                          <div className="divide-y divide-hairline px-2.5">
                             {turnEvents.map((event) =>
                               event.kind === "action" ? (
                                 <ActionEntry key={event.id} event={event} />
@@ -350,6 +368,7 @@ export default function BattleLogDrawer({
           </m.aside>
         </>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

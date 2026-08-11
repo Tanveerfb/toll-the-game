@@ -22,6 +22,35 @@ interface SettingsState {
    *  Persisted so it survives the reloads a dev session is full of. */
   duelMode: boolean;
   setDuelMode: (on: boolean) => void;
+  /**
+   * Show the grey "effect" entries — the uncancellable ones (ruling #30).
+   * Off by default: nothing about them is actionable, and they crowded out
+   * the buffs and debuffs that actually inform a decision (Tanveer,
+   * 2026-08-11). Toggled from the unit detail panel; a preference rather
+   * than battle state, so it lives here and survives reloads.
+   */
+  showUncancellableEffects: boolean;
+  setShowUncancellableEffects: (show: boolean) => void;
+  /**
+   * Show characters the player doesn't own in the archive. Off by default:
+   * the archive now doubles as the roster screen (it took that job from
+   * `/profile` on 2026-08-11), and a roster that leads with 20 locked units
+   * isn't a roster. The toggle is right there for browsing the full catalogue.
+   */
+  showUnownedCharacters: boolean;
+  setShowUnownedCharacters: (show: boolean) => void;
+  /**
+   * Character whose portrait stands in as the account's display picture, or
+   * `null` for the initial-letter default.
+   *
+   * Deliberately here and not in `playerStore`: that store's cloud sync writes
+   * a fixed field list (roster/currencies/inventory/characters/stamina/pity)
+   * and is versioned, so adding to it means a schema bump on every existing
+   * Firestore document. This is cosmetic and device-local until that's worth
+   * doing — see docs/STATUS.md.
+   */
+  avatarCharacterId: string | null;
+  setAvatarCharacterId: (id: string | null) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -39,6 +68,13 @@ export const useSettingsStore = create<SettingsState>()(
       setMusicMuted: (muted) => set({ musicMuted: muted }),
       duelMode: false,
       setDuelMode: (on) => set({ duelMode: on }),
+      showUncancellableEffects: false,
+      setShowUncancellableEffects: (show) =>
+        set({ showUncancellableEffects: show }),
+      showUnownedCharacters: false,
+      setShowUnownedCharacters: (show) => set({ showUnownedCharacters: show }),
+      avatarCharacterId: null,
+      setAvatarCharacterId: (id) => set({ avatarCharacterId: id }),
     }),
     { name: "toll-settings" },
   ),

@@ -100,6 +100,10 @@ const chapterSchema = z.object({
   teamMode: z.enum(["canon", "anchored", "free"]),
   stageEffects: z.array(stageEffectSchema).optional(),
   trialLevel: z.number().int().positive().optional(),
+  /** Early-out threshold, 1–99. Rejecting 100 on purpose: a battle won at
+   *  full HP would end before the first action, and 0 is just "kill them",
+   *  which is what leaving this out already means. */
+  victoryAtEnemyHpPercent: z.number().int().min(1).max(99).optional(),
   rewards: rewardsSchema,
 });
 

@@ -77,6 +77,9 @@ interface BattleState {
   /** Encounter-level modifiers for this battle (stage effects). Empty = a
    *  standard fight, which is the default for everything. */
   stageEffects: StageEffect[];
+  /** Chapter's early-out threshold. Set per battle launch; `undefined` is the
+   *  ordinary fight-to-the-end rule. See lib/game/victoryCondition.ts. */
+  victoryAtEnemyHpPercent?: number;
   currentTurn: number;
   playerTurns: number;
   enemyTurns: number;
@@ -90,6 +93,21 @@ interface BattleState {
    *  restores. Published here (not local sequencer state) so components
    *  outside BattleArena's tree, like Deck, can react to it too. */
   bigHitFocus: boolean;
+  /** How many `battleEvents` the sequencer has finished animating. The turn
+   *  resolvers wait on this before executing the next action — see
+   *  `lib/game/playback.ts`. */
+  playedEvents: number;
+  /** A sequencer is mounted and will actually animate. Without one (tests,
+   *  the duel watcher, any headless caller) the resolvers must not wait. */
+  playbackMounted: boolean;
+  /**
+   * HP as currently *shown*, keyed by instanceId — the sequencer's exact
+   * per-event snapshots. Every HP readout on the battle screen reads this
+   * before falling back to `currentHP`, so the tiles, the team dots and the
+   * roster stacks can't disagree about whether a unit has died yet. Empty
+   * between animations, when `currentHP` is the truth.
+   */
+  presentedHp: Record<string, number>;
 
   // Deck System
   /** Preview mode (spec §7): the hand is a hardcoded full rank/ultimate set
@@ -123,6 +141,12 @@ interface BattleState {
     deck: ActionCard[];
     ultGauges: Record<string, number>;
   } | null;
+  /**
+   * Cards cancelled because the fight ended before they could fire, waiting to
+   * be dealt back. They take PRIORITY over the random refill at the next turn
+   * start rather than reappearing mid-turn (Tanveer, 2026-08-11).
+   */
+  pendingReturnCards: ActionCard[];
 
   // Actions
   setPlayerTeam: (team: BattleCharacter[]) => void;
@@ -132,6 +156,7 @@ interface BattleState {
     enemyTeam: BattleCharacter[],
   ) => void;
   setStageEffects: (effects: StageEffect[]) => void;
+  setVictoryAtEnemyHpPercent: (percent: number | undefined) => void;
   setCurrentTurn: (turn: number | ((prev: number) => number)) => void;
   setPlayerTurns: (turn: number | ((prev: number) => number)) => void;
   setEnemyTurns: (turn: number | ((prev: number) => number)) => void;
@@ -140,6 +165,16 @@ interface BattleState {
   addBattleEvent: (event: AnyBattleEvent) => void;
   setBattleSpeed: (speed: number) => void;
   setBigHitFocus: (focused: boolean) => void;
+  /** Sequencer → store: how many events have finished animating. */
+  setPlayedEvents: (played: number) => void;
+  /** Sequencer mount/unmount. */
+  setPlaybackMounted: (mounted: boolean) => void;
+  /** Sequencer → store: the HP to display while animating. */
+  setPresentedHp: (
+    hp:
+      | Record<string, number>
+      | ((prev: Record<string, number>) => Record<string, number>),
+  ) => void;
   resetBattle: () => void;
 
   // Deck Actions
@@ -180,6 +215,10 @@ interface BattleState {
   setActionQueue: (queue: ActionCard[]) => void;
   snapshotHand: () => void;
   resetHand: () => void;
+  /** Put cancelled cards back in the hand. Used when a queued ultimate never
+   *  got to fire because the fight ended first — see
+   *  lib/game/targetRequirement.ts. */
+  queueCardsForNextDraw: (cards: ActionCard[]) => void;
 }
 
 // Removes `deck[cardIndex]`, appends it to the queue with the resolved target,
@@ -241,6 +280,9 @@ export const useGameStore = create<BattleState>()(
   // survives across battles/reloads instead of resetting to 1x every time.
   battleSpeed: useSettingsStore.getState().battleSpeed,
   bigHitFocus: false,
+  playedEvents: 0,
+  playbackMounted: false,
+  presentedHp: {},
 
   isPreview: false,
   deck: [],
@@ -253,8 +295,11 @@ export const useGameStore = create<BattleState>()(
   interactionNotice: null,
   phaseBreak: null,
   handSnapshot: null,
+  pendingReturnCards: [],
 
   setStageEffects: (effects) => set({ stageEffects: effects }),
+  setVictoryAtEnemyHpPercent: (percent) =>
+    set({ victoryAtEnemyHpPercent: percent }),
   setPlayerTeam: (team) => set({ playerTeam: team }),
   setEnemyTeam: (team) => set({ enemyTeam: team }),
   updateTeams: (playerTeam, enemyTeam) => set({ playerTeam, enemyTeam }),
@@ -295,12 +340,19 @@ export const useGameStore = create<BattleState>()(
     set({ battleSpeed: speed });
   },
   setBigHitFocus: (focused) => set({ bigHitFocus: focused }),
+  setPlayedEvents: (played) => set({ playedEvents: played }),
+  setPlaybackMounted: (mounted) => set({ playbackMounted: mounted }),
+  setPresentedHp: (hp) =>
+    set((state) => ({
+      presentedHp: typeof hp === "function" ? hp(state.presentedHp) : hp,
+    })),
 
   resetBattle: () =>
     set({
       playerTeam: [],
       enemyTeam: [],
       stageEffects: [],
+      victoryAtEnemyHpPercent: undefined,
       currentTurn: 0,
       playerTurns: 0,
       enemyTurns: 0,
@@ -317,7 +369,12 @@ export const useGameStore = create<BattleState>()(
       interactionNotice: null,
       phaseBreak: null,
       handSnapshot: null,
+      pendingReturnCards: [],
       bigHitFocus: false,
+      // `playbackMounted` is deliberately NOT reset — it tracks whether an
+      // arena is on screen, which a battle reset doesn't change.
+      playedEvents: 0,
+      presentedHp: {},
       isPreview: false,
     }),
 
@@ -358,6 +415,21 @@ export const useGameStore = create<BattleState>()(
       queuedNullCount: 0,
       interactionNotice: null,
     });
+  },
+
+  queueCardsForNextDraw: (cards) => {
+    if (cards.length === 0) return;
+    const { pendingReturnCards, deck } = get();
+    // Held, not dealt: they come back at the START of the next turn, ahead of
+    // the random refill — not mid-turn into a hand the player is still
+    // spending (Tanveer, 2026-08-11).
+    const known = new Set([
+      ...deck.map((c) => c.id),
+      ...pendingReturnCards.map((c) => c.id),
+    ]);
+    const held = cards.filter((c) => !known.has(c.id));
+    if (held.length === 0) return;
+    set({ pendingReturnCards: [...pendingReturnCards, ...held] });
   },
 
   setPreviewMode: (preview) => set({ isPreview: preview }),
@@ -404,13 +476,33 @@ export const useGameStore = create<BattleState>()(
   },
 
   drawCards: () => {
-    const { playerTeam, deck, actionQueue, isPreview } = get();
+    const { playerTeam, actionQueue, isPreview, pendingReturnCards } = get();
     // Preview mode keeps its hardcoded full-set hand — never RNG-refill it.
     if (isPreview) return;
     // Subs contribute no cards until promoted to the field
     const livingChars = playerTeam.filter((c) => c.currentHP > 0 && !c.isSub);
     const fieldCount = playerTeam.filter((c) => !c.isSub).length;
     const maxCapacity = maxHandCapacity(fieldCount);
+
+    // Cancelled ultimates are dealt FIRST, ahead of the random refill — they
+    // take priority for the seats available this turn. Only cards whose owner
+    // is still on the field and alive; a returning card for a unit that died
+    // in the meantime is simply dropped.
+    let deck = get().deck;
+    if (pendingReturnCards.length > 0) {
+      const onField = new Set(livingChars.map((c) => c.instanceId));
+      const seats = Math.max(0, maxCapacity - deck.length);
+      const dealable = pendingReturnCards.filter((c) =>
+        onField.has(c.sourceInstanceId),
+      );
+      const dealt = dealable.slice(0, seats);
+      // Anything that didn't fit keeps waiting rather than being lost.
+      const stillPending = pendingReturnCards.filter(
+        (c) => onField.has(c.sourceInstanceId) && !dealt.includes(c),
+      );
+      deck = [...deck, ...dealt];
+      set({ deck, pendingReturnCards: stillPending });
+    }
 
     if (deck.length >= maxCapacity || livingChars.length === 0) return;
 

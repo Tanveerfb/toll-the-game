@@ -938,13 +938,262 @@ rather than a second phase, and the Seris closing scene gets no battle
 
 ### Not done
 
-- **#24 battle UI** beyond the info panel — arena, tiles, deck, log drawer.
-- **#31's UI half**: chapter `baseDifficulty` in data, the difficulty picker on
-  the brief, feeding `enemyLevelForDifficulty` through at launch, a rank/XP
-  display, and the two ascension trials (encounters — Tanveer's design).
+- ~~#24 battle UI~~ — done 2026-08-11 (layout B).
+- ~~#31's UI half~~ — done 2026-08-12 on the events brief and the nav/profile
+  rank display. Still open: the two ascension trial **encounters** (Tanveer's
+  design; the board entries exist and refuse entry).
 - Preset naming still uses `window.prompt`.
-- `/practice`, `/gacha`, `/world-boss`, `/profile`, `/login`, `/` are still on
-  the pre-token palette.
+- Pre-token palette remaining: `/practice` and `/login` only.
+
+## Session log — 2026-08-11/12 (part 3): battle playback, six screens, gacha economy, the whole story
+
+The longest session so far — roughly eight batches, none committed until the
+end. Everything below is implemented, `npm run check` green (961 tests / 81
+files), production build clean. **None of it is browser-verified** — Tanveer
+playtests.
+
+### 1. The flash of the future (started as a bug report)
+
+Tanveer: *"it shows a glimpse of future battle stat snapshot before the actions
+actually play one at a time. this should never be the case. it should play in
+async-await style."*
+
+He was right, and the cause was architectural. `resolveplayerTurnWrapper` ran
+the **entire** action queue in one synchronous `while` loop and called
+`updateTeams()` **once at the end**; same shape in `resolveEnemyTurnWrapper`. So
+the store held end-of-turn truth while the sequencer replayed the turn from the
+beginning. `useBattleSequencer` already fought this by seeding `hpBefore` in a
+layout effect — but that covered only HP, only on units appearing as event
+targets, and only `if (!runningRef.current)`. Buffs, ult gauges, the hand, the
+team dots and the boss phase-break banner all still jumped ahead.
+
+**`lib/game/playback.ts` (new)** is the gate. Both resolvers are async now and
+commit per action: `executeSkill → commit → await playback → next`.
+
+- **Keyed on counts, not a live "is it playing" flag.** The sequencer only
+  starts on a layout effect *after* the commit, so a resolver asking "are you
+  busy?" immediately after committing would always be told "no" and race
+  straight past. `playedEvents >= battleEvents.length` has no such window, and
+  an action that emits no events is trivially already played — right for a pass.
+- **Three ways it cannot hang**, because a stuck gate is a frozen fight: no
+  sequencer mounted (tests, duel watcher) resolves instantly; unmounting
+  mid-animation releases the wait; a 12s ceiling backstops the rest.
+- **`presentedHp` moved into the store.** It was local to the sequencer, so
+  `TeamBarDots` and `RosterButton` read `currentHP` raw and greyed units out on
+  commit. One source now.
+- `setPhaseBreak` moved behind the await; dead units' cards leave the hand after
+  the await, not on commit.
+- **Skip collapses the rest of the turn**, not just the event on screen —
+  otherwise every remaining action waits for playback that isn't coming. Resets
+  per turn.
+- Adjacent fix: the sequencer treated its whole event stream as fresh on mount,
+  so a remounting arena replayed every event since turn 1. Harmless when the
+  hook only drew floaters; not harmless once resolvers wait on that count.
+
+### 2. Battle UI — layout B
+
+Mockup (`scratchpad/battle-ui.html`) offered a console frame and a side rail;
+Tanveer picked **B**. Built: a 56px right rail (Skip / Speed / Log · Foe · Team ·
+Exit) replacing three floating buttons whose own code carried comments about
+colliding with each other.
+
+**The palette was the bulk of it.** Battle was the last screen on the pre-token
+palette — eight chrome hues against five element hues — and
+`lib/game/elementSwatch.ts` still returned Tailwind `rose/sky/emerald/violet/
+amber`, so elements rendered at different values in battle than in the archive.
+Three collisions had to be resolved:
+
+- **Ultimate cards were cyan** — the same cyan now used for the rail and End
+  Turn. **R3 was gold**, which is the ultimate's colour on the tile flag and the
+  queue chip. So `cardFrameStyle` became one achromatic ramp for the merge
+  ladder, with gold reserved for the ultimate.
+- CRIT and ULT badges sat on the same log row, both gold. Crit went achromatic.
+- Skill-type badges spent five hues restating what the glyph already said.
+
+Tile: art on top, **fixed-height** readout underneath (the chip strip used to
+wrap and shove the portrait down), HP as the largest number, bar achromatic
+until ≤30%, ult as one bar plus a READY flag, chips capped at 3 with `+n`.
+Console: action pips, **Reset/End Turn pinned outside the scroll container** (a
+full queue used to scroll End Turn off the edge), cards carrying name and power,
+rank as `◆◆◇`.
+
+`BattleLogDrawer` now portals. It was a documented exception reading *"portal it
+if the arena stops being near-viewport-sized"* — the rail is exactly that.
+
+**Not done:** the mockup proposed merge-by-dragging-onto-its-twin. Drop means
+reorder today and repurposing it risked breaking that; the Merge button stays.
+
+### 3. Two rulings on effects and the bench
+
+- **Grey (uncancellable) effects hidden by default**,
+  `settingsStore.showUncancellableEffects`, with an inline `+n fixed` reveal
+  *where the hidden chips would be* — a control in a corner wouldn't be found.
+  Two empty states had to change or they'd have claimed no effects while hiding
+  some.
+- **Subs are off the battlefield entirely** — tiles, team dots, roster stacks.
+  They live in the Team list. This surfaced a real bug: `UnitDetailPanel`
+  resolved its unit with `Math.max(0, findIndex(...))` against a field-only
+  list, so opening a benched unit silently showed the **first field unit**
+  instead. Near-unreachable before; the Team list is now the only way to meet a
+  sub.
+
+### 4. Home, nav, profile, archive
+
+Mockup `scratchpad/home-nav-profile.html`. Tanveer: **Home A**, **Nav B with
+inline icon+text links**, **Profile A**, roster moved to the archive.
+
+- **Home** was a second navbar — the nav listed all eight routes and home listed
+  the same eight as cards. Now: a Continue hero derived from progress, alerts
+  that only render when true (boss runs *affordable*, banner days + pulls to
+  milestone, unread news), then a quiet grid.
+- **Nav** grew a second row carrying stamina/gems/coin/rank — previously visible
+  only on home. **The trap:** `h-[calc(100dvh-2.875rem)]` was hardcoded in
+  **six** screens, so a taller nav would have silently cut ~33px off each. The
+  nav now publishes `data-nav-rows`, CSS derives `--nav-h` via `:has()`, and
+  screens use `.screen-below-nav`. A guard test forbids the magic number
+  returning. The row stands down in battle, gated on `mounted` because
+  `battlePhase` comes back from sessionStorage.
+- **Profile** opens on rank/XP/world level *and why it's capped*. Roster section
+  removed. Two modals on `DetailOverlay`: **Inventory** (held materials only,
+  count of unheld, account figures, investment totals) and **Account** (sign-in,
+  cloud state, display picture, sign out — which had been the loudest control on
+  the page).
+- **Archive** took the roster listing: owned-only by default with a `Show locked
+  (n)` toggle, tiles reading `Lv 42 · A3 · U2`.
+- `PlayerHud.tsx` **deleted** — the nav row replaced it, nothing referenced it.
+- **Display picture is a portrait picker**, not an upload — no storage bucket
+  exists, and a dead upload button is worse than none. Stored in `settingsStore`
+  (device-local) rather than `playerStore`, because that store's cloud sync
+  writes a fixed field list and is versioned: adding to it means a schema bump
+  on every existing Firestore document. Flagged, not done.
+
+### 5. Events, and the gacha economy
+
+`/world-boss` → **`/events`** (`git mv`, history preserved). `lib/game/events.ts`
+holds Molvarr plus the **two ascension trials**, which `RANK_WALLS` has declared
+at ranks 20 and 40 since the rank system landed and which no screen had ever
+mentioned. Board → brief → battle → results. The brief is where
+`enemyLevelForDifficulty` finally reaches `startCustomBattle` — world level had
+been built and wired to nothing. Trials refuse entry with "Encounter not
+authored yet" rather than presenting a dead button.
+
+**Gacha was redesigned whole, including the loop.** Rulings, in the order they
+arrived (each superseding the last):
+
+1. Costs 5 gems single / 50 multi; bar 3 / 30.
+2. **Superseded:** milestones move 300/600 → **500/1000**, and gems are **1:1**
+   with progress.
+3. **The final milestone does not override the first.** Both claimable at any
+   time, in any order; the lap only wraps once the final threshold is reached
+   **and every reward on it has been taken**.
+4. The first milestone rolls **from the banner's featured units**, not the whole
+   roster. The two milestones differ only in who chooses.
+
+`lib/gacha/milestone.ts` was rewritten around `settleLimitedLap`. The old model
+reset the lap the moment 600 was claimed and **silently forfeited an unclaimed
+300** — the code carried a comment admitting it and a test asserting the forfeit
+as correct behaviour. Both are gone. Constants renamed `_FIRST`/`_FINAL`: a
+constant called `LIMITED_MILESTONE_300` holding 500 is how the next re-tune goes
+wrong.
+
+**Persisted state v5 → v6.** `claimed300` → `claimedFirst`, plus `claimedFinal`
+on both banners. A Limited lap in flight is **reset, not converted** — the bar
+counted a 3-per-single unit against 300/600 and now counts gems against
+500/1000, so carrying 450 forward would show progress never made at the new
+rate. Permanent kept ticket pricing and its 600, so its bar carries untouched.
+
+Reveal screen: it used to **dismiss itself** (GSAP `onComplete` wired straight to
+the close handler), with no skip and no way to review an 11-pull. Materials
+rendered raw ids (`training_manual`). Dupes were invisible even though
+`resolvePullResult` had already computed new-vs-dupe — so `ResolvedPullOutcome`
+now carries `isNew`/`ultLevel` from the store rather than being re-derived by
+diffing the roster afterwards.
+
+### 6. Ruling #43, refined — and the bug it caught
+
+Tanveer: cards needing an enemy fizzle; heals, cleanses and buffs still fire; an
+attacking ultimate returns to the deck; a non-attacking ultimate (Isolde's
+Starbound Ward) fires.
+
+`lib/game/targetRequirement.ts`. **For ultimates the discriminator is damage,
+not type** — Starbound Ward is `type: "ultimate"` with `damage: 0`.
+
+**The bug:** the first implementation checked damage *before* type. On a `heal`,
+`damageRanked` is the **heal magnitude** — Isolde's Threads of Renewal
+`[20,25,30]`, Siddiq's Cleansing Bloom and Prism's Blessing Light all carry one,
+and AGENTS.md excludes heals from the damage rule for exactly that reason. So
+all three heals would have been **cancelled**, the precise opposite of the
+ruling, on the character that prompted it. The tests passed because they
+asserted invented fixtures. Replaced with a pass that walks **every real kit**,
+plus a guard asserting a real heal-with-`damageRanked` still exists so the test
+can't lose its teeth. Verified by reintroducing the bug: 2 failures, both new
+tests.
+
+Second correction: returned ultimates do **not** rejoin the hand mid-turn. They
+go to `pendingReturnCards` and are dealt **first at the next turn's draw**, ahead
+of the random refill. Overflow keeps waiting; a card whose owner died or benched
+is discarded.
+
+### 7. Battles you aren't meant to win
+
+`lib/game/victoryCondition.ts` + `victoryAtEnemyHpPercent` on a chapter. Ruled:
+the fight happens and **ends as a victory at 20% enemy HP**, the panels explain
+what happened, rewards pay normally. Absent = the old kill-everything rule, so
+every prior battle is untouched.
+
+- **Pooled across the enemy side, not per unit** — otherwise focusing one enemy
+  ends a three-unit fight while the other two stand untouched.
+- **Defeat beats the threshold in the same commit.** A mutual knockout is a
+  loss; if the threshold won that race, wiping your own team on the killing blow
+  would read as a win.
+- Remaining queued cards fizzle on the threshold too, per §6.
+
+### 8. The story — all twelve parts
+
+The source folder holds **twelve** chapters, not six; 7–12 were all marked
+LOCKED and had never been mapped. `STORY_PARTS_7_TO_12_DRAFT.md` written, then
+both drafts acted on.
+
+**Rulings:** dialogue is pulled from the canon beat sheets, not invented; **no
+invented battles** — chapters 3, 4, 6, 11 and 12 have no fights in the source,
+so those parts are scene-only; Yalina stays playable after dying (Himeko
+precedent); Seras is concealed rather than duplicated.
+
+Two corrections from Tanveer that changed the work:
+
+- **"Seras" and "Seris" are the same character** — I had written them up as two,
+  which would have put a villain with no assets into the plan alongside a
+  playable with a full kit. She has **two arts**: combat (registered) and
+  civilian (`public/unreleased/seras_civilian_wip.png`, unregistered).
+- **`sea_monster` is Molvarr** — the generic id from before he was named. So it
+  was never available as the smaller Ch10 creature.
+
+Result: `data/story/part3–12.json`, all validated by the Zod schema at load,
+`UPCOMING_PARTS` now empty. Battles only where the source fights: part 5 (4),
+part 7 (3), part 8 (1), part 9 (3), part 10 (1). The 20% rule applies in five
+chapters — Chiara's stalemate, Duke/Batra breaking off, all three Molvarr
+chapters. `tests/storyCatalogIntegrity.test.ts` asserts the fightless chapters
+stay fightless, XP never goes backward, and scene-only chapters cost no replay
+stamina.
+
+**Mine, not canon, and worth review:** part 5's stage effects (Duke −50% ATK for
+the no-Toll round, Tao +1 action while Lyra is down, level 15 for the ignited
+round); the Ch10 creature is **`wild_beast`** because the source wants a smaller
+Molvarr-kin and no such kit exists; the connective narration between canon
+lines.
+
+Seras is **never named** — Tao doesn't say her name in the Ch10 dialogue either,
+so her lines are credited to "Unknown female voice" in both part 6 and part 10.
+
+### Not done, deliberately
+
+- Merge-by-drag on hand cards (§2).
+- Avatar in cloud save (§4) — needs a `playerStore` version bump.
+- A kit for the Ch10 Molvarr-lite creature (§8).
+- Ascension trial encounters — Tanveer's design.
+- `/practice` and `/login` are still on the pre-token palette.
+- Preset naming still uses `window.prompt`.
+
 
 ## Open Issues
 
@@ -961,7 +1210,7 @@ Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier sta
 
 ## Not Built Yet
 
-- Story Parts 3–6 (source beat sheets exist; listed as coming soon on `/story`)
+- Story **Phase 3** — the bracket part 12 ends on. Not written in the source yet; parts 1–12 are all adapted and `UPCOMING_PARTS` is empty.
 - ~10 additional characters (Tanveer adds when game is in working order)
 - **Mobile layout pass** — the biggest remaining gap in roadmap item 2
 - **Audio assets** — the music *system* shipped 2026-08-09; `public/audio/` is empty until Tanveer supplies the OST (`docs/AUDIO.md`). No SFX system exists and none is planned.
@@ -970,7 +1219,7 @@ Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier sta
 - Effect application in the battle-event stream (Open Issue #22)
 - Story chapter **mission objectives** (3 per chapter paying gems once), **difficulty tiers**, the **node-path stage map**, and **multi-wave stages with persistent HP** — all scoped out of the 2026-08-09 rewards batch, each its own future batch
 
-Note: "playerStore is a stub" is no longer true — it carries roster, currencies, inventory, per-character progress, stamina and gacha pity, with migrations at v3.
+Note: "playerStore is a stub" is no longer true — it carries roster, currencies, inventory, per-character progress, stamina and gacha pity, with migrations at v6.
 
 ## Environment
 

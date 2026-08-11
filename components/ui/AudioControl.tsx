@@ -9,8 +9,9 @@ import { useSettingsStore } from "@/store/settingsStore";
  * Lives in the nav rather than on `/profile` because that page redirects
  * guests to `/login`, and guest mode is a supported way to play — a global
  * setting can't sit behind an account. The trigger must stay inside the nav's
- * fixed `h-11`: the battle shell sizes itself to `100dvh - 2.875rem` against
- * that height.
+ * fixed-height top row: screens size themselves to `100dvh - var(--nav-h)`
+ * (`.screen-below-nav`), and that variable is declared from the nav's own
+ * rendered row count.
  *
  * The slider is a native range input styled with Tailwind — a whole Radix
  * dependency for one control isn't worth it.

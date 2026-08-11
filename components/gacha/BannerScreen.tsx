@@ -2,84 +2,121 @@
 
 import Image from "next/image";
 import React from "react";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
-import { usePlayerStore } from "@/store/playerStore";
+import { usePlayerStore, type ResolvedPullOutcome } from "@/store/playerStore";
 import { getActiveLimitedBanner, getPermanentBanner } from "@/lib/gacha/banners";
+import { getCharacterArt } from "@/lib/game/characterArt";
+import { getCharacterById } from "@/lib/game/characterCatalog";
 import RatesModal from "@/components/gacha/RatesModal";
 import ClaimSection from "@/components/gacha/ClaimSection";
 import PullReveal from "@/components/gacha/PullReveal";
 import {
-  canClaimLimited300,
-  canClaimLimited600,
-  canClaimPermanent600,
-  LIMITED_MILESTONE_600,
-  PERMANENT_MILESTONE_600,
+  canClaimLimitedFinal,
+  canClaimLimitedFirst,
+  canClaimPermanentFinal,
+  LIMITED_MILESTONE_FINAL,
+  LIMITED_MILESTONE_FIRST,
+  PERMANENT_MILESTONE_FINAL,
 } from "@/lib/gacha/milestone";
-
-gsap.registerPlugin(useGSAP);
+import {
+  LIMITED_GEM_COST,
+  MULTI_PULL_COUNT,
+  PERMANENT_TICKET_COST,
+} from "@/lib/gacha/cost";
 
 type Tab = "limited" | "permanent";
 
-export default function BannerScreen() {
+/** Where a milestone marker sits on the track, as a percentage. */
+function markerAt(threshold: number, final: number): number {
+  return Math.min(100, (threshold / final) * 100);
+}
+
+export default function BannerScreen(): React.JSX.Element {
   const [tab, setTab] = React.useState<Tab>("limited");
   const [showRates, setShowRates] = React.useState(false);
-  const [revealResults, setRevealResults] = React.useState<import("@/lib/gacha/pull").PullOutcome[] | null>(null);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const barFillRef = React.useRef<HTMLDivElement>(null);
-  const currencyRef = React.useRef<HTMLSpanElement>(null);
-  const currencyProxy = React.useRef({ value: 0 });
+  const [reveal, setReveal] = React.useState<{
+    results: ResolvedPullOutcome[];
+    count: 1 | 11;
+  } | null>(null);
+  const [notice, setNotice] = React.useState<string | null>(null);
+
+  const hasHydrated = usePlayerStore((s) => s.hasHydrated);
   const currencies = usePlayerStore((s) => s.currencies);
+  const roster = usePlayerStore((s) => s.roster);
+  const characters = usePlayerStore((s) => s.characters);
   const pity = usePlayerStore((s) => s.pity);
   const pullLimited = usePlayerStore((s) => s.pullLimited);
   const pullPermanent = usePlayerStore((s) => s.pullPermanent);
-  const claimLimited300 = usePlayerStore((s) => s.claimLimited300);
-  const claimLimited600 = usePlayerStore((s) => s.claimLimited600);
-  const claimPermanent600 = usePlayerStore((s) => s.claimPermanent600);
+  const claimLimitedFirst = usePlayerStore((s) => s.claimLimitedFirst);
+  const claimLimitedFinal = usePlayerStore((s) => s.claimLimitedFinal);
+  const claimPermanentFinal = usePlayerStore((s) => s.claimPermanentFinal);
 
   const limitedBanner = getActiveLimitedBanner();
   const permanentBanner = getPermanentBanner();
 
   const isLimited = tab === "limited";
+  const featured = isLimited ? limitedBanner.featured : permanentBanner.featured;
   const bar = isLimited ? pity.limited.bar : pity.permanent.bar;
-  const milestone600 = isLimited ? LIMITED_MILESTONE_600 : PERMANENT_MILESTONE_600;
-  const barPercent = Math.min((bar / milestone600) * 100, 100);
-  const currentCurrencyValue = isLimited ? currencies.gems : currencies.permanentTicket;
+  const finalThreshold = isLimited
+    ? LIMITED_MILESTONE_FINAL
+    : PERMANENT_MILESTONE_FINAL;
+  // Permanent has one milestone; Limited has two.
+  const firstThreshold = isLimited ? LIMITED_MILESTONE_FIRST : null;
+  const barPercent = Math.min(100, (bar / finalThreshold) * 100);
 
-  const claimable300 = isLimited && canClaimLimited300(pity.limited.bar, pity.limited.claimed300);
-  const claimable600 = isLimited ? canClaimLimited600(pity.limited.bar) : canClaimPermanent600(pity.permanent.bar);
+  const singleCost = isLimited
+    ? LIMITED_GEM_COST.single
+    : PERMANENT_TICKET_COST.single;
+  const multiCost = isLimited
+    ? LIMITED_GEM_COST.multi
+    : PERMANENT_TICKET_COST.multi;
+  const balance = isLimited ? currencies.gems : currencies.permanentTicket;
+  const unit = isLimited ? "gems" : "tickets";
 
-  useGSAP(
-    () => {
-      if (barFillRef.current) {
-        gsap.to(barFillRef.current, { width: `${barPercent}%`, duration: 0.6, ease: "power2.out" });
-      }
-      if (currencyRef.current) {
-        gsap.to(currencyProxy.current, {
-          value: currentCurrencyValue,
-          duration: 0.5,
-          ease: "power1.out",
-          onUpdate: () => {
-            if (currencyRef.current) {
-              currencyRef.current.textContent = Math.round(currencyProxy.current.value).toLocaleString();
-            }
-          },
-        });
-      }
-    },
-    { dependencies: [barPercent, currentCurrencyValue], scope: containerRef },
-  );
+  // The permanent pool is every character flagged `permanentPool`, which is
+  // currently none — the tab used to render a live Draw button over an empty
+  // pool, so pressing it did nothing at all.
+  const poolEmpty = !isLimited && permanentBanner.featured.length === 0;
+  const canAfford = (cost: number) => hasHydrated && balance >= cost && !poolEmpty;
+
+  const claimableFirst =
+    isLimited && canClaimLimitedFirst(pity.limited.bar, pity.limited.claimedFirst);
+  const claimableFinal = isLimited
+    ? canClaimLimitedFinal(pity.limited.bar, pity.limited.claimedFinal)
+    : canClaimPermanentFinal(pity.permanent.bar, pity.permanent.claimedFinal);
+
+  const draw = (count: 1 | 11) => {
+    const results = isLimited ? pullLimited(count) : pullPermanent(count);
+    if (!results) {
+      setNotice(
+        poolEmpty
+          ? "The permanent pool is empty — nothing to draw from yet."
+          : `Not enough ${unit}.`,
+      );
+      return;
+    }
+    setNotice(null);
+    setReveal({ results, count });
+  };
+
+  const drawLabel = (count: 1 | 11) =>
+    `Draw ×${count} · ${count === 1 ? singleCost : multiCost} ${unit}`;
 
   return (
-    <main className="relative min-h-screen bg-zinc-950">
-      <div ref={containerRef} className="mx-auto w-full max-w-2xl px-6 py-10">
-        <div className="mb-4 flex border-b-2 border-zinc-800">
+    <main className="terminal-grid min-h-screen bg-void">
+      <section className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-6 md:px-8">
+        <div className="flex gap-1.5 border-b border-edge pb-2">
           {(["limited", "permanent"] as const).map((t) => (
             <button
               key={t}
-              onClick={() => setTab(t)}
-              className={`-mb-0.5 border-b-2 px-4 py-2 font-body text-xs font-bold uppercase tracking-[0.14em] transition-colors ${
-                tab === t ? "border-amber-400 text-amber-200" : "border-transparent text-zinc-500 hover:text-zinc-300"
+              type="button"
+              onClick={() => {
+                setTab(t);
+                setNotice(null);
+              }}
+              className={`border px-3.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] transition-colors ${
+                tab === t
+                  ? "border-signal bg-signal/10 text-signal"
+                  : "border-edge text-readout-dim hover:border-edge-strong hover:text-readout"
               }`}
             >
               {t === "limited" ? "Limited" : "Permanent"}
@@ -87,90 +124,230 @@ export default function BannerScreen() {
           ))}
         </div>
 
-        <div className="relative aspect-[2/1] w-full overflow-hidden border border-zinc-800 bg-zinc-900">
+        {/* BANNER */}
+        <div className="relative h-40 overflow-hidden border border-edge-strong bg-panel md:h-48">
           <Image
-            src={isLimited ? "/banners/debut-2026-08.png" : "/banners/debut-2026-08-placeholder.svg"}
-            alt={isLimited ? limitedBanner.name : "Permanent Banner"}
+            src={
+              isLimited
+                ? "/banners/debut-2026-08.png"
+                : "/banners/debut-2026-08-placeholder.svg"
+            }
+            alt=""
             fill
-            className="object-cover"
+            priority
+            sizes="(max-width: 768px) 100vw, 672px"
+            className="object-cover opacity-55"
+          />
+          <span className="absolute inset-0 bg-linear-to-r from-void via-void/70 to-transparent" />
+          <div className="relative flex h-full max-w-[70%] flex-col justify-center gap-1 px-5">
+            <span className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
+              {isLimited
+                ? `Limited · ends ${new Date(limitedBanner.endsAt).toLocaleDateString()}`
+                : "Permanent"}
+            </span>
+            <span className="font-heading text-2xl leading-tight tracking-[0.04em] text-readout-strong md:text-3xl">
+              {isLimited ? limitedBanner.name : "Permanent Banner"}
+            </span>
+            <span className="font-body text-xs text-readout-dim">
+              {isLimited
+                ? `${(limitedBanner.rate * 100).toFixed(0)}% featured · ${featured.length} units`
+                : poolEmpty
+                  ? "No units in the pool yet"
+                  : `${featured.length} units · every pull is a character`}
+            </span>
+          </div>
+        </div>
+
+        {/* FEATURED — which of these you already have is the whole reason a
+            pull is exciting or a shrug. */}
+        {featured.length > 0 ? (
+          <div className="border border-hairline bg-panel px-3 py-2.5">
+            <p className="mb-2 font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+              Featured
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {featured.map((id) => {
+                const art = getCharacterArt(id);
+                const character = getCharacterById(id);
+                const owned = hasHydrated && roster.includes(id);
+                const ultLevel = characters[id]?.ultLevel ?? 1;
+                return (
+                  <span
+                    key={id}
+                    title={
+                      owned
+                        ? `${character?.name ?? id} — owned, ult ${ultLevel}`
+                        : `${character?.name ?? id} — not owned`
+                    }
+                    className={`relative h-11 w-11 overflow-hidden border ${
+                      owned ? "border-edge-strong" : "border-hairline opacity-45"
+                    }`}
+                  >
+                    {art ? (
+                      <Image
+                        src={art}
+                        alt=""
+                        fill
+                        sizes="44px"
+                        className="object-cover object-top"
+                      />
+                    ) : null}
+                    {owned && ultLevel > 1 ? (
+                      <span className="absolute bottom-0 right-0 bg-signal px-1 font-body text-[8px] font-bold text-void">
+                        U{ultLevel}
+                      </span>
+                    ) : null}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        {/* MILESTONE TRACK */}
+        <div className="border border-hairline bg-panel px-3 py-3">
+          <div className="flex items-baseline justify-between">
+            <span className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+              Milestone
+            </span>
+            <span className="font-heading text-lg leading-none tracking-[0.04em] text-readout-strong tabular-nums">
+              {hasHydrated ? bar.toLocaleString() : "—"}
+              <span className="ml-1 font-body text-[10px] font-semibold text-readout-muted">
+                / {finalThreshold.toLocaleString()} {unit} spent
+              </span>
+            </span>
+          </div>
+          <div className="relative mt-2 mb-5 h-2.5 border border-hairline bg-void">
+            <span
+              className="block h-full bg-signal transition-[width] duration-500"
+              style={{ width: hasHydrated ? `${barPercent}%` : "0%" }}
+            />
+            {firstThreshold !== null ? (
+              <span
+                className="absolute -top-1 h-4.5 w-0.5 bg-edge-strong"
+                style={{ left: `${markerAt(firstThreshold, finalThreshold)}%` }}
+              >
+                <span className="absolute left-1/2 top-5 -translate-x-1/2 font-body text-[9px] font-bold tabular-nums text-readout-muted">
+                  {firstThreshold}
+                </span>
+              </span>
+            ) : null}
+            <span className="absolute -top-1 right-0 h-4.5 w-0.5 bg-el-light">
+              <span className="absolute left-1/2 top-5 -translate-x-1/2 font-body text-[9px] font-bold tabular-nums text-readout-muted">
+                {finalThreshold}
+              </span>
+            </span>
+          </div>
+
+          <ClaimSection
+            bar={bar}
+            firstThreshold={firstThreshold}
+            finalThreshold={finalThreshold}
+            firstTitle="Random featured unit"
+            firstDetail="Rolled for you from this banner"
+            claimableFirst={claimableFirst}
+            claimedFirst={pity.limited.claimedFirst}
+            claimableFinal={claimableFinal}
+            claimedFinal={
+              isLimited ? pity.limited.claimedFinal : pity.permanent.claimedFinal
+            }
+            featured={featured}
+            onClaimFirst={() => {
+              const result = claimLimitedFirst();
+              if (result) setReveal({ results: [result], count: 1 });
+            }}
+            onClaimFinal={(characterId) => {
+              const result = isLimited
+                ? claimLimitedFinal(characterId)
+                : claimPermanentFinal(characterId);
+              if (result) setReveal({ results: [result], count: 1 });
+            }}
           />
         </div>
 
-        <h1 className="mt-3 font-heading text-3xl tracking-[0.08em] text-zinc-100">
-          {isLimited ? limitedBanner.name : "Permanent Banner"}
-        </h1>
-        {isLimited ? (
-          <p className="font-body text-[11px] uppercase tracking-[0.14em] text-zinc-500">
-            Ends {new Date(limitedBanner.endsAt).toLocaleDateString()}
+        {notice ? (
+          <p className="border-l-2 border-el-red bg-el-red/5 px-3 py-2 font-body text-xs text-el-red">
+            {notice}
           </p>
         ) : null}
 
-        <div className="mt-2 flex justify-end font-body text-sm text-amber-200">
-          ◆ <span ref={currencyRef}>0</span> {isLimited ? "gems" : "tickets"}
+        {/* DRAW — the cost is on the button. It used to be discovered by
+            watching the balance tick down afterwards. */}
+        <div className="flex gap-2">
+          {([1, MULTI_PULL_COUNT] as const).map((count) => {
+            const cost = count === 1 ? singleCost : multiCost;
+            const main = count !== 1;
+            return (
+              <button
+                key={count}
+                type="button"
+                disabled={!canAfford(cost)}
+                onClick={() => draw(count === 1 ? 1 : 11)}
+                className={`flex-1 border px-3 py-3 text-center transition-colors disabled:border-hairline disabled:bg-transparent disabled:opacity-50 ${
+                  main
+                    ? "border-signal bg-signal/12 hover:bg-signal/20"
+                    : "border-edge bg-inset hover:border-edge-strong"
+                }`}
+              >
+                <span
+                  className={`block font-heading text-lg tracking-[0.05em] ${main ? "text-signal" : "text-readout-strong"}`}
+                >
+                  Draw ×{count}
+                </span>
+                <span
+                  className={`block font-body text-[10px] font-bold uppercase tracking-[0.1em] ${main ? "text-signal" : "text-readout-muted"}`}
+                >
+                  {cost} {unit}
+                  {main ? " · one free pull" : ""}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        <div className="mt-2">
-          <div className="flex justify-between font-body text-[9px] uppercase tracking-[0.08em] text-zinc-500">
-            <span>Milestone</span>
-            <span>{bar} / {milestone600}</span>
-          </div>
-          <div className="relative mt-1 h-2 rounded bg-zinc-800">
-            <div ref={barFillRef} className="h-full w-0 rounded bg-amber-400" />
-          </div>
-        </div>
-
-        <div className="mt-3 flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-body text-sm font-bold tabular-nums text-readout-strong">
+            {hasHydrated ? balance.toLocaleString() : "—"}{" "}
+            <span className="font-semibold uppercase tracking-[0.12em] text-readout-muted">
+              {unit}
+            </span>
+          </span>
+          <span className="flex-1" />
           <button
-            disabled={revealResults !== null}
-            onClick={() => {
-              const results = isLimited ? pullLimited(1) : pullPermanent(1);
-              if (results) setRevealResults(results);
-            }}
-            className="flex-1 rounded border border-zinc-700 bg-zinc-800 py-3 font-body text-xs font-bold uppercase tracking-[0.08em] text-zinc-100 disabled:opacity-50"
+            type="button"
+            onClick={() => setShowRates(true)}
+            className="border border-edge px-3 py-1.5 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
           >
-            Draw ×1
-          </button>
-          <button
-            disabled={revealResults !== null}
-            onClick={() => {
-              const results = isLimited ? pullLimited(11) : pullPermanent(11);
-              if (results) setRevealResults(results);
-            }}
-            className="flex-1 rounded bg-amber-400 py-3 font-body text-xs font-bold uppercase tracking-[0.08em] text-zinc-950 disabled:opacity-50"
-          >
-            Draw ×11
+            Rates &amp; pool
           </button>
         </div>
+      </section>
 
-        <button
-          onClick={() => setShowRates(true)}
-          className="mt-2 w-full text-center font-body text-[10px] uppercase tracking-[0.1em] text-zinc-500 underline underline-offset-2"
-        >
-          Rates
-        </button>
-
-        <ClaimSection
-          claimable300={claimable300}
-          claimable600={claimable600}
-          isLimited={isLimited}
-          featured={isLimited ? limitedBanner.featured : permanentBanner.featured}
-          claimLimited300={claimLimited300}
-          claimLimited600={claimLimited600}
-          claimPermanent600={claimPermanent600}
+      {showRates ? (
+        <RatesModal
+          featured={featured}
+          rate={isLimited ? limitedBanner.rate : 1}
+          missNote={
+            isLimited
+              ? undefined
+              : "Nothing else — every permanent pull is a character."
+          }
+          onClose={() => setShowRates(false)}
         />
+      ) : null}
 
-        {showRates ? (
-          <RatesModal
-            featured={isLimited ? limitedBanner.featured : permanentBanner.featured}
-            rate={isLimited ? limitedBanner.rate : 1 / Math.max(permanentBanner.featured.length, 1)}
-            onClose={() => setShowRates(false)}
-          />
-        ) : null}
-
-        {revealResults ? (
-          <PullReveal results={revealResults} onComplete={() => setRevealResults(null)} />
-        ) : null}
-      </div>
+      {reveal ? (
+        <PullReveal
+          results={reveal.results}
+          drawLabel={drawLabel(reveal.count)}
+          canDrawAgain={canAfford(reveal.count === 1 ? singleCost : multiCost)}
+          onDrawAgain={() => {
+            setReveal(null);
+            draw(reveal.count);
+          }}
+          onClose={() => setReveal(null)}
+        />
+      ) : null}
     </main>
   );
 }

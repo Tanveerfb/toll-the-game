@@ -9,15 +9,21 @@ import { rollLimitedPull, rollPermanentPull, rollUniformFromPool, type PullOutco
 import {
   advanceLimitedBar,
   advancePermanentBar,
-  canClaimLimited300,
-  canClaimLimited600,
-  canClaimPermanent600,
-  resetLimitedLap,
-  resetPermanentLap,
+  canClaimLimitedFirst,
+  canClaimLimitedFinal,
+  canClaimPermanentFinal,
+  settleLimitedLap,
+  settlePermanentLap,
+  type LimitedPityState,
+  type PermanentPityState,
 } from "@/lib/gacha/milestone";
+import {
+  limitedBarGain,
+  limitedGemCost,
+  permanentTicketCost,
+} from "@/lib/gacha/cost";
 import { resolvePullResult } from "@/lib/gacha/dupes";
 import type { StoryPayout } from "@/lib/game/storyRewards";
-import { getPlayableCharacters } from "@/lib/game/characterCatalog";
 import { grantAccountXp } from "@/lib/game/accountRank";
 import {
   MIN_WORLD_LEVEL,
@@ -32,10 +38,9 @@ import {
   type TeamPreset,
 } from "@/lib/game/teamPresets";
 
-const LIMITED_COST_SINGLE = 3;
-const LIMITED_COST_MULTI = 30;
-const PERMANENT_COST_SINGLE = 1;
-const PERMANENT_COST_MULTI = 10;
+// Pull pricing and milestone progress live in `lib/gacha/cost.ts`. They used
+// to be one number each — the bar advanced by the gem cost — which is exactly
+// what stopped them being tunable apart (Tanveer, 2026-08-11).
 
 export interface CharacterProgress {
   level: number;
@@ -43,6 +48,25 @@ export interface CharacterProgress {
   xp: number;
   ultLevel: number;
 }
+
+/**
+ * A pull outcome plus what it actually did to the roster.
+ *
+ * The raw `PullOutcome` says "you got Duke" and stops there, so the reveal
+ * screen had no way to distinguish a first copy from a fourth — it rendered
+ * them identically even though `resolvePullResult` had already worked out the
+ * difference and the store had already banked the ult rank (Tanveer,
+ * 2026-08-11). The resolution rides along instead of being recomputed by
+ * diffing the roster, which would be guesswork after the fact.
+ */
+export type ResolvedPullOutcome =
+  | (Extract<PullOutcome, { kind: "character" }> & {
+      isNew: boolean;
+      /** Ult level AFTER this pull. `1` on a new unit. */
+      ultLevel: number;
+    })
+  | Extract<PullOutcome, { kind: "coin" }>
+  | Extract<PullOutcome, { kind: "material" }>;
 
 export interface PlayerState {
   uid: string | null;
@@ -63,8 +87,8 @@ export interface PlayerState {
   worldLevel: number;
   stamina: { current: number; updatedAt: number };
   pity: {
-    limited: { bannerId: string | null; bar: number; claimed300: boolean };
-    permanent: { bar: number };
+    limited: LimitedPityState;
+    permanent: PermanentPityState;
   };
   /** True once zustand-persist has rehydrated from localStorage — gate any
    *  first-paint read of roster/inventory on this to avoid a flash of the
@@ -89,11 +113,11 @@ export interface PlayerState {
   grantAccountXpAction: (amount: number) => void;
   clearRankWall: (rank: number) => void;
   setWorldLevel: (level: number) => void;
-  pullLimited: (count: 1 | 11) => PullOutcome[] | false;
-  pullPermanent: (count: 1 | 11) => PullOutcome[] | false;
-  claimLimited300: () => PullOutcome | false;
-  claimLimited600: (characterId: string) => PullOutcome | false;
-  claimPermanent600: (characterId: string) => PullOutcome | false;
+  pullLimited: (count: 1 | 11) => ResolvedPullOutcome[] | false;
+  pullPermanent: (count: 1 | 11) => ResolvedPullOutcome[] | false;
+  claimLimitedFirst: () => ResolvedPullOutcome | false;
+  claimLimitedFinal: (characterId: string) => ResolvedPullOutcome | false;
+  claimPermanentFinal: (characterId: string) => ResolvedPullOutcome | false;
 }
 
 /** What `migratePlayerState` actually produces — plain persisted data, none
@@ -124,14 +148,14 @@ export type PersistedPlayerData = Omit<
   | "setWorldLevel"
   | "pullLimited"
   | "pullPermanent"
-  | "claimLimited300"
-  | "claimLimited600"
-  | "claimPermanent600"
+  | "claimLimitedFirst"
+  | "claimLimitedFinal"
+  | "claimPermanentFinal"
 >;
 
 export const DEFAULT_PITY = {
-  limited: { bannerId: null, bar: 0, claimed300: false },
-  permanent: { bar: 0 },
+  limited: { bannerId: null, bar: 0, claimedFirst: false, claimedFinal: false },
+  permanent: { bar: 0, claimedFinal: false },
 } as const;
 
 /** The level-1/ascension-0/ultLevel-1 floor for a character not yet present
@@ -252,10 +276,58 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     };
   }
 
+  if (version < 6) {
+    // v5 → v6: milestone laps gained a `claimedFinal` flag on both banners, so
+    // 600 can be claimed without immediately wrapping the lap and forfeiting
+    // an unclaimed 300 (Tanveer, 2026-08-11).
+    //
+    // `pity` is a nested object, so persist's shallow merge replaces it
+    // wholesale rather than filling the new field — an untouched v5 payload
+    // would arrive with `claimedFinal: undefined`. That reads as falsy, which is
+    // the right answer, but "right by accident" is how the next shape change
+    // goes wrong. Normalised explicitly instead.
+    // The stored field was `claimed300`; it is now `claimedFirst`, because the
+    // threshold it guards moved from 300 to 500 and a field named for a number
+    // it no longer holds is a trap.
+    const oldPity = state.pity as
+      | {
+          limited?: {
+            bannerId?: string | null;
+            bar?: number;
+            claimed300?: boolean;
+          };
+          permanent?: { bar?: number };
+        }
+      | undefined;
+    state = {
+      ...state,
+      pity: {
+        limited: {
+          bannerId: oldPity?.limited?.bannerId ?? null,
+          // The bar was denominated in the old 3-per-single unit against
+          // 300/600 thresholds; it is now gems-spent against 500/1000. There
+          // is no honest conversion — carrying the old number forward would
+          // read as progress the player never made at the new rate — so a
+          // lap in flight is reset. Nothing claimable is lost: both claim
+          // flags start clean too.
+          bar: 0,
+          claimedFirst: false,
+          claimedFinal: false,
+        },
+        permanent: {
+          // Permanent kept its ticket pricing and its 600 threshold, so its
+          // bar carries over untouched.
+          bar: oldPity?.permanent?.bar ?? 0,
+          claimedFinal: false,
+        },
+      },
+    };
+  }
+
   return state as unknown as PersistedPlayerData;
 }
 
-export const CURRENT_PLAYER_STATE_VERSION = 5;
+export const CURRENT_PLAYER_STATE_VERSION = 6;
 
 export const usePlayerStore = create<PlayerState>()(
   persist(
@@ -438,31 +510,40 @@ export const usePlayerStore = create<PlayerState>()(
       pullLimited: (count) => {
         const state = get();
         const banner = getActiveLimitedBanner();
-        const cost = count === 1 ? LIMITED_COST_SINGLE : LIMITED_COST_MULTI;
+        const cost = limitedGemCost(count);
         if (state.currencies.gems < cost) return false;
 
         let coin = state.currencies.coin;
         const inventory = { ...state.inventory };
         const roster = [...state.roster];
         const characters = { ...state.characters };
-        const results: PullOutcome[] = [];
+        const results: ResolvedPullOutcome[] = [];
 
         for (let i = 0; i < count; i++) {
           const outcome = rollLimitedPull(banner);
-          results.push(outcome);
           if (outcome.kind === "character") {
             const resolution = resolvePullResult(outcome.characterId, roster, characters);
             if (resolution.isNew) roster.push(outcome.characterId);
             const existing = defaultCharacterProgress(characters, outcome.characterId);
             characters[outcome.characterId] = { ...existing, ultLevel: resolution.ultLevel };
-          } else if (outcome.kind === "coin") {
+            results.push({ ...outcome, ...resolution });
+            continue;
+          }
+          results.push(outcome);
+          if (outcome.kind === "coin") {
             coin += outcome.amount;
           } else {
             inventory[outcome.materialId] = (inventory[outcome.materialId] ?? 0) + outcome.amount;
           }
         }
 
-        const limitedPity = advanceLimitedBar(state.pity.limited, banner.id, cost);
+        // The bar advances by its own value, not by the gems spent — those
+        // came apart on 2026-08-11 so pricing and lap length tune separately.
+        const limitedPity = advanceLimitedBar(
+          state.pity.limited,
+          banner.id,
+          limitedBarGain(count),
+        );
         set({
           currencies: { ...state.currencies, gems: state.currencies.gems - cost, coin },
           inventory,
@@ -477,57 +558,76 @@ export const usePlayerStore = create<PlayerState>()(
         const state = get();
         const banner = getPermanentBanner();
         if (banner.featured.length === 0) return false;
-        const cost = count === 1 ? PERMANENT_COST_SINGLE : PERMANENT_COST_MULTI;
+        const cost = permanentTicketCost(count);
         if (state.currencies.permanentTicket < cost) return false;
 
         const roster = [...state.roster];
         const characters = { ...state.characters };
-        const results: PullOutcome[] = [];
+        const results: ResolvedPullOutcome[] = [];
 
         for (let i = 0; i < count; i++) {
           const outcome = rollPermanentPull(banner.featured);
           if (!outcome) break;
-          results.push(outcome);
           if (outcome.kind !== "character") continue; // rollPermanentPull only ever constructs "character" outcomes
           const resolution = resolvePullResult(outcome.characterId, roster, characters);
           if (resolution.isNew) roster.push(outcome.characterId);
           const existing = defaultCharacterProgress(characters, outcome.characterId);
           characters[outcome.characterId] = { ...existing, ultLevel: resolution.ultLevel };
+          results.push({ ...outcome, ...resolution });
         }
 
-        const permanentBar = advancePermanentBar(state.pity.permanent.bar, cost);
+        // Permanent still runs on tickets and still advances its bar by the
+        // ticket cost — the gem re-pricing was Limited-only.
+        const permanentPity = advancePermanentBar(state.pity.permanent, cost);
         set({
           currencies: { ...state.currencies, permanentTicket: state.currencies.permanentTicket - cost },
           roster,
           characters,
-          pity: { ...state.pity, permanent: { bar: permanentBar } },
+          pity: { ...state.pity, permanent: permanentPity },
         });
         return results;
       },
 
-      claimLimited300: () => {
+      claimLimitedFirst: () => {
         const state = get();
-        if (!canClaimLimited300(state.pity.limited.bar, state.pity.limited.claimed300)) return false;
-        const pool = getPlayableCharacters().map((c) => c.id);
-        const characterId = rollUniformFromPool(pool);
+        if (!canClaimLimitedFirst(state.pity.limited.bar, state.pity.limited.claimedFirst)) return false;
+        // Banner units, not the whole playable roster (Tanveer, 2026-08-11).
+        // The two milestones differ only in who chooses: the first rolls a
+        // featured unit for you, the final lets you pick one.
+        const characterId = rollUniformFromPool(
+          getActiveLimitedBanner().featured,
+        );
         if (!characterId) return false;
 
         const resolution = resolvePullResult(characterId, state.roster, state.characters);
         const roster = resolution.isNew ? [...state.roster, characterId] : state.roster;
         const existing = defaultCharacterProgress(state.characters, characterId);
 
+        // Claiming 300 can itself complete the lap — if 600 was reached and
+        // already taken, this was the last outstanding reward.
+        const limited = settleLimitedLap({
+          ...state.pity.limited,
+          claimedFirst: true,
+        });
         set({
           roster,
           characters: { ...state.characters, [characterId]: { ...existing, ultLevel: resolution.ultLevel } },
-          pity: { ...state.pity, limited: { ...state.pity.limited, claimed300: true } },
+          pity: { ...state.pity, limited },
         });
-        return { kind: "character", characterId };
+        return { kind: "character", characterId, ...resolution };
       },
 
-      claimLimited600: (characterId) => {
+      claimLimitedFinal: (characterId) => {
         const state = get();
         const banner = getActiveLimitedBanner();
-        if (!canClaimLimited600(state.pity.limited.bar)) return false;
+        if (
+          !canClaimLimitedFinal(
+            state.pity.limited.bar,
+            state.pity.limited.claimedFinal,
+          )
+        ) {
+          return false;
+        }
         if (!banner.featured.includes(characterId)) return false;
 
         const resolution = resolvePullResult(characterId, state.roster, state.characters);
@@ -537,15 +637,31 @@ export const usePlayerStore = create<PlayerState>()(
         set({
           roster,
           characters: { ...state.characters, [characterId]: { ...existing, ultLevel: resolution.ultLevel } },
-          pity: { ...state.pity, limited: resetLimitedLap(state.pity.limited) },
+          // Claiming 600 no longer resets the lap on its own. If 300 is still
+          // outstanding the bar keeps running, so that reward can't be lost —
+          // which is exactly what the old `resetLimitedLap` did to it.
+          pity: {
+            ...state.pity,
+            limited: settleLimitedLap({
+              ...state.pity.limited,
+              claimedFinal: true,
+            }),
+          },
         });
-        return { kind: "character", characterId };
+        return { kind: "character", characterId, ...resolution };
       },
 
-      claimPermanent600: (characterId) => {
+      claimPermanentFinal: (characterId) => {
         const state = get();
         const banner = getPermanentBanner();
-        if (!canClaimPermanent600(state.pity.permanent.bar)) return false;
+        if (
+          !canClaimPermanentFinal(
+            state.pity.permanent.bar,
+            state.pity.permanent.claimedFinal,
+          )
+        ) {
+          return false;
+        }
         if (!banner.featured.includes(characterId)) return false;
 
         const resolution = resolvePullResult(characterId, state.roster, state.characters);
@@ -555,9 +671,15 @@ export const usePlayerStore = create<PlayerState>()(
         set({
           roster,
           characters: { ...state.characters, [characterId]: { ...existing, ultLevel: resolution.ultLevel } },
-          pity: { ...state.pity, permanent: { bar: resetPermanentLap() } },
+          pity: {
+            ...state.pity,
+            permanent: settlePermanentLap({
+              ...state.pity.permanent,
+              claimedFinal: true,
+            }),
+          },
         });
-        return { kind: "character", characterId };
+        return { kind: "character", characterId, ...resolution };
       },
     }),
     {

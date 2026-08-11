@@ -29,6 +29,7 @@ import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { getPassiveReadout, type PassiveReadout } from "@/lib/game/passiveStacks";
 import SubstatDrawer from "@/components/game/SubstatDrawer";
 import DetailOverlay from "@/components/game/DetailOverlay";
+import { useSettingsStore } from "@/store/settingsStore";
 import {
   categorizeEffects,
   EffectsList,
@@ -273,6 +274,12 @@ export default function UnitDetailPanel({
   const teamOnField = ownTeam.filter((u) => !u.isSub);
   const [selectedId, setSelectedId] = React.useState(unit.instanceId);
   const [effectsOpen, setEffectsOpen] = React.useState(false);
+  // A preference, not panel state: whoever wants the grey entries wants them
+  // on every unit and every battle, not once per panel open.
+  const showUncancellable = useSettingsStore((s) => s.showUncancellableEffects);
+  const setShowUncancellable = useSettingsStore(
+    (s) => s.setShowUncancellableEffects,
+  );
   const [tagOverlayTag, setTagOverlayTag] = React.useState<string | null>(null);
   const [detailOverlay, setDetailOverlay] = React.useState<
     | { kind: "ultimate"; skill: CharacterSkillData }
@@ -287,11 +294,17 @@ export default function UnitDetailPanel({
     () => false,
   );
 
-  const idx = Math.max(
-    0,
-    teamOnField.findIndex((u) => u.instanceId === selectedId),
-  );
-  const selected = teamOnField[idx] ?? unit;
+  // A bench unit is reachable from the Team list but isn't in `teamOnField`,
+  // so the old `Math.max(0, findIndex)` silently resolved it to the FIRST
+  // field unit — you opened the sub and got someone else. Now the bench is
+  // the only way to meet a sub, so it has to resolve honestly.
+  const fieldIdx = teamOnField.findIndex((u) => u.instanceId === selectedId);
+  const isBenched = fieldIdx < 0;
+  const idx = Math.max(0, fieldIdx);
+  const selected =
+    (isBenched
+      ? ownTeam.find((u) => u.instanceId === selectedId)
+      : teamOnField[idx]) ?? unit;
 
   // Plain function, not `useCallback`: `teamOnField` is derived inline, so
   // manual memoization can't be preserved and the React Compiler refuses to
@@ -345,7 +358,13 @@ export default function UnitDetailPanel({
   const gaugeMax = ultGaugeMax(selected);
   const hpPercent =
     selected.hp > 0 ? Math.max(0, (selected.currentHP / selected.hp) * 100) : 0;
-  const effects = categorizeEffects(selected);
+  // Grey (uncancellable) entries are hidden by default — see the toggle on
+  // the effect strip and `settingsStore.showUncancellableEffects`.
+  const allEffects = categorizeEffects(selected);
+  const effects = showUncancellable
+    ? allEffects
+    : allEffects.filter((e) => e.category !== "effect");
+  const hiddenEffects = allEffects.length - effects.length;
 
   const tabs: KitTab[] = [];
   kit?.skills.forEach((skill, i) => {
@@ -432,7 +451,7 @@ export default function UnitDetailPanel({
             {/* Position readout — with four units on a side, stepping blind
                 gave no sense of where you were. */}
             <span className="min-w-8 text-center font-body text-[10px] font-bold tabular-nums text-readout-muted">
-              {idx + 1}/{teamOnField.length}
+              {isBenched ? "Sub" : `${idx + 1}/${teamOnField.length}`}
             </span>
             <button
               type="button"
@@ -542,7 +561,7 @@ export default function UnitDetailPanel({
               point of pinning this block is that its height can't move. */}
           <div className="mt-2 flex items-center gap-2">
             <div className="hud-scroll flex min-w-0 flex-1 gap-1 overflow-x-auto">
-              {effects.length === 0 ? (
+              {effects.length === 0 && hiddenEffects === 0 ? (
                 <span className="font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-muted">
                   No active effects
                 </span>
@@ -567,6 +586,28 @@ export default function UnitDetailPanel({
                   </span>
                 ))
               )}
+              {/* The reveal sits inline, where the hidden chips would be —
+                  a toggle parked in a corner would never be found. */}
+              {hiddenEffects > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setShowUncancellable(true)}
+                  title={`Show ${hiddenEffects} uncancellable effect${hiddenEffects > 1 ? "s" : ""}`}
+                  className="shrink-0 border border-dashed border-edge px-1.5 py-0.5 font-body text-[10px] font-bold uppercase tracking-[0.1em] text-readout-muted transition-colors hover:border-edge-strong hover:text-readout"
+                >
+                  +{hiddenEffects} fixed
+                </button>
+              ) : null}
+              {showUncancellable && allEffects.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setShowUncancellable(false)}
+                  title="Hide uncancellable effects"
+                  className="shrink-0 border border-dashed border-edge px-1.5 py-0.5 font-body text-[10px] font-bold uppercase tracking-[0.1em] text-readout-muted transition-colors hover:border-edge-strong hover:text-readout"
+                >
+                  Hide fixed
+                </button>
+              ) : null}
             </div>
             <button
               type="button"
@@ -596,6 +637,7 @@ export default function UnitDetailPanel({
               <EffectsList
                 unit={selected}
                 allUnits={[...playerTeam, ...enemyTeam]}
+                showUncancellable={showUncancellable}
               />
               {passive ? <PassiveReadoutRow passive={passive} /> : null}
               <SubstatDrawer unit={selected} />

@@ -1,8 +1,14 @@
 /**
  * Card frame styling — "Clean" style (2026-07-24 battle UI overhaul, spec §3).
- * Rank reads at a glance via border color/weight, not text: thin bronze (R1)
- * -> thin silver (R2) -> gold + top accent bar (R3). Ultimate is its own
- * frame class (cyan/frost + accent bar) — not "beyond gold," a separate tier.
+ * Rank reads at a glance via border color/weight, not text.
+ *
+ * Retuned onto the palette tokens 2026-08-11. The ladder was bronze -> silver
+ * -> gold with a cyan "frost" frame for ultimates, and both ends had become
+ * collisions: cyan is now system chrome (the rail, End Turn, active state),
+ * and gold is the ultimate's colour everywhere else on the screen — on the
+ * tile's ULT READY flag and on the queue chip. So the merge ladder is one
+ * achromatic ramp (dim -> strong -> bright readout) and gold belongs solely
+ * to the ultimate, which is a separate tier, not "beyond R3".
  */
 
 export type CardFrameTier = "r1" | "r2" | "r3" | "ultimate";
@@ -19,24 +25,24 @@ export interface CardFrameStyle {
 
 const R1_STYLE: Omit<CardFrameStyle, "starCount"> = {
   tier: "r1",
-  borderClass: "border border-amber-700",
+  borderClass: "border border-edge",
 };
 
 const R2_STYLE: Omit<CardFrameStyle, "starCount"> = {
   tier: "r2",
-  borderClass: "border border-zinc-400",
+  borderClass: "border border-edge-strong",
 };
 
 const R3_STYLE: Omit<CardFrameStyle, "starCount"> = {
   tier: "r3",
-  borderClass: "border-2 border-yellow-400",
-  accentBarClass: "bg-yellow-400",
+  borderClass: "border-2 border-readout",
+  accentBarClass: "bg-readout",
 };
 
 const ULTIMATE_STYLE: Omit<CardFrameStyle, "starCount"> = {
   tier: "ultimate",
-  borderClass: "border-2 border-cyan-300",
-  accentBarClass: "bg-cyan-300",
+  borderClass: "border-2 border-el-light",
+  accentBarClass: "bg-el-light",
 };
 
 /**

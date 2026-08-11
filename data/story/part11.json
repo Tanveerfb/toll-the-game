@@ -1,0 +1,295 @@
+{
+  "id": "part11",
+  "order": 11,
+  "title": "Overnight",
+  "tagline": "Wasn't going to let you sit in this room by yourself.",
+  "coverCharacterId": "isolde",
+  "chapters": [
+    {
+      "id": "p11c1",
+      "title": "The Overseer",
+      "teamMode": "canon",
+      "trialLevel": 26,
+      "intro": [
+        {
+          "speaker": "Narrator",
+          "text": "The room hasn't moved on from Sara yet — a few uncertain glances, nobody sure whether to approach — when the noise of it drops on its own. Not an announcement. Just presence."
+        },
+        {
+          "portraitId": "isolde",
+          "side": "right",
+          "text": "Isolde enters. Silver-white hair long and loose, catching movement it shouldn't in a still room. Wings out, translucent, no need to hide them here. The Bureau uniform reads as ceremony rather than fatigue, unlike everyone else present. She doesn't raise her voice. The room does the work of quieting itself."
+        },
+        {
+          "speaker": "Isolde",
+          "portraitId": "isolde",
+          "side": "right",
+          "text": "Phase 2 is closed. You'll rest tonight, paired by your original Phase 1 assignments — the Bureau's already moved your things. Phase 3 begins tomorrow. That's all I'll ask of you tonight — rest, actually rest."
+        },
+        {
+          "portraitId": "isolde",
+          "side": "right",
+          "text": "Her eyes pass over the room once as she says it — and catch on Sara, still down, still not fully back inside herself. The smile doesn't change. Nothing in her posture does either. She clocks it the way she seems to clock everything, files it, and moves on without a word. Not indifference. Restraint."
+        }
+      ],
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "She's gone again before the room has fully absorbed that she was there at all."
+        },
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "Duke and Lyra head off toward their assigned room, the walk quiet in the way that isn't uncomfortable. Rooms are assigned by the original Phase 1 duos. Sara and Yalina's assignment still sits on the board somewhere, useless now. Lyra stops before they reach the door."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "I'm staying with her tonight."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Yeah. Go."
+        },
+        {
+          "portraitId": "duke",
+          "text": "She holds on his face a second longer than the sentence needs — checking, not asking permission. He gives her a small nod that does the job better than a sentence would. She goes. Duke is left standing outside a room assigned for two that is now a room for one."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 260,
+          "coin": 7200,
+          "materials": { "training_manual": 6 },
+          "accountXp": 120
+        },
+        "repeat": { "coin": { "min": 1600, "max": 3000 } },
+        "replayStamina": 0
+      }
+    },
+    {
+      "id": "p11c2",
+      "title": "Dinner with the Old Man",
+      "teamMode": "canon",
+      "trialLevel": 26,
+      "intro": [
+        {
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "Duke doesn't try to sleep. He wanders the shared common space instead — quieter now, most candidates already gone — and finds Master Tao sitting alone at a table near the edge of it, taking his time with a plate. Duke hesitates half a step. Tao clocks him without really looking up."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "Sit if you're going to hover."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "Ribs still complaining?"
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Only when I laugh. Or breathe."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "Good. Means you'll remember the lesson longer than the bruise takes to heal. That's usually the trade."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Is that what you tell yourself, or what you tell the candidates you half-kill?"
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "Same thing. Works either way."
+        }
+      ],
+      "outro": [
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "Heard about the lake. Heard you two turned a lake monster into a bridge instead of a kill. That's not nothing — most people your age want the kill. Takes a different kind of confidence to want the crossing instead."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Wasn't confidence. Batra almost lost an arm figuring that out the hard way."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "The Singh boy. Of course he did. Some people only learn a lesson once it's already cost them something. You're not one of those, from what I saw in the forest."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "You barely saw anything. You were setting things on fire."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "I saw plenty. Fighting a person tells you more about them in five minutes than a year of conversation would."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "For a stretch after that it's just two people who respect each other, unwinding — Tao asking pointed, half-teasing questions about Duke's technique, Duke giving flatter answers than the questions deserve and getting away with it."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 260,
+          "coin": 7200,
+          "materials": { "training_manual": 6 },
+          "accountXp": 125
+        },
+        "repeat": { "coin": { "min": 1600, "max": 3000 } },
+        "replayStamina": 0
+      }
+    },
+    {
+      "id": "p11c3",
+      "title": "Two Beds",
+      "teamMode": "canon",
+      "trialLevel": 26,
+      "intro": [
+        {
+          "portraitId": "sara",
+          "side": "right",
+          "text": "A small room, two beds, the kind of quiet that isn't comfortable yet. Sara sits upright on the edge of her bed, composure mostly back on, hands folded like they need somewhere to be. Lyra doesn't fill the silence — just exists in it, unpacking nothing in particular, giving Sara room to start if she wants to."
+        },
+        {
+          "speaker": "Sara",
+          "portraitId": "sara",
+          "side": "right",
+          "text": "You didn't have to do this."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "text": "I know."
+        },
+        {
+          "speaker": "Sara",
+          "portraitId": "sara",
+          "side": "right",
+          "text": "That's not a no."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "text": "Wasn't going to be."
+        },
+        {
+          "speaker": "Sara",
+          "portraitId": "sara",
+          "side": "right",
+          "text": "She used to steal food off my plate. Every meal, since we were kids. Didn't matter if she had her own — she'd reach over, take a piece off mine, and act personally offended if I said anything about it."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "text": "Did you ever stop her?"
+        },
+        {
+          "speaker": "Sara",
+          "portraitId": "sara",
+          "side": "right",
+          "text": "Once. Slapped her hand away in front of the whole table. She didn't talk to me for two days. Then she just — showed back up, stole a piece of my breakfast like nothing happened, and that was that. That was her apology. I never got a real one out of her in eleven years."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "text": "Sounds like she didn't think she needed one."
+        },
+        {
+          "speaker": "Sara",
+          "portraitId": "sara",
+          "side": "right",
+          "text": "She didn't. That was the infuriating part. She was always so — sure. About everything. Right up until—"
+        },
+        {
+          "speaker": "Narrator",
+          "text": "She doesn't finish it. Doesn't need to. Lyra lets the silence hold the rest of the sentence instead of rushing to fill it."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "text": "I don't have anyone like that. Not really. There were people at the academy — training partners, people I respected — but no one who'd have earned the right to steal off my plate."
+        },
+        {
+          "speaker": "Sara",
+          "portraitId": "sara",
+          "side": "right",
+          "text": "That's sadder than what I just told you."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "text": "Maybe. I didn't say it for sympathy. Just — didn't want you to think I was sitting here with some perfect friendship to compare yours to. I don't have the frame of reference. I just know what it looks like from outside, and it looked like something worth having."
+        },
+        {
+          "speaker": "Sara",
+          "portraitId": "sara",
+          "side": "right",
+          "text": "...Thank you. For staying."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "text": "Wasn't going to let you sit in this room by yourself."
+        }
+      ],
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "They're not sisters. Not friends, not really, not yet. But something starts here that wasn't there this morning."
+        },
+        {
+          "portraitId": "isolde",
+          "side": "right",
+          "text": "Later, Sara steps out for air and ends up in the open common area outside the quarters, arms wrapped around herself, not really going anywhere. Isolde is there before Sara notices her, unhurried, like she's simply doing a last pass of the grounds."
+        },
+        {
+          "speaker": "Isolde",
+          "portraitId": "isolde",
+          "side": "right",
+          "text": "Couldn't sleep either."
+        },
+        {
+          "speaker": "Sara",
+          "portraitId": "sara",
+          "text": "...No."
+        },
+        {
+          "portraitId": "isolde",
+          "side": "right",
+          "text": "Isolde doesn't sit, doesn't crowd her — just settles into the same stretch of quiet Sara is already standing in, present without demanding anything back. Her expression here is nothing like the room she commanded earlier. Softer. Something closer to genuinely tired herself."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 300,
+          "coin": 8000,
+          "materials": { "training_manual_advanced": 1, "training_manual": 6 },
+          "accountXp": 130
+        },
+        "repeat": { "coin": { "min": 1700, "max": 3200 } },
+        "replayStamina": 0
+      }
+    }
+  ]
+}

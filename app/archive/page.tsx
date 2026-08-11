@@ -32,6 +32,12 @@ export default function ArchivePage() {
             <h1 className="font-heading text-3xl leading-none tracking-[0.1em] text-readout md:text-4xl">
               Character Archive
             </h1>
+            {/* This page took the roster listing over from `/profile` on
+                2026-08-11, which is why it opens on what you own. */}
+            <p className="mt-1 font-body text-[11px] text-readout-muted">
+              Your characters and their progression. Locked units are hidden
+              until you ask for them.
+            </p>
           </div>
           <Link
             href="/archive/npc"

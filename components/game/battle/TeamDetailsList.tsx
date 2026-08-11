@@ -48,9 +48,9 @@ export default function TeamDetailsList({
               key={unit.instanceId}
               type="button"
               onClick={() => onSelectUnit(unit)}
-              className={`flex w-full items-center gap-3 border border-zinc-800 bg-zinc-900/40 px-3 py-2 text-left transition-colors hover:border-amber-300/60 ${isDead ? "opacity-50" : ""}`}
+              className={`flex w-full items-center gap-3 border border-hairline bg-inset/40 px-3 py-2 text-left transition-colors hover:border-edge-strong ${isDead ? "opacity-50" : ""}`}
             >
-              <div className="relative h-12 w-12 shrink-0 overflow-hidden border border-zinc-700">
+              <div className="relative h-12 w-12 shrink-0 overflow-hidden border border-edge">
                 {art ? (
                   <Image
                     src={art}
@@ -60,35 +60,35 @@ export default function TeamDetailsList({
                     className={`object-cover object-top ${isDead ? "grayscale" : ""}`}
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center font-heading text-lg text-white/80">
+                  <span className="flex h-full w-full items-center justify-center font-heading text-lg text-readout-strong/80">
                     {unit.name.charAt(0)}
                   </span>
                 )}
               </div>
               <span
                 title={unit.color}
-                className={`h-2.5 w-2.5 shrink-0 rotate-45 border border-black/40 ${ELEMENT_SWATCH[unit.color]}`}
+                className={`h-2.5 w-2.5 shrink-0 rotate-45 ${ELEMENT_SWATCH[unit.color]}`}
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-heading text-sm tracking-[0.04em] text-zinc-100">
+                <p className="truncate font-heading text-sm tracking-[0.04em] text-readout-strong">
                   {unit.name}
                   {unit.isSub ? (
-                    <span className="ml-1.5 font-body text-[9px] uppercase tracking-widest text-amber-300">
+                    <span className="ml-1.5 font-body text-[9px] uppercase tracking-widest text-signal">
                       Sub
                     </span>
                   ) : null}
                   {isDead ? (
-                    <span className="ml-1.5 font-body text-[9px] uppercase tracking-widest text-red-400">
+                    <span className="ml-1.5 font-body text-[9px] uppercase tracking-widest text-el-red">
                       Down
                     </span>
                   ) : null}
                 </p>
-                <p className="truncate font-body text-[10px] uppercase tracking-widest text-zinc-500">
+                <p className="truncate font-body text-[10px] uppercase tracking-widest text-readout-muted">
                   {signature ?? "—"}
                 </p>
               </div>
-              <div className="shrink-0 text-right font-body text-[10px] uppercase tracking-widest text-zinc-400">
-                <div className="text-zinc-300 tabular-nums">
+              <div className="shrink-0 text-right font-body text-[10px] uppercase tracking-widest text-readout-dim">
+                <div className="text-readout tabular-nums">
                   {Math.max(0, unit.currentHP)}/{unit.hp}
                 </div>
                 <div className="tabular-nums">

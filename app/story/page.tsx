@@ -118,7 +118,10 @@ export default function StoryPage(): React.JSX.Element {
       startCustomBattle(
         resolveStoryTeam(chapter, picks, roster),
         chapter.battle.enemyTeam,
-        { stageEffects: chapter.stageEffects },
+        {
+          stageEffects: chapter.stageEffects,
+          victoryAtEnemyHpPercent: chapter.victoryAtEnemyHpPercent,
+        },
       );
     },
     [startCustomBattle, roster],
@@ -208,7 +211,7 @@ export default function StoryPage(): React.JSX.Element {
   if (view.kind === "battle") {
     return (
       <main
-        className="terminal-grid relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden bg-void text-readout"
+        className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout"
       >
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-size-[36px_36px]" />
         <BattleArena
@@ -256,7 +259,7 @@ export default function StoryPage(): React.JSX.Element {
     const chapterNumber = part.chapters.findIndex((c) => c.id === chapter.id) + 1;
     return (
       <main
-        className="terminal-grid relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden bg-void text-readout"
+        className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout"
       >
         <ChapterTitleCard
           chapterNumber={chapterNumber}
@@ -286,7 +289,7 @@ export default function StoryPage(): React.JSX.Element {
     }
     return (
       <main
-        className="terminal-grid relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden bg-void text-readout"
+        className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout"
       >
         <VersusSplash
           playerTeam={resolveStoryTeam(chapter, view.picks)}
@@ -316,7 +319,7 @@ export default function StoryPage(): React.JSX.Element {
       : 0;
     return (
       <main
-        className="terminal-grid relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden bg-void text-readout"
+        className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout"
       >
         <ChapterCompleteCard
           chapterNumber={chapterNumber}
@@ -345,7 +348,7 @@ export default function StoryPage(): React.JSX.Element {
     const picks = isIntro ? view.picks : [];
     return (
       <main
-        className="terminal-grid relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden bg-void text-readout"
+        className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout"
       >
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-size-[36px_36px]" />
         <StorySceneReader

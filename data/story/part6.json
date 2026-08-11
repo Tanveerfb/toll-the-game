@@ -1,0 +1,184 @@
+{
+  "id": "part6",
+  "order": 6,
+  "title": "Aftermath",
+  "tagline": "Work on your Toll. Be versatile. Cover your weaknesses.",
+  "coverCharacterId": "duke",
+  "chapters": [
+    {
+      "id": "p6c1",
+      "title": "The Pillar",
+      "teamMode": "canon",
+      "intro": [
+        {
+          "speaker": "Narrator",
+          "text": "A column of fire and smoke rises from the impact point, high enough to clear the canopy. Across the forest, other candidates stop mid-fight and look at it. Some take a step back without deciding to. Whatever that was, it was not a candidate fight."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "An interior room at the venue. A small team of administrators at their stations, watching drone feeds from across the forest. One feed in particular — smoke, and a drone still picking its way through the trees toward the source."
+        },
+        {
+          "speaker": "Admin",
+          "text": "There was a big boom right around this area. Master Tao was supposed to be the examiner for this batch."
+        },
+        {
+          "speaker": "Admin",
+          "text": "He sure doesn't hold back when he's having fun. Hopefully he didn't kill the contestants like he did last time he was an examiner."
+        },
+        {
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "The drone clears the treeline. The feed shows the scorched clearing — Duke and Lyra on the ground, breathing, barely awake. Tao standing nearby, composed as ever. He spots the drone, looks directly into it, and hand-signals: two fingers, a gesture for supplies, two flat hands for transport."
+        },
+        {
+          "speaker": "Admin",
+          "text": "He's asking for supplies. Get someone out there with first aid, refreshments and two transports."
+        },
+        { "speaker": "Admin", "text": "On it." }
+      ],
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "The admin team moves. The drone feed holds on the scorched clearing."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 140,
+          "coin": 4400,
+          "materials": { "training_manual": 4 },
+          "accountXp": 45
+        },
+        "repeat": {
+          "coin": { "min": 1000, "max": 2000 }
+        },
+        "replayStamina": 0
+      }
+    },
+    {
+      "id": "p6c2",
+      "title": "The Debrief",
+      "teamMode": "canon",
+      "intro": [
+        {
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "Tao helps them both into a sitting position, side by side. Neither has much left. Upright is about the best either of them is managing."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "You two did well. That combination at the end was well improvised. Your powers don't complement each other naturally — but you still managed to mostly negate the burns and heat. Otherwise that would have been fatal."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "Young man — you're not used to your Toll yet. Your martial arts and close combat are strong but you're exposed the moment your opponent steps outside your preferred range. Work on your Toll. Be versatile. Cover your weaknesses."
+        },
+        {
+          "portraitId": "duke",
+          "text": "Duke listens. Nods. Tao smiles and turns to Lyra."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "Young miss — your archery was impressive. You covered his gaps and made sure I couldn't deal with him easily while maintaining your distance and landing with those arrows. Freeze and burn both from the same shot — first time I've seen anything quite like that. You have potential. Work on your close-range weakness and your Toll abilities."
+        },
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "Lyra nods and manages a tired smile."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "Rest now. The admin team will be here shortly with supplies and transport back to the venue. By the look of things you'll have around fifteen to thirty minutes before Phase 2 begins. Use it."
+        }
+      ],
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "They both get to their feet — slow, deliberate — and bow to him. He smiles, turns, and heads off into the other side of the forest without another word. Back to work."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "The admin team arrives. First aid, refreshments, transport, all of it efficient and unfussed. As they're helped out, the scorched earth is visible from above — the full twenty metres of it. The scale says what they survived better than anyone could."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 140,
+          "coin": 4400,
+          "materials": { "training_manual": 4 },
+          "accountXp": 48
+        },
+        "repeat": {
+          "coin": { "min": 1000, "max": 2000 }
+        },
+        "replayStamina": 0
+      }
+    },
+    {
+      "id": "p6c3",
+      "title": "Phase Two",
+      "teamMode": "canon",
+      "intro": [
+        {
+          "portraitId": "duke",
+          "text": "Back at the venue, the energy has changed. The candidates who qualified are gathered and quieter than they were this morning. A board with names and numbers. A Bureau official at the front, preparing to address the room."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "Nobody says anything yet. They all carry the same look — people who made it through something, who know that what comes next isn't going to resemble it."
+        },
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "Duke and Lyra take it in. Whatever Phase 2 is, it will not look like Phase 1. The official opens their mouth to speak."
+        }
+      ],
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "Somewhere else entirely. A remote monitor room, silent operators, a split-screen feed carrying every candidate at once. A figure walks in, back to the camera, and stops in front of the wall of screens."
+        },
+        {
+          "speaker": "Unknown female voice",
+          "side": "right",
+          "text": "Hmph. They don't look like anything special to me."
+        },
+        {
+          "speaker": "Unknown female voice",
+          "side": "right",
+          "text": "...I wonder what that old man Tao saw in them."
+        },
+        {
+          "speaker": "Unknown female voice",
+          "side": "right",
+          "text": "Interesting."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "She turns away from the screens. End of Arc One, Part One."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 180,
+          "coin": 5000,
+          "materials": { "training_manual_advanced": 1, "training_manual": 4 },
+          "accountXp": 50
+        },
+        "repeat": {
+          "coin": { "min": 1100, "max": 2200 }
+        },
+        "replayStamina": 0
+      }
+    }
+  ]
+}

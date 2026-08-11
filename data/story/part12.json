@@ -1,0 +1,246 @@
+{
+  "id": "part12",
+  "order": 12,
+  "title": "Eight",
+  "tagline": "There is no Phase 4.",
+  "coverCharacterId": "isolde",
+  "chapters": [
+    {
+      "id": "p12c1",
+      "title": "The Last Phase",
+      "teamMode": "canon",
+      "trialLevel": 28,
+      "intro": [
+        {
+          "speaker": "Narrator",
+          "text": "The same open-air gathering space as the night before, now full daylight and full attendance — all eight finishers, some more rested than others. A raised platform at the front, admin staff setting up alongside three familiar figures. Tao, Chiara, Isolde. Every examiner the exam has produced, standing together for the first time."
+        },
+        {
+          "speaker": "Batra",
+          "portraitId": "batra",
+          "text": "That's not normal, right? All three at once?"
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Don't think so."
+        },
+        {
+          "speaker": "Isolde",
+          "portraitId": "isolde",
+          "side": "right",
+          "text": "Eight of you made it this far. Phase 3 is the last phase of the Grading. There is no Phase 4 — whatever happens here decides who leaves this exam a Ledger."
+        },
+        {
+          "speaker": "Isolde",
+          "portraitId": "isolde",
+          "side": "right",
+          "text": "Format's simple. Single-elimination bracket, one opponent at a time, in front of everyone. Win by submission or knockout."
+        },
+        {
+          "speaker": "Admin",
+          "text": "No killing. That is not a guideline. It is the rule of this phase, absolute, no exceptions carved out for any circumstance. Any match that crosses that line ends the exam for whoever crossed it — immediately, retroactively if necessary, regardless of what the bracket result says."
+        },
+        {
+          "speaker": "Batra",
+          "portraitId": "batra",
+          "text": "And if we just win normally? Like — with our hands?"
+        },
+        { "speaker": "Admin", "text": "Then you win normally. With your hands." },
+        {
+          "speaker": "Isolde",
+          "portraitId": "isolde",
+          "side": "right",
+          "text": "One more thing, since I know it's the actual question on your minds. Losing your match does not fail you. This phase was never about winning. Fight, lose, it doesn't matter — you pass regardless. The only way to fail Phase 3 is to lose control of yourself badly enough that the rule above gets broken."
+        }
+      ],
+      "outro": [
+        {
+          "speaker": "Chiara",
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "Lenient. I like it. Keeps the interesting ones in play longer."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "You'd say that about anything that keeps the betting pool bigger."
+        },
+        {
+          "speaker": "Chiara",
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "I contain no such cynicism. I simply enjoy a full bracket."
+        },
+        {
+          "speaker": "Isolde",
+          "portraitId": "isolde",
+          "side": "right",
+          "text": "You two are going to behave today."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "No promises."
+        },
+        {
+          "speaker": "Chiara",
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "See, now he's the fun one."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 300,
+          "coin": 8000,
+          "materials": { "training_manual": 6 },
+          "accountXp": 135
+        },
+        "repeat": { "coin": { "min": 1700, "max": 3200 } },
+        "replayStamina": 0
+      }
+    },
+    {
+      "id": "p12c2",
+      "title": "The Draw",
+      "teamMode": "canon",
+      "trialLevel": 28,
+      "intro": [
+        {
+          "speaker": "Narrator",
+          "text": "A sealed box, eight folded slips inside, brought out by one of the admin staff. Deliberately low-tech next to everything Toll-driven about the rest of the exam — no ambiguity, no way to rig it, just paper and a hand reaching in."
+        },
+        {
+          "portraitId": "batra",
+          "text": "Called up one at a time, name to number. Batra pulls his slip like he's daring it to be bad news. Gabrist unfolds his without any change in his expression at all. The board fills in behind them, slip by slip."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "Gabrist against Siddiq. Batra against Sara. Duke against Lyra. Mustafa against Iron."
+        },
+        {
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "Up on the platform, Tao is the one going quiet for once. He's the only examiner who has fought both of them personally, and it shows."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "...Now that's a fight I didn't expect to see this soon."
+        },
+        {
+          "speaker": "Chiara",
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "You say that like you're not thrilled."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "I'm not saying anything."
+        },
+        {
+          "speaker": "Isolde",
+          "portraitId": "isolde",
+          "side": "right",
+          "text": "You're saying plenty."
+        }
+      ],
+      "outro": [
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "They haven't said anything yet. Just standing near each other, both looking at the same two names on the board like re-reading it might change them."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "...Of course it's you."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Bracket's not being subtle about it."
+        },
+        {
+          "speaker": "Batra",
+          "portraitId": "batra",
+          "side": "right",
+          "text": "Oh, this is going to be fun to watch."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Go away, Batra."
+        },
+        {
+          "speaker": "Batra",
+          "portraitId": "batra",
+          "side": "right",
+          "text": "Wouldn't miss it."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "We just got back to standing in the same room. And now this."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "It's not a real problem. Losing doesn't cost either of us anything."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "That's not what I meant."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "...I know."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "Neither of them says anything else about it. It doesn't need resolving today. They stand there a while longer, close, not touching, both still looking at the board like it might blink first."
+        },
+        {
+          "portraitId": "mustafa",
+          "side": "right",
+          "text": "Later, quieter. Mustafa alone, away from the group, looking at a slip of paper that isn't his match assignment. Something else, folded small, the way you'd carry something you don't want found on you."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "His face, for just a moment, isn't doing any of the things it's done all day. Something flat and calculating passes through it — there and gone so fast it could almost be imagined."
+        },
+        {
+          "speaker": "Mustafa",
+          "portraitId": "mustafa",
+          "side": "right",
+          "text": "...Not yet."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "He folds it back up, tucks it away, and by the time he turns back toward the group his face is doing exactly what it always does. Warm. Easy. Nothing wrong at all."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 400,
+          "coin": 10000,
+          "materials": { "training_manual_premium": 1, "training_manual_advanced": 2 },
+          "accountXp": 150
+        },
+        "repeat": { "coin": { "min": 2000, "max": 3600 } },
+        "replayStamina": 0
+      }
+    }
+  ]
+}

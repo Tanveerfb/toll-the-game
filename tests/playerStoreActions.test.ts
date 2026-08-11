@@ -14,8 +14,8 @@ function resetToKnownState() {
     characters: {},
     stamina: { current: 120, updatedAt: Date.now() },
     pity: {
-      limited: { bannerId: null, bar: 0, claimed300: false },
-      permanent: { bar: 0 },
+      limited: { bannerId: null, bar: 0, claimedFirst: false, claimedFinal: false },
+      permanent: { bar: 0, claimedFinal: false },
     },
     hasHydrated: true,
   });

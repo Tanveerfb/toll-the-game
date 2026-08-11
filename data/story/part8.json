@@ -1,0 +1,175 @@
+{
+  "id": "part8",
+  "order": 8,
+  "title": "Phase 2 — The Lots",
+  "tagline": "Something sleeps beneath the surface. You have one hour.",
+  "coverCharacterId": "batra",
+  "chapters": [
+    {
+      "id": "p8c1",
+      "title": "The Draw",
+      "teamMode": "canon",
+      "trialLevel": 20,
+      "intro": [
+        {
+          "speaker": "Narrator",
+          "text": "The twenty qualifiers gather at a staging area. Physical lots — a box, a wheel, a drawn number. The camera moves through the group as names are called: Batra, Duke, Yalina, Mustafa, Sara, Lyra, Siddiq, Gabrist, with the twelve unrevealed candidates drawing between and around them. Glimpsed, not lingered on."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "An official confirms it: the draw order is the release order. Staggered starts, not a mass release."
+        }
+      ],
+      "outro": [
+        {
+          "portraitId": "batra",
+          "text": "Batra is called first and steps onto the course. A short beat later Duke is called second, and enters close enough behind him that the two end up on the same stretch of ground within moments of each other."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 200,
+          "coin": 5600,
+          "materials": { "training_manual": 5 },
+          "accountXp": 68
+        },
+        "repeat": { "coin": { "min": 1200, "max": 2400 } },
+        "replayStamina": 0
+      }
+    },
+    {
+      "id": "p8c2",
+      "title": "Same Stretch of Ground",
+      "teamMode": "canon",
+      "trialLevel": 20,
+      "victoryAtEnemyHpPercent": 20,
+      "intro": [
+        {
+          "portraitId": "batra",
+          "side": "right",
+          "text": "They size each other up on instinct. Batra grins — the kind of grin that means he has already decided this is interesting."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "A short skirmish breaks out, fast and physical, neither one holding back and neither fully committing. More a read on each other than a real fight to hurt."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "duke" }],
+        "enemyTeam": [{ "id": "batra" }]
+      },
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "It ends the way these things end in this world: both land something, both take something, and both realise at the same moment that this isn't what either of them is here for."
+        },
+        {
+          "portraitId": "duke",
+          "text": "They break off. No words needed. Both turn the same direction — toward the course proper — and start moving."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 200,
+          "coin": 5600,
+          "materials": { "training_manual": 5 },
+          "accountXp": 72
+        },
+        "repeat": {
+          "coin": { "min": 1200, "max": 2400 },
+          "materials": { "training_manual": { "min": 1, "max": 2 } }
+        },
+        "replayStamina": 8
+      }
+    },
+    {
+      "id": "p8c3",
+      "title": "The Lake",
+      "teamMode": "canon",
+      "trialLevel": 20,
+      "intro": [
+        {
+          "speaker": "Narrator",
+          "text": "They crest a rise and the first obstacle comes into view. A vast lake, five to ten kilometres across at its narrowest. On the near shore, a flag marked 1. Impossibly distant, on a small island barely visible through the haze, a second flag marked 2. No bridge. No boats. No visible way across."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "Obstacle One. Reach the flag on the island to proceed. The water is corrosive to organic tissue — prolonged contact will cause severe injury. Something sleeps beneath the surface. You have one hour."
+        },
+        {
+          "speaker": "Batra",
+          "portraitId": "batra",
+          "side": "right",
+          "text": "No boats. Can't swim it — not with that warning."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Let's check the shoreline first. There's got to be something."
+        },
+        {
+          "portraitId": "duke",
+          "text": "Duke tries the water itself — draws on his Toll, tries to force a stable path out of it the way he'd redirect a strike. It doesn't hold. The corrosive quality fights his control at a level he's never had to push through, and the water answers wrong, collapsing back on itself within seconds."
+        },
+        {
+          "portraitId": "batra",
+          "side": "right",
+          "text": "Batra works the treeline, hauling deadwood and testing it against the shallows. It corrodes fast. He builds something crude anyway, gets ten metres out, and has to scramble back when the lashings dissolve."
+        },
+        {
+          "speaker": "Batra",
+          "portraitId": "batra",
+          "side": "right",
+          "text": "We're running out of hour."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "It hasn't moved once. Not a ripple, this whole time."
+        },
+        {
+          "speaker": "Batra",
+          "portraitId": "batra",
+          "side": "right",
+          "text": "So?"
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "So it's not hiding from us. It just hasn't had a reason to notice us yet."
+        },
+        {
+          "portraitId": "batra",
+          "side": "right",
+          "text": "Batra goes still, then follows the thought all the way through — and the grin comes back, slower this time, sharper."
+        },
+        {
+          "speaker": "Batra",
+          "portraitId": "batra",
+          "side": "right",
+          "text": "You're saying give it one."
+        }
+      ],
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "Neither of them likes it. It's the option left once every other one has burned away. Batra slams a Toll-charged strike into the shallows, loud and deliberate. Duke follows with a water-pressure blast straight down into the depths — not to hurt whatever's there, just to be heard."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "For a moment, nothing. Then the lake's surface breaks. Something vast rises from beneath, water sheeting off a body too large for the shallows that held it. Neither of them gets a clean look at the whole thing before it's already moving."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 220,
+          "coin": 6000,
+          "materials": { "training_manual": 5 },
+          "accountXp": 75
+        },
+        "repeat": { "coin": { "min": 1300, "max": 2500 } },
+        "replayStamina": 0
+      }
+    }
+  ]
+}

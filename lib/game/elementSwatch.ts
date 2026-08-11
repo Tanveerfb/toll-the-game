@@ -1,12 +1,19 @@
 import type { Color } from "@/types/color";
 
-/** Element crest/dot fill color, shared across battle tiles and hand cards. */
+/**
+ * Element crest/dot fill color, shared across battle tiles and hand cards.
+ *
+ * On the `--color-el-*` tokens since 2026-08-11. These were the last place
+ * still returning Tailwind `rose/sky/emerald/violet/amber`, which meant the
+ * five element hues rendered at one set of values in the archive and a
+ * slightly different set in battle.
+ */
 export const ELEMENT_SWATCH: Record<Color, string> = {
-  red: "bg-rose-500",
-  blue: "bg-sky-500",
-  green: "bg-emerald-500",
-  dark: "bg-violet-500",
-  light: "bg-amber-300",
+  red: "bg-el-red",
+  blue: "bg-el-blue",
+  green: "bg-el-green",
+  dark: "bg-el-dark",
+  light: "bg-el-light",
 };
 
 /**
@@ -19,26 +26,26 @@ export const ELEMENT_SWATCH: Record<Color, string> = {
  * tint is invisible.
  */
 export const FLASH_TINTS: Record<Color, string> = {
-  red: "rgba(244,63,94,0.55)",
-  blue: "rgba(56,189,248,0.55)",
-  green: "rgba(52,211,153,0.5)",
-  dark: "rgba(167,139,250,0.55)",
-  light: "rgba(252,211,77,0.55)",
+  red: "rgba(255,90,78,0.55)",
+  blue: "rgba(55,166,255,0.55)",
+  green: "rgba(53,212,139,0.5)",
+  dark: "rgba(168,116,255,0.55)",
+  light: "rgba(232,209,116,0.55)",
 };
 
 /** Tile border color per element. */
 export function getUnitBorderClass(color: Color): string {
   switch (color) {
     case "red":
-      return "border-rose-400/80";
+      return "border-el-red/80";
     case "blue":
-      return "border-sky-400/80";
+      return "border-el-blue/80";
     case "green":
-      return "border-emerald-400/80";
+      return "border-el-green/80";
     case "dark":
-      return "border-violet-400/80";
+      return "border-el-dark/80";
     case "light":
     default:
-      return "border-amber-300/80";
+      return "border-el-light/80";
   }
 }

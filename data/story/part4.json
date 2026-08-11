@@ -1,0 +1,184 @@
+{
+  "id": "part4",
+  "order": 4,
+  "title": "Master of Fire",
+  "tagline": "That explosion was more powerful than anything I've been seeing out here.",
+  "coverCharacterId": "lyra",
+  "chapters": [
+    {
+      "id": "p4c1",
+      "title": "The Zipline",
+      "teamMode": "canon",
+      "intro": [
+        {
+          "speaker": "Narrator",
+          "text": "Candidates are sent into the forest in number order. The platform has four lines, so no group larger than four. Duke is 22. Lyra is 23. They wait as the first twenty-one go through, watching them disappear down the wires — some alone, some paired, one group of four."
+        },
+        {
+          "portraitId": "duke",
+          "text": "Their turn comes. No words. They step up."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "They take their lines together. The camera starts close, then pulls back and back — two figures crossing open air toward a vast forest, an inactive volcano standing behind all of it."
+        },
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "They land meters apart at the canopy edge. Lyra pulls the bow off her back and settles it in her hands. Duke rolls his shoulders, stretches out. Then they move."
+        }
+      ],
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "Inside, the forest is dense and gold — late afternoon light cutting through in shafts and already starting to dip. No paths. No signage. Trees in every direction."
+        },
+        {
+          "portraitId": "duke",
+          "text": "Other candidates are out there. Movement, distant Toll flares. Duke and Lyra keep low and quiet, stepping around anything they hear. No unnecessary fights. Conserve everything."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 100,
+          "coin": 3200,
+          "materials": { "training_manual": 4 },
+          "accountXp": 22
+        },
+        "repeat": {
+          "coin": { "min": 700, "max": 1500 }
+        },
+        "replayStamina": 0
+      }
+    },
+    {
+      "id": "p4c2",
+      "title": "Something Big",
+      "teamMode": "canon",
+      "intro": [
+        {
+          "speaker": "Narrator",
+          "text": "Through a gap in the trees — two candidates mid-fight, Toll flaring, neither one holding back. Duke and Lyra slow and watch from cover. They don't engage. They don't make themselves known. They share a look, move around it, and keep going."
+        },
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "Lyra picks a tall tree and climbs it fast, practiced, until she can see over the canopy. Duke follows her up."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "From up here the forest is alive. Toll energy scattered in pockets across it — a gust of wind in one direction, blue electricity somewhere else, a flash of white light far off. Candidates, fighting each other."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Can you see where Tao is?"
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "No. I'm trying to find something big. Something dangerous. Right now all I can see is players fighting each other."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "This forest is massive. That old man told everyone to find him and fight him. I guess finding him was part of the challenge too."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Yeah. Didn't think it would be this big either. Let's focus and—"
+        }
+      ],
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "A massive inferno explodes near the volcano base. The sky lights up. Trees flatten outward from the blast radius. They feel the heat from where they're sitting."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Think it might be him? That's some power."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "That explosion was more powerful than anything I've been seeing out here. It's a possibility."
+        },
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "She's already moving back down the tree."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "Let's head there."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 100,
+          "coin": 3200,
+          "materials": { "training_manual": 4 },
+          "accountXp": 23
+        },
+        "repeat": {
+          "coin": { "min": 700, "max": 1500 }
+        },
+        "replayStamina": 0
+      }
+    },
+    {
+      "id": "p4c3",
+      "title": "Scorched Earth",
+      "teamMode": "canon",
+      "intro": [
+        { "speaker": "Narrator", "text": "1 Hour Later" },
+        {
+          "portraitId": "duke",
+          "text": "Closer to the volcano base now, and the trees here are wrong. Scorched trunks. Blackened ground. Leaves stripped clean. Not a wildfire — something that started at a single point and expanded outward equally in every direction."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "They slow at the edge of it. A circle of scorched earth, twenty meters across. Dead centre, nothing at all. Whatever did this was standing right there."
+        },
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "Lyra looks at the treeline. Duke looks at the ground. Neither of them says anything. They don't need to."
+        }
+      ],
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "Then — sounds. A fight somewhere close. Toll, movement, impact, muffled by trees but near enough to feel. They both go still and listen."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "Then silence. Sudden and complete. Not the sound of a fight ending. The sound of something deciding it was over."
+        },
+        {
+          "portraitId": "duke",
+          "text": "Duke and Lyra look at each other. A beat. Then they turn toward it together and move."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 120,
+          "coin": 3600,
+          "materials": { "training_manual": 4 },
+          "accountXp": 25
+        },
+        "repeat": {
+          "coin": { "min": 800, "max": 1600 }
+        },
+        "replayStamina": 0
+      }
+    }
+  ]
+}

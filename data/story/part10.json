@@ -1,0 +1,240 @@
+{
+  "id": "part10",
+  "order": 10,
+  "title": "Roll Call",
+  "tagline": "Yalina's taking her time.",
+  "coverCharacterId": "sara",
+  "chapters": [
+    {
+      "id": "p10c1",
+      "title": "The Holding Room",
+      "teamMode": "canon",
+      "trialLevel": 24,
+      "intro": [
+        {
+          "speaker": "Narrator",
+          "text": "Admin room near the course exit. Already there, already finished: Mustafa, nursing tea like he isn't going to let a near-death exam interrupt the ritual. Siddiq beside him. And a familiar face from the board — Iron, arms crossed, still as the wall his reputation describes."
+        },
+        {
+          "portraitId": "batra",
+          "side": "right",
+          "text": "Batra clocks the room and immediately starts talking, riding back into his recovering swagger — something for Iron, who doesn't dignify it with more than a look. Duke gives the room a shorter once-over and takes a seat."
+        },
+        {
+          "speaker": "Mustafa",
+          "portraitId": "mustafa",
+          "side": "right",
+          "text": "You look like the lake won."
+        },
+        {
+          "speaker": "Batra",
+          "portraitId": "batra",
+          "side": "right",
+          "text": "The lake got a participation trophy. I got the flag."
+        },
+        {
+          "speaker": "Siddiq",
+          "portraitId": "siddiq",
+          "side": "right",
+          "text": "Nobody asked about the flag."
+        },
+        {
+          "portraitId": "duke",
+          "text": "They settle. People drift toward the canteen table along the back wall — Batra first, loud about it, already narrating the lake to anyone who'll half-listen. Duke goes when it's his turn, filling a plate without really looking at it."
+        }
+      ],
+      "outro": [
+        {
+          "portraitId": "duke",
+          "text": "His eyes drift toward the entrance instead. Toward the board. He doesn't notice he's stopped moving until the line behind him does too."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 240,
+          "coin": 6800,
+          "materials": { "training_manual": 5 },
+          "accountXp": 100
+        },
+        "repeat": { "coin": { "min": 1500, "max": 2800 } },
+        "replayStamina": 0
+      }
+    },
+    {
+      "id": "p10c2",
+      "title": "The Crossing",
+      "teamMode": "canon",
+      "trialLevel": 24,
+      "intro": [
+        {
+          "speaker": "Narrator",
+          "text": "A different stretch of the course. Something Molvarr-shaped but wrong-sized — smaller, faster to anger, nowhere near the same weight class. More animal than warden. It's already mid-lunge when we cut in."
+        },
+        {
+          "portraitId": "sara",
+          "text": "Sara is the one holding its attention, weaving in and out of range, fast enough that it keeps overcommitting to a target that isn't where it swings. She isn't trying to hurt it — just making sure it never once looks anywhere else."
+        },
+        {
+          "portraitId": "lyra",
+          "text": "Push into Lyra's eyes. Focus pulls tight until the whole world drops out except the line between her and the seam in the creature's hide that Sara is herding it toward. String drawn. Breath held."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "lyra" }, { "id": "sara" }],
+        "enemyTeam": [{ "id": "wild_beast" }]
+      },
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "Release. The arrow crosses the whole distance in one unbroken shot. Impact. The creature seizes, staggers, and goes down in a way that reads as final."
+        },
+        {
+          "portraitId": "lyra",
+          "text": "Sara and Lyra cross into the admin room together, both still catching their breath, both intact. A beat of Lyra scanning the room — and finding Duke. Neither of them makes a show of it. Just the specific unguarded half-second where both stop pretending they weren't looking."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "You're in one piece."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "Mostly. You?"
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Depends on the definition."
+        },
+        {
+          "portraitId": "sara",
+          "side": "right",
+          "text": "Sara drifts, half-listening, doing the thing she does without quite deciding to — a head-count of people she keeps track of. Mustafa. Siddiq. Iron. Duke, Lyra, Batra. No Yalina. She clocks the gap and it doesn't land as anything yet."
+        },
+        {
+          "speaker": "Sara",
+          "portraitId": "sara",
+          "side": "right",
+          "text": "Yalina's taking her time."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 240,
+          "coin": 6800,
+          "materials": { "training_manual_advanced": 1, "training_manual": 5 },
+          "accountXp": 105
+        },
+        "repeat": {
+          "coin": { "min": 1500, "max": 2800 },
+          "materials": { "training_manual": { "min": 1, "max": 3 } }
+        },
+        "replayStamina": 10
+      }
+    },
+    {
+      "id": "p10c3",
+      "title": "Roll Call",
+      "teamMode": "canon",
+      "trialLevel": 24,
+      "intro": [
+        {
+          "speaker": "Narrator",
+          "text": "The holding room is fuller now. Above the gate, a countdown clock reads 5:00 — the hard limit on Phase 2. Sara has drifted near the gate, watching it on and off without making a show of it."
+        },
+        {
+          "portraitId": "sara",
+          "side": "right",
+          "text": "One minute. Her attention has fully left the group. She's watching the gate now, not glancing at it. The math is starting to bother her and she hasn't said so."
+        },
+        {
+          "portraitId": "gabrist",
+          "text": "Thirty seconds. A figure comes through the gate — not Yalina. Gabrist, scorched at the edges, moving like every step costs something, but upright. Sara is on her feet and crossing the room before he's fully through."
+        },
+        {
+          "speaker": "Sara",
+          "portraitId": "sara",
+          "side": "right",
+          "text": "Gabrist — Yalina, have you seen her, is she—"
+        },
+        {
+          "speaker": "Gabrist",
+          "portraitId": "gabrist",
+          "text": "Haven't been with her since the start. Sorry."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "The buzzer goes off. Loud, flat, final. Phase 2 is over."
+        }
+      ],
+      "outro": [
+        {
+          "portraitId": "sara",
+          "side": "right",
+          "text": "Admin staff move through the room congratulating finishers, reading off placements, logistics. Sara peels off toward three officials still working the room."
+        },
+        {
+          "speaker": "Sara",
+          "portraitId": "sara",
+          "side": "right",
+          "text": "My friend — Yalina — she didn't come through. Do you have her status, is she still on the course, is there a—"
+        },
+        {
+          "speaker": "Narrator",
+          "text": "The three of them trade a look first. The specific look of people deciding, in real time, how much of the truth to hand someone."
+        },
+        {
+          "speaker": "Admin",
+          "text": "...We found her. I'm sorry."
+        },
+        {
+          "speaker": "Admin",
+          "text": "Recovery team found her off the main route, past the treeline. No response to the hour-limit check-in, so they went in early."
+        },
+        {
+          "speaker": "Admin",
+          "text": "Wound was to the abdomen. Clean — cleaner than most of what the course does to people. Whatever it was, it didn't take long."
+        },
+        {
+          "speaker": "Admin",
+          "text": "We brought her in. Bureau medical has her now. Whatever hit her, it wasn't anything our teams reached in time."
+        },
+        {
+          "speaker": "Admin",
+          "text": "We're sorry for your loss."
+        },
+        {
+          "portraitId": "sara",
+          "side": "right",
+          "text": "They step away, giving her the room to fall apart that they can't stay to witness. Sara goes down to her knees. No sound. Just crying, alone, in a room that has gone on celebrating around her."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "Later. Dusk. Master Tao approaches a figure from behind — a silhouette only, dark, unreadable. Not the form anyone at the exam would recognise."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "text": "You didn't have to kill her. Tell me — why did you do it?!"
+        },
+        {
+          "speaker": "Unknown female voice",
+          "side": "right",
+          "text": "Hmph. Mind your own business, old man."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 300,
+          "coin": 7600,
+          "materials": { "training_manual_advanced": 1, "training_manual": 6 },
+          "accountXp": 115
+        },
+        "repeat": { "coin": { "min": 1600, "max": 3000 } },
+        "replayStamina": 0
+      }
+    }
+  ]
+}

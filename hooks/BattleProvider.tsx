@@ -36,6 +36,15 @@ import {
 } from "@/lib/game/stageEffects";
 import type { StageEffect } from "@/types/stageEffects";
 import type { AnyBattleEvent } from "@/types/battleEvent";
+import { resetPlayback, waitForPlayback } from "@/lib/game/playback";
+import {
+  evaluateBattleOutcome,
+  toVictoryTeam,
+} from "@/lib/game/victoryCondition";
+import {
+  partitionOnEnemyless,
+  returnsToDeckOnFizzle,
+} from "@/lib/game/targetRequirement";
 
 /**
  * Diffs a team before/after a system tick (DoT, HoT, boss drain, stat-spike
@@ -92,6 +101,10 @@ interface BattleContextType {
       stageEffects?: StageEffect[];
       /** Overrides the default 3-on-field rule — practice bench only. */
       fieldCap?: number;
+      /** End the fight as a win once the enemy side falls to this percentage
+       *  of its pooled HP — for authored battles the story says you don't win.
+       *  See lib/game/victoryCondition.ts. */
+      victoryAtEnemyHpPercent?: number;
     },
   ) => void;
   lastBattleConfig: { playerPicks: TeamPick[]; enemyPicks: TeamPick[] } | null;
@@ -136,6 +149,9 @@ export default function BattleProvider({
   const drawCards = useGameStore((s) => s.drawCards);
   const setPreviewMode = useGameStore((s) => s.setPreviewMode);
   const setStageEffects = useGameStore((s) => s.setStageEffects);
+  const setVictoryAtEnemyHpPercent = useGameStore(
+    (s) => s.setVictoryAtEnemyHpPercent,
+  );
   const initializeEnemyDeck = useGameStore((s) => s.initializeEnemyDeck);
   const drawEnemyCards = useGameStore((s) => s.drawEnemyCards);
   const setEnemyDeck = useGameStore((s) => s.setEnemyDeck);
@@ -151,6 +167,13 @@ export default function BattleProvider({
   // normally follow — the player acts first against the new phase (Tanveer
   // 2026-07-19). This flag skips exactly that one enemy turn.
   const skipEnemyTurnRef = React.useRef(false);
+
+  // Both turn resolvers now await the animation between actions, so they are
+  // alive across many frames. Deck's auto-execute effect and the End Turn
+  // button can both fire again during that window — the old `battlePhase`
+  // check no longer guards them, because the phase only advances once the
+  // whole turn is done. This does.
+  const resolvingRef = React.useRef(false);
 
   // Resume a battle restored from sessionStorage (page reload / dev HMR). The
   // teams/decks/phase come back via zustand-persist, but passive handlers live
@@ -386,6 +409,14 @@ export default function BattleProvider({
           }
         }
 
+        // Commit the tick sweep and let it animate before anything reads the
+        // result. Victory/defeat and the boss phase-break banner are all
+        // decided below, and they used to fire while the DoT numbers were
+        // still flying (Tanveer, 2026-08-11).
+        updateTeams(updatedTeams.playerTeam, updatedTeams.enemyTeam);
+        await waitForPlayback();
+        if (useGameStore.getState().battlePhase !== battlePhase) return;
+
         // Multi-phase boss: transition a boss whose bar emptied (e.g. from a
         // DoT tick) before deciding victory; redraw its hand next enemy turn.
         const phaseStep = transitionBossPhases(updatedTeams.enemyTeam);
@@ -415,19 +446,26 @@ export default function BattleProvider({
         // Sync modified states to Zustand
         updateTeams(updatedTeams.playerTeam, updatedTeams.enemyTeam);
 
-        // Check for victory/defeat
-        const allEnemiesDead = updatedTeams.enemyTeam.every(
-          (e) => e.currentHP <= 0,
-        );
-        const allPlayersDead = updatedTeams.playerTeam.every(
-          (p) => p.currentHP <= 0,
-        );
+        // Check for victory/defeat. A chapter can end the fight early once the
+        // enemy is broken rather than dead — see lib/game/victoryCondition.ts.
+        const retreatPercent = useGameStore.getState().victoryAtEnemyHpPercent;
+        const outcome = evaluateBattleOutcome({
+          playerTeam: toVictoryTeam(updatedTeams.playerTeam),
+          enemyTeam: toVictoryTeam(updatedTeams.enemyTeam),
+          retreatPercent,
+        });
 
-        if (allEnemiesDead && updatedTeams.enemyTeam.length > 0) {
+        if (outcome === "victory") {
           setBattlePhase("victory");
-          addToBattleLog("VICTORY!");
+          addToBattleLog(
+            retreatPercent !== undefined &&
+              updatedTeams.enemyTeam.some((e) => e.currentHP > 0)
+              ? "[System] The fight breaks off — you weren't meant to finish it."
+              : "VICTORY!",
+          );
           return;
-        } else if (allPlayersDead && updatedTeams.playerTeam.length > 0) {
+        }
+        if (outcome === "defeat") {
           setBattlePhase("defeat");
           addToBattleLog("DEFEAT...");
           return;
@@ -456,9 +494,29 @@ export default function BattleProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [battlePhase]);
 
-  function resolveplayerTurnWrapper() {
+  async function resolveplayerTurnWrapper() {
     if (useGameStore.getState().battlePhase !== "PlayerAction") return;
+    if (resolvingRef.current) return;
+    resolvingRef.current = true;
+    // A skip applies to the turn it was pressed in, not forever.
+    resetPlayback();
+    try {
+      await runPlayerActions();
+    } finally {
+      resolvingRef.current = false;
+    }
+  }
 
+  /**
+   * Execute this turn's queued cards one at a time, committing each and
+   * waiting for it to finish animating before starting the next.
+   *
+   * The whole queue used to resolve in one synchronous pass with a single
+   * commit at the end, which left the store holding end-of-turn truth while
+   * the sequencer replayed the turn from the beginning — the player saw the
+   * outcome before the actions played (Tanveer, 2026-08-11).
+   */
+  async function runPlayerActions() {
     // Process the entire action queue sequentially.
     let currentTeams = {
       playerTeam: useGameStore.getState().playerTeam,
@@ -495,10 +553,6 @@ export default function BattleProvider({
         return;
       }
 
-      // Remove dead player characters immediately (subs promote at turn start)
-      const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
-      deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
-
       // Grant ult gauge for the source character. An ultimate consumes the
       // gauge (→0), then refills by its own gainUltGauge mechanic if any
       // (Molvarr P2 ult refills 3); normal cards grant +1.
@@ -522,9 +576,24 @@ export default function BattleProvider({
       // Remove processed card from the temporary queue
       remainingQueue.shift();
 
+      // Commit THIS action, then let it play before resolving the next one.
+      updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
+      await waitForPlayback();
+      // Exiting the battle (or a defeat) during the animation ends the turn.
+      if (useGameStore.getState().battlePhase !== "PlayerAction") return;
+
+      // A dead player's cards leave the hand (subs promote at turn start).
+      // After the await, not before: pulling them the instant the engine
+      // committed emptied the hand ahead of the death that caused it.
+      currentTeams.playerTeam
+        .filter((c) => c.currentHP <= 0)
+        .forEach((c) => removeDeadCharacterCards(c.instanceId));
+
       // Multi-phase boss: a boss whose bar just emptied transitions to its
       // next phase (fresh HP) instead of dying. Clear the enemy hand so the
-      // enemy turn redraws from the new phase's skills.
+      // enemy turn redraws from the new phase's skills. Deliberately AFTER the
+      // await: the killing blow has to land on screen before the boss's HP
+      // jumps to its next phase and the PHASE banner fires.
       const phaseStep = transitionBossPhases(currentTeams.enemyTeam);
       if (phaseStep.transitions.length > 0) {
         currentTeams.enemyTeam = phaseStep.team;
@@ -546,20 +615,39 @@ export default function BattleProvider({
         break;
       }
 
-      // Ruling #43: once the last enemy dies, remaining queued cards
-      // FIZZLE — no momentum, no gauge, straight to the win screen
-      const allEnemiesDead = currentTeams.enemyTeam.every(
-        (e) => e.currentHP <= 0,
-      );
-      if (allEnemiesDead && remainingQueue.length > 0) {
-        addToBattleLog(
-          `[System] Victory — ${remainingQueue.length} queued card(s) fizzle.`,
-        );
-        break;
+      // Ruling #43, refined 2026-08-11: once the fight is decided, only the
+      // cards that NEED a living enemy fizzle. Heals, cleanses and buffs still
+      // land — they have somewhere to point and the player already paid for
+      // them. An attacking ultimate goes back to the hand rather than burning;
+      // its gauge was never spent, so losing the card too would leave a full
+      // gauge with nothing to spend it on.
+      const decided =
+        evaluateBattleOutcome({
+          playerTeam: toVictoryTeam(currentTeams.playerTeam),
+          enemyTeam: toVictoryTeam(currentTeams.enemyTeam),
+          retreatPercent: useGameStore.getState().victoryAtEnemyHpPercent,
+        }) === "victory";
+      if (decided && remainingQueue.length > 0) {
+        const { playable, cancelled } = partitionOnEnemyless(remainingQueue);
+        if (cancelled.length > 0) {
+          const returned = cancelled.filter(returnsToDeckOnFizzle);
+          useGameStore.getState().queueCardsForNextDraw(returned);
+          addToBattleLog(
+            `[System] Victory — ${cancelled.length} queued card(s) fizzle` +
+              (returned.length > 0
+                ? `; ${returned.length} ultimate(s) return next turn.`
+                : "."),
+          );
+        }
+        // Keep resolving whatever still works, in its queued order.
+        remainingQueue.length = 0;
+        remainingQueue.push(...playable);
+        if (remainingQueue.length === 0) break;
       }
     }
 
-    // Update store with final state and clear the action queue (+ any passes)
+    // Catches the phase-break branch's re-assigned enemy team; every other
+    // path already committed inside the loop.
     updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
     setActionQueue([]);
     useGameStore.setState({ queuedNullCount: 0 });
@@ -570,7 +658,17 @@ export default function BattleProvider({
 
   async function resolveEnemyTurnWrapper() {
     if (useGameStore.getState().battlePhase !== "EnemyAction") return;
+    if (resolvingRef.current) return;
+    resolvingRef.current = true;
+    resetPlayback();
+    try {
+      await runEnemyActions();
+    } finally {
+      resolvingRef.current = false;
+    }
+  }
 
+  async function runEnemyActions() {
     // Refill the enemy hand to capacity first (RNG + auto-merge, same rules as
     // the player deck; merges grant enemy ult gauge). The AI then plays only
     // from this hand — headless 7DS GC.
@@ -676,19 +774,6 @@ export default function BattleProvider({
         }
       }
 
-      const deadChars = currentTeams.playerTeam.filter((c) => c.currentHP <= 0);
-      deadChars.forEach((c) => removeDeadCharacterCards(c.instanceId));
-
-      // A dead enemy's cards leave the hand.
-      const deadEnemyIds = new Set(
-        currentTeams.enemyTeam
-          .filter((c) => c.currentHP <= 0)
-          .map((c) => c.instanceId),
-      );
-      if (deadEnemyIds.size > 0) {
-        hand = hand.filter((c) => !deadEnemyIds.has(c.sourceInstanceId));
-      }
-
       // +1 ult gauge for playing a card; an ult consumes then refills by its
       // own gainUltGauge mechanic (Molvarr P2 = 3) — same rule the player gets.
       const enemyUltRefill =
@@ -707,6 +792,29 @@ export default function BattleProvider({
             }
           : char,
       );
+
+      // Commit THIS action and let it play before the AI decides the next
+      // one — the enemy turn used to resolve all three at once, so the whole
+      // exchange landed on screen before any of it animated.
+      updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
+      await waitForPlayback();
+      if (useGameStore.getState().battlePhase !== "EnemyAction") return;
+
+      // Deck cleanup after the blow has landed on screen — the player's hand
+      // used to lose a downed unit's cards while that unit was still standing.
+      currentTeams.playerTeam
+        .filter((c) => c.currentHP <= 0)
+        .forEach((c) => removeDeadCharacterCards(c.instanceId));
+
+      // A dead enemy's cards leave its hand before the AI's next decision.
+      const deadEnemyIds = new Set(
+        currentTeams.enemyTeam
+          .filter((c) => c.currentHP <= 0)
+          .map((c) => c.instanceId),
+      );
+      if (deadEnemyIds.size > 0) {
+        hand = hand.filter((c) => !deadEnemyIds.has(c.sourceInstanceId));
+      }
 
       const allPlayersDead = currentTeams.playerTeam.every(
         (p) => p.currentHP <= 0,
@@ -738,6 +846,10 @@ export default function BattleProvider({
       preview?: boolean;
       stageEffects?: StageEffect[];
       fieldCap?: number;
+      /** End the fight as a win once the enemy side falls to this percentage of
+       *  its pooled HP — for authored battles the story says you do not win.
+       *  See lib/game/victoryCondition.ts. */
+      victoryAtEnemyHpPercent?: number;
     },
   ) => {
     const preview = options?.preview === true;
@@ -756,6 +868,7 @@ export default function BattleProvider({
     resetBattle();
     clearQueue();
     setStageEffects(stageEffects);
+    setVictoryAtEnemyHpPercent(options?.victoryAtEnemyHpPercent);
     setPreviewMode(preview);
     skipEnemyTurnRef.current = false;
 

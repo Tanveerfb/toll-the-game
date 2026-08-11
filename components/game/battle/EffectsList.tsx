@@ -117,11 +117,19 @@ function DescriptionText({ text }: { text: string }): React.JSX.Element {
 export function EffectsList({
   unit,
   allUnits,
+  showUncancellable = true,
 }: {
   unit: BattleCharacter;
   allUnits: BattleCharacter[];
+  /** Include the grey uncancellable entries. Off in battle by default — see
+   *  `settingsStore.showUncancellableEffects`. */
+  showUncancellable?: boolean;
 }): React.JSX.Element {
-  const rows = categorizeEffects(unit);
+  const all = categorizeEffects(unit);
+  const rows = showUncancellable
+    ? all
+    : all.filter((r) => r.category !== "effect");
+  const hidden = all.length - rows.length;
   const sourceArt = (sourceId?: string): string | null => {
     if (!sourceId) return null;
     const src = allUnits.find((u) => u.instanceId === sourceId);
@@ -130,7 +138,10 @@ export function EffectsList({
   if (rows.length === 0) {
     return (
       <p className="py-6 text-center font-body text-sm font-bold uppercase tracking-[0.18em] text-readout-muted">
-        No active effects.
+        {hidden > 0
+          ? // Saying "no active effects" while hiding some would be a lie.
+            `No buffs or debuffs — ${hidden} uncancellable hidden`
+          : "No active effects."}
       </p>
     );
   }

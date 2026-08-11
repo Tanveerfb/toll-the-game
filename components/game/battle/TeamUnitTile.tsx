@@ -2,9 +2,8 @@
 
 import React from "react";
 import Image from "next/image";
-import { ArrowDown, ArrowUp, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowUp, Crosshair, Sparkles } from "lucide-react";
 import { m } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import {
   ELEMENT_SWATCH,
@@ -16,20 +15,35 @@ import { categorizeEffects } from "@/components/game/battle/EffectsList";
 import type { BattleCharacter } from "@/types/character";
 import type { SequencerFlash } from "@/hooks/useBattleSequencer";
 
+/** HP at or below this reads as danger. Above it the bar stays achromatic —
+ *  a bar that's green all fight tells you nothing; one that turns red tells
+ *  you where to heal. */
+const DANGER_PERCENT = 30;
+
+/** How many status chips fit on one line before the rest collapse to "+n".
+ *  The strip is fixed-height on purpose: it used to wrap to a second row and
+ *  shove the portrait down, so a unit's tile changed shape when it got
+ *  buffed. */
+const CHIP_LIMIT = 3;
+
 const CHIP_STYLE = {
-  buff: { cls: "border-sky-500/60 bg-sky-500/15 text-sky-200", icon: ArrowUp },
+  buff: { cls: "border-signal/50 bg-signal/12 text-signal", icon: ArrowUp },
   debuff: {
-    cls: "border-rose-500/60 bg-rose-500/15 text-rose-200",
+    cls: "border-el-red/50 bg-el-red/12 text-el-red",
     icon: ArrowDown,
   },
   effect: {
-    cls: "border-zinc-500/60 bg-zinc-500/15 text-zinc-300",
+    cls: "border-edge bg-readout-muted/12 text-readout-dim",
     icon: Sparkles,
   },
 } as const;
 
-// Small colored status squares above the HP bar (blue buff / red debuff / grey
-// effect). The whole cluster is a button that opens the unit detail panel.
+/**
+ * Status chips above the HP block. Only buffs/debuffs surface here — grey
+ * uncancellable entries live in the detail panel behind their own toggle
+ * (`settingsStore.showUncancellableEffects`), since nothing about them is
+ * actionable mid-fight.
+ */
 function StatusChips({
   unit,
   onOpen,
@@ -37,11 +51,9 @@ function StatusChips({
   unit: BattleCharacter;
   onOpen: (unit: BattleCharacter) => void;
 }): React.JSX.Element {
-  // Only buffs/debuffs surface on the battlefield tile; grey "effect"-category
-  // statuses (and the full itemized list) live in the character info panel.
-  // Bar wraps to at most 2 lines.
   const rows = categorizeEffects(unit).filter((r) => r.category !== "effect");
-  if (rows.length === 0) return <></>;
+  const shown = rows.slice(0, CHIP_LIMIT);
+  const overflow = rows.length - shown.length;
   return (
     <button
       type="button"
@@ -49,28 +61,33 @@ function StatusChips({
         e.stopPropagation();
         onOpen(unit);
       }}
-      title="View effects"
+      title={rows.length > 0 ? "View effects" : undefined}
       aria-label="View status effects"
-      className="flex min-h-11 max-h-[2.15rem] w-full cursor-pointer flex-wrap content-start items-center gap-0.5 overflow-hidden"
+      className="flex h-4 w-full cursor-pointer items-center gap-0.5 overflow-hidden"
     >
-      {rows.map(({ effect, category }, idx) => {
+      {shown.map(({ effect, category }, idx) => {
         const style = CHIP_STYLE[category];
         const Icon = style.icon;
         const stacks = effect.stacks ?? 1;
         return (
           <span
             key={`${effect.type}-${idx}`}
-            className={`relative flex h-4 w-4 shrink-0 items-center justify-center border ${style.cls}`}
+            className={`flex h-4 shrink-0 items-center gap-px border px-px ${style.cls}`}
           >
             <Icon className="h-2.5 w-2.5" strokeWidth={2.6} />
             {stacks > 1 ? (
-              <span className="absolute -bottom-1 -right-1 bg-black px-0.5 font-body text-[7px] font-bold leading-none text-zinc-100">
+              <span className="font-body text-[8px] font-bold leading-none">
                 {stacks}
               </span>
             ) : null}
           </span>
         );
       })}
+      {overflow > 0 ? (
+        <span className="flex h-4 shrink-0 items-center border border-edge px-1 font-body text-[8px] font-bold leading-none text-readout-muted">
+          +{overflow}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -82,6 +99,13 @@ export interface TileFx {
   flash?: SequencerFlash;
 }
 
+/**
+ * One unit on the battlefield: portrait on top, readout underneath.
+ *
+ * The readout block is a FIXED height. Before, the chip strip sat above the
+ * portrait and could wrap, so a tile's art shrank as its unit picked up
+ * buffs — the layout moved for the exact reason you were looking at it.
+ */
 const TeamUnitTile = React.memo(function TeamUnitTile({
   unit,
   isEnemy,
@@ -108,135 +132,67 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
   const displayHP = fx.hpOverride ?? unit.currentHP;
   const hpPercent = unit.hp > 0 ? Math.max(0, (displayHP / unit.hp) * 100) : 0;
   const isDead = displayHP <= 0;
-  const isBenched = unit.isSub === true;
+  const isHurt = hpPercent <= DANGER_PERCENT;
   const art = getCharacterArt(unit.id);
-  const ultFull = unit.ultGauge >= ultGaugeMax(unit);
-  // Enemies get a camera-reticle corner-bracket overlay (spec §3,
-  // 7dsgc-enemy-target-marker.jpg) rather than a glowing border.
-  const showTargetReticle = isMarked && isEnemy;
-  const canTarget = isEnemy && !isDead && !isBenched;
+  const gaugeMax = ultGaugeMax(unit);
+  const ultFull = unit.ultGauge >= gaugeMax;
+  const canTarget = isEnemy && !isDead;
 
   return (
     <div
       data-battle-instance={unit.instanceId}
-      className={`relative min-h-0 h-full ${fx.shaking ? (fx.flash?.strong ? "battle-shake-strong" : "battle-shake") : ""} ${fx.evading ? "battle-evade" : ""}`}
+      className={`relative h-full min-h-0 ${fx.shaking ? (fx.flash?.strong ? "battle-shake-strong" : "battle-shake") : ""} ${fx.evading ? "battle-evade" : ""}`}
     >
-      {showTargetReticle ? (
-        <div className="pointer-events-none absolute inset-0.5 z-20">
-          <span className="absolute left-0 top-0 h-4 w-4 border-l-2 border-t-2 border-red-500" />
-          <span className="absolute right-0 top-0 h-4 w-4 border-r-2 border-t-2 border-red-500" />
-          <span className="absolute bottom-0 left-0 h-4 w-4 border-b-2 border-l-2 border-red-500" />
-          <span className="absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-red-500" />
-        </div>
-      ) : null}
-
       <div
         onClick={() => onInspect(unit)}
-        className={`flex h-full min-h-0 cursor-pointer flex-col overflow-hidden border-2 bg-black/55 transition-colors ${getUnitBorderClass(unit.color)} ${isBenched ? "opacity-60" : ""}`}
+        className={`flex h-full min-h-0 cursor-pointer flex-col overflow-hidden border bg-panel transition-colors ${getUnitBorderClass(unit.color)} ${isMarked ? "shadow-[0_0_0_1px_var(--color-el-red)]" : ""}`}
       >
-        {/* HEADER (top): effects · element crest + name · HP + ult */}
-        <div
-          className={`shrink-0 space-y-1 border-b border-zinc-800 bg-black/80 px-1.5 py-1 ${isDead ? "opacity-60" : ""}`}
-        >
-          <StatusChips unit={unit} onOpen={onOpenEffects} />
-
-          <div className="flex items-center gap-1">
-            <span
-              title={unit.color}
-              className={`h-2.5 w-2.5 shrink-0 rotate-45 border border-black/40 ${ELEMENT_SWATCH[unit.color]}`}
-            />
-            <span className="min-w-0 flex-1 truncate font-heading text-xs tracking-[0.06em] text-zinc-100">
-              {unit.name.split(" ")[0]}
-            </span>
-          </div>
-
-          <div>
-            {/* HP numerals sit ON the tile: "how close to dead is it" is the
-                most-asked question mid-fight and a bare bar can't answer it. */}
-            <div className="flex items-baseline justify-between gap-1">
-              <span className="font-body text-[9px] font-semibold leading-none text-zinc-300 tabular-nums">
-                {Math.max(0, displayHP)}
-              </span>
-              <span className="font-body text-[8px] leading-none text-zinc-500 tabular-nums">
-                /{unit.hp}
-              </span>
-            </div>
-            <div className="mt-0.5 h-2 w-full overflow-hidden rounded-full border border-zinc-700/80 bg-zinc-900">
-              <div
-                className={`h-full rounded-full transition-[width] duration-300 ${isDead || hpPercent < 30 ? "bg-red-500" : "bg-emerald-500"}`}
-                style={{ width: `${hpPercent}%` }}
-              />
-            </div>
-            <span className="mt-0.5 flex items-center gap-0.5">
-              {Array.from({ length: ultGaugeMax(unit) }).map((_, i) => (
-                <span
-                  key={i}
-                  className={`h-1 flex-1 -skew-x-12 ${i < unit.ultGauge ? (ultFull ? "bg-amber-300 shadow-[0_0_5px_rgba(252,211,77,0.8)]" : "bg-amber-500/80") : "bg-zinc-700"}`}
-                />
-              ))}
-            </span>
-          </div>
-        </div>
-
-        {/* BODY: character artwork */}
-        <div className="relative min-h-0 flex-1 overflow-hidden bg-zinc-900/60">
+        {/* PORTRAIT */}
+        <div className="relative min-h-0 flex-1 overflow-hidden bg-inset">
           {art ? (
             <Image
               src={art}
               alt={unit.name}
               fill
               sizes="220px"
-              className={`object-cover object-top ${isDead ? "grayscale" : ""}`}
+              className={`object-cover object-top ${isDead ? "grayscale brightness-50" : ""}`}
             />
           ) : (
-            <span className="absolute inset-0 flex items-center justify-center font-heading text-4xl text-white/80">
+            <span className="absolute inset-0 flex items-center justify-center font-heading text-4xl text-readout-strong">
               {unit.name.charAt(0).toUpperCase()}
             </span>
           )}
 
-          <div className="absolute left-1 top-1 flex flex-wrap gap-1">
-            {isBenched ? (
-              <Badge className="rounded-none bg-amber-300 px-1 py-0 font-body text-[9px] font-bold uppercase tracking-widest text-zinc-950">
-                Sub
-              </Badge>
-            ) : null}
-            {queuedHits > 0 ? (
-              <Badge
-                variant="outline"
-                className="rounded-none border-sky-300 bg-sky-500/25 px-1 py-0 font-body text-[9px] uppercase tracking-widest text-sky-100 backdrop-blur-sm"
-              >
-                {queuedHits}×
-              </Badge>
-            ) : null}
-          </div>
+          {/* Focus-fire brackets — a camera reticle rather than a glowing
+              border, so "marked" never reads as an element colour. */}
+          {isMarked && isEnemy ? (
+            <div className="pointer-events-none absolute inset-0.5">
+              <span className="absolute left-0 top-0 h-3.5 w-3.5 border-l-2 border-t-2 border-el-red" />
+              <span className="absolute right-0 top-0 h-3.5 w-3.5 border-r-2 border-t-2 border-el-red" />
+              <span className="absolute bottom-0 left-0 h-3.5 w-3.5 border-b-2 border-l-2 border-el-red" />
+              <span className="absolute bottom-0 right-0 h-3.5 w-3.5 border-b-2 border-r-2 border-el-red" />
+            </div>
+          ) : null}
 
-          {/* Focus-fire is its own affordance now. Tapping the tile used to
-              mark an enemy and do nothing at all on an ally — two different
-              meanings for one gesture, on one screen. Tap always inspects;
-              this button targets. */}
-          {canTarget ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onMark(unit.instanceId);
-              }}
-              aria-label={isMarked ? "Clear focus fire" : "Focus fire on this enemy"}
-              aria-pressed={isMarked}
-              title={isMarked ? "Focus-firing this enemy" : "Focus fire"}
-              className={`absolute bottom-1 right-1 flex h-7 w-7 items-center justify-center border text-[11px] leading-none backdrop-blur-sm transition-colors ${
-                isMarked
-                  ? "border-red-400 bg-red-500/30 text-red-100"
-                  : "border-zinc-500 bg-black/70 text-zinc-300 hover:border-red-400 hover:text-red-200"
-              }`}
-            >
-              ◎
-            </button>
+          {/* A full gauge used to be a glow on five 1px slivers. It's the
+              single most decision-changing fact on the tile. */}
+          {ultFull && !isDead ? (
+            <span className="absolute inset-x-0 top-0 bg-el-light px-1 py-px text-center font-body text-[8px] font-bold uppercase leading-none tracking-[0.16em] text-void">
+              Ult Ready
+            </span>
+          ) : null}
+
+          {/* Incoming hits sit WITH the brackets, not in the opposite corner:
+              "marked" and "already taking two hits" are one fact. */}
+          {queuedHits > 0 && isEnemy && !isDead ? (
+            <span className="absolute inset-x-0 bottom-0 bg-el-red/90 px-1 py-px text-center font-body text-[8px] font-bold uppercase leading-none tracking-[0.12em] text-void">
+              {queuedHits} incoming
+            </span>
           ) : null}
 
           {isDead ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-              <span className="border border-red-500/80 bg-red-950/70 px-2 py-0.5 font-heading text-sm tracking-[0.2em] text-red-300">
+            <div className="absolute inset-0 flex items-center justify-center bg-void/55">
+              <span className="font-heading text-sm tracking-[0.2em] text-el-red">
                 DOWN
               </span>
             </div>
@@ -254,11 +210,79 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
               }}
             >
               <div
-                className="absolute inset-y-0 left-1/2 w-1 -translate-x-1/2 rotate-[24deg] bg-white/80"
+                className="absolute inset-y-0 left-1/2 w-1 -translate-x-1/2 rotate-[24deg] bg-readout-strong/80"
                 style={{ display: fx.flash.strong ? undefined : "none" }}
               />
             </m.div>
           ) : null}
+        </div>
+
+        {/* READOUT — fixed height, so nothing here can resize the portrait. */}
+        <div className="shrink-0 space-y-1 border-t border-hairline bg-inset px-1.5 py-1">
+          <div className="flex items-center gap-1">
+            <span
+              title={unit.color}
+              className={`h-2 w-2 shrink-0 rotate-45 ${ELEMENT_SWATCH[unit.color]}`}
+            />
+            <span className="min-w-0 flex-1 truncate font-heading text-xs tracking-[0.04em] text-readout-strong">
+              {unit.name}
+            </span>
+            {canTarget ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMark(unit.instanceId);
+                }}
+                aria-label={
+                  isMarked ? "Clear focus fire" : "Focus fire on this enemy"
+                }
+                aria-pressed={isMarked}
+                title={isMarked ? "Focus-firing this enemy" : "Focus fire"}
+                className={`flex h-5 w-5 shrink-0 items-center justify-center border transition-colors ${
+                  isMarked
+                    ? "border-el-red bg-el-red/20 text-el-red"
+                    : "border-edge text-readout-muted hover:border-el-red hover:text-el-red"
+                }`}
+              >
+                <Crosshair className="h-3 w-3" strokeWidth={2.2} />
+              </button>
+            ) : null}
+          </div>
+
+          {/* Current HP leads; max is a quiet divisor. It used to be the
+              other way round at 9px against an 8px maximum. */}
+          <div className="flex items-baseline gap-1">
+            <span
+              className={`font-body text-base font-bold leading-none tabular-nums ${isHurt ? "text-el-red" : "text-readout-strong"}`}
+            >
+              {Math.max(0, displayHP)}
+            </span>
+            <span className="font-body text-[9px] font-semibold leading-none tabular-nums text-readout-muted">
+              /{unit.hp}
+            </span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden border border-hairline bg-void">
+            <div
+              className={`h-full transition-[width] duration-300 ${isHurt ? "bg-el-red" : "bg-readout"}`}
+              style={{ width: `${hpPercent}%` }}
+            />
+          </div>
+
+          {/* One bar with a count, not five slivers. */}
+          <div className="relative h-2.5 w-full overflow-hidden border border-hairline bg-void">
+            <div
+              className={`h-full transition-[width] duration-300 ${ultFull ? "bg-el-light" : "bg-el-light/30"}`}
+              style={{ width: `${(Math.min(unit.ultGauge, gaugeMax) / gaugeMax) * 100}%` }}
+            />
+            <span
+              className={`absolute inset-0 flex items-center justify-center font-body text-[8px] font-bold leading-none tabular-nums ${ultFull ? "text-void" : "text-readout-dim"}`}
+            >
+              {Math.min(unit.ultGauge, gaugeMax)}/{gaugeMax}
+            </span>
+          </div>
+
+          <StatusChips unit={unit} onOpen={onOpenEffects} />
         </div>
       </div>
     </div>

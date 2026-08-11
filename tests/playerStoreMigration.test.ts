@@ -19,8 +19,8 @@ describe("migratePlayerState — v1 (inventory.gems) to v2 (currencies split)", 
     expect(result.characters).toEqual({});
     expect(result.stamina.current).toBe(120);
     expect(result.pity).toEqual({
-      limited: { bannerId: null, bar: 0, claimed300: false },
-      permanent: { bar: 0 },
+      limited: { bannerId: null, bar: 0, claimedFirst: false, claimedFinal: false },
+      permanent: { bar: 0, claimedFinal: false },
     });
   });
 
@@ -115,8 +115,8 @@ describe("migratePlayerState — v2 to v3 (gacha fields)", () => {
     const result = migratePlayerState(v2, 2);
     expect(result.currencies).toEqual({ gems: 500, coin: 10000, permanentTicket: 0 });
     expect(result.pity).toEqual({
-      limited: { bannerId: null, bar: 0, claimed300: false },
-      permanent: { bar: 0 },
+      limited: { bannerId: null, bar: 0, claimedFirst: false, claimedFinal: false },
+      permanent: { bar: 0, claimedFinal: false },
     });
     expect(result.characters.duke).toEqual({ level: 5, ascension: 1, xp: 20, ultLevel: 1 });
   });
@@ -162,8 +162,8 @@ describe("migratePlayerState — v2 to v3 (gacha fields)", () => {
     // Pity reset to the v3 default shape is spec-sanctioned (old counters
     // were dead scaffolding), not data loss.
     expect(result.pity).toEqual({
-      limited: { bannerId: null, bar: 0, claimed300: false },
-      permanent: { bar: 0 },
+      limited: { bannerId: null, bar: 0, claimedFirst: false, claimedFinal: false },
+      permanent: { bar: 0, claimedFinal: false },
     });
   });
 });
@@ -219,9 +219,67 @@ describe("migratePlayerState — defensive defaults for missing fields regardles
       account: { rank: 21, xp: 120, clearedWalls: [20] },
       worldLevel: 2,
       stamina: { current: 80, updatedAt: 12345 },
-      pity: { limited: { bannerId: "debut-2026-08", bar: 30, claimed300: false }, permanent: { bar: 0 } },
+      pity: {
+        limited: { bannerId: "debut-2026-08", bar: 30, claimedFirst: false, claimedFinal: false },
+        permanent: { bar: 0, claimedFinal: false },
+      },
     };
     const result = migratePlayerState(current, CURRENT_PLAYER_STATE_VERSION);
     expect(result).toEqual(current);
+  });
+});
+
+describe("migratePlayerState — v5 to v6 (milestone laps)", () => {
+  /** A v5 save: `claimed300`, no `claimed600`, permanent as a bare bar. */
+  const v5 = {
+    uid: null,
+    roster: ["duke", "sara"],
+    currencies: { gems: 500, coin: 10000, permanentTicket: 5 },
+    inventory: { sea_monster_eye: 3 },
+    characters: { duke: { level: 5, ascension: 1, xp: 20, ultLevel: 2 } },
+    presets: [],
+    lastTeam: ["duke"],
+    account: { rank: 21, xp: 120, clearedWalls: [20] },
+    worldLevel: 2,
+    stamina: { current: 80, updatedAt: 12345 },
+    pity: {
+      limited: { bannerId: "debut-2026-08", bar: 450, claimed300: true },
+      permanent: { bar: 240 },
+    },
+  };
+
+  it("renames the claim flag and adds the missing one", () => {
+    const result = migratePlayerState(v5, 5);
+    expect(result.pity.limited).toEqual({
+      // The banner itself is unchanged, so its id carries — only the bar's
+      // denomination moved. Nulling it would make the next spend treat this
+      // as a banner switch and wipe the lap a second time.
+      bannerId: "debut-2026-08",
+      bar: 0,
+      claimedFirst: false,
+      claimedFinal: false,
+    });
+    expect(result.pity.permanent.claimedFinal).toBe(false);
+  });
+
+  it("resets a Limited lap in flight rather than mis-converting it", () => {
+    // The bar changed denomination — it counted a 3-per-single unit against
+    // 300/600, and now counts gems against 500/1000. Carrying 450 forward
+    // would show progress the player never made at the new rate.
+    const result = migratePlayerState(v5, 5);
+    expect(result.pity.limited.bar).toBe(0);
+  });
+
+  it("carries the Permanent bar across untouched", () => {
+    // Permanent kept its ticket pricing and its 600 threshold, so its bar
+    // means the same thing before and after.
+    expect(migratePlayerState(v5, 5).pity.permanent.bar).toBe(240);
+  });
+
+  it("leaves everything outside pity alone", () => {
+    const result = migratePlayerState(v5, 5);
+    expect(result.roster).toEqual(["duke", "sara"]);
+    expect(result.account).toEqual({ rank: 21, xp: 120, clearedWalls: [20] });
+    expect(result.currencies.gems).toBe(500);
   });
 });

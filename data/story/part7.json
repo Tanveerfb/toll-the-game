@@ -1,0 +1,247 @@
+{
+  "id": "part7",
+  "order": 7,
+  "title": "Other Tables",
+  "tagline": "Six passes out of one batch. Bureau's going to love that number and hate what it means.",
+  "coverCharacterId": "chiara",
+  "chapters": [
+    {
+      "id": "p7c1",
+      "title": "The Gambler's Table",
+      "teamMode": "canon",
+      "trialLevel": 18,
+      "intro": [
+        { "speaker": "Narrator", "text": "Elsewhere, that same afternoon." },
+        {
+          "speaker": "Narrator",
+          "text": "The same admin room. Tao's feed closed out long ago. Other batch feeds still trickle in across the bank of monitors — one shows a clearing, wrapped up and quiet. No fire. No wreckage. Nothing dramatic to report."
+        },
+        {
+          "speaker": "Admin",
+          "text": "That one's done too. Nothing like the fireworks Tao gave us."
+        },
+        {
+          "speaker": "Admin",
+          "text": "Not every examiner needs to level a forest to make a point."
+        },
+        {
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "The door opens. Chiara walks in unhurried, flipping a card between two fingers — and tucks it away the instant she clears the doorway, like she wasn't doing anything and didn't want anyone confirming it. She drops into a chair, boots up on the console edge."
+        },
+        {
+          "speaker": "Admin",
+          "text": "Done already? Heard you had a full batch — thought yours might run long."
+        },
+        {
+          "speaker": "Chiara",
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "Ran long enough. Three pairs worth telling you about, actually."
+        },
+        {
+          "speaker": "Admin",
+          "text": "Go on then. We've got a minute before Phase 2 kicks off."
+        }
+      ],
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "No ceremony. No forced exposition. Just someone who enjoys a good story telling it to two people who enjoy hearing them."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 180,
+          "coin": 5000,
+          "materials": { "training_manual": 5 },
+          "accountXp": 55
+        },
+        "repeat": { "coin": { "min": 1100, "max": 2200 } },
+        "replayStamina": 0
+      }
+    },
+    {
+      "id": "p7c2",
+      "title": "Pain and Patience",
+      "teamMode": "canon",
+      "trialLevel": 18,
+      "intro": [
+        {
+          "portraitId": "batra",
+          "text": "Batra takes a hit early — and smiles. Every exchange after that he's faster, heavier, hungrier. Chiara drops a dice-construct on him expecting it to slow him down. Instead it visibly feeds him. Pain answering the oldest law of Toll: the more it costs him, the more he burns."
+        },
+        {
+          "portraitId": "gabrist",
+          "text": "Gabrist has been quiet the whole time. Watching. Timing. The moment Chiara commits to a real technique he flicks two fingers and it unravels mid-formation — but he staggers a half-step doing it, breath short, like the cancel cost him something real. He can afford that once. Maybe twice. Both of them know it."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "batra" }, { "id": "gabrist" }],
+        "enemyTeam": [{ "id": "chiara" }]
+      },
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "It closes with Batra still trying to close distance while Gabrist quietly pulls him back a step — reading the fight better than Batra reads it himself."
+        },
+        {
+          "speaker": "Chiara",
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "The big one hits harder the longer it goes — didn't expect that. The quiet one only gets one good trick out of him before he's running on fumes. Between them, almost enough."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 180,
+          "coin": 5200,
+          "materials": { "training_manual": 5 },
+          "accountXp": 58
+        },
+        "repeat": {
+          "coin": { "min": 1200, "max": 2300 },
+          "materials": { "training_manual": { "min": 1, "max": 2 } }
+        },
+        "replayStamina": 8
+      }
+    },
+    {
+      "id": "p7c3",
+      "title": "Nothing to Bet On",
+      "teamMode": "canon",
+      "trialLevel": 18,
+      "victoryAtEnemyHpPercent": 20,
+      "intro": [
+        {
+          "speaker": "Narrator",
+          "text": "This one has no finish."
+        },
+        {
+          "portraitId": "mustafa",
+          "text": "Mustafa plants and holds — an earthen wall that doesn't chip, doesn't crack, just is. He isn't trying to hurt her. He isn't trying to do anything except remain."
+        },
+        {
+          "portraitId": "siddiq",
+          "text": "Siddiq stays half a step behind, vines threading briefly over Mustafa's forearm to seal a graze shut without either of them breaking formation. Neither steps forward to strike."
+        },
+        {
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "Chiara throws everything she has — full gambles, real technique, calculated risk — and there is nothing on the other end to win against. No opening. No damage that matters. No offense to punish."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "mustafa" }, { "id": "siddiq" }],
+        "enemyTeam": [{ "id": "chiara" }]
+      },
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "Eventually she just stops. Lowers her hand."
+        },
+        {
+          "speaker": "Chiara",
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "Two shields and a stalemate isn't a hand I can play."
+        },
+        {
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "She passes them looking almost betrayed by how little there was to bet on."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 180,
+          "coin": 5200,
+          "materials": { "training_manual": 5 },
+          "accountXp": 60
+        },
+        "repeat": {
+          "coin": { "min": 1200, "max": 2300 },
+          "materials": { "training_manual": { "min": 1, "max": 2 } }
+        },
+        "replayStamina": 8
+      }
+    },
+    {
+      "id": "p7c4",
+      "title": "Mouth and Legs",
+      "teamMode": "canon",
+      "trialLevel": 18,
+      "intro": [
+        {
+          "portraitId": "yalina",
+          "text": "Yalina never stops talking — needling, mocking, dragging every ounce of Chiara's attention onto herself, absorbing hits she could have dodged just to keep the target where she wants it."
+        },
+        {
+          "portraitId": "sara",
+          "text": "Sara is barely there half the time. Gone before the strike lands, already circling — a graze here, a cut there, a slow bleed nobody notices building."
+        },
+        {
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "Chiara, baited and irritated, finally overcommits on Yalina with something real. It is exactly the opening Yalina wanted."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "sara" }, { "id": "yalina" }],
+        "enemyTeam": [{ "id": "chiara" }]
+      },
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "She eats the hit clean, doesn't flinch, and answers with everything she has in one committed strike while Chiara is still resetting. It lands."
+        },
+        {
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "Chiara laughs out loud — the first genuine sound she's made all afternoon. Sara, still circling at the edge of frame, hasn't taken a clean hit once."
+        },
+        {
+          "speaker": "Chiara",
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "Mouth draws the fire. Legs never stop moving. And somewhere in between, one hit that actually mattered."
+        },
+        {
+          "speaker": "Chiara",
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "Six passes out of one batch. Bureau's going to love that number and hate what it means."
+        },
+        {
+          "speaker": "Admin",
+          "text": "Speaking of — Phase 2's about to start. You clocked out already, you know. Don't have to stick around."
+        },
+        {
+          "speaker": "Chiara",
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "I know."
+        },
+        {
+          "speaker": "Chiara",
+          "portraitId": "chiara",
+          "side": "right",
+          "text": "Just want to see what happens next."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 220,
+          "coin": 6000,
+          "materials": { "training_manual_advanced": 1, "training_manual": 5 },
+          "accountXp": 64
+        },
+        "repeat": {
+          "coin": { "min": 1300, "max": 2500 },
+          "materials": { "training_manual": { "min": 1, "max": 3 } }
+        },
+        "replayStamina": 8
+      }
+    }
+  ]
+}

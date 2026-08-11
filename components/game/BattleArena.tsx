@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AnimatePresence, m } from "framer-motion";
+import { FastForward, Gauge, LogOut, ScrollText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { useBattleContext } from "@/hooks/BattleProvider";
@@ -40,50 +41,80 @@ import { useSettingsStore } from "@/store/settingsStore";
  *  fresh inline closure. Player tiles never focus-fire. */
 const noop = (): void => {};
 
-/** Portrait-stack shortcut into one side's roster list. */
-function RosterButton({
-  team,
+/** One control on the side rail — icon or portrait stack, plus a micro-label. */
+function RailButton({
   label,
-  className,
+  title,
+  tone = "default",
+  active,
   onClick,
+  children,
 }: {
-  team: BattleCharacter[];
   label: string;
-  className: string;
+  title?: string;
+  tone?: "default" | "danger";
+  active?: boolean;
   onClick: () => void;
+  children: React.ReactNode;
 }): React.JSX.Element {
+  const toneCls =
+    tone === "danger"
+      ? "hover:border-el-red hover:text-el-red"
+      : "hover:border-signal hover:text-signal";
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={`View ${label.toLowerCase()} details`}
-      className={`flex min-h-11 cursor-pointer items-center gap-1.5 border border-zinc-600 bg-black/75 px-2 py-1.5 backdrop-blur-sm transition-colors ${className}`}
+      title={title ?? label}
+      aria-label={title ?? label}
+      className={`flex w-full cursor-pointer flex-col items-center gap-1 border px-1 py-1.5 transition-colors ${
+        active
+          ? "border-signal bg-signal/10 text-signal"
+          : `border-edge text-readout-dim ${toneCls}`
+      }`}
     >
-      <div className="flex -space-x-2">
-        {team.slice(0, 3).map((unit) => {
-          const art = getCharacterArt(unit.id);
-          return (
-            <span
-              key={unit.instanceId}
-              className="h-6 w-6 overflow-hidden rounded-full border border-zinc-500 bg-zinc-800"
-            >
-              {art ? (
-                <Image
-                  src={art}
-                  alt=""
-                  width={24}
-                  height={24}
-                  className={`h-full w-full object-cover object-top ${unit.currentHP <= 0 ? "grayscale" : ""}`}
-                />
-              ) : null}
-            </span>
-          );
-        })}
-      </div>
-      <span className="font-body text-[10px] uppercase tracking-[0.14em] text-zinc-300">
+      {children}
+      <span className="font-body text-[8px] font-bold uppercase leading-none tracking-[0.1em]">
         {label}
       </span>
     </button>
+  );
+}
+
+/** Portrait stack for one side's rail entry. */
+function RailStack({
+  team,
+  presentedHp,
+}: {
+  team: BattleCharacter[];
+  /** HP as currently shown by the sequencer — without this the stack greys a
+   *  portrait out the instant the engine commits, ahead of the death
+   *  animation the tiles are still playing. */
+  presentedHp: Record<string, number>;
+}): React.JSX.Element {
+  return (
+    <span className="flex flex-wrap justify-center gap-px">
+      {team.map((unit) => {
+        const art = getCharacterArt(unit.id);
+        const shownHp = presentedHp[unit.instanceId] ?? unit.currentHP;
+        return (
+          <span
+            key={unit.instanceId}
+            className="h-4 w-4 overflow-hidden border border-edge bg-inset"
+          >
+            {art ? (
+              <Image
+                src={art}
+                alt=""
+                width={16}
+                height={16}
+                className={`h-full w-full object-cover object-top ${shownHp <= 0 ? "grayscale opacity-40" : ""}`}
+              />
+            ) : null}
+          </span>
+        );
+      })}
+    </span>
   );
 }
 
@@ -148,6 +179,17 @@ export default function BattleArena({
   const resetBattle = useGameStore((s) => s.resetBattle);
   const setBattlePhase = useGameStore((s) => s.setBattlePhase);
   const bigHitFocus = useGameStore((s) => s.bigHitFocus);
+  // What the sequencer is currently showing, ahead of store truth for the
+  // action being animated. Every HP readout on this screen reads it.
+  const presentedHp = useGameStore((s) => s.presentedHp);
+
+  // The battlefield shows only units that have entered the field. A sub is
+  // untargetable, can't act and has no cards — a tile for it was a unit you
+  // could neither use nor hit. The bench still shows in the Team list, where
+  // it's badged as a sub (Tanveer, 2026-08-11). Subs promote at turn start
+  // (lib/game/sub.ts), at which point they appear here on their own.
+  const playerOnField = playerTeam.filter((u) => !u.isSub);
+  const enemyOnField = enemyTeam.filter((u) => !u.isSub);
   // Dev-only duel mode: shows who is actually piloting the enemy side.
   const duelMode = useSettingsStore((s) => s.duelMode);
 
@@ -177,7 +219,7 @@ export default function BattleArena({
     : null;
 
   const tileFx = (instanceId: string): TileFx => ({
-    hpOverride: seq.hpOverrides[instanceId],
+    hpOverride: presentedHp[instanceId],
     shaking: seq.shaking[instanceId],
     evading: seq.evading[instanceId],
     flash: seq.flashes[instanceId],
@@ -368,7 +410,7 @@ export default function BattleArena({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 / battleSpeed }}
-              className="absolute inset-0 bg-black/70"
+              className="absolute inset-0 bg-void/80"
             />
           ) : null}
         </AnimatePresence>
@@ -426,7 +468,7 @@ export default function BattleArena({
               className="absolute left-0 top-0"
             >
               <div
-                className={`h-14 w-14 overflow-hidden rounded-full border-2 ${seq.ghost.isUlt ? "border-amber-300 shadow-[0_0_24px_rgba(252,211,77,0.9)]" : "border-white/80 shadow-[0_0_14px_rgba(255,255,255,0.5)]"}`}
+                className={`h-14 w-14 overflow-hidden rounded-full border-2 ${seq.ghost.isUlt ? "border-el-light shadow-[0_0_24px_rgba(232,209,116,0.9)]" : "border-readout-strong/80 shadow-[0_0_14px_rgba(234,242,248,0.5)]"}`}
               >
                 {getCharacterArt(seq.ghost.characterId) ? (
                   <Image
@@ -450,7 +492,7 @@ export default function BattleArena({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 / battleSpeed }}
-              className="absolute inset-0 bg-black/65"
+              className="absolute inset-0 bg-void/75"
             >
               {/* White flash punch on entry */}
               <m.div
@@ -464,7 +506,7 @@ export default function BattleArena({
                 animate={{ x: 0, scale: 1 }}
                 exit={{ x: "100%" }}
                 transition={{ duration: 0.3 / battleSpeed, ease: "easeOut" }}
-                className="absolute inset-x-0 top-1/2 flex h-32 -translate-y-1/2 items-center gap-4 overflow-hidden border-y-2 border-amber-300 bg-linear-to-r from-amber-950/95 via-zinc-950/95 to-amber-950/95 px-6 shadow-[0_0_60px_rgba(252,211,77,0.5)]"
+                className="absolute inset-x-0 top-1/2 flex h-32 -translate-y-1/2 items-center gap-4 overflow-hidden border-y-2 border-el-light bg-linear-to-r from-el-light/12 via-void/95 to-el-light/12 px-6 shadow-[0_0_60px_rgba(232,209,116,0.4)]"
               >
                 {/* Skill art first, portrait as fallback. All 48 playable +
                     boss ultimates have their own art already, so every
@@ -476,14 +518,14 @@ export default function BattleArena({
                     alt={seq.cutIn.name}
                     width={220}
                     height={220}
-                    className="h-40 w-28 shrink-0 border-2 border-amber-300/70 object-cover object-top shadow-[0_0_30px_rgba(252,211,77,0.6)]"
+                    className="h-40 w-28 shrink-0 border-2 border-el-light/70 object-cover object-top shadow-[0_0_30px_rgba(232,209,116,0.6)]"
                   />
                 ) : null}
                 <div className="min-w-0">
-                  <p className="font-body text-xs uppercase tracking-[0.3em] text-amber-200/80">
+                  <p className="font-body text-xs uppercase tracking-[0.3em] text-el-light/80">
                     {seq.cutIn.name} — Ultimate
                   </p>
-                  <p className="truncate font-heading text-4xl tracking-[0.1em] text-amber-100 drop-shadow-[0_0_12px_rgba(252,211,77,0.8)]">
+                  <p className="truncate font-heading text-4xl tracking-[0.1em] text-el-light drop-shadow-[0_0_12px_rgba(232,209,116,0.8)]">
                     {seq.cutIn.skillName}
                   </p>
                 </div>
@@ -507,19 +549,19 @@ export default function BattleArena({
                 initial={{ opacity: 0.9 }}
                 animate={{ opacity: 0 }}
                 transition={{ duration: 0.6 / battleSpeed, ease: "easeOut" }}
-                className="absolute inset-0 bg-rose-600/40"
+                className="absolute inset-0 bg-el-red/40"
               />
               <m.div
                 initial={{ scale: 1.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
                 transition={{ duration: 0.38 / battleSpeed, ease: "easeOut" }}
-                className="relative flex flex-col items-center gap-1 border-y-2 border-rose-400 bg-black/70 px-12 py-5 backdrop-blur-sm"
+                className="relative flex flex-col items-center gap-1 border-y-2 border-el-red bg-void/80 px-12 py-5 backdrop-blur-sm"
               >
-                <span className="font-body text-xs uppercase tracking-[0.4em] text-rose-200/80">
+                <span className="font-body text-xs uppercase tracking-[0.4em] text-el-red/80">
                   {phaseBreak.name}
                 </span>
-                <span className="font-heading text-5xl tracking-[0.16em] text-rose-100 drop-shadow-[0_0_16px_rgba(244,63,94,0.85)] md:text-6xl">
+                <span className="font-heading text-5xl tracking-[0.16em] text-el-red drop-shadow-[0_0_16px_rgba(255,90,78,0.85)] md:text-6xl">
                   PHASE {phaseBreak.phase}
                 </span>
               </m.div>
@@ -537,16 +579,16 @@ export default function BattleArena({
               transition={{ duration: 0.5 / battleSpeed, ease: "easeOut" }}
               className={`absolute -translate-x-1/2 border px-2 py-0.5 font-heading tracking-[0.06em] shadow-xl ${
                 floater.kind === "crit"
-                  ? "border-amber-300 bg-amber-950/85 text-2xl text-amber-200"
+                  ? "border-el-light bg-void/90 text-2xl text-el-light"
                   : floater.kind === "damage"
-                    ? "border-red-300/70 bg-red-950/80 text-xl text-red-200"
+                    ? "border-el-red/70 bg-void/85 text-xl text-el-red"
                     : floater.kind === "counter"
-                      ? "border-orange-300/70 bg-orange-950/80 text-lg text-orange-200"
+                      ? "border-edge-strong bg-void/85 text-lg text-readout"
                       : floater.kind === "heal"
-                        ? "border-emerald-300/70 bg-emerald-950/80 text-xl text-emerald-200"
+                        ? "border-el-green/70 bg-void/85 text-xl text-el-green"
                         : floater.kind === "evade"
-                          ? "border-sky-300/70 bg-sky-950/80 text-lg text-sky-200"
-                          : "border-amber-300/70 bg-zinc-950/85 text-sm text-amber-100"
+                          ? "border-signal/70 bg-void/85 text-lg text-signal"
+                          : "border-edge-strong bg-void/85 text-sm text-readout-strong"
               }`}
               style={{ left: floater.x, top: floater.y }}
             >
@@ -691,213 +733,219 @@ export default function BattleArena({
         </AnimatePresence>
       </div>
 
-      {seq.active ? (
-        <button
-          type="button"
-          onClick={skipPlayback}
-          // bottom-16 clears the TEAM roster button at bottom-3; at bottom-10
-          // the two overlapped during playback.
-          className="absolute bottom-16 right-3 z-30 cursor-pointer border border-zinc-500 bg-black/75 px-3 py-1.5 font-body text-[11px] uppercase tracking-[0.16em] text-zinc-200 backdrop-blur-sm transition-colors hover:border-amber-300 hover:text-amber-200"
-        >
-          Skip ▸▸
-        </button>
-      ) : null}
-
-      {/* Roster shortcuts (Dokkan's "Next Up" stack, spec §5) — one per side.
-          The enemy button is new: enemies previously had no route into the
-          detail panel from anywhere on this screen. */}
-      <RosterButton
-        team={enemyTeam}
-        label="Enemy"
-        // top-14, not top-3: the status strip's Speed/Log/Exit cluster lives
-        // in the top-right corner and this would sit on top of it.
-        className="absolute right-3 top-14 z-30 hover:border-red-400"
-        onClick={() => setRosterSide("enemy")}
-      />
-      <RosterButton
-        team={playerTeam}
-        label="Team"
-        className="absolute bottom-3 right-3 z-30 hover:border-amber-300"
-        onClick={() => setRosterSide("player")}
-      />
-
-      {/* Slim status strip */}
-      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-800 bg-black/60 px-3 py-1.5 backdrop-blur-sm">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="shrink-0 font-heading text-base tracking-[0.12em] text-zinc-100">
-            TURN {currentTurn + 1}
+      {/* Status strip — readout only. Every control moved to the rail; this
+          row used to carry the Speed/Log/Exit cluster, which is what forced
+          the enemy roster button down to top-14 to avoid it. */}
+      <header className="flex shrink-0 items-center gap-3 border-b border-hairline bg-inset px-3 py-1.5">
+        <span className="shrink-0 font-heading text-base tracking-[0.12em] text-readout-strong">
+          TURN {currentTurn + 1}
+        </span>
+        <span className="truncate font-body text-xs uppercase tracking-[0.16em] text-signal">
+          {phaseLabel}
+        </span>
+        {duelMode ? (
+          <span className="hidden shrink-0 border border-violet-400/70 px-1.5 py-0.5 font-body text-[10px] uppercase tracking-[0.14em] text-violet-200 sm:inline">
+            Duel
           </span>
-          <span className="truncate font-body text-xs uppercase tracking-[0.16em] text-amber-200">
-            {phaseLabel}
-          </span>
-          {duelMode ? (
-            <span className="hidden shrink-0 border border-violet-400/70 px-1.5 py-0.5 font-body text-[10px] uppercase tracking-[0.14em] text-violet-200 sm:inline">
-              Duel
+        ) : null}
+        {contextLabel ? (
+          <span className="hidden min-w-0 shrink items-center gap-2 lg:flex">
+            <span className="h-3 w-px shrink-0 bg-edge" />
+            <span className="truncate font-body text-[11px] uppercase tracking-[0.16em] text-readout-muted">
+              {contextLabel}
             </span>
-          ) : null}
-          {contextLabel ? (
-            <span className="hidden min-w-0 shrink items-center gap-2 lg:flex">
-              <span className="h-3 w-px shrink-0 bg-zinc-700" />
-              <span className="truncate font-body text-[11px] uppercase tracking-[0.16em] text-zinc-400">
-                {contextLabel}
-              </span>
-            </span>
-          ) : null}
-          <div className="hidden h-1.5 w-28 shrink-0 overflow-hidden border border-zinc-700 bg-zinc-900/70 sm:block">
-            <m.div
-              className="h-full bg-linear-to-r from-amber-300 via-orange-400 to-yellow-300"
-              initial={{ width: 0 }}
-              animate={{ width: `${phaseProgress}%` }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
-            />
-          </div>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2 font-body text-[11px] uppercase tracking-[0.12em]">
-          <span className="hidden text-zinc-500 md:inline">
-            Player {playerTurns} • Enemy {enemyTurns}
           </span>
-          <button
-            type="button"
-            onClick={() => setBattleSpeed(battleSpeed === 1 ? 2 : 1)}
-            className={`cursor-pointer border px-2 py-1 transition-colors ${battleSpeed === 2 ? "border-amber-300 bg-amber-300/10 text-amber-200" : "border-zinc-700 bg-zinc-900/60 text-zinc-300"}`}
-          >
-            {battleSpeed}× Speed
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsLogOpen(true)}
-            className="cursor-pointer border border-zinc-700 bg-zinc-900/60 px-2 py-1 text-zinc-300 transition-colors hover:border-zinc-500 hover:text-zinc-100"
-          >
-            Log
-          </button>
-          {!isBattleOver ? (
-            <button
-              type="button"
-              onClick={() => setIsExitConfirmOpen(true)}
-              className="cursor-pointer border border-red-500/60 bg-red-950/40 px-2 py-1 text-red-300 transition-colors hover:border-red-400 hover:text-red-200"
-            >
-              Exit Battle
-            </button>
-          ) : null}
+        ) : null}
+        <span className="flex-1" />
+        <span className="hidden shrink-0 font-body text-[10px] uppercase tracking-[0.12em] text-readout-muted md:inline">
+          Player {playerTurns} • Enemy {enemyTurns}
+        </span>
+        <div className="hidden h-1.5 w-24 shrink-0 overflow-hidden border border-edge bg-void sm:block">
+          <m.div
+            className="h-full bg-signal"
+            initial={{ width: 0 }}
+            animate={{ width: `${phaseProgress}%` }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+          />
         </div>
       </header>
 
-      {/* Battlefield — "Balanced Stack" (spec §1): enemy row / center battle
-          stage / ally row. Big-hit focus (R3/ultimate) recedes both team
-          rows and lets the stage take momentary visual focus, then restores. */}
-      <section className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-1 px-3 py-1.5">
-        <div
-          className={`bighit-recede flex min-h-0 flex-col transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.97] opacity-50" : "scale-100 opacity-100"}`}
-        >
-          <div className="mb-1 flex shrink-0 items-center justify-between gap-2">
-            <p className="min-w-0 truncate font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-              Enemy{" "}
-              <span className="text-zinc-600">
-                — tap to inspect · ◎ to focus fire (optional; unmarked attacks
-                pick randomly)
-              </span>
-            </p>
-            {/* Enemy hidden deck (headless 7DS GC model): face-down cards = the
-                enemy's current hand size. */}
-            {enemyDeck.length > 0 ? (
-              <div
-                className="flex shrink-0 items-center gap-1"
-                title={`Enemy hand: ${enemyDeck.length} card${enemyDeck.length > 1 ? "s" : ""}`}
-              >
-                <span className="font-body text-[9px] uppercase tracking-[0.16em] text-zinc-600">
-                  Deck
-                </span>
-                {enemyDeck.slice(0, 7).map((card, i) => (
-                  <span
-                    key={card.id ?? i}
-                    className="flex h-5 w-3.5 items-start justify-center border border-zinc-600/80 bg-linear-to-b from-zinc-800 to-zinc-950"
-                  >
-                    <span className="mt-1 block h-1.5 w-1.5 rotate-45 bg-amber-400/40" />
-                  </span>
-                ))}
-              </div>
-            ) : null}
-          </div>
-          {/* Cards are 9:16 portrait, height-capped to the row and centered;
-              a lone boss just sits alone in the middle. */}
-          <div className="flex min-h-0 flex-1 items-center justify-center gap-2 overflow-hidden">
-            {enemyTeam.map((unit) => (
-              <div
-                key={unit.instanceId}
-                className="aspect-[9/16] max-h-full min-w-0 flex-1 max-w-[88px]"
-              >
-                <TeamUnitTile
-                  unit={unit}
-                  isEnemy
-                  isMarked={selectedEnemyMarker === unit.instanceId}
-                  queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
-                  fx={tileFx(unit.instanceId)}
-                  onInspect={openDetail}
-                  onMark={setEnemyMarker}
-                  onOpenEffects={openDetail}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Battle stage — the focal strip where attack VFX/reveal animations
-            play (ghost lunge, beams, cut-ins are already absolute-positioned
-            over the whole arena; this band just gives that action a visual
-            "stage" between the two team rows instead of them sitting flush). */}
-        <div
-          className={`bighit-recede relative flex h-6 shrink-0 items-center justify-center transition-[transform,filter] duration-300 sm:h-8 ${bigHitFocus ? "scale-x-105" : ""}`}
-        >
+      {/* Stage + rail. The rail sits BESIDE the play area rather than floating
+          on top of it — the three controls it replaces (both roster stacks and
+          Skip) all lived over the tiles they described, and the code carried
+          comments about them colliding with each other. */}
+      <div className="flex min-h-0 flex-1">
+        {/* Battlefield — "Balanced Stack" (spec §1): enemy row / center battle
+            stage / ally row. Big-hit focus (R3/ultimate) recedes both team
+            rows and lets the stage take momentary visual focus, then restores. */}
+        <section className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-1 py-1.5 pl-3 pr-2">
           <div
-            className={`h-px w-full bg-linear-to-r from-transparent via-amber-300/40 to-transparent transition-opacity duration-300 ${bigHitFocus ? "opacity-100" : "opacity-60"}`}
-          />
-          <span
-            className={`absolute font-heading text-[10px] tracking-[0.4em] text-amber-200/70 transition-opacity duration-300 sm:text-xs ${bigHitFocus ? "opacity-100" : "opacity-50"}`}
+            className={`bighit-recede flex min-h-0 flex-col transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.97] opacity-50" : "scale-100 opacity-100"}`}
           >
-            VS
-          </span>
-        </div>
-
-        <div
-          className={`bighit-recede flex min-h-0 flex-col transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.97] opacity-50" : "scale-100 opacity-100"}`}
-        >
-          <p className="mb-1 shrink-0 font-body text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            Player <span className="text-zinc-600">— tap to inspect</span>
-          </p>
-          <div className="flex min-h-0 flex-1 items-center justify-center gap-2 overflow-hidden">
-            {playerTeam.map((unit) => (
-              <div
-                key={unit.instanceId}
-                className="aspect-[9/16] max-h-full min-w-0 flex-1 max-w-[88px]"
-              >
-                <TeamUnitTile
-                  unit={unit}
-                  isEnemy={false}
-                  isMarked={false}
-                  queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
-                  fx={tileFx(unit.instanceId)}
-                  onInspect={openDetail}
-                  onMark={noop}
-                  onOpenEffects={openDetail}
-                />
-              </div>
-            ))}
+            <div className="mb-1 flex shrink-0 items-center justify-between gap-2">
+              {/* The instruction text that used to live here ("tap to inspect ·
+                  ◎ to focus fire (optional; unmarked attacks pick randomly)")
+                  is gone — a permanent tutorial line on a height-starved
+                  screen. The reticle carries its own tooltip. */}
+              <p className="min-w-0 truncate font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+                Enemy
+              </p>
+              {/* Enemy hidden deck (headless 7DS GC model): face-down cards =
+                  the enemy's current hand size. */}
+              {enemyDeck.length > 0 ? (
+                <div
+                  className="flex shrink-0 items-center gap-1"
+                  title={`Enemy hand: ${enemyDeck.length} card${enemyDeck.length > 1 ? "s" : ""}`}
+                >
+                  <span className="font-body text-[9px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+                    Hand {enemyDeck.length}
+                  </span>
+                  {enemyDeck.slice(0, 7).map((card, i) => (
+                    <span
+                      key={card.id ?? i}
+                      className="flex h-4 w-3 items-start justify-center border border-edge bg-panel-raised"
+                    >
+                      <span className="mt-1 block h-1 w-1 rotate-45 bg-readout-muted" />
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            {/* Cards are 9:16 portrait, height-capped to the row and centered;
+                a lone boss just sits alone in the middle. */}
+            <div className="flex min-h-0 flex-1 items-center justify-center gap-2 overflow-hidden">
+              {enemyOnField.map((unit) => (
+                <div
+                  key={unit.instanceId}
+                  className="aspect-[9/16] max-h-full min-w-0 max-w-[112px] flex-1"
+                >
+                  <TeamUnitTile
+                    unit={unit}
+                    isEnemy
+                    isMarked={selectedEnemyMarker === unit.instanceId}
+                    queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
+                    fx={tileFx(unit.instanceId)}
+                    onInspect={openDetail}
+                    onMark={setEnemyMarker}
+                    onOpenEffects={openDetail}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+
+          {/* Battle stage — the focal strip where attack VFX/reveal animations
+              play (ghost lunge, beams, cut-ins are already absolute-positioned
+              over the whole arena; this band just gives that action a visual
+              "stage" between the two team rows instead of them sitting flush). */}
+          <div
+            className={`bighit-recede relative flex h-6 shrink-0 items-center justify-center transition-[transform,filter] duration-300 sm:h-8 ${bigHitFocus ? "scale-x-105" : ""}`}
+          >
+            <div
+              className={`h-px w-full bg-linear-to-r from-transparent via-edge-strong to-transparent transition-opacity duration-300 ${bigHitFocus ? "opacity-100" : "opacity-60"}`}
+            />
+            <span
+              className={`absolute bg-void px-2 font-heading text-[10px] tracking-[0.4em] text-readout-muted transition-opacity duration-300 sm:text-xs ${bigHitFocus ? "opacity-100" : "opacity-60"}`}
+            >
+              VS
+            </span>
+          </div>
+
+          <div
+            className={`bighit-recede flex min-h-0 flex-col transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.97] opacity-50" : "scale-100 opacity-100"}`}
+          >
+            <p className="mb-1 shrink-0 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+              Your team
+            </p>
+            <div className="flex min-h-0 flex-1 items-center justify-center gap-2 overflow-hidden">
+              {playerOnField.map((unit) => (
+                <div
+                  key={unit.instanceId}
+                  className="aspect-[9/16] max-h-full min-w-0 max-w-[112px] flex-1"
+                >
+                  <TeamUnitTile
+                    unit={unit}
+                    isEnemy={false}
+                    isMarked={false}
+                    queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
+                    fx={tileFx(unit.instanceId)}
+                    onInspect={openDetail}
+                    onMark={noop}
+                    onOpenEffects={openDetail}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <aside className="flex w-14 shrink-0 flex-col items-center gap-1 border-l border-hairline bg-inset px-1.5 py-1.5">
+          {/* Skip takes the top slot only while something is playing — it's the
+              most urgent control on the screen for those few seconds. */}
+          {seq.active ? (
+            <RailButton label="Skip" title="Skip playback" active onClick={skipPlayback}>
+              <FastForward className="h-4 w-4" strokeWidth={2.2} />
+            </RailButton>
+          ) : null}
+          <RailButton
+            label={`${battleSpeed}×`}
+            title="Battle speed"
+            active={battleSpeed === 2}
+            onClick={() => setBattleSpeed(battleSpeed === 1 ? 2 : 1)}
+          >
+            <Gauge className="h-4 w-4" strokeWidth={2.2} />
+          </RailButton>
+          <RailButton label="Log" title="Battle log" onClick={() => setIsLogOpen(true)}>
+            <ScrollText className="h-4 w-4" strokeWidth={2.2} />
+          </RailButton>
+
+          <span className="my-0.5 h-px w-6 bg-edge" />
+
+          {/* Enemies had no route into the detail panel from anywhere on this
+              screen before their stack was added. */}
+          <RailButton
+            label="Foe"
+            title="Enemy details"
+            onClick={() => setRosterSide("enemy")}
+          >
+            <RailStack team={enemyOnField} presentedHp={presentedHp} />
+          </RailButton>
+          {/* Full team, not just the field — the bench is only reachable here. */}
+          <RailButton
+            label="Team"
+            title="Team details"
+            onClick={() => setRosterSide("player")}
+          >
+            <RailStack team={playerTeam} presentedHp={presentedHp} />
+          </RailButton>
+
+          {!isBattleOver ? (
+            <>
+              <span className="my-0.5 h-px w-6 bg-edge" />
+              <RailButton
+                label="Exit"
+                title="Exit battle"
+                tone="danger"
+                onClick={() => setIsExitConfirmOpen(true)}
+              >
+                <LogOut className="h-4 w-4" strokeWidth={2.2} />
+              </RailButton>
+            </>
+          ) : null}
+        </aside>
+      </div>
 
       {/* Event ticker (click for full log) */}
-      <div className="shrink-0 border-t border-zinc-800 bg-black/60 px-3 py-1 backdrop-blur-sm">
+      <div className="shrink-0 border-t border-hairline bg-void/70 px-3 py-1 backdrop-blur-sm">
         {interactionNotice ? (
           <div className="flex items-center justify-between gap-2">
-            <p className="truncate font-body text-xs uppercase tracking-[0.1em] text-red-200">
+            <p className="truncate font-body text-xs uppercase tracking-[0.1em] text-el-red">
               {interactionNotice}
             </p>
             <button
               type="button"
               onClick={clearInteractionNotice}
-              className="shrink-0 cursor-pointer border border-red-300/70 px-2 py-0.5 font-body text-[10px] uppercase tracking-widest text-red-100"
+              className="shrink-0 cursor-pointer border border-el-red/70 px-2 py-0.5 font-body text-[10px] uppercase tracking-widest text-el-red"
             >
               Dismiss
             </button>
@@ -906,9 +954,9 @@ export default function BattleArena({
           <button
             type="button"
             onClick={() => setIsLogOpen(true)}
-            className="block w-full cursor-pointer truncate text-left font-body text-xs text-zinc-300 transition-colors hover:text-zinc-100"
+            className="block w-full cursor-pointer truncate text-left font-body text-xs text-readout transition-colors hover:text-readout-strong"
           >
-            <span className="mr-1.5 text-amber-300">►</span>
+            <span className="mr-1.5 text-signal">►</span>
             {latestAction}
           </button>
         )}
@@ -922,27 +970,27 @@ export default function BattleArena({
       />
 
       {isExitConfirmOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
-          <Card className="w-full max-w-sm rounded-none border-2 border-red-500 bg-zinc-950/95 ring-0">
-            <CardHeader className="border-b border-zinc-800 px-6 py-5 text-center">
-              <CardTitle className="font-heading text-3xl tracking-[0.12em] text-red-400">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/85 px-4 backdrop-blur-sm">
+          <Card className="w-full max-w-sm rounded-none border-2 border-el-red bg-panel/95 ring-0">
+            <CardHeader className="border-b border-hairline px-6 py-5 text-center">
+              <CardTitle className="font-heading text-3xl tracking-[0.12em] text-el-red">
                 EXIT BATTLE?
               </CardTitle>
-              <CardDescription className="mt-2 font-body text-xs uppercase tracking-[0.12em] text-zinc-400">
+              <CardDescription className="mt-2 font-body text-xs uppercase tracking-[0.12em] text-readout-dim">
                 This counts as a loss — your progress in this fight is forfeited.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3 px-6 py-5">
               <Button
                 onClick={confirmExitBattle}
-                className="h-11 rounded-none border-2 border-red-500 bg-transparent font-heading text-base tracking-[0.12em] text-red-300 hover:bg-red-500/10"
+                className="h-11 rounded-none border-2 border-el-red bg-transparent font-heading text-base tracking-[0.12em] text-el-red hover:bg-el-red/10"
               >
                 EXIT — TAKE THE LOSS
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setIsExitConfirmOpen(false)}
-                className="h-11 rounded-none border-2 border-zinc-500 bg-transparent font-heading text-base tracking-[0.12em] text-zinc-100"
+                className="h-11 rounded-none border-2 border-edge-strong bg-transparent font-heading text-base tracking-[0.12em] text-readout-strong"
               >
                 CANCEL
               </Button>
@@ -952,17 +1000,17 @@ export default function BattleArena({
       ) : null}
 
       {showBattleOver ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/85 px-4 backdrop-blur-sm">
           <Card
-            className={`w-full max-w-md rounded-none border-2 ${battlePhase === "victory" ? "border-amber-300" : "border-red-500"} bg-zinc-950/95 ring-0`}
+            className={`w-full max-w-md rounded-none border-2 ${battlePhase === "victory" ? "border-el-light" : "border-el-red"} bg-panel/95 ring-0`}
           >
-            <CardHeader className="border-b border-zinc-800 px-6 py-6 text-center">
+            <CardHeader className="border-b border-hairline px-6 py-6 text-center">
               <CardTitle
-                className={`font-heading text-6xl tracking-[0.16em] ${battlePhase === "victory" ? "text-amber-300" : "text-red-400"}`}
+                className={`font-heading text-6xl tracking-[0.16em] ${battlePhase === "victory" ? "text-el-light" : "text-el-red"}`}
               >
                 {battlePhase === "victory" ? "VICTORY" : "DEFEAT"}
               </CardTitle>
-              <CardDescription className="mt-2 font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+              <CardDescription className="mt-2 font-body text-xs uppercase tracking-[0.14em] text-readout-dim">
                 Turn {currentTurn + 1} • {playerTurns} player /{" "}
                 {enemyTurns} enemy actions resolved
               </CardDescription>
@@ -971,7 +1019,7 @@ export default function BattleArena({
               {battleEnd && battlePhase === "victory" ? (
                 <Button
                   onClick={battleEnd.onContinue}
-                  className="h-12 rounded-none border-2 border-amber-300 font-heading text-lg tracking-[0.14em]"
+                  className="h-12 rounded-none border-2 border-signal font-heading text-lg tracking-[0.14em] text-signal"
                 >
                   {story ? "CONTINUE STORY" : "CLAIM REWARDS"}
                 </Button>
@@ -980,14 +1028,14 @@ export default function BattleArena({
                 <>
                   <Button
                     onClick={battleEnd.onRetry}
-                    className="h-12 rounded-none border-2 border-amber-300 font-heading text-lg tracking-[0.14em]"
+                    className="h-12 rounded-none border-2 border-signal font-heading text-lg tracking-[0.14em] text-signal"
                   >
                     RETRY BATTLE
                   </Button>
                   <Button
                     variant="outline"
                     onClick={battleEnd.onQuit}
-                    className="h-12 rounded-none border-2 border-zinc-400 bg-transparent font-heading text-lg tracking-[0.14em] text-zinc-100"
+                    className="h-12 rounded-none border-2 border-edge-strong bg-transparent font-heading text-lg tracking-[0.14em] text-readout-strong"
                   >
                     {story ? "BACK TO CHAPTERS" : "BACK TO WORLD BOSS"}
                   </Button>
@@ -1001,7 +1049,7 @@ export default function BattleArena({
                       lastBattleConfig.enemyPicks,
                     )
                   }
-                  className="h-12 rounded-none border-2 border-amber-300 font-heading text-lg tracking-[0.14em]"
+                  className="h-12 rounded-none border-2 border-signal font-heading text-lg tracking-[0.14em] text-signal"
                 >
                   REMATCH
                 </Button>
@@ -1011,12 +1059,12 @@ export default function BattleArena({
                   <Button
                     variant="outline"
                     onClick={saveBattleLog}
-                    className="h-12 rounded-none border-2 border-sky-400 bg-transparent font-heading text-lg tracking-[0.14em] text-sky-200"
+                    className="h-12 rounded-none border-2 border-edge-strong bg-transparent font-heading text-lg tracking-[0.14em] text-readout-dim"
                   >
                     SAVE BATTLE LOG
                   </Button>
                   {logSaveResult ? (
-                    <p className="text-center font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+                    <p className="text-center font-body text-xs uppercase tracking-[0.14em] text-readout-dim">
                       {logSaveResult}
                     </p>
                   ) : null}
@@ -1027,7 +1075,7 @@ export default function BattleArena({
                   <Button
                     variant="outline"
                     onClick={resetBattle}
-                    className="h-12 rounded-none border-2 border-zinc-400 bg-transparent font-heading text-lg tracking-[0.14em] text-zinc-100"
+                    className="h-12 rounded-none border-2 border-edge-strong bg-transparent font-heading text-lg tracking-[0.14em] text-readout-strong"
                   >
                     CHANGE TEAMS
                   </Button>
@@ -1037,7 +1085,7 @@ export default function BattleArena({
                       resetBattle();
                       router.push("/");
                     }}
-                    className="h-12 rounded-none border-2 border-zinc-700 font-heading text-lg tracking-[0.14em] text-zinc-300"
+                    className="h-12 rounded-none border-2 border-edge font-heading text-lg tracking-[0.14em] text-readout"
                   >
                     MAIN MENU
                   </Button>
@@ -1071,13 +1119,13 @@ export default function BattleArena({
       ) : null}
 
       {pendingAllyCard ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4">
-          <Card className="w-full max-w-md rounded-none border border-emerald-500/60 bg-zinc-950/95 ring-0">
-            <CardHeader className="border-b border-zinc-800 px-5 py-4">
-              <CardTitle className="font-heading text-xl tracking-[0.08em] text-zinc-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/75 px-4">
+          <Card className="w-full max-w-md rounded-none border border-role-heal/60 bg-panel/95 ring-0">
+            <CardHeader className="border-b border-hairline px-5 py-4">
+              <CardTitle className="font-heading text-xl tracking-[0.08em] text-readout-strong">
                 Choose an ally
               </CardTitle>
-              <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+              <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-readout-dim">
                 {pendingAllyCard.skill.skillName} — pick who it targets
               </CardDescription>
             </CardHeader>
@@ -1090,12 +1138,12 @@ export default function BattleArena({
                       key={ally.instanceId}
                       type="button"
                       onClick={() => confirmAllyTarget(ally.instanceId)}
-                      className="flex items-center justify-between gap-2 border-2 border-zinc-700 bg-zinc-900/60 px-3 py-2 text-left transition-colors hover:border-emerald-400 hover:bg-emerald-400/5"
+                      className="flex items-center justify-between gap-2 border-2 border-edge bg-inset px-3 py-2 text-left transition-colors hover:border-signal hover:bg-signal/5"
                     >
-                      <span className="min-w-0 truncate font-heading text-sm tracking-[0.06em] text-zinc-100">
+                      <span className="min-w-0 truncate font-heading text-sm tracking-[0.06em] text-readout-strong">
                         {ally.name}
                       </span>
-                      <span className="shrink-0 font-body text-[10px] uppercase tracking-widest text-zinc-500">
+                      <span className="shrink-0 font-body text-[10px] uppercase tracking-widest text-readout-muted">
                         {ally.currentHP}/{ally.hp}
                       </span>
                     </button>
@@ -1104,7 +1152,7 @@ export default function BattleArena({
               <Button
                 variant="ghost"
                 onClick={cancelAllyTarget}
-                className="w-full rounded-none border border-zinc-700 text-xs uppercase tracking-widest text-zinc-300"
+                className="w-full rounded-none border border-edge text-xs uppercase tracking-widest text-readout"
               >
                 Cancel
               </Button>

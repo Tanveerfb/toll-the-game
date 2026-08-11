@@ -4,6 +4,11 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  LIMITED_MILESTONE_FINAL,
+  LIMITED_MILESTONE_FIRST,
+  PERMANENT_MILESTONE_FINAL,
+} from "@/lib/gacha/milestone";
 import { usePlayerStore } from "@/store/playerStore";
 import { getPlayableCharacters } from "@/lib/game/characterCatalog";
 
@@ -71,29 +76,29 @@ export default function DevGrantPanel(): React.JSX.Element | null {
             variant="outline"
             onClick={() =>
               setPlayerState({
-                pity: { ...usePlayerStore.getState().pity, limited: { ...usePlayerStore.getState().pity.limited, bar: 300 } },
+                pity: { ...usePlayerStore.getState().pity, limited: { ...usePlayerStore.getState().pity.limited, bar: LIMITED_MILESTONE_FIRST } },
               })
             }
           >
-            Force Limited bar to 300
+            Force Limited bar to first milestone
           </Button>
           <Button
             variant="outline"
             onClick={() =>
               setPlayerState({
-                pity: { ...usePlayerStore.getState().pity, limited: { ...usePlayerStore.getState().pity.limited, bar: 600 } },
+                pity: { ...usePlayerStore.getState().pity, limited: { ...usePlayerStore.getState().pity.limited, bar: LIMITED_MILESTONE_FINAL } },
               })
             }
           >
-            Force Limited bar to 600
+            Force Limited bar to final milestone
           </Button>
           <Button
             variant="outline"
             onClick={() =>
-              setPlayerState({ pity: { ...usePlayerStore.getState().pity, permanent: { bar: 600 } } })
+              setPlayerState({ pity: { ...usePlayerStore.getState().pity, permanent: { ...usePlayerStore.getState().pity.permanent, bar: PERMANENT_MILESTONE_FINAL } } })
             }
           >
-            Force Permanent bar to 600
+            Force Permanent bar to milestone
           </Button>
           <Button variant="outline" onClick={() => spendStaminaAction(40)}>Simulate a run (-40 stamina)</Button>
         </div>

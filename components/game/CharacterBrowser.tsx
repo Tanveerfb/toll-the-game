@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { usePlayerStore } from "@/store/playerStore";
+import { useSettingsStore } from "@/store/settingsStore";
 
 type CharacterColor = "light" | "red" | "blue" | "green" | "dark";
 
@@ -153,6 +154,11 @@ export default function CharacterBrowser({
   const roster = usePlayerStore((s) => s.roster);
   const characterProgress = usePlayerStore((s) => s.characters);
   const hasHydrated = usePlayerStore((s) => s.hasHydrated);
+  // The archive took over the roster listing from `/profile`, so by default it
+  // shows what you own. Unowned units are one click away, not gone.
+  const showUnowned = useSettingsStore((s) => s.showUnownedCharacters);
+  const setShowUnowned = useSettingsStore((s) => s.setShowUnownedCharacters);
+  const ownedIds = React.useMemo(() => new Set(roster), [roster]);
 
   const allTags = React.useMemo(() => {
     const s = new Set<string>();
@@ -210,7 +216,18 @@ export default function CharacterBrowser({
       const matchesMechs =
         selectedMechs.size === 0 ||
         (character.mechanics ?? []).some((m) => selectedMechs.has(m));
-      return matchesSearch && matchesColor && matchesTags && matchesMechs;
+      // Ownership can only be judged once the store has rehydrated; before
+      // that everything shows, same reason the tiles hold back their state
+      // label rather than flashing "Locked" on a unit you own.
+      const matchesOwned =
+        showUnowned || !hasHydrated || ownedIds.has(character.id);
+      return (
+        matchesSearch &&
+        matchesColor &&
+        matchesTags &&
+        matchesMechs &&
+        matchesOwned
+      );
     });
 
     if (sortField !== "none") {
@@ -218,7 +235,23 @@ export default function CharacterBrowser({
       rows.sort((a, b) => (a[sortField] - b[sortField]) * dir);
     }
     return rows;
-  }, [characters, searchValue, selectedColor, selectedTags, selectedMechs, sortField, sortDir]);
+  }, [
+    characters,
+    searchValue,
+    selectedColor,
+    selectedTags,
+    selectedMechs,
+    sortField,
+    sortDir,
+    showUnowned,
+    hasHydrated,
+    ownedIds,
+  ]);
+
+  const hiddenByOwnership =
+    hasHydrated && !showUnowned
+      ? characters.filter((c) => !ownedIds.has(c.id)).length
+      : 0;
 
   const onSort = (field: Exclude<SortField, "none">) => {
     if (sortField === field) {
@@ -265,7 +298,8 @@ export default function CharacterBrowser({
         </div>
         <span className="ml-auto font-body text-[11px] font-bold uppercase tracking-[0.2em] tabular-nums text-readout-muted">
           <b className="font-bold text-signal">{filtered.length}</b> /{" "}
-          {characters.length} units
+          {hasHydrated && !showUnowned ? ownedIds.size : characters.length}{" "}
+          units
         </span>
       </div>
 
@@ -289,6 +323,16 @@ export default function CharacterBrowser({
           onClick={() => setShowFilters((v) => !v)}
         >
           Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+        </Toggle>
+        {/* Owned-only is the default view, so the control that changes it says
+            what it would reveal rather than what it currently is. */}
+        <Toggle
+          active={showUnowned}
+          onClick={() => setShowUnowned(!showUnowned)}
+        >
+          {showUnowned
+            ? "Owned only"
+            : `Show locked${hiddenByOwnership > 0 ? ` (${hiddenByOwnership})` : ""}`}
         </Toggle>
         {(activeFilterCount > 0 ||
           selectedColor !== "all" ||
@@ -348,16 +392,33 @@ export default function CharacterBrowser({
 
       {/* Unit grid */}
       {filtered.length === 0 ? (
-        <p className="chamfer-lg border border-edge bg-panel py-10 text-center font-body text-sm font-bold uppercase tracking-[0.2em] text-readout-muted">
-          No units match this query.
-        </p>
+        <div className="chamfer-lg flex flex-col items-center gap-3 border border-edge bg-panel py-10 text-center">
+          <p className="font-body text-sm font-bold uppercase tracking-[0.2em] text-readout-muted">
+            No units match this query.
+          </p>
+          {/* Without this, an empty grid on a fresh account reads as a bug
+              rather than as "you own one character and it's filtered out". */}
+          {hiddenByOwnership > 0 ? (
+            <button
+              type="button"
+              onClick={() => setShowUnowned(true)}
+              className="chamfer border border-edge px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-signal transition-colors hover:border-signal"
+            >
+              {hiddenByOwnership} locked unit
+              {hiddenByOwnership === 1 ? " is" : "s are"} hidden — show them
+            </button>
+          ) : null}
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {filtered.map((character) => {
             const hue = EL_HUE[character.color];
             const art = getCharacterArt(character.id);
-            const owned = hasHydrated && roster.includes(character.id);
-            const ultLevel = characterProgress[character.id]?.ultLevel ?? 1;
+            const owned = hasHydrated && ownedIds.has(character.id);
+            const progress = characterProgress[character.id];
+            const ultLevel = progress?.ultLevel ?? 1;
+            const level = progress?.level ?? 1;
+            const ascension = progress?.ascension ?? 0;
             // Pre-hydration we don't know what's owned, so the tile shows no
             // state label at all rather than flashing "Locked" on an owned unit.
             const locked = hasHydrated && !owned;
@@ -393,15 +454,23 @@ export default function CharacterBrowser({
                   >
                     {EL_CODE[character.color]}
                   </span>
+                  {/* This corner used to read "Active" — true but useless.
+                      The archive is the roster screen now, so it carries the
+                      investment: level, ascension band, ult rank. */}
                   {hasHydrated ? (
                     <span
-                      className="absolute bottom-0 right-0 border-l border-t border-edge bg-void/85 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-[0.18em]"
+                      title={
+                        owned
+                          ? `Level ${level}${ascension > 0 ? `, ascension ${ascension}` : ""}${ultLevel > 1 ? `, ultimate ${ultLevel}` : ""}`
+                          : "Not yet recruited"
+                      }
+                      className="absolute bottom-0 right-0 border-l border-t border-edge bg-void/85 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-[0.14em] tabular-nums"
                       style={{
                         color: owned ? hue : "var(--color-readout-muted)",
                       }}
                     >
                       {owned
-                        ? `Active${ultLevel > 1 ? ` · U${ultLevel}` : ""}`
+                        ? `Lv ${level}${ascension > 0 ? ` · A${ascension}` : ""}${ultLevel > 1 ? ` · U${ultLevel}` : ""}`
                         : "Locked"}
                     </span>
                   ) : null}

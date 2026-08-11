@@ -1,0 +1,290 @@
+{
+  "id": "part5",
+  "order": 5,
+  "title": "Trial by Fire",
+  "tagline": "I will do my best to hold back. But I am not permitted to go easy on you.",
+  "coverCharacterId": "master_tao",
+  "chapters": [
+    {
+      "id": "p5c1",
+      "title": "Round One",
+      "teamMode": "canon",
+      "trialLevel": 15,
+      "stageEffects": [
+        {
+          "type": "statBoost",
+          "target": "player",
+          "stat": "atk",
+          "valuePercent": -50,
+          "description": "No Toll — Duke opens with his hands alone."
+        }
+      ],
+      "intro": [
+        {
+          "portraitId": "duke",
+          "text": "They come out of the treeline into a clearing near the volcano base. The ground is already black. A figure sits cross-legged at the centre of it, eyes closed, still. Off to one side, a candidate lies burned and unconscious — chest barely rising. Nobody has to explain what happened here."
+        },
+        {
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "They recognise him from the screen. Both shift into ready stances without a word. Tao doesn't open his eyes."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "You two are next? Hopefully I'll get more of a challenge from you than the lot I just fought."
+        },
+        {
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "He opens his eyes slowly. Takes them both in — unhurried, measuring."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "You may attack whenever you're ready."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "They feel it immediately. Not skill — weight. The kind of fighter who doesn't need to perform confidence because the confidence is structural. Lyra hangs back, reading. Duke steps forward."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "duke" }],
+        "enemyTeam": [{ "id": "master_tao" }]
+      },
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "Duke doesn't stop. Combinations — face, body, angles, fast and clean and relentless. Tao reads all of it, blocking or slipping with almost no movement. He doesn't step back. He doesn't step forward. He just handles it."
+        },
+        {
+          "portraitId": "duke",
+          "text": "Then a single kick. Duke blocks it, and the force clears him several metres back through the block. All three go still. The dust settles. The gap between them says everything that needs saying."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 120,
+          "coin": 4000,
+          "materials": { "training_manual": 4 },
+          "accountXp": 28
+        },
+        "repeat": {
+          "coin": { "min": 900, "max": 1800 },
+          "materials": { "training_manual": { "min": 1, "max": 2 } }
+        },
+        "replayStamina": 8
+      }
+    },
+    {
+      "id": "p5c2",
+      "title": "The Plan",
+      "teamMode": "canon",
+      "trialLevel": 15,
+      "intro": [
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "Lyra comes up beside him, eyes still on Tao. Duke holds his block stance — not hurt, but the cost of it shows. Across the clearing Tao waits, not even breathing hard."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "That old man is too strong for me in hand to hand. If you can't even land a single strike, there's no chance for me."
+        },
+        {
+          "speaker": "Lyra",
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "But if we work together — we might actually take him down. We have to use Toll. Non-Toll attacks aren't going to move him."
+        },
+        {
+          "portraitId": "duke",
+          "text": "Duke exhales and lets the stance go. Looks at Tao — calm, confident, waiting. Something in him finds the absurdity of it funny. He smiles."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Yeah. We're not getting far without it, that's for sure."
+        },
+        {
+          "speaker": "Duke",
+          "portraitId": "duke",
+          "text": "Let's go. You cover me — I'll take him head on."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "duke" }, { "id": "lyra" }],
+        "enemyTeam": [{ "id": "master_tao" }]
+      },
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "An arrow lands — red ice, crystalline — and Tao has to disengage and give ground. He looks at the arrow. Then at Lyra, already nocking another. He studies the colour. Ice he knows. Ice that colour is wrong. He files it away and keeps going."
+        },
+        {
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "The rhythm builds — Duke holding him in close quarters, Lyra closing every opening he tries to take, Tao forced to split his attention. He's being pressured. Not overwhelmed. Something shifts in his expression that isn't alarm. It's interest."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 120,
+          "coin": 4000,
+          "materials": { "training_manual": 4 },
+          "accountXp": 30
+        },
+        "repeat": {
+          "coin": { "min": 900, "max": 1800 },
+          "materials": { "training_manual": { "min": 1, "max": 2 } }
+        },
+        "replayStamina": 8
+      }
+    },
+    {
+      "id": "p5c3",
+      "title": "Smoldering Palm",
+      "teamMode": "canon",
+      "trialLevel": 15,
+      "stageEffects": [
+        {
+          "type": "bonusActions",
+          "target": "enemy",
+          "value": 1,
+          "description": "Tao has split them — Lyra is out of the fight."
+        }
+      ],
+      "intro": [
+        {
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "Tao reads the pattern. The arrows are the disruption; without them, Duke alone isn't a threat at this level. The calculation is quick. He lets Duke land a strike — takes it deliberately — and his palm ignites."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "Smoldering Palm. Fire engulfing from the point of contact inward. Duke pulls water Toll through the contact the instant it lands and negates most of it, but it costs him, and it makes distance. He stumbles back, sleeve scorched."
+        },
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "Tao is already moving. Toward Lyra. She fires in rapid succession and he parries all of it, walking through the arrows faster than she can reset. She throws the bow aside and shifts to ice barriers at close range, buying seconds she doesn't have."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "He draws Toll into both arms — fire condensing outside his torso, gathering into something enormous. Funeral Pyre."
+        },
+        {
+          "portraitId": "duke",
+          "text": "Duke crosses the clearing at the last second and shoves her out of the path. They hit the ground hard as it detonates in the space she was standing in. The trees take it. The ground scorches. They lie there a moment, looking at what happened beside them."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "duke" }],
+        "enemyTeam": [{ "id": "master_tao" }]
+      },
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "They get back to their feet. All three re-engage — faster and messier than before, everyone in tight range, Duke and Lyra both worn down, Tao still composed and no longer bored."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 140,
+          "coin": 4400,
+          "materials": { "training_manual": 5 },
+          "accountXp": 32
+        },
+        "repeat": {
+          "coin": { "min": 1000, "max": 2000 },
+          "materials": { "training_manual": { "min": 1, "max": 2 } }
+        },
+        "replayStamina": 8
+      }
+    },
+    {
+      "id": "p5c4",
+      "title": "The Combination",
+      "teamMode": "canon",
+      "trialLevel": 15,
+      "intro": [
+        {
+          "portraitId": "lyra",
+          "side": "right",
+          "text": "Lyra spots her bow on the ground mid-exchange, breaks off, grabs it, and puts three arrows into the air while Duke keeps him busy. Two are parried. One lands, straight into Tao's back. Red ice spreads from the impact. The freeze bites. Then the burn."
+        },
+        {
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "Tao goes still for half a second. Then the fire comes — not the thin controlled layer from before. His whole body engulfs, radiating heat they feel from metres away. The arrow burns off him in seconds. He rolls his shoulders once and looks at both of them."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "He launches skyward — Toll-propelled, carrying him high above the clearing, already gathering fire above them with both arms raised. Scorched Earth. Twenty metres, no targeting, everything in the radius."
+        },
+        {
+          "portraitId": "duke",
+          "text": "Duke looks at it. Looks at Lyra. Half a second, and it's the only window he gets. He moves to her side and whispers something fast and urgent into her ear. Her eyes flick to him. Then back up."
+        }
+      ],
+      "battle": {
+        "playerTeam": [{ "id": "duke" }, { "id": "lyra" }],
+        "enemyTeam": [{ "id": "master_tao", "level": 15 }]
+      },
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "text": "White out. Heat. Silence. Tao lands at the edge of the scorched ground and looks toward the centre. Two figures. Still standing."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "These two... are something else."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "Lyra's red ice freezes on contact. Duke's water negates the burn when it melts — the same property that took the skin off his hand once, reversed and turned into a shield. She encased them both in the instant before impact and he wrapped his Toll around it. It shouldn't have worked. It barely did."
+        },
+        {
+          "portraitId": "duke",
+          "text": "Both of them drop to their knees, then to the ground, side by side, completely spent. The flames die down around them. Tao walks over and looks down."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "I'm impressed. Not many people have survived that attack."
+        },
+        {
+          "speaker": "Master Tao",
+          "portraitId": "master_tao",
+          "side": "right",
+          "text": "You two may proceed to Phase 2. I'd suggest resting before you move on."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "They hear it. Neither of them responds. They're already asleep."
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 200,
+          "coin": 6000,
+          "materials": { "training_manual_advanced": 2, "training_manual": 4 },
+          "accountXp": 40
+        },
+        "repeat": {
+          "coin": { "min": 1200, "max": 2400 },
+          "materials": { "training_manual": { "min": 1, "max": 3 } }
+        },
+        "replayStamina": 10
+      }
+    }
+  ]
+}

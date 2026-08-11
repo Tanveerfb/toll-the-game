@@ -1,91 +1,198 @@
 import { describe, expect, it } from "vitest";
 import {
-  LIMITED_MILESTONE_300,
-  LIMITED_MILESTONE_600,
-  PERMANENT_MILESTONE_600,
+  LIMITED_MILESTONE_FINAL,
+  LIMITED_MILESTONE_FIRST,
+  PERMANENT_MILESTONE_FINAL,
   advanceLimitedBar,
   advancePermanentBar,
-  canClaimLimited300,
-  canClaimLimited600,
-  canClaimPermanent600,
-  resetLimitedLap,
-  resetPermanentLap,
+  canClaimLimitedFinal,
+  canClaimLimitedFirst,
+  canClaimPermanentFinal,
+  isLimitedLapComplete,
+  settleLimitedLap,
+  settlePermanentLap,
+  unclaimedLimitedMilestones,
   type LimitedPityState,
 } from "@/lib/gacha/milestone";
 
+/**
+ * The rules Tanveer set on 2026-08-11:
+ *   - thresholds are 500 and 1,000, 1:1 with gems spent
+ *   - the final milestone does NOT override the first
+ *   - the lap only wraps once every reward on it has been taken
+ *
+ * The last one is the load-bearing change. The previous model reset the lap the
+ * moment the final milestone was claimed, silently destroying an unclaimed
+ * first — there was even a test asserting that forfeit as correct behaviour.
+ */
+
+const lap = (over: Partial<LimitedPityState> = {}): LimitedPityState => ({
+  bannerId: "debut-2026-08",
+  bar: 0,
+  claimedFirst: false,
+  claimedFinal: false,
+  ...over,
+});
+
 describe("advanceLimitedBar", () => {
-  it("accumulates spend on the same banner", () => {
-    const state: LimitedPityState = { bannerId: "debut-2026-08", bar: 100, claimed300: false };
-    const result = advanceLimitedBar(state, "debut-2026-08", 30);
-    expect(result).toEqual({ bannerId: "debut-2026-08", bar: 130, claimed300: false });
+  it("accumulates on the same banner", () => {
+    expect(advanceLimitedBar(lap({ bar: 100 }), "debut-2026-08", 50)).toEqual(
+      lap({ bar: 150 }),
+    );
   });
 
-  it("resets to 0 (and clears claimed300) before adding spend when the banner changes", () => {
-    const state: LimitedPityState = { bannerId: "old-banner", bar: 250, claimed300: true };
-    const result = advanceLimitedBar(state, "new-banner", 30);
-    expect(result).toEqual({ bannerId: "new-banner", bar: 30, claimed300: false });
+  it("wipes the lap — bar and both flags — when the banner changes", () => {
+    const carried = advanceLimitedBar(
+      lap({ bar: 900, claimedFirst: true, claimedFinal: true }),
+      "new-banner",
+      50,
+    );
+    expect(carried).toEqual({
+      bannerId: "new-banner",
+      bar: 50,
+      claimedFirst: false,
+      claimedFinal: false,
+    });
   });
 
-  it("adopts the active banner id on first-ever spend (bannerId starts null)", () => {
-    const state: LimitedPityState = { bannerId: null, bar: 0, claimed300: false };
-    const result = advanceLimitedBar(state, "debut-2026-08", 3);
-    expect(result).toEqual({ bannerId: "debut-2026-08", bar: 3, claimed300: false });
-  });
-});
-
-describe("canClaimLimited300 / canClaimLimited600", () => {
-  it("is not claimable just under the threshold", () => {
-    expect(canClaimLimited300(299, false)).toBe(false);
-    expect(canClaimLimited600(599)).toBe(false);
-  });
-
-  it("is claimable at exactly the threshold", () => {
-    expect(canClaimLimited300(300, false)).toBe(true);
-    expect(canClaimLimited600(600)).toBe(true);
-  });
-
-  it("300 is not claimable again once already claimed this lap", () => {
-    expect(canClaimLimited300(450, true)).toBe(false);
-  });
-
-  it("600 stays claimable regardless of the 300 claimed flag (independent)", () => {
-    expect(canClaimLimited600(600)).toBe(true);
+  it("adopts the active banner on first-ever spend", () => {
+    const first = advanceLimitedBar(
+      { bannerId: null, bar: 0, claimedFirst: false, claimedFinal: false },
+      "debut-2026-08",
+      5,
+    );
+    expect(first).toEqual(lap({ bar: 5 }));
   });
 });
 
-describe("resetLimitedLap", () => {
-  it("zeroes the bar and clears claimed300, keeping the banner id", () => {
-    const state: LimitedPityState = { bannerId: "debut-2026-08", bar: 650, claimed300: true };
-    expect(resetLimitedLap(state)).toEqual({ bannerId: "debut-2026-08", bar: 0, claimed300: false });
+describe("claimability", () => {
+  it("needs the exact threshold, not one short", () => {
+    expect(canClaimLimitedFirst(LIMITED_MILESTONE_FIRST - 1, false)).toBe(false);
+    expect(canClaimLimitedFirst(LIMITED_MILESTONE_FIRST, false)).toBe(true);
+    expect(canClaimLimitedFinal(LIMITED_MILESTONE_FINAL - 1, false)).toBe(false);
+    expect(canClaimLimitedFinal(LIMITED_MILESTONE_FINAL, false)).toBe(true);
   });
 
-  it("forfeits an unclaimed 300 when 600 is claimed (claimed300 was false going in)", () => {
-    const state: LimitedPityState = { bannerId: "debut-2026-08", bar: 650, claimed300: false };
-    const result = resetLimitedLap(state);
-    expect(result).toEqual({ bannerId: "debut-2026-08", bar: 0, claimed300: false });
-    expect(canClaimLimited300(result.bar, result.claimed300)).toBe(false);
+  it("refuses a second claim of the same milestone in one lap", () => {
+    expect(canClaimLimitedFirst(LIMITED_MILESTONE_FINAL, true)).toBe(false);
+    expect(canClaimLimitedFinal(LIMITED_MILESTONE_FINAL, true)).toBe(false);
+  });
+
+  it("keeps the first claimable past the final threshold", () => {
+    // The heart of the ruling: reaching the end does not close the door on
+    // what came before it.
+    expect(canClaimLimitedFirst(LIMITED_MILESTONE_FINAL + 200, false)).toBe(
+      true,
+    );
+  });
+});
+
+describe("lap completion", () => {
+  it("is not complete while anything is unclaimed", () => {
+    expect(
+      isLimitedLapComplete(lap({ bar: 1200, claimedFirst: true })),
+    ).toBe(false);
+    expect(
+      isLimitedLapComplete(lap({ bar: 1200, claimedFinal: true })),
+    ).toBe(false);
+  });
+
+  it("is not complete on claims alone if the bar never reached the end", () => {
+    expect(
+      isLimitedLapComplete(
+        lap({ bar: 600, claimedFirst: true, claimedFinal: true }),
+      ),
+    ).toBe(false);
+  });
+
+  it("is complete once the end is reached and both are taken", () => {
+    expect(
+      isLimitedLapComplete(
+        lap({ bar: 1000, claimedFirst: true, claimedFinal: true }),
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("settleLimitedLap", () => {
+  it("leaves an incomplete lap exactly as it was", () => {
+    // Claiming the final milestone with the first still outstanding used to
+    // zero the bar and destroy that reward. Now it changes nothing.
+    const held = lap({ bar: 1100, claimedFinal: true });
+    expect(settleLimitedLap(held)).toEqual(held);
+    expect(canClaimLimitedFirst(held.bar, held.claimedFirst)).toBe(true);
+  });
+
+  it("wraps once everything has been taken, keeping the banner id", () => {
+    const done = lap({ bar: 1100, claimedFirst: true, claimedFinal: true });
+    expect(settleLimitedLap(done)).toEqual(lap({ bar: 0 }));
+  });
+
+  it("either claim order reaches the same wrapped state", () => {
+    // "Claimable in any order" is only true if the order can't change where
+    // you end up. Walk both, settling after each claim as the store does.
+    const takeFinalThenFirst = settleLimitedLap({
+      ...settleLimitedLap(lap({ bar: 1000, claimedFinal: true })),
+      claimedFirst: true,
+    });
+    const takeFirstThenFinal = settleLimitedLap({
+      ...settleLimitedLap(lap({ bar: 1000, claimedFirst: true })),
+      claimedFinal: true,
+    });
+    expect(takeFinalThenFirst).toEqual(takeFirstThenFinal);
+    expect(takeFinalThenFirst.bar).toBe(0);
+  });
+});
+
+describe("unclaimedLimitedMilestones", () => {
+  it("names nothing before the first threshold", () => {
+    expect(unclaimedLimitedMilestones(lap({ bar: 100 }))).toEqual([]);
+  });
+
+  it("names both when the bar is at the end and neither is taken", () => {
+    expect(unclaimedLimitedMilestones(lap({ bar: 1000 }))).toEqual([
+      LIMITED_MILESTONE_FIRST,
+      LIMITED_MILESTONE_FINAL,
+    ]);
+  });
+
+  it("drops one as it is claimed", () => {
+    expect(
+      unclaimedLimitedMilestones(lap({ bar: 1000, claimedFirst: true })),
+    ).toEqual([LIMITED_MILESTONE_FINAL]);
   });
 });
 
 describe("Permanent bar", () => {
-  it("advancePermanentBar accumulates", () => {
-    expect(advancePermanentBar(100, 10)).toBe(110);
+  it("accumulates", () => {
+    expect(
+      advancePermanentBar({ bar: 100, claimedFinal: false }, 10),
+    ).toEqual({ bar: 110, claimedFinal: false });
   });
 
-  it("canClaimPermanent600 follows the same exact-threshold rule", () => {
-    expect(canClaimPermanent600(599)).toBe(false);
-    expect(canClaimPermanent600(600)).toBe(true);
+  it("follows the same exact-threshold and once-per-lap rules", () => {
+    expect(canClaimPermanentFinal(PERMANENT_MILESTONE_FINAL - 1, false)).toBe(
+      false,
+    );
+    expect(canClaimPermanentFinal(PERMANENT_MILESTONE_FINAL, false)).toBe(true);
+    expect(canClaimPermanentFinal(PERMANENT_MILESTONE_FINAL, true)).toBe(false);
   });
 
-  it("resetPermanentLap zeroes the bar", () => {
-    expect(resetPermanentLap()).toBe(0);
+  it("wraps only once its single milestone has been taken", () => {
+    const held = { bar: 700, claimedFinal: false };
+    expect(settlePermanentLap(held)).toEqual(held);
+    expect(settlePermanentLap({ bar: 700, claimedFinal: true })).toEqual({
+      bar: 0,
+      claimedFinal: false,
+    });
   });
 });
 
 describe("milestone constants", () => {
-  it("are the locked spec numbers", () => {
-    expect(LIMITED_MILESTONE_300).toBe(300);
-    expect(LIMITED_MILESTONE_600).toBe(600);
-    expect(PERMANENT_MILESTONE_600).toBe(600);
+  it("are the ruled numbers", () => {
+    expect(LIMITED_MILESTONE_FIRST).toBe(500);
+    expect(LIMITED_MILESTONE_FINAL).toBe(1000);
+    // Permanent runs on tickets and was not re-priced with the gem change.
+    expect(PERMANENT_MILESTONE_FINAL).toBe(600);
   });
 });

@@ -25,7 +25,7 @@ export default function Practice() {
   // bottom, no page scroll (STATUS #20)
   return (
     <main
-      className="relative flex h-[calc(100dvh-2.875rem)] flex-col overflow-hidden text-zinc-100"
+      className="relative flex screen-below-nav flex-col overflow-hidden text-zinc-100"
       style={{
         backgroundImage:
           "radial-gradient(70% 50% at 50% 0%, rgba(245,158,11,0.22), transparent 72%), linear-gradient(140deg, #09090b 0%, #111827 52%, #0a0a0a 100%)",

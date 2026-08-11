@@ -4,6 +4,13 @@
 Written 2026-08-11 from `E:\Toll - Web toon` (`Master_Context.md`, `Chapter 3–6.md`).
 Story is Tanveer's to own — this is a proposed mapping, not a decision.
 
+> **Read `STORY_PARTS_7_TO_12_DRAFT.md` alongside this.** The source holds
+> twelve chapters, not six; 7–12 were mapped on 2026-08-11 after this document.
+> One thing there directly overrides a ruling below: this draft says the Seris
+> scene is "intrigue only, not villain identification", and **webtoon chapter
+> 10 identifies her on screen as Yalina's killer.** Part 6 should be authored
+> knowing that lands four parts later.
+
 ---
 
 ## How the game has been splitting the webtoon so far

@@ -108,6 +108,17 @@ export interface StoryChapter {
    *  deep into story" (Tanveer, 2026-08-11). Defaults to
    *  `DEFAULT_TRIAL_LEVEL`. */
   trialLevel?: number;
+  /**
+   * End the battle as a victory once the enemy side falls to this percentage
+   * of its pooled HP, instead of requiring every enemy dead.
+   *
+   * For fights the story says you don't win — Chiara conceding, Duke and Batra
+   * breaking off, Molvarr being crossed rather than killed. The chapter's
+   * outro panels carry what actually happened; the battle just stops at the
+   * right moment (Tanveer, 2026-08-11). Absent = fight to the end, which is
+   * every chapter authored before this.
+   */
+  victoryAtEnemyHpPercent?: number;
   rewards: StoryChapterRewards;
 }
 

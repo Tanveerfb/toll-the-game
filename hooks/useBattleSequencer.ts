@@ -4,13 +4,21 @@ import React from "react";
 import { useGameStore, SequencedBattleEvent } from "@/store/gameStore";
 import type { Color } from "@/types/color";
 import { getRevealTier } from "@/lib/game/revealTier";
+import { resetPlayback, skipPlayback } from "@/lib/game/playback";
 
 /**
  * Replays structured battle events as a timed cinematic: attacker lunge,
- * impact shake/flash, damage floaters, ult cut-ins. The engine state is
- * already final while this plays — HP bars render `hpOverrides` (exact
- * per-event snapshots from the engine) until playback ends, then fall back
- * to store truth. Skip cancels everything and snaps to the final state.
+ * impact shake/flash, damage floaters, ult cut-ins.
+ *
+ * The turn resolvers commit one action at a time and wait for this hook to
+ * finish animating it (`lib/game/playback.ts`), so store truth is never more
+ * than one action ahead of the screen. Within that action the displayed HP
+ * still comes from the engine's exact per-event snapshots — published to the
+ * store as `presentedHp` rather than kept local, so the tiles, the team dots
+ * and the roster stacks can't disagree about whether a unit has died yet.
+ *
+ * Skip cancels everything, snaps to the final state, and collapses the rest
+ * of the turn's waits so the remaining actions resolve without animating.
  */
 
 export interface SequencerGhost {
@@ -81,7 +89,6 @@ export interface SequencerScreenFlash {
 
 export interface SequencerView {
   active: boolean;
-  hpOverrides: Record<string, number>;
   shaking: Record<string, boolean>;
   evading: Record<string, boolean>;
   flashes: Record<string, SequencerFlash>;
@@ -100,7 +107,6 @@ export interface SequencerView {
 
 const IDLE_VIEW: SequencerView = {
   active: false,
-  hpOverrides: {},
   shaking: {},
   evading: {},
   flashes: {},
@@ -162,7 +168,12 @@ export function useBattleSequencer(
 
   const queueRef = React.useRef<SequencedBattleEvent[]>([]);
   const processedRef = React.useRef(0);
+  /** Events *finished animating* — mirrored to the store for the playback
+   *  gate. `processedRef` counts events enqueued, which is not the same
+   *  thing and is what the resolvers must not wait on. */
+  const playedRef = React.useRef(0);
   const runningRef = React.useRef(false);
+  const initialisedRef = React.useRef(false);
   const generationRef = React.useRef(0);
   const keyRef = React.useRef(0);
   const timeoutsRef = React.useRef<Set<number>>(new Set());
@@ -325,6 +336,15 @@ export function useBattleSequencer(
     [scheduleTimeout],
   );
 
+  /** Publish the HP to display for one unit. Store, not local view: the team
+   *  dots and roster stacks live outside this hook's tree and used to read
+   *  `currentHP` raw, which meant they showed a death before its animation. */
+  const showHp = React.useCallback((instanceId: string, hp: number) => {
+    useGameStore
+      .getState()
+      .setPresentedHp((prev) => ({ ...prev, [instanceId]: hp }));
+  }, []);
+
   const flashUnit = React.useCallback(
     (instanceId: string, color: Color, strong: boolean, shake: boolean) => {
       const flash: SequencerFlash = { key: nextKey(), color, strong };
@@ -356,10 +376,7 @@ export function useBattleSequencer(
       if (ev.kind === "tick") {
         for (const t of ev.targets) {
           const delta = t.hpAfter - t.hpBefore;
-          setView((v) => ({
-            ...v,
-            hpOverrides: { ...v.hpOverrides, [t.instanceId]: t.hpAfter },
-          }));
+          showHp(t.instanceId, t.hpAfter);
           const isHeal = delta > 0;
           flashUnit(t.instanceId, isHeal ? "green" : "red", false, !isHeal);
           if (delta !== 0) {
@@ -498,10 +515,7 @@ export function useBattleSequencer(
             // a crit/kill still earns a shake regardless of tier.
             const shakeTile = tier.shake !== "none" || Boolean(t.crit || t.killed);
             if (t.hpAfter !== undefined) {
-              setView((v) => ({
-                ...v,
-                hpOverrides: { ...v.hpOverrides, [t.instanceId]: t.hpAfter! },
-              }));
+              showHp(t.instanceId, t.hpAfter);
             }
             flashUnit(t.instanceId, ev.sourceColor, strong, shakeTile);
             addBurst(t.instanceId, ev.sourceColor, strong, ev.sourceCharacterId);
@@ -545,13 +559,7 @@ export function useBattleSequencer(
           color: ev.sourceColor,
         });
         for (const counter of ev.counters) {
-          setView((v) => ({
-            ...v,
-            hpOverrides: {
-              ...v.hpOverrides,
-              [counter.onInstanceId]: counter.attackerHpAfter,
-            },
-          }));
+          showHp(counter.onInstanceId, counter.attackerHpAfter);
           const counterShake =
             counterTier.shake !== "none" || counter.killedAttacker;
           flashUnit(
@@ -568,10 +576,7 @@ export function useBattleSequencer(
         // Support skills: green/gold pulse on each target, no lunge
         ev.targets.forEach((t) => {
           if (t.hpAfter !== undefined) {
-            setView((v) => ({
-              ...v,
-              hpOverrides: { ...v.hpOverrides, [t.instanceId]: t.hpAfter! },
-            }));
+            showHp(t.instanceId, t.hpAfter);
           }
           flashUnit(t.instanceId, "green", false, false);
           if (t.heal !== undefined && t.heal > 0) {
@@ -604,6 +609,7 @@ export function useBattleSequencer(
       anchorFor,
       flashUnit,
       scheduleTimeout,
+      showHp,
       sleep,
       triggerScreenFlash,
       triggerScreenShake,
@@ -620,11 +626,19 @@ export function useBattleSequencer(
       if (gen !== generationRef.current) return;
       const ev = queueRef.current.shift()!;
       await playEvent(ev, gen);
+      // Report progress after each event, not after the batch: the turn
+      // resolver is waiting on this count to decide it may execute the next
+      // action (lib/game/playback.ts).
+      if (gen !== generationRef.current) return;
+      playedRef.current += 1;
+      useGameStore.getState().setPlayedEvents(playedRef.current);
     }
 
     if (gen !== generationRef.current) return;
     runningRef.current = false;
     setView(IDLE_VIEW);
+    // Caught up: store truth is what's on screen, so stop overriding it.
+    useGameStore.getState().setPresentedHp({});
   }, [playEvent]);
 
   // useLayoutEffect (not useEffect): the engine has already written the FINAL
@@ -633,15 +647,34 @@ export function useBattleSequencer(
   // Running before paint means the seeded overrides land in the same commit —
   // no flash of the outcome ahead of the animation.
   React.useLayoutEffect(() => {
+    // Adopt the stream as-is on the first pass rather than treating all of it
+    // as fresh. An arena remounting mid-battle (route change and back) would
+    // otherwise replay every event since turn 1 — harmless when this hook only
+    // drew floaters, but the turn resolvers now wait on the played count, so a
+    // replay would drag it backwards under a resolver that is mid-turn. A
+    // fresh battle mounts with an empty stream, so this is a no-op there.
+    if (!initialisedRef.current) {
+      initialisedRef.current = true;
+      processedRef.current = battleEvents.length;
+      playedRef.current = battleEvents.length;
+      useGameStore.getState().setPlayedEvents(playedRef.current);
+      return;
+    }
+
     // Battle reset rewinds the event stream — drop everything
     if (battleEvents.length < processedRef.current) {
       processedRef.current = battleEvents.length;
+      playedRef.current = battleEvents.length;
       queueRef.current = [];
       generationRef.current += 1;
       runningRef.current = false;
       clearAllTimeouts();
       setView(IDLE_VIEW);
-      useGameStore.getState().setBigHitFocus(false);
+      resetPlayback();
+      const store = useGameStore.getState();
+      store.setBigHitFocus(false);
+      store.setPlayedEvents(playedRef.current);
+      store.setPresentedHp({});
       return;
     }
     if (battleEvents.length === processedRef.current) return;
@@ -649,37 +682,50 @@ export function useBattleSequencer(
     const fresh = battleEvents.slice(processedRef.current);
     processedRef.current = battleEvents.length;
 
-    // Seed pre-batch HP from the engine's exact snapshots so bars start
-    // where the units were BEFORE these actions (store already holds the
-    // final values)
-    if (!runningRef.current) {
-      const seeded: Record<string, number> = {};
-      fresh.forEach((ev) => {
-        ev.targets.forEach((t) => {
-          if (t.hpBefore !== undefined && seeded[t.instanceId] === undefined) {
-            seeded[t.instanceId] = t.hpBefore;
-          }
-        });
+    // Seed pre-batch HP from the engine's exact snapshots so bars start where
+    // the units were BEFORE these events. The resolvers now commit one action
+    // at a time, so this covers a single action's worth of lead rather than a
+    // whole turn's — but the lead is still real (the commit lands before the
+    // lunge animation does), and multi-event batches like the turn-start tick
+    // sweep still arrive all at once.
+    const seeded: Record<string, number> = {};
+    fresh.forEach((ev) => {
+      ev.targets.forEach((t) => {
+        if (t.hpBefore !== undefined && seeded[t.instanceId] === undefined) {
+          seeded[t.instanceId] = t.hpBefore;
+        }
       });
-      setView((v) => ({ ...v, hpOverrides: { ...seeded, ...v.hpOverrides } }));
-    }
+    });
+    // Anything already being presented wins — it belongs to an event that has
+    // played, so re-seeding it from a later event's `hpBefore` would rewind
+    // the bar. (This used to be skipped wholesale while the queue ran, which
+    // meant a batch arriving mid-playback got no seeding at all.)
+    useGameStore
+      .getState()
+      .setPresentedHp((prev) => ({ ...seeded, ...prev }));
 
     queueRef.current.push(...fresh);
     void runQueue();
   }, [battleEvents, runQueue, clearAllTimeouts]);
 
-  // Unmount: invalidate the running generation, cancel every in-flight
-  // fire-and-forget timer (floater/burst/sweep/flash cleanup) so none of
-  // them can call setState after this component is gone, and clear the
-  // shared big-hit-focus flag so it can't outlive this screen.
-  React.useEffect(
-    () => () => {
+  // Mount/unmount: tell the playback gate whether anyone is animating. With
+  // no sequencer on screen the resolvers must not wait at all — tests and the
+  // duel watcher drive battles headlessly and would otherwise stall.
+  // Unmount also invalidates the running generation, cancels every in-flight
+  // fire-and-forget timer (floater/burst/sweep/flash cleanup) so none of them
+  // can call setState after this component is gone, and clears the shared
+  // big-hit-focus flag so it can't outlive this screen.
+  React.useEffect(() => {
+    useGameStore.getState().setPlaybackMounted(true);
+    return () => {
       generationRef.current += 1;
       clearAllTimeouts();
-      useGameStore.getState().setBigHitFocus(false);
-    },
-    [clearAllTimeouts],
-  );
+      const store = useGameStore.getState();
+      store.setBigHitFocus(false);
+      store.setPlaybackMounted(false);
+      store.setPresentedHp({});
+    };
+  }, [clearAllTimeouts]);
 
   const skip = React.useCallback(() => {
     generationRef.current += 1;
@@ -687,9 +733,18 @@ export function useBattleSequencer(
     runningRef.current = false;
     clearAllTimeouts();
     setView(IDLE_VIEW);
+    // Skip means "stop animating this turn", not "stop animating this event":
+    // the resolver has actions still to execute, and each one would otherwise
+    // wait for a playback that is never coming.
+    skipPlayback();
+    const store = useGameStore.getState();
+    playedRef.current = store.battleEvents.length;
+    processedRef.current = store.battleEvents.length;
     // Skipping mid-reveal must not leave the shared big-hit-focus flag stuck
     // on, since it's read by components outside this hook's own tree.
-    useGameStore.getState().setBigHitFocus(false);
+    store.setBigHitFocus(false);
+    store.setPlayedEvents(playedRef.current);
+    store.setPresentedHp({});
   }, [clearAllTimeouts]);
 
   return { view, skip };

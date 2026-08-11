@@ -1,21 +1,48 @@
 import part1 from "@/data/story/part1.json";
 import part2 from "@/data/story/part2.json";
+import part3 from "@/data/story/part3.json";
+import part4 from "@/data/story/part4.json";
+import part5 from "@/data/story/part5.json";
+import part6 from "@/data/story/part6.json";
+import part7 from "@/data/story/part7.json";
+import part8 from "@/data/story/part8.json";
+import part9 from "@/data/story/part9.json";
+import part10 from "@/data/story/part10.json";
+import part11 from "@/data/story/part11.json";
+import part12 from "@/data/story/part12.json";
 import { validateStoryParts } from "@/lib/game/storySchema";
 import type { StoryChapter, StoryPart } from "@/types/story";
 
 // Fail loudly at load time on malformed story JSON or battles that
 // reference characters missing from the catalog — same policy as kits.
-const storyParts: StoryPart[] = validateStoryParts([part1, part2]).sort(
-  (a, b) => a.order - b.order,
-);
+const storyParts: StoryPart[] = validateStoryParts([
+  part1,
+  part2,
+  part3,
+  part4,
+  part5,
+  part6,
+  part7,
+  part8,
+  part9,
+  part10,
+  part11,
+  part12,
+]).sort((a, b) => a.order - b.order);
 
-/** Source chapters not yet adapted — shown as locked banners in the UI */
-export const UPCOMING_PARTS: ReadonlyArray<{ order: number; title: string }> = [
-  { order: 3, title: "Welcome to the Ledger Exam" },
-  { order: 4, title: "Master of Fire" },
-  { order: 5, title: "Trial by Fire" },
-  { order: 6, title: "Aftermath" },
-];
+/**
+ * Source chapters not yet adapted — shown as locked banners in the UI.
+ *
+ * Empty as of 2026-08-12: all twelve written webtoon chapters are adapted.
+ * Battles exist only where the source has a fight — Tanveer ruled against
+ * inventing any — so chapters 3, 4, 6, 11 and 12 are scene-only, which the
+ * engine supports and which pays first-clear rewards like any other chapter.
+ *
+ * Phase 3 (the bracket part 12 ends on) isn't written in the source yet, so
+ * this stays empty rather than advertising a part that has nothing behind it.
+ */
+export const UPCOMING_PARTS: ReadonlyArray<{ order: number; title: string }> =
+  [];
 
 export function getStoryParts(): StoryPart[] {
   return storyParts;

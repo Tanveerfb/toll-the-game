@@ -45,8 +45,10 @@ function getSkillPowerText(card: ActionCard): string {
   return `Power ${card.skill.damageRanked[card.rank - 1]}`;
 }
 
-function getRankStars(rank: 1 | 2 | 3): string {
-  return `${"⭐".repeat(rank)}${"☆".repeat(3 - rank)}`;
+/** Merge tier. Deliberately not stars — a star row reads as rarity, which is
+ *  a different axis and one this game also has. */
+function getRankPips(rank: 1 | 2 | 3): string {
+  return `${"◆".repeat(rank)}${"◇".repeat(3 - rank)}`;
 }
 
 // Skill-type badge (7DSGC-style, top-right corner of a card). Collapses the
@@ -96,15 +98,17 @@ function skillTypeCategory(skill: ActionCard["skill"]): SkillTypeCategory {
   }
 }
 
-const SKILL_TYPE_BADGE: Record<
-  SkillTypeCategory,
-  { Icon: React.ElementType; cls: string }
-> = {
-  attack: { Icon: Sword, cls: "bg-red-600 text-white" },
-  attackDebuff: { Icon: Swords, cls: "bg-fuchsia-700 text-white" },
-  buff: { Icon: ArrowBigUp, cls: "bg-sky-600 text-white" },
-  debuff: { Icon: ArrowBigDown, cls: "bg-purple-700 text-white" },
-  heal: { Icon: Heart, cls: "bg-emerald-600 text-white" },
+/**
+ * Skill type is a glyph, not a colour. The five badges used to be red /
+ * fuchsia / sky / purple / emerald — five hues spent restating what the icon
+ * already says, on a screen that also has to carry five element hues.
+ */
+const SKILL_TYPE_ICON: Record<SkillTypeCategory, React.ElementType> = {
+  attack: Sword,
+  attackDebuff: Swords,
+  buff: ArrowBigUp,
+  debuff: ArrowBigDown,
+  heal: Heart,
 };
 
 function getCharacterInitial(name?: string): string {
@@ -117,16 +121,16 @@ function getCharacterInitial(name?: string): string {
 function getColorTokenClasses(color?: string): string {
   switch (color) {
     case "red":
-      return "border-rose-400/80 bg-rose-950/25";
+      return "border-el-red/80 bg-el-red/10";
     case "blue":
-      return "border-sky-400/80 bg-sky-950/25";
+      return "border-el-blue/80 bg-el-blue/10";
     case "green":
-      return "border-emerald-400/80 bg-emerald-950/25";
+      return "border-el-green/80 bg-el-green/10";
     case "dark":
-      return "border-violet-400/80 bg-violet-950/25";
+      return "border-el-dark/80 bg-el-dark/10";
     case "light":
     default:
-      return "border-amber-300/80 bg-amber-950/20";
+      return "border-el-light/80 bg-el-light/10";
   }
 }
 
@@ -144,24 +148,32 @@ function getSkillDescription(card: ActionCard): string {
 // who's-alive readout, one row per side.
 function TeamBarDots({
   units,
+  presentedHp,
 }: {
   units: BattleCharacter[];
+  /** HP as currently shown by the sequencer. These dots read store truth
+   *  directly, so without this they went dark the moment the engine
+   *  committed — announcing a death while the tile was still mid-lunge. */
+  presentedHp: Record<string, number>;
 }): React.JSX.Element {
   return (
     <div className="flex items-center gap-1">
-      {units.map((unit) => (
-        <span
-          key={unit.instanceId}
-          title={`${unit.name} — ${Math.max(0, unit.currentHP)}/${unit.hp} HP`}
-          className={`h-2 w-2 rounded-full border border-black/40 ${ELEMENT_SWATCH[unit.color]} ${
-            unit.currentHP <= 0
-              ? "opacity-25 grayscale"
-              : unit.isSub
-                ? "opacity-50"
-                : "opacity-100"
-          }`}
-        />
-      ))}
+      {/* Field only — the bench isn't part of the battlefield readout; it
+          lives in the Team list (Tanveer, 2026-08-11). */}
+      {units
+        .filter((unit) => !unit.isSub)
+        .map((unit) => {
+          const shownHp = presentedHp[unit.instanceId] ?? unit.currentHP;
+          return (
+            <span
+              key={unit.instanceId}
+              title={`${unit.name} — ${Math.max(0, shownHp)}/${unit.hp} HP`}
+              className={`h-2 w-2 rounded-full ${ELEMENT_SWATCH[unit.color]} ${
+                shownHp <= 0 ? "opacity-25 grayscale" : "opacity-100"
+              }`}
+            />
+          );
+        })}
     </div>
   );
 }
@@ -184,6 +196,8 @@ export default function Deck() {
     removeNullAction,
     bigHitFocus,
   } = useGameStore();
+
+  const presentedHp = useGameStore((s) => s.presentedHp);
 
   const slotsUsed = actionQueue.length + queuedNullCount;
   // Living field members +1, capped at 3 — same rule as the enemy side, so a
@@ -307,51 +321,51 @@ export default function Deck() {
       // hand while the center battle stage takes visual focus — transient
       // only, the hand stays persistently visible in normal play (never a
       // permanent drawer), so this just dims/shrinks it a touch, not hides it.
-      className={`bighit-recede relative z-30 w-full shrink-0 border-t border-zinc-800 bg-linear-to-t from-black/95 to-black/70 px-3 pb-2 pt-1.5 backdrop-blur-md transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.98] opacity-60" : "scale-100 opacity-100"}`}
+      className={`bighit-recede relative z-30 w-full shrink-0 border-t border-hairline bg-linear-to-t from-black/95 to-black/70 px-3 pb-2 pt-1.5 backdrop-blur-md transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.98] opacity-60" : "scale-100 opacity-100"}`}
     >
       {previewCard ? (
         <div className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-3 w-full max-w-xl -translate-x-1/2">
-          <Card className="w-full rounded-none border border-zinc-700 bg-zinc-950/95 ring-0">
-            <CardHeader className="border-b border-zinc-800 px-4 py-3">
+          <Card className="w-full rounded-none border border-edge bg-panel/95 ring-0">
+            <CardHeader className="border-b border-hairline px-4 py-3">
               <div className="flex w-full items-start justify-between gap-3">
                 <div>
-                  <CardTitle className="font-heading text-xl tracking-[0.08em] text-zinc-100">
+                  <CardTitle className="font-heading text-xl tracking-[0.08em] text-readout-strong">
                     {previewCard.skill.skillName}
                   </CardTitle>
-                  <CardDescription className="font-body text-xs uppercase tracking-[0.12em] text-zinc-400">
+                  <CardDescription className="font-body text-xs uppercase tracking-[0.12em] text-readout-dim">
                     {previewCard.skill.type} • Rank {previewCard.rank} •{" "}
                     {getSkillPowerText(previewCard)}
                   </CardDescription>
                 </div>
-                <span className="rounded border border-amber-300/70 bg-amber-400/15 px-2 py-0.5 font-body text-xs uppercase tracking-[0.12em] text-amber-100">
+                <span className="rounded-none border border-el-light/70 bg-el-light/15 px-2 py-0.5 font-body text-xs uppercase tracking-[0.12em] text-el-light">
                   R{previewCard.rank}
                 </span>
               </div>
             </CardHeader>
             <CardContent className="px-4 py-3">
-              <p className="font-body text-sm text-zinc-200">
+              <p className="font-body text-sm text-readout">
                 <KeyworkHighlighter
                   text={previewDescription}
-                  className="font-body text-sm text-zinc-200"
+                  className="font-body text-sm text-readout"
                   glossary={previewGlossary}
-                  keywordClassName="inline-flex cursor-help items-center rounded-none border border-white/70 bg-transparent px-1 py-[1px] font-body text-xs uppercase tracking-[0.06em] text-zinc-100"
+                  keywordClassName="inline-flex cursor-help items-center rounded-none border border-edge-strong bg-transparent px-1 py-[1px] font-body text-xs uppercase tracking-[0.06em] text-readout-strong"
                 />
               </p>
 
               {previewKeywordDefinitions.length > 0 ? (
                 <>
-                  <div className="my-3 border-t border-zinc-700" />
+                  <div className="my-3 border-t border-edge" />
                   <div className="space-y-1">
                     {previewKeywordDefinitions.map((entry) => (
                       <p
                         key={entry.keyword}
-                        className="font-body text-xs text-zinc-400"
+                        className="font-body text-xs text-readout-dim"
                       >
-                        <span className="mr-1 text-zinc-500">※</span>
-                        <span className="font-semibold text-sky-300">
+                        <span className="mr-1 text-readout-muted">※</span>
+                        <span className="font-semibold text-signal">
                           {formatFootnoteLabel(entry.keyword)}
                         </span>
-                        <span className="text-zinc-300"> — {entry.meaning}</span>
+                        <span className="text-readout"> — {entry.meaning}</span>
                       </p>
                     ))}
                   </div>
@@ -362,9 +376,31 @@ export default function Deck() {
         </div>
       ) : null}
 
-      {/* Queue chips + controls — always visible */}
-      <div className="mb-1.5 flex items-center justify-between gap-2">
-        <div className="hud-scroll flex min-w-0 items-center gap-1.5 overflow-x-auto">
+      {/* Action economy, queue, controls. The queue scrolls; the controls do
+          NOT — Reset and End Turn used to sit inside the same overflow
+          container, so a full queue on a narrow screen scrolled End Turn off
+          the edge. */}
+      <div className="mb-1.5 flex items-center gap-2">
+        {/* The cap used to be inferable only by counting leftover empty boxes. */}
+        <div
+          className="flex shrink-0 items-center gap-1 border border-hairline bg-inset px-1.5 py-1"
+          title={`${actionCap} action${actionCap > 1 ? "s" : ""} this turn`}
+        >
+          <span className="mr-0.5 font-body text-[8px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+            Actions
+          </span>
+          {Array.from({ length: actionCap }).map((_, i) => (
+            <span
+              key={`pip-${i}`}
+              className={`block h-3 w-2 border ${i < slotsUsed ? "border-signal bg-signal" : "border-edge bg-void"}`}
+            />
+          ))}
+          <span className="ml-1 font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-dim">
+            {Math.max(0, actionCap - slotsUsed)} left
+          </span>
+        </div>
+
+        <div className="hud-scroll flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
           {actionQueue.map((card) => {
             const char = playerTeam.find(
               (c) => c.instanceId === card.sourceInstanceId,
@@ -379,7 +415,7 @@ export default function Deck() {
                 onMouseLeave={endPreview}
                 onFocus={() => beginPreview(card)}
                 onBlur={endPreview}
-                className={`flex h-9 min-w-0 max-w-44 shrink-0 cursor-pointer items-center gap-1.5 border px-1.5 transition-colors ${getColorTokenClasses(char?.color)} ${isUlt ? "ring-1 ring-amber-400/80 shadow-[0_0_8px_rgba(251,191,36,0.45)]" : ""}`}
+                className={`flex h-9 min-w-0 max-w-44 shrink-0 cursor-pointer items-center gap-1.5 border px-1.5 transition-colors ${getColorTokenClasses(char?.color)} ${isUlt ? "ring-1 ring-el-light/80 shadow-[0_0_8px_rgba(232,209,116,0.45)]" : ""}`}
               >
                 {char && getCharacterArt(char.id) ? (
                   <Image
@@ -387,21 +423,21 @@ export default function Deck() {
                     alt={char.name}
                     width={48}
                     height={48}
-                    className="h-6 w-6 shrink-0 border border-zinc-700 object-cover object-top"
+                    className="h-6 w-6 shrink-0 border border-edge object-cover object-top"
                   />
                 ) : (
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center border border-zinc-700 font-heading text-sm text-white/90">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center border border-edge font-heading text-sm text-readout-strong/90">
                     {getCharacterInitial(char?.name)}
                   </span>
                 )}
                 <span className="flex min-w-0 flex-col text-left leading-tight">
-                  <span className="truncate text-[10px] font-bold text-zinc-100">
+                  <span className="truncate text-[10px] font-bold text-readout-strong">
                     {char?.name}
                   </span>
                   <span
-                    className={`truncate text-[9px] ${isUlt ? "text-amber-300" : "text-zinc-300"}`}
+                    className={`truncate text-[9px] ${isUlt ? "text-el-light" : "text-readout"}`}
                   >
-                    {isUlt ? "ULT" : getRankStars(card.rank)} •{" "}
+                    {isUlt ? "ULT" : getRankPips(card.rank)} •{" "}
                     {card.skill.skillName}
                   </span>
                 </span>
@@ -414,7 +450,7 @@ export default function Deck() {
               key={`pass-${i}`}
               type="button"
               onClick={() => isPlayerActionPhase && removeNullAction()}
-              className="flex h-9 w-14 shrink-0 items-center justify-center border border-zinc-600 bg-zinc-800/60 font-body text-[9px] uppercase tracking-widest text-zinc-400 transition-colors hover:border-rose-400/70 hover:text-rose-200"
+              className="flex h-9 w-14 shrink-0 items-center justify-center border border-edge bg-panel-raised/60 font-body text-[9px] uppercase tracking-widest text-readout-dim transition-colors hover:border-el-red/70 hover:text-el-red"
             >
               Pass
             </button>
@@ -427,26 +463,30 @@ export default function Deck() {
               onClick={() => isPlayerActionPhase && addNullAction()}
               disabled={!isPlayerActionPhase}
               title="Tap to pass this action"
-              className="flex h-9 w-14 shrink-0 items-center justify-center border border-dashed border-zinc-700 font-body text-[10px] text-zinc-600 transition-colors enabled:hover:border-zinc-500 enabled:hover:text-zinc-400 disabled:cursor-not-allowed"
+              className="flex h-9 w-14 shrink-0 items-center justify-center border border-dashed border-edge font-body text-[10px] text-readout-muted transition-colors enabled:hover:border-edge-strong enabled:hover:text-readout-dim disabled:cursor-not-allowed"
             >
               {slotsUsed + i + 1}
             </button>
           ))}
+        </div>
+
+        {/* Pinned outside the scroll container above. */}
+        <div className="flex shrink-0 items-center gap-1.5">
           <Button
             variant="ghost"
             size="sm"
             disabled={!isPlayerActionPhase || !handSnapshot}
             onClick={resetHand}
-            className="shrink-0 border border-amber-300/60 rounded-none px-2 text-[11px] uppercase tracking-widest text-amber-200 disabled:border-zinc-800 disabled:text-zinc-600"
+            className="shrink-0 rounded-none border border-edge px-2 text-[11px] uppercase tracking-widest text-readout-dim hover:border-edge-strong disabled:border-hairline disabled:text-readout-muted"
           >
-            Reset Hand
+            Reset
           </Button>
           <Button
             variant="ghost"
             size="sm"
             disabled={!isPlayerActionPhase || actionQueue.length === 0}
             onClick={resolveplayerTurnWrapper}
-            className="shrink-0 rounded-none border border-emerald-400/60 px-2 text-[11px] uppercase tracking-widest text-emerald-200 disabled:border-zinc-800 disabled:text-zinc-600"
+            className="shrink-0 rounded-none border border-signal bg-signal/10 px-3 text-[11px] uppercase tracking-widest text-signal hover:bg-signal/20 disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted"
           >
             End Turn
           </Button>
@@ -456,7 +496,7 @@ export default function Deck() {
       {/* Deck — always visible. Cards flex to fill the row width so the whole
           hand (up to 8 cards at 4v4) shows at once without scrolling, 7DSGC-
           style; hud-scroll stays as a safety net for any overflow edge case. */}
-      <div className="hud-scroll flex w-full justify-center gap-1 overflow-x-auto border border-zinc-800 bg-black/60 p-2">
+      <div className="hud-scroll flex w-full justify-center gap-1 overflow-x-auto border border-hairline bg-void/70 p-2">
         {deck.map((card) => {
           const char = playerTeam.find(
             (c) => c.instanceId === card.sourceInstanceId,
@@ -500,70 +540,85 @@ export default function Deck() {
                 setDraggedCardId(null);
               }}
               className={`
-                h-28 relative min-w-0 flex-1 max-w-20 select-none flex flex-col overflow-hidden bg-zinc-900/80 p-1 transition-all
+                relative flex h-32 min-w-0 max-w-24 flex-1 select-none flex-col overflow-hidden bg-panel p-0 transition-all
                 ${frame.borderClass}
                 ${isPlayerActionPhase ? "cursor-pointer hover:-translate-y-2 hover:shadow-lg" : "cursor-not-allowed opacity-50"}
                 ${isStunned || isSealed ? "grayscale brightness-50" : ""}
                 ${queueFull ? "opacity-70" : ""}
                 ${draggedCardId === card.id ? "opacity-40" : ""}
+                ${canMergeCard(card) && isPlayerActionPhase ? "ring-1 ring-signal/70" : ""}
               `}
             >
               {frame.accentBarClass ? (
                 <span
-                  className={`absolute inset-x-0 top-0 h-1 ${frame.accentBarClass}`}
+                  className={`absolute inset-x-0 top-0 z-10 h-1 ${frame.accentBarClass}`}
                 />
               ) : null}
-              {/* 7DSGC-style card, top -> bottom:
-                  1. one row: rank stars / ULT badge and the skill-type icon,
-                     spaced apart (justify-around)
-                  2. skill artwork (defaults to character art until per-skill
-                     art is generated via ComfyUI). */}
-              {(() => {
-                const badge = SKILL_TYPE_BADGE[skillTypeCategory(card.skill)];
-                const BadgeIcon = badge.Icon;
-                return (
-                  <div className="flex items-center justify-around gap-1">
-                    <span className="text-[11px] leading-none tracking-tight">
-                      {isUlt ? (
-                        <span className="font-bold text-[9px] uppercase tracking-widest text-cyan-300">
-                          ULT
-                        </span>
-                      ) : (
-                        <span className="text-zinc-100">
-                          {getRankStars(card.rank)}
-                        </span>
-                      )}
-                    </span>
-                    <span
-                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded ${badge.cls}`}
-                    >
-                      <BadgeIcon className="h-2.5 w-2.5" strokeWidth={2.6} />
-                    </span>
-                  </div>
-                );
-              })()}
-              <div className="relative mt-0.5 flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+
+              {/* Art fills the card; rank and skill-type ride on top of it, and
+                  the name/power footer sits under it. The face used to carry
+                  neither — you hovered for 260ms to find out what a card did,
+                  which on touch meant you never found out at all. */}
+              <div className="relative min-h-0 flex-1 overflow-hidden bg-inset">
                 {(() => {
                   // Per-skill art when available; otherwise the character
                   // portrait (docs/design/SKILL_ART_PLAN.md).
                   const art = char
-                    ? getSkillArt(char.id, card.skill.skillName) ??
-                      getCharacterArt(char.id)
+                    ? (getSkillArt(char.id, card.skill.skillName) ??
+                      getCharacterArt(char.id))
                     : null;
                   return art ? (
-                  <Image
-                    src={art}
-                    alt={char?.name ?? card.skill.skillName}
-                    width={160}
-                    height={160}
-                    className="h-full w-full object-cover object-top"
-                  />
-                ) : (
-                  <span className="text-center font-heading text-3xl leading-none text-white/90 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
-                    {getCharacterInitial(char?.name)}
-                  </span>
-                );
+                    <Image
+                      src={art}
+                      alt={char?.name ?? card.skill.skillName}
+                      width={160}
+                      height={160}
+                      className="h-full w-full object-cover object-top"
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center font-heading text-3xl leading-none text-readout-strong">
+                      {getCharacterInitial(char?.name)}
+                    </span>
+                  );
                 })()}
+
+                {/* Diamonds, not stars: stars read as rarity in every other
+                    game on the phone, and these are merge tiers. */}
+                <span className="absolute left-0 top-0 bg-void/80 px-1 py-px font-body text-[9px] font-bold leading-none tracking-[0.08em]">
+                  {isUlt ? (
+                    <span className="uppercase tracking-[0.12em] text-el-light">
+                      Ult
+                    </span>
+                  ) : (
+                    <span className="text-readout">
+                      {getRankPips(card.rank)}
+                    </span>
+                  )}
+                </span>
+
+                {/* Monochrome: the five coloured badges spent five hues on a
+                    fact the glyph already carries. */}
+                {(() => {
+                  const BadgeIcon =
+                    SKILL_TYPE_ICON[skillTypeCategory(card.skill)];
+                  return (
+                    <span
+                      title={skillTypeCategory(card.skill)}
+                      className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center bg-void/80 text-readout-dim"
+                    >
+                      <BadgeIcon className="h-2.5 w-2.5" strokeWidth={2.6} />
+                    </span>
+                  );
+                })()}
+              </div>
+
+              <div className="shrink-0 border-t border-hairline bg-inset px-1 py-0.5">
+                <p className="truncate font-body text-[9px] font-semibold leading-tight text-readout-strong">
+                  {card.skill.skillName}
+                </p>
+                <p className="truncate font-body text-[8px] font-bold leading-tight tabular-nums text-readout-muted">
+                  {getSkillPowerText(card)}
+                </p>
               </div>
 
               {canMergeCard(card) && isPlayerActionPhase && (
@@ -574,14 +629,14 @@ export default function Deck() {
                     e.stopPropagation();
                     mergeDeckCard(card.id);
                   }}
-                  className="absolute bottom-1 right-1 h-5 rounded border border-sky-300/70 bg-sky-900/70 px-1 text-[9px] uppercase tracking-[0.08em] text-sky-100 hover:bg-sky-800/70"
+                  className="absolute bottom-6 right-0.5 h-5 rounded-none border border-signal bg-void/85 px-1 text-[9px] uppercase tracking-[0.08em] text-signal hover:bg-signal/20"
                 >
                   Merge
                 </Button>
               )}
 
               {isStunned && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20 text-[10px] font-bold text-white uppercase tracking-widest rounded-xl">
+                <div className="absolute inset-0 flex items-center justify-center bg-void/40 font-body text-[10px] font-bold uppercase tracking-widest text-readout-strong">
                   Stunned
                 </div>
               )}
@@ -593,11 +648,11 @@ export default function Deck() {
       {/* Team bar — bottom edge of the screen (spec §1 item 6), below the
           always-visible hand. */}
       <div className="mt-1.5 flex items-center justify-center gap-3">
-        <TeamBarDots units={playerTeam} />
-        <span className="font-body text-[9px] uppercase tracking-[0.2em] text-zinc-600">
+        <TeamBarDots units={playerTeam} presentedHp={presentedHp} />
+        <span className="font-body text-[9px] uppercase tracking-[0.2em] text-readout-muted">
           vs
         </span>
-        <TeamBarDots units={enemyTeam} />
+        <TeamBarDots units={enemyTeam} presentedHp={presentedHp} />
       </div>
     </div>
   );

@@ -20,7 +20,7 @@ export interface GameRoute {
 export const GAME_ROUTES: readonly GameRoute[] = [
   { href: "/", label: "Main Menu", navLabel: "Menu" },
   { href: "/story", label: "Main Story", navLabel: "Story" },
-  { href: "/world-boss", label: "World Boss", navLabel: "Boss" },
+  { href: "/events", label: "Events", navLabel: "Events" },
   { href: "/gacha", label: "Gacha" },
   { href: "/archive", label: "Character Archive", navLabel: "Archive" },
   { href: "/practice", label: "Practice" },
