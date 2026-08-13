@@ -122,7 +122,7 @@
       "def": 230,
       "skills": [
         {
-          "skillName": "Abyssal Pierce",
+          "skillName": "Abyssal Convergence",
           "description": "Does Concentrate damage equal to ATK-scaled to all enemies.",
           "characterId": "molvarr",
           "type": "attack",

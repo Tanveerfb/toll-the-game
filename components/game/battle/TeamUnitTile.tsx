@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { ArrowDown, ArrowUp, Crosshair, Sparkles } from "lucide-react";
+import { Crosshair } from "lucide-react";
 import { m } from "framer-motion";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import {
@@ -11,7 +11,10 @@ import {
   getUnitBorderClass,
 } from "@/lib/game/elementSwatch";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
-import { categorizeEffects } from "@/components/game/battle/EffectsList";
+import {
+  EffectCountStrip,
+  effectCounts,
+} from "@/components/game/battle/EffectsList";
 import type { BattleCharacter } from "@/types/character";
 import type { SequencerFlash } from "@/hooks/useBattleSequencer";
 
@@ -20,29 +23,14 @@ import type { SequencerFlash } from "@/hooks/useBattleSequencer";
  *  you where to heal. */
 const DANGER_PERCENT = 30;
 
-/** How many status chips fit on one line before the rest collapse to "+n".
- *  The strip is fixed-height on purpose: it used to wrap to a second row and
- *  shove the portrait down, so a unit's tile changed shape when it got
- *  buffed. */
-const CHIP_LIMIT = 3;
-
-const CHIP_STYLE = {
-  buff: { cls: "border-signal/50 bg-signal/12 text-signal", icon: ArrowUp },
-  debuff: {
-    cls: "border-el-red/50 bg-el-red/12 text-el-red",
-    icon: ArrowDown,
-  },
-  effect: {
-    cls: "border-edge bg-readout-muted/12 text-readout-dim",
-    icon: Sparkles,
-  },
-} as const;
-
 /**
- * Status chips above the HP block. Only buffs/debuffs surface here — grey
- * uncancellable entries live in the detail panel behind their own toggle
+ * Status counts above the HP block, `↑4 ↓3`. Only buffs/debuffs surface here —
+ * grey uncancellable entries live in the detail modal behind their own toggle
  * (`settingsStore.showUncancellableEffects`), since nothing about them is
  * actionable mid-fight.
+ *
+ * The strip is fixed-height on purpose: chips used to wrap to a second row and
+ * shove the portrait down, so a unit's tile changed shape when it got buffed.
  */
 function StatusChips({
   unit,
@@ -51,9 +39,7 @@ function StatusChips({
   unit: BattleCharacter;
   onOpen: (unit: BattleCharacter) => void;
 }): React.JSX.Element {
-  const rows = categorizeEffects(unit).filter((r) => r.category !== "effect");
-  const shown = rows.slice(0, CHIP_LIMIT);
-  const overflow = rows.length - shown.length;
+  const { buffs, debuffs } = effectCounts(unit);
   return (
     <button
       type="button"
@@ -61,33 +47,14 @@ function StatusChips({
         e.stopPropagation();
         onOpen(unit);
       }}
-      title={rows.length > 0 ? "View effects" : undefined}
+      title={buffs + debuffs > 0 ? "View effects" : undefined}
       aria-label="View status effects"
       className="flex h-4 w-full cursor-pointer items-center gap-0.5 overflow-hidden"
     >
-      {shown.map(({ effect, category }, idx) => {
-        const style = CHIP_STYLE[category];
-        const Icon = style.icon;
-        const stacks = effect.stacks ?? 1;
-        return (
-          <span
-            key={`${effect.type}-${idx}`}
-            className={`flex h-4 shrink-0 items-center gap-px border px-px ${style.cls}`}
-          >
-            <Icon className="h-2.5 w-2.5" strokeWidth={2.6} />
-            {stacks > 1 ? (
-              <span className="font-body text-[8px] font-bold leading-none">
-                {stacks}
-              </span>
-            ) : null}
-          </span>
-        );
-      })}
-      {overflow > 0 ? (
-        <span className="flex h-4 shrink-0 items-center border border-edge px-1 font-body text-[8px] font-bold leading-none text-readout-muted">
-          +{overflow}
-        </span>
-      ) : null}
+      {/* Counts, not a chip per effect, and the same encoding the info panel
+          uses — the strip used to truncate at CHIP_LIMIT and add "+3", which
+          told you less than a number would have (Tanveer, 2026-08-13). */}
+      <EffectCountStrip unit={unit} className="text-[10px]" />
     </button>
   );
 }

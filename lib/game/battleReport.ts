@@ -194,9 +194,20 @@ function emptyTotals(
   };
 }
 
-/** Consecutive identical lines collapsed. The engine's string log repeats
- *  entries the event stream records once; keeping both copies made every
- *  count read off it wrong. */
+/**
+ * Consecutive identical lines collapsed.
+ *
+ * This began as a mitigation for the duplicate-resolution bug (issue #24): a
+ * remount could leave two turn-resolution loops running against one action
+ * queue, so the string log carried entries the event stream recorded once.
+ * That cause was fixed at the source on 2026-08-13 by moving the resolution
+ * claim out of a per-instance ref and into the store.
+ *
+ * It is kept as a **regression detector**, not a crutch. The anomaly it raises
+ * should now never fire; if a future report shows one, the guard has been
+ * defeated again and the log is once more untrustworthy. The raw log written
+ * into the report stays verbatim so the duplicates remain diagnosable.
+ */
 function dedupeConsecutive(lines: string[]): {
   lines: string[];
   collapsedDuplicates: number;
@@ -298,7 +309,11 @@ export function buildBattleReport(input: BattleReportInput): BattleReport {
           });
         }
       }
-      if (damage === 0 && !target.evaded && !target.heal) attemptedDamage = true;
+      // `tanked` is the engine's own verdict and is exact; the shape test
+      // behind it stays as a fallback for events emitted without the flag.
+      if (target.tanked || (damage === 0 && !target.evaded && !target.heal)) {
+        attemptedDamage = true;
+      }
       if (heal > 0) {
         source.healingDone += heal;
         entry.healingReceived += heal;
@@ -311,14 +326,16 @@ export function buildBattleReport(input: BattleReportInput): BattleReport {
     }
 
     // A card that resolved, spent an action and changed nothing. Usually flat
-    // DEF exceeding the hit — and any effect scaled off that damage lands at
-    // zero too, which is how "applied decay (0/turn)" happens.
+    // DEF exceeding the hit. Since ruling #71 its DoTs and gauge depletion are
+    // skipped rather than applied at zero, so this is now purely a balance
+    // signal — it no longer implies the "applied decay (0/turn)" corruption
+    // that originally motivated tracking it.
     if (attemptedDamage && !landedAnyDamage && !event.isUlt) {
       source.zeroDamageHits += 1;
       anomalies.push({
         kind: "zero-damage-attack",
         turn,
-        detail: `${event.sourceName}'s ${event.skillName} resolved for 0 damage`,
+        detail: `${event.sourceName}'s ${event.skillName} was tanked for 0 damage`,
       });
     }
 
@@ -348,7 +365,7 @@ export function buildBattleReport(input: BattleReportInput): BattleReport {
   if (raw.collapsedDuplicates > 0) {
     anomalies.push({
       kind: "duplicate-log-lines",
-      detail: `${raw.collapsedDuplicates} consecutive duplicate line(s) collapsed from the engine's string log — it repeats entries the event stream records once, so do not count anything from it`,
+      detail: `REGRESSION: ${raw.collapsedDuplicates} consecutive duplicate line(s) in the engine's string log. The duplicate-resolution cause was fixed 2026-08-13 (store-held resolution claim, issue #24) and this should read zero — a non-zero count means a turn resolved twice again, so treat every number derived from the string log as suspect`,
     });
   }
 

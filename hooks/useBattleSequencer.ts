@@ -507,6 +507,12 @@ export function useBattleSequencer(
                 return { ...v, evading };
               });
             }, 420 / (useGameStore.getState().battleSpeed || 1));
+          } else if (t.tanked) {
+            // Ruling #71: the hit connected and was fully absorbed. It reads
+            // "TANKED" and gets none of the impact fanfare — a burst and a
+            // shake for an attack that changed nothing is the UI overstating
+            // what happened. No HP call either; the bar did not move.
+            addFloater(t.instanceId, "TANKED", "info");
           } else if (t.damage !== undefined) {
             const strong = Boolean(
               t.crit || t.killed || ev.isUlt || tier.burstStrong,

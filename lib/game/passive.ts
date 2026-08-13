@@ -1,5 +1,6 @@
 ﻿import { BattleCharacter } from "@/types/character";
 import { scaleMaxHp } from "@/lib/game/maxHp";
+import { entryAffectsStat, statPhrase } from "@/lib/game/stats";
 import { QueueItem } from "@/hooks/MechanicProvider";
 import { BattlePhase, StatusEffect } from "@/types/mechanic";
 
@@ -71,9 +72,16 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
                 // as amplify (15% damageDealt) for whatever reason").
                 // damageDealt entries are consumed by the damage engine at
                 // read time (ruling #36), so they are NOT preApplied.
+                // `stats` has to ride along, not just `stat`. Every tribe
+                // synergy in the roster (Ban/Diane/Meliodas/Gon/Killua/Leorio)
+                // declares `stats: ["atk","def","hp"]` and no `stat` — dropping
+                // it here left the buff covering NO stat at all, so six kits'
+                // synergies were pure display badges granting nothing
+                // (2026-08-13). STATUS said "the buff works"; it did not.
                 const buff: StatusEffect = {
                   type: "buff",
                   stat: mech.stat,
+                  stats: mech.stats,
                   valuePercent: totalPercent,
                   uncancellable: true,
                   preApplied: mech.stat !== "damageDealt",
@@ -81,20 +89,24 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
                     ? `[${mech.conditionTags[0]}] Synergy`
                     : `${source.passive!.name}`
                 };
-                
+
                 const t = { ...mutateTeam[idx], buffs: [...mutateTeam[idx].buffs, buff] };
-                if (mech.stat === "all") {
+                // Bake per stat the entry actually covers. Reading through
+                // entryAffectsStat means `stat: "all"`, `stat: "def"` and
+                // `stats: [...]` all land the same way — the old chain tested
+                // `mech.stat` alone and silently skipped every array form.
+                if (entryAffectsStat(buff, "atk")) {
                   t.currentAttack += Math.floor(t.atk * (totalPercent/100));
+                }
+                if (entryAffectsStat(buff, "def")) {
                   t.currentDefense += Math.floor(t.def * (totalPercent/100));
-                  Object.assign(t, scaleMaxHp(t, totalPercent));
-                } else if (mech.stat === "def") {
-                  t.currentDefense += Math.floor(t.def * (totalPercent/100));
-                } else if (mech.stat === "hp") {
+                }
+                if (entryAffectsStat(buff, "hp")) {
                   Object.assign(t, scaleMaxHp(t, totalPercent));
                 }
                 mutateTeam[idx] = t;
                 changed = true;
-                log(`${ally.name} gained ${totalPercent}% ${mech.stat} from ${source.name}'s ${source.passive!.name}!`);
+                log(`${ally.name} gained ${totalPercent}% ${statPhrase(buff)} from ${source.name}'s ${source.passive!.name}!`);
               }
             });
           }
@@ -124,7 +136,7 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
               }
               mutateTeam[idx] = t;
               changed = true;
-              log(`${ally.name} gained ${mech.valuePercent}% ${mech.stat} from ${source.name}'s Aura!`);
+              log(`${ally.name} gained ${mech.valuePercent}% ${statPhrase(buff)} from ${source.name}'s Aura!`);
             });
           }
         });
@@ -242,7 +254,9 @@ function registerCharacterSynergy(
         basePercent,
         baseName,
         log,
-        `gains +${basePercent}% basic stats from ${source.name}'s ${passiveName}!`,
+        // Read from the target rather than hardcoding "basic stats": a kit that
+        // overrides `stats` would otherwise have the log describe the default.
+        `gains +${basePercent}% ${statPhrase(baseTarget)} from ${source.name}'s ${passiveName}!`,
         baseTarget,
       );
       return { ...teams, [teamKey]: boosted };
@@ -270,7 +284,7 @@ function registerCharacterSynergy(
           extraPercent,
           extraName,
           log,
-          `gains an extra +${extraPercent}% all stats — the friends fight together!`,
+          `gains an extra +${extraPercent}% ${statPhrase(extraTarget)} — the friends fight together!`,
           extraTarget,
         );
         return { ...teams, [teamKey]: boosted };

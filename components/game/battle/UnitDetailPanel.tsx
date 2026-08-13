@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import {
   CheckCircle2,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Circle,
@@ -31,9 +30,9 @@ import SubstatDrawer from "@/components/game/SubstatDrawer";
 import DetailOverlay from "@/components/game/DetailOverlay";
 import { useSettingsStore } from "@/store/settingsStore";
 import {
-  categorizeEffects,
-  EffectsList,
-  prettyName,
+  EffectCountStrip,
+  effectCounts,
+  EffectsTables,
 } from "@/components/game/battle/EffectsList";
 import {
   PassiveDetailSections,
@@ -360,11 +359,7 @@ export default function UnitDetailPanel({
     selected.hp > 0 ? Math.max(0, (selected.currentHP / selected.hp) * 100) : 0;
   // Grey (uncancellable) entries are hidden by default — see the toggle on
   // the effect strip and `settingsStore.showUncancellableEffects`.
-  const allEffects = categorizeEffects(selected);
-  const effects = showUncancellable
-    ? allEffects
-    : allEffects.filter((e) => e.category !== "effect");
-  const hiddenEffects = allEffects.length - effects.length;
+  const counts = effectCounts(selected);
 
   const tabs: KitTab[] = [];
   kit?.skills.forEach((skill, i) => {
@@ -571,92 +566,37 @@ export default function UnitDetailPanel({
             </div>
           </div>
 
-          {/* Effect strip: one line, scrolls sideways, never wraps — the whole
-              point of pinning this block is that its height can't move. */}
+          {/* Effect counts: `↑4 ↓3`, a side with none omitted entirely. This
+              was a chip per effect, which outgrew the one line it is allowed
+              (the point of pinning this block is that its height can't move).
+              The names moved to the Detail modal (Tanveer, 2026-08-13). */}
           <div className="mt-2 flex items-center gap-2">
-            <div className="hud-scroll flex min-w-0 flex-1 gap-1 overflow-x-auto">
-              {effects.length === 0 && hiddenEffects === 0 ? (
+            <div className="min-w-0 flex-1">
+              {counts.buffs === 0 && counts.debuffs === 0 ? (
                 <span className="font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-muted">
                   No active effects
                 </span>
               ) : (
-                effects.map(({ effect, category }, i) => (
-                  <span
-                    key={`${effect.type}-${i}`}
-                    className={`shrink-0 border px-1.5 py-0.5 font-body text-[10px] font-bold uppercase tracking-[0.1em] ${
-                      category === "buff"
-                        ? "border-el-blue/50 text-el-blue"
-                        : category === "debuff"
-                          ? "border-role-attack/50 text-role-attack"
-                          : "border-edge text-readout-muted"
-                    }`}
-                  >
-                    {prettyName(effect)}
-                    {effect.buffDuration ?? effect.debuffDuration ? (
-                      <span className="ml-1 tabular-nums opacity-80">
-                        {effect.buffDuration ?? effect.debuffDuration}t
-                      </span>
-                    ) : null}
-                  </span>
-                ))
+                <EffectCountStrip unit={selected} />
               )}
-              {/* The reveal sits inline, where the hidden chips would be —
-                  a toggle parked in a corner would never be found. */}
-              {hiddenEffects > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setShowUncancellable(true)}
-                  title={`Show ${hiddenEffects} uncancellable effect${hiddenEffects > 1 ? "s" : ""}`}
-                  className="shrink-0 border border-dashed border-edge px-1.5 py-0.5 font-body text-[10px] font-bold uppercase tracking-[0.1em] text-readout-muted transition-colors hover:border-edge-strong hover:text-readout"
-                >
-                  +{hiddenEffects} fixed
-                </button>
-              ) : null}
-              {showUncancellable && allEffects.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setShowUncancellable(false)}
-                  title="Hide uncancellable effects"
-                  className="shrink-0 border border-dashed border-edge px-1.5 py-0.5 font-body text-[10px] font-bold uppercase tracking-[0.1em] text-readout-muted transition-colors hover:border-edge-strong hover:text-readout"
-                >
-                  Hide fixed
-                </button>
-              ) : null}
             </div>
             <button
               type="button"
-              onClick={() => setEffectsOpen((v) => !v)}
-              aria-expanded={effectsOpen}
-              className={`flex h-7 shrink-0 items-center gap-1 border px-2 font-body text-[10px] font-bold uppercase tracking-[0.14em] transition-colors ${
-                effectsOpen
-                  ? "border-signal text-signal"
-                  : "border-edge text-readout-dim hover:border-edge-strong hover:text-readout"
-              }`}
+              onClick={() => setEffectsOpen(true)}
+              aria-haspopup="dialog"
+              className="flex h-7 shrink-0 items-center gap-1 border border-edge px-2 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
             >
               Detail
-              <ChevronDown
-                className={`h-3 w-3 transition-transform ${effectsOpen ? "rotate-180" : ""}`}
-              />
             </button>
           </div>
         </div>
 
         {/* SCROLL ZONE — everything that can grow without limit. */}
         <div className="hud-scroll min-h-0 flex-1 overflow-y-auto">
-          {effectsOpen ? (
-            <div className="space-y-2 border-b border-hairline p-3">
-              <p className="font-body text-[9px] font-bold uppercase tracking-[0.22em] text-readout-muted">
-                Active effects
-              </p>
-              <EffectsList
-                unit={selected}
-                allUnits={[...playerTeam, ...enemyTeam]}
-                showUncancellable={showUncancellable}
-              />
-              {passive ? <PassiveReadoutRow passive={passive} /> : null}
-              <SubstatDrawer unit={selected} />
-            </div>
-          ) : passive ? (
+          {/* The effects list used to expand INTO this column — an unbounded
+              list inside an already-scrolling panel. It lives in a modal now;
+              the passive readout stays, since it is one fixed-height row. */}
+          {passive ? (
             <div className="border-b border-hairline p-3">
               <PassiveReadoutRow passive={passive} />
             </div>
@@ -748,6 +688,26 @@ export default function UnitDetailPanel({
           ) : (
             <PassiveDetailSections passive={detailOverlay.passive} />
           )}
+        </DetailOverlay>
+      ) : null}
+
+      {effectsOpen ? (
+        <DetailOverlay
+          title="Active Effects"
+          subtitle={selected.name}
+          onClose={() => setEffectsOpen(false)}
+        >
+          <EffectsTables
+            unit={selected}
+            allUnits={[...playerTeam, ...enemyTeam]}
+            showUncancellable={showUncancellable}
+            onToggleUncancellable={() =>
+              setShowUncancellable(!showUncancellable)
+            }
+          />
+          <div className="mt-4 border-t border-hairline pt-3">
+            <SubstatDrawer unit={selected} />
+          </div>
         </DetailOverlay>
       ) : null}
 

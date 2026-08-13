@@ -38,6 +38,60 @@ export function entryAffectsStat(
   return entry.stats?.includes(stat) ?? false;
 }
 
+/** The three stats every kit has. Ruling #55 names this set "basic stats". */
+export const BASIC_STATS = ["atk", "def", "hp"] as const;
+
+const STAT_WORD: Record<string, string> = {
+  atk: "ATK",
+  def: "DEF",
+  hp: "HP",
+  damageDealt: "damage dealt",
+  damageReduction: "damage taken",
+  evade: "evade chance",
+  critChance: "crit chance",
+  critDamage: "crit damage",
+  recoveryRate: "recovery rate",
+  lifesteal: "lifesteal",
+};
+
+/**
+ * How a status entry's stat coverage reads in running text — battle-log lines
+ * and anywhere else prose names the stats an effect touches.
+ *
+ * The vocabulary is Tanveer's (2026-08-13) and predates the `stats` array, so
+ * the array has to be translated rather than printed:
+ *  - **basic stats** = ATK, DEF, HP — which is exactly what `stats:
+ *    ["atk","def","hp"]` means, and every tribe synergy in the roster uses it.
+ *  - **all stats** = basic stats plus every substat except evade chance and
+ *    damage reduction — spelled `stat: "all"`.
+ *  - anything else is a plain list.
+ *
+ * Deliberately NOT used by `descriptionTranslator.ts` (its keys have to match
+ * the description prose Tanveer authored, "raises ATK and DEF") or by the kit
+ * preview's `statLabel` (a table column, where "ATK · DEF · HP" is clearer than
+ * a category name).
+ */
+export function statPhrase(entry: { stat?: string; stats?: string[] }): string {
+  if (entry.stat === "all") return "all stats";
+
+  const list = entry.stats?.length
+    ? entry.stats
+    : entry.stat
+      ? [entry.stat]
+      : [];
+  if (list.length === 0) return "stats";
+  if (
+    list.length === BASIC_STATS.length &&
+    BASIC_STATS.every((s) => list.includes(s))
+  ) {
+    return "basic stats";
+  }
+
+  const words = list.map((s) => STAT_WORD[s] ?? s.toUpperCase());
+  if (words.length === 1) return words[0];
+  return `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
+}
+
 function effectiveStat(char: BattleCharacter, stat: "atk" | "def", current: number): number {
   let buffMult = 1;
   let flat = 0;

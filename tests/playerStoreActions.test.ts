@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { emptyRewards } from "@/lib/game/worldBossRewards";
 import { usePlayerStore } from "@/store/playerStore";
 
 function resetToKnownState() {
@@ -106,12 +107,7 @@ describe("grantWorldBossRewards", () => {
     // The action rest-spreads its argument into the materials map, so a new
     // non-material field silently becomes an inventory key nothing can spend.
     usePlayerStore.getState().grantWorldBossRewards({
-      sea_monster_eye: 0,
-      corroded_seaweed: 0,
-      training_manual: 0,
-      coin: 0,
-      gems: 0,
-      permanentTicket: 0,
+      ...emptyRewards(),
       accountXp: 250,
     });
     const state = usePlayerStore.getState();
@@ -121,13 +117,13 @@ describe("grantWorldBossRewards", () => {
 
   it("adds materials and coin to the existing totals", () => {
     usePlayerStore.getState().grantWorldBossRewards({
+      ...emptyRewards(),
       sea_monster_eye: 2,
       corroded_seaweed: 3,
       training_manual: 4,
       coin: 5000,
       gems: 25,
       permanentTicket: 1,
-      accountXp: 0,
     });
     const state = usePlayerStore.getState();
     expect(state.inventory.sea_monster_eye).toBe(7);

@@ -1399,6 +1399,12 @@ do it — and pays you for arriving.**
 under the home hero. Seven orders: clear a chapter, summon eleven times, reach
 level 5, save a preset, beat Molvarr, ascend once, reach rank 5.
 
+> **Superseded 2026-08-13 (ruling #79).** `starter.json` was renamed
+> `data/orders/step-1.json` and grew to ten orders; `step-2.json` adds ten
+> more. The board is stepped and tabbed now — see this file's
+> § "Session log — 2026-08-13 (auto session)". The evaluator and panel
+> split described above still hold.
+
 Built as a **general evaluator rather than a hardcoded checklist** — daily
 missions are the same question asked on a timer, and that's a roadmap item.
 The board sorts claimable → in progress → locked → done, and **retires itself**
@@ -2005,6 +2011,348 @@ held card over another, with visible artifacts. Already Open Issue #27 and
 already deferred by him to a future batch — this playtest is a second data
 point on it, not a new issue.
 
+## Session log — 2026-08-13 (auto session): Open Issues #24–27, and what was under them
+
+Tanveer left for work and asked for a long unattended session on the batch he
+had already named. Every issue turned out to be bigger than its ticket. **The
+tree is left uncommitted at his instruction** — nothing here has shipped.
+
+### #26 was not cosmetic — six kits' synergies granted nothing
+
+The ticket was a log line reading `gained 5% undefined`. The cause ran deeper:
+`passive.ts` copied only `mech.stat` onto the synergy buff, but **every tribe
+synergy in the roster** declares `stats: ["atk","def","hp"]` and no `stat`. So
+`entryAffectsStat` matched nothing, the pre-apply chain (which tested
+`mech.stat === "all" / "def" / "hp"`) skipped them, and the buff was a display
+badge moving zero stats. Ban `[Human]`, Diane `[Giant]`, Meliodas `[Demon]` and
+Gon / Killua / Leorio `[Collab]` were all affected.
+
+**This document previously said "The buff works — those kits declare `stats` and
+`affects()` reads it." That was wrong.** No test caught it because the existing
+ones assert the badge exists, never that a stat moved.
+
+Fixed both halves: the buff carries `stats`, baking reads through
+`entryAffectsStat`, and the log renders via a new `statPhrase` helper using
+Tanveer's vocabulary — **basic stats** = ATK/DEF/HP, **all stats** = basic plus
+every substat except evade chance and damage reduction. Deliberately *not*
+applied to `descriptionTranslator.ts` (its keys must match the description prose
+he authored, or keyword highlighting breaks) or to the kit preview's
+`statLabel` (a table column, where "ATK · DEF · HP" reads better).
+
+### #25 — "Tanked", scoped narrow on purpose
+
+Ruling #71 built out per **ruling #75**: the gate is the mechanic's position
+relative to the damage step, not a type list, so the deferred families join it
+later without a rewrite. `NULLED_BY_TANKED_HIT` currently holds the five DoTs
+plus `lowerUltGauge`.
+
+Worth knowing: the null never comes from `baseDamage - DEF`, which
+`calculateDamage` floors at 1. It comes from type-advantage and
+damage-reduction multipliers dragging that 1 below 1.0, so detection has to sit
+*after* the floor. Wired through four surfaces — engine skip, `"Tanked"` in the
+log, a `TANKED` floater with no burst or shake, and a drawer badge. That last
+one mattered more than expected: the drawer's damage badge is gated on `> 0`, so
+a fully-absorbed hit used to render as a **bare unit name**.
+
+### #24 — the guard was a React ref on a component built to be remounted
+
+Cause and fix are **ruling #76**. The corroboration was sitting in his own
+report header the whole time: *16 player turns in a 15-turn battle*.
+
+I could not reproduce it — it needs a real mid-turn remount in a browser — so
+`dedupeConsecutive` is kept as a regression detector rather than deleted. Its
+anomaly now reads "REGRESSION" and should be zero in every future report.
+
+Log readability fixes found by reading the 08-13 raw log as a player would:
+every buff line read `by 20%  for 1 turn` (a trailing space in `toPercentText`
+colliding with a leading one in `formatTurns`), and three sites printed
+`applied buff to stat by …` for any kit using `stats`.
+
+### #27 — a feedback loop, not a cost problem
+
+Hit-testing used `document.elementFromPoint` against the **live** DOM while the
+drag preview was reordering that same DOM: hover a neighbour → row reflows → a
+different card sits under a stationary pointer → reorder again, each flip
+restarting all eight FLIP animations. That is the reported "unstable... with
+artifacts". Hit-testing now runs against boxes frozen at drag start
+(`dragRects`), so the preview cannot change its own input; the drop target only
+reaches React state when it actually changes; ghosts are cloned nodes instead of
+`outerHTML` reparsed on use.
+
+**Two items on the old suspicion list were already fixed** — the per-render
+`outerHTML` snapshot is skipped mid-drag, and FLIP only measures when the
+displayed order changes. That list (in "Deck animations need an optimisation
+pass" above) is stale. `window.__handProfile` is available in dev
+(`layoutPasses`, `rectsMeasured`, `ghostsFlown`, `.reset()`) — `layoutPasses`
+should be about one per real hand change, never one per pointermove.
+
+### Effects display rebuilt (ruling #77)
+
+`↑4 ↓3` on both the tile and the info panel; "Detail" opens a modal with buff
+and debuff tables and a grey-effects toggle. The old `EffectsList` component was
+**removed** — it expanded an unbounded list inside the panel's own scroll zone,
+and nothing else consumed it. `EffectsList.tsx` now holds `categorizeEffects`,
+`effectCounts`, `EffectCountStrip` and `EffectsTables`.
+
+### Abyssal Pierce → **Abyssal Convergence**
+
+It stopped piercing under ruling #73. Tanveer approved the rename without naming
+it, so the name is mine and reversible: `data/characters/molvarr.json`, the art
+PNG, `SKILLS_WITH_ART`, `characterKit.test.ts`, `BOSS_MOLVARR.md`, and the two
+actionable lines in `SKILL_ART_PLAN.md` (the pending art re-spin names the file).
+
+### Doc-vs-JSON drift audit
+
+| Doc | Claimed | Ships | |
+| --- | --- | --- | --- |
+| `WORLD_BOSS_AND_ASCENSION_PLAN.md` (LOCKED section) | "Up to 5× local-specialty materials (random)" | 4 guaranteed + 10% chance of +1 | **drift, stated twice** |
+| same | Eye + mats + coin | also 3–6 manuals, 20–50 gems, 1–3 tickets, 100 account XP | **omission** |
+| `KIT_DESIGN.md` role bands | Tao 300/140/2900, Ban 190/80/3600, Yalina 110/230/4000 | identical | clean |
+| Ascension costs; stamina 120 / 5 min / 40 | as written | identical | clean |
+| `docs/design/characters/*.md` | — | — | art docs, no statlines |
+| `author_notes.md` | pre-#68 statlines | — | already bannered |
+
+The omission is the one that matters: `worldBossRewards.ts` calls gems and
+tickets "the only real faucet for either gacha currency", and the design doc
+didn't mention them at all.
+
+### Decisions waiting on Tanveer
+
+1. ~~Six tribe synergies now work.~~ **ANSWERED — keep.** *"i designed their
+   kits while keeping that in mind so you only fixed what was wrong and
+   underwhelmed result."* The +5% ATK/DEF/HP per carrying source was always the
+   intent; the kits were authored against it.
+2. ~~"Abyssal Convergence"~~ **ANSWERED — approved.**
+3. ~~Stun and freeze still land on a tanked hit.~~ **ANSWERED — null them.**
+   *"null them if the damage resulted in null. i know freeze isn't implemented
+   in the game but in theory, it is same as stun."* `stun` is in the set;
+   **freeze inherits the rule unbuilt** and joins the set when implemented. Plain
+   stat debuffs remain out and unruled.
+4. **"Tanked" plus pre-damage effects on one line** — e.g. `… — Tanked,
+   cancelled buffs.` Ruling #71 says "no other text"; a cancel that genuinely
+   resolved is still reported, because the ban was on after-effects announcing
+   themselves at zero.
+5. **The count strip went on both surfaces**, tile and panel. His wording named
+   one.
+6. **#27's feel is unjudged.** The loop is gone; whether the hand now feels
+   right is a playtest question.
+
+### Then he answered, and the session continued
+
+He replied from mobile: **keep the synergy fix** (*"i designed their kits while
+keeping that in mind so you only fixed what was wrong and underwhelmed
+result"*), **approve the rename**, and **null stun too** — freeze inherits the
+rule unbuilt, since he confirmed it is a stun variant in every respect. Then he
+rejected auto-battle and specified **Auto Clear** in its place (ruling #78), and
+asked for **Bureau Orders to become stepped** (ruling #79).
+
+**Auto Clear, built.** `lib/game/autoClear.ts` plus a `playerStore` **v7 → v8**
+migration for `autoClearTickets` and `clearedEvents`. Three things worth
+carrying forward:
+
+- **Rank-up pays `5 × ranks gained`, not a flat 5.** `grantAccountXp` applies
+  banked XP in a loop and `clearRankWall` re-applies everything banked at a
+  wall, so one call can cross several ranks. A flat grant would underpay exactly
+  the players who were blocked longest.
+- **The ticket is not a material.** `inventory` is materials-only and materials
+  are what ascension spends; a ticket is a skip token. Top-level count.
+- **Batches resolve sequentially, re-reading the store each run**, because a
+  mid-batch rank-up refills stamina *and* pays tickets — so a batch can
+  legitimately afford more than its opening state suggested.
+
+**Bureau Orders stepped.** Step 1 grew from 8 to 10 orders, step 2 is 10 new
+ones, tabs in the panel, and a step opens only when the previous one is fully
+**claimed**. Ten tickets across the authored board, placeholder like every other
+order reward.
+
+**Two more drifts found while building, both player-facing this time:**
+
+- The world-boss **results screen listed four of a clear's seven payouts** — no
+  gems, no permanent ticket, no account XP. The same three
+  `WORLD_BOSS_AND_ASCENSION_PLAN.md` had lost. A design doc and a results screen
+  had quietly agreed with each other and both were wrong. Now built from the
+  reward object.
+- The brief's **reward preview was wrong on every line**: 2–4 eyes (ships 1
+  +10%), 1–3 seaweed (ships 4 +10%), 1–2 manuals (ships 3–6), 3,000–6,000 coin
+  (ships 2,000–10,000).
+
+### Rewards restructured: first-time-only vs farmable (ruling #80)
+
+He spotted the leak while reading the auto-clear work: *"repeat clears of boss
+battle are also giving out gems? the same gems that are used for summoning?"*
+The world boss paid **20-50 gems on every clear** — at 40 stamina and ~7 runs a
+day, the summoning currency was farmable.
+
+My first fix was wrong in a way he caught immediately: I gated gems behind a
+`firstClear` flag but left the amounts rolled. *"first clear rewards aren't
+supposed to be chance based with amounts."* The real problem was that the boss
+had **one roll table doing two jobs**.
+
+**Now every fight pays two separate lists.** A first clear pays both together;
+every clear after pays the farmable list alone.
+
+**Molvarr's first-clear bundle — fixed, never rolled:** 50 gems · 3 eyes · 10
+seaweed · 50,000 coin · 50 account XP · 15/10/5 training manuals by tier · 1
+Permanent Ticket.
+
+**Molvarr's farm — existing rates:** eyes, seaweed, coin, basic manuals,
+account XP. **Nothing else.** No gems, no Permanent Ticket, no higher-tier
+manuals — which also closed the Permanent Ticket leak I'd flagged earlier the
+same day, without a separate ruling.
+
+`rollWorldBossRewards`'s `firstClear` defaults to **false**, so a call site that
+forgets it under-pays rather than reprinting the bundle every run.
+
+**Audited game-wide, as he asked.** The story was already safe *by
+construction*: `storySchema.ts` gives the `repeat` block only `coin` and
+`materials` — it cannot express gems or tickets even if authored. The boss was
+the only leak in PVE, and it now uses the same two-list shape the story does.
+
+The brief shows both lists separately, the first-clear half only while it is
+still unclaimed, and both are built from the constants so they cannot drift
+again.
+
+### Difficulty became content (ruling #81)
+
+While reporting the reward tables I found the difficulty picker advertising
+×1.00 / ×1.35 / ×1.70 / ×2.05 per world level while `rollWorldBossRewards`
+never received it. He asked me to dig for prior documentation, and it was
+there — `docs/STATUS.md` § "Account rank + world level" (2026-08-11) says
+*"Reward multiplier applies to the whole payout including account XP."*
+
+**It was half-wired.** The `/events` batch got `enemyLevelForDifficulty` to the
+boss — its own note says world level "had been built and wired to nothing" —
+but the reward half never followed. Story implemented both.
+`tests/accountRank.test.ts` only checked the multiplier function's arithmetic,
+never that a caller used it, which is why the gap survived.
+
+Rather than wire it up, he replaced the model:
+
+> *"you know molvarr will have different versions scaled in difficulty yes?
+> now what we can do, not only user needs to reach certain world level to
+> unlock that but also clear that difficulty fight once before it is unlocked
+> for grinding."*
+
+**Each difficulty is now its own fight.** Its own world-level requirement, its
+own first-clear bundle paid once, its own farmable table. No multiplier
+anywhere — a harder tier pays better because its table is better.
+
+**And clearing a tier is what unlocks grinding it.** `clearedEvents` keys per
+tier (`molvarr@3`), so beating world level 1 can't open auto clear on world
+level 4. That closes the hole I'd flagged an hour earlier under the multiplier
+model, where a WL1 clear would have let you farm the ×2.05 table forever.
+
+**Tiers 2–4 are placeholder numbers.** He authored tier 1; the rest follow his
+stated shape — higher tiers add advanced and premium manuals to the farm, which
+is what "higher quality rewards" means here rather than "more of the same".
+Tests assert each tier strictly improves on the one below and that no tier's
+farm ever contains summon currency, so his numbers can drop straight in.
+
+### The reward multiplier is gone (ruling #82)
+
+I flagged it `@deprecated` for later. He pushed back, correctly: *"bruh if
+nothing's changed then flag is useless lol. if ifs not much to remove then do
+it right now."* A deprecation tag on code with no callers is a comment
+pretending to be a plan.
+
+Deleted in full — `REWARD_BONUS_PER_DIFFICULTY`,
+`rewardMultiplierForDifficulty`, `scalePayout`, and `rollStoryRewards`'s
+`rewardMultiplier` parameter. **Zero references remain**, and no behaviour
+changed anywhere: the boss displayed it without applying it, and story never
+passed a value.
+
+`lib/game/worldLevel.ts` now answers one question — *how hard is the fight*.
+What a difficulty pays lives with the content (ruling #81). The "harder must
+pay better" rule survives as
+`tests/worldBossRewards.test.ts`'s tier-progression assertion, which is a real
+check rather than an arithmetic one about a number nobody read.
+
+`effectiveDifficulty` and `baseDifficultyForPart` are also uncalled but were
+left alone — they're the story's base-difficulty scaffolding, which is what he
+wants story to keep running on.
+
+### Auto Clear results, as he specified them
+
+A table: one row per skipped run with its instance id, stamina spent and
+stamina remaining, and a button opening that run's rewards; then a totals row
+with the same button for the combined haul. Both use one `DetailOverlay`.
+
+The per-run rows aren't decoration — each run rolls its own drops, and a
+rank-up mid-batch refills the bar, which the "remaining" column shows as the
+jump it actually was.
+
+### What was tried, declined, or deliberately left
+
+**Auto-battle was proposed and rejected** — not on principle, on cost: a
+player-side AI must handle 27 kits, ally targeting, ult timing and merges, and
+would be judged against how he plays. Auto Clear replaced it. Don't re-propose
+auto-battle.
+
+**Deprecating the reward multiplier was rejected outright.** I marked four
+symbols `@deprecated` for later removal; his answer was *"bruh if nothing's
+changed then flag is useless lol."* Correct — a deprecation tag on code with
+zero callers is a comment pretending to be a plan. **Working rule going
+forward: if removal is cheap and nothing depends on it, remove it now.**
+
+**My first gem fix was wrong and was corrected.** I gated gems behind a
+`firstClear` flag but left every amount rolled. *"first clear rewards aren't
+supposed to be chance based with amounts."* The defect was one roll table doing
+two jobs, not a missing flag.
+
+**Deliberately not changed:**
+- `effectiveDifficulty` and `baseDifficultyForPart` have no callers, but they
+  are the story's base-difficulty scaffolding, which he wants kept.
+- `rewardMultiplierForDifficulty` was **not** wired up to the boss despite the
+  2026-08-11 note saying it should be — he replaced the model instead.
+- Open Issue #22 (effect application in the battle-event stream) and the 3
+  unused-import warnings in `tests/duel.test.ts` were both explicitly excluded
+  from this session's scope.
+
+**Open questions he has not answered:**
+- Which Bureau Orders carry Auto Clear Tickets, and how many. Ten across the
+  board is my split (6 in step 1, 4 in step 2), placeholder like every other
+  order reward.
+- Molvarr tiers 2–4 reward numbers.
+- Whether `effectiveDifficulty`/`baseDifficultyForPart` should also go.
+- Three of the six decisions from the unattended half are still open (the
+  "Tanked, cancelled buffs" line format, the count strip going on both
+  surfaces, and #27's feel).
+
+### Confidence and gaps
+
+**Verified this session** (commands run, output read): 1,192 tests across 96
+files; `tsc --noEmit` exit 0; `npm run lint` 0 errors / 3 known warnings;
+`NEXT_DIST_DIR=.next-verify npm run build` compiled and generated 48 static
+pages. Orders count 10 + 10 and ticket total 10 confirmed by reading the JSON.
+`CURRENT_PLAYER_STATE_VERSION = 8` and four Molvarr tiers confirmed by grep.
+
+**Assumed, not verified:**
+- **#24's fix is unproven in play.** The duplicate-resolution diagnosis fits
+  every artefact (seven log lines against a 3-action cap; "16 player turns in a
+  15-turn battle" in the report header) but I could not reproduce it — it needs
+  a real mid-turn remount in a browser. `dedupeConsecutive` is kept as a
+  regression detector; **a non-zero `duplicate-log-lines` anomaly in any future
+  report means this diagnosis was wrong.**
+- **#27's feel is unjudged.** The hit-test feedback loop is gone; whether the
+  hand now feels right is a playtest question. `window.__handProfile` exists in
+  dev for measuring it.
+- **No UI was browser-verified** — house rule, he playtests. Everything visual
+  this session (count strip, effects modal, orders tabs, auto-clear table, the
+  two-list brief) is typechecked and built but never looked at.
+- **Molvarr tiers 2–4 are my numbers**, shaped to his stated intent. Tests pin
+  the invariants, not the values.
+
+**What I'd check first coming back cold:** whether he has replaced the tier 2–4
+tables, and whether a playtest report still shows `duplicate-log-lines`.
+
+### Verification
+
+`npx vitest run` — **1,192 tests / 96 files passing** (from 1,114 / 91; +78
+across six new files). `npx tsc --noEmit` clean. `npm run lint` clean apart
+from the 3 known unused-import warnings in `tests/duel.test.ts`, unchanged and
+out of scope. Production build green via `NEXT_DIST_DIR=.next-verify`, with
+`tsconfig.json` restored afterwards.
+
 ## Open Issues
 
 | # | Issue | Where | Severity |
@@ -2016,10 +2364,10 @@ point on it, not a new issue.
 | 21 | Enemy AI: skill-selection priority rewritten 2026-07-13 (team-wide tiers + per-turn caps). Target-choice heuristics (currently lowest-HP/taunt) may still want tuning per playtest | `lib/game/ai.ts` | Mostly done |
 | 23 | Stamina is effectively unlimited below ~account rank 13: a boss clear pays 100 XP, nearly every early clear ranks up, and a rank-up refills the bar to 120 (three runs). Raised 2026-08-12 with three fixes; Tanveer declined all three — **accepted, not a bug** | `store/playerStore.ts:463`, `lib/game/worldBossRewards.ts` | Design note (accepted) |
 | 22 | Battle log can't show **which buffs/debuffs an action applied** — `battleEvents` doesn't model effect application, so the raw string log remains the only record. Needs an `emit` change in `combat.ts` | `lib/game/combat.ts`, `types/battleEvent.ts` | Open |
-| 24 | **The engine's string log double-prints actions.** Also: the in-battle log drawer is player-facing and must stay readable (ruling #72), unlike the JSON reports. Turn 14 of the 08-13 run logged seven Lyra actions where the event stream had two; HP arithmetic proves two resolved, so it's a logging path, not a resolution one. `buildBattleReport` collapses consecutive duplicates as a mitigation; the cause is unfound | `hooks/BattleProvider.tsx`, `lib/game/combat.ts` | Open |
-| 25 | **A nulled hit must read "Tanked" and skip its scaled after-effects.** Volcanic Frost resolved for 0 against ~400 DEF and still applied `decay (0/turn)`. **Ruled 2026-08-13 (ruling #71)** — no damage floor, no DEF cap: the card reports "Tanked", no other text, and bleed/decay/shock don't proc when their value nulls to 0. Ready to build | `lib/game/damage.ts`, `lib/game/combat.ts` | Ruled, unbuilt |
-| 26 | Tribe-synergy log lines read `gained 5% undefined` — those kits declare `stats: [...]` rather than `stat`, and the log prints the latter. **The buff itself works.** Cosmetic | `lib/game/passive.ts` | Cosmetic |
-| 27 | **Battle hand animations want a performance pass.** Reported after playtesting 2026-08-13, and reported again the same evening: dragging a held card over another "feels unstable" and leaves artifacts. Suspects ranked in the "Playtest findings" section; start with a profile, not the list | `components/game/battle/Hand.tsx` | Open |
+| 24 | ~~String log double-prints actions~~ **FIXED 2026-08-13 (ruling #76)** — the resolution guard was a per-instance React ref on a provider built to survive remounts, so two loops resolved one queue. Claim moved into the store, keyed by turn. **Not reproduced live**; `dedupeConsecutive` kept as a regression detector whose anomaly must now read zero | `hooks/BattleProvider.tsx`, `store/gameStore.ts` | Fixed, unverified in play |
+| 25 | ~~A nulled hit must read "Tanked"~~ **BUILT 2026-08-13 (rulings #71, #75)** — gate is clause position relative to the damage step. Scoped to DoTs + `lowerUltGauge`; **stun/freeze deferred by Tanveer** and pinned by a test | `lib/game/combat.ts`, `types/battleEvent.ts` | Done (partial scope, by instruction) |
+| 26 | ~~`gained 5% undefined`~~ **FIXED 2026-08-13 — and it was not cosmetic.** The synergy buff never carried `mech.stats`, so six kits' tribe synergies granted **nothing**. This table previously said "the buff itself works"; it did not. Balance knock-on awaiting Tanveer | `lib/game/passive.ts`, `lib/game/stats.ts` | Fixed, his call to keep |
+| 27 | ~~Hand animations want a performance pass~~ **FIXED 2026-08-13** — it was a correctness bug, not cost: hit-testing ran against the live DOM the drag preview was reordering, so the row fed its own input. Frozen boxes now. **Feel is unjudged** — needs a playtest | `components/game/battle/Hand.tsx` | Fixed, feel unverified |
 
 Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier stats wired, ruling #36), #16 (zero clauses hidden, ruling #44), #15 (firestore.rules deployed live via Firebase MCP 2026-07-11 — cloud saves work for signed-in users; minimal `firebase.json` added), #7 (Mechanic discriminated union — see Working).
 

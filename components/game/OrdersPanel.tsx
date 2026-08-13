@@ -10,10 +10,14 @@ import { useStoryStore } from "@/store/storyStore";
 import {
   allOrdersClaimed,
   claimableCount,
+  currentStep,
   evaluateOrders,
   getStarterOrders,
+  isStepUnlocked,
+  ORDER_STEPS,
   orderCompletion,
   summariseRewards,
+  type OrderContext,
   type OrderProgress,
   type OrderReward,
 } from "@/lib/game/orders";
@@ -60,7 +64,12 @@ function OrderRow({
   onClaim: () => void;
   onGo: () => void;
 }): React.JSX.Element {
-  const { order, current, required, claimed, claimable, lockedBy } = entry;
+  const { order, current, required, claimed, claimable, lockedBy, stepLocked } =
+    entry;
+  // Both read as "locked" on the row; only the explanation differs, and the
+  // step reason is already stated once above the list rather than ten times
+  // inside it.
+  const anyLock = lockedBy !== null || stepLocked;
   const percent = required > 0 ? Math.min(100, (current / required) * 100) : 0;
   // A one-step order ("save a preset") has no meaningful bar — 0% or 100% is
   // just a restatement of the tick.
@@ -72,14 +81,14 @@ function OrderRow({
         className={`flex h-4 w-4 shrink-0 items-center justify-center border ${
           claimed
             ? "border-el-green text-el-green"
-            : lockedBy
+            : anyLock
               ? "border-hairline text-readout-muted"
               : "border-edge text-readout-muted"
         }`}
       >
         {claimed ? (
           <Check className="h-2.5 w-2.5" strokeWidth={3} />
-        ) : lockedBy ? (
+        ) : anyLock ? (
           <Lock className="h-2.5 w-2.5" strokeWidth={2.4} />
         ) : null}
       </span>
@@ -129,7 +138,7 @@ function OrderRow({
         >
           Claim
         </button>
-      ) : !claimed && !lockedBy ? (
+      ) : !claimed && !anyLock ? (
         <button
           type="button"
           onClick={onGo}
@@ -207,18 +216,17 @@ export default function OrdersPanel(): React.JSX.Element | null {
   const completed = useStoryStore((s) => s.completed);
   const storyHydrated = useStoryStore((s) => s.hasHydrated);
 
-  const board = React.useMemo(
-    () =>
-      evaluateOrders({
-        completedChapters: completed,
-        pulls: stats.pulls,
-        bossClears: stats.bossClears,
-        presetsSaved: presets.length,
-        rosterSize: roster.length,
-        accountRank: account.rank,
-        characters,
-        claimed: claimedOrders,
-      }),
+  const context: OrderContext = React.useMemo(
+    () => ({
+      completedChapters: completed,
+      pulls: stats.pulls,
+      bossClears: stats.bossClears,
+      presetsSaved: presets.length,
+      rosterSize: roster.length,
+      accountRank: account.rank,
+      characters,
+      claimed: claimedOrders,
+    }),
     [
       completed,
       stats,
@@ -229,6 +237,23 @@ export default function OrdersPanel(): React.JSX.Element | null {
       claimedOrders,
     ],
   );
+
+  const stepOpen = React.useMemo(
+    () => currentStep(context),
+    [context],
+  );
+  // Which tab the player is LOOKING at, which is not necessarily the step they
+  // are on — they can page back to a finished step to re-read it. Following
+  // `stepOpen` automatically would yank the view out from under them the
+  // moment they claim the last order of a step.
+  const [viewedStep, setViewedStep] = React.useState<number | null>(null);
+  const activeStep = viewedStep ?? stepOpen;
+
+  const board = React.useMemo(
+    () => evaluateOrders(context, activeStep),
+    [context, activeStep],
+  );
+  const wholeBoard = React.useMemo(() => evaluateOrders(context), [context]);
 
   // Both stores are localStorage-backed, so anything rendered before they
   // rehydrate would be a wrong answer that then visibly corrects itself.
@@ -243,9 +268,11 @@ export default function OrdersPanel(): React.JSX.Element | null {
   // The board retires once it's finished — a permanently ticked checklist on
   // the home screen is clutter, and daily missions will want the space. A
   // signed-out player never reaches that state, so the check follows the gate.
-  if (!locked && allOrdersClaimed(board)) return null;
+  if (!locked && allOrdersClaimed(wholeBoard)) return null;
 
-  const ready = claimableCount(board);
+  // Counted across every unlocked step, not just the visible tab — a badge
+  // that ignores the other tab would send the player looking in the wrong one.
+  const ready = claimableCount(wholeBoard);
   const { claimed, total } = orderCompletion(board);
 
   return (
@@ -271,16 +298,62 @@ export default function OrdersPanel(): React.JSX.Element | null {
       {locked ? (
         <LockedOrders onSignIn={() => router.push("/login")} />
       ) : (
-        <div className="flex flex-col">
-          {board.map((entry) => (
-            <OrderRow
-              key={entry.order.id}
-              entry={entry}
-              onClaim={() => claimOrder(entry.order.id, completed)}
-              onGo={() => router.push(entry.order.route)}
-            />
-          ))}
-        </div>
+        <>
+          {/* One tab per step. Shown even when only one step is authored —
+              it tells the player the board continues, which a bare list of
+              ten does not (Tanveer, 2026-08-13). */}
+          <div className="hud-scroll flex gap-px overflow-x-auto border-b border-hairline bg-inset">
+            {ORDER_STEPS.map((step) => {
+              const unlocked = isStepUnlocked(step, claimedOrders);
+              const active = step === activeStep;
+              const stepReady = claimableCount(
+                wholeBoard.filter((e) => e.order.step === step),
+              );
+              return (
+                <button
+                  key={step}
+                  type="button"
+                  // A locked step is readable, not enterable: seeing what is
+                  // coming is the point of the tab existing.
+                  onClick={() => setViewedStep(step)}
+                  className={`flex shrink-0 items-center gap-1.5 px-3 py-1.5 font-body text-[10px] font-bold uppercase tracking-[0.16em] transition-colors ${
+                    active
+                      ? "bg-panel text-signal"
+                      : "text-readout-muted hover:text-readout"
+                  }`}
+                >
+                  {!unlocked ? (
+                    <Lock className="h-3 w-3" strokeWidth={2.4} />
+                  ) : null}
+                  Step {step}
+                  {stepReady > 0 ? (
+                    <span className="border border-el-light px-1 text-el-light tabular-nums">
+                      {stepReady}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+
+          {!isStepUnlocked(activeStep, claimedOrders) ? (
+            <p className="border-b border-hairline px-3 py-2 font-body text-xs text-readout-dim">
+              Claim every order in step {activeStep - 1} to open this one.
+              Progress you make early still counts — it just waits here.
+            </p>
+          ) : null}
+
+          <div className="flex flex-col">
+            {board.map((entry) => (
+              <OrderRow
+                key={entry.order.id}
+                entry={entry}
+                onClaim={() => claimOrder(entry.order.id, completed)}
+                onGo={() => router.push(entry.order.route)}
+              />
+            ))}
+          </div>
+        </>
       )}
     </section>
   );

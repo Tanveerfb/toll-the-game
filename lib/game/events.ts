@@ -34,6 +34,15 @@ export interface GameEvent {
   repeatable: boolean;
   /** The rank wall this clears, for trials. */
   clearsWall?: number;
+  /**
+   * An Auto Clear Ticket may be spent here, once the player has beaten it
+   * manually. Absent = manual only.
+   *
+   * Molvarr alone for now (Tanveer, 2026-08-13). A non-repeatable event should
+   * never carry this: skipping a one-off clear skips the content itself, and
+   * the trials exist to be fought.
+   */
+  autoClearEligible?: boolean;
 }
 
 const [FIRST_WALL, SECOND_WALL] = RANK_WALLS;
@@ -49,6 +58,7 @@ export const GAME_EVENTS: readonly GameEvent[] = [
     staminaCost: 40,
     requiredRank: 1,
     repeatable: true,
+    autoClearEligible: true,
   },
   {
     id: "trial-rank-20",

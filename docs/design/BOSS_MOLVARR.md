@@ -15,7 +15,8 @@
 
 > **Re-verified against `data/characters/molvarr.json` on 2026-08-13**, after
 > Tanveer's playtest nerf (ruling #73): P1 Crushing Maw 350 → 300 at R3, P2
-> Abyssal Pierce swapped Pierce → Concentrate, P2 SP 50% → 30%, P2 Corrosive
+> Abyssal Pierce swapped Pierce → Concentrate (and was **renamed Abyssal
+> Convergence** on 2026-08-13 — it no longer pierces), P2 SP 50% → 30%, P2 Corrosive
 > Tide now applies on every 3rd phase-turn instead of every turn. The passive
 > percentages below had also drifted (doc said 10%/30%, JSON has 5%/20%) and
 > are corrected.
@@ -54,7 +55,7 @@
   skills for 2 turns** (seal, sealType attack).
 
 ## Phase 2 — HP 7200 | ATK 400 | DEF 230
-- **Skill 1 (Abyssal Pierce):** **Concentrate** [130/155/210] damage to all
+- **Skill 1 (Abyssal Convergence):** **Concentrate** [130/155/210] damage to all
   enemies (×1.5/1.2/1.1/1.0 for 1/2/3/4 targets).
 - **Skill 2 (Devouring Bite):** [180/220/300] damage to one enemy; lifesteals
   30% of damage.

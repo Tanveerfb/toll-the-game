@@ -57,6 +57,8 @@ describe("migratePlayerState — v1 (inventory.gems) to v2 (currencies split)", 
       stamina: { current: 80, updatedAt: 12345 },
       stats: { pulls: 0, bossClears: 0 },
       claimedOrders: {},
+      autoClearTickets: 0,
+      clearedEvents: [],
       pity: { limited: { bannerId: "debut-2026-08", bar: 30, claimed300: false }, permanent: { bar: 0 } },
     };
     const result = migratePlayerState(v4, CURRENT_PLAYER_STATE_VERSION);
@@ -223,6 +225,8 @@ describe("migratePlayerState — defensive defaults for missing fields regardles
       stamina: { current: 80, updatedAt: 12345 },
       stats: { pulls: 22, bossClears: 3 },
       claimedOrders: { "first-chapter": true },
+      autoClearTickets: 12,
+      clearedEvents: ["molvarr"],
       pity: {
         limited: { bannerId: "debut-2026-08", bar: 30, claimedFirst: false, claimedFinal: false },
         permanent: { bar: 0, claimedFinal: false },

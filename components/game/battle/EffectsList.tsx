@@ -1,9 +1,8 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
-import { ArrowDown, ArrowUp, Hourglass, Sparkles } from "lucide-react";
-import { getCharacterArt } from "@/lib/game/characterArt";
+import { ArrowDown, ArrowUp, Sparkles } from "lucide-react";
+import { statPhrase } from "@/lib/game/stats";
 import type { BattleCharacter } from "@/types/character";
 import type { StatusEffect } from "@/types/mechanic";
 
@@ -50,6 +49,29 @@ export function categorizeEffects(unit: BattleCharacter): CategorizedEffect[] {
   return [...buffs, ...debuffs, ...effects];
 }
 
+/**
+ * How many cancellable buffs and debuffs are on a unit.
+ *
+ * Grey (uncancellable) entries are excluded entirely and count toward neither
+ * side — ruling #30 says they are "effects", not buffs or debuffs, and the
+ * strip that renders this is about what can still be played around.
+ *
+ * Counts ENTRIES, not stacks, matching the chip strip this replaced: three
+ * stacks of one Corrosion were one chip and are one debuff.
+ */
+export function effectCounts(unit: BattleCharacter): {
+  buffs: number;
+  debuffs: number;
+} {
+  let buffs = 0;
+  let debuffs = 0;
+  for (const { category } of categorizeEffects(unit)) {
+    if (category === "buff") buffs += 1;
+    else if (category === "debuff") debuffs += 1;
+  }
+  return { buffs, debuffs };
+}
+
 export function prettyName(effect: StatusEffect): string {
   if (effect.name) return effect.name;
   return effect.type
@@ -73,13 +95,17 @@ function effectDescription(effect: StatusEffect): string {
     return `${effect.sealType ?? "skill"} skills sealed`;
   }
   if (effect.type === "taunt") return "Attacks redirect to the source";
-  if (effect.flatValue !== undefined && effect.stat) {
+  // Via statPhrase, so an entry declaring `stats: ["atk","def","hp"]` reads
+  // "basic stats" instead of losing its stat name entirely — `effect.stat` is
+  // undefined on every combined entry (see lib/game/stats.ts).
+  const named = effect.stat || effect.stats?.length;
+  if (effect.flatValue !== undefined && named) {
     const sign = effect.flatValue >= 0 ? "+" : "";
-    return `${sign}${effect.flatValue} ${effect.stat.toUpperCase()}`;
+    return `${sign}${effect.flatValue} ${statPhrase(effect)}`;
   }
-  if (effect.valuePercent !== undefined && effect.stat) {
+  if (effect.valuePercent !== undefined && named) {
     const sign = effect.valuePercent >= 0 ? "+" : "";
-    return `${sign}${effect.valuePercent}% ${effect.stat.toUpperCase()}`;
+    return `${sign}${effect.valuePercent}% ${statPhrase(effect)}`;
   }
   if (effect.valuePercent !== undefined) return `${effect.valuePercent}%`;
   return "";
@@ -105,102 +131,192 @@ function DescriptionText({ text }: { text: string }): React.JSX.Element {
 }
 
 /**
- * The itemized active-effects list (buffs, then debuffs, then grey effects),
- * each with duration, stacks, description, and the source unit's portrait.
+ * The at-a-glance count under a unit's ult gauge: `↑4 ↓3`.
  *
- * Rendered inside UnitDetailPanel. This module used to also export a whole
- * second overlay (EffectsQuickPanel) that answered the same question from a
- * different tap on the same tile; that overlay is gone and the panel is the
- * single destination. `categorizeEffects` is still shared with the tile's
- * status-chip strip.
+ * Replaces a chip per effect, which grew past the width it had. Rules
+ * (Tanveer, 2026-08-13):
+ *  - a side with nothing active renders NOTHING — no zero, no dimmed arrow, so
+ *    `↓2` alone is a unit carrying only debuffs;
+ *  - grey uncancellable effects never appear here and never count;
+ *  - with neither, the strip is empty rather than a placeholder.
  */
-export function EffectsList({
+export function EffectCountStrip({
   unit,
-  allUnits,
-  showUncancellable = true,
+  className = "",
 }: {
   unit: BattleCharacter;
+  className?: string;
+}): React.JSX.Element | null {
+  const { buffs, debuffs } = effectCounts(unit);
+  if (buffs === 0 && debuffs === 0) return null;
+  return (
+    <div
+      className={`flex items-center gap-2 font-body text-xs font-bold tabular-nums ${className}`}
+      // One label for the pair: two separate ones read as unrelated numbers.
+      aria-label={`${buffs} buff${buffs === 1 ? "" : "s"}, ${debuffs} debuff${debuffs === 1 ? "" : "s"}`}
+    >
+      {buffs > 0 ? (
+        <span className="flex items-center gap-0.5 text-el-blue">
+          <ArrowUp className="h-3 w-3" strokeWidth={3} aria-hidden />
+          {buffs}
+        </span>
+      ) : null}
+      {debuffs > 0 ? (
+        <span className="flex items-center gap-0.5 text-role-attack">
+          <ArrowDown className="h-3 w-3" strokeWidth={3} aria-hidden />
+          {debuffs}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * One category as a table.
+ *
+ * Built to survive growth: the caller scrolls the body, and the table itself
+ * scrolls sideways rather than crushing columns, so adding a column later
+ * doesn't wreck the layout on a narrow panel.
+ */
+function EffectTable({
+  rows,
+  allUnits,
+  emptyText,
+}: {
+  rows: CategorizedEffect[];
   allUnits: BattleCharacter[];
-  /** Include the grey uncancellable entries. Off in battle by default — see
-   *  `settingsStore.showUncancellableEffects`. */
-  showUncancellable?: boolean;
+  emptyText: string;
 }): React.JSX.Element {
-  const all = categorizeEffects(unit);
-  const rows = showUncancellable
-    ? all
-    : all.filter((r) => r.category !== "effect");
-  const hidden = all.length - rows.length;
-  const sourceArt = (sourceId?: string): string | null => {
-    if (!sourceId) return null;
-    const src = allUnits.find((u) => u.instanceId === sourceId);
-    return src ? getCharacterArt(src.id) : null;
-  };
   if (rows.length === 0) {
     return (
-      <p className="py-6 text-center font-body text-sm font-bold uppercase tracking-[0.18em] text-readout-muted">
-        {hidden > 0
-          ? // Saying "no active effects" while hiding some would be a lie.
-            `No buffs or debuffs — ${hidden} uncancellable hidden`
-          : "No active effects."}
+      <p className="py-3 text-center font-body text-xs uppercase tracking-[0.18em] text-readout-muted">
+        {emptyText}
       </p>
     );
   }
+  const sourceName = (sourceId?: string): string => {
+    if (!sourceId) return "—";
+    return allUnits.find((u) => u.instanceId === sourceId)?.name ?? "—";
+  };
   return (
-    <div className="space-y-1.5">
-      {rows.map(({ effect, category }, idx) => {
-        const style = CATEGORY_STYLE[category];
-        const Icon = style.icon;
-        const duration = effect.buffDuration ?? effect.debuffDuration;
-        const stacks = effect.stacks ?? 1;
-        const art = sourceArt(effect.sourceId);
-        const desc = effectDescription(effect);
-        return (
-          <div
-            key={`${effect.type}-${idx}`}
-            className={`flex items-center gap-2.5 border px-2.5 py-2 ${style.row}`}
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[24rem] border-collapse font-body text-xs">
+        <thead>
+          <tr className="border-b border-edge text-left font-bold uppercase tracking-[0.14em] text-readout-muted">
+            <th className="py-1 pr-2 font-normal">Effect</th>
+            <th className="py-1 pr-2 font-normal">Value</th>
+            <th className="py-1 pr-2 text-right font-normal">Stacks</th>
+            <th className="py-1 pr-2 text-right font-normal">Turns</th>
+            <th className="py-1 font-normal">From</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ effect, category }, idx) => {
+            const style = CATEGORY_STYLE[category];
+            const Icon = style.icon;
+            const duration = effect.buffDuration ?? effect.debuffDuration;
+            const stacks = effect.stacks ?? 1;
+            const desc = effectDescription(effect);
+            return (
+              <tr
+                key={`${effect.type}-${idx}`}
+                className="border-b border-hairline last:border-b-0"
+              >
+                <td className="py-1.5 pr-2">
+                  <span className="flex items-center gap-1.5">
+                    <Icon
+                      className={`h-3 w-3 shrink-0 ${style.chip}`}
+                      strokeWidth={2.6}
+                      aria-hidden
+                    />
+                    <span className="font-heading tracking-[0.04em] text-readout-strong">
+                      {prettyName(effect)}
+                    </span>
+                  </span>
+                </td>
+                <td className="py-1.5 pr-2 text-readout-dim">
+                  {desc ? <DescriptionText text={desc} /> : "—"}
+                </td>
+                <td className="py-1.5 pr-2 text-right tabular-nums text-readout-dim">
+                  {stacks > 1 ? `×${stacks}` : "—"}
+                </td>
+                <td className="py-1.5 pr-2 text-right tabular-nums text-readout-dim">
+                  {duration ?? "—"}
+                </td>
+                <td className="py-1.5 truncate text-readout-muted">
+                  {sourceName(effect.sourceId)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * Everything active on a unit, as buff and debuff tables with the grey
+ * uncancellable effects behind a toggle.
+ *
+ * This replaced an inline disclosure inside the info panel's own scroll zone,
+ * which put a list of unbounded length inside a column that already scrolled
+ * (Tanveer: "its not good UI"). Rendered by the caller inside a modal.
+ */
+export function EffectsTables({
+  unit,
+  allUnits,
+  showUncancellable,
+  onToggleUncancellable,
+}: {
+  unit: BattleCharacter;
+  allUnits: BattleCharacter[];
+  showUncancellable: boolean;
+  onToggleUncancellable: () => void;
+}): React.JSX.Element {
+  const all = categorizeEffects(unit);
+  const buffs = all.filter((r) => r.category === "buff");
+  const debuffs = all.filter((r) => r.category === "debuff");
+  const grey = all.filter((r) => r.category === "effect");
+
+  return (
+    <div className="space-y-4">
+      <section className="space-y-1">
+        <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-el-blue">
+          Buffs
+        </h3>
+        <EffectTable rows={buffs} allUnits={allUnits} emptyText="None active" />
+      </section>
+
+      <section className="space-y-1">
+        <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-role-attack">
+          Debuffs
+        </h3>
+        <EffectTable
+          rows={debuffs}
+          allUnits={allUnits}
+          emptyText="None active"
+        />
+      </section>
+
+      {grey.length > 0 ? (
+        <section className="space-y-1">
+          <button
+            type="button"
+            onClick={onToggleUncancellable}
+            aria-expanded={showUncancellable}
+            className="flex w-full items-center justify-between border border-dashed border-edge px-2 py-1 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted transition-colors hover:border-edge-strong hover:text-readout"
           >
-            <div
-              className={`flex h-8 w-8 shrink-0 items-center justify-center border border-hairline bg-void/40 ${style.chip}`}
-            >
-              <Icon className="h-4 w-4" strokeWidth={2.4} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                <span className="font-heading text-sm tracking-[0.04em] text-readout-strong">
-                  {prettyName(effect)}
-                </span>
-                {duration ? (
-                  <span className="flex items-center gap-0.5 font-body text-[10px] font-bold uppercase tracking-widest text-readout-dim">
-                    <Hourglass className="h-3 w-3" />
-                    {duration}
-                  </span>
-                ) : null}
-                {stacks > 1 ? (
-                  <span className="border border-edge bg-void/50 px-1 font-body text-[10px] font-bold text-readout">
-                    ×{stacks}
-                  </span>
-                ) : null}
-              </div>
-              {desc ? (
-                <p className="font-body text-xs text-readout-dim">
-                  <DescriptionText text={desc} />
-                </p>
-              ) : null}
-            </div>
-            {art ? (
-              <div className="h-9 w-9 shrink-0 overflow-hidden border border-edge">
-                <Image
-                  src={art}
-                  alt=""
-                  width={36}
-                  height={36}
-                  className="h-full w-full object-cover object-top"
-                />
-              </div>
-            ) : null}
-          </div>
-        );
-      })}
+            <span>
+              {grey.length} fixed effect{grey.length === 1 ? "" : "s"}
+            </span>
+            <span>{showUncancellable ? "Hide" : "Show"}</span>
+          </button>
+          {showUncancellable ? (
+            <EffectTable rows={grey} allUnits={allUnits} emptyText="None" />
+          ) : null}
+        </section>
+      ) : null}
     </div>
   );
 }

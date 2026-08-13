@@ -5,8 +5,12 @@ import {
   evaluateOrder,
   evaluateOrders,
   getOrder,
+  getOrdersForStep,
   getStarterOrders,
+  currentStep,
+  isStepUnlocked,
   measureGoal,
+  ORDER_STEPS,
   orderCompletion,
   summariseRewards,
   type OrderContext,
@@ -56,12 +60,13 @@ describe("the authored board", () => {
 
   it("pays something for every order", () => {
     for (const order of orders) {
-      const { gems, coin, permanentTicket, materials, character } =
+      const { gems, coin, permanentTicket, autoClearTickets, materials, character } =
         order.reward;
       const paid =
         (gems ?? 0) > 0 ||
         (coin ?? 0) > 0 ||
         (permanentTicket ?? 0) > 0 ||
+        (autoClearTickets ?? 0) > 0 ||
         Object.keys(materials ?? {}).length > 0 ||
         character !== undefined;
       expect(paid).toBe(true);
@@ -263,6 +268,7 @@ describe("what a signed-out player is shown", () => {
       gems: 0,
       coin: 0,
       permanentTicket: 0,
+      autoClearTickets: 0,
       materials: {},
       characters: [],
     });
@@ -304,5 +310,89 @@ describe("the board's ordering", () => {
     expect(allOrdersClaimed(evaluateOrders({ ...EMPTY, claimed: all }))).toBe(
       true,
     );
+  });
+});
+
+describe("steps (Tanveer, 2026-08-13)", () => {
+  const allClaimed = (step: number): Record<string, boolean> =>
+    Object.fromEntries(getOrdersForStep(step).map((o) => [o.id, true]));
+
+  it("authors exactly ten orders per step", () => {
+    // His rule: "for each step, keep it with 10 missions". A step of 8 or 12
+    // isn't wrong so much as it breaks the promise the tab strip makes.
+    for (const step of ORDER_STEPS) {
+      expect(getOrdersForStep(step), `step ${step}`).toHaveLength(10);
+    }
+  });
+
+  it("gives every order a step, with no gaps in the sequence", () => {
+    expect(ORDER_STEPS).toEqual(
+      Array.from({ length: ORDER_STEPS.length }, (_, i) => i + 1),
+    );
+  });
+
+  it("has no duplicate order ids across steps", () => {
+    const ids = getStarterOrders().map((o) => o.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("opens step 1 immediately", () => {
+    expect(isStepUnlocked(1, {})).toBe(true);
+  });
+
+  it("keeps step 2 shut until every step-1 order is CLAIMED", () => {
+    expect(isStepUnlocked(2, {})).toBe(false);
+
+    // Met-but-unclaimed is not finished: the reward is still sitting there.
+    const allButOne = allClaimed(1);
+    const lastId = getOrdersForStep(1)[9].id;
+    delete allButOne[lastId];
+    expect(isStepUnlocked(2, allButOne)).toBe(false);
+
+    expect(isStepUnlocked(2, allClaimed(1))).toBe(true);
+  });
+
+  it("marks a locked step's orders stepLocked and unclaimable, but still tracks progress", () => {
+    const context = {
+      ...EMPTY,
+      // Rank 15 satisfies a step-2 order outright.
+      accountRank: 20,
+      claimed: {},
+    };
+    const board = evaluateOrders(context, 2);
+    const rankOrder = board.find((e) => e.order.id === "s2-rank-fifteen");
+    expect(rankOrder).toBeDefined();
+    expect(rankOrder!.met).toBe(true);
+    expect(rankOrder!.stepLocked).toBe(true);
+    // Progress is real and kept; only collection waits.
+    expect(rankOrder!.claimable).toBe(false);
+    expect(rankOrder!.current).toBe(15);
+  });
+
+  it("makes that same order claimable once step 1 is done", () => {
+    const board = evaluateOrders(
+      { ...EMPTY, accountRank: 20, claimed: allClaimed(1) },
+      2,
+    );
+    const rankOrder = board.find((e) => e.order.id === "s2-rank-fifteen")!;
+    expect(rankOrder.stepLocked).toBe(false);
+    expect(rankOrder.claimable).toBe(true);
+  });
+
+  it("filters to one step and never interleaves another", () => {
+    const board = evaluateOrders(EMPTY, 1);
+    expect(board).toHaveLength(10);
+    expect(board.every((e) => e.order.step === 1)).toBe(true);
+  });
+
+  it("points at the first unfinished step", () => {
+    expect(currentStep({ ...EMPTY, claimed: {} })).toBe(1);
+    expect(currentStep({ ...EMPTY, claimed: allClaimed(1) })).toBe(2);
+  });
+
+  it("pays ten Auto Clear Tickets across the authored board", () => {
+    // Tanveer, 2026-08-13: "let's give our 10 tickets for now". Placeholder
+    // like every other order reward — his to tune.
+    expect(summariseRewards(getStarterOrders()).autoClearTickets).toBe(10);
   });
 });

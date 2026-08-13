@@ -38,11 +38,45 @@ import type { BattleCharacter } from "@/types/character";
  *      not in place: the deck wrapper carries a `scale` during big-hit focus,
  *      and a transform would make `fixed` coordinates lie.
  *   3. **Pointer drag** — the dragged node is transformed directly rather than
- *      through React state, so a pointermove never costs a render.
+ *      through React state, and the drop target is only pushed to state when it
+ *      actually changes, so a pointermove costs a render only when the preview
+ *      genuinely differs. Hit-testing runs against boxes frozen at drag start
+ *      (`dragRects`); against the live DOM the preview reorder fed back into
+ *      its own input and the row oscillated (issue #27).
  *
  * The drag preview and the committed move both run through `moveCardById`, so
  * where a card appears to land is where it lands.
  */
+
+/* ── profiling ──────────────────────────────────────────────────────────── */
+
+/**
+ * Cheap counters for the animation cost pass (Open Issue #27).
+ *
+ * The issue asks to "start with a profile, not the list", and a profile needs a
+ * browser and a real hand. Read these from the console after a fight:
+ *
+ *   window.__handProfile          // { layoutPasses, rectsMeasured, ghostsFlown }
+ *   window.__handProfile.reset()
+ *
+ * A layout pass measures every card, so `rectsMeasured / layoutPasses` is the
+ * hand size and `layoutPasses` is the number that matters: it should be about
+ * one per real hand change, NOT one per pointermove.
+ */
+const handProfile = {
+  layoutPasses: 0,
+  rectsMeasured: 0,
+  ghostsFlown: 0,
+  reset() {
+    this.layoutPasses = 0;
+    this.rectsMeasured = 0;
+    this.ghostsFlown = 0;
+  },
+};
+
+if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
+  (window as unknown as Record<string, unknown>).__handProfile = handProfile;
+}
 
 /* ── card face ──────────────────────────────────────────────────────────── */
 
@@ -188,6 +222,23 @@ export default function Hand({
     holdTimer: ReturnType<typeof setTimeout> | null;
   } | null>(null);
 
+  /**
+   * Card boxes frozen at the moment the drag began.
+   *
+   * Hit-testing used `document.elementFromPoint` against the LIVE DOM, which
+   * fed the preview reorder back into its own input: hovering a neighbour
+   * reflowed the row, a different card landed under a stationary pointer, that
+   * reordered again, and the hand oscillated. That is the "unstable when
+   * hovering a held card over another" report, artifacts included — each flip
+   * also restarted every card's FLIP animation (Tanveer, 2026-08-13).
+   *
+   * Frozen boxes make the hit-test a pure function of pointer position, so the
+   * preview can never change what the pointer is considered to be over. The
+   * hand cannot legitimately reflow mid-drag — nothing enters or leaves it —
+   * so there is nothing for them to go stale against.
+   */
+  const dragRects = React.useRef<Array<{ id: string; rect: DOMRect }>>([]);
+
   // A drag previews its own outcome: the row reflows through the same function
   // that will commit the move. Over a merge target the order is left alone —
   // it's a target now, not a gap.
@@ -207,7 +258,9 @@ export default function Hand({
   const previous = React.useRef<{
     rects: Map<string, DOMRect>;
     cards: ActionCard[];
-    html: Map<string, string>;
+    /** Detached clones, not `outerHTML` strings. Serialising to markup and
+     *  reparsing it to fly one ghost was work done twice for no benefit. */
+    faces: Map<string, HTMLElement>;
   } | null>(null);
 
   React.useLayoutEffect(() => {
@@ -215,6 +268,8 @@ export default function Hand({
     nodes.current.forEach((node, id) => {
       if (node.isConnected) rects.set(id, node.getBoundingClientRect());
     });
+    handProfile.layoutPasses += 1;
+    handProfile.rectsMeasured += rects.size;
 
     const before = previous.current;
     // The dragged node is positioned by hand, so FLIP must leave it alone.
@@ -227,13 +282,13 @@ export default function Hand({
       for (const id of removedCardIds(before.cards, displayed)) {
         const removed = before.cards.find((c) => c.id === id);
         const from = before.rects.get(id);
-        const html = before.html.get(id);
-        if (!removed || !from || !html) continue;
+        const face = before.faces.get(id);
+        if (!removed || !from || !face) continue;
 
         const exit = classifyExit(removed, before.cards, displayed);
         const into =
           exit.kind === "merged" ? (rects.get(exit.intoCardId) ?? null) : null;
-        flyGhost(html, from, into);
+        flyGhost(face, from, into);
         if (exit.kind === "merged") {
           punch(nodes.current.get(exit.intoCardId));
         }
@@ -264,16 +319,16 @@ export default function Hand({
     // Snapshot the faces so a card that unmounts next render still has
     // something to fly. Skipped mid-drag: nothing leaves the hand during a
     // drag, and a pointermove-driven render shouldn't pay for eight clones.
-    const html = new Map<string, string>();
+    const faces = new Map<string, HTMLElement>();
     if (!dragging) {
       nodes.current.forEach((node, id) => {
-        if (node.isConnected) html.set(id, node.outerHTML);
+        if (node.isConnected) faces.set(id, node.cloneNode(true) as HTMLElement);
       });
     } else if (before) {
-      before.html.forEach((value, key) => html.set(key, value));
+      before.faces.forEach((value, key) => faces.set(key, value));
     }
 
-    previous.current = { rects, cards: displayed, html };
+    previous.current = { rects, cards: displayed, faces };
   }, [displayed, reducedMotion]);
 
   /* ── pointer interaction ──────────────────────────────────────────────── */
@@ -327,6 +382,13 @@ export default function Hand({
           if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
           live.active = true;
           if (live.holdTimer) clearTimeout(live.holdTimer);
+          // Freeze the layout BEFORE the first preview reorder can move it.
+          dragRects.current = [];
+          nodes.current.forEach((node, id) => {
+            if (node.isConnected) {
+              dragRects.current.push({ id, rect: node.getBoundingClientRect() });
+            }
+          });
           // Partners stay lit through the drag — they are the drop targets.
           setHoldId(card.id);
           setDragId(card.id);
@@ -336,28 +398,32 @@ export default function Hand({
 
         live.node.style.transform = `translate(${dx}px, ${dy}px) scale(1.06)`;
 
-        // Hit-test *through* the card being dragged, which is under the
-        // pointer by definition.
-        live.node.style.pointerEvents = "none";
-        const under = document.elementFromPoint(
-          moveEvent.clientX,
-          moveEvent.clientY,
-        );
-        live.node.style.pointerEvents = "";
+        // Against the frozen boxes, not the live DOM — see `dragRects`. The
+        // dragged card's own box is skipped rather than hidden behind a
+        // pointer-events toggle, which used to force a style recalc per move.
+        const { clientX, clientY } = moveEvent;
+        const overId = dragRects.current.find(
+          ({ id, rect }) =>
+            id !== card.id &&
+            clientX >= rect.left &&
+            clientX <= rect.right &&
+            clientY >= rect.top &&
+            clientY <= rect.bottom,
+        )?.id;
 
-        const overId =
-          under instanceof Element
-            ? (under.closest("[data-card-id]") as HTMLElement | null)?.dataset
-                .cardId
-            : undefined;
-
-        if (!overId || overId === card.id) {
-          live.dropTargetId = null;
-          live.mergeTargetId = null;
-          setDropTargetId(null);
-          setMergeTargetId(null);
+        if (!overId) {
+          // Only touch state when it actually changes: a pointermove that
+          // resolves to the same target should cost nothing.
+          if (live.dropTargetId !== null || live.mergeTargetId !== null) {
+            live.dropTargetId = null;
+            live.mergeTargetId = null;
+            setDropTargetId(null);
+            setMergeTargetId(null);
+          }
           return;
         }
+
+        if (overId === live.dropTargetId) return;
 
         const held = cards.find((c) => c.id === card.id);
         const isPartner =
@@ -380,6 +446,7 @@ export default function Hand({
         const wasActive = live.active;
         const wasHeld = live.held;
         const target = live.mergeTargetId ?? live.dropTargetId;
+        dragRects.current = [];
 
         live.node.style.transform = "";
         live.node.style.zIndex = "";
@@ -596,13 +663,17 @@ function punch(node: HTMLElement | undefined): void {
  * `position: fixed` against it — the same trap that once put a modal behind
  * the page it was launched from.
  */
-function flyGhost(html: string, from: DOMRect, into: DOMRect | null): void {
+function flyGhost(
+  snapshot: HTMLElement,
+  from: DOMRect,
+  into: DOMRect | null,
+): void {
   if (typeof document === "undefined") return;
 
-  const host = document.createElement("div");
-  host.innerHTML = html;
-  const ghost = host.firstElementChild as HTMLElement | null;
-  if (!ghost) return;
+  // The snapshot is already a detached clone, but a cascade merge can fly the
+  // same one more than once — clone again so each ghost owns its element.
+  const ghost = snapshot.cloneNode(true) as HTMLElement;
+  handProfile.ghostsFlown += 1;
 
   ghost.removeAttribute("data-card-id");
   Object.assign(ghost.style, {

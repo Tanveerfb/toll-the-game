@@ -110,7 +110,7 @@ Order: prove the recipe on **Gon** (canon tag, easy consistency) → review with
 - [ ] **yalina** — Attention Drawer · Unexpected Strike · Devastating Blow (ult)
 
 **Boss Molvarr (8 unique, across 2 phases):**
-- [ ] Corrosive Surge · Crushing Maw · Sunken Verdict · Devour the Tide · Abyssal Pierce · Devouring Bite · Iron Carapace · Tidal Cataclysm
+- [ ] Corrosive Surge · Crushing Maw · Sunken Verdict · Devour the Tide · Abyssal Convergence · Devouring Bite · Iron Carapace · Tidal Cataclysm
 
 ## Proof batch — Gon (ready-to-run)
 
@@ -314,7 +314,7 @@ Arts Tanveer flagged from the first full batch — re-spin these after the batch
   - **Anchor to her locked portrait via img2img/ControlNet** (consistency strategy step 2) — she's AI-invented, txt2img drifts.
   - Keep: white-silver asymmetrical hair, elf-point ears, light-reddish eyes (can crackle), lightning-channeling polearm.
 
-**molvarr (boss) — 4 of 8 flagged by Sonnet.** Re-spin `corrosive-surge`, `crushing-maw`, `sunken-verdict`, `abyssal-pierce` — they came out as abstract extreme-close-up textures/claws that don't read as the creature at card size. The other 4 (`devour-the-tide`, `devouring-bite`, `iron-carapace`, `tidal-cataclysm`) are fine — leave them. Fix: pull back the framing so the corroded rock behemoth clearly reads; IP-Adapter-lock to `public/npc/molvarr.png`.
+**molvarr (boss) — 4 of 8 flagged by Sonnet.** Re-spin `corrosive-surge`, `crushing-maw`, `sunken-verdict`, `abyssal-convergence` (the file was `abyssal-pierce` until the 2026-08-13 rename) — they came out as abstract extreme-close-up textures/claws that don't read as the creature at card size. The other 4 (`devour-the-tide`, `devouring-bite`, `iron-carapace`, `tidal-cataclysm`) are fine — leave them. Fix: pull back the framing so the corroded rock behemoth clearly reads; IP-Adapter-lock to `public/npc/molvarr.png`.
 
 ## Out of scope (this pass)
 

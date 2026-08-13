@@ -32,7 +32,7 @@ describe("getCharacterKit", () => {
 
     // Distinct skill sets per phase
     expect(p1.skills.map((s) => s.skillName)).toContain("Corrosive Surge");
-    expect(p2.skills.map((s) => s.skillName)).toContain("Abyssal Pierce");
+    expect(p2.skills.map((s) => s.skillName)).toContain("Abyssal Convergence");
     expect(p2.skills.map((s) => s.skillName)).not.toContain("Corrosive Surge");
 
     // Distinct ultimate + stats

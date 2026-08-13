@@ -85,38 +85,13 @@ export function rollStoryRewards(
   rewards: StoryChapterRewards,
   isFirstClear: boolean,
   rng: () => number = Math.random,
-  /** Difficulty reward multiplier — 1 at world level 1, which is every
-   *  encounter today. Applied to the whole payout, account XP included
-   *  (Tanveer, 2026-08-11). */
-  rewardMultiplier: number = 1,
 ): StoryClearResult {
-  const firstClear = isFirstClear
-    ? scalePayout(fromBundle(rewards.firstClear), rewardMultiplier)
-    : null;
-  const drops = scalePayout(rollDrops(rewards.repeat, rng), rewardMultiplier);
+  const firstClear = isFirstClear ? fromBundle(rewards.firstClear) : null;
+  const drops = rollDrops(rewards.repeat, rng);
   return {
     firstClear,
     drops,
     total: firstClear ? addPayouts(firstClear, drops) : drops,
-  };
-}
-
-/** Scales a rolled payout. A multiplier of 1 is a strict no-op, so nothing
- *  currently authored moves by a single point. */
-export function scalePayout(
-  payout: StoryPayout,
-  multiplier: number,
-): StoryPayout {
-  if (multiplier === 1) return payout;
-  const scale = (n: number) => Math.round(n * multiplier);
-  return {
-    gems: scale(payout.gems),
-    coin: scale(payout.coin),
-    permanentTicket: scale(payout.permanentTicket),
-    accountXp: scale(payout.accountXp),
-    materials: Object.fromEntries(
-      Object.entries(payout.materials).map(([id, qty]) => [id, scale(qty)]),
-    ),
   };
 }
 

@@ -4,7 +4,7 @@ import { calculateDamage } from "./damage";
 import { getEvadeChance } from "./evade";
 import { trySurviveLethal } from "./lethal";
 import { syncExtortLinks } from "./effects";
-import { getEffectiveAttack, getEffectiveDefense } from "./stats";
+import { getEffectiveAttack, getEffectiveDefense, statPhrase } from "./stats";
 import { ultGaugeMax } from "./ultGauge";
 import { bossDamageMultiplierVsTarget } from "./bossPassives";
 import { getEffectiveCritResist, getEffectiveLifesteal } from "./substats";
@@ -27,6 +27,36 @@ import type {
   BattleEventCounter,
 } from "@/types/battleEvent";
 import type { StatusEffect } from "@/types/mechanic";
+
+/**
+ * Effects that exist only as a consequence of the hit LANDING, and so do not
+ * proc when the hit's damage nulls to 0 (ruling #71, "Tanked").
+ *
+ * The test Tanveer gave is the skill's own description, read in clause order:
+ * for "Cancels buffs, does damage equal to 375% ATK to all enemies, greatly
+ * lowers ATK and DEF for 2 turns", the cancel precedes the damage clause and
+ * still fires; the ATK/DEF drop follows it and would not. Everything in this
+ * set sits after the damage clause.
+ *
+ * DoTs, gauge depletion and hard CC. Stun joined on 2026-08-13 once Tanveer
+ * ruled on it: "null them if the damage resulted in null". **Freeze belongs
+ * here too** — it is not implemented yet, but he confirmed it is a stun
+ * variant in every respect, so it goes in this set the day it exists rather
+ * than being re-litigated then.
+ *
+ * The stat debuffs (a plain `debuff` entry) are still OUT. They are the same
+ * shape and will likely follow, but he has not ruled, and the clause-order
+ * test has to be applied per mechanic rather than assumed.
+ */
+const NULLED_BY_TANKED_HIT: ReadonlySet<string> = new Set([
+  "shock",
+  "decay",
+  "bleed",
+  "corrosion",
+  "ignite",
+  "lowerUltGauge",
+  "stun",
+]);
 
 /**
  * Strips any prior effect this same source applied that matches `matches`,
@@ -173,7 +203,10 @@ function formatTurns(duration?: number): string {
 
 function toPercentText(value?: number): string {
   if (typeof value !== "number") return "";
-  return `${value}% `;
+  // No trailing space: it used to collide with formatTurns' leading one and
+  // every buff line in the log read "by 20%  for 1 turn" (ruling #72 — the
+  // drawer is player-facing, so this is a defect, not a cosmetic).
+  return `${value}%`;
 }
 
 export function executeSkill(
@@ -497,7 +530,7 @@ export function executeSkill(
         uncancellable: mech.uncancellable,
       });
       log(
-        `[Action] ${updatedSource.name} gained ${mech.type} to ${mech.stat || "stat"} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim() +
+        `[Action] ${updatedSource.name} gained ${mech.type} to ${statPhrase(mech)} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim() +
           ".",
       );
     }
@@ -740,6 +773,10 @@ export function executeSkill(
     const targetEffects: string[] = [];
     let dealtDamage = 0;
     let healedAmount = 0;
+    /** Ruling #71 — damage was intended against THIS target and resolved to 0.
+     *  Per target on purpose: an AoE that nulls on one unit still lands, with
+     *  all its after-effects, on the others. */
+    let damageNulled = false;
 
     // Cancels resolve BEFORE damage (Evil Spirit order: strip stances and
     // buffs, then hit) — canceling a counter stance prevents the counter.
@@ -822,6 +859,16 @@ export function executeSkill(
       totalDamageDealt += finalDamage;
       targetEvent.damage = finalDamage;
 
+      // Ruling #71 — the hit was fully absorbed. Detected AFTER flooring, and
+      // it has to be: calculateDamage already floors the post-DEF base at 1, so
+      // a null is produced by the type-advantage and damage-reduction
+      // multipliers dragging that 1 below 1.0 — never by the subtraction alone.
+      // A skill that was never going to deal damage (Draw Fire) is not a null.
+      if (baseDamage > 0 && finalDamage === 0) {
+        damageNulled = true;
+        targetEvent.tanked = true;
+      }
+
       // Lifesteal substat — unconditional heal-on-hit, stacks additively with
       // any explicit skill-level "lifesteal" mechanic (resolved separately,
       // below in the mechanics loop).
@@ -899,6 +946,10 @@ export function executeSkill(
     if (isOffensive && !targetIsDebuffImmune) {
       // Apply skill mechanics (Debuffs)
       skillMechanics.forEach((mech) => {
+        // Ruling #71: a tanked hit carries none of its consequences. Skipping
+        // outright — NOT applying them at a value of 0, which is what produced
+        // the reported "applied decay (0/turn)".
+        if (damageNulled && NULLED_BY_TANKED_HIT.has(mech.type)) return;
         if (mech.type === "shock") {
           // Independent DoT per application, valued off THIS hit's damage
           // (e.g. 100 dealt -> 30 per turn for 4 turns). Removable debuff.
@@ -1125,7 +1176,7 @@ export function executeSkill(
             Object.assign(updatedTarget, scaleMaxHp(updatedTarget, -downPercent));
           }
           targetEffects.push(
-            `lowered ${mech.stat || "stat"} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim(),
+            `lowered ${statPhrase(mech)} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim(),
           );
         }
         if (mech.type === "taunt") {
@@ -1215,7 +1266,7 @@ export function executeSkill(
           Object.assign(updatedTarget, scaleMaxHp(updatedTarget, percent));
         }
         targetEffects.push(
-          `applied ${mech.type} to ${mech.stat || "stat"} by ${toPercentText(percent)}${formatTurns(mech.duration)}`.trim(),
+          `applied ${mech.type} to ${statPhrase(mech)} by ${toPercentText(percent)}${formatTurns(mech.duration)}`.trim(),
         );
       }
       if (mech.type === "debuffImmunity" && !mech.targetSelf && isHealOrBuff) {
@@ -1255,7 +1306,15 @@ export function executeSkill(
       }
     });
 
-    if (isAttack) {
+    if (isAttack && damageNulled) {
+      // Ruling #71: "Tanked", not "dealt 0 damage". Anything still listed here
+      // resolved BEFORE the damage step (a cancel, a broken taunt) and really
+      // did happen — reporting it isn't the "other text" the ruling forbids;
+      // that was the after-effects being announced at a value of zero.
+      log(
+        `[Action] ${updatedSource.name} used ${action.skill.skillName} on ${updatedTarget.name} — Tanked${targetEffects.length > 0 ? `, ${targetEffects.join(", ")}` : ""}.`,
+      );
+    } else if (isAttack) {
       log(
         `[Action] ${updatedSource.name} used ${action.skill.skillName} and dealt ${dealtDamage} damage to ${updatedTarget.name}${targetEffects.length > 0 ? ` causing ${targetEffects.join(", ")}` : ""}.`,
       );

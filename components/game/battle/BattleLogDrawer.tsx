@@ -4,7 +4,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { AnimatePresence, m } from "framer-motion";
-import { ChevronDown, Skull, Sparkles, Wind, Zap } from "lucide-react";
+import { ChevronDown, Shield, Skull, Sparkles, Wind, Zap } from "lucide-react";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import type { SequencedBattleEvent } from "@/store/gameStore";
 
@@ -43,6 +43,7 @@ function TargetRow({
   damage,
   heal,
   evaded,
+  tanked,
   crit,
   killed,
   survivedLethal,
@@ -51,6 +52,7 @@ function TargetRow({
   damage?: number;
   heal?: number;
   evaded?: boolean;
+  tanked?: boolean;
   crit?: boolean;
   killed?: boolean;
   survivedLethal?: boolean;
@@ -63,6 +65,15 @@ function TargetRow({
         <span className="flex shrink-0 items-center gap-0.5 font-semibold uppercase tracking-widest text-signal">
           <Wind className="h-3 w-3" strokeWidth={2.6} />
           Dodged
+        </span>
+      ) : null}
+      {tanked ? (
+        // Without this the row rendered a bare name: the damage badge is
+        // gated on `> 0`, so a fully-absorbed hit said nothing at all and the
+        // player was left to guess whether it had even resolved (ruling #71).
+        <span className="flex shrink-0 items-center gap-0.5 font-semibold uppercase tracking-widest text-readout-muted">
+          <Shield className="h-3 w-3" strokeWidth={2.6} />
+          Tanked
         </span>
       ) : null}
       {damage !== undefined && damage > 0 ? (

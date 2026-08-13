@@ -163,7 +163,18 @@ The part schema gains `teamMode` (enum) and `rewards`, and fails at load with th
 
 ## Numbers (placeholders — Tanveer tunes)
 
-Derived from shipped anchors, not invented from nothing: world boss pays 2000–10000 coin, 3–6 manuals, 20–50 gems and 1–3 tickets for 40 stamina; a summon costs 3 gems single / 30 multi; manuals grant 100/400/1000 XP; the stamina bar caps at 120 and refills at +1/5min.
+Derived from shipped anchors, not invented from nothing: world boss pays 2000–10000 coin, 3–6 manuals, 20–50 gems and 1–3 tickets for 40 stamina;
+
+> **This anchor is out of date as of 2026-08-13 (rulings #80/#81).** The world
+> boss no longer pays gems or Permanent Tickets on a repeat clear at all —
+> both moved to a one-off first-clear bundle, and difficulty became authored
+> tiers rather than a multiplier. The line above described the boss when this
+> spec was written and is kept as the derivation's provenance; **do not read
+> it as current rates.** `lib/game/worldBossRewards.ts` is the source of truth.
+> The story numbers derived from it were never re-derived — they remain
+> Tanveer's to tune, as this section already says.
+
+Original anchors, for the record: a summon costs 3 gems single / 30 multi; manuals grant 100/400/1000 XP; the stamina bar caps at 120 and refills at +1/5min.
 
 **Per-stamina intent:** story should beat the world boss on *levelling fuel* and lose badly on *gacha currency and ascension materials*, so each mode keeps a distinct reason to exist.
 

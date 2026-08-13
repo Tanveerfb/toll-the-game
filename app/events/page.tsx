@@ -12,7 +12,11 @@ import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
 import { getCurrentStamina, STAMINA_CAP } from "@/lib/game/stamina";
 import {
+  addRewards,
+  emptyRewards,
+  getBossTier,
   rollWorldBossRewards,
+  tierKey,
   type WorldBossRewards,
 } from "@/lib/game/worldBossRewards";
 import { getCharacterArt } from "@/lib/game/characterArt";
@@ -29,26 +33,228 @@ import {
 import {
   availableDifficulties,
   enemyLevelForDifficulty,
-  rewardMultiplierForDifficulty,
   worldLevelCapForRank,
 } from "@/lib/game/worldLevel";
 import { materialLabel } from "@/lib/game/materials";
+import {
+  AUTO_CLEAR_IS_NEVER_FIRST_CLEAR,
+  autoClearAvailability,
+  maxBatchSize,
+} from "@/lib/game/autoClear";
+import DetailOverlay from "@/components/game/DetailOverlay";
 
 type View =
   | { kind: "board" }
   | { kind: "brief"; event: GameEvent }
   | { kind: "battle"; event: GameEvent }
-  | { kind: "results"; event: GameEvent; rewards: WorldBossRewards };
+  | { kind: "results"; event: GameEvent; rewards: WorldBossRewards }
+  /** Auto Clear's per-run breakdown plus the combined haul. Separate from
+   *  `results` because it reports many runs and never came from a battle. */
+  | {
+      kind: "autoResults";
+      event: GameEvent;
+      rewards: WorldBossRewards;
+      runs: AutoClearRun[];
+    };
+
+/** One skipped fight, as the results table reports it. */
+interface AutoClearRun {
+  id: string;
+  staminaUsed: number;
+  staminaAfter: number;
+  rewards: WorldBossRewards;
+}
+
+/**
+ * A clear's payout, itemised, zeroes dropped.
+ *
+ * A boss clear pays SEVEN things. The results screen used to list four of them
+ * — no gems, no permanent ticket, no account XP — and `WORLD_BOSS_AND_ASCENSION_PLAN.md`
+ * had lost track of the same three, which is how a design doc and a results
+ * screen can quietly agree with each other and both be wrong (2026-08-13).
+ * Read from the reward object so a new field can't be forgotten twice.
+ */
+function rewardRows(rewards: WorldBossRewards): Array<[string, number]> {
+  const rows: Array<[string, number]> = [
+    [materialLabel("sea_monster_eye"), rewards.sea_monster_eye],
+    [materialLabel("corroded_seaweed"), rewards.corroded_seaweed],
+    [materialLabel("training_manual"), rewards.training_manual],
+    [materialLabel("training_manual_advanced"), rewards.training_manual_advanced],
+    [materialLabel("training_manual_premium"), rewards.training_manual_premium],
+    ["Coin", rewards.coin],
+    ["Gems", rewards.gems],
+    ["Permanent Ticket", rewards.permanentTicket],
+    ["Account XP", rewards.accountXp],
+  ];
+  return rows.filter(([, value]) => value > 0);
+}
 
 /** What the brief promises. Ranges, not guarantees — the roll happens on
  *  victory (`rollWorldBossRewards`), and the brief exists to answer "what am I
  *  playing for", which nothing did before. */
-const BOSS_REWARD_PREVIEW: Array<[string, string]> = [
-  [materialLabel("sea_monster_eye"), "2–4"],
-  [materialLabel("corroded_seaweed"), "1–3"],
-  [materialLabel("training_manual"), "1–2"],
-  ["Coin", "3,000–6,000"],
-];
+/** One tier's farmable table, as ranges. Built from the tier so it cannot
+ *  drift from what the fight actually pays. */
+function farmablePreview(difficulty: number): Array<[string, string]> {
+  const { farmable } = getBossTier(difficulty);
+  const bonus = ([base, chance]: [number, number]) =>
+    chance > 0 ? `${base}–${base + 1}` : `${base}`;
+  const range = ([min, max]: [number, number]) =>
+    max > min ? `${min.toLocaleString()}–${max.toLocaleString()}` : `${min}`;
+  const rows: Array<[string, string]> = [
+    [materialLabel("sea_monster_eye"), bonus(farmable.sea_monster_eye)],
+    [materialLabel("corroded_seaweed"), bonus(farmable.corroded_seaweed)],
+    [materialLabel("training_manual"), range(farmable.training_manual)],
+    [materialLabel("training_manual_advanced"), range(farmable.training_manual_advanced)],
+    [materialLabel("training_manual_premium"), range(farmable.training_manual_premium)],
+    ["Coin", range(farmable.coin)],
+    ["Account XP", `${farmable.accountXp}`],
+  ];
+  // A tier that doesn't drop a manual tier shouldn't advertise "0".
+  return rows.filter(([, value]) => value !== "0");
+}
+
+/** The one-off bundle for a tier. Fixed amounts, never rolled and never
+ *  scaled — each tier's bundle is authored at the value it should pay
+ *  (Tanveer, 2026-08-13: "first clear doesn't need to scale with world level"). */
+function firstClearPreview(difficulty: number): Array<[string, string]> {
+  return rewardRows(getBossTier(difficulty).firstClear).map(([label, value]) => [
+    label,
+    value.toLocaleString(),
+  ]);
+}
+
+/**
+ * Auto Clear's results, as Tanveer specified them: a row per skipped run
+ * carrying that run's id, the stamina it cost and what was left afterwards,
+ * with its rewards behind a button; then a totals row with the same button for
+ * the combined haul.
+ *
+ * A row per run rather than one merged number because the runs are not
+ * identical — each rolls its own drops, and a rank-up mid-batch refills the
+ * bar, which the stamina-after column shows as the jump it was.
+ */
+function AutoClearResults({
+  event,
+  runs,
+  totals,
+  onBack,
+}: {
+  event: GameEvent;
+  runs: AutoClearRun[];
+  totals: WorldBossRewards;
+  onBack: () => void;
+}): React.JSX.Element {
+  // `null` = closed. A run id or "total" names which breakdown is open, so one
+  // modal serves every row instead of one per run.
+  const [open, setOpen] = React.useState<string | null>(null);
+  const openRun = runs.find((run) => run.id === open);
+  const openRewards = open === "total" ? totals : openRun?.rewards;
+  const totalStamina = runs.reduce((sum, run) => sum + run.staminaUsed, 0);
+
+  return (
+    <main className="terminal-grid flex min-h-screen items-center justify-center bg-void px-4 py-6">
+      <div className="w-full max-w-lg border border-edge-strong bg-panel">
+        <div className="border-b border-hairline bg-inset px-5 py-4">
+          <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
+            {event.name} · auto cleared
+          </p>
+          <p className="font-heading text-2xl tracking-[0.08em] text-readout-strong">
+            {runs.length} run{runs.length === 1 ? "" : "s"}
+          </p>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[26rem] border-collapse font-body text-xs">
+            <thead>
+              <tr className="border-b border-edge text-left font-bold uppercase tracking-[0.14em] text-readout-muted">
+                <th className="px-4 py-2 font-normal">Instance</th>
+                <th className="px-2 py-2 text-right font-normal">Stamina</th>
+                <th className="px-2 py-2 text-right font-normal">Remaining</th>
+                <th className="px-4 py-2 text-right font-normal">Rewards</th>
+              </tr>
+            </thead>
+            <tbody>
+              {runs.map((run) => (
+                <tr key={run.id} className="border-b border-hairline">
+                  <td className="px-4 py-2 font-mono text-readout">{run.id}</td>
+                  <td className="px-2 py-2 text-right tabular-nums text-readout-dim">
+                    −{run.staminaUsed}
+                  </td>
+                  <td className="px-2 py-2 text-right tabular-nums text-readout-dim">
+                    {run.staminaAfter}
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    <button
+                      type="button"
+                      onClick={() => setOpen(run.id)}
+                      className="border border-edge px-2 py-1 font-bold uppercase tracking-[0.12em] text-readout-dim transition-colors hover:border-signal hover:text-signal"
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              <tr className="border-t-2 border-edge-strong bg-inset">
+                <td className="px-4 py-2 font-bold uppercase tracking-[0.14em] text-readout-strong">
+                  Total
+                </td>
+                <td className="px-2 py-2 text-right font-bold tabular-nums text-readout-strong">
+                  −{totalStamina}
+                </td>
+                <td className="px-2 py-2 text-right tabular-nums text-readout-muted">
+                  {runs[runs.length - 1]?.staminaAfter ?? 0}
+                </td>
+                <td className="px-4 py-2 text-right">
+                  <button
+                    type="button"
+                    onClick={() => setOpen("total")}
+                    className="border border-signal bg-signal/12 px-2 py-1 font-bold uppercase tracking-[0.12em] text-signal transition-colors hover:bg-signal/20"
+                  >
+                    View all
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="px-5 py-4">
+          <button
+            type="button"
+            onClick={onBack}
+            className="w-full border border-edge-strong py-3 text-center font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout transition-colors hover:border-signal hover:text-signal"
+          >
+            Back to events
+          </button>
+        </div>
+      </div>
+
+      {openRewards ? (
+        <DetailOverlay
+          title={open === "total" ? "All rewards" : "Run rewards"}
+          subtitle={open === "total" ? `${runs.length} runs combined` : open!}
+          onClose={() => setOpen(null)}
+        >
+          <div className="flex flex-col gap-1.5">
+            {rewardRows(openRewards).map(([label, value]) => (
+              <div
+                key={label}
+                className="flex items-baseline justify-between gap-3 border-b border-hairline pb-1.5 last:border-b-0"
+              >
+                <span className="font-body text-sm text-readout-dim">
+                  {label}
+                </span>
+                <span className="font-heading text-lg tabular-nums text-readout-strong">
+                  +{value.toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </DetailOverlay>
+      ) : null}
+    </main>
+  );
+}
 
 function EventCard({
   event,
@@ -146,6 +352,10 @@ export default function EventsPage(): React.JSX.Element {
   const spendStaminaAction = usePlayerStore((s) => s.spendStaminaAction);
   const rememberLastTeam = usePlayerStore((s) => s.rememberLastTeam);
   const grantWorldBossRewards = usePlayerStore((s) => s.grantWorldBossRewards);
+  const autoClearTickets = usePlayerStore((s) => s.autoClearTickets);
+  const clearedEvents = usePlayerStore((s) => s.clearedEvents);
+  const recordManualClear = usePlayerStore((s) => s.recordManualClear);
+  const spendAutoClearRun = usePlayerStore((s) => s.spendAutoClearRun);
 
   const [view, setView] = React.useState<View>({ kind: "board" });
   const [team, setTeam] = React.useState<CharacterData[]>([]);
@@ -155,7 +365,7 @@ export default function EventsPage(): React.JSX.Element {
   useScreenMusic(
     view.kind === "battle"
       ? "battle"
-      : view.kind === "results"
+      : view.kind === "results" || view.kind === "autoResults"
         ? "victory"
         : "menu",
   );
@@ -184,6 +394,64 @@ export default function EventsPage(): React.JSX.Element {
     [spendStaminaAction, startCustomBattle, team, rememberLastTeam, difficulty],
   );
 
+  /**
+   * Resolve `count` skipped runs.
+   *
+   * Sequential, and re-reading the store each iteration, for a reason that is
+   * easy to miss: a rank-up mid-batch refills stamina to the cap AND pays
+   * Auto Clear Tickets, so a batch can legitimately afford more than its
+   * opening state suggested. Pre-computing affordability once would either
+   * stop early or, worse, keep spending against stale numbers.
+   *
+   * Each run pays its own ticket and stamina atomically before its reward is
+   * rolled, so an interrupted batch never hands out an unpaid clear.
+   */
+  const runAutoClear = React.useCallback(
+    (event: GameEvent, count: number) => {
+      // From the module's own constructor, not a literal: a hand-written
+      // zeroed object goes stale the moment a reward field is added.
+      let totals = emptyRewards();
+      const runs: AutoClearRun[] = [];
+
+      for (let i = 0; i < count; i++) {
+        const staminaBefore = getCurrentStamina(
+          usePlayerStore.getState().stamina,
+        );
+        if (!spendAutoClearRun(event.staminaCost)) break;
+        // A fresh roll per run — the 10% bonus branches have to be rolled
+        // independently or the variance flattens and the average shifts.
+        // Never a first clear: the unlock gate guarantees one already happened,
+        // and gems are first-clear only.
+        const rewards = rollWorldBossRewards(undefined, {
+          firstClear: AUTO_CLEAR_IS_NEVER_FIRST_CLEAR,
+          difficulty,
+        });
+        grantWorldBossRewards(rewards);
+        totals = addRewards(totals, rewards);
+        runs.push({
+          // Sequential within the batch, and readable in a table — a raw
+          // uuid would identify the run without telling anyone anything.
+          id: `${tierKey(event.id, difficulty)}-${String(runs.length + 1).padStart(2, "0")}`,
+          staminaUsed: staminaBefore - getCurrentStamina(
+            usePlayerStore.getState().stamina,
+          ),
+          // Read AFTER the spend, so a rank-up that refilled the bar mid-batch
+          // shows up here as the jump it actually was.
+          staminaAfter: getCurrentStamina(usePlayerStore.getState().stamina),
+          rewards,
+        });
+      }
+
+      if (runs.length === 0) {
+        setNotice("Not enough tickets or stamina for a run.");
+        return;
+      }
+      setNotice(null);
+      setView({ kind: "autoResults", event, rewards: totals, runs });
+    },
+    [spendAutoClearRun, grantWorldBossRewards, difficulty],
+  );
+
   if (view.kind === "battle") {
     return (
       <main className="terminal-grid screen-below-nav relative flex flex-col overflow-hidden bg-void text-readout">
@@ -191,8 +459,21 @@ export default function EventsPage(): React.JSX.Element {
           contextLabel={view.event.name}
           worldBoss={{
             onContinue: () => {
-              const rewards = rollWorldBossRewards();
+              // Read BEFORE the clear is recorded — `clearedEvents` is what
+              // makes this the first clear, and recording first would pay
+              // every clear as a repeat. Keyed per DIFFICULTY: each tier is a
+              // separate fight with its own one-off bundle.
+              const key = tierKey(view.event.id, difficulty);
+              const isFirstClear = !clearedEvents.includes(key);
+              const rewards = rollWorldBossRewards(undefined, {
+                firstClear: isFirstClear,
+                difficulty,
+              });
               grantWorldBossRewards(rewards);
+              // A MANUAL clear, which is what unlocks Auto Clear for this
+              // tier. Auto Clear deliberately never reaches this call — it
+              // would otherwise be able to unlock itself.
+              recordManualClear(key);
               resetBattle();
               setView({ kind: "results", event: view.event, rewards });
             },
@@ -208,13 +489,19 @@ export default function EventsPage(): React.JSX.Element {
     );
   }
 
+  if (view.kind === "autoResults") {
+    return (
+      <AutoClearResults
+        event={view.event}
+        runs={view.runs}
+        totals={view.rewards}
+        onBack={() => setView({ kind: "board" })}
+      />
+    );
+  }
+
   if (view.kind === "results") {
-    const rows: Array<[string, number]> = [
-      [materialLabel("sea_monster_eye"), view.rewards.sea_monster_eye],
-      [materialLabel("corroded_seaweed"), view.rewards.corroded_seaweed],
-      [materialLabel("training_manual"), view.rewards.training_manual],
-      ["Coin", view.rewards.coin],
-    ];
+    const rows = rewardRows(view.rewards);
     return (
       <main className="terminal-grid flex min-h-screen items-center justify-center bg-void px-4">
         <div className="w-full max-w-md border border-edge-strong bg-panel">
@@ -261,6 +548,18 @@ export default function EventsPage(): React.JSX.Element {
     const enemyLevel = enemyLevelForDifficulty(difficulty);
     const canEnter =
       team.length > 0 && currentStamina >= event.staminaCost && !!event.enemyId;
+
+    const auto = autoClearAvailability({
+      eligible: event.autoClearEligible === true,
+      clearedEvents,
+      eventId: event.id,
+      // Per tier: beating world level 1 doesn't unlock farming world level 4.
+      difficulty,
+      tickets: autoClearTickets,
+      stamina: currentStamina,
+      staminaCost: event.staminaCost,
+    });
+    const autoRuns = Math.min(auto.affordable, maxBatchSize(event.staminaCost));
 
     return (
       <main className="terminal-grid min-h-screen bg-void">
@@ -360,9 +659,15 @@ export default function EventsPage(): React.JSX.Element {
                           {level}
                         </span>
                         <span className="block font-body text-[9px] font-bold uppercase tracking-[0.08em] text-readout-muted">
-                          {allowed
-                            ? `×${rewardMultiplierForDifficulty(level).toFixed(2)}`
-                            : "Locked"}
+                          {/* No multiplier here any more: difficulty pays
+                              through its own reward table, not a coefficient
+                              (ruling #80). The old "×2.05" was advertising a
+                              bonus the code never applied. */}
+                          {!allowed
+                            ? "Locked"
+                            : clearedEvents.includes(tierKey(event.id, level))
+                              ? "Cleared"
+                              : "New"}
                         </span>
                       </button>
                     );
@@ -370,18 +675,45 @@ export default function EventsPage(): React.JSX.Element {
                 </div>
                 <p className="mt-2 font-body text-[11px] leading-snug text-readout-muted">
                   World level {rankCap} is your cap at account rank{" "}
-                  {account.rank}. Dropping lower makes the fight easier and pays
-                  proportionally less — the dial goes both ways.
+                  {account.rank}. Each difficulty is its own fight with its own
+                  one-off bundle and its own drop table — and each has to be
+                  beaten before it can be auto cleared.
                 </p>
               </div>
 
               {event.kind === "boss" ? (
                 <div className="border border-hairline bg-panel p-3">
+                  {/* Two lists, because a fight pays two different things: a
+                      one-off bundle and the farm. Showing them merged is what
+                      made the old preview read as "you get this every time". */}
+                  {!clearedEvents.includes(tierKey(event.id, difficulty)) ? (
+                    <>
+                      <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[9px] font-bold uppercase tracking-[0.22em] text-el-light">
+                        First clear · once only
+                      </p>
+                      <div className="mb-3 flex flex-wrap gap-1.5">
+                        {firstClearPreview(difficulty).map(([label, amount]) => (
+                          <span
+                            key={label}
+                            className="min-w-[7rem] flex-1 border border-el-light/40 bg-el-light/5 px-2.5 py-1.5"
+                          >
+                            <span className="block font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+                              {label}
+                            </span>
+                            <span className="block font-heading text-base text-readout-strong">
+                              {amount}
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  ) : null}
+
                   <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[9px] font-bold uppercase tracking-[0.22em] text-readout-muted">
-                    On the table
+                    Every clear
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {BOSS_REWARD_PREVIEW.map(([label, range]) => (
+                    {farmablePreview(difficulty).map(([label, range]) => (
                       <span
                         key={label}
                         className="min-w-[7rem] flex-1 border border-hairline bg-inset px-2.5 py-1.5"
@@ -396,7 +728,9 @@ export default function EventsPage(): React.JSX.Element {
                     ))}
                   </div>
                   <p className="mt-2 font-body text-[11px] leading-snug text-readout-muted">
-                    Ranges, not promises — the roll happens on victory.
+                    {clearedEvents.includes(tierKey(event.id, difficulty))
+                      ? "Ranges, not promises — the roll happens on victory. This difficulty's first-clear bundle is already paid."
+                      : "The bundle above is fixed and pays once, for this difficulty. Everything below rolls, every time."}
                   </p>
                 </div>
               ) : null}
@@ -423,15 +757,48 @@ export default function EventsPage(): React.JSX.Element {
                     of {currentStamina} stamina
                   </span>
                 </span>
+                {/* Auto Clear sits beside Enter, never replacing it. Hidden
+                    outright on an ineligible event — a permanently disabled
+                    control on the trials would only raise a question the
+                    answer to is "never". */}
+                {auto.eligible ? (
+                  <button
+                    type="button"
+                    disabled={autoRuns < 1}
+                    onClick={() => runAutoClear(event, autoRuns)}
+                    title={
+                      auto.blocker === "locked"
+                        ? "Clear this fight yourself once to unlock Auto Clear."
+                        : auto.blocker === "no-tickets"
+                          ? "No Auto Clear Tickets."
+                          : auto.blocker === "no-stamina"
+                            ? "Not enough stamina — Auto Clear still pays the full cost."
+                            : `Skip ${autoRuns} run${autoRuns === 1 ? "" : "s"}`
+                    }
+                    className="ml-auto border border-edge-strong px-4 py-3 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout transition-colors hover:border-signal hover:text-signal disabled:border-hairline disabled:text-readout-muted"
+                  >
+                    Auto clear
+                    <span className="ml-1.5 tabular-nums opacity-80">
+                      ×{autoClearTickets}
+                    </span>
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   disabled={!canEnter}
                   onClick={() => enter(event)}
-                  className="ml-auto border border-signal bg-signal/12 px-5 py-3 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-signal transition-colors hover:bg-signal/20 disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted"
+                  className={`${auto.eligible ? "" : "ml-auto "}border border-signal bg-signal/12 px-5 py-3 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-signal transition-colors hover:bg-signal/20 disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted`}
                 >
                   Enter battle
                 </button>
               </div>
+
+              {auto.eligible && auto.blocker === "locked" ? (
+                <p className="border-l-2 border-edge-strong bg-inset px-3 py-2 font-body text-xs text-readout-dim">
+                  Beat {event.name} once yourself to unlock Auto Clear. A ticket
+                  skips the fight — it never skips the stamina.
+                </p>
+              ) : null}
             </div>
           </div>
         </section>

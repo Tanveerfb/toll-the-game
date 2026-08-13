@@ -14,6 +14,11 @@ export interface BattleEventTarget {
   /** HP restored to this target */
   heal?: number;
   evaded?: boolean;
+  /** Damage was intended against this target and resolved to 0 — the hit was
+   *  fully absorbed. Ruling #71: the UI shows "Tanked" rather than a 0, and
+   *  the engine skips the after-effects that only exist because a hit landed.
+   *  Distinct from `evaded`, which means the hit never connected at all. */
+  tanked?: boolean;
   crit?: boolean;
   /** Target hit 0 HP from this action */
   killed?: boolean;

@@ -112,6 +112,26 @@ interface BattleState {
    * toward the 3-slot cap alongside actionQueue.
    */
   queuedNullCount: number;
+  /**
+   * Which turn resolution currently owns the engine, e.g. `"player:14"`.
+   *
+   * BattleProvider used to guard this with a ref, which is per component
+   * INSTANCE. The provider is explicitly built to survive a remount (page
+   * reload, dev HMR — see its resume effect), and a remount hands the new
+   * instance a fresh `false` ref while the old instance's `runPlayerActions`
+   * loop is still awaiting playback and still sees `battlePhase ===
+   * "PlayerAction"` in this same store. Both loops then resolved the same
+   * action queue: seven logged Lyra actions against a 3-action cap, and 16
+   * player turns in a 15-turn battle (Open Issue #24, 2026-08-13).
+   *
+   * Living in the store makes the claim survive exactly what the ref could
+   * not, and keying it by turn means a re-entry within the same turn is
+   * refused even after the first resolution has finished.
+   */
+  activeResolution: string | null;
+  /** Turn resolutions already completed this battle — a second attempt at the
+   *  same key is a duplicate, not a retry. */
+  finishedResolutions: string[];
   interactionNotice: string | null;
   /** A boss just broke into a new phase — drives the cinematic flourish. */
   phaseBreak: { name: string; phase: number; key: number } | null;
@@ -165,6 +185,15 @@ interface BattleState {
   setPlayerTurns: (turn: number | ((prev: number) => number)) => void;
   setEnemyTurns: (turn: number | ((prev: number) => number)) => void;
   setBattlePhase: (phase: BattlePhase) => void;
+  /**
+   * Take exclusive ownership of a turn resolution. Returns false if this key
+   * is already running or already finished — the caller must then do nothing
+   * at all, not retry. Zustand's set is synchronous and JS is single
+   * threaded, so the read-then-write below cannot interleave.
+   */
+  claimResolution: (key: string) => boolean;
+  /** Give up ownership, marking the key finished so it can never run again. */
+  releaseResolution: (key: string) => void;
   addToBattleLog: (entry: string) => void;
   addBattleEvent: (event: AnyBattleEvent) => void;
   setBattleSpeed: (speed: number) => void;
@@ -304,6 +333,8 @@ export const useGameStore = create<BattleState>()(
   selectedAllyMarker: null,
   pendingAllyCardId: null,
   queuedNullCount: 0,
+  activeResolution: null,
+  finishedResolutions: [],
   interactionNotice: null,
   phaseBreak: null,
   handSnapshot: null,
@@ -343,6 +374,23 @@ export const useGameStore = create<BattleState>()(
       enemyTurns: typeof turn === "function" ? turn(state.enemyTurns) : turn,
     })),
   setBattlePhase: (phase) => set({ battlePhase: phase }),
+  claimResolution: (key) => {
+    const { activeResolution, finishedResolutions } = get();
+    if (activeResolution !== null || finishedResolutions.includes(key)) {
+      return false;
+    }
+    set({ activeResolution: key });
+    return true;
+  },
+  releaseResolution: (key) =>
+    set((state) =>
+      state.activeResolution === key
+        ? {
+            activeResolution: null,
+            finishedResolutions: [...state.finishedResolutions, key],
+          }
+        : {},
+    ),
   addToBattleLog: (entry) =>
     set((state) => ({ battleLog: [...state.battleLog, entry] })),
   // Stamped with the turn and phase it landed in. The engine has no reason to
@@ -393,6 +441,8 @@ export const useGameStore = create<BattleState>()(
       selectedAllyMarker: null,
       pendingAllyCardId: null,
       queuedNullCount: 0,
+      activeResolution: null,
+      finishedResolutions: [],
       interactionNotice: null,
       phaseBreak: null,
       handSnapshot: null,

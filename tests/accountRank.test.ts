@@ -16,7 +16,6 @@ import {
   effectiveDifficulty,
   enemyLevelForDifficulty,
   MAX_WORLD_LEVEL,
-  rewardMultiplierForDifficulty,
   worldLevelCapForRank,
 } from "@/lib/game/worldLevel";
 
@@ -127,15 +126,18 @@ describe("difficulty scaling", () => {
     // Every existing encounter must keep exactly the numbers it was tuned
     // with, or turning this on silently re-balances the whole game.
     expect(enemyLevelForDifficulty(1)).toBe(1);
-    expect(rewardMultiplierForDifficulty(1)).toBe(1);
   });
 
-  it("pays out faster than it scales enemies", () => {
-    // The rule that stops this being a treadmill. If it ever inverts, raising
-    // world level is work for no gain.
+  it("raises the enemy monotonically", () => {
+    // This module answers "how hard", and nothing else. What a difficulty
+    // PAYS is authored per tier with the content now (ruling #81) — the
+    // reward multiplier that used to live here was removed 2026-08-13, having
+    // been displayed on the boss brief and never applied to anything.
+    // `tests/worldBossRewards.test.ts` owns the "harder pays better" rule.
     for (let d = 2; d <= MAX_WORLD_LEVEL; d += 1) {
-      const statGrowth = 1 + (enemyLevelForDifficulty(d) - 1) / 59;
-      expect(rewardMultiplierForDifficulty(d)).toBeGreaterThan(statGrowth);
+      expect(enemyLevelForDifficulty(d)).toBeGreaterThan(
+        enemyLevelForDifficulty(d - 1),
+      );
     }
   });
 

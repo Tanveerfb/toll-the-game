@@ -1,0 +1,112 @@
+[
+  {
+    "id": "s2-story-five",
+    "title": "Clear five chapters",
+    "hint": "The story keeps paying — first clears hand out gems and manuals.",
+    "route": "/story",
+    "routeLabel": "Story",
+    "goal": { "type": "chaptersCleared", "count": 5 },
+    "reward": { "gems": 300, "coin": 5000 },
+    "step": 2
+  },
+  {
+    "id": "s2-level-twenty",
+    "title": "Raise any character to level 20",
+    "hint": "Level 20 is the first ascension wall. You will feel it before you see it.",
+    "route": "/archive",
+    "routeLabel": "Archive",
+    "goal": { "type": "characterLevel", "level": 20 },
+    "reward": {
+      "gems": 200,
+      "materials": { "training_manual_advanced": 3 }
+    },
+    "step": 2
+  },
+  {
+    "id": "s2-ascend-two",
+    "title": "Take a character to ascension 2",
+    "hint": "Band two costs 6 eyes and 15 seaweed. Plan the runs.",
+    "route": "/archive",
+    "routeLabel": "Archive",
+    "goal": { "type": "characterAscension", "ascension": 2 },
+    "reward": { "gems": 400, "autoClearTickets": 2 },
+    "step": 2
+  },
+  {
+    "id": "s2-boss-ten",
+    "title": "Defeat Molvarr ten times",
+    "hint": "This is the loop Auto Clear exists for.",
+    "route": "/events",
+    "routeLabel": "Events",
+    "goal": { "type": "bossClears", "count": 10 },
+    "reward": {
+      "materials": { "sea_monster_eye": 3, "corroded_seaweed": 5 },
+      "autoClearTickets": 2
+    },
+    "step": 2
+  },
+  {
+    "id": "s2-rank-fifteen",
+    "title": "Reach account rank 15",
+    "hint": "Every rank-up refills your stamina and pays Auto Clear Tickets.",
+    "route": "/events",
+    "routeLabel": "Events",
+    "goal": { "type": "accountRank", "rank": 15 },
+    "reward": { "gems": 500, "coin": 10000 },
+    "step": 2
+  },
+  {
+    "id": "s2-roster-ten",
+    "title": "Field a roster of ten",
+    "hint": "Ten is enough to answer any element the story throws at you.",
+    "route": "/gacha",
+    "routeLabel": "Summon",
+    "goal": { "type": "rosterSize", "count": 10 },
+    "reward": { "gems": 300, "permanentTicket": 2 },
+    "step": 2
+  },
+  {
+    "id": "s2-summon-fifty",
+    "title": "Summon fifty times",
+    "hint": "The milestone bar pays at 500 and 1000 — both claimable, independently.",
+    "route": "/gacha",
+    "routeLabel": "Summon",
+    "goal": { "type": "pulls", "count": 50 },
+    "reward": { "gems": 400 },
+    "step": 2
+  },
+  {
+    "id": "s2-presets-three",
+    "title": "Save three team presets",
+    "hint": "One for story, one for the boss, one for whatever you are testing.",
+    "route": "/story",
+    "routeLabel": "Team picker",
+    "goal": { "type": "presetsSaved", "count": 3 },
+    "reward": { "gems": 150, "coin": 3000 },
+    "step": 2
+  },
+  {
+    "id": "s2-part-four",
+    "title": "See Part 4 through to the end",
+    "hint": "The bureau's hand starts showing around here.",
+    "route": "/story",
+    "routeLabel": "Story",
+    "goal": { "type": "chapterCleared", "partId": "part4", "chapterId": "p4c3" },
+    "reward": { "gems": 400, "materials": { "training_manual_advanced": 2 } },
+    "step": 2
+  },
+  {
+    "id": "s2-ascend-three",
+    "title": "Take a character to ascension 3",
+    "hint": "Band three is 10 eyes and 25 seaweed — the longest stretch so far.",
+    "route": "/archive",
+    "routeLabel": "Archive",
+    "requires": "s2-ascend-two",
+    "goal": { "type": "characterAscension", "ascension": 3 },
+    "reward": {
+      "gems": 600,
+      "materials": { "training_manual_premium": 1 }
+    },
+    "step": 2
+  }
+]

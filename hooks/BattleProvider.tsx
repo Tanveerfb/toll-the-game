@@ -169,12 +169,28 @@ export default function BattleProvider({
   // 2026-07-19). This flag skips exactly that one enemy turn.
   const skipEnemyTurnRef = React.useRef(false);
 
-  // Both turn resolvers now await the animation between actions, so they are
-  // alive across many frames. Deck's auto-execute effect and the End Turn
-  // button can both fire again during that window — the old `battlePhase`
-  // check no longer guards them, because the phase only advances once the
-  // whole turn is done. This does.
-  const resolvingRef = React.useRef(false);
+  // Both turn resolvers await the animation between actions, so they are alive
+  // across many frames. Deck's auto-execute effect and the End Turn button can
+  // both fire again during that window — the `battlePhase` check doesn't guard
+  // them, because the phase only advances once the whole turn is done.
+  //
+  // The guard lives in the STORE, not in a ref. A ref is per component
+  // instance, and this provider is built to survive a remount (page reload,
+  // dev HMR — see the resume effect below). A remount handed the new instance
+  // a fresh `false` while the old instance's resolution loop was still
+  // awaiting playback and still saw `battlePhase === "PlayerAction"` in the
+  // shared store, so both loops resolved the same queue. That is Open Issue
+  // #24: seven logged Lyra actions against a 3-action cap, and a report
+  // claiming 16 player turns in a 15-turn battle.
+  //
+  // Keyed by turn, so re-entry is refused even after the first resolution has
+  // finished — a duplicate is never a legitimate retry.
+  const resolutionKey = (side: "player" | "enemy") =>
+    `${side}:${useGameStore.getState().currentTurn}`;
+  /** A zombie loop from an unmounted instance must stop committing the moment
+   *  it loses the claim. Checked after every await inside the resolvers. */
+  const stillOwns = (key: string) =>
+    useGameStore.getState().activeResolution === key;
 
   // Resume a battle restored from sessionStorage (page reload / dev HMR). The
   // teams/decks/phase come back via zustand-persist, but passive handlers live
@@ -501,14 +517,14 @@ export default function BattleProvider({
 
   async function resolveplayerTurnWrapper() {
     if (useGameStore.getState().battlePhase !== "PlayerAction") return;
-    if (resolvingRef.current) return;
-    resolvingRef.current = true;
+    const key = resolutionKey("player");
+    if (!useGameStore.getState().claimResolution(key)) return;
     // A skip applies to the turn it was pressed in, not forever.
     resetPlayback();
     try {
-      await runPlayerActions();
+      await runPlayerActions(key);
     } finally {
-      resolvingRef.current = false;
+      useGameStore.getState().releaseResolution(key);
     }
   }
 
@@ -521,7 +537,7 @@ export default function BattleProvider({
    * the sequencer replayed the turn from the beginning — the player saw the
    * outcome before the actions played (Tanveer, 2026-08-11).
    */
-  async function runPlayerActions() {
+  async function runPlayerActions(key: string) {
     // Process the entire action queue sequentially.
     let currentTeams = {
       playerTeam: useGameStore.getState().playerTeam,
@@ -586,6 +602,10 @@ export default function BattleProvider({
       await waitForPlayback();
       // Exiting the battle (or a defeat) during the animation ends the turn.
       if (useGameStore.getState().battlePhase !== "PlayerAction") return;
+      // Lost the claim mid-turn — this provider instance was replaced while
+      // awaiting. Stop dead rather than keep committing alongside whoever
+      // holds it now (issue #24).
+      if (!stillOwns(key)) return;
 
       // A dead player's cards leave the hand (subs promote at turn start).
       // After the await, not before: pulling them the instant the engine
@@ -667,17 +687,17 @@ export default function BattleProvider({
 
   async function resolveEnemyTurnWrapper() {
     if (useGameStore.getState().battlePhase !== "EnemyAction") return;
-    if (resolvingRef.current) return;
-    resolvingRef.current = true;
+    const key = resolutionKey("enemy");
+    if (!useGameStore.getState().claimResolution(key)) return;
     resetPlayback();
     try {
-      await runEnemyActions();
+      await runEnemyActions(key);
     } finally {
-      resolvingRef.current = false;
+      useGameStore.getState().releaseResolution(key);
     }
   }
 
-  async function runEnemyActions() {
+  async function runEnemyActions(key: string) {
     // Refill the enemy hand to capacity first (RNG + auto-merge, same rules as
     // the player deck; merges grant enemy ult gauge). The AI then plays only
     // from this hand — headless 7DS GC.
@@ -714,6 +734,7 @@ export default function BattleProvider({
       });
       // The battle may have ended (or been exited) while waiting.
       if (useGameStore.getState().battlePhase !== "EnemyAction") return;
+      if (!stillOwns(key)) return;
       currentTeams = {
         playerTeam: useGameStore.getState().playerTeam,
         enemyTeam: useGameStore.getState().enemyTeam,
@@ -808,6 +829,8 @@ export default function BattleProvider({
       updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
       await waitForPlayback();
       if (useGameStore.getState().battlePhase !== "EnemyAction") return;
+      // Replaced mid-turn while awaiting — see resolveplayerTurnWrapper.
+      if (!stillOwns(key)) return;
 
       // Deck cleanup after the blow has landed on screen — the player's hand
       // used to lose a downed unit's cards while that unit was still standing.

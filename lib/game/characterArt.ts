@@ -126,7 +126,7 @@ const SKILLS_WITH_ART = new Set<string>([
   "yalina__attention-drawer",
   "yalina__devastating-blow",
   "yalina__unexpected-strike",
-  "molvarr__abyssal-pierce",
+  "molvarr__abyssal-convergence",
   "molvarr__corrosive-surge",
   "molvarr__crushing-maw",
   "molvarr__devour-the-tide",

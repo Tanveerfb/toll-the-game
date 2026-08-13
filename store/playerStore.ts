@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { spendStamina, STAMINA_CAP } from "@/lib/game/stamina";
+import { AUTO_CLEAR_TICKETS_PER_RANK } from "@/lib/game/autoClear";
 import { feedManual, type ManualTier } from "@/lib/game/leveling";
 import { canAffordAscension, getAscensionCost, maxLevelForAscension } from "@/lib/game/ascension";
 import type { WorldBossRewards } from "@/lib/game/worldBossRewards";
@@ -75,6 +76,23 @@ export interface PlayerState {
   roster: string[]; // Character IDs
   currencies: { gems: number; coin: number; permanentTicket: number };
   inventory: Record<string, number>; // materials only: sea_monster_eye, corroded_seaweed, training_manual(_advanced|_premium)
+  /**
+   * Auto Clear Tickets.
+   *
+   * Top-level, NOT in `inventory` — that map is materials, and materials are
+   * what ascension spends. A ticket is neither a material nor a currency you
+   * can buy with; it is a skip token. Sources: Bureau Orders and account
+   * rank-ups. See `lib/game/autoClear.ts`.
+   */
+  autoClearTickets: number;
+  /**
+   * Event ids the player has beaten **manually**.
+   *
+   * Auto Clear requires a manual clear first (Tanveer, 2026-08-13), so an
+   * auto-clear must never be what writes to this — otherwise the gate unlocks
+   * itself. Recorded on a real victory only.
+   */
+  clearedEvents: string[];
   characters: Record<string, CharacterProgress>;
   /** Saved loadouts, shared by every mode. See lib/game/teamPresets.ts. */
   presets: TeamPreset[];
@@ -111,6 +129,16 @@ export interface PlayerState {
   resetPlayerState: () => void;
   grantMaterials: (materials: Record<string, number>) => void;
   grantCurrency: (currency: Partial<{ gems: number; coin: number; permanentTicket: number }>) => void;
+  grantAutoClearTickets: (count: number) => void;
+  /** Records a MANUAL clear. Auto Clear must never call this. */
+  recordManualClear: (eventId: string) => void;
+  /**
+   * Spend one ticket and one fight's stamina, atomically.
+   *
+   * Returns false and changes nothing if either is short — a partial spend
+   * would take the ticket and leave the player without the run.
+   */
+  spendAutoClearRun: (staminaCost: number) => boolean;
   spendStaminaAction: (amount: number) => boolean;
   feedManualToCharacter: (characterId: string, manualTier: ManualTier) => boolean;
   ascendCharacter: (characterId: string) => boolean;
@@ -206,6 +234,8 @@ const defaultState = {
   stamina: { current: STAMINA_CAP, updatedAt: Date.now() },
   stats: { pulls: 0, bossClears: 0 },
   claimedOrders: {} as Record<string, boolean>,
+  autoClearTickets: 0,
+  clearedEvents: [] as string[],
   pity: DEFAULT_PITY,
 };
 
@@ -244,6 +274,8 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     currencies: { gems: 1000, coin: 0, permanentTicket: 0 },
     stats: { pulls: 0, bossClears: 0 },
     claimedOrders: {} as Record<string, boolean>,
+    autoClearTickets: 0,
+    clearedEvents: [] as string[],
     pity: DEFAULT_PITY,
     ...state,
   };
@@ -373,10 +405,27 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     };
   }
 
+  if (version < 8) {
+    // v7 → v8: Auto Clear. `autoClearTickets` and `clearedEvents` are purely
+    // additive and the defensive baseline already supplied both.
+    //
+    // `clearedEvents` is deliberately NOT back-filled from `stats.bossClears`.
+    // The two answer different questions — "how many times" versus "which
+    // fights" — and a save with clears recorded against a boss that predates
+    // the event registry has no event id to credit. A returning player beats
+    // Molvarr once more and unlocks Auto Clear for it, which is the same bar
+    // a new player clears.
+    state = {
+      ...state,
+      autoClearTickets: (state.autoClearTickets as number | undefined) ?? 0,
+      clearedEvents: (state.clearedEvents as string[] | undefined) ?? [],
+    };
+  }
+
   return state as unknown as PersistedPlayerData;
 }
 
-export const CURRENT_PLAYER_STATE_VERSION = 7;
+export const CURRENT_PLAYER_STATE_VERSION = 8;
 
 export const usePlayerStore = create<PlayerState>()(
   persist(
@@ -417,6 +466,32 @@ export const usePlayerStore = create<PlayerState>()(
         const result = spendStamina(get().stamina, amount);
         if (!result.ok) return false;
         set({ stamina: result.next });
+        return true;
+      },
+
+      grantAutoClearTickets: (count) =>
+        set((state) => ({
+          autoClearTickets: state.autoClearTickets + Math.max(0, count),
+        })),
+
+      recordManualClear: (eventId) =>
+        set((state) =>
+          state.clearedEvents.includes(eventId)
+            ? {}
+            : { clearedEvents: [...state.clearedEvents, eventId] },
+        ),
+
+      spendAutoClearRun: (staminaCost) => {
+        const state = get();
+        if (state.autoClearTickets < 1) return false;
+        const result = spendStamina(state.stamina, staminaCost);
+        if (!result.ok) return false;
+        // Both or neither. Checked before either is written, so a short
+        // stamina bar can't consume the ticket that was going to pay for it.
+        set({
+          autoClearTickets: state.autoClearTickets - 1,
+          stamina: result.next,
+        });
         return true;
       },
 
@@ -524,11 +599,22 @@ export const usePlayerStore = create<PlayerState>()(
             amount,
             state.account.clearedWalls,
           );
-          const rankedUp = next.rank > state.account.rank;
+          const ranksGained = next.rank - state.account.rank;
           return {
             account: { ...state.account, ...next },
-            ...(rankedUp
-              ? { stamina: { current: STAMINA_CAP, updatedAt: Date.now() } }
+            ...(ranksGained > 0
+              ? {
+                  stamina: { current: STAMINA_CAP, updatedAt: Date.now() },
+                  // Per rank, NOT per grant. One call can cross several ranks
+                  // — `grantAccountXp` applies banked XP in a loop, and
+                  // `clearRankWall` deliberately re-applies everything banked
+                  // while the player was stuck at a wall. Paying a flat
+                  // TICKETS_PER_RANK there would underpay exactly the players
+                  // who were blocked longest (Tanveer, 2026-08-13).
+                  autoClearTickets:
+                    state.autoClearTickets +
+                    ranksGained * AUTO_CLEAR_TICKETS_PER_RANK,
+                }
               : {}),
           };
         }),
@@ -793,6 +879,10 @@ export const usePlayerStore = create<PlayerState>()(
               [characterId]: { ...existing, ultLevel: resolution.ultLevel },
             },
           }));
+        }
+
+        if (order.reward.autoClearTickets) {
+          get().grantAutoClearTickets(order.reward.autoClearTickets);
         }
 
         get().grantStoryRewards({

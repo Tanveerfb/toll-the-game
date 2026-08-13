@@ -12,8 +12,15 @@ import { MAX_ACCOUNT_RANK, RANK_BAND_SIZE } from "@/lib/game/accountRank";
  * 1. It is **adjustable downward**. A one-way ratchet strands a player who
  *    out-ranked their roster, which is the single most complained-about part
  *    of the system this borrows from.
- * 2. Rewards scale **faster** than difficulty. If tougher enemies pay
- *    proportionally, raising the dial is work for no gain and nobody opts in.
+ * 2. A harder setting must **pay better**. This used to be a reward multiplier
+ *    here; it is now the world boss's authored per-difficulty reward tables
+ *    (ruling #81), enforced by a tier-progression test in
+ *    `tests/worldBossRewards.test.ts`. The intent survived, the coefficient
+ *    did not — it was displayed on the boss brief and never applied, and the
+ *    only path that ever implemented it (story) never passed a value.
+ *
+ * This module now answers one question only: **how hard is the fight**. What
+ * it pays lives with the content.
  *
  * Story chapters additionally carry their own `baseDifficulty` floor, so a
  * later chapter is never as easy as chapter one however the dial is set — see
@@ -44,19 +51,6 @@ export const ENEMY_LEVEL_PER_DIFFICULTY = 8;
 export function enemyLevelForDifficulty(difficulty: number): number {
   const clamped = clampDifficulty(difficulty);
   return 1 + (clamped - 1) * ENEMY_LEVEL_PER_DIFFICULTY;
-}
-
-/**
- * Reward multiplier at a given difficulty.
- *
- * TUNING, same caveat. Deliberately steeper than the stat curve: difficulty 4
- * is ~1.4x enemy stats but pays 2.05x, so the dial is worth turning. If these
- * two ever cross the wrong way the feature is actively hostile.
- */
-export const REWARD_BONUS_PER_DIFFICULTY = 0.35;
-
-export function rewardMultiplierForDifficulty(difficulty: number): number {
-  return 1 + REWARD_BONUS_PER_DIFFICULTY * (clampDifficulty(difficulty) - 1);
 }
 
 export function clampDifficulty(difficulty: number): number {

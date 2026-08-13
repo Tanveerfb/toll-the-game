@@ -196,6 +196,12 @@ Chance-tier wording (2026-07-30, `author_notes.md` idea #1): a fixed probability
 - **`components/ui/prose.tsx` owns document typography** — headings, tables, lists — and is consumed by BOTH `mdx-components.tsx` (the `/news` MDX posts) and `app/archive/[id]/page.tsx`. That shared source is what makes the two pages actually match. `ProseSection` = ruled heading + optional note; `ProseTable` = horizontally scrollable table.
 - **Two kit renderers, deliberately.** `KitDetails.tsx` is the compact boxed variant used inside battle overlays; `SkillDocument.tsx` is the document variant (ruled heading + metadata line + Rank/Mult/Effect table) used on the archive. `KitPhases` takes a `variant` prop (`compact` | `document`) so a multi-phase boss matches whichever page it's on.
 - **`BattleArena.tsx` is the arena shell only.** Overlays live in `components/game/battle/`: `TeamUnitTile`, `UnitDetailPanel`, `TeamDetailsList`, `BattleLogDrawer`, `EffectsList`. It was a 1964-line monolith holding all of them.
+  `EffectsList.tsx` no longer exports a list component — it holds
+  `categorizeEffects`, `effectCounts`, the `↑4 ↓3` `EffectCountStrip` shared by
+  the tile and the panel, and `EffectsTables` for the Detail modal. The itemised
+  inline list it was named for was removed 2026-08-13: it expanded inside the
+  panel's own scroll zone, which is the wrong home for a list of unbounded
+  length.
 - **Tap = inspect, on both sides.** `UnitDetailPanel` opens for allies AND enemies (it picks its team from `unit.team`); enemy focus-fire is a separate ◎ button on the enemy tile. One gesture, one meaning.
 - **The battle log renders from `battleEvents`, not `battleLog`.** The typed stream carries per-target damage/crit/evade/kill and exact HP snapshots; `turn` and `phase` are stamped in `gameStore.addBattleEvent` (presentation context the engine has no reason to know). The `battleLog` string array survives behind a Raw toggle because it is still the only record of **which buffs/debuffs an action applied** — the event stream doesn't model effect application yet. Emitting that from `combat.ts` is the known follow-up.
 - **VFX are a registry, not JSX branches.** `lib/game/characterVfx.ts` maps every character to a tint + shape + accent; the arena's burst renderer switches on `getVfxAccent(shape)`. Adding a flavor is a data edit. Tints must sit visibly away from the character's own element tint (`FLASH_TINTS` in `elementSwatch.ts`) or the flavor is invisible — enforced by `tests/characterVfx.test.ts`.

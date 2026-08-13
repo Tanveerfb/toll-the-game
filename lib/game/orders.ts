@@ -1,5 +1,6 @@
 import { z } from "zod";
-import starterOrders from "@/data/orders/starter.json";
+import step1Orders from "@/data/orders/step-1.json";
+import step2Orders from "@/data/orders/step-2.json";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 
 /**
@@ -44,6 +45,8 @@ const rewardSchema = z.object({
   gems: z.number().int().nonnegative().optional(),
   coin: z.number().int().nonnegative().optional(),
   permanentTicket: z.number().int().nonnegative().optional(),
+  /** Auto Clear Tickets. Not a material — see `lib/game/autoClear.ts`. */
+  autoClearTickets: z.number().int().nonnegative().optional(),
   materials: z.record(z.string(), z.number().int().positive()).optional(),
   /**
    * A character, handed over outright.
@@ -69,8 +72,18 @@ const orderSchema = z.object({
   route: z.string().startsWith("/"),
   routeLabel: z.string().min(1),
   /** Another order that must be claimed first. Used only where the sequence is
-   *  real — ascension needs materials the boss drops. */
+   *  real — ascension needs materials the boss drops. Cross-step `requires` is
+   *  legal but redundant: a later step is already gated on the earlier one. */
   requires: z.string().optional(),
+  /**
+   * Which step this order belongs to (1-based).
+   *
+   * Steps are the long-term shape of the board (Tanveer, 2026-08-13): ten
+   * orders each, and finishing one step unlocks the next. The alternative —
+   * one ever-growing list — turns into a wall of objectives a new account
+   * cannot read, which is the exact problem Bureau Orders was built to solve.
+   */
+  step: z.number().int().positive(),
   goal: goalSchema,
   reward: rewardSchema,
 });
@@ -81,14 +94,42 @@ export type Order = z.infer<typeof orderSchema>;
 
 /** Fail loudly at load time on malformed order JSON — same policy as kits and
  *  story parts. A silently dropped order is a reward nobody can ever claim. */
-const ORDERS: Order[] = z.array(orderSchema).parse(starterOrders);
+const ORDERS: Order[] = z
+  .array(orderSchema)
+  .parse([...step1Orders, ...step2Orders]);
+
+/** Every authored step, ascending. */
+export const ORDER_STEPS: readonly number[] = [
+  ...new Set(ORDERS.map((order) => order.step)),
+].sort((a, b) => a - b);
 
 export function getStarterOrders(): Order[] {
   return ORDERS;
 }
 
+export function getOrdersForStep(step: number): Order[] {
+  return ORDERS.filter((order) => order.step === step);
+}
+
 export function getOrder(id: string): Order | undefined {
   return ORDERS.find((order) => order.id === id);
+}
+
+/**
+ * A step is open once every order in the step before it has been **claimed**.
+ *
+ * Claimed, not merely met: the same rule `requires` uses. A player who has
+ * satisfied the last order but not collected it hasn't finished the step, and
+ * unlocking early would hide the reward behind a tab they just left.
+ */
+export function isStepUnlocked(
+  step: number,
+  claimed: Record<string, boolean>,
+): boolean {
+  const previous = ORDER_STEPS.filter((s) => s < step);
+  return previous.every((s) =>
+    getOrdersForStep(s).every((order) => claimed[order.id] === true),
+  );
 }
 
 /**
@@ -126,6 +167,10 @@ export interface OrderProgress {
   claimed: boolean;
   /** Set when a prerequisite order hasn't been claimed yet. */
   lockedBy: Order | null;
+  /** The whole step is still locked behind an earlier one. Distinct from
+   *  `lockedBy`, which is a single named prerequisite — the UI says different
+   *  things about them and only one is the player's next action. */
+  stepLocked: boolean;
   /** Met, unclaimed, and not locked — the only state with a button. */
   claimable: boolean;
 }
@@ -213,6 +258,7 @@ export function evaluateOrder(
     prerequisite && context.claimed[prerequisite.id] !== true
       ? prerequisite
       : null;
+  const stepLocked = !isStepUnlocked(order.step, context.claimed);
 
   return {
     order,
@@ -221,25 +267,45 @@ export function evaluateOrder(
     met,
     claimed,
     lockedBy,
-    claimable: met && !claimed && lockedBy === null,
+    stepLocked,
+    // Progress toward a locked step's orders still counts — a player who
+    // happened to reach rank 15 early keeps it — but they cannot collect
+    // until the step opens.
+    claimable: met && !claimed && lockedBy === null && !stepLocked,
   };
 }
 
 /**
- * The whole board, in the order the player should work through it: claimable
+ * One step's board, in the order the player should work through it: claimable
  * first (they came here to collect), then in progress, then locked, then done.
  * Within a group the authored order stands.
+ *
+ * Sorted per step, never across steps — the tabs are the grouping, and a
+ * global sort would interleave a step-2 order into the step-1 list.
  */
-export function evaluateOrders(context: OrderContext): OrderProgress[] {
+export function evaluateOrders(
+  context: OrderContext,
+  step?: number,
+): OrderProgress[] {
   const rank = (progress: OrderProgress): number => {
     if (progress.claimable) return 0;
     if (progress.claimed) return 3;
     if (progress.lockedBy) return 2;
     return 1;
   };
-  return ORDERS.map((order) => evaluateOrder(order, context)).sort(
-    (a, b) => rank(a) - rank(b),
+  const pool = step === undefined ? ORDERS : getOrdersForStep(step);
+  return pool
+    .map((order) => evaluateOrder(order, context))
+    .sort((a, b) => rank(a) - rank(b));
+}
+
+/** The step the player should be looking at: the first that isn't fully
+ *  claimed, falling back to the last once everything is done. */
+export function currentStep(context: OrderContext): number {
+  const open = ORDER_STEPS.find((step) =>
+    getOrdersForStep(step).some((order) => context.claimed[order.id] !== true),
   );
+  return open ?? ORDER_STEPS[ORDER_STEPS.length - 1];
 }
 
 export function claimableCount(board: OrderProgress[]): number {
@@ -267,6 +333,7 @@ export interface RewardSummary {
   gems: number;
   coin: number;
   permanentTicket: number;
+  autoClearTickets: number;
   materials: Record<string, number>;
   /** Character ids handed over outright, in board order. */
   characters: string[];
@@ -287,6 +354,7 @@ export function summariseRewards(orders: Order[]): RewardSummary {
     gems: 0,
     coin: 0,
     permanentTicket: 0,
+    autoClearTickets: 0,
     materials: {},
     characters: [],
   };
@@ -294,6 +362,7 @@ export function summariseRewards(orders: Order[]): RewardSummary {
     summary.gems += order.reward.gems ?? 0;
     summary.coin += order.reward.coin ?? 0;
     summary.permanentTicket += order.reward.permanentTicket ?? 0;
+    summary.autoClearTickets += order.reward.autoClearTickets ?? 0;
     for (const [id, count] of Object.entries(order.reward.materials ?? {})) {
       summary.materials[id] = (summary.materials[id] ?? 0) + count;
     }

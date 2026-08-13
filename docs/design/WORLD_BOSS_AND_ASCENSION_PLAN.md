@@ -40,10 +40,24 @@ Each band unlock also grants a **flat stat bump** (the ascension contribution to
 
 ## World-boss rewards (LOCKED)
 
-Single fight, single multiplier for now (difficulty tiers = future / player-rank unlock). Per clear:
-- **1× Sea Monster's Eye guaranteed** + **10% chance of +1**.
-- **Up to 5× local-specialty materials** (random).
-- **Currency: random 2,000–10,000**.
+Single fight, single multiplier for now (difficulty tiers = future / player-rank unlock).
+
+> **Re-verified against `lib/game/worldBossRewards.ts` on 2026-08-13.** The list
+> below was written at planning time and drifted once the batch shipped. It used
+> to say "**Up to 5× local-specialty materials** (random)" — seaweed has never
+> been a 0–5 roll; it ships as a guaranteed base with the same +1 bonus roll the
+> Eye gets (2 at launch, **4** since 2026-08-13). The list also omitted training
+> manuals, gems, the permanent ticket and account XP entirely, which is most of
+> what a clear actually pays. `worldBossRewards.ts` is the source of truth.
+
+Per clear:
+- **1× Sea Monster's Eye** guaranteed + **10% chance of +1**.
+- **4× Corroded Sea Weed** guaranteed + **10% chance of +1**.
+- **3–6× Training Manual**.
+- **Coin: 2,000–10,000**.
+- **Gems: 20–50** and **1–3 Permanent Tickets** — the only real faucet for
+  either gacha currency (see the gacha spec's "Faucet" section).
+- **100 account XP**, paid on every clear, not just the first.
 - Entry: **40 stamina**.
 
 ---
@@ -111,4 +125,4 @@ The monster's **fight kit** (Concept A "Topple" / Concept B "Fury", see below) i
 - **[TODO] The monster's premium multi-phase kit** (up to 12 skills) — Tanveer to bring. Concept A "Topple" / B "Wind-Up" above are the reference starting points.
 
 ## Resolved (2026-07-18)
-Cap Lv60 eventual / **Lv40 reachable now**; ascension = boss drop + local specialty + currency (bands 1-3 costed above); ascension grants flat stat bumps (→~3x total); world boss = single fight/multiplier now (tiers = future); rewards = 1 Eye (+10% for +1) + up to 5 specialty mats + 2k-10k currency per clear; ult level = stat bump only for now.
+Cap Lv60 eventual / **Lv40 reachable now**; ascension = boss drop + local specialty + currency (bands 1-3 costed above); ascension grants flat stat bumps (→~3x total); world boss = single fight/multiplier now (tiers = future); rewards per clear as shipped — see the corrected list above, **not** the "up to 5 specialty mats" wording this line used to carry; ult level = stat bump only for now.
