@@ -501,8 +501,10 @@ Design rules this produced, all now in `docs/design/KIT_DESIGN.md`:
 - **One scaling stat per kit**, heals included (ruling #67). Roster check found
   **Isolde genuinely violates it** — heal `hp`, damage/ult `atk`. Siddiq heals
   off ATK, so ATK is the established form; direction of the fix is Tanveer's
-  call and her numbers move either way. **Still open.** Yalina and Iron only
-  declare a second stat on zero-damage skills, where it's inert — cosmetic.
+  call and her numbers move either way. **CLOSED 2026-08-13** — he took the
+  other direction: her whole kit scales off HP (Severed Ledger 16/20/25). See
+  the 2026-08-13 test-suite audit. Yalina and Iron only declare a second stat
+  on zero-damage skills, where it's inert — cosmetic.
 - **Skill ranks never exceed 3.** Escalation past that belongs in the ultimate.
 - **No lore-number hunting** for statlines — anchors are a flourish he applies
   himself, never a requirement.
@@ -943,7 +945,10 @@ rather than a second phase, and the Seris closing scene gets no battle
   rank display. Still open: the two ascension trial **encounters** (Tanveer's
   design; the board entries exist and refuse entry).
 - Preset naming still uses `window.prompt`.
-- Pre-token palette remaining: `/practice` and `/login` only.
+- ~~Pre-token palette remaining: `/practice` and `/login` only.~~ Wrong on
+  both counts — see the 2026-08-13 palette sweep. Eight files were still on
+  the stock ramps and the two that mattered were shared components, not pages.
+  All migrated; `tests/paletteTokens.test.ts` now enforces it.
 
 ## Session log — 2026-08-11/12 (part 3): battle playback, six screens, gacha economy, the whole story
 
@@ -1191,7 +1196,8 @@ so her lines are credited to "Unknown female voice" in both part 6 and part 10.
 - Avatar in cloud save (§4) — needs a `playerStore` version bump.
 - A kit for the Ch10 Molvarr-lite creature (§8).
 - Ascension trial encounters — Tanveer's design.
-- `/practice` and `/login` are still on the pre-token palette.
+- ~~`/practice` and `/login` are still on the pre-token palette.~~ Done
+  2026-08-13, along with six files nobody had counted.
 - Preset naming still uses `window.prompt`.
 
 
@@ -1254,6 +1260,686 @@ reference table personal is a design call, not plumbing. Tanveer: "its fine for
 now."
 
 
+## Session log — 2026-08-12 (part 5): the hand moves
+
+Tanveer, after playing: *"if cards are interacting with each other by any
+means, they should have a smooth but crisp animation for that."* Mocked up
+first (a live, playable artifact), signed off, then built.
+
+### What was actually wrong
+
+Cards teleported. HTML5 drag-and-drop gave no positional feedback at all — you
+picked a card up and it reappeared somewhere else. A merge deleted one card and
+incremented another in the same frame. A fresh turn's hand arrived fully dealt
+and already merged.
+
+That last one was not a missing animation, it was a **missing state**.
+`refillHand` draws and merges in one pass — draw, merge, draw, merge — so the
+two cards that collided were never in a hand any component could render. There
+was nothing to animate because the frames did not exist.
+
+### Deal snapshots
+
+`applyAdjacentMerges` and `refillHand` now return `steps` — the hand after each
+individual draw and each individual merge. `drawCards` stores them as
+`dealSteps`, and `useDealSequence` walks them, so the deal plays out and
+settles on the store's truth.
+
+This is deliberately the **same shape as the battle sequencer**: the store
+commits, the presentation catches up, and the store is never the thing being
+animated. `deck` is always the settled answer; `dealSteps` is only how it got
+there. Not persisted to sessionStorage — a tab reloaded mid-deal should find
+the hand it has, not replay an animation for cards it already owns.
+
+`drawCards` also went from **two commits to one**. Returned ultimates were set
+separately from the refill, so they appeared instantly while only the refill
+animated. They now deal as part of the same sequence.
+
+The frame is **derived during render**, not pushed into state by an effect. An
+effect that synchronously set the first frame would paint the settled hand
+first and the deal second — precisely the glimpse-of-the-future bug that turn
+playback had. `react-hooks/set-state-in-effect` catches this; the fix is
+React's sanctioned render-phase `setState` to rewind when a new deal arrives.
+
+### Hand-rolled, not `domMax`
+
+`MotionProvider` loads framer-motion's `domAnimation`, which excludes both
+`layout` and `drag` — exactly what this needed. Upgrading to `domMax` grows the
+bundle on every screen that mounts the provider (all of them) for a feature
+used on one. Tanveer took the recommendation: **hand-rolled**.
+
+Three mechanisms in `components/game/battle/Hand.tsx`, split out of `Deck.tsx`:
+
+1. **FLIP** — measure, let React render, measure again, play each card from its
+   old box to its new one. One flex row, so about twenty lines, and predictable
+   next to the arena's shake transform.
+2. **Ghosts** — React unmounts a merged card instantly, so its exit is played by
+   a clone appended to `document.body` and positioned at its last box.
+   **Body, not in place**: the deck wrapper takes a `scale` during big-hit
+   focus, and an ancestor transform makes `position: fixed` lie. Same trap that
+   put the Growth modal behind its own page.
+3. **Pointer drag** — the dragged node is transformed directly, so a
+   pointermove costs no React render.
+
+### One function decides where a card lands
+
+`moveCardById` moved from `gameStore` into `lib/game/deck.ts` because the drag
+**preview** and the **commit** must be the same function. A preview computed by
+a second implementation is a preview that can lie about where the card lands.
+
+This produced a simplification worth keeping: **dropping onto a merge partner
+and dropping beside one are the same commit.** Both call `reorderDeckCard`,
+which seats the cards together and lets the engine's existing adjacent-merge
+rule fire, ult gauge included. The gold MERGE target is an affordance, not a
+second code path.
+
+### Rules the animation reads
+
+`lib/game/handTransition.ts` — pure, tested, and out of the component:
+
+- `classifyExit` tells a merge from a played card. The DOM can't: both are just
+  an id that stopped rendering. A merge is the only exit where a twin gains
+  *exactly one* rank, which is also why matching on rank alone is wrong — a
+  bystander R2 in the same hand would catch the ghost.
+- `mergePartnerIds` delegates to `canCardsAutoMerge` rather than restating it.
+
+**Found while doing this, and fixed:** the Merge button used a **looser rule
+than merging did.** `mergeDeckCard` accepted any card with the same owner and
+skill name *regardless of rank*, so an R1 could be consumed by an R2; adjacent
+merging has always required equal ranks. Two rules for one mechanic, and the
+hold-to-highlight ring could only ever show one of them.
+
+Asked rather than assumed, since merge rules are mechanics: Tanveer chose to
+**unify on the strict rule** (2026-08-12). `mergeDeckCard` and the button's
+visibility both run through `canCardsAutoMerge` now, and
+`tests/mergeRule.test.ts` asserts every path against the same predicate so the
+loose one can't creep back through whichever is edited next. The cost, accepted:
+a spare R1 can no longer be fed into an R2.
+
+### Timings
+
+Signed off from the mockup: hold 180ms, reflow 180ms, entrance 220ms, merge fly
+220ms, punch 260ms, deal stagger 55ms, and a 140ms beat before a card that is
+about to merge collides — so the collision is seen, not inferred. All scale
+with the existing battle-speed setting and collapse under
+`prefers-reduced-motion`, which returns a single frame: the settled hand.
+
+### Not done
+
+- The **battle-start hand** doesn't deal in; `initializeDeck` produces no steps.
+  Battle start already has the VS splash and its own cinematics.
+- Enemy hand is unchanged and unanimated — it isn't rendered.
+- `data-tutorial="hand"` is on the row already, for the coach marks.
+
+## Session log — 2026-08-13: the first ten minutes
+
+The FTUE gap, mocked up as three directions and built as two of them. Tanveer
+took the recommendation: **C (Bureau Orders) as the spine, A (coach marks) cut
+to four steps, B (first-visit primers) dropped.**
+
+### The gap was two problems, not one
+
+Worth keeping separate, because one solution can't cover both:
+
+- **"How do I take a turn?"** A new player met a random-refill hand, adjacent
+  merging, three actions from any unit in any order, and an untargetable bench
+  unit — none of it stated anywhere.
+- **"What do I do next?"** They cleared chapter 1 and the game went quiet. The
+  1,000 gems in their wallet were never mentioned. Stamina was a number in the
+  top bar with no stated purpose. Manuals, materials, world level and account
+  rank all existed and none announced themselves.
+
+Orders answer the second. Coach marks answer the first. **B was dropped
+because everything a primer would say, an order says better by sending you to
+do it — and pays you for arriving.**
+
+### Bureau Orders
+
+`data/orders/starter.json` + a pure evaluator in `lib/game/orders.ts` + a panel
+under the home hero. Seven orders: clear a chapter, summon eleven times, reach
+level 5, save a preset, beat Molvarr, ascend once, reach rank 5.
+
+Built as a **general evaluator rather than a hardcoded checklist** — daily
+missions are the same question asked on a timer, and that's a roadmap item.
+The board sorts claimable → in progress → locked → done, and **retires itself**
+once everything is claimed rather than sitting on the home screen as a
+permanently ticked list.
+
+Decisions worth keeping:
+
+- **`measureGoal` reads an empty roster as level 0, not level 1.** Every
+  character is implicitly level 1, so counting that would start "raise someone
+  to level 5" at 20% done on nobody.
+- **Only one order has a prerequisite** (`first-ascension` requires
+  `first-boss`), because that sequence is real — ascension needs materials the
+  boss drops. Locks elsewhere would be theatre; progress bars already say
+  "not yet".
+- **Claiming re-checks in the store.** The button being visible is a rendering
+  decision, not a permission.
+- Rewards total roughly **1,150 gems** across the seven, on top of the 1,000
+  a new account starts with. Placeholders — Tanveer tunes payouts.
+
+**`playerStore` went v6 → v7** for `claimedOrders` and a `stats` counter
+(`pulls`, `bossClears`). Nothing else records that a boss was ever beaten — the
+drops are indistinguishable from any other materials. The migration
+deliberately does **not** back-fill from existing progress: a returning save
+that has already cleared chapters finds those orders complete and claimable,
+which is right (the work was done, the reward is owed). `bossClears` starts at
+0 because nothing ever recorded it, and inventing a number is worse than
+earning it again.
+
+### Lyra joins the roster
+
+Tanveer's call: **clearing Part 2 Chapter 2 hands Lyra over for good**, so the
+opening stretch isn't fought with Duke alone and the character who has been
+fighting beside you on loan stops being a loaner. Authored as an order rather
+than a starter grant — she's earned at the point the story says she joins.
+
+- New goal type `chapterCleared` naming a specific chapter, so `OrderContext`
+  carries the **cleared-chapter map** rather than a count.
+- Orders can now pay a **character**, validated against the catalogue at load
+  time. An order promising an id that doesn't exist would be a permanently
+  unclaimable reward that only fails when someone earns it.
+- The grant runs through `resolvePullResult`, the same path a pull takes, so a
+  player who already pulled Lyra gets the **dupe's ult rank** instead of
+  nothing.
+- `orders.ts` rebuilds the `partId:chapterId` key rather than importing
+  `chapterKey` — that module validates every story JSON at load, and this one
+  is pulled in by `playerStore`, which half the app imports. A test asserts the
+  two formats agree so the copy can't drift.
+
+### The cloud save was losing half the account
+
+Found while wiring orders, fixed as its own thing. `AuthProvider` wrote a fixed
+field list, and **six fields weren't on it**: `account` (rank and XP),
+`worldLevel`, `presets`, `lastTeam`, `stats` and `claimedOrders`. Signing in on
+a second device lost your account rank and re-offered every completed order for
+a second payout.
+
+The fix is not just "add the fields". **A field absent from a document must not
+overwrite local state.** Every document already in Firestore predates all six,
+and `migratePlayerState` dutifully supplies a rank-1 default for a missing
+`account` — so copying migrated values across unconditionally would have reset
+an existing player's rank to 1 and deleted their presets the moment they signed
+in. Silent, immediate, unrecoverable.
+
+So `cloudPatch` checks presence rather than assuming it, and the rule lives in
+`lib/game/cloudSave.ts` — pure, tested without Firebase or React, because it's
+the rule most likely to destroy real progress and least likely to be noticed.
+`cloudDocument` always writes every field, so a document converges on the full
+shape after one write. **The same hazard applies to every field added to
+`CLOUD_FIELDS` from here on.**
+
+### Four coach marks
+
+`lib/tutorial/steps.ts` holds the catalogue and the triggers;
+`components/game/battle/BattleCoach.tsx` finds the anchor and positions the
+card. Anchors are `data-tutorial` attributes on the hand, the action pips and
+the Team rail button.
+
+**Nothing gates input.** The dimming layer is `pointer-events: none`, so every
+card and button underneath stays live. A tutorial that blocks input in a game
+with a randomly dealt hand is a tutorial that softlocks — the pair it wants you
+to merge might not be in the hand.
+
+- **A step is finished by doing it.** When the situation it describes stops
+  being true while the player is still acting, it's marked learned. Gated on
+  `playerActing` so a step that merely went off screen when the enemy's turn
+  started isn't counted as read.
+- **"Two of a kind" only fires when a pair is actually in hand.** Telling
+  someone to merge a hand that can't merge is worse than saying nothing.
+- One at a time, in authored order. Two coach marks on one screen is a screen
+  you close rather than read.
+- Portalled to `document.body` — `BattleArena`'s shake transform creates a
+  containing block that would reinterpret `position: fixed` against it.
+- Seen-steps live in **`settingsStore`, not `playerStore`**: same reasoning as
+  the avatar. "Has seen the merge hint" is a property of this device, and
+  `playerStore`'s cloud sync is versioned. **Show again** in the account modal
+  is the way back from Skip All, which a playtester needs more than once.
+
+### Not done
+
+- No coach marks outside battle; the orders carry the rest.
+- Orders are shown only on home and as the nav badge.
+- Eight orders now, and the reward numbers are still placeholders.
+
+## Test suite audit — 2026-08-13
+
+Tanveer asked whether 1,000+ tests were worth a quality pass. Audited rather
+than assumed.
+
+**Speed is a non-issue** and should not be optimised: 1,047 tests ran in 4.6s
+wall, of which ~1.2s is execution and the rest import and transform. The
+slowest single file was 161ms. Test-to-source is 13,439 : 29,364 lines.
+
+**Overall quality was better than a first look suggested.** 21 weak assertions
+(`toBeDefined`/`toBeTruthy`) across the whole suite, and both surviving
+`toBeTruthy` calls are correct in context. No `.skip`, no `.only`, no
+`it.todo`. Six files are roster-wide contract tests —
+`characterCatalogRegistration` in particular guards a failure with no build
+error, no type error and no runtime warning: a kit that silently isn't in the
+game.
+
+**A first pass wrongly suspected the synthetic fixtures.** 69 `as unknown as
+BattleCharacter` casts across 35 files look like a smell and mostly aren't:
+`bossPassives` asserting `hp === 7200` reads as restated data but is `2400 × 3`
+— the multiplier under test, on a clean fixture. Coupling engine tests to real
+statlines would break them on every rebalance for nothing. **Round-number
+fixtures for engine mechanics are correct; real data belongs in contract
+tests.**
+
+### The one real defect, and the fix
+
+`chiaraIsoldeKits.test.ts` carried a "stat sanity" block asserting
+`chiaraData.atk === 205`, `hp === 3000` and four more — **the JSON restated
+against itself.** It could not catch a bug. It could only fail when Tanveer
+rebalanced, and its own comment said "Numbers updated by the 2026-08-10 roster
+stat rebalance" — the anti-pattern caught in the act. The test failed, and the
+fix was to copy the new numbers in, which trains exactly the reflex that makes
+a suite stop being trusted.
+
+Replaced by `tests/kitInvariants.test.ts`, which asserts what the numbers must
+*satisfy* rather than what they are, from rules already written in
+`docs/design/KIT_DESIGN.md`:
+
+- statlines inside the union of the three role bands
+- every `*Ranked` ladder exactly three long ("ranks never exceed 3")
+- no ultimate carrying a rank ladder ("ultimates never rank")
+- damage never decreasing as a card ranks up
+- **one scaling stat per kit** (ruling #67) — see below; the allowlist that
+  briefly held Isolde is now empty
+
+Roles are checked as a union rather than per role on purpose: **role isn't
+stored in the kit JSON** — it comes from what a kit does, and the doc is
+explicit that you never read it off the numbers. A role map in a test file
+would duplicate a design decision somewhere it would rot.
+
+Also converted `isoldeData.skills[0].damageRanked === [20, 25, 30]` into
+"the ladder climbs", which is the invariant that test's own name claimed.
+
+**Swept for recurrence: none.** Twenty test files import kit JSON; the Chiara/
+Isolde block was the only place any of them asserted literal values against it.
+
+### Ruling #67 closed — Isolde scales off HP
+
+The new invariant surfaced the open violation on its first run, and Tanveer
+closed it the same day: **her whole kit scales off HP.** Only one ability
+actually moved — Threads of Renewal was already HP-scaled, and Starbound Ward
+deals 0 damage so its `statMultiplier` was inert.
+
+**Severed Ledger: ATK 280/340/400 → HP 16/20/25.** Numbers taken from
+`buildCharacterDamagePreview`, per KIT_DESIGN's own instruction not to
+hand-roll damage:
+
+| | R1 | R2 | R3 |
+| --- | --- | --- | --- |
+| before (ATK 195) | 496 | 613 | 730 |
+| after (HP 3100) | 446 | 570 | 725 |
+
+The ladder is 64% / 80% of R3, which lands on the roster's R1≈65% / R2≈80%
+pacing convention (her old ladder was 70% / 85%).
+
+**The interaction worth remembering:** her own Woven Blessing aura applies to
+*her* — `passive.ts` walks every ally including the source — so in a real
+fight she reads off **3,410 max HP, not 3,100**. ATK scaling never saw that;
+HP scaling does. Severed Ledger therefore lands for **802 at R3 in play**
+against a preview of 725, about 10% above its old output. Flagged before the
+decision and accepted: she is a support whose damage card is one of two.
+`14/18/22` was the alternative that would have held output exactly level.
+
+**A comparison I got wrong, corrected by Tanveer.** I flagged Severed Ledger's
+725 as out-damaging Sara's R3 AoE at 580 — but 580 is Stampede Concentrate
+against **four** enemies, which is the case Concentrate is designed to be
+weakest in *and* is now nearly unreachable with the field capped at three.
+`concentrate` (combat.ts) multiplies ×1.5 / ×1.2 / ×1.1 / ×1.0 for 1 / 2 / 3 /
+4+ enemies, so at R3 per enemy:
+
+| Enemies | Isolde (flat AoE) | Sara (Concentrate) |
+| --- | --- | --- |
+| 1 | 725 | **895** |
+| 2 | 725 | 706 |
+| 3 | 725 | 638 |
+| 4 | 725 | 580 |
+
+Sara wins outright in the case her mechanic exists for; Isolde's flat AoE is
+better into a full field, which is what a flat AoE is for. **Not a balance
+concern — both kits do their job.** Flag withdrawn.
+
+### Two synergy cards were lying about who they buff
+
+Surfaced while checking how Isolde's new HP scaling stacks on a team with
+Sara. `passive.ts` applies a synergy buff **only to allies carrying the tag**
+— the `applies` gate at line 57 — but two cards described it as reaching
+everyone:
+
+- Sara, Nine Lives: "For each allied [Female] character in the team, **all
+  allies** damage 5% 👆"
+- Batra, Fierce Dedication: "For each allied [KHALSA] character in the team,
+  **all allies** all stats 10% 👆"
+
+On Duke + Sara + Isolde, Sara and Isolde each got +10% and **Duke got nothing**
+while the card promised it to him.
+
+Both directions were put to Tanveer, because which one is wrong is a mechanic
+decision. **He ruled the text was wrong, not the code**, and gave the wording:
+`[Female] allies damage 5% 👆 per each one in the team`. Batra took the same
+shape. The `flatBonus` synergies (Ban, Diane, Gon, Killua, Leorio, Meliodas,
+Seras) already worded themselves correctly and were untouched.
+
+`kitInvariants` now carries the guard: **a count-scaling tag synergy may not
+say "all allies".** Verified by reverting Batra's fix and watching it fail with
+his name in the output. `passiveDescriptionSync` could never have caught this
+— it checks that stated *numbers* are backed by mechanic data and has no
+notion of scope.
+
+**A second instance of the audited anti-pattern fell out of this.**
+`descriptionTranslator.test.ts` pinned the whole rendered string —
+`"Does damage equal to 280% ATK to all enemies."` — inside a test named
+*"joins two clauses with 'and' and hides a zero-value one"*. A balance change
+broke a test about prose. Rewritten to assert the clause structure (no
+ult-gauge clause and no "and" at R1; both present at R3) with the multiplier
+left as `\d+% \w+`.
+
+### Not done
+
+- Per-kit test files (`collabKits`, `hxhKits`, `seras`, `characterMechanics`,
+  `substats`) look redundant and were left alone. Each was written against a
+  specific kit's mechanics; merging them trades real coverage for a tidier
+  directory.
+- Buff-magnitude ladders (self 25/50/75, team 20/30/50) are **not** machine-
+  checked. "Massively raises" is a legal 100% tier value, so a ceiling
+  assertion would be wrong, and inferring a buff's scope from the JSON is
+  guesswork. Left to review.
+
+## Palette sweep and Google-only sign-in — 2026-08-13
+
+### The docs were wrong about what was left
+
+Two places said the pre-token palette survived on **`/practice` and `/login`
+only**. A scan found stock Tailwind ramps in **eight** files, and the two worst
+weren't pages at all:
+
+| File | Hits | Why it mattered |
+| --- | --- | --- |
+| `components/game/KitDetails.tsx` | 19 | Skill chips and passive readouts, rendered inside battle |
+| `components/ui/AudioControl.tsx` | 17 | The ♪ popover — in the nav on **every** screen, still amber |
+| `components/game/DevGrantPanel.tsx` | 9 | Dev tool |
+| `app/error.tsx` | 6 | The crash screen |
+| `components/game/BattleEffectsOverlay.tsx` | 4 | Battle VFX |
+| `components/ui/DuelToggle.tsx` | 3 | Dev tool |
+| `app/practice/page.tsx` | 3 | Two wrapper classes; its content had already migrated |
+| `components/gacha/ModalShell.tsx` | 2 | Default modal border |
+
+"Which *page* is left?" was the wrong question, which is how the answer stayed
+wrong for two days. Nobody counted the shared components.
+
+**A first scan reported sixteen files** including `BattleArena` at 13 — all
+false positives. `-translate-x-1/2` contains the substring "slate". The real
+pattern has to anchor on the utility prefix (`bg-`, `text-`, `border-`…).
+
+All eight migrated. Choices worth recording: `AudioControl`'s amber accent
+became **`signal`**, because the palette reserves cyan for system chrome and a
+nav control is exactly that; `error.tsx`'s heading became **`el-red`** rather
+than gold, since red is the danger hue; the gold flash in
+`BattleEffectsOverlay` became **`el-light`**, which `role-ultimate` already
+aliases.
+
+`tests/paletteTokens.test.ts` enforces it from here, with the two guards that
+matter: one asserting it still detects a planted offender (a regex that stops
+matching would otherwise pass vacuously — same trap `overlayStacking` guards),
+and one asserting it does *not* fire on `translate`.
+
+### Google-only sign-in
+
+`loginWithEmail` and `signupWithEmail` **removed**, not hidden. Leaving them
+wired with no UI keeps a second account system alive — no password reset, no
+route to it, and a live `createUserWithEmailAndPassword` nobody maintains.
+`AccountModal` still maps the `password` provider as "Email & password
+(legacy)": an account created before today still signs in and should see what
+it used.
+
+`/login` rebuilt on the tokens as part of the sweep. Key art behind a scrim,
+one full-width button with Google's mark **inlined as SVG** (a CDN request is
+CSP-blocked, and the button must never fail to render), and the pitch stated in
+rewards — the Bureau Orders total, read from the orders themselves so it can't
+drift as payouts are tuned. Guest play stays one tap away and is not dressed up
+as a mistake; the game is fully playable without an account.
+
+Two bugs fixed in passing: the old page called `router.replace()` **during
+render** for a signed-in user, and a closed Google popup surfaced as an error
+rather than as someone changing their mind.
+
+## Playtest findings — 2026-08-13
+
+### Coach marks crashed a battle (fixed)
+
+*"Maximum update depth exceeded"* at `BattleCoach.tsx:199`, mid-fight.
+
+**Self-inflicted, and recently.** `pickActiveStep` builds a fresh object on
+every call. It was originally wrapped in a `useMemo`; I unwrapped it while
+fixing a `react-hooks/set-state-in-effect` lint error and didn't notice the
+identity now changed every render. That re-ran the measuring effect → `setBox`
+with a new object → render → new `step` → effect → forever.
+
+Three fixes, because one wasn't enough:
+
+- `step` is memoised again, on `[finished, context, seen, dismissed]`.
+- The measuring effect keys on **`step.anchor`**, not the step object — two
+  consecutive steps can point at the same element, and re-measuring identical
+  geometry is churn.
+- `setBox` now uses a functional update with a **value-equality bail-out**
+  (`sameBox`). Without it the 250ms tracker re-rendered the whole arena four
+  times a second for the life of a step, loop or no loop. That one was a
+  performance bug hiding behind the crash.
+
+The seen-marking effect had the same stale-identity churn and now keys on
+`step.id`.
+
+`tests/tutorialSteps.test.ts` records the trap directly: `pickActiveStep`
+returns an equal-but-not-identical object each call, and is deterministic —
+the two facts that together make memoising it both necessary and safe.
+
+### Deck animations need an optimisation pass — **future batch**
+
+Tanveer, after playing: *"deck animations need a lot of optimisation."* Not
+scoped or started; flagged here so it isn't rediscovered.
+
+Where to look first, in the order I'd suspect them:
+
+- **`Hand.tsx` snapshots `outerHTML` for every card on every render** that
+  isn't mid-drag, purely so a card that unmounts next render has a ghost to
+  fly. Eight clones per render is the most obviously wasteful thing in there.
+- **The FLIP layout effect measures every card** on every render, including
+  renders that changed nothing about layout.
+- **Ghosts are built by parsing an HTML string** (`innerHTML`) and appended to
+  `document.body` — cheap individually, but a cascade merge does it repeatedly.
+- **Deal frames each commit a store read** through `useDealSequence`; the
+  timeline is rebuilt whenever `dealSteps`, speed or reduced-motion change.
+- Worth measuring before changing any of it — the pass should start with a
+  profile, not with this list.
+
+## Screens and rules from the 2026-08-13 playtest
+
+Everything below came out of Tanveer playing rather than from a plan, so each
+one is a report first and a change second.
+
+### Home font sizes
+
+*"looks smaller than what's needed."* He was right, and the worst of it was
+mine: Bureau Orders bottomed out at **9px**, with order titles at 12px and
+hints at 10px. The Combat Terminal idiom uses uppercase and wide tracking for
+*labels*, which has to run small — I carried that sizing onto **content**, and
+an order's title and hint are sentences you read.
+
+Split into two tiers and raised the content one: order title 12 → **14px**,
+hint 10 → **12px**, reward 10 → 12, progress 9 → 11, buttons 9 → 11. On home:
+hero subline 12 → 14, alert detail 11 → 12, mode card title 16 → 18. Labels
+stayed at 10–11px on purpose — at 14px with that tracking they compete with
+the hero. **Nothing under 11px remains on the page.**
+
+### Bureau Orders gated behind an account
+
+His call. A signed-out player sees the reward total instead of the checklist —
+*"Create an account or log in to access Bureau Orders"*, with the prize line
+generated from the orders themselves so it can't drift as payouts are tuned,
+and **Lyra leading it** because a character beats a currency total as a reason
+to sign up.
+
+Three decisions inside it:
+
+- **Progress still accrues while signed out.** The evaluator reads game state,
+  not auth. Anything already earned is waiting on sign-in, which is the pitch
+  doing real work rather than a wall.
+- **The gate is enforced in `claimOrder`, not just the panel.** A UI-only gate
+  is a suggestion.
+- **No gate when Firebase isn't configured.** This build runs guest-only
+  without env, and locking the board there would make it permanently
+  unreachable rather than enticing. Both panel and store check
+  `firebaseEnabled` first.
+- **No nav badge for guests** — a count on every screen leading to a locked
+  panel is nagging, not enticing.
+
+### `/practice` rebuilt
+
+The palette sweep changed two wrapper colours here and I listed it alongside
+real redesigns; Tanveer screenshotted the unchanged page. Fair. **The sweep was
+not a redesign, and saying so would have saved a round trip.**
+
+What the screenshot showed: top-heavy, half the page empty, Start battle
+floating top-right *next to Clear*, and Sandbox / Boss / 3v3 / 4v4 / Clear /
+Start all wearing the same chip — four kinds of control at one weight.
+
+Rebuilt: a labelled **setup strip** for mode and format, a **VS divider**
+between the two panels (two identical pickers otherwise read as two equal
+teams), and a **pinned action bar** carrying Start with Clear demoted to a
+quiet text button at the far end. The bar says *why* Start is disabled rather
+than leaving a dead button. Added bench-specific quick actions — **Randomise**,
+**Empty**, and **Mirror your team** on the enemy side, which is the shortcut a
+test bench actually wants: build a comp, then fight it.
+
+Both panels are still the shared `TeamPicker`, so consistency is by
+construction rather than by discipline.
+
+**Also found:** `/practice`'s *battle* view had the pre-token palette written
+as **inline styles** — `rgba(245,158,11,…)`, `#09090b`, `#111827` — which the
+class-name sweep walked straight past. Now `.terminal-grid` on `bg-void`. Every
+other hardcoded colour in the codebase is a *token value* written as rgba for a
+glow (`rgba(232,209,116,…)` is `el-light`), which is a different and much
+smaller problem.
+
+### The empty preset row
+
+*"it doesn't have preset picker."* It did — `showPresets` defaults true and
+only the opposing side turns it off — but with nothing saved the row was a bare
+`PRESET` label and a dashed `+`, which reads as a missing feature rather than
+an empty one. Now says **"Save a team here to load it in any battle."**
+
+### NPC archive stopped pretending NPCs are lockable
+
+Story-only kits can never be acquired, so ownership treatment was answering a
+question that doesn't apply: every NPC rendered greyed out and **Locked**, and
+the archive's owned-only default meant the page showed *nothing* until you
+toggled it.
+
+`CharacterBrowser` gained an `ownership` prop (default `true`, so the playable
+archive is untouched). `false` turns off the grayscale, the Locked badge, the
+level pip and the owned-only filter and its toggle. Implementation note: it
+collapses to forcing the component's internal `hasHydrated` false rather than
+branching at six use sites — odd-looking on a page that has obviously hydrated,
+but semantically right, since that flag gates "do we know what's owned" and the
+answer here is permanently "ownership doesn't apply".
+
+### An ultimate can't be held below a full gauge
+
+Reported from play: Lyra at 5/5 with her ultimate in hand, Mustafa drained her
+to 4/5, **the card stayed and was playable.**
+
+Structural gap. `refillHand` has always required a full gauge to *deal* an
+ultimate, but nothing reconsidered it once the card existed — `lowerUltGauge`
+edits the unit inside `executeSkill`, which is pure over teams and never sees a
+deck, so the two facts never met.
+
+`dropUnchargedUltimates` (lib/game/deck.ts) is the missing rule, called from
+`BattleProvider` after both turns resolve — the only layer holding teams and
+decks at once, same as `rankUpCharacterCards`. Applied to **both hands**, since
+either side can carry a drain.
+
+Two judgement calls, both flagged to him:
+
+- **A queued ultimate is dropped too.** He described the hand; within a turn
+  nothing drains your own gauge, so this only bites when a drain lands between
+  queueing and firing — and an ultimate firing at 4/5 is the same bug.
+- **An ultimate whose owner isn't in the team list is left alone.** That's a
+  dead unit, and clearing their cards is `removeDeadCharacterCards`' job.
+
+The other half of the rule needed no work: `ultEligible` already re-deals the
+ultimate the moment the gauge refills. Tests cover both directions so the
+take-back and the return can't drift apart.
+
+## Battle reports are written for a machine — 2026-08-13
+
+Tanveer: *"I never read logs myself. They are mostly for you so that we can
+analyze and improve battles, character kits and misc."* That reframes the
+artefact completely, so the markdown report is gone and
+`lib/game/battleReport.ts` emits **JSON**.
+
+Three things made the old format unreliable for analysis:
+
+1. **The raw string log double-printed actions.** Turn 14 of the 08-13 run
+   showed seven Lyra actions where the event stream showed two — and the HP
+   arithmetic (965 → 600 → 524) proves only two resolved. Anything counted off
+   that log was wrong.
+2. **No opening statline.** Only final teams were recorded, so a hit had no
+   health bar to be measured against and battle-start auras were invisible.
+3. **Every aggregate was derived by hand at read time.**
+
+The report now carries `meta`, `teams.opening` + `teams.final`,
+`totals.byUnit`, `damageByTurn`, the full event stream, a deduplicated
+`rawLog` with its collapsed count, and — the point of the exercise —
+**`anomalies[]`**: zero-damage attacks, chip hits under 2% of max HP, units
+that never acted, duplicate log lines. Today's Volcanic Frost finding would
+have been the first line of the file instead of the product of reading 216.
+
+`captureOpeningTeams` (gameStore) snapshots both sides at `OnBattleStart`,
+per-unit copies because the engine replaces those objects as it goes.
+
+**Decisions worth keeping:**
+
+- An **AoE counts as one action**, not one per target. Counting hits would make
+  a three-enemy sweep look like three turns of tempo.
+- An **evade is not a zero-damage attack** — that's the defender working.
+- A **benched unit is not flagged for never acting.**
+- Only **consecutive** duplicate log lines are collapsed, because that's
+  provably safe. **The underlying double-logging is unfixed** — HP arithmetic
+  says damage resolves once, so it's a logging path, not a resolution one, and
+  it deserves its own look.
+
+**Offered and declined:** auto-saving every battle in dev, and a mid-fight save
+button. Tanveer: *"its fine as it is. option to save it after a fight means
+that you will never get incomplete information."* So saving stays manual and
+end-of-battle only, and a crashed or abandoned fight is simply not captured.
+Don't re-propose this.
+
+### Log findings not yet acted on
+
+From the 08-13 run (`battle-log/battle_2026-08-13-00-59-40.md`, the last
+markdown one):
+
+- **`gained 5% undefined`** in the log for every `[Collab]`/`[Human]`/`[Giant]`
+  synergy. **The buff works** — those kits declare `stats: ["atk","def","hp"]`
+  and `affects()` reads it. The *log line* prints `mech.stat`, which they don't
+  have. Seras uses `stat: "all"`, which is why hers reads correctly. Cosmetic,
+  unfixed.
+- **Volcanic Frost dealt 0 damage, twice**, and applied `decay (0/turn)` with
+  it. Mustafa ended on 384 DEF plus a 30% DEF buff plus a 25–40% damage
+  reduction stance re-applied every turn; Gon peaked at 402. DEF subtracts
+  flat, so the weaker card lands under it and does literally nothing.
+  **This is a balance decision and Tanveer's** — options range from a damage
+  floor, to capping stacked DEF, to giving `decay` a minimum.
+- **Isolde died having barely acted** — 662, 1065, then 1645 from Gon. Worth
+  watching now that HP is doing double duty as her survivability *and* her
+  damage.
+
 ## Open Issues
 
 | # | Issue | Where | Severity |
@@ -1264,7 +1950,11 @@ now."
 | 20 | Battle screen overhaul: cinematics shipped 2026-07-12; the 2026-08-04 UX batches did the layout, enemy inspection, info panel, structured log and per-character VFX. **Remaining: mobile pass + sound hooks only** | `components/game/*` | Mostly done |
 | 21 | Enemy AI: skill-selection priority rewritten 2026-07-13 (team-wide tiers + per-turn caps). Target-choice heuristics (currently lowest-HP/taunt) may still want tuning per playtest | `lib/game/ai.ts` | Mostly done |
 | 23 | Stamina is effectively unlimited below ~account rank 13: a boss clear pays 100 XP, nearly every early clear ranks up, and a rank-up refills the bar to 120 (three runs). Raised 2026-08-12 with three fixes; Tanveer declined all three — **accepted, not a bug** | `store/playerStore.ts:463`, `lib/game/worldBossRewards.ts` | Design note (accepted) |
-| 22 | Battle log can't show **which buffs/debuffs an action applied** — `battleEvents` doesn't model effect application, so the Raw string-log toggle remains the only record. Needs an `emit` change in `combat.ts` | `lib/game/combat.ts`, `types/battleEvent.ts` | Open |
+| 22 | Battle log can't show **which buffs/debuffs an action applied** — `battleEvents` doesn't model effect application, so the raw string log remains the only record. Needs an `emit` change in `combat.ts` | `lib/game/combat.ts`, `types/battleEvent.ts` | Open |
+| 24 | **The engine's string log double-prints actions.** Turn 14 of the 08-13 run logged seven Lyra actions where the event stream had two; HP arithmetic proves two resolved, so it's a logging path, not a resolution one. `buildBattleReport` collapses consecutive duplicates as a mitigation; the cause is unfound | `hooks/BattleProvider.tsx`, `lib/game/combat.ts` | Open |
+| 25 | **Flat DEF can reduce a card to literally nothing.** Volcanic Frost resolved for 0 damage against ~400 DEF and applied `decay (0/turn)` with it — an action spent for no effect. Options: a damage floor, a cap on stacked DEF, or a minimum for scaled after-effects. **Tanveer's call** | `lib/game/damage.ts` | Balance decision |
+| 26 | Tribe-synergy log lines read `gained 5% undefined` — those kits declare `stats: [...]` rather than `stat`, and the log prints the latter. **The buff itself works.** Cosmetic | `lib/game/passive.ts` | Cosmetic |
+| 27 | **Battle hand animations want a performance pass.** Reported after playtesting 2026-08-13. Suspects ranked in the "Playtest findings" section; start with a profile, not the list | `components/game/battle/Hand.tsx` | Open |
 
 Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier stats wired, ruling #36), #16 (zero clauses hidden, ruling #44), #15 (firestore.rules deployed live via Firebase MCP 2026-07-11 — cloud saves work for signed-in users; minimal `firebase.json` added), #7 (Mechanic discriminated union — see Working).
 
@@ -1274,12 +1964,12 @@ Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier sta
 - ~10 additional characters (Tanveer adds when game is in working order)
 - **Mobile layout pass** — the biggest remaining gap in roadmap item 2
 - **Audio assets** — the music *system* shipped 2026-08-09; `public/audio/` is empty until Tanveer supplies the OST (`docs/AUDIO.md`). No SFX system exists and none is planned.
-- FTUE / onboarding, daily loop, analytics (see `docs/PRODUCT_AUDIT.md`)
+- ~~FTUE / onboarding~~ **built 2026-08-13** (Bureau Orders + four battle coach marks). Daily loop and analytics remain — the orders evaluator was built general so daily missions are mostly a data change (see `docs/PRODUCT_AUDIT.md`)
 - Deployment (Vercel target; Firebase project `toll-the-game` exists for auth/Firestore). **Not started** — no Vercel project linked, CLI not installed
 - Effect application in the battle-event stream (Open Issue #22)
 - Story chapter **mission objectives** (3 per chapter paying gems once), **difficulty tiers**, the **node-path stage map**, and **multi-wave stages with persistent HP** — all scoped out of the 2026-08-09 rewards batch, each its own future batch
 
-Note: "playerStore is a stub" is no longer true — it carries roster, currencies, inventory, per-character progress, stamina and gacha pity, with migrations at v6.
+Note: "playerStore is a stub" is no longer true — it carries roster, currencies, inventory, per-character progress, stamina, gacha pity, lifetime stats and claimed orders, with migrations at **v7**.
 
 ## Environment
 

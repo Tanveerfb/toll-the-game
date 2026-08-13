@@ -6,6 +6,7 @@ import TeamPicker from "@/components/game/TeamPicker";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import {
   getBossCharacters,
+  getPlayableCharacters,
   type CharacterData,
 } from "@/lib/game/characterCatalog";
 import { FIELD_CAP, TEAM_CAP } from "@/lib/game/format";
@@ -126,6 +127,7 @@ export default function TeamSelect({
   ) => void;
 }): React.JSX.Element {
   const bosses = React.useMemo(() => getBossCharacters(), []);
+  const catalog = React.useMemo(() => getPlayableCharacters(), []);
   const [mode, setMode] = React.useState<Mode>("sandbox");
   const [format, setFormat] = React.useState<BattleFormat>("3v3");
   const [playerTeam, setPlayerTeam] = React.useState<CharacterData[]>([]);
@@ -159,101 +161,255 @@ export default function TeamSelect({
   };
 
   return (
-    <section className="mx-auto w-full max-w-6xl space-y-3 px-4 py-6 md:px-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <header className="border-l-2 border-signal pl-3">
-          <span className="block font-body text-[10px] font-bold uppercase tracking-[0.34em] text-signal">
-            Practice bench
-          </span>
-          <h1 className="font-heading text-4xl leading-none tracking-[0.1em] text-readout-strong">
-            {isBossMode ? "Boss Battle" : "Team Select"}
-          </h1>
-          <p className="mt-1 max-w-[70ch] font-body text-[11px] leading-relaxed text-readout-dim">
-            {isBossMode
-              ? "Build a team, then pick one boss. Bosses act three times a turn."
-              : "Any units, owned or not — this is the bench."}{" "}
-            {FORMATS[format].hint}. A sub&apos;s passive works from the bench; it
-            enters at the start of a new turn after a teammate falls.
-          </p>
-        </header>
+    <section className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 md:px-8">
+      {/* Masthead — the signal rule every other screen opens on. */}
+      <header className="border-l-2 border-signal pl-3">
+        <span className="block font-body text-[10px] font-bold uppercase tracking-[0.34em] text-signal">
+          Practice bench
+        </span>
+        <h1 className="font-heading text-4xl leading-none tracking-[0.1em] text-readout-strong">
+          {isBossMode ? "Boss Battle" : "Team Select"}
+        </h1>
+        <p className="mt-1.5 max-w-[68ch] font-body text-sm leading-relaxed text-readout-dim">
+          {isBossMode
+            ? "Build a team, then pick one boss. Bosses act three times a turn."
+            : "Any character in the game, owned or not. Nothing here touches your save."}
+        </p>
+      </header>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex gap-1">
-            {(["sandbox", "boss"] as Mode[]).map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setMode(key)}
-                className={`${TOGGLE} border ${
-                  mode === key
-                    ? "border-role-attack bg-role-attack/15 text-role-attack"
-                    : "border-edge text-readout-dim hover:text-readout"
-                }`}
+      {/* Setup strip. Mode and format are settings, not actions — they used to
+          sit in one undifferentiated row alongside Clear and Start, so four
+          different kinds of control wore the same chip. */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-hairline bg-inset/50 px-3 py-2">
+        <Setting label="Mode">
+          {(["sandbox", "boss"] as Mode[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setMode(key)}
+              className={`${TOGGLE} border ${
+                mode === key
+                  ? "border-role-attack bg-role-attack/15 text-role-attack"
+                  : "border-edge text-readout-dim hover:text-readout"
+              }`}
+            >
+              {key === "sandbox" ? "Sandbox" : "Boss"}
+            </button>
+          ))}
+        </Setting>
+
+        <Setting label="Format">
+          {(Object.keys(FORMATS) as BattleFormat[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setFormat(key)}
+              className={`${TOGGLE} border ${
+                format === key
+                  ? "border-signal bg-signal/15 text-signal"
+                  : "border-edge text-readout-dim hover:text-readout"
+              }`}
+            >
+              {FORMATS[key].label}
+            </button>
+          ))}
+        </Setting>
+
+        <p className="min-w-[18rem] flex-1 font-body text-[11px] leading-snug text-readout-muted">
+          {FORMATS[format].hint}. A sub&apos;s passive works from the bench; it
+          enters at the start of a new turn after a teammate falls.
+        </p>
+      </div>
+
+      {/* The matchup. Two identical pickers read as two equal teams, so a VS
+          divider says which way the fight runs. */}
+      <div className="mt-4 grid items-start gap-3 lg:grid-cols-[1fr_auto_1fr]">
+        <div className="flex flex-col gap-2">
+          <TeamPicker
+            team={playerTeam}
+            onChange={setPlayerTeam}
+            source="catalog"
+            title="Your team"
+            fieldCap={fieldCap}
+          />
+          <QuickRow>
+            <QuickAction
+              onClick={() => setPlayerTeam(randomTeam(catalog, fieldCap))}
+            >
+              Randomise
+            </QuickAction>
+            <QuickAction
+              onClick={() => setPlayerTeam([])}
+              disabled={playerTeam.length === 0}
+            >
+              Empty
+            </QuickAction>
+          </QuickRow>
+        </div>
+
+        <div className="flex items-center justify-center py-2 lg:h-full lg:flex-col">
+          <span className="hidden flex-1 border-l border-hairline lg:block" />
+          <span className="px-3 py-1 font-heading text-2xl tracking-[0.14em] text-readout-muted">
+            VS
+          </span>
+          <span className="hidden flex-1 border-l border-hairline lg:block" />
+        </div>
+
+        {isBossMode ? (
+          <BossPicker
+            bosses={bosses}
+            selected={boss}
+            onSelect={(c) =>
+              setBoss((current) => (current?.id === c.id ? null : c))
+            }
+          />
+        ) : (
+          <div className="flex flex-col gap-2">
+            <TeamPicker
+              team={enemyTeam}
+              onChange={setEnemyTeam}
+              source="catalog"
+              title="Opposing team"
+              showPresets={false}
+              fieldCap={fieldCap}
+            />
+            <QuickRow>
+              <QuickAction
+                onClick={() => setEnemyTeam(randomTeam(catalog, fieldCap))}
               >
-                {key === "sandbox" ? "Sandbox" : "Boss"}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-1">
-            {(Object.keys(FORMATS) as BattleFormat[]).map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setFormat(key)}
-                className={`${TOGGLE} border ${
-                  format === key
-                    ? "border-signal bg-signal/15 text-signal"
-                    : "border-edge text-readout-dim hover:text-readout"
-                }`}
+                Randomise
+              </QuickAction>
+              {/* The bench's most-wanted shortcut: fight the thing you just
+                  built, to see how a kit handles itself. */}
+              <QuickAction
+                onClick={() => setEnemyTeam([...playerTeam])}
+                disabled={playerTeam.length === 0}
               >
-                {FORMATS[key].label}
-              </button>
-            ))}
+                Mirror your team
+              </QuickAction>
+              <QuickAction
+                onClick={() => setEnemyTeam([])}
+                disabled={enemyTeam.length === 0}
+              >
+                Empty
+              </QuickAction>
+            </QuickRow>
           </div>
+        )}
+      </div>
+
+      {/* Action bar, pinned. Start used to sit top-right — above the teams it
+          starts and directly beside Clear, which is the one control you never
+          want next to it. */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-edge bg-void/95 backdrop-blur-sm">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 md:px-8">
+          <span className="min-w-0 font-body text-[11px] leading-snug text-readout-muted">
+            {canStart ? (
+              <>
+                <span className="text-readout-strong">{playerTeam.length}</span>{" "}
+                vs{" "}
+                <span className="text-readout-strong">
+                  {isBossMode ? boss?.name : enemyTeam.length}
+                </span>
+                {" · "}
+                {FORMATS[format].label}
+              </>
+            ) : (
+              missingLabel(isBossMode, playerTeam.length, enemyTeam.length, boss)
+            )}
+          </span>
+          <span className="flex-1" />
           <button
             type="button"
             disabled={
               playerTeam.length === 0 && enemyTeam.length === 0 && boss === null
             }
             onClick={clearAll}
-            className={`${TOGGLE} border border-edge text-readout-dim hover:text-readout disabled:pointer-events-none disabled:opacity-40`}
+            className="font-body text-[11px] font-bold uppercase tracking-[0.16em] text-readout-muted transition-colors hover:text-el-red disabled:pointer-events-none disabled:opacity-40"
           >
-            Clear
+            Clear all
           </button>
           <button
             type="button"
             disabled={!canStart}
             onClick={handleStart}
-            className="chamfer h-11 border border-signal bg-signal px-8 font-heading text-lg tracking-[0.12em] text-void disabled:pointer-events-none disabled:opacity-40"
+            className="chamfer h-11 shrink-0 border border-signal bg-signal px-8 font-heading text-lg tracking-[0.12em] text-void transition-opacity disabled:pointer-events-none disabled:opacity-40"
           >
             {isBossMode ? "Start boss battle" : "Start battle"}
           </button>
         </div>
       </div>
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <TeamPicker
-          team={playerTeam}
-          onChange={setPlayerTeam}
-          source="catalog"
-          title="Your team"
-          fieldCap={fieldCap}
-        />
-        {isBossMode ? (
-          <BossPicker bosses={bosses} selected={boss} onSelect={(c) =>
-            setBoss((current) => (current?.id === c.id ? null : c))
-          } />
-        ) : (
-          <TeamPicker
-            team={enemyTeam}
-            onChange={setEnemyTeam}
-            source="catalog"
-            title="Opposing team"
-            showPresets={false}
-            fieldCap={fieldCap}
-          />
-        )}
-      </div>
     </section>
   );
+}
+
+/** A labelled cluster in the setup strip. */
+function Setting({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <span className="flex items-center gap-2">
+      <span className="font-body text-[9px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+        {label}
+      </span>
+      <span className="flex gap-1">{children}</span>
+    </span>
+  );
+}
+
+function QuickRow({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return <div className="flex flex-wrap gap-1.5">{children}</div>;
+}
+
+function QuickAction({
+  onClick,
+  disabled,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="chamfer min-h-9 border border-edge bg-void/60 px-2.5 py-1 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:pointer-events-none disabled:opacity-35"
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Says what's still missing rather than leaving a disabled button unexplained. */
+function missingLabel(
+  isBossMode: boolean,
+  playerCount: number,
+  enemyCount: number,
+  boss: CharacterData | null,
+): string {
+  if (playerCount === 0) return "Pick at least one unit for your team";
+  if (isBossMode && !boss) return "Pick a boss to fight";
+  if (!isBossMode && enemyCount === 0) return "Pick at least one opponent";
+  return "";
+}
+
+/** A random line-up for the bench — the fastest way to get into a fight when
+ *  you only want to watch one kit work. */
+function randomTeam(pool: CharacterData[], size: number): CharacterData[] {
+  const shuffled = [...pool];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, Math.min(size, shuffled.length));
 }

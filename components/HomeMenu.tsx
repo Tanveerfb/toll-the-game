@@ -10,6 +10,7 @@ import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
 import { useStoryStore } from "@/store/storyStore";
 import BattleArena from "@/components/game/BattleArena";
+import OrdersPanel from "@/components/game/OrdersPanel";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { getPlayableCharacters } from "@/lib/game/characterCatalog";
 import { getActiveLimitedBanner } from "@/lib/gacha/banners";
@@ -116,7 +117,7 @@ function Alert({
       <span className="pr-6 font-body text-sm font-semibold text-readout-strong">
         {title}
       </span>
-      <span className="font-body text-[11px] text-readout-muted">{detail}</span>
+      <span className="font-body text-xs text-readout-muted">{detail}</span>
     </button>
   );
 }
@@ -137,10 +138,10 @@ function ModeButton({
       onClick={onClick}
       className="flex flex-col gap-0.5 border border-hairline bg-inset px-3 py-2.5 text-left transition-colors hover:border-edge-strong"
     >
-      <span className="font-heading text-base tracking-[0.05em] text-readout-strong">
+      <span className="font-heading text-lg tracking-[0.05em] text-readout-strong">
         {title}
       </span>
-      <span className="font-body text-[10px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+      <span className="font-body text-[11px] font-bold uppercase tracking-[0.1em] text-readout-muted">
         {subtitle}
       </span>
     </button>
@@ -249,7 +250,7 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
                 <span className="font-heading text-2xl leading-tight tracking-[0.04em] text-readout-strong md:text-4xl">
                   {nextChapter.chapter.title}
                 </span>
-                <span className="font-body text-xs text-readout-dim">
+                <span className="font-body text-sm text-readout-dim">
                   {clearedInPart} of {nextChapter.part.chapters.length} chapters
                   cleared in this part
                 </span>
@@ -262,7 +263,7 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
                 <span className="font-heading text-2xl leading-tight tracking-[0.04em] text-readout-strong md:text-4xl">
                   All chapters cleared
                 </span>
-                <span className="font-body text-xs text-readout-dim">
+                <span className="font-body text-sm text-readout-dim">
                   Replay any chapter from the story index
                 </span>
               </>
@@ -273,6 +274,10 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
             </span>
           </span>
         </button>
+
+        {/* ORDERS — the "what do I do next" answer, directly under the "what
+            do I do now" one. Retires itself once every order is claimed. */}
+        <OrdersPanel />
 
         {/* ALERTS — only what is true right now. */}
         {ready || hasUnread ? (

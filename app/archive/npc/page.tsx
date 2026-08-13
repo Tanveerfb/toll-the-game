@@ -38,7 +38,11 @@ export default function NpcArchivePage() {
         </header>
 
         <div className="mt-5">
-          <CharacterBrowser characters={characters} />
+          {/* No ownership treatment: these kits can never be acquired, so a
+              Locked badge and a greyed portrait describe a permanent state of
+              affairs rather than something the player can change
+              (Tanveer, 2026-08-13). */}
+          <CharacterBrowser characters={characters} ownership={false} />
         </div>
       </section>
     </main>

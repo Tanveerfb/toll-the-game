@@ -93,7 +93,7 @@ function MechanicsTags({ skill }: { skill: CharacterSkillData }): React.ReactNod
         <Badge
           key={`${skill.skillName}-${type}`}
           variant="secondary"
-          className="rounded-none px-1.5 py-0 font-body text-[10px] uppercase tracking-widest text-zinc-200"
+          className="rounded-none px-1.5 py-0 font-body text-[10px] uppercase tracking-widest text-readout-strong"
         >
           {toTitleCase(type)}
         </Badge>
@@ -116,7 +116,7 @@ export function SkillBlock({
 }): React.ReactNode {
   const rankedLines =
     skill.type === "ultimate" ? null : buildRankedSkillDescriptions(skill);
-  const chipClass = SKILL_TYPE_CHIP[skill.type] ?? "bg-zinc-700 text-zinc-200";
+  const chipClass = SKILL_TYPE_CHIP[skill.type] ?? "bg-edge text-readout-strong";
   // Heal skills show their recovery amount in green (7DS convention).
   const numberClassName =
     skill.type === "heal" ? "font-semibold text-emerald-400" : undefined;
@@ -139,15 +139,15 @@ export function SkillBlock({
   const footnotes = extractKeywordFootnotes(footnoteText, footnoteGlossary);
 
   return (
-    <div className="border border-zinc-800 bg-zinc-950/60">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/70 px-3 py-2">
+    <div className="border border-hairline bg-inset/60">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline px-3 py-2">
         <div className="flex items-center gap-2">
           <span
             className={`px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-widest ${chipClass}`}
           >
             {tag}
           </span>
-          <p className="font-heading text-lg tracking-[0.05em] text-zinc-100">
+          <p className="font-heading text-lg tracking-[0.05em] text-readout-strong">
             {skill.skillName}
           </p>
         </div>
@@ -157,7 +157,7 @@ export function SkillBlock({
             <button
               type="button"
               onClick={onDetails}
-              className="shrink-0 chamfer border border-edge px-2 py-1 font-body text-[10px] uppercase tracking-widest text-zinc-300 transition-colors hover:border-edge-strong hover:text-signal"
+              className="shrink-0 chamfer border border-edge px-2 py-1 font-body text-[10px] uppercase tracking-widest text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
             >
               Details
             </button>
@@ -172,7 +172,7 @@ export function SkillBlock({
               key={`${skill.skillName}-rank-${index + 1}`}
               className="grid grid-cols-[44px_1fr] items-baseline gap-2"
             >
-              <span className="font-body text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+              <span className="font-body text-[10px] font-bold uppercase tracking-widest text-readout-muted">
                 R{index + 1}
               </span>
               <KeyworkHighlighter
@@ -211,14 +211,14 @@ function FootnoteList({
 }): React.ReactNode {
   if (footnotes.length === 0) return null;
   return (
-    <div className="mt-1.5 space-y-0.5 border-t border-zinc-800 pt-1.5">
+    <div className="mt-1.5 space-y-0.5 border-t border-hairline pt-1.5">
       {footnotes.map((entry) => (
-        <p key={entry.keyword} className="font-body text-xs text-zinc-400">
-          <span className="mr-1 text-zinc-500">※</span>
+        <p key={entry.keyword} className="font-body text-xs text-readout-dim">
+          <span className="mr-1 text-readout-muted">※</span>
           <span className="font-semibold text-sky-300">
             {formatFootnoteLabel(entry.keyword)}
           </span>
-          <span className="text-zinc-300"> — {entry.meaning}</span>
+          <span className="text-readout-dim"> — {entry.meaning}</span>
         </p>
       ))}
     </div>
@@ -235,9 +235,9 @@ function PanelSection({
   children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <section className="border border-zinc-800 bg-black/40">
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-zinc-800 bg-zinc-900/50 px-3 py-2">
-        <h3 className="font-heading text-base tracking-[0.1em] text-zinc-100">
+    <section className="border border-hairline bg-inset/60">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-hairline bg-panel-raised/50 px-3 py-2">
+        <h3 className="font-heading text-base tracking-[0.1em] text-readout-strong">
           {title}
         </h3>
         {subtitle}
@@ -297,7 +297,7 @@ export function PassiveProse({
             <button
               type="button"
               onClick={onDetails}
-              className="shrink-0 chamfer border border-edge px-2 py-1 font-body text-[10px] uppercase tracking-widest text-zinc-300 transition-colors hover:border-edge-strong hover:text-signal"
+              className="shrink-0 chamfer border border-edge px-2 py-1 font-body text-[10px] uppercase tracking-widest text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
             >
               Details
             </button>
@@ -420,7 +420,7 @@ export default function KitDetails({
         title={multi ? "Passives" : "Passive"}
         subtitle={
           subtitleName ? (
-            <span className="font-body text-xs uppercase tracking-[0.14em] text-zinc-400">
+            <span className="font-body text-xs uppercase tracking-[0.14em] text-readout-dim">
               {subtitleName}
             </span>
           ) : undefined

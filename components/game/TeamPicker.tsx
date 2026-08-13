@@ -297,6 +297,14 @@ export default function TeamPicker({
             >
               + Save current
             </button>
+            {/* With nothing saved, the row was a bare label and a dashed `+`,
+                which reads as a missing feature rather than an empty one
+                (Tanveer, 2026-08-13). Say what a preset is for instead. */}
+            {presets.length === 0 ? (
+              <span className="font-body text-[11px] text-readout-muted">
+                Save a team here to load it in any battle.
+              </span>
+            ) : null}
             {presets.length > 0 ? (
               <button
                 type="button"

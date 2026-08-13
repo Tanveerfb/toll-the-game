@@ -520,20 +520,12 @@ describe("rankUpCharacterCards store action", () => {
   });
 });
 
-// Numbers updated by the 2026-08-10 roster stat rebalance (ruling #68) —
-// HP moved to the 3-4k band so time-to-kill is ~3.8 hits instead of ~2.1.
-describe("Chiara/Isolde stat sanity", () => {
-  it("Chiara", () => {
-    expect(chiaraData.atk).toBe(205);
-    expect(chiaraData.def).toBe(155);
-    expect(chiaraData.hp).toBe(3000);
-  });
-  it("Isolde", () => {
-    expect(isoldeData.atk).toBe(195);
-    expect(isoldeData.def).toBe(145);
-    expect(isoldeData.hp).toBe(3100);
-  });
-});
+// The "Chiara/Isolde stat sanity" block that used to sit here asserted
+// `chiaraData.atk === 205` and five more like it — the JSON restated against
+// itself. It could not catch a bug, and it failed on the 2026-08-10 rebalance
+// purely because the numbers moved. Replaced by `tests/kitInvariants.test.ts`,
+// which checks the *bands* those numbers have to sit in and so survives a
+// rebalance while still catching one that goes out of range.
 
 describe("Archive-page description rendering (the actual bug Tanveer caught)", () => {
   it("Chiara's Marked Card: word swaps 'lowers' -> 'greatly lowers' as the rank curve crosses tiers", async () => {
@@ -581,7 +573,13 @@ describe("Archive-page description rendering (the actual bug Tanveer caught)", (
   });
 
   it("Isolde's heal scales up by rank like every other stat-scaled skill (not flat)", () => {
-    expect(isoldeData.skills[0].damageRanked).toEqual([20, 25, 30]);
+    // The invariant, not the values: this used to assert `[20, 25, 30]`, which
+    // pins a balance decision that is Tanveer's to move. What must hold is
+    // that the ladder climbs at all — a flat heal is the bug this guards.
+    const ladder = isoldeData.skills[0].damageRanked;
+    expect(ladder).toHaveLength(3);
+    expect(ladder[1]).toBeGreaterThan(ladder[0]);
+    expect(ladder[2]).toBeGreaterThan(ladder[1]);
   });
 
   it("Rejuvenate resolves to the correct HoT explanation via the shared glossary", async () => {

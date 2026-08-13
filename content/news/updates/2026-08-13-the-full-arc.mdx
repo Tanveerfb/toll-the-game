@@ -1,0 +1,268 @@
+export const metadata = {
+  title: "The Full Arc, and Levels That Count",
+  date: "2026-08-13",
+  summary:
+    "All twelve story parts are playable, the levels you've been earning finally change how your characters fight, Lyra joins for good, and summoning, events, the hand and the battle screen have all been rebuilt.",
+};
+
+This is the largest update the game has had. The story goes from two parts to
+twelve, character investment stops being decorative, cards finally move like
+they weigh something, and most of what you look at on the way there has been
+rebuilt. Read the parts that matter to you — the short version is:
+**everything you have earned now counts for something.**
+
+## Your Level Finally Matters
+
+Levelling, ascension and ultimate ranks have been stored on your account since
+the World Boss update and, until now, changed nothing. A fully invested
+character fought exactly as hard as one pulled a minute ago.
+
+That's fixed.
+
+- **Levelling doubles a stat** across the full climb to Lv60
+- **Ascension adds another full stat's worth** across its six bands, so a
+  maxed character lands near **three times** its base numbers
+- **Ultimate ranks** grow an ultimate by 60% of its own multiplier across six
+  levels — a 500% ultimate reads 500 / 560 / 620 / 680 / 740 / 800
+
+Every stat grows by the same proportion, so nothing about your team's internal
+balance shifts — the tank doesn't quietly overtake the attacker.
+
+Your character pages show this now. The archive's statlines carry **your** level
+and ascension rather than the catalogue's base numbers, with the base printed
+underneath whenever the two differ. The bars still measure against the roster,
+because that comparison is about who a character *is*, not how much you've fed
+them.
+
+## Trial Characters Say So
+
+Story chapters lend you characters you don't own. They always did — that's how
+a new account plays Duke's story without pulling Duke — but nothing said so, and
+an unowned character appearing in your team read as a bug.
+
+Loaned units now carry a **Trial** badge and a line explaining they're yours for
+that battle only. They arrive at the chapter's trial level, so early story
+fights aren't fought with level-1 stats.
+
+**If you own the character, your copy is used instead** — always. There's no
+level at which the loaner is better than the one you've invested in.
+
+## Account Rank and World Level
+
+A new ladder sits above your characters.
+
+- **Account rank** climbs to 60. Story chapters pay rank XP on first clear;
+  the world boss pays on **every** clear, which is what actually moves the bar
+- **Ranking up refills your stamina**
+- **World level** is a difficulty dial. It opens at rank 20 and again at 40,
+  and you can turn it **down** as well as up — a lower setting makes the fight
+  easier and pays proportionally less
+
+Ranks 20 and 40 are **walls**: XP keeps accruing but the rank holds until you
+clear an ascension trial. Nothing is lost while you wait — the moment a wall
+falls, every rank you earned behind it lands at once.
+
+The trials themselves are listed on the events board but **aren't playable
+yet**. They arrive in a later update.
+
+## Three on the Field, One on the Bench
+
+Every battle is now **3 on the field with 1 sub**, on both sides. This was
+always the intended format; only the practice sandbox actually enforced it,
+which is why story and world-boss fights had been fielding four.
+
+Your sub keeps its passive active from the bench, can't be targeted, and steps
+onto the field at the start of a turn after a teammate falls.
+
+Subs no longer appear on the battlefield itself — they're in the **Team** panel
+until they enter. The world boss was tuned against four attackers, so expect it
+to run longer.
+
+## One Team Picker, and Presets
+
+Team selection was three different screens with three different behaviours.
+There's one now, everywhere in the game.
+
+- **Save up to 8 presets**, shared across every mode. Each chip shows its
+  members' portraits, so you pick a team by recognising it
+- **Your last team is remembered** — no more rebuilding it from scratch on
+  every visit. It's saved when you actually launch a battle, not when you're
+  still deciding
+- A preset that can't fully load — a story chapter anchoring a slot, or a
+  character you don't own — **leaves that slot open and tells you why**. It
+  never silently swaps someone in, and never edits the saved preset
+
+## The Whole Story
+
+**Parts 3 through 12 are in.** Twelve parts, adapted from the source chapters.
+
+Two rules shaped them:
+
+**Battles only happen where the source has a fight.** Several chapters are
+scenes end to end — no invented encounters were added to pad them out. A
+scene-only chapter still pays its first-clear rewards and costs no stamina.
+
+**Some fights aren't meant to be won.** Where the source has a fight that ends
+in something other than victory, the battle **ends on its own once the enemy
+drops to 20% health**, the scene takes over, and you're paid as normal. You're
+not being asked to beat someone the story says you can't.
+
+## Turns Play Out One Action at a Time
+
+A real bug, and the fix changed how battles feel.
+
+The engine used to resolve an entire turn instantly and then play the
+animations back. For a moment before the first hit landed, the health bars
+already showed the *end* of the turn — you could see the outcome before you saw
+the fight.
+
+Now each action resolves, plays, and only then hands over to the next one. What
+you see is the actual state of the battle at that moment.
+
+## The Hand Moves Now
+
+Cards used to teleport. You picked one up and it reappeared somewhere else; a
+merge deleted one card and quietly ranked up another; a new turn's hand arrived
+already dealt and already merged.
+
+Every one of those is animated now.
+
+- **Press and hold a card** and everything it can merge with lights up. The
+  rest of the hand dims, so what matters is what you can see
+- **Drag** and the card follows your finger while the rest of the hand opens a
+  space for it
+- **Drag onto a lit card** and it flies into that card, which punches and
+  ranks up
+- **At the start of a turn**, cards deal in one at a time — and when two of
+  them merge on arrival, you actually watch it happen
+
+That last one was never a missing animation. The game merged those cards
+*while dealing them*, so the pair that collided was never on the table to be
+seen. Now the deal plays out properly.
+
+All of it scales with your battle speed setting, and if you have reduced
+motion enabled, cards simply appear where they belong.
+
+## The Battle Screen
+
+Rebuilt around a side rail. Both teams sit in one column with their health,
+gauge and active effects always legible, and the log opens as a drawer instead
+of eating the arena.
+
+- **Uncancellable effects are hidden by default** — they're permanent, so
+  showing them on every unit forever was noise. A toggle brings them back
+- Card frames read their rank at a glance, and ultimates are unmistakable
+
+## Events
+
+The World Boss page is now the **events board**, and Molvarr is one entry on it
+rather than the whole screen. Selecting a fight opens a briefing — the enemy's
+statline, what's on the table, your difficulty setting and your team — before
+you commit any stamina.
+
+The two ascension trials are listed there too, locked, so the rank walls are no
+longer something you hit with no explanation anywhere in the game.
+
+## Summoning, Rebuilt
+
+The whole flow: pulls, the reveal, and how milestones pay out.
+
+- **5 gems for a single, 50 for a multi.** A multi is **11 pulls for the price
+  of 10** — the eleventh is free
+- **Banner progress moves 1:1 with gems spent** — 50 gems, 50 progress
+- **500** hands you a **random featured unit from the banner**
+- **1000** lets you **pick one**
+
+The two milestones are independent. Claiming 1000 no longer wipes out an
+unclaimed 500 — the bar only resets once you've reached the end **and** claimed
+everything on the way. Rewards can't expire out from under you.
+
+The Permanent banner still runs on tickets and is unchanged.
+
+## Rules Clarified
+
+**When the last enemy falls mid-turn**, only the cards that actually need an
+enemy fizzle. Heals, cleanses and buffs still fire. An attacking ultimate isn't
+spent — it **returns to the top of your next draw** and keeps its gauge.
+Ultimates that aren't attacks go off as normal.
+
+**Encounter difficulty now lives on the stage.** Some chapters give a side a
+stat boost or an extra action, and the briefing lists them before you enter.
+Most fights have none.
+
+**Merging has one rule everywhere: same character, same skill, same rank.**
+The Merge button used to be looser than that — it would feed a rank 1 card into
+a rank 2 one — while merging by dragging never allowed it. Two rules for one
+mechanic, and the highlight could only ever show one of them. The strict rule
+won. A spare low-rank card can no longer be sacrificed into a higher one.
+
+## Balance
+
+A roster-wide pass on health and defence. Fights were ending in roughly **two
+hits** on a focused character — fast enough that taunts, damage reduction,
+heals and cleanses rarely got to matter.
+
+- **Health roughly doubled** across the roster, into a 2,900–4,000 band
+- **Defence up about 60%**
+- **Attack is unchanged** — every skill multiplier is tuned against it
+
+Skills that scale off health or defence were **brought down to compensate**, and
+attack-scaled heals were raised, so nobody's damage or healing changed position
+relative to anyone else's. Enemies were scaled to match.
+
+The result is closer to four hits. Expect longer fights and more room for a
+support kit to earn its slot.
+
+## Starting Out
+
+The game used to say nothing to a new player. You cleared the first chapter and
+it went quiet, with a thousand gems in your wallet nobody had mentioned and a
+stamina bar whose purpose was never stated.
+
+**Bureau Orders** are a short list of starter objectives on the home screen.
+Each one names somewhere to go, says why, and pays you for getting there —
+clear a chapter, summon, raise someone to level 5, save a team, beat Molvarr,
+ascend, reach rank 5. The list retires itself once you've claimed everything,
+and a gold count on the TOLL wordmark tells you when something's waiting.
+
+**Lyra joins you for good.** She has been fighting beside you on loan since
+Part 2 began. Clear **Part 2, Chapter 2** and she stays — a permanent second
+character, so the early stretch isn't fought with Duke alone. If you already
+summoned her, you get an ultimate rank instead.
+
+**Your first battle now explains itself.** Four short prompts cover the hand,
+merging, how many actions you get, and the unit sitting on your bench. They
+appear when the thing they describe is actually true, they never block a tap,
+and doing the thing dismisses them. **Skip all** turns them off; *Show again*
+under Account brings them back.
+
+## A New Look
+
+The interface has one colour language now, applied across the archive, news,
+story, home, the navigation bar, your profile and the battle screen. Cyan is
+reserved for the interface itself; the five element colours belong to
+characters and nothing else.
+
+Other things you'll notice:
+
+- **Home** opens on where you left off, not a second copy of the menu
+- **The archive** is where your roster lives, showing level, ascension and
+  ultimate rank per character. Units you don't own are hidden until you ask
+  for them
+- **Your profile** carries account rank and progress, with inventory and
+  account settings behind their own buttons
+- **Locked story chapters are redacted rather than hidden** — you can see how
+  much is ahead of you without the titles spoiling it
+
+## Fixes
+
+- **Cloud saves were only carrying half your account.** Account rank, world
+  level, saved teams and your last team never left the device they were made
+  on, so signing in elsewhere started you at rank 1 with no presets. All of it
+  travels with the save now
+- Description text corrected across a dozen kits: missing durations, effects
+  naming the wrong target, "1 ultimate gauge(s)", and a heal that claimed to
+  cleanse enemies
+- The Growth window opening *behind* the page it was launched from
+- A story boss rendering with no artwork at all
+- Character pages showing base stats regardless of your investment

@@ -32,11 +32,11 @@
     },
     {
       "skillName": "Severed Ledger",
-      "description": "Does damage equal to ATK-scaled to all enemies; depletes [lowerUltGauge.value] ultimate gauge(s).",
+      "description": "Does damage equal to HP-scaled to all enemies; depletes [lowerUltGauge.value] ultimate gauge(s).",
       "characterId": "isolde",
       "type": "attack",
-      "statMultiplier": "atk",
-      "damageRanked": [280, 340, 400],
+      "statMultiplier": "hp",
+      "damageRanked": [16, 20, 25],
       "mechanics": [
         {
           "type": "aoe"
@@ -53,7 +53,7 @@
     "description": "Grants all allies Debuff Immunity and raises their basic stats for 3 turns.",
     "characterId": "isolde",
     "type": "ultimate",
-    "statMultiplier": "atk",
+    "statMultiplier": "hp",
     "damage": 0,
     "mechanics": [
       {

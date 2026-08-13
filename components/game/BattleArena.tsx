@@ -29,9 +29,10 @@ import TeamUnitTile, {
   type TileFx,
 } from "@/components/game/battle/TeamUnitTile";
 import TeamDetailsList from "@/components/game/battle/TeamDetailsList";
+import BattleCoach from "@/components/game/battle/BattleCoach";
 import UnitDetailPanel from "@/components/game/battle/UnitDetailPanel";
 import BattleLogDrawer from "@/components/game/battle/BattleLogDrawer";
-import { formatBattleLogMarkdown } from "@/lib/game/battleLogMarkdown";
+import { buildBattleReport } from "@/lib/game/battleReport";
 import { useBattleSequencer } from "@/hooks/useBattleSequencer";
 import DuelWaitingOverlay from "@/components/game/battle/DuelWaitingOverlay";
 import { publishDuelResult } from "@/lib/duel/client";
@@ -48,6 +49,7 @@ function RailButton({
   tone = "default",
   active,
   onClick,
+  tutorialAnchor,
   children,
 }: {
   label: string;
@@ -55,6 +57,9 @@ function RailButton({
   tone?: "default" | "danger";
   active?: boolean;
   onClick: () => void;
+  /** Marks this control as something a coach mark can point at
+   *  (lib/tutorial/steps.ts). */
+  tutorialAnchor?: string;
   children: React.ReactNode;
 }): React.JSX.Element {
   const toneCls =
@@ -67,6 +72,7 @@ function RailButton({
       onClick={onClick}
       title={title ?? label}
       aria-label={title ?? label}
+      data-tutorial={tutorialAnchor}
       className={`flex w-full cursor-pointer flex-col items-center gap-1 border px-1 py-1.5 transition-colors ${
         active
           ? "border-signal bg-signal/10 text-signal"
@@ -351,22 +357,33 @@ export default function BattleArena({
   const saveBattleLog = async () => {
     const now = new Date();
     const stamp = now.toISOString().replace(/[:T]/g, "-").slice(0, 19);
-    const content = formatBattleLogMarkdown({
+    // JSON, not prose: these are saved to be analysed rather than read
+    // (Tanveer, 2026-08-13). `buildBattleReport` precomputes the aggregates
+    // and flags the anomalies so a reading doesn't start with arithmetic.
+    const opening = useGameStore.getState().openingTeams;
+    const report = buildBattleReport({
       result: battlePhase,
       turn: currentTurn,
       playerTurns,
       enemyTurns,
       playerTeam,
       enemyTeam,
+      openingPlayerTeam: opening?.playerTeam,
+      openingEnemyTeam: opening?.enemyTeam,
       events: battleEvents,
       rawLog: battleLog,
-      timestamp: now.toString(),
+      timestamp: now.toISOString(),
+      context: contextLabel,
+      fieldCap: playerTeam.filter((u) => !u.isSub).length,
     });
     try {
       const res = await fetch("/api/battle-log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: `battle_${stamp}`, content }),
+        body: JSON.stringify({
+          filename: `battle_${stamp}.json`,
+          content: JSON.stringify(report, null, 2),
+        }),
       });
       const data = await res.json();
       setLogSaveResult(res.ok ? `Saved to ${data.saved}` : "Save failed");
@@ -914,6 +931,7 @@ export default function BattleArena({
           <RailButton
             label="Team"
             title="Team details"
+            tutorialAnchor="team"
             onClick={() => setRosterSide("player")}
           >
             <RailStack team={playerTeam} presentedHp={presentedHp} />
@@ -1095,6 +1113,11 @@ export default function BattleArena({
           </Card>
         </div>
       ) : null}
+
+      {/* First-battle coach marks. Portals to the body and dims without
+          disabling — see components/game/battle/BattleCoach.tsx. Rendered last
+          so nothing in the arena can paint over it. */}
+      <BattleCoach />
 
       {detailUnit ? (
         <UnitDetailPanel

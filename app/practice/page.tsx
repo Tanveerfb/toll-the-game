@@ -15,23 +15,22 @@ export default function Practice() {
 
   if (isInitializing) {
     return (
-      <main className="relative min-h-screen bg-zinc-950 text-zinc-100">
+      <main className="relative min-h-screen bg-void text-readout">
         <TeamSelect onStart={startCustomBattle} />
       </main>
     );
   }
 
   // Single-viewport battle HUD: arena fills the screen, deck docked at the
-  // bottom, no page scroll (STATUS #20)
+  // bottom, no page scroll (STATUS #20).
+  //
+  // This used to paint an amber radial over a hand-written gradient
+  // (`rgba(245,158,11,…)`, `#09090b`, `#111827`) plus its own grid overlay —
+  // the pre-token palette written as inline styles, which is why the class
+  // sweep on 2026-08-13 walked straight past it. `.terminal-grid` is the same
+  // 44px ground every other screen stands on.
   return (
-    <main
-      className="relative flex screen-below-nav flex-col overflow-hidden text-zinc-100"
-      style={{
-        backgroundImage:
-          "radial-gradient(70% 50% at 50% 0%, rgba(245,158,11,0.22), transparent 72%), linear-gradient(140deg, #09090b 0%, #111827 52%, #0a0a0a 100%)",
-      }}
-    >
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-size-[36px_36px]" />
+    <main className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout">
       <BattleArena />
       <Deck />
     </main>

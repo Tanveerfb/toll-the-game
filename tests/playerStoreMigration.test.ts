@@ -55,6 +55,8 @@ describe("migratePlayerState — v1 (inventory.gems) to v2 (currencies split)", 
       account: { rank: 1, xp: 0, clearedWalls: [] },
       worldLevel: 1,
       stamina: { current: 80, updatedAt: 12345 },
+      stats: { pulls: 0, bossClears: 0 },
+      claimedOrders: {},
       pity: { limited: { bannerId: "debut-2026-08", bar: 30, claimed300: false }, permanent: { bar: 0 } },
     };
     const result = migratePlayerState(v4, CURRENT_PLAYER_STATE_VERSION);
@@ -219,6 +221,8 @@ describe("migratePlayerState — defensive defaults for missing fields regardles
       account: { rank: 21, xp: 120, clearedWalls: [20] },
       worldLevel: 2,
       stamina: { current: 80, updatedAt: 12345 },
+      stats: { pulls: 22, bossClears: 3 },
+      claimedOrders: { "first-chapter": true },
       pity: {
         limited: { bannerId: "debut-2026-08", bar: 30, claimedFirst: false, claimedFinal: false },
         permanent: { bar: 0, claimedFinal: false },
@@ -281,5 +285,49 @@ describe("migratePlayerState — v5 to v6 (milestone laps)", () => {
     expect(result.roster).toEqual(["duke", "sara"]);
     expect(result.account).toEqual({ rank: 21, xp: 120, clearedWalls: [20] });
     expect(result.currencies.gems).toBe(500);
+  });
+});
+
+describe("migratePlayerState — v6 to v7 (Bureau Orders)", () => {
+  /** A v6 save: everything current except the two new fields. */
+  const v6 = {
+    uid: null,
+    roster: ["duke", "sara"],
+    currencies: { gems: 500, coin: 10000, permanentTicket: 5 },
+    inventory: { sea_monster_eye: 3 },
+    characters: { duke: { level: 30, ascension: 2, xp: 20, ultLevel: 2 } },
+    presets: [],
+    lastTeam: ["duke"],
+    account: { rank: 21, xp: 120, clearedWalls: [20] },
+    worldLevel: 2,
+    stamina: { current: 80, updatedAt: 12345 },
+    pity: {
+      limited: { bannerId: null, bar: 0, claimedFirst: false, claimedFinal: false },
+      permanent: { bar: 0, claimedFinal: false },
+    },
+  };
+
+  it("starts the board clean", () => {
+    const result = migratePlayerState(v6, 6);
+    expect(result.claimedOrders).toEqual({});
+    expect(result.stats).toEqual({ pulls: 0, bossClears: 0 });
+  });
+
+  it("touches nothing else", () => {
+    const result = migratePlayerState(v6, 6);
+    expect(result.roster).toEqual(["duke", "sara"]);
+    expect(result.characters).toEqual(v6.characters);
+    expect(result.account).toEqual(v6.account);
+    expect(result.pity).toEqual(v6.pity);
+  });
+
+  it("lets a returning save claim what it already earned", () => {
+    // A save at rank 21 with an ascended character has done the work those
+    // orders describe. They arrive complete and claimable, which is the right
+    // outcome — the reward is owed. `bossClears` is the exception: nothing
+    // ever recorded it, so that order is earned again rather than invented.
+    const result = migratePlayerState(v6, 6);
+    expect(result.stats.bossClears).toBe(0);
+    expect(result.account.rank).toBe(21);
   });
 });

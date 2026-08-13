@@ -24,6 +24,14 @@ export interface CharacterBrowserItem {
 
 interface CharacterBrowserProps {
   characters: CharacterBrowserItem[];
+  /**
+   * Whether these characters can be owned at all.
+   *
+   * `false` for the NPC index: story-only kits are never acquirable, so
+   * Locked badges, the grayscale treatment, the level/ascension pip and the
+   * owned-only filter are all answering a question that doesn't apply to them.
+   */
+  ownership?: boolean;
 }
 
 const COLOR_OPTIONS: Array<{ id: "all" | CharacterColor; label: string }> = [
@@ -142,6 +150,7 @@ function StatBar({
 
 export default function CharacterBrowser({
   characters,
+  ownership = true,
 }: CharacterBrowserProps): React.JSX.Element {
   const [searchValue, setSearchValue] = React.useState("");
   const [selectedColor, setSelectedColor] = React.useState<
@@ -159,12 +168,24 @@ export default function CharacterBrowser({
 
   const roster = usePlayerStore((s) => s.roster);
   const characterProgress = usePlayerStore((s) => s.characters);
-  const hasHydrated = usePlayerStore((s) => s.hasHydrated);
+  const hasHydratedStore = usePlayerStore((s) => s.hasHydrated);
   // The archive took over the roster listing from `/profile`, so by default it
   // shows what you own. Unowned units are one click away, not gone.
-  const showUnowned = useSettingsStore((s) => s.showUnownedCharacters);
+  const showUnownedSetting = useSettingsStore((s) => s.showUnownedCharacters);
   const setShowUnowned = useSettingsStore((s) => s.setShowUnownedCharacters);
   const ownedIds = React.useMemo(() => new Set(roster), [roster]);
+
+  // The NPC index lists story-only kits, which **cannot be acquired**. Running
+  // them through the ownership treatment marked every one Locked and greyed
+  // them out — a permanent lock on something that was never a lock, and the
+  // owned-only default hid the entire page behind a toggle (Tanveer,
+  // 2026-08-13).
+  //
+  // Collapsing the two flags here rather than branching at every use keeps the
+  // rest of the component honest: with ownership off, nothing is unowned, so
+  // no filter runs, no toggle renders and no tile dims.
+  const showUnowned = ownership ? showUnownedSetting : true;
+  const hasHydrated = ownership ? hasHydratedStore : false;
 
   const allTags = React.useMemo(() => {
     const s = new Set<string>();
@@ -331,15 +352,18 @@ export default function CharacterBrowser({
           Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
         </Toggle>
         {/* Owned-only is the default view, so the control that changes it says
-            what it would reveal rather than what it currently is. */}
-        <Toggle
-          active={showUnowned}
-          onClick={() => setShowUnowned(!showUnowned)}
-        >
-          {showUnowned
-            ? "Owned only"
-            : `Show locked${hiddenByOwnership > 0 ? ` (${hiddenByOwnership})` : ""}`}
-        </Toggle>
+            what it would reveal rather than what it currently is. Absent
+            entirely where nothing can be owned. */}
+        {ownership ? (
+          <Toggle
+            active={showUnowned}
+            onClick={() => setShowUnowned(!showUnowned)}
+          >
+            {showUnowned
+              ? "Owned only"
+              : `Show locked${hiddenByOwnership > 0 ? ` (${hiddenByOwnership})` : ""}`}
+          </Toggle>
+        ) : null}
         {(activeFilterCount > 0 ||
           selectedColor !== "all" ||
           sortField !== "none" ||

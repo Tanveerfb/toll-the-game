@@ -11,6 +11,7 @@ import { useSettingsStore } from "@/store/settingsStore";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { firebaseEnabled } from "@/lib/firebase";
+import { TUTORIAL_STEPS } from "@/lib/tutorial/steps";
 
 /**
  * Account management: who you're signed in as, what that does for your save,
@@ -51,17 +52,27 @@ export default function AccountModal({
   const roster = usePlayerStore((s) => s.roster);
   const avatarId = useSettingsStore((s) => s.avatarCharacterId);
   const setAvatarId = useSettingsStore((s) => s.setAvatarCharacterId);
+  const seenTutorialSteps = useSettingsStore((s) => s.seenTutorialSteps);
+  const tutorialDismissed = useSettingsStore((s) => s.tutorialDismissed);
+  const resetTutorial = useSettingsStore((s) => s.resetTutorial);
   const [signingOut, setSigningOut] = React.useState(false);
+
+  const tutorialSeenCount = TUTORIAL_STEPS.filter(
+    (step) => seenTutorialSteps[step.id],
+  ).length;
 
   const displayName =
     user?.displayName || user?.email?.split("@")[0] || "Guest";
 
   const provider = user?.providerData?.[0]?.providerId;
+  // Google is the only method offered since 2026-08-13, but `password` stays
+  // mapped: an account created before that still signs in and should see what
+  // it actually used rather than a raw provider id.
   const providerLabel =
     provider === "google.com"
       ? "Google"
       : provider === "password"
-        ? "Email & password"
+        ? "Email & password (legacy)"
         : provider
           ? provider
           : "—";
@@ -179,6 +190,29 @@ export default function AccountModal({
               }
             />
           ) : null}
+        </section>
+
+        <section>
+          <p className="mb-1 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+            Tutorial
+          </p>
+          <div className="flex items-center justify-between gap-3 py-2">
+            <span className="min-w-0 font-body text-[11px] leading-snug text-readout-muted">
+              {tutorialDismissed
+                ? "Battle hints are turned off."
+                : `${tutorialSeenCount} of ${TUTORIAL_STEPS.length} battle hints seen.`}
+            </span>
+            {/* The way back from Skip All. Without it that button is one-way,
+                and a playtester needs to see these more than once. */}
+            <button
+              type="button"
+              onClick={resetTutorial}
+              disabled={!tutorialDismissed && tutorialSeenCount === 0}
+              className="shrink-0 border border-edge px-3 py-1.5 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-signal hover:text-signal disabled:opacity-40"
+            >
+              Show again
+            </button>
+          </div>
         </section>
 
         <section className="flex flex-wrap gap-2 border-t border-hairline pt-4">

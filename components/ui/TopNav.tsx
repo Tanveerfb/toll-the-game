@@ -20,8 +20,11 @@ import { GAME_ROUTES, isRouteActive } from "@/lib/nav/routes";
 import { useAuth } from "@/hooks/AuthProvider";
 import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
+import { useStoryStore } from "@/store/storyStore";
 import { getCurrentStamina, STAMINA_CAP } from "@/lib/game/stamina";
 import { rankProgress } from "@/lib/game/accountRank";
+import { claimableCount, evaluateOrders } from "@/lib/game/orders";
+import { firebaseEnabled } from "@/lib/firebase";
 
 /** Never resubscribes — it exists only so the server snapshot and the client
  *  snapshot differ, which is how a client-only branch stays hydration-safe. */
@@ -100,6 +103,29 @@ export default function TopNav() {
   const worldLevel = usePlayerStore((s) => s.worldLevel);
   const battlePhase = useGameStore((s) => s.battlePhase);
 
+  const stats = usePlayerStore((s) => s.stats);
+  const presets = usePlayerStore((s) => s.presets);
+  const roster = usePlayerStore((s) => s.roster);
+  const characters = usePlayerStore((s) => s.characters);
+  const claimedOrders = usePlayerStore((s) => s.claimedOrders);
+  const completed = useStoryStore((s) => s.completed);
+  const storyHydrated = useStoryStore((s) => s.hasHydrated);
+
+  const orderBoard = React.useMemo(
+    () =>
+      evaluateOrders({
+        completedChapters: completed,
+        pulls: stats.pulls,
+        bossClears: stats.bossClears,
+        presetsSaved: presets.length,
+        rosterSize: roster.length,
+        accountRank: account.rank,
+        characters,
+        claimed: claimedOrders,
+      }),
+    [completed, stats, presets.length, roster.length, account.rank, characters, claimedOrders],
+  );
+
   const now = React.useSyncExternalStore(
     subscribeClock,
     getClockSnapshot,
@@ -120,6 +146,17 @@ export default function TopNav() {
   // until the ascension trial for this band is cleared. A full bar that never
   // moves would read as a bug, so the walled case gets its own marker.
   const progress = rankProgress(account, account.clearedWalls);
+
+  // Gated on `ready` for the same reason as the resource strip: both stores
+  // rehydrate from localStorage, and a badge that appears and then vanishes
+  // reads as a bug.
+  //
+  // Also gated on being signed in: claiming needs an account, and a count on
+  // every screen that leads to a locked panel is nagging, not enticing. The
+  // pitch belongs on the home panel, once.
+  const canClaimOrders = !firebaseEnabled || !!user;
+  const readyOrders =
+    ready && storyHydrated && canClaimOrders ? claimableCount(orderBoard) : 0;
   const rankPercent = progress
     ? Math.min(100, (progress.current / progress.required) * 100)
     : 100;
@@ -138,9 +175,22 @@ export default function TopNav() {
             link beside it doing exactly the same thing. */}
         <Link
           href="/"
-          className="shrink-0 font-heading text-xl tracking-[0.2em] text-signal"
+          title={
+            readyOrders > 0
+              ? `${readyOrders} Bureau order${readyOrders > 1 ? "s" : ""} ready to claim`
+              : "Home"
+          }
+          className="relative shrink-0 font-heading text-xl tracking-[0.2em] text-signal"
         >
           TOLL
+          {/* Orders live on the home screen, so the count rides the one link
+              that goes there. Without it a claimable reward is invisible from
+              every other screen. */}
+          {readyOrders > 0 ? (
+            <span className="absolute -right-2 -top-1 flex h-3.5 min-w-3.5 items-center justify-center bg-el-light px-1 font-body text-[9px] font-bold tabular-nums leading-none text-void">
+              {readyOrders}
+            </span>
+          ) : null}
         </Link>
         <div className="hud-scroll flex min-w-0 items-center gap-1 overflow-x-auto">
           {GAME_ROUTES.filter((route) => route.href !== "/").map((route) => {

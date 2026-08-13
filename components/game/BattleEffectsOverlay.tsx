@@ -168,7 +168,7 @@ export default function BattleEffectsOverlay({
             animate={{ opacity: 0.18 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22 }}
-            className="absolute inset-0 bg-linear-to-b from-amber-300/30 via-transparent to-transparent"
+            className="absolute inset-0 bg-linear-to-b from-el-light/30 via-transparent to-transparent"
           />
         ) : null}
       </AnimatePresence>
@@ -214,7 +214,7 @@ export default function BattleEffectsOverlay({
                 className={`rounded border px-3 py-2 font-body text-xs uppercase tracking-[0.12em] shadow-lg ${
                   effect.kind === "status"
                     ? "border-sky-300/60 bg-sky-900/65 text-sky-100"
-                    : "border-zinc-500/70 bg-zinc-900/70 text-zinc-200"
+                    : "border-edge/70 bg-panel/70 text-readout-strong"
                 }`}
               >
                 {effect.text}

@@ -5,14 +5,13 @@ import { firebaseEnabled, loadFirebase } from "@/lib/firebase";
 // TYPE-ONLY: erased at compile time. A value import of firebase/auth here
 // would pull the SDK back into the shared chunk and undo the lazy loading.
 import type { User } from "firebase/auth";
-import { usePlayerStore, PlayerState, migratePlayerState, CURRENT_PLAYER_STATE_VERSION } from "@/store/playerStore";
+import { usePlayerStore, PlayerState, migratePlayerState } from "@/store/playerStore";
+import { cloudDocument, cloudPatch } from "@/lib/game/cloudSave";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   loginWithGoogle: () => Promise<void>;
-  loginWithEmail: (e: string, p: string) => Promise<void>;
-  signupWithEmail: (e: string, p: string) => Promise<void>;
   logout: () => Promise<void>;
   saveToCloud: (state: Partial<PlayerState>) => Promise<void>;
 }
@@ -89,24 +88,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             skipSyncRef.current = true;
             setPlayerState({
               uid: currentUser.uid,
-              roster: migrated.roster,
-              currencies: migrated.currencies,
-              inventory: migrated.inventory,
-              characters: migrated.characters,
-              stamina: migrated.stamina,
-              pity: migrated.pity,
+              ...cloudPatch(data, migrated),
             });
           } else {
-            const state = usePlayerStore.getState();
-            await setDoc(docRef, {
-              roster: state.roster,
-              currencies: state.currencies,
-              inventory: state.inventory,
-              characters: state.characters,
-              stamina: state.stamina,
-              pity: state.pity,
-              version: CURRENT_PLAYER_STATE_VERSION,
-            });
+            await setDoc(docRef, cloudDocument(usePlayerStore.getState()));
             skipSyncRef.current = true;
             setPlayerState({ uid: currentUser.uid });
           }
@@ -152,13 +137,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { doc, setDoc } = dbApi;
     try {
       const docRef = doc(db, "users", user.uid);
-      const { roster, currencies, inventory, characters, stamina, pity } = {
-        ...usePlayerStore.getState(),
-        ...state,
-      };
       await setDoc(
         docRef,
-        { roster, currencies, inventory, characters, stamina, pity, version: CURRENT_PLAYER_STATE_VERSION },
+        cloudDocument({ ...usePlayerStore.getState(), ...state }),
         { merge: true },
       );
     } catch (e) {
@@ -166,9 +147,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  // Auto-sync: any gameplay action that changes roster/currencies/inventory
-  // /characters/stamina/pity (spending stamina, feeding a manual, ascending,
-  // world-boss rewards, etc.) writes to Firestore a beat after it settles.
+  // Auto-sync: any gameplay action that changes a synced field (see
+  // CLOUD_FIELDS — spending stamina, feeding a manual, ascending, world-boss
+  // rewards, ranking up, claiming an order) writes to Firestore a beat after
+  // it settles.
   // Without this, those changes only ever reached the cloud on next login —
   // a session that ended without logging out first lost all mid-session
   // progress. Debounced so a burst of changes (e.g. grant + immediate feed)
@@ -205,19 +187,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return fb;
   };
 
+  // Google is the only sign-in method (Tanveer, 2026-08-13). Email/password
+  // was removed rather than hidden: leaving `signInWithEmailAndPassword`
+  // wired up would keep a second account system alive with no UI, no password
+  // reset and no route to it, which is a liability rather than a feature.
   const loginWithGoogle = async () => {
     const { auth, authApi } = await requireFirebase();
     await authApi.signInWithPopup(auth, new authApi.GoogleAuthProvider());
-  };
-
-  const loginWithEmail = async (e: string, p: string) => {
-    const { auth, authApi } = await requireFirebase();
-    await authApi.signInWithEmailAndPassword(auth, e, p);
-  };
-
-  const signupWithEmail = async (e: string, p: string) => {
-    const { auth, authApi } = await requireFirebase();
-    await authApi.createUserWithEmailAndPassword(auth, e, p);
   };
 
   const logout = async () => {
@@ -227,7 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithGoogle, loginWithEmail, signupWithEmail, logout, saveToCloud }}>
+    <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout, saveToCloud }}>
       {children}
     </AuthContext.Provider>
   );

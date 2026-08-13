@@ -24,6 +24,8 @@ import {
 } from "@/lib/gacha/cost";
 import { resolvePullResult } from "@/lib/gacha/dupes";
 import type { StoryPayout } from "@/lib/game/storyRewards";
+import { evaluateOrder, getOrder } from "@/lib/game/orders";
+import { firebaseEnabled } from "@/lib/firebase";
 import { grantAccountXp } from "@/lib/game/accountRank";
 import {
   MIN_WORLD_LEVEL,
@@ -86,6 +88,15 @@ export interface PlayerState {
    *  unlocked. Adjustable down — see lib/game/worldLevel.ts. */
   worldLevel: number;
   stamina: { current: number; updatedAt: number };
+  /**
+   * Lifetime counters, kept because Bureau Orders ask questions the rest of the
+   * state can't answer: nothing else records that a boss was ever beaten (the
+   * drops are indistinguishable from any other materials) or how many times
+   * the player has pulled.
+   */
+  stats: { pulls: number; bossClears: number };
+  /** Order ids whose reward has been collected. See lib/game/orders.ts. */
+  claimedOrders: Record<string, boolean>;
   pity: {
     limited: LimitedPityState;
     permanent: PermanentPityState;
@@ -118,6 +129,17 @@ export interface PlayerState {
   claimLimitedFirst: () => ResolvedPullOutcome | false;
   claimLimitedFinal: (characterId: string) => ResolvedPullOutcome | false;
   claimPermanentFinal: (characterId: string) => ResolvedPullOutcome | false;
+  /**
+   * Collect a Bureau Order's reward.
+   *
+   * Takes the cleared-chapter map because story progress lives in
+   * `storyStore`, and the check is re-run here rather than trusted from the
+   * panel — the button being visible is a UI fact, not a permission.
+   */
+  claimOrder: (
+    orderId: string,
+    completedChapters: Record<string, boolean>,
+  ) => boolean;
 }
 
 /** What `migratePlayerState` actually produces — plain persisted data, none
@@ -151,6 +173,7 @@ export type PersistedPlayerData = Omit<
   | "claimLimitedFirst"
   | "claimLimitedFinal"
   | "claimPermanentFinal"
+  | "claimOrder"
 >;
 
 export const DEFAULT_PITY = {
@@ -181,6 +204,8 @@ const defaultState = {
   account: { rank: 1, xp: 0, clearedWalls: [] as number[] },
   worldLevel: 1,
   stamina: { current: STAMINA_CAP, updatedAt: Date.now() },
+  stats: { pulls: 0, bossClears: 0 },
+  claimedOrders: {} as Record<string, boolean>,
   pity: DEFAULT_PITY,
 };
 
@@ -217,6 +242,8 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     worldLevel: 1,
     stamina: { current: STAMINA_CAP, updatedAt: Date.now() },
     currencies: { gems: 1000, coin: 0, permanentTicket: 0 },
+    stats: { pulls: 0, bossClears: 0 },
+    claimedOrders: {} as Record<string, boolean>,
     pity: DEFAULT_PITY,
     ...state,
   };
@@ -324,10 +351,32 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     };
   }
 
+  if (version < 7) {
+    // v6 → v7: Bureau Orders. `claimedOrders` and the lifetime `stats`
+    // counters are purely additive — the defensive baseline above already
+    // supplied both — so an existing save simply starts the board fresh.
+    //
+    // Deliberately NOT back-filled from existing progress: a returning save
+    // that has already cleared chapters and beaten the boss will find those
+    // orders sitting complete and claimable on the first visit, which is the
+    // right outcome (the work was done, the reward is owed). `bossClears`
+    // starts at 0 because nothing ever recorded it, so that one order is
+    // earned again — the alternative is inventing a number.
+    state = {
+      ...state,
+      stats: (state.stats as PlayerState["stats"] | undefined) ?? {
+        pulls: 0,
+        bossClears: 0,
+      },
+      claimedOrders:
+        (state.claimedOrders as Record<string, boolean> | undefined) ?? {},
+    };
+  }
+
   return state as unknown as PersistedPlayerData;
 }
 
-export const CURRENT_PLAYER_STATE_VERSION = 6;
+export const CURRENT_PLAYER_STATE_VERSION = 7;
 
 export const usePlayerStore = create<PlayerState>()(
   persist(
@@ -420,6 +469,12 @@ export const usePlayerStore = create<PlayerState>()(
         // the materials map, and anything left in it turns into an inventory
         // key that nothing displays and nothing spends.
         const { coin, gems, permanentTicket, accountXp, ...materials } = rewards;
+        // Counted here rather than at battle end because this is the call that
+        // only ever happens on a real clear. Nothing else in the state records
+        // that a boss was beaten — the drops look like any other materials.
+        set((state) => ({
+          stats: { ...state.stats, bossClears: state.stats.bossClears + 1 },
+        }));
         get().grantMaterials(materials);
         if (coin || gems || permanentTicket) get().grantCurrency({ coin, gems, permanentTicket });
         if (accountXp) get().grantAccountXpAction(accountXp);
@@ -549,6 +604,7 @@ export const usePlayerStore = create<PlayerState>()(
           inventory,
           roster,
           characters,
+          stats: { ...state.stats, pulls: state.stats.pulls + count },
           pity: { ...state.pity, limited: limitedPity },
         });
         return results;
@@ -583,6 +639,8 @@ export const usePlayerStore = create<PlayerState>()(
           currencies: { ...state.currencies, permanentTicket: state.currencies.permanentTicket - cost },
           roster,
           characters,
+          // A pull is a pull, whichever banner paid for it.
+          stats: { ...state.stats, pulls: state.stats.pulls + results.length },
           pity: { ...state.pity, permanent: permanentPity },
         });
         return results;
@@ -680,6 +738,71 @@ export const usePlayerStore = create<PlayerState>()(
           },
         });
         return { kind: "character", characterId, ...resolution };
+      },
+
+      claimOrder: (orderId, completedChapters) => {
+        const state = get();
+        const order = getOrder(orderId);
+        if (!order) return false;
+
+        // Claiming needs an account (Tanveer, 2026-08-13). Enforced here and
+        // not only in the panel: `uid` is set by AuthProvider on sign-in, so
+        // this is the same fact the UI branches on, checked where the reward
+        // is actually granted. `firebaseEnabled` is false on a build with no
+        // auth configured, where there is nothing to sign in to and gating
+        // would make the board permanently unclaimable.
+        if (firebaseEnabled && state.uid === null) return false;
+
+        // Re-checked here, not trusted from the panel. The button appearing is
+        // a rendering decision; this is the only place the reward is real.
+        const progress = evaluateOrder(order, {
+          completedChapters,
+          pulls: state.stats.pulls,
+          bossClears: state.stats.bossClears,
+          presetsSaved: state.presets.length,
+          rosterSize: state.roster.length,
+          accountRank: state.account.rank,
+          characters: state.characters,
+          claimed: state.claimedOrders,
+        });
+        if (!progress.claimable) return false;
+
+        // Marked before the payout: `grantStoryRewards` fans out into three
+        // more `set` calls, and claiming has to be recorded even if one of
+        // those is ever made to fail.
+        set({ claimedOrders: { ...state.claimedOrders, [orderId]: true } });
+
+        // A character reward runs through the same resolution a pull does, so
+        // a player who already owns them gets the dupe's ult rank rather than
+        // nothing at all (Lyra is reachable from the banner before Part 2 is
+        // finished).
+        if (order.reward.character) {
+          const characterId = order.reward.character;
+          const resolution = resolvePullResult(
+            characterId,
+            state.roster,
+            state.characters,
+          );
+          const existing = defaultCharacterProgress(state.characters, characterId);
+          set((current) => ({
+            roster: resolution.isNew
+              ? [...current.roster, characterId]
+              : current.roster,
+            characters: {
+              ...current.characters,
+              [characterId]: { ...existing, ultLevel: resolution.ultLevel },
+            },
+          }));
+        }
+
+        get().grantStoryRewards({
+          gems: order.reward.gems ?? 0,
+          coin: order.reward.coin ?? 0,
+          permanentTicket: order.reward.permanentTicket ?? 0,
+          materials: order.reward.materials ?? {},
+          accountXp: 0,
+        });
+        return true;
       },
     }),
     {

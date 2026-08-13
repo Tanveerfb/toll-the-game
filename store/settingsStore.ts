@@ -51,6 +51,22 @@ interface SettingsState {
    */
   avatarCharacterId: string | null;
   setAvatarCharacterId: (id: string | null) => void;
+  /**
+   * Battle coach marks already shown, by step id (lib/tutorial/steps.ts).
+   *
+   * Here and not in `playerStore` for the same reason as the avatar: that
+   * store's cloud sync writes a fixed field list, and "has seen the merge
+   * hint" is a property of this device, not of the account. Seeing it once
+   * more on a new phone is a smaller cost than a schema bump.
+   */
+  seenTutorialSteps: Record<string, boolean>;
+  markTutorialStepSeen: (stepId: string) => void;
+  /** Skip All: no coach marks, ever, until this is turned back off. */
+  tutorialDismissed: boolean;
+  setTutorialDismissed: (dismissed: boolean) => void;
+  /** Show them again from the start — the way back from Skip All, and what a
+   *  playtester needs after seeing them once. */
+  resetTutorial: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -75,6 +91,23 @@ export const useSettingsStore = create<SettingsState>()(
       setShowUnownedCharacters: (show) => set({ showUnownedCharacters: show }),
       avatarCharacterId: null,
       setAvatarCharacterId: (id) => set({ avatarCharacterId: id }),
+      seenTutorialSteps: {},
+      markTutorialStepSeen: (stepId) =>
+        set((state) =>
+          state.seenTutorialSteps[stepId]
+            ? state
+            : {
+                seenTutorialSteps: {
+                  ...state.seenTutorialSteps,
+                  [stepId]: true,
+                },
+              },
+        ),
+      tutorialDismissed: false,
+      setTutorialDismissed: (dismissed) =>
+        set({ tutorialDismissed: dismissed }),
+      resetTutorial: () =>
+        set({ seenTutorialSteps: {}, tutorialDismissed: false }),
     }),
     { name: "toll-settings" },
   ),

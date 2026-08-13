@@ -39,7 +39,7 @@ export default function DuelToggle(): React.JSX.Element | null {
       className={`shrink-0 border px-2 py-0.5 font-body text-[10px] uppercase tracking-[0.14em] transition-colors ${
         duelMode
           ? "border-violet-400 text-violet-200"
-          : "border-zinc-800 text-zinc-600 hover:text-zinc-400"
+          : "border-hairline text-readout-muted hover:text-readout-dim"
       }`}
     >
       {duelMode ? "Claude ON" : "Claude"}

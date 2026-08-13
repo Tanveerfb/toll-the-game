@@ -22,11 +22,11 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-zinc-950 px-6 text-center">
-      <p className="font-heading text-2xl tracking-[0.1em] text-amber-300">
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-void px-6 text-center">
+      <p className="font-heading text-2xl tracking-[0.1em] text-el-red">
         SOMETHING WENT WRONG
       </p>
-      <p className="max-w-md font-body text-sm text-zinc-400">
+      <p className="max-w-md font-body text-sm text-readout-dim">
         The battle hit an unexpected error. Your progress up to this point is
         saved — you can try again or head back to the menu.
       </p>
@@ -34,7 +34,7 @@ export default function GlobalError({
         <Button
           variant="outline"
           onClick={reset}
-          className="rounded-none border-2 border-zinc-500 bg-transparent font-heading tracking-[0.1em] text-zinc-100"
+          className="rounded-none border border-edge bg-transparent font-heading tracking-[0.1em] text-readout-strong"
         >
           TRY AGAIN
         </Button>
@@ -42,7 +42,7 @@ export default function GlobalError({
           onClick={() => {
             window.location.href = "/";
           }}
-          className="rounded-none border-2 border-amber-300 font-heading tracking-[0.1em]"
+          className="rounded-none border border-signal bg-signal/10 font-heading tracking-[0.1em] text-signal"
         >
           RETURN TO MENU
         </Button>

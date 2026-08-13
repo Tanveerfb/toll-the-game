@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { useGameStore } from "@/store/gameStore";
-import { getCharacterArt, getSkillArt } from "@/lib/game/characterArt";
+import { getCharacterArt } from "@/lib/game/characterArt";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,15 +20,13 @@ import {
   buildDescriptionForRank,
   buildSkillKeywordGlossary,
 } from "@/lib/game/descriptionTranslator";
-import {
-  ArrowBigDown,
-  ArrowBigUp,
-  Heart,
-  Sword,
-  Swords,
-} from "lucide-react";
 import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
-import { getCardFrameStyle } from "@/lib/game/cardFrameStyle";
+import { mergePartnerIds } from "@/lib/game/handTransition";
+import Hand from "@/components/game/battle/Hand";
+import {
+  useDealSequence,
+  usePrefersReducedMotion,
+} from "@/hooks/useDealSequence";
 import { actionsForTurn } from "@/lib/game/actionEconomy";
 import { bonusActionsFor } from "@/lib/game/stageEffects";
 import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
@@ -51,65 +49,8 @@ function getRankPips(rank: 1 | 2 | 3): string {
   return `${"◆".repeat(rank)}${"◇".repeat(3 - rank)}`;
 }
 
-// Skill-type badge (7DSGC-style, top-right corner of a card). Collapses the
-// full SkillType union into the five gameplay categories: attack, attack-debuff
-// (an attack that also inflicts a debuff), buff, debuff, heal.
-type SkillTypeCategory =
-  | "attack"
-  | "attackDebuff"
-  | "buff"
-  | "debuff"
-  | "heal";
-
-const DEBUFF_MECHANICS = new Set([
-  "debuff",
-  "seal",
-  "stun",
-  "shock",
-  "bleed",
-  "corrosion",
-  "decay",
-  "weaken",
-  "extort",
-  "rupture",
-  "disable",
-  "ignite",
-]);
-
-function skillTypeCategory(skill: ActionCard["skill"]): SkillTypeCategory {
-  switch (skill.type) {
-    case "heal":
-    case "cleanse":
-      return "heal";
-    case "buff":
-    case "stance":
-      return "buff";
-    case "debuff":
-    case "disable":
-      return "debuff";
-    // attack + ultimate (ultimates are offensive super-attacks): tag as
-    // attack-debuff when the skill also carries a debuff-type mechanic.
-    default: {
-      const hasDebuff = (skill.mechanics ?? []).some((m) =>
-        DEBUFF_MECHANICS.has(m.type),
-      );
-      return hasDebuff ? "attackDebuff" : "attack";
-    }
-  }
-}
-
-/**
- * Skill type is a glyph, not a colour. The five badges used to be red /
- * fuchsia / sky / purple / emerald — five hues spent restating what the icon
- * already says, on a screen that also has to carry five element hues.
- */
-const SKILL_TYPE_ICON: Record<SkillTypeCategory, React.ElementType> = {
-  attack: Sword,
-  attackDebuff: Swords,
-  buff: ArrowBigUp,
-  debuff: ArrowBigDown,
-  heal: Heart,
-};
+// The card face — art, rank pips, skill-type glyph — moved to
+// components/game/battle/Hand.tsx with the rest of the hand on 2026-08-12.
 
 function getCharacterInitial(name?: string): string {
   if (!name || name.trim().length === 0) {
@@ -228,22 +169,20 @@ export default function Deck() {
     resolveplayerTurnWrapper,
   ]);
 
+  // The hand the player is looking at. Equal to `deck` except while a fresh
+  // turn's draw is still playing out card by card.
+  const presentedDeck = useDealSequence(deck);
+  const reducedMotion = usePrefersReducedMotion();
+
   const [previewCard, setPreviewCard] = React.useState<ActionCard | null>(null);
-  const [draggedCardId, setDraggedCardId] = React.useState<string | null>(null);
   const previewShowTimerRef = React.useRef<number | null>(null);
   const previewHideTimerRef = React.useRef<number | null>(null);
 
+  // One rule for every way a card can merge (Tanveer, 2026-08-12): same owner,
+  // same skill, same rank. The button used to advertise a looser one and the
+  // hold-to-highlight ring the strict one, so the two disagreed on screen.
   const canMergeCard = React.useCallback(
-    (card: ActionCard): boolean => {
-      if (card.rank >= 3) return false;
-      return (
-        deck.filter(
-          (c) =>
-            c.sourceInstanceId === card.sourceInstanceId &&
-            c.skill.skillName === card.skill.skillName,
-        ).length >= 2
-      );
-    },
+    (card: ActionCard): boolean => mergePartnerIds(card, deck).length > 0,
     [deck],
   );
 
@@ -383,6 +322,7 @@ export default function Deck() {
       <div className="mb-1.5 flex items-center gap-2">
         {/* The cap used to be inferable only by counting leftover empty boxes. */}
         <div
+          data-tutorial="actions"
           className="flex shrink-0 items-center gap-1 border border-hairline bg-inset px-1.5 py-1"
           title={`${actionCap} action${actionCap > 1 ? "s" : ""} this turn`}
         >
@@ -493,157 +433,22 @@ export default function Deck() {
         </div>
       </div>
 
-      {/* Deck — always visible. Cards flex to fill the row width so the whole
-          hand (up to 8 cards at 4v4) shows at once without scrolling, 7DSGC-
-          style; hud-scroll stays as a safety net for any overflow edge case. */}
-      <div className="hud-scroll flex w-full justify-center gap-1 overflow-x-auto border border-hairline bg-void/70 p-2">
-        {deck.map((card) => {
-          const char = playerTeam.find(
-            (c) => c.instanceId === card.sourceInstanceId,
-          );
-          const isUlt = card.skill.type === "ultimate";
-          const isStunned = char?.debuffs.some((d) => d.type === "stun");
-          const isSealed =
-            card.skill.type === "attack" &&
-            char?.debuffs.some(
-              (d) => d.type === "seal" && d.sealType === "attack",
-            );
-          // Enemy targeting is optional (unmarked = random at execution).
-          // Single-target ally skills open the ally chooser on select, so no
-          // pre-selection marker is needed here.
-          const queueFull = slotsUsed >= actionCap;
-          const frame = getCardFrameStyle(card.rank, isUlt);
-
-          return (
-            <Card
-              key={card.id}
-              onClick={() => isPlayerActionPhase && selectCard(card.id)}
-              onMouseEnter={() => beginPreview(card)}
-              onMouseLeave={endPreview}
-              onFocus={() => beginPreview(card)}
-              onBlur={endPreview}
-              draggable={isPlayerActionPhase}
-              onDragStart={() => {
-                setDraggedCardId(card.id);
-                beginPreview(card);
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (!draggedCardId || draggedCardId === card.id) return;
-                reorderDeckCard(draggedCardId, card.id);
-                setDraggedCardId(null);
-              }}
-              onDragEnd={() => {
-                setDraggedCardId(null);
-              }}
-              className={`
-                relative flex h-32 min-w-0 max-w-24 flex-1 select-none flex-col overflow-hidden bg-panel p-0 transition-all
-                ${frame.borderClass}
-                ${isPlayerActionPhase ? "cursor-pointer hover:-translate-y-2 hover:shadow-lg" : "cursor-not-allowed opacity-50"}
-                ${isStunned || isSealed ? "grayscale brightness-50" : ""}
-                ${queueFull ? "opacity-70" : ""}
-                ${draggedCardId === card.id ? "opacity-40" : ""}
-                ${canMergeCard(card) && isPlayerActionPhase ? "ring-1 ring-signal/70" : ""}
-              `}
-            >
-              {frame.accentBarClass ? (
-                <span
-                  className={`absolute inset-x-0 top-0 z-10 h-1 ${frame.accentBarClass}`}
-                />
-              ) : null}
-
-              {/* Art fills the card; rank and skill-type ride on top of it, and
-                  the name/power footer sits under it. The face used to carry
-                  neither — you hovered for 260ms to find out what a card did,
-                  which on touch meant you never found out at all. */}
-              <div className="relative min-h-0 flex-1 overflow-hidden bg-inset">
-                {(() => {
-                  // Per-skill art when available; otherwise the character
-                  // portrait (docs/design/SKILL_ART_PLAN.md).
-                  const art = char
-                    ? (getSkillArt(char.id, card.skill.skillName) ??
-                      getCharacterArt(char.id))
-                    : null;
-                  return art ? (
-                    <Image
-                      src={art}
-                      alt={char?.name ?? card.skill.skillName}
-                      width={160}
-                      height={160}
-                      className="h-full w-full object-cover object-top"
-                    />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center font-heading text-3xl leading-none text-readout-strong">
-                      {getCharacterInitial(char?.name)}
-                    </span>
-                  );
-                })()}
-
-                {/* Diamonds, not stars: stars read as rarity in every other
-                    game on the phone, and these are merge tiers. */}
-                <span className="absolute left-0 top-0 bg-void/80 px-1 py-px font-body text-[9px] font-bold leading-none tracking-[0.08em]">
-                  {isUlt ? (
-                    <span className="uppercase tracking-[0.12em] text-el-light">
-                      Ult
-                    </span>
-                  ) : (
-                    <span className="text-readout">
-                      {getRankPips(card.rank)}
-                    </span>
-                  )}
-                </span>
-
-                {/* Monochrome: the five coloured badges spent five hues on a
-                    fact the glyph already carries. */}
-                {(() => {
-                  const BadgeIcon =
-                    SKILL_TYPE_ICON[skillTypeCategory(card.skill)];
-                  return (
-                    <span
-                      title={skillTypeCategory(card.skill)}
-                      className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center bg-void/80 text-readout-dim"
-                    >
-                      <BadgeIcon className="h-2.5 w-2.5" strokeWidth={2.6} />
-                    </span>
-                  );
-                })()}
-              </div>
-
-              <div className="shrink-0 border-t border-hairline bg-inset px-1 py-0.5">
-                <p className="truncate font-body text-[9px] font-semibold leading-tight text-readout-strong">
-                  {card.skill.skillName}
-                </p>
-                <p className="truncate font-body text-[8px] font-bold leading-tight tabular-nums text-readout-muted">
-                  {getSkillPowerText(card)}
-                </p>
-              </div>
-
-              {canMergeCard(card) && isPlayerActionPhase && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    mergeDeckCard(card.id);
-                  }}
-                  className="absolute bottom-6 right-0.5 h-5 rounded-none border border-signal bg-void/85 px-1 text-[9px] uppercase tracking-[0.08em] text-signal hover:bg-signal/20"
-                >
-                  Merge
-                </Button>
-              )}
-
-              {isStunned && (
-                <div className="absolute inset-0 flex items-center justify-center bg-void/40 font-body text-[10px] font-bold uppercase tracking-widest text-readout-strong">
-                  Stunned
-                </div>
-              )}
-            </Card>
-          );
-        })}
-      </div>
+      {/* The hand — always visible, and every card interaction inside it is
+          animated (components/game/battle/Hand.tsx). Cards flex to fill the
+          row so the whole hand shows at once, 7DSGC-style. */}
+      <Hand
+        cards={presentedDeck}
+        playerTeam={playerTeam}
+        interactive={isPlayerActionPhase}
+        queueFull={slotsUsed >= actionCap}
+        reducedMotion={reducedMotion}
+        onSelect={selectCard}
+        onMerge={mergeDeckCard}
+        onReorder={reorderDeckCard}
+        onPreviewStart={beginPreview}
+        onPreviewEnd={endPreview}
+        canUseMergeButton={canMergeCard}
+      />
 
       {/* Team bar — bottom edge of the screen (spec §1 item 6), below the
           always-visible hand. */}

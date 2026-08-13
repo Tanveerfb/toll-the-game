@@ -10,7 +10,10 @@ import { ActionCard } from "@/types/action";
 import { AnyBattleEvent } from "@/types/battleEvent";
 import {
   applyAdjacentMerges,
+  canCardsAutoMerge,
+  dropUnchargedUltimates,
   initialCardsFor,
+  moveCardById,
   previewCardsFor,
   maxHandCapacity,
   refillHand,
@@ -46,29 +49,6 @@ export function isSingleAllyTarget(card: ActionCard): boolean {
         m.ranks[rankIndex] === true),
   );
   return !aoeActive;
-}
-
-function moveCardById(
-  cards: ActionCard[],
-  draggedCardId: string,
-  targetCardId: string,
-): ActionCard[] {
-  if (draggedCardId === targetCardId) {
-    return cards;
-  }
-
-  const fromIndex = cards.findIndex((c) => c.id === draggedCardId);
-  const toIndex = cards.findIndex((c) => c.id === targetCardId);
-
-  if (fromIndex === -1 || toIndex === -1) {
-    return cards;
-  }
-
-  const reordered = [...cards];
-  const [moved] = reordered.splice(fromIndex, 1);
-  reordered.splice(toIndex, 0, moved);
-
-  return reordered;
 }
 
 interface BattleState {
@@ -147,6 +127,21 @@ interface BattleState {
    * start rather than reappearing mid-turn (Tanveer, 2026-08-11).
    */
   pendingReturnCards: ActionCard[];
+  /** Both teams as the battle began. See `captureOpeningTeams`. */
+  openingTeams: {
+    playerTeam: BattleCharacter[];
+    enemyTeam: BattleCharacter[];
+  } | null;
+  /**
+   * The last draw, frame by frame — see `RefillResult.steps`.
+   *
+   * `deck` is always the settled truth; this is only how it got there, so the
+   * hand can deal card by card and show auto-merges collide instead of
+   * appearing pre-merged. Transient and deliberately NOT persisted: a tab
+   * reloaded mid-deal should find the hand it actually has, not replay an
+   * animation for cards it already owns.
+   */
+  dealSteps: ActionCard[][];
 
   // Actions
   setPlayerTeam: (team: BattleCharacter[]) => void;
@@ -155,6 +150,15 @@ interface BattleState {
     playerTeam: BattleCharacter[],
     enemyTeam: BattleCharacter[],
   ) => void;
+  /**
+   * Statlines as the battle began — progression, stage effects and any
+   * battle-start aura already applied.
+   *
+   * Saved battle reports are analysed rather than read (Tanveer, 2026-08-13),
+   * and without an opening snapshot a hit can't be measured against the health
+   * bar it was aimed at: `playerTeam` has been mutating all fight.
+   */
+  captureOpeningTeams: () => void;
   setStageEffects: (effects: StageEffect[]) => void;
   setVictoryAtEnemyHpPercent: (percent: number | undefined) => void;
   setCurrentTurn: (turn: number | ((prev: number) => number)) => void;
@@ -186,6 +190,8 @@ interface BattleState {
   clearPhaseBreak: () => void;
   initializeDeck: () => void;
   drawCards: () => void;
+  /** The hand has finished playing the deal back; drop the frames. */
+  clearDealSteps: () => void;
   /** Toggle preview mode (hardcoded full-set hand, no RNG refill). */
   setPreviewMode: (preview: boolean) => void;
   /** Seed the enemy hand from the living field enemies (battle start). */
@@ -207,6 +213,12 @@ interface BattleState {
   reorderDeckCard: (draggedCardId: string, targetCardId: string) => void;
   mergeDeckCard: (cardId: string) => void;
   removeDeadCharacterCards: (instanceId: string) => void;
+  /**
+   * Drop ultimate cards from a side's hand when their owner's gauge is no
+   * longer full — see `dropUnchargedUltimates`. Called after every resolved
+   * action, since any of them may carry `lowerUltGauge`.
+   */
+  dropUnchargedUltCards: (team: "player" | "enemy") => void;
   /** Ranks up every non-ultimate, sub-max-rank card belonging to `instanceId`
    * currently in the given team's hand by 1. Data-driven support for the
    * `rankUpOwnDeck` passive mechanic (Chiara) — called from BattleProvider,
@@ -296,6 +308,8 @@ export const useGameStore = create<BattleState>()(
   phaseBreak: null,
   handSnapshot: null,
   pendingReturnCards: [],
+  openingTeams: null,
+  dealSteps: [],
 
   setStageEffects: (effects) => set({ stageEffects: effects }),
   setVictoryAtEnemyHpPercent: (percent) =>
@@ -303,6 +317,19 @@ export const useGameStore = create<BattleState>()(
   setPlayerTeam: (team) => set({ playerTeam: team }),
   setEnemyTeam: (team) => set({ enemyTeam: team }),
   updateTeams: (playerTeam, enemyTeam) => set({ playerTeam, enemyTeam }),
+
+  captureOpeningTeams: () => {
+    const { playerTeam, enemyTeam } = get();
+    // Structured-cloned rather than referenced: these arrays hold the same
+    // objects the engine replaces as it goes, and a shallow copy would leave
+    // the snapshot describing the end of the fight.
+    set({
+      openingTeams: {
+        playerTeam: playerTeam.map((unit) => ({ ...unit })),
+        enemyTeam: enemyTeam.map((unit) => ({ ...unit })),
+      },
+    });
+  },
   setCurrentTurn: (turn) =>
     set((state) => ({
       currentTurn: typeof turn === "function" ? turn(state.currentTurn) : turn,
@@ -370,6 +397,8 @@ export const useGameStore = create<BattleState>()(
       phaseBreak: null,
       handSnapshot: null,
       pendingReturnCards: [],
+      openingTeams: null,
+      dealSteps: [],
       bigHitFocus: false,
       // `playbackMounted` is deliberately NOT reset — it tracks whether an
       // arena is on screen, which a battle reset doesn't change.
@@ -414,6 +443,9 @@ export const useGameStore = create<BattleState>()(
       pendingAllyCardId: null,
       queuedNullCount: 0,
       interactionNotice: null,
+      // Rewinding to the turn-start hand is not a deal — replaying the draw
+      // here would animate cards the player is putting back, not drawing.
+      dealSteps: [],
     });
   },
 
@@ -488,7 +520,14 @@ export const useGameStore = create<BattleState>()(
     // take priority for the seats available this turn. Only cards whose owner
     // is still on the field and alive; a returning card for a unit that died
     // in the meantime is simply dropped.
+    //
+    // Returned cards and the random refill commit together, in one `set`, so
+    // the hand can play the whole deal as one sequence. Two commits meant the
+    // returned cards appeared instantly and only the refill animated.
     let deck = get().deck;
+    const steps: ActionCard[][] = [];
+    let pendingAfterDeal = pendingReturnCards;
+
     if (pendingReturnCards.length > 0) {
       const onField = new Set(livingChars.map((c) => c.instanceId));
       const seats = Math.max(0, maxCapacity - deck.length);
@@ -497,14 +536,22 @@ export const useGameStore = create<BattleState>()(
       );
       const dealt = dealable.slice(0, seats);
       // Anything that didn't fit keeps waiting rather than being lost.
-      const stillPending = pendingReturnCards.filter(
+      pendingAfterDeal = pendingReturnCards.filter(
         (c) => onField.has(c.sourceInstanceId) && !dealt.includes(c),
       );
-      deck = [...deck, ...dealt];
-      set({ deck, pendingReturnCards: stillPending });
+      for (const returned of dealt) {
+        deck = [...deck, returned];
+        steps.push(deck);
+      }
     }
 
-    if (deck.length >= maxCapacity || livingChars.length === 0) return;
+    if (deck.length >= maxCapacity || livingChars.length === 0) {
+      // No refill, but returned cards may still have landed.
+      if (steps.length > 0) {
+        set({ deck, pendingReturnCards: pendingAfterDeal, dealSteps: steps });
+      }
+      return;
+    }
 
     // The hand is never reset: leftover cards persist and new cards are drawn
     // purely at random, auto-merging adjacent identical cards (each merge grants
@@ -526,11 +573,18 @@ export const useGameStore = create<BattleState>()(
     set({
       deck: result.deck,
       playerTeam: updatedTeam,
+      pendingReturnCards: pendingAfterDeal,
+      dealSteps: [...steps, ...result.steps],
       interactionNotice:
         result.mergeCount > 0
           ? `${result.notices.join(" ")} +${result.mergeCount} Ult Gauge.`
           : get().interactionNotice,
     });
+  },
+
+  clearDealSteps: () => {
+    if (get().dealSteps.length === 0) return;
+    set({ dealSteps: [] });
   },
 
   selectCard: (cardId: string) => {
@@ -731,16 +785,18 @@ export const useGameStore = create<BattleState>()(
       return;
     }
 
+    // The button used to accept ANY card with the same owner and skill name,
+    // so an R1 could be eaten by an R2 — a looser rule than merging by
+    // adjacency, which has always required equal ranks. Two rules for one
+    // mechanic, and the hold-to-highlight ring could only ever show one of
+    // them. Unified on the strict rule (Tanveer, 2026-08-12).
     const materialIndex = deck.findIndex(
-      (c, idx) =>
-        idx !== cardIndex &&
-        c.sourceInstanceId === baseCard.sourceInstanceId &&
-        c.skill.skillName === baseCard.skill.skillName,
+      (c, idx) => idx !== cardIndex && canCardsAutoMerge(baseCard, c),
     );
 
     if (materialIndex === -1) {
       set({
-        interactionNotice: `Need another ${baseCard.skill.skillName} card to merge.`,
+        interactionNotice: `Need another R${baseCard.rank} ${baseCard.skill.skillName} card to merge.`,
       });
       return;
     }
@@ -773,6 +829,28 @@ export const useGameStore = create<BattleState>()(
       deck: deck.filter((c) => c.sourceInstanceId !== instanceId),
       actionQueue: actionQueue.filter((c) => c.sourceInstanceId !== instanceId),
     });
+  },
+
+  dropUnchargedUltCards: (team) => {
+    const state = get();
+    const units = team === "player" ? state.playerTeam : state.enemyTeam;
+    const hand = team === "player" ? state.deck : state.enemyDeck;
+    const kept = dropUnchargedUltimates(hand, units);
+    if (kept === hand) return;
+
+    // A queued ultimate goes too. The player queues before anything resolves,
+    // so this only bites when a drain lands between queueing and firing — and
+    // an ultimate that fires at 4/5 is the bug either way.
+    const actionQueue =
+      team === "player"
+        ? dropUnchargedUltimates(state.actionQueue, units)
+        : state.actionQueue;
+
+    set(
+      team === "player"
+        ? { deck: kept, actionQueue }
+        : { enemyDeck: kept },
+    );
   },
 
   rankUpCharacterCards: (instanceId: string, team: "player" | "enemy") => {

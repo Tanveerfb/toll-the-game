@@ -117,12 +117,22 @@ describe("description placeholders", () => {
     const houseRules = chiaraData.skills[1] as unknown as CharacterSkillData;
 
     it("joins two clauses with 'and' and hides a zero-value one", () => {
+      // Asserted on the clause structure, not the multiplier: Severed Ledger's
+      // damage number and scaling stat are balance, and pinning the whole
+      // rendered string here meant a rebalance broke a test about *prose*
+      // (it did, when Isolde moved to HP scaling on 2026-08-13).
       const ledger = isoldeData.skills[1] as unknown as CharacterSkillData;
-      expect(buildDescriptionForRank(ledger, 0)).toBe(
-        "Does damage equal to 280% ATK to all enemies.",
-      );
-      expect(buildDescriptionForRank(ledger, 2)).toBe(
-        "Does damage equal to 400% ATK to all enemies and depletes 3 ultimate gauges.",
+
+      const r1 = buildDescriptionForRank(ledger, 0);
+      // `lowerUltGauge` is 0 at R1, so its clause — and the "and" that would
+      // have joined it — must not appear at all.
+      expect(r1).toMatch(/^Does damage equal to \d+% \w+ to all enemies\.$/);
+      expect(r1).not.toMatch(/ultimate gauge/i);
+      expect(r1).not.toMatch(/ and /);
+
+      const r3 = buildDescriptionForRank(ledger, 2);
+      expect(r3).toMatch(
+        /^Does damage equal to \d+% \w+ to all enemies and depletes 3 ultimate gauges\.$/,
       );
     });
 

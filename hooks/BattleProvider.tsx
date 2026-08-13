@@ -155,6 +155,7 @@ export default function BattleProvider({
   const initializeEnemyDeck = useGameStore((s) => s.initializeEnemyDeck);
   const drawEnemyCards = useGameStore((s) => s.drawEnemyCards);
   const setEnemyDeck = useGameStore((s) => s.setEnemyDeck);
+  const dropUnchargedUltCards = useGameStore((s) => s.dropUnchargedUltCards);
   const setPhaseBreak = useGameStore((s) => s.setPhaseBreak);
   // clearActionQueue is no longer needed; actions are resolved one by one.
   const removeDeadCharacterCards = useGameStore((s) => s.removeDeadCharacterCards);
@@ -271,6 +272,10 @@ export default function BattleProvider({
         if (battlePhase === "OnBattleStart") {
           initializeDeck();
           initializeEnemyDeck();
+          // Snapshot both statlines before a single point of damage lands.
+          // Saved reports are analysed, not read, and without this the numbers
+          // in a report have no baseline to be measured against.
+          useGameStore.getState().captureOpeningTeams();
         }
 
         // System ticks (ruling #21): buffs/HoT expire at the owner's turn
@@ -649,6 +654,10 @@ export default function BattleProvider({
     // Catches the phase-break branch's re-assigned enemy team; every other
     // path already committed inside the loop.
     updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
+    // A drained gauge takes its ultimate card back — from either hand, since
+    // either side can carry `lowerUltGauge` (Tanveer, 2026-08-13).
+    dropUnchargedUltCards("player");
+    dropUnchargedUltCards("enemy");
     setActionQueue([]);
     useGameStore.setState({ queuedNullCount: 0 });
     setPlayerTurns((prev) => prev + 1);
@@ -824,6 +833,11 @@ export default function BattleProvider({
 
     setEnemyDeck(hand);
     updateTeams(currentTeams.playerTeam, currentTeams.enemyTeam);
+    // The enemy turn is where the player's gauge usually gets drained, so this
+    // is the call that actually fixes the reported bug: Mustafa depletes
+    // Lyra's gauge, and her ultimate leaves the hand it was sitting in.
+    dropUnchargedUltCards("player");
+    dropUnchargedUltCards("enemy");
     setEnemyTurns((prev) => prev + 1);
     advancePhase();
   }

@@ -49,19 +49,24 @@ export default function AudioControl(): React.JSX.Element {
         onClick={() => setOpen((v) => !v)}
         aria-label={silent ? "Music muted" : "Music settings"}
         aria-expanded={open}
+        // Migrated to the Combat Terminal tokens 2026-08-13. `signal` is the
+        // correct accent here and amber was not: this is nav chrome, and the
+        // palette reserves cyan for exactly that (element hues belong to
+        // units). It sits in the nav on every screen, so it was the most
+        // visible thing still on the old utilities.
         className={`flex h-7 w-7 items-center justify-center border text-xs transition-colors ${
           silent
-            ? "border-zinc-800 text-zinc-600 hover:text-zinc-400"
-            : "border-zinc-700 text-amber-200 hover:border-amber-300"
+            ? "border-hairline text-readout-muted hover:text-readout-dim"
+            : "border-edge text-signal hover:border-signal"
         }`}
       >
         {silent ? "♪̸" : "♪"}
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-9 z-50 w-56 border-2 border-zinc-700 bg-zinc-950/95 p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
+        <div className="absolute right-0 top-9 z-50 w-56 border border-edge-strong bg-panel/95 p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
           <div className="flex items-center justify-between">
-            <p className="font-heading text-xs tracking-[0.16em] text-zinc-300">
+            <p className="font-heading text-xs tracking-[0.16em] text-readout-dim">
               MUSIC
             </p>
             <button
@@ -69,8 +74,8 @@ export default function AudioControl(): React.JSX.Element {
               onClick={() => setMuted(!muted)}
               className={`border px-2 py-0.5 font-body text-[10px] uppercase tracking-[0.14em] transition-colors ${
                 muted
-                  ? "border-amber-300 text-amber-200"
-                  : "border-zinc-700 text-zinc-400 hover:text-zinc-200"
+                  ? "border-signal bg-signal/10 text-signal"
+                  : "border-edge text-readout-dim hover:text-readout-strong"
               }`}
             >
               {muted ? "Muted" : "Mute"}
@@ -84,10 +89,10 @@ export default function AudioControl(): React.JSX.Element {
             value={Math.round(volume * 100)}
             onChange={(event) => setVolume(Number(event.target.value) / 100)}
             aria-label="Music volume"
-            className="mt-3 h-1 w-full appearance-none bg-zinc-800 accent-amber-300 disabled:opacity-40"
+            className="mt-3 h-1 w-full appearance-none bg-inset accent-[var(--color-signal)] disabled:opacity-40"
             disabled={muted}
           />
-          <p className="mt-2 font-body text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+          <p className="mt-2 font-body text-[10px] uppercase tracking-[0.14em] text-readout-muted">
             {Math.round(volume * 100)}%
           </p>
         </div>

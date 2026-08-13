@@ -57,7 +57,7 @@ export default function DevGrantPanel(): React.JSX.Element | null {
 
   return (
     <Card className="rounded-none border-2 border-sky-400 bg-black/50 ring-0">
-      <CardHeader className="border-b border-zinc-800 px-4 py-2.5">
+      <CardHeader className="border-b border-hairline px-4 py-2.5">
         <CardTitle className="font-heading text-lg tracking-[0.12em] text-sky-200">
           DEV GRANT PANEL
         </CardTitle>
@@ -103,13 +103,13 @@ export default function DevGrantPanel(): React.JSX.Element | null {
           <Button variant="outline" onClick={() => spendStaminaAction(40)}>Simulate a run (-40 stamina)</Button>
         </div>
 
-        <div className="flex flex-wrap items-end gap-2 border-t border-zinc-800 pt-3">
+        <div className="flex flex-wrap items-end gap-2 border-t border-hairline pt-3">
           <label className="flex flex-col gap-1">
-            <span className="font-body text-[10px] uppercase tracking-widest text-zinc-500">Character</span>
+            <span className="font-body text-[10px] uppercase tracking-widest text-readout-muted">Character</span>
             <select
               value={selectedCharId}
               onChange={(e) => setSelectedCharId(e.target.value)}
-              className="border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm text-zinc-100"
+              className="border border-edge bg-inset px-2 py-1 text-sm text-readout-strong"
             >
               {getPlayableCharacters().map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -117,11 +117,11 @@ export default function DevGrantPanel(): React.JSX.Element | null {
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="font-body text-[10px] uppercase tracking-widest text-zinc-500">Level</span>
+            <span className="font-body text-[10px] uppercase tracking-widest text-readout-muted">Level</span>
             <Input value={levelInput} onChange={(e) => setLevelInput(e.target.value)} className="w-16" />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="font-body text-[10px] uppercase tracking-widest text-zinc-500">Ascension</span>
+            <span className="font-body text-[10px] uppercase tracking-widest text-readout-muted">Ascension</span>
             <Input value={ascensionInput} onChange={(e) => setAscensionInput(e.target.value)} className="w-16" />
           </label>
           <Button variant="outline" onClick={setCharacterProgress}>Set</Button>
@@ -134,7 +134,7 @@ export default function DevGrantPanel(): React.JSX.Element | null {
           </Button>
         </div>
 
-        <p className="font-body text-xs text-zinc-500">
+        <p className="font-body text-xs text-readout-muted">
           Gems {currencies.gems} • Coin {currencies.coin} • Roster: {roster.join(", ")}
         </p>
       </CardContent>

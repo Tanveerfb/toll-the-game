@@ -14,7 +14,7 @@ export default function ModalShell({
   onClose,
   maxWidth = "md",
   backdropClassName = "bg-black/80",
-  borderClassName = "border-zinc-700",
+  borderClassName = "border-edge-strong",
   children,
 }: ModalShellProps) {
   return (
@@ -23,7 +23,7 @@ export default function ModalShell({
       onClick={onClose}
     >
       <div
-        className={`max-h-[80vh] w-full ${maxWidth === "lg" ? "max-w-lg" : "max-w-md"} overflow-y-auto border ${borderClassName} bg-zinc-950 p-5`}
+        className={`max-h-[80vh] w-full ${maxWidth === "lg" ? "max-w-lg" : "max-w-md"} overflow-y-auto border ${borderClassName} bg-panel p-5`}
         onClick={(e) => e.stopPropagation()}
       >
         {children}
