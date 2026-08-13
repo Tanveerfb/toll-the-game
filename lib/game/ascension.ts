@@ -37,3 +37,41 @@ export function canAffordAscension(
     coin >= cost.coin
   );
 }
+
+/**
+ * The level a character must reach before the next ascension opens.
+ *
+ * Ascension was materials-only until 2026-08-13, so a level-1 character with a
+ * full bag could be taken straight from ascension 1 to 4 without ever being
+ * levelled (Tanveer). That skipped the entire levelling loop the bands exist to
+ * pace — the bands *are* the level ladder, so ascending past one you never
+ * climbed is meaningless.
+ *
+ * The requirement is the cap of the tier you are leaving: ascension 2 wants
+ * level 20, ascension 3 wants 30, ascension 4 wants 40. Ascension 1 wants
+ * level 1, which every character already has — a fresh unit is not blocked
+ * from its first ascension.
+ */
+export function ascensionLevelRequirement(targetAscension: number): number {
+  return maxLevelForAscension(targetAscension - 1);
+}
+
+/** Why an ascension can't happen, or `null` when it can. Ordered so the
+ *  message names the thing the player should go and do: reaching the level
+ *  gate is progress they control, and reporting "not enough materials" to
+ *  someone who is also under-levelled sends them farming for nothing. */
+export type AscensionBlocker = "maxed" | "level" | "materials";
+
+export function ascensionBlocker(
+  progress: { level: number; ascension: number },
+  inventory: Record<string, number>,
+  coin: number,
+): AscensionBlocker | null {
+  const cost = getAscensionCost(progress.ascension + 1);
+  if (!cost) return "maxed";
+  if (progress.level < ascensionLevelRequirement(progress.ascension + 1)) {
+    return "level";
+  }
+  if (!canAffordAscension(cost, inventory, coin)) return "materials";
+  return null;
+}

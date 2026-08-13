@@ -1,5 +1,5 @@
 import { materialForCharacter } from "@/lib/gacha/materials";
-import type { LimitedBannerConfig } from "@/lib/gacha/banners";
+import type { GemBannerConfig } from "@/lib/gacha/banners";
 
 export type PullOutcome =
   | { kind: "character"; characterId: string }
@@ -27,7 +27,7 @@ export function rollUniformFromPool(pool: string[], rng: () => number = Math.ran
  *  Calls `rng()` 2 times on a hit (hit-check, then featured-index pick), and
  *  3 times on a miss (hit-check, category pick, then an in-category pick —
  *  bundle amount / manual tier / featured-index-for-specialty-mat). */
-export function rollLimitedPull(banner: LimitedBannerConfig, rng: () => number = Math.random): PullOutcome {
+export function rollLimitedPull(banner: GemBannerConfig, rng: () => number = Math.random): PullOutcome {
   const hitRoll = rng();
   if (hitRoll < banner.rate) {
     const characterId = rollUniformFromPool(banner.featured, rng);

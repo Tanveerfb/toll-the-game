@@ -58,7 +58,8 @@ export default function ChapterCompleteCard({
         >
           <Button
             onClick={onContinue}
-            className="chamfer mt-8 h-12 rounded-none border border-signal bg-signal px-10 font-heading text-lg tracking-[0.12em] text-void"
+            size="xl"
+            className="chamfer mt-8 px-10"
           >
             REWARDS ▸
           </Button>

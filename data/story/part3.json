@@ -51,7 +51,7 @@
       ],
       "rewards": {
         "firstClear": {
-          "gems": 80,
+          "gems": 20,
           "coin": 2800,
           "materials": { "training_manual": 3 },
           "accountXp": 18
@@ -109,7 +109,7 @@
       ],
       "rewards": {
         "firstClear": {
-          "gems": 80,
+          "gems": 20,
           "coin": 2800,
           "materials": { "training_manual": 3 },
           "accountXp": 19
@@ -213,7 +213,7 @@
       ],
       "rewards": {
         "firstClear": {
-          "gems": 100,
+          "gems": 30,
           "coin": 3200,
           "materials": { "training_manual": 4 },
           "accountXp": 20

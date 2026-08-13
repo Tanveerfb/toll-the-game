@@ -3,6 +3,8 @@ import {
   addRewards,
   BASE_CORRODED_SEAWEED,
   BASE_SEA_MONSTER_EYE,
+  TRAINING_MANUAL_MAX,
+  TRAINING_MANUAL_MIN,
   attemptableTiers,
   emptyRewards,
   getBossTier,
@@ -46,14 +48,17 @@ describe("rollWorldBossRewards", () => {
     }
   });
 
-  it("grants training_manual minimum (3) when rng is 0", () => {
+  // Asserted against the constants, not literals. These are tuning numbers —
+  // they moved from 3-6 to 4-8 on 2026-08-13 — and a test that hardcodes them
+  // tests the retune, not the roll.
+  it("grants the training_manual minimum when rng is 0", () => {
     const result = rollWorldBossRewards(() => 0);
-    expect(result.training_manual).toBe(3);
+    expect(result.training_manual).toBe(TRAINING_MANUAL_MIN);
   });
 
-  it("grants training_manual maximum (6) when rng is just under 1", () => {
+  it("grants the training_manual maximum when rng is just under 1", () => {
     const result = rollWorldBossRewards(() => 0.999999);
-    expect(result.training_manual).toBe(6);
+    expect(result.training_manual).toBe(TRAINING_MANUAL_MAX);
   });
 
   it("grants coin minimum (2000) when rng is 0", () => {

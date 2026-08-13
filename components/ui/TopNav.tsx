@@ -15,6 +15,12 @@ import {
   Zap,
 } from "lucide-react";
 import AudioControl from "@/components/ui/AudioControl";
+import OrdersButton from "@/components/game/OrdersButton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import DuelToggle from "@/components/ui/DuelToggle";
 import { GAME_ROUTES, isRouteActive } from "@/lib/nav/routes";
 import { useAuth } from "@/hooks/AuthProvider";
@@ -58,6 +64,15 @@ const ROUTE_ICON: Record<string, React.ElementType> = {
 /** Archive and story would otherwise share `BookOpen`. */
 const ARCHIVE_ICON = Coins;
 
+/**
+ * One counter on the resource strip.
+ *
+ * The explanation used to ride on a native `title`, which is unstyleable and —
+ * the reason this moved — never appears on touch at all. Every player on a
+ * phone saw three unlabelled numbers with no way to learn what they were. A
+ * Radix tooltip opens on focus and on tap, so the answer is reachable without
+ * a mouse.
+ */
 function Resource({
   icon: Icon,
   value,
@@ -70,18 +85,27 @@ function Resource({
   title: string;
 }): React.JSX.Element {
   return (
-    <span
-      title={title}
-      className="flex shrink-0 items-center gap-1.5 border border-hairline bg-void px-2 py-0.5"
-    >
-      <Icon className="h-3 w-3 shrink-0 text-readout-muted" strokeWidth={2.4} />
-      <span className="font-body text-[11px] font-bold tabular-nums text-readout-strong">
-        {value}
-        {suffix ? (
-          <span className="font-semibold text-readout-muted">{suffix}</span>
-        ) : null}
-      </span>
-    </span>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          aria-label={title}
+          className="flex shrink-0 cursor-help items-center gap-1.5 border border-hairline bg-void px-2 py-0.5 transition-colors hover:border-edge-strong"
+        >
+          <Icon
+            className="h-3 w-3 shrink-0 text-readout-muted"
+            strokeWidth={2.4}
+          />
+          <span className="font-body text-[11px] font-bold tabular-nums text-readout-strong">
+            {value}
+            {suffix ? (
+              <span className="font-semibold text-readout-muted">{suffix}</span>
+            ) : null}
+          </span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>{title}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -244,36 +268,52 @@ export default function TopNav() {
             title="Coin — spent on levelling and ascension"
             value={ready ? currencies.coin.toLocaleString() : dash}
           />
+          {/* Orders sits with the counters, not with the account chrome — it
+              is something you have progress on, not a setting. */}
+          <OrdersButton />
           <span className="flex-1" />
-          <Link
-            href="/profile"
-            title={
-              !ready
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="/profile"
+                aria-label="Account rank"
+                className="flex shrink-0 items-center gap-2 border border-hairline bg-void px-2 py-0.5 transition-colors hover:border-edge-strong"
+              >
+                <span
+                  className={`font-body text-[11px] font-bold tracking-[0.06em] ${ready && !progress ? "text-el-light" : "text-signal"}`}
+                >
+                  {ready ? `R${account.rank}` : "R—"}
+                </span>
+                <span className="hidden h-1 w-14 overflow-hidden border border-hairline bg-void sm:block">
+                  <span
+                    className={`block h-full transition-[width] duration-500 ${ready && !progress ? "bg-el-light" : "bg-signal"}`}
+                    style={{ width: ready ? `${rankPercent}%` : "0%" }}
+                  />
+                </span>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>
+              {!ready
                 ? "Account rank"
                 : progress
                   ? `Account rank ${account.rank} — ${progress.current} / ${progress.required} xp`
-                  : `Account rank ${account.rank} — clear the ascension trial to rank up`
-            }
-            className="flex shrink-0 items-center gap-2 border border-hairline bg-void px-2 py-0.5 transition-colors hover:border-edge-strong"
-          >
-            <span
-              className={`font-body text-[11px] font-bold tracking-[0.06em] ${ready && !progress ? "text-el-light" : "text-signal"}`}
-            >
-              {ready ? `R${account.rank}` : "R—"}
-            </span>
-            <span className="hidden h-1 w-14 overflow-hidden border border-hairline bg-void sm:block">
-              <span
-                className={`block h-full transition-[width] duration-500 ${ready && !progress ? "bg-el-light" : "bg-signal"}`}
-                style={{ width: ready ? `${rankPercent}%` : "0%" }}
-              />
-            </span>
-          </Link>
-          <span
-            title="World level — the difficulty everything scales to"
-            className="hidden shrink-0 border border-hairline bg-void px-2 py-0.5 font-body text-[10px] font-bold uppercase tracking-[0.12em] text-readout-dim sm:block"
-          >
-            World {ready ? worldLevel : dash}
-          </span>
+                  : `Account rank ${account.rank} — clear the ascension trial to rank up`}
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label="World level"
+                className="hidden shrink-0 cursor-help border border-hairline bg-void px-2 py-0.5 font-body text-[10px] font-bold uppercase tracking-[0.12em] text-readout-dim transition-colors hover:border-edge-strong sm:block"
+              >
+                World {ready ? worldLevel : dash}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              World level — the difficulty everything scales to
+            </TooltipContent>
+          </Tooltip>
           <Link
             href={user ? "/profile" : "/login"}
             title={user ? "Profile" : "Sign in"}

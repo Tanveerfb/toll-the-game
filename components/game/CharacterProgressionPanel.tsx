@@ -3,10 +3,20 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import DetailOverlay from "@/components/game/DetailOverlay";
 import { usePlayerStore, getCharacterProgress } from "@/store/playerStore";
 import { xpToNext } from "@/lib/game/leveling";
-import { getAscensionCost, maxLevelForAscension } from "@/lib/game/ascension";
+import {
+  ascensionBlocker,
+  ascensionLevelRequirement,
+  getAscensionCost,
+  maxLevelForAscension,
+} from "@/lib/game/ascension";
 
 const MANUAL_TIERS = [
   { id: "training_manual", label: "Training Manual" },
@@ -26,6 +36,15 @@ function GrowthControls({
   const maxLevel = maxLevelForAscension(progress.ascension);
   const nextCost = getAscensionCost(progress.ascension + 1);
   const atMaxLevel = progress.level >= maxLevel;
+  // Same rule the store enforces, read from the same function — the button
+  // being enabled is never allowed to mean something different from what
+  // `ascendCharacter` will actually do.
+  const blocker = ascensionBlocker(
+    progress,
+    state.inventory,
+    state.currencies.coin,
+  );
+  const levelNeeded = ascensionLevelRequirement(progress.ascension + 1);
   const xpNeeded = atMaxLevel ? 0 : xpToNext(progress.level);
 
   return (
@@ -60,22 +79,34 @@ function GrowthControls({
         {MANUAL_TIERS.map((tier) => {
           const owned = state.inventory[tier.id] ?? 0;
           const disabled = atMaxLevel || owned < 1;
-          return (
+          // Why the button is dead is the whole point of the message, and a
+          // native `title` never fires on a disabled control or on touch —
+          // so the reason was invisible in exactly the two cases that needed
+          // it. The wrapper span keeps a hoverable target while the button
+          // itself stays disabled.
+          const reason = atMaxLevel
+            ? "At max level for this ascension tier"
+            : owned < 1
+              ? `No ${tier.label} owned`
+              : null;
+          const button = (
             <Button
               key={tier.id}
               variant="outline"
               disabled={disabled}
               onClick={() => state.feedManualToCharacter(characterId, tier.id)}
-              title={
-                atMaxLevel
-                  ? "At max level for this ascension tier"
-                  : owned < 1
-                    ? `No ${tier.label} owned`
-                    : undefined
-              }
             >
               Feed {tier.label} ({owned})
             </Button>
+          );
+          if (!reason) return button;
+          return (
+            <Tooltip key={tier.id}>
+              <TooltipTrigger asChild>
+                <span className="inline-flex cursor-help">{button}</span>
+              </TooltipTrigger>
+              <TooltipContent>{reason}</TooltipContent>
+            </Tooltip>
           );
         })}
       </div>
@@ -93,8 +124,21 @@ function GrowthControls({
             {state.inventory.corroded_seaweed ?? 0} owned) • {nextCost.coin} coin
             ({state.currencies.coin} owned)
           </p>
-          <Button className="mt-2" onClick={() => state.ascendCharacter(characterId)}>
-            Ascend
+          {blocker === "level" ? (
+            <p className="mt-1 font-body text-sm text-el-light">
+              Reach level {levelNeeded} first — this character is {progress.level}.
+            </p>
+          ) : null}
+          <Button
+            className="mt-2"
+            disabled={blocker !== null}
+            onClick={() => state.ascendCharacter(characterId)}
+          >
+            {blocker === "level"
+              ? `Locked until Lv ${levelNeeded}`
+              : blocker === "materials"
+                ? "Not enough materials"
+                : "Ascend"}
           </Button>
         </div>
       ) : (

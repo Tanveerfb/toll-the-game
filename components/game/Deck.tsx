@@ -264,14 +264,14 @@ export default function Deck() {
     >
       {previewCard ? (
         <div className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-3 w-full max-w-xl -translate-x-1/2">
-          <Card className="w-full rounded-none border border-edge bg-panel/95 ring-0">
-            <CardHeader className="border-b border-hairline px-4 py-3">
+          <Card className="w-full">
+            <CardHeader className="px-4 py-3">
               <div className="flex w-full items-start justify-between gap-3">
                 <div>
-                  <CardTitle className="font-heading text-xl tracking-[0.08em] text-readout-strong">
+                  <CardTitle>
                     {previewCard.skill.skillName}
                   </CardTitle>
-                  <CardDescription className="font-body text-xs uppercase tracking-[0.12em] text-readout-dim">
+                  <CardDescription className="tracking-[0.12em]">
                     {previewCard.skill.type} • Rank {previewCard.rank} •{" "}
                     {getSkillPowerText(previewCard)}
                   </CardDescription>
@@ -417,16 +417,16 @@ export default function Deck() {
             size="sm"
             disabled={!isPlayerActionPhase || !handSnapshot}
             onClick={resetHand}
-            className="shrink-0 rounded-none border border-edge px-2 text-[11px] uppercase tracking-widest text-readout-dim hover:border-edge-strong disabled:border-hairline disabled:text-readout-muted"
+            className="shrink-0"
           >
             Reset
           </Button>
           <Button
-            variant="ghost"
+            variant="secondary"
             size="sm"
             disabled={!isPlayerActionPhase || actionQueue.length === 0}
             onClick={resolveplayerTurnWrapper}
-            className="shrink-0 rounded-none border border-signal bg-signal/10 px-3 text-[11px] uppercase tracking-widest text-signal hover:bg-signal/20 disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted"
+            className="shrink-0"
           >
             End Turn
           </Button>

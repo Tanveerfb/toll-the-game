@@ -57,12 +57,12 @@ export default function StoryRewardsScreen({
   const nothingDropped = !result.firstClear && isEmptyPayout(result.drops);
 
   return (
-    <Card className="chamfer-lg w-full max-w-md rounded-none border border-signal bg-panel ring-0">
-      <CardHeader className="border-b border-hairline bg-inset px-6 py-5">
+    <Card className="chamfer-lg w-full max-w-md border-signal bg-panel">
+      <CardHeader className="bg-inset px-6 py-5">
         <p className="font-body text-[10px] font-bold uppercase tracking-[0.28em] text-signal">
           {chapterTitle}
         </p>
-        <CardTitle className="mt-1 font-heading text-3xl tracking-[0.14em] text-signal">
+        <CardTitle className="mt-1 text-3xl tracking-[0.14em] text-signal">
           REWARDS
         </CardTitle>
       </CardHeader>
@@ -80,7 +80,8 @@ export default function StoryRewardsScreen({
         ) : null}
         <Button
           onClick={onContinue}
-          className="chamfer mt-2 h-12 rounded-none border border-signal bg-signal font-heading text-lg tracking-[0.12em] text-void"
+          size="xl"
+          className="chamfer mt-2"
         >
           CONTINUE
         </Button>

@@ -3,6 +3,17 @@
 import React from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Lock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import AutoClearConfirm from "@/components/game/AutoClearConfirm";
 import BattleArena from "@/components/game/BattleArena";
 import Deck from "@/components/game/Deck";
 import TeamPicker, { toTeamPicks } from "@/components/game/TeamPicker";
@@ -163,60 +174,60 @@ function AutoClearResults({
           </p>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[26rem] border-collapse font-body text-xs">
-            <thead>
-              <tr className="border-b border-edge text-left font-bold uppercase tracking-[0.14em] text-readout-muted">
-                <th className="px-4 py-2 font-normal">Instance</th>
-                <th className="px-2 py-2 text-right font-normal">Stamina</th>
-                <th className="px-2 py-2 text-right font-normal">Remaining</th>
-                <th className="px-4 py-2 text-right font-normal">Rewards</th>
-              </tr>
-            </thead>
-            <tbody>
-              {runs.map((run) => (
-                <tr key={run.id} className="border-b border-hairline">
-                  <td className="px-4 py-2 font-mono text-readout">{run.id}</td>
-                  <td className="px-2 py-2 text-right tabular-nums text-readout-dim">
-                    −{run.staminaUsed}
-                  </td>
-                  <td className="px-2 py-2 text-right tabular-nums text-readout-dim">
-                    {run.staminaAfter}
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <button
-                      type="button"
-                      onClick={() => setOpen(run.id)}
-                      className="border border-edge px-2 py-1 font-bold uppercase tracking-[0.12em] text-readout-dim transition-colors hover:border-signal hover:text-signal"
-                    >
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              <tr className="border-t-2 border-edge-strong bg-inset">
-                <td className="px-4 py-2 font-bold uppercase tracking-[0.14em] text-readout-strong">
-                  Total
-                </td>
-                <td className="px-2 py-2 text-right font-bold tabular-nums text-readout-strong">
-                  −{totalStamina}
-                </td>
-                <td className="px-2 py-2 text-right tabular-nums text-readout-muted">
-                  {runs[runs.length - 1]?.staminaAfter ?? 0}
-                </td>
-                <td className="px-4 py-2 text-right">
-                  <button
-                    type="button"
-                    onClick={() => setOpen("total")}
-                    className="border border-signal bg-signal/12 px-2 py-1 font-bold uppercase tracking-[0.12em] text-signal transition-colors hover:bg-signal/20"
+        <Table className="min-w-[26rem]">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Instance</TableHead>
+              <TableHead className="px-2 text-right">Stamina</TableHead>
+              <TableHead className="px-2 text-right">Remaining</TableHead>
+              <TableHead className="text-right">Rewards</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {runs.map((run) => (
+              <TableRow key={run.id}>
+                <TableCell className="font-mono">{run.id}</TableCell>
+                <TableCell className="px-2 text-right tabular-nums text-readout-dim">
+                  −{run.staminaUsed}
+                </TableCell>
+                <TableCell className="px-2 text-right tabular-nums text-readout-dim">
+                  {run.staminaAfter}
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => setOpen(run.id)}
                   >
-                    View all
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                    View
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell className="uppercase tracking-[0.14em] text-readout-strong">
+                Total
+              </TableCell>
+              <TableCell className="px-2 text-right tabular-nums text-readout-strong">
+                −{totalStamina}
+              </TableCell>
+              <TableCell className="px-2 text-right tabular-nums text-readout-muted">
+                {runs[runs.length - 1]?.staminaAfter ?? 0}
+              </TableCell>
+              <TableCell className="text-right">
+                <Button
+                  variant="secondary"
+                  size="xs"
+                  onClick={() => setOpen("total")}
+                >
+                  View all
+                </Button>
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
 
         <div className="px-5 py-4">
           <button
@@ -361,6 +372,17 @@ export default function EventsPage(): React.JSX.Element {
   const [team, setTeam] = React.useState<CharacterData[]>([]);
   const [difficulty, setDifficulty] = React.useState<number>(worldLevel);
   const [notice, setNotice] = React.useState<string | null>(null);
+  /**
+   * A pending Auto Clear, awaiting a run count. Auto Clear used to spend the
+   * whole affordable batch on one tap — a full bar of stamina and every ticket
+   * that fit — with no way to ask for fewer (Tanveer, 2026-08-13). `maxRuns` is
+   * frozen at the moment the button was pressed so the slider's ceiling can't
+   * move under the player's finger while the modal is open.
+   */
+  const [autoConfirm, setAutoConfirm] = React.useState<{
+    event: GameEvent;
+    maxRuns: number;
+  } | null>(null);
 
   useScreenMusic(
     view.kind === "battle"
@@ -765,7 +787,7 @@ export default function EventsPage(): React.JSX.Element {
                   <button
                     type="button"
                     disabled={autoRuns < 1}
-                    onClick={() => runAutoClear(event, autoRuns)}
+                    onClick={() => setAutoConfirm({ event, maxRuns: autoRuns })}
                     title={
                       auto.blocker === "locked"
                         ? "Clear this fight yourself once to unlock Auto Clear."
@@ -777,10 +799,16 @@ export default function EventsPage(): React.JSX.Element {
                     }
                     className="ml-auto border border-edge-strong px-4 py-3 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout transition-colors hover:border-signal hover:text-signal disabled:border-hairline disabled:text-readout-muted"
                   >
+                    {/* No ticket count here. It read "Auto clear ×15" and was
+                        taken to mean fifteen skips already used (Tanveer,
+                        2026-08-13) — a bare ×N beside a verb reads as a count
+                        of the verb. The balance belongs in the confirm modal,
+                        where it is shown as a before → after shift next to the
+                        run count actually being spent. The button's own job is
+                        to be pressable or not: `autoRuns < 1` covers zero
+                        tickets, so a player with none can never reach the
+                        modal. */}
                     Auto clear
-                    <span className="ml-1.5 tabular-nums opacity-80">
-                      ×{autoClearTickets}
-                    </span>
                   </button>
                 ) : null}
                 <button
@@ -802,6 +830,24 @@ export default function EventsPage(): React.JSX.Element {
             </div>
           </div>
         </section>
+
+        {autoConfirm ? (
+          <AutoClearConfirm
+            eventName={autoConfirm.event.name}
+            difficulty={difficulty}
+            maxRuns={autoConfirm.maxRuns}
+            staminaCost={autoConfirm.event.staminaCost}
+            stamina={currentStamina}
+            tickets={autoClearTickets}
+            dropRows={farmablePreview(difficulty)}
+            onCancel={() => setAutoConfirm(null)}
+            onConfirm={(runs) => {
+              const target = autoConfirm.event;
+              setAutoConfirm(null);
+              runAutoClear(target, runs);
+            }}
+          />
+        ) : null}
       </main>
     );
   }

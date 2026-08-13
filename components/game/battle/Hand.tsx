@@ -595,13 +595,13 @@ export default function Hand({
             {canUseMergeButton(card) && interactive ? (
               <Button
                 variant="secondary"
-                size="sm"
+                size="xs"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
                   onMerge(card.id);
                 }}
-                className="absolute bottom-6 right-0.5 h-5 rounded-none border border-signal bg-void/85 px-1 text-[9px] uppercase tracking-[0.08em] text-signal hover:bg-signal/20"
+                className="absolute bottom-6 right-0.5 h-5 bg-void/85 px-1 text-[9px] tracking-[0.08em]"
               >
                 Merge
               </Button>

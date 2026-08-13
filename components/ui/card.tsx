@@ -2,6 +2,23 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Combat Terminal card (retheme, 2026-08-13).
+ *
+ * Every one of the seven `<Card>` usages in the app opened with the same
+ * three corrections — `rounded-none`, a Combat Terminal border, `bg-panel/95`
+ * and `ring-0` to cancel shadcn's `ring-1 ring-foreground/10`. Those are the
+ * defaults now, so a usage only states the parts that differ: a width, a
+ * situational border colour (victory gold, defeat red), a chamfer.
+ *
+ * `CardHeader` carries `border-b border-hairline` because all of them did;
+ * a header that doesn't want the rule passes `border-b-0`. Same reasoning for
+ * `CardDescription`, which was the identical body-uppercase readout in every
+ * usage.
+ *
+ * The `--card-spacing` mechanism is shadcn's and stays — it is the one part of
+ * the original that was already doing useful work.
+ */
 function Card({
   className,
   size = "default",
@@ -12,7 +29,7 @@ function Card({
       data-slot="card"
       data-size={size}
       className={cn(
-        "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl bg-card py-(--card-spacing) text-sm text-card-foreground ring-1 ring-foreground/10 [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
+        "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-none border border-edge bg-panel/95 py-(--card-spacing) text-sm text-readout [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0",
         className
       )}
       {...props}
@@ -25,7 +42,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-header"
       className={cn(
-        "group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-(--card-spacing) has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-(--card-spacing)",
+        "group/card-header @container/card-header grid auto-rows-min items-start gap-1 border-b border-hairline px-(--card-spacing) pb-(--card-spacing) has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto]",
         className
       )}
       {...props}
@@ -38,7 +55,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-title"
       className={cn(
-        "font-heading text-base leading-snug font-medium group-data-[size=sm]/card:text-sm",
+        "font-heading text-xl leading-snug tracking-[0.08em] text-readout-strong group-data-[size=sm]/card:text-base",
         className
       )}
       {...props}
@@ -50,7 +67,10 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-description"
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn(
+        "font-body text-xs uppercase tracking-[0.14em] text-readout-dim",
+        className
+      )}
       {...props}
     />
   )
@@ -84,7 +104,7 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-footer"
       className={cn(
-        "flex items-center rounded-b-xl border-t bg-muted/50 p-(--card-spacing)",
+        "flex items-center border-t border-hairline bg-inset p-(--card-spacing)",
         className
       )}
       {...props}

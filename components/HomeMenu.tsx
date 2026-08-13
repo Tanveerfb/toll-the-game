@@ -10,10 +10,9 @@ import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
 import { useStoryStore } from "@/store/storyStore";
 import BattleArena from "@/components/game/BattleArena";
-import OrdersPanel from "@/components/game/OrdersPanel";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { getPlayableCharacters } from "@/lib/game/characterCatalog";
-import { getActiveLimitedBanner } from "@/lib/gacha/banners";
+import { getGemBanner } from "@/lib/gacha/banners";
 import { LIMITED_MILESTONE_FIRST } from "@/lib/gacha/milestone";
 import { getCurrentStamina } from "@/lib/game/stamina";
 import {
@@ -34,7 +33,7 @@ interface HomeMenuProps {
 // Static catalog reads — these resolve at module load from the same JSON the
 // engine uses, so the hub can't advertise a roster or banner that doesn't exist.
 const PLAYABLE_COUNT = getPlayableCharacters().length;
-const LIMITED_BANNER = getActiveLimitedBanner();
+const GEM_BANNER = getGemBanner();
 
 const STORY_ART = getCharacterArt("duke");
 
@@ -72,12 +71,6 @@ function findNextChapter(completed: Record<string, boolean>) {
     }
   }
   return null;
-}
-
-/** Whole days until an ISO timestamp, floored at 0. */
-function daysUntil(iso: string, now: number): number {
-  const ms = new Date(iso).getTime() - now;
-  return Math.max(0, Math.ceil(ms / 86_400_000));
 }
 
 /**
@@ -201,10 +194,16 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
   const affordableRuns = ready
     ? Math.floor(getCurrentStamina(stamina, now) / BOSS_STAMINA_COST)
     : 0;
-  const bannerDays = now !== 0 ? daysUntil(LIMITED_BANNER.endsAt, now) : null;
-  const pullsToMilestone = ready
+  // The banner used to alert on "ends in N days". It has no end date any more
+  // (Tanveer, 2026-08-13 — it was always meant to be permanent), so the alert
+  // now fires on the only thing left that is actually actionable: an unclaimed
+  // first milestone. Manufacturing urgency for a permanent banner would be a
+  // lie.
+  const gemsToMilestone = ready
     ? Math.max(0, LIMITED_MILESTONE_FIRST - pity.limited.bar)
     : null;
+  const milestoneInReach =
+    ready && gemsToMilestone !== null && !pity.limited.claimedFirst;
 
   if (battlePhase !== "initializing") {
     return <BattleArena />;
@@ -277,7 +276,6 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
 
         {/* ORDERS — the "what do I do next" answer, directly under the "what
             do I do now" one. Retires itself once every order is claimed. */}
-        <OrdersPanel />
 
         {/* ALERTS — only what is true right now. */}
         {ready || hasUnread ? (
@@ -291,15 +289,15 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
                 onClick={() => router.push("/events")}
               />
             ) : null}
-            {bannerDays !== null && bannerDays <= 14 ? (
+            {milestoneInReach ? (
               <Alert
                 icon={Sparkles}
-                tone={bannerDays <= 3 ? "ready" : "quiet"}
-                title={LIMITED_BANNER.name}
+                tone={gemsToMilestone === 0 ? "ready" : "quiet"}
+                title={GEM_BANNER.name}
                 detail={
-                  pullsToMilestone !== null && pullsToMilestone > 0
-                    ? `Ends in ${bannerDays} day${bannerDays === 1 ? "" : "s"} · ${pullsToMilestone} to milestone`
-                    : `Ends in ${bannerDays} day${bannerDays === 1 ? "" : "s"}`
+                  gemsToMilestone === 0
+                    ? "Milestone reward ready to claim"
+                    : `${gemsToMilestone.toLocaleString()} gems to your first milestone`
                 }
                 onClick={() => router.push("/gacha")}
               />
@@ -327,7 +325,7 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
           />
           <ModeButton
             title="Gacha"
-            subtitle={LIMITED_BANNER.name}
+            subtitle={GEM_BANNER.name}
             onClick={() => router.push("/gacha")}
           />
           <ModeButton

@@ -93,7 +93,6 @@ function MechanicsTags({ skill }: { skill: CharacterSkillData }): React.ReactNod
         <Badge
           key={`${skill.skillName}-${type}`}
           variant="secondary"
-          className="rounded-none px-1.5 py-0 font-body text-[10px] uppercase tracking-widest text-readout-strong"
         >
           {toTitleCase(type)}
         </Badge>

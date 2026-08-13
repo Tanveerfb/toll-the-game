@@ -6,7 +6,7 @@
     "route": "/story",
     "routeLabel": "Story",
     "goal": { "type": "chaptersCleared", "count": 5 },
-    "reward": { "gems": 300, "coin": 5000 },
+    "reward": { "gems": 75, "coin": 5000 },
     "step": 2
   },
   {
@@ -17,7 +17,7 @@
     "routeLabel": "Archive",
     "goal": { "type": "characterLevel", "level": 20 },
     "reward": {
-      "gems": 200,
+      "gems": 50,
       "materials": { "training_manual_advanced": 3 }
     },
     "step": 2
@@ -29,7 +29,7 @@
     "route": "/archive",
     "routeLabel": "Archive",
     "goal": { "type": "characterAscension", "ascension": 2 },
-    "reward": { "gems": 400, "autoClearTickets": 2 },
+    "reward": { "gems": 100, "autoClearTickets": 2 },
     "step": 2
   },
   {
@@ -52,7 +52,7 @@
     "route": "/events",
     "routeLabel": "Events",
     "goal": { "type": "accountRank", "rank": 15 },
-    "reward": { "gems": 500, "coin": 10000 },
+    "reward": { "gems": 150, "coin": 10000 },
     "step": 2
   },
   {
@@ -62,7 +62,7 @@
     "route": "/gacha",
     "routeLabel": "Summon",
     "goal": { "type": "rosterSize", "count": 10 },
-    "reward": { "gems": 300, "permanentTicket": 2 },
+    "reward": { "gems": 75, "permanentTicket": 2 },
     "step": 2
   },
   {
@@ -72,7 +72,7 @@
     "route": "/gacha",
     "routeLabel": "Summon",
     "goal": { "type": "pulls", "count": 50 },
-    "reward": { "gems": 400 },
+    "reward": { "gems": 100 },
     "step": 2
   },
   {
@@ -82,7 +82,7 @@
     "route": "/story",
     "routeLabel": "Team picker",
     "goal": { "type": "presetsSaved", "count": 3 },
-    "reward": { "gems": 150, "coin": 3000 },
+    "reward": { "gems": 50, "coin": 3000 },
     "step": 2
   },
   {
@@ -92,7 +92,7 @@
     "route": "/story",
     "routeLabel": "Story",
     "goal": { "type": "chapterCleared", "partId": "part4", "chapterId": "p4c3" },
-    "reward": { "gems": 400, "materials": { "training_manual_advanced": 2 } },
+    "reward": { "gems": 125, "materials": { "training_manual_advanced": 2 } },
     "step": 2
   },
   {
@@ -104,7 +104,7 @@
     "requires": "s2-ascend-two",
     "goal": { "type": "characterAscension", "ascension": 3 },
     "reward": {
-      "gems": 600,
+      "gems": 175,
       "materials": { "training_manual_premium": 1 }
     },
     "step": 2

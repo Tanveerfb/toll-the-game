@@ -74,7 +74,7 @@
       ],
       "rewards": {
         "firstClear": {
-          "gems": 240,
+          "gems": 35,
           "coin": 6400,
           "materials": { "training_manual": 5, "sea_monster_eye": 1 },
           "accountXp": 80
@@ -162,7 +162,7 @@
       ],
       "rewards": {
         "firstClear": {
-          "gems": 240,
+          "gems": 40,
           "coin": 6400,
           "materials": { "training_manual": 5, "corroded_seaweed": 1 },
           "accountXp": 85
@@ -283,7 +283,7 @@
       ],
       "rewards": {
         "firstClear": {
-          "gems": 300,
+          "gems": 45,
           "coin": 8000,
           "materials": {
             "training_manual_advanced": 2,

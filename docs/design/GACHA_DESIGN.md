@@ -5,8 +5,24 @@
 > Part of the monetization core (see PRODUCT_AUDIT.md).
 
 ## Banners
+
+> **Amended 2026-08-13 — there are no Limited banners.** The V1. Beta Roster
+> Banner carried an `endsAt` and displayed as "Limited · ends 05/09/2026" for
+> weeks; Tanveer: *"it was always meant to be permanent, i just noticed it after
+> so much time."* The end date is gone from the data and the type, and the home
+> screen's "ends in N days" alert went with it. **The rate rule and the
+> rotation model below are kept as the design for a future limited banner —
+> none exists today.**
+>
+> The two banners that exist are two *economies*, not two durations: the **gem
+> banner** (the beta roster, permanent, 5% featured) and the **ticket banner**
+> (permanent, empty). Accessors are `getGemBanner()` / `getTicketBanner()`. The
+> `limited` identifiers still inside `store/playerStore.ts` mean "the gem
+> banner" — they key persisted pity state and were not worth a migration.
+
 Two banner categories, not one:
-- **Limited banner** — rotates, has a featured roster and an end date. Currently: the **debut banner**
+- **Gem banner** (was: "Limited banner" — rotation and end dates are unbuilt).
+  Currently: the **debut banner**
   (in-game display name **"V1. Beta Roster Banner"**, renamed 2026-08-02 — "debut banner" below is the
   conceptual/doc term, not the player-facing string), a one-off covering 12 non-collab characters (Duke,
   Lyra, Batra, Gabrist, Sara, Yalina, Mustafa,
@@ -69,11 +85,18 @@ that tracks currency *spent* (not pull count), 1:1:
 ## Economy & pull system
 - **Three currencies:** `gems` (Limited banner pulls), `coin` (in-world money, ascension/leveling — also
   a possible miss-pull reward), `permanentTicket` (Permanent banner pulls only).
-- **Pull cost:** Limited = 3 gems single / 30 gems for an 11-pull. Permanent = 1 ticket single / 10
-  tickets for an 11-pull (same 7DSGC-style discount shape on both banners).
-- **Faucet:** small gems + tickets rolled into the existing World Boss clear-reward roll (the only
-  reward pipeline that existed when this was built) — amounts are tunable later, same as the
-  materials/coin ranges already are.
+- **Pull cost:** gem banner = **5 gems single / 50 for an 11-pull**; Permanent = 1 ticket single / 10
+  tickets for an 11-pull (same 7DSGC-style discount shape on both banners). *(Corrected 2026-08-13:
+  this line read "3 gems single / 30 gems for an 11-pull". `LIMITED_GEM_COST` in `lib/gacha/cost.ts`
+  has been 5/50 since the 2026-08-11 milestone ruling, which set the bar 1:1 with gems spent.)*
+- **Faucet:** gems and Permanent Tickets come from **first clears only** — never from a repeat or an
+  Auto Clear (ruling #80, 2026-08-13). *(This line previously described them as part of the ordinary
+  World Boss clear roll, which was the grindable-gems bug that ruling closed.)*
+- **Permanent Tickets are parked, not orphaned (Tanveer, 2026-08-13).** With the beta roster running
+  on gems and the ticket banner's pool empty, tickets currently buy nothing — and Molvarr's first
+  clear still pays 1. That is **intentional accrual**: a **shop is planned**, and tickets regain their
+  use there. *"dw until then."* Do not repurpose them, stop granting them, or wire them to the gem
+  banner to give them something to do.
 
 ## Non-featured pull outcomes (Limited banner only — Permanent never misses)
 A non-featured Limited pull never gives a character. It gives one item from 3 equally-weighted

@@ -3,9 +3,10 @@
 import Image from "next/image";
 import React from "react";
 import { usePlayerStore, type ResolvedPullOutcome } from "@/store/playerStore";
-import { getActiveLimitedBanner, getPermanentBanner } from "@/lib/gacha/banners";
+import { getGemBanner, getTicketBanner } from "@/lib/gacha/banners";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { getCharacterById } from "@/lib/game/characterCatalog";
+import ConfirmPullModal from "@/components/gacha/ConfirmPullModal";
 import RatesModal from "@/components/gacha/RatesModal";
 import ClaimSection from "@/components/gacha/ClaimSection";
 import PullReveal from "@/components/gacha/PullReveal";
@@ -19,7 +20,9 @@ import {
 } from "@/lib/gacha/milestone";
 import {
   LIMITED_GEM_COST,
+  limitedBarGain,
   MULTI_PULL_COUNT,
+  permanentTicketCost,
   PERMANENT_TICKET_COST,
 } from "@/lib/gacha/cost";
 
@@ -33,6 +36,10 @@ function markerAt(threshold: number, final: number): number {
 export default function BannerScreen(): React.JSX.Element {
   const [tab, setTab] = React.useState<Tab>("limited");
   const [showRates, setShowRates] = React.useState(false);
+  // A draw is confirmed before it rolls: 50 gems is ten Molvarr first clears,
+  // and it used to fire on one tap of a button whose only warning was its own
+  // label (Tanveer, 2026-08-13).
+  const [pendingDraw, setPendingDraw] = React.useState<1 | 11 | null>(null);
   const [reveal, setReveal] = React.useState<{
     results: ResolvedPullOutcome[];
     count: 1 | 11;
@@ -50,11 +57,17 @@ export default function BannerScreen(): React.JSX.Element {
   const claimLimitedFinal = usePlayerStore((s) => s.claimLimitedFinal);
   const claimPermanentFinal = usePlayerStore((s) => s.claimPermanentFinal);
 
-  const limitedBanner = getActiveLimitedBanner();
-  const permanentBanner = getPermanentBanner();
+  const gemBanner = getGemBanner();
+  const ticketBanner = getTicketBanner();
+
+  // The ticket banner's pool is every character flagged `permanentPool`, which
+  // is currently none. An empty banner is not a tab the player should be able
+  // to land on, so the strip only renders once there is a real second banner
+  // to switch to.
+  const ticketBannerAvailable = ticketBanner.featured.length > 0;
 
   const isLimited = tab === "limited";
-  const featured = isLimited ? limitedBanner.featured : permanentBanner.featured;
+  const featured = isLimited ? gemBanner.featured : ticketBanner.featured;
   const bar = isLimited ? pity.limited.bar : pity.permanent.bar;
   const finalThreshold = isLimited
     ? LIMITED_MILESTONE_FINAL
@@ -75,8 +88,20 @@ export default function BannerScreen(): React.JSX.Element {
   // The permanent pool is every character flagged `permanentPool`, which is
   // currently none — the tab used to render a live Draw button over an empty
   // pool, so pressing it did nothing at all.
-  const poolEmpty = !isLimited && permanentBanner.featured.length === 0;
+  const poolEmpty = !isLimited && ticketBanner.featured.length === 0;
   const canAfford = (cost: number) => hasHydrated && balance >= cost && !poolEmpty;
+
+  // The next milestone this banner has still to pay out — what the confirm
+  // modal measures a draw against. `null` once they are all behind you.
+  const nextThreshold: number | null = isLimited
+    ? !pity.limited.claimedFirst
+      ? LIMITED_MILESTONE_FIRST
+      : !pity.limited.claimedFinal
+        ? LIMITED_MILESTONE_FINAL
+        : null
+    : !pity.permanent.claimedFinal
+      ? PERMANENT_MILESTONE_FINAL
+      : null;
 
   const claimableFirst =
     isLimited && canClaimLimitedFirst(pity.limited.bar, pity.limited.claimedFirst);
@@ -104,25 +129,27 @@ export default function BannerScreen(): React.JSX.Element {
   return (
     <main className="terminal-grid min-h-screen bg-void">
       <section className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-6 md:px-8">
-        <div className="flex gap-1.5 border-b border-edge pb-2">
-          {(["limited", "permanent"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => {
-                setTab(t);
-                setNotice(null);
-              }}
-              className={`border px-3.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] transition-colors ${
-                tab === t
-                  ? "border-signal bg-signal/10 text-signal"
-                  : "border-edge text-readout-dim hover:border-edge-strong hover:text-readout"
-              }`}
-            >
-              {t === "limited" ? "Limited" : "Permanent"}
-            </button>
-          ))}
-        </div>
+        {ticketBannerAvailable ? (
+          <div className="flex gap-1.5 border-b border-edge pb-2">
+            {(["limited", "permanent"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => {
+                  setTab(t);
+                  setNotice(null);
+                }}
+                className={`border px-3.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] transition-colors ${
+                  tab === t
+                    ? "border-signal bg-signal/10 text-signal"
+                    : "border-edge text-readout-dim hover:border-edge-strong hover:text-readout"
+                }`}
+              >
+                {t === "limited" ? "Gems" : "Tickets"}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         {/* BANNER */}
         <div className="relative h-40 overflow-hidden border border-edge-strong bg-panel md:h-48">
@@ -141,16 +168,16 @@ export default function BannerScreen(): React.JSX.Element {
           <span className="absolute inset-0 bg-linear-to-r from-void via-void/70 to-transparent" />
           <div className="relative flex h-full max-w-[70%] flex-col justify-center gap-1 px-5">
             <span className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
-              {isLimited
-                ? `Limited · ends ${new Date(limitedBanner.endsAt).toLocaleDateString()}`
-                : "Permanent"}
+              {/* No end date and no "Limited" — the beta roster was always
+                  meant to be permanent (Tanveer, 2026-08-13). */}
+              Permanent · {isLimited ? "gems" : "tickets"}
             </span>
             <span className="font-heading text-2xl leading-tight tracking-[0.04em] text-readout-strong md:text-3xl">
-              {isLimited ? limitedBanner.name : "Permanent Banner"}
+              {isLimited ? gemBanner.name : "Permanent Banner"}
             </span>
             <span className="font-body text-xs text-readout-dim">
               {isLimited
-                ? `${(limitedBanner.rate * 100).toFixed(0)}% featured · ${featured.length} units`
+                ? `${(gemBanner.rate * 100).toFixed(0)}% featured · ${featured.length} units`
                 : poolEmpty
                   ? "No units in the pool yet"
                   : `${featured.length} units · every pull is a character`}
@@ -282,7 +309,7 @@ export default function BannerScreen(): React.JSX.Element {
                 key={count}
                 type="button"
                 disabled={!canAfford(cost)}
-                onClick={() => draw(count === 1 ? 1 : 11)}
+                onClick={() => setPendingDraw(count === 1 ? 1 : 11)}
                 className={`flex-1 border px-3 py-3 text-center transition-colors disabled:border-hairline disabled:bg-transparent disabled:opacity-50 ${
                   main
                     ? "border-signal bg-signal/12 hover:bg-signal/20"
@@ -326,7 +353,7 @@ export default function BannerScreen(): React.JSX.Element {
       {showRates ? (
         <RatesModal
           featured={featured}
-          rate={isLimited ? limitedBanner.rate : 1}
+          rate={isLimited ? gemBanner.rate : 1}
           missNote={
             isLimited
               ? undefined
@@ -336,14 +363,38 @@ export default function BannerScreen(): React.JSX.Element {
         />
       ) : null}
 
+      {pendingDraw !== null ? (
+        <ConfirmPullModal
+          bannerName={isLimited ? gemBanner.name : "Permanent Banner"}
+          count={pendingDraw}
+          cost={pendingDraw === 1 ? singleCost : multiCost}
+          unit={unit}
+          balance={balance}
+          bar={bar}
+          barGain={
+            isLimited
+              ? limitedBarGain(pendingDraw)
+              : permanentTicketCost(pendingDraw)
+          }
+          nextThreshold={nextThreshold}
+          onCancel={() => setPendingDraw(null)}
+          onConfirm={() => {
+            const count = pendingDraw;
+            setPendingDraw(null);
+            draw(count);
+          }}
+        />
+      ) : null}
+
       {reveal ? (
         <PullReveal
           results={reveal.results}
           drawLabel={drawLabel(reveal.count)}
           canDrawAgain={canAfford(reveal.count === 1 ? singleCost : multiCost)}
           onDrawAgain={() => {
+            const count = reveal.count;
             setReveal(null);
-            draw(reveal.count);
+            setPendingDraw(count);
           }}
           onClose={() => setReveal(null)}
         />

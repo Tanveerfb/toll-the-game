@@ -40,7 +40,7 @@ export default function DuelWaitingOverlay(): React.JSX.Element | null {
           size="sm"
           variant="ghost"
           onClick={() => abort?.()}
-          className="shrink-0 rounded-none border border-edge font-body text-[10px] uppercase tracking-[0.14em] text-readout"
+          className="shrink-0"
         >
           Let AI play
         </Button>

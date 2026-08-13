@@ -3,9 +3,13 @@ import { persist } from "zustand/middleware";
 import { spendStamina, STAMINA_CAP } from "@/lib/game/stamina";
 import { AUTO_CLEAR_TICKETS_PER_RANK } from "@/lib/game/autoClear";
 import { feedManual, type ManualTier } from "@/lib/game/leveling";
-import { canAffordAscension, getAscensionCost, maxLevelForAscension } from "@/lib/game/ascension";
+import {
+  ascensionBlocker,
+  getAscensionCost,
+  maxLevelForAscension,
+} from "@/lib/game/ascension";
 import type { WorldBossRewards } from "@/lib/game/worldBossRewards";
-import { getActiveLimitedBanner, getPermanentBanner } from "@/lib/gacha/banners";
+import { getGemBanner, getTicketBanner } from "@/lib/gacha/banners";
 import { rollLimitedPull, rollPermanentPull, rollUniformFromPool, type PullOutcome } from "@/lib/gacha/pull";
 import {
   advanceLimitedBar,
@@ -522,7 +526,13 @@ export const usePlayerStore = create<PlayerState>()(
         const progress = getCharacterProgress(state, characterId);
         const cost = getAscensionCost(progress.ascension + 1);
         if (!cost) return false;
-        if (!canAffordAscension(cost, state.inventory, state.currencies.coin)) return false;
+        // Every gate in one call, so the store and the panel can never disagree
+        // about whether a button should have worked. The level check is the one
+        // that was missing until 2026-08-13 — materials alone could carry a
+        // level-1 character from ascension 1 to 4.
+        if (ascensionBlocker(progress, state.inventory, state.currencies.coin)) {
+          return false;
+        }
 
         set({
           inventory: {
@@ -650,7 +660,7 @@ export const usePlayerStore = create<PlayerState>()(
 
       pullLimited: (count) => {
         const state = get();
-        const banner = getActiveLimitedBanner();
+        const banner = getGemBanner();
         const cost = limitedGemCost(count);
         if (state.currencies.gems < cost) return false;
 
@@ -698,7 +708,7 @@ export const usePlayerStore = create<PlayerState>()(
 
       pullPermanent: (count) => {
         const state = get();
-        const banner = getPermanentBanner();
+        const banner = getTicketBanner();
         if (banner.featured.length === 0) return false;
         const cost = permanentTicketCost(count);
         if (state.currencies.permanentTicket < cost) return false;
@@ -739,7 +749,7 @@ export const usePlayerStore = create<PlayerState>()(
         // The two milestones differ only in who chooses: the first rolls a
         // featured unit for you, the final lets you pick one.
         const characterId = rollUniformFromPool(
-          getActiveLimitedBanner().featured,
+          getGemBanner().featured,
         );
         if (!characterId) return false;
 
@@ -763,7 +773,7 @@ export const usePlayerStore = create<PlayerState>()(
 
       claimLimitedFinal: (characterId) => {
         const state = get();
-        const banner = getActiveLimitedBanner();
+        const banner = getGemBanner();
         if (
           !canClaimLimitedFinal(
             state.pity.limited.bar,
@@ -797,7 +807,7 @@ export const usePlayerStore = create<PlayerState>()(
 
       claimPermanentFinal: (characterId) => {
         const state = get();
-        const banner = getPermanentBanner();
+        const banner = getTicketBanner();
         if (
           !canClaimPermanentFinal(
             state.pity.permanent.bar,

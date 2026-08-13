@@ -10,7 +10,7 @@
       "count": 1
     },
     "reward": {
-      "gems": 100
+      "gems": 50
     },
     "step": 1
   },
@@ -58,7 +58,7 @@
       "level": 5
     },
     "reward": {
-      "gems": 200,
+      "gems": 75,
       "coin": 2000
     },
     "step": 1
@@ -74,7 +74,7 @@
       "count": 1
     },
     "reward": {
-      "gems": 50
+      "gems": 25
     },
     "step": 1
   },
@@ -89,7 +89,7 @@
       "count": 1
     },
     "reward": {
-      "gems": 300,
+      "gems": 150,
       "materials": {
         "training_manual_advanced": 1
       },
@@ -109,7 +109,7 @@
       "ascension": 1
     },
     "reward": {
-      "gems": 200,
+      "gems": 100,
       "coin": 5000
     },
     "step": 1
@@ -125,7 +125,7 @@
       "rank": 5
     },
     "reward": {
-      "gems": 300,
+      "gems": 125,
       "materials": {
         "training_manual_advanced": 2
       },
@@ -144,7 +144,7 @@
       "count": 6
     },
     "reward": {
-      "gems": 200,
+      "gems": 75,
       "coin": 3000
     },
     "step": 1

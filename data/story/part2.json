@@ -67,7 +67,7 @@
       "teamMode": "canon",
       "rewards": {
         "firstClear": {
-          "gems": 75,
+          "gems": 30,
           "coin": 2500,
           "materials": {
             "training_manual": 3
@@ -204,7 +204,7 @@
       ],
       "rewards": {
         "firstClear": {
-          "gems": 75,
+          "gems": 40,
           "coin": 2500,
           "materials": {
             "training_manual": 3

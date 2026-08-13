@@ -1,8 +1,13 @@
 # shadcn and the game UI — cleanup, and what to actually use it for
 
 > Spec written 2026-08-13 after Tanveer asked whether shadcn had quietly stopped
-> being used. **Not built.** Every number below was measured against the repo at
-> commit `018e9d0`, not recalled.
+> being used. Every number below was measured against the repo at commit
+> `018e9d0`, not recalled.
+>
+> **Status: built the same day.** He answered the three open calls; see
+> [Decisions and what shipped](#decisions-and-what-shipped) at the foot of this
+> document for what was done, what was deliberately not done, and the two things
+> the plan got wrong before contact with the screens.
 
 ## The question he asked
 
@@ -176,12 +181,116 @@ grep -rn -A3 "<Button" --include=*.tsx app/ components/ | grep -c "className="
 
 It reads **16** today at commit `018e9d0`.
 
-## Open — his calls
+## Decisions and what shipped
 
-1. **Phase 1 scope**: delete all three dead primitives, or keep `select` for
-   Phase 3? (I recommend keeping `select`.)
-2. **Is Phase 2 wanted at all**, or is hand-rolled Tailwind the intended house
-   style from here? It is a legitimate answer — this codebase is proof it works.
-   It just needs to be a decision rather than a drift.
-3. **Phase 3 appetite**, if any. It is the only phase with real risk, and it
-   buys accessibility rather than looks.
+Answered by Tanveer on 2026-08-13, and built the same day.
+
+| Call | His answer | Outcome |
+| --- | --- | --- |
+| Phase 1 scope | Delete `label` + `table`, keep `select` | **Amended** — `label` deleted, `table` and `select` both kept (see below) |
+| Phase 2 | Yes, retheme the primitives | Done. `<Button>` usages carrying a className: **16 → 6** |
+| Phase 3 | Selects, Tables and Tooltips | Tables and Tooltips done. **Selects: nothing to convert** (see below) |
+
+### Where the plan was wrong
+
+Two of this document's own claims did not survive reading the screens they
+described. Both were written from counts rather than from the markup.
+
+**1. `table` was scheduled for deletion and for adoption in the same session.**
+Phase 1 said delete it; Phase 3 said convert the Auto Clear and effects tables
+to it. Deleting and re-adding a primitive inside one batch is exactly the
+failure this document exists to stop, so `table` was kept and adopted — the same
+reasoning he accepted for `select`, applied to the primitive that had a
+confirmed consumer waiting. Only `label.tsx` was deleted; its 3 raw `<label>`
+elements all live in `DevGrantPanel` and none of them want the primitive.
+
+**2. "The difficulty picker, the team picker and the archive filters are all
+hand-rolled buttons doing a select's job" is false.** Reading them:
+
+- The **difficulty picker** is a 4-tile segmented control where every tile
+  shows its own state (Locked / Cleared / New). A select would collapse four
+  always-visible states behind a trigger — strictly worse.
+- The **archive filters** are multi-select tag and mechanic chips, plus a sort
+  control carrying tri-state (off / ascending / descending) in one button. A
+  Radix Select can express neither.
+- The **team preset chooser** renders member portraits on each chip; a preset is
+  recognised by its faces, not its name. Its actual defect is the `window.prompt`
+  and `window.alert` calls beside it — `docs/design/UX_IDEAS.md` **N1**, a
+  different fix.
+
+So the app currently has **zero** genuine select candidates. `select.tsx` stays
+on his call, but the reason given for keeping it (its emptiness is the bug) is
+now known to be wrong: nothing in the app wants it today. It should be revisited
+the first time a real single-choice control appears, and deleted if one never
+does.
+
+### What Phase 2 changed
+
+`button.tsx`, `badge.tsx` and `card.tsx` now paint from the Combat Terminal
+tokens by default — `rounded-none`, `border-edge`, `bg-panel`, `font-heading`,
+`text-readout`. Size carries the typeface too, because the two always travelled
+together: `xs`/`sm` are body-font uppercase readouts, `default`/`lg`/`xl` are
+heading-font display text. An `xl` size was added for the h-12 result-screen
+buttons.
+
+Variant names are unchanged and now mean something in this game's vocabulary:
+`default` is filled signal (primary action), `secondary` is outlined signal,
+`outline` is neutral `edge-strong`, `ghost` is quieter `edge`, `destructive` is
+`el-red`.
+
+Every remaining `<Button className>` adds something a variant cannot know — a
+width, a chamfer, a grid margin, a type size. None restate the palette.
+
+### Two live bugs the retheme fixed
+
+Both were `bg-primary` — shadcn's near-white in dark mode — showing through a
+className that overrode text and border but forgot background:
+
+- The victory/defeat screen's **CLAIM REWARDS / CONTINUE STORY / RETRY BATTLE /
+  REMATCH** rendered as near-white buttons with cyan text.
+- The progression panel's **Ascend** button (`<Button className="mt-2">`) was a
+  near-white button inside a Combat Terminal panel.
+
+Neither was reported; both were invisible in code review precisely because the
+override *looked* complete.
+
+### What Phase 3 shipped
+
+- **Tables** — `table.tsx` rethemed and adopted by both hand-rolled tables
+  (`app/events/page.tsx` Auto Clear results, `components/game/battle/EffectsList.tsx`
+  effects modal). The Auto Clear totals row is now a real `<TableFooter>`. Both
+  now inherit the `overflow-x-auto` container, which the effects table had been
+  getting only by hand.
+- **Tooltips** — `tooltip.tsx` rethemed from shadcn's white-on-black pill to a
+  `panel-raised` card with an `edge-strong` border. Converted the cases where a
+  native `title` was carrying information nothing else showed:
+  - the **TopNav resource strip** (stamina, gems, coin, world level, account
+    rank) — five explanations that never appeared on touch at all, on chrome
+    that renders on every screen;
+  - the **Feed Manual** disabled reason in the progression panel, where a native
+    `title` fires on neither a disabled control nor a tap — invisible in exactly
+    the two cases that needed it.
+
+The other ~40 `title=` occurrences were left alone: most are React props named
+`title` (panel headings, overlay titles), not HTML attributes, and the genuine
+ones restate a label already visible next to the icon.
+
+### Verification
+
+`npx vitest run` → **1192 passed / 96 files**. `npx tsc --noEmit` → clean.
+`npm run lint` → 0 errors, the same 3 known warnings in `tests/duel.test.ts`.
+`NEXT_DIST_DIR=.next-verify npm run build` → compiled, 48 pages.
+
+No test covers visual output, so **the look is unverified** — Tanveer playtests,
+per the usual rule. The screens most changed are the battle result modal, the
+story reward and skip screens, the events Auto Clear results, the effects modal
+and the top nav.
+
+### Still open
+
+- **`select.tsx`** — kept, but with no consumer and no candidate. Revisit when a
+  real single-choice control appears.
+- **The 97 raw `<button>` elements** are untouched and should stay that way; see
+  the out-of-scope list above.
+- The **mobile pass** will touch many of the same files. Phase 2 landing first
+  was deliberate.

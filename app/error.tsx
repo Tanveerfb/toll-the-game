@@ -31,18 +31,14 @@ export default function GlobalError({
         saved — you can try again or head back to the menu.
       </p>
       <div className="flex gap-3">
-        <Button
-          variant="outline"
-          onClick={reset}
-          className="rounded-none border border-edge bg-transparent font-heading tracking-[0.1em] text-readout-strong"
-        >
+        <Button variant="outline" onClick={reset}>
           TRY AGAIN
         </Button>
         <Button
+          variant="secondary"
           onClick={() => {
             window.location.href = "/";
           }}
-          className="rounded-none border border-signal bg-signal/10 font-heading tracking-[0.1em] text-signal"
         >
           RETURN TO MENU
         </Button>

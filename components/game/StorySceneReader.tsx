@@ -206,10 +206,8 @@ export default function StorySceneReader({
               event.stopPropagation();
               setAuto((v) => !v);
             }}
-            className={`rounded-none border font-body text-[10px] uppercase tracking-[0.16em] ${
-              auto
-                ? "chamfer border-signal bg-signal text-void"
-                : "chamfer border-edge text-readout-dim hover:text-readout"
+            className={`chamfer text-[10px] tracking-[0.16em] ${
+              auto ? "border-signal bg-signal text-void" : ""
             }`}
           >
             Auto
@@ -221,7 +219,7 @@ export default function StorySceneReader({
               event.stopPropagation();
               setHistoryOpen(true);
             }}
-            className="chamfer rounded-none border border-edge font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-dim hover:text-signal"
+            className="chamfer text-[10px] tracking-[0.16em] hover:text-signal"
           >
             History
           </Button>
@@ -232,7 +230,7 @@ export default function StorySceneReader({
               event.stopPropagation();
               requestSkip();
             }}
-            className="chamfer rounded-none border border-edge font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-dim hover:text-signal"
+            className="chamfer text-[10px] tracking-[0.16em] hover:text-signal"
           >
             Skip ▸▸
           </Button>
@@ -436,7 +434,8 @@ function HistoryOverlay({
         </p>
         <Button
           onClick={onClose}
-          className="chamfer h-11 rounded-none border border-signal bg-signal px-5 font-heading text-sm tracking-[0.12em] text-void"
+          size="lg"
+          className="chamfer text-sm"
         >
           CLOSE
         </Button>
@@ -481,13 +480,15 @@ function SkipPrompt({
           <Button
             onClick={onCancel}
             variant="ghost"
-            className="chamfer h-11 flex-1 rounded-none border border-edge font-heading text-sm tracking-[0.12em] text-readout-dim hover:text-signal"
+            size="lg"
+            className="chamfer flex-1 text-sm hover:text-signal"
           >
             KEEP READING
           </Button>
           <Button
             onClick={onConfirm}
-            className="chamfer h-11 flex-1 rounded-none border border-signal bg-signal font-heading text-sm tracking-[0.12em] text-void"
+            size="lg"
+            className="chamfer flex-1 text-sm"
           >
             SKIP
           </Button>

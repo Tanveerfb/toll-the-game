@@ -218,6 +218,25 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
 83. **Don't deprecate what you can delete** (2026-08-13). Offered a `@deprecated` flag on four symbols with zero callers: *"bruh if nothing's changed then flag is useless lol. if ifs not much to remove then do it right now."* A deprecation marker is a migration plan for code someone still depends on. On dead code it is a comment pretending to be a plan, and it leaves the next reader to re-derive that it was safe to remove. **If removal is cheap and nothing calls it, remove it in the same breath as noticing it.**
 
+84. **The primitives speak Combat Terminal; usages don't re-say it** (2026-08-13). `components/ui/` shipped shadcn's greyscale defaults while the game paints from the Combat Terminal tokens, so every `<Button>` set `variant="outline"` on one line and contradicted it on the next — 16 of 36 usages carried a className restating radius, border, background, font, tracking and colour. The primitives now default to the game's look, and **a className on a primitive should add something the variant cannot know** — a width, a chamfer, a grid position, a type size. If you find yourself writing `rounded-none border-edge font-heading` at a usage, the variant is wrong, not the usage.
+
+    Corollary, learned the same day: **an override that looks complete can still leak.** Four result-screen buttons and the Ascend button rendered near-white for weeks because their classNames set text and border but not background, so shadcn's `bg-primary` showed through. Nobody reported it; it was invisible in review.
+
+    Also settled: **the app has no genuine `<Select>` candidates.** The difficulty picker is a segmented control with per-tile state, the archive filters are multi-select chips plus a tri-state sort, and the team preset chips carry member portraits. Don't convert any of them — see `docs/superpowers/specs/2026-08-13-shadcn-and-ui-cleanup-design.md`.
+
+85. **Ascension requires the level, not just the materials** (2026-08-13). Ascending was cost-only, so a Lv1 character with a full bag could be taken from ascension 1 to 4 without being levelled once: *"to ascend, they need to reach the min base level of that band first."* Ascension N+1 now requires level ≥ the cap of band N (Lv20 → asc 2, Lv30 → asc 3, Lv40 → asc 4); ascension 1 requires Lv1, so a fresh unit is never blocked from its first.
+
+    The general shape worth carrying: **a cap in one direction is not a gate in the other.** `maxLevelForAscension` had existed since the system shipped and was correct — it stopped you levelling past a band. Nobody wrote the mirror rule, and the missing half was invisible because the existing half looked like the whole thing.
+
+    Both the store and the panel now call one `ascensionBlocker()`, so an enabled button can never mean something different from what the action will do.
+
+86. **Be frugal; more content is coming** (2026-08-13). After the economy audit: *"i will add more events in the future to daily grind out coin, manuals and other stuff... there will be more bosses, more PVE content in general later... you don't have to 'donate' resources right now across current content. a frugal dev and dev helper (you) is good to have right now."* When a resource looks short, the default answer is **future content**, not a bigger number on existing content. Every payout retuned this session was moved *down* or bumped only partially.
+
+    Settled at the same time:
+    - **The story is 24 parts**, twelve of which exist. Total gem budget **3,000**, ramped in six tiers of four parts (70/95/120/140/155/170 each). `docs/design/ECONOMY_AUDIT.md` carries the table — **author future parts against it.** The first twelve were improvised and reached 6,430 before anyone summed them.
+    - **Lv40 is the hard grinder ceiling** and *"i don't want anyone to grind all of their characters to lvl 40 easily."* A team of four to Lv40 is ~72 days; that is the intent, not a problem. Do not "fix" it — specifically, do not add Advanced Manuals to the tier-1 farm or flatten the XP curve, which are the two levers that would.
+    - **Permanent Tickets are parked, not orphaned.** They buy nothing today and accrue on purpose; a **shop** is planned and reclaims them. Don't repurpose them or stop granting them.
+
 ## Working Style He Expects
 
 - Work **batch by batch**; commit per batch with tests + lint + build green; update `docs/` in the same commit.

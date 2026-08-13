@@ -68,8 +68,25 @@ export const BASE_SEA_MONSTER_EYE = 1;
  *  the eye count (lib/game/ascension.ts) but both dropped at a flat 1:2, so
  *  seaweed was the only real gate while eyes piled up unspent. */
 export const BASE_CORRODED_SEAWEED = 4;
-export const TRAINING_MANUAL_MIN = 3;
-export const TRAINING_MANUAL_MAX = 6;
+/**
+ * Training Manuals per tier-1 clear. Raised from 3-6 on 2026-08-13.
+ *
+ * The economy audit found manuals were the binding constraint on the whole
+ * game by a factor of ten: levelling one character Lv1->40 costs 78,000 XP =
+ * 780 manuals, which at 3-6 a clear and 7.2 clears a day was **24 days for a
+ * single character**, against 2.4 days for the eyes and 1.7 for the seaweed
+ * that the ascension design intended as the gate. The 2026-08-13 ascension
+ * level gate (ruling #85) then put that wall on the critical path, because a
+ * character can no longer be ascended past a band it never levelled through.
+ *
+ * Deliberately a modest bump rather than a fix: Tanveer is adding daily events
+ * and further bosses that will farm manuals, and asked for frugality until
+ * they exist — *"you don't have to 'donate' resources right now across current
+ * content."* The remaining gap should close with that content, not with this
+ * number. See `docs/design/ECONOMY_AUDIT.md`.
+ */
+export const TRAINING_MANUAL_MIN = 4;
+export const TRAINING_MANUAL_MAX = 8;
 export const COIN_MIN = 2000;
 export const COIN_MAX = 10000;
 
@@ -155,7 +172,7 @@ export const MOLVARR_TIERS: readonly BossTier[] = [
     farmable: {
       sea_monster_eye: [2, 0.15],
       corroded_seaweed: [6, 0.15],
-      training_manual: [4, 8],
+      training_manual: [6, 11],
       training_manual_advanced: [1, 2],
       training_manual_premium: [0, 0],
       coin: [4000, 14000],
@@ -180,7 +197,7 @@ export const MOLVARR_TIERS: readonly BossTier[] = [
     farmable: {
       sea_monster_eye: [3, 0.2],
       corroded_seaweed: [8, 0.2],
-      training_manual: [6, 10],
+      training_manual: [9, 15],
       training_manual_advanced: [2, 4],
       training_manual_premium: [1, 1],
       coin: [7000, 20000],
@@ -205,7 +222,7 @@ export const MOLVARR_TIERS: readonly BossTier[] = [
     farmable: {
       sea_monster_eye: [4, 0.25],
       corroded_seaweed: [10, 0.25],
-      training_manual: [8, 14],
+      training_manual: [13, 21],
       training_manual_advanced: [3, 6],
       training_manual_premium: [1, 2],
       coin: [10000, 28000],

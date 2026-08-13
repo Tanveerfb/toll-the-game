@@ -989,26 +989,27 @@ export default function BattleArena({
 
       {isExitConfirmOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/85 px-4 backdrop-blur-sm">
-          <Card className="w-full max-w-sm rounded-none border-2 border-el-red bg-panel/95 ring-0">
-            <CardHeader className="border-b border-hairline px-6 py-5 text-center">
+          <Card className="w-full max-w-sm border-2 border-el-red">
+            <CardHeader className="px-6 py-5 text-center">
               <CardTitle className="font-heading text-3xl tracking-[0.12em] text-el-red">
                 EXIT BATTLE?
               </CardTitle>
-              <CardDescription className="mt-2 font-body text-xs uppercase tracking-[0.12em] text-readout-dim">
+              <CardDescription className="mt-2 tracking-[0.12em]">
                 This counts as a loss — your progress in this fight is forfeited.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3 px-6 py-5">
               <Button
+                variant="destructive"
+                size="lg"
                 onClick={confirmExitBattle}
-                className="h-11 rounded-none border-2 border-el-red bg-transparent font-heading text-base tracking-[0.12em] text-el-red hover:bg-el-red/10"
               >
                 EXIT — TAKE THE LOSS
               </Button>
               <Button
                 variant="outline"
+                size="lg"
                 onClick={() => setIsExitConfirmOpen(false)}
-                className="h-11 rounded-none border-2 border-edge-strong bg-transparent font-heading text-base tracking-[0.12em] text-readout-strong"
               >
                 CANCEL
               </Button>
@@ -1020,15 +1021,15 @@ export default function BattleArena({
       {showBattleOver ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/85 px-4 backdrop-blur-sm">
           <Card
-            className={`w-full max-w-md rounded-none border-2 ${battlePhase === "victory" ? "border-el-light" : "border-el-red"} bg-panel/95 ring-0`}
+            className={`w-full max-w-md border-2 ${battlePhase === "victory" ? "border-el-light" : "border-el-red"}`}
           >
-            <CardHeader className="border-b border-hairline px-6 py-6 text-center">
+            <CardHeader className="px-6 py-6 text-center">
               <CardTitle
                 className={`font-heading text-6xl tracking-[0.16em] ${battlePhase === "victory" ? "text-el-light" : "text-el-red"}`}
               >
                 {battlePhase === "victory" ? "VICTORY" : "DEFEAT"}
               </CardTitle>
-              <CardDescription className="mt-2 font-body text-xs uppercase tracking-[0.14em] text-readout-dim">
+              <CardDescription className="mt-2">
                 Turn {currentTurn + 1} • {playerTurns} player /{" "}
                 {enemyTurns} enemy actions resolved
               </CardDescription>
@@ -1036,8 +1037,9 @@ export default function BattleArena({
             <CardContent className="flex flex-col gap-3 px-6 py-6">
               {battleEnd && battlePhase === "victory" ? (
                 <Button
+                  variant="secondary"
+                  size="xl"
                   onClick={battleEnd.onContinue}
-                  className="h-12 rounded-none border-2 border-signal font-heading text-lg tracking-[0.14em] text-signal"
                 >
                   {story ? "CONTINUE STORY" : "CLAIM REWARDS"}
                 </Button>
@@ -1045,40 +1047,34 @@ export default function BattleArena({
               {battleEnd && battlePhase === "defeat" ? (
                 <>
                   <Button
+                    variant="secondary"
+                    size="xl"
                     onClick={battleEnd.onRetry}
-                    className="h-12 rounded-none border-2 border-signal font-heading text-lg tracking-[0.14em] text-signal"
                   >
                     RETRY BATTLE
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={battleEnd.onQuit}
-                    className="h-12 rounded-none border-2 border-edge-strong bg-transparent font-heading text-lg tracking-[0.14em] text-readout-strong"
-                  >
+                  <Button variant="outline" size="xl" onClick={battleEnd.onQuit}>
                     {story ? "BACK TO CHAPTERS" : "BACK TO WORLD BOSS"}
                   </Button>
                 </>
               ) : null}
               {!battleEnd && lastBattleConfig ? (
                 <Button
+                  variant="secondary"
+                  size="xl"
                   onClick={() =>
                     startCustomBattle(
                       lastBattleConfig.playerPicks,
                       lastBattleConfig.enemyPicks,
                     )
                   }
-                  className="h-12 rounded-none border-2 border-signal font-heading text-lg tracking-[0.14em] text-signal"
                 >
                   REMATCH
                 </Button>
               ) : null}
               {process.env.NODE_ENV !== "production" ? (
                 <>
-                  <Button
-                    variant="outline"
-                    onClick={saveBattleLog}
-                    className="h-12 rounded-none border-2 border-edge-strong bg-transparent font-heading text-lg tracking-[0.14em] text-readout-dim"
-                  >
+                  <Button variant="outline" size="xl" onClick={saveBattleLog}>
                     SAVE BATTLE LOG
                   </Button>
                   {logSaveResult ? (
@@ -1090,20 +1086,16 @@ export default function BattleArena({
               ) : null}
               {!battleEnd ? (
                 <>
-                  <Button
-                    variant="outline"
-                    onClick={resetBattle}
-                    className="h-12 rounded-none border-2 border-edge-strong bg-transparent font-heading text-lg tracking-[0.14em] text-readout-strong"
-                  >
+                  <Button variant="outline" size="xl" onClick={resetBattle}>
                     CHANGE TEAMS
                   </Button>
                   <Button
                     variant="ghost"
+                    size="xl"
                     onClick={() => {
                       resetBattle();
                       router.push("/");
                     }}
-                    className="h-12 rounded-none border-2 border-edge font-heading text-lg tracking-[0.14em] text-readout"
                   >
                     MAIN MENU
                   </Button>
@@ -1143,12 +1135,12 @@ export default function BattleArena({
 
       {pendingAllyCard ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/75 px-4">
-          <Card className="w-full max-w-md rounded-none border border-role-heal/60 bg-panel/95 ring-0">
-            <CardHeader className="border-b border-hairline px-5 py-4">
-              <CardTitle className="font-heading text-xl tracking-[0.08em] text-readout-strong">
+          <Card className="w-full max-w-md border-role-heal/60">
+            <CardHeader className="px-5 py-4">
+              <CardTitle>
                 Choose an ally
               </CardTitle>
-              <CardDescription className="font-body text-xs uppercase tracking-[0.14em] text-readout-dim">
+              <CardDescription>
                 {pendingAllyCard.skill.skillName} — pick who it targets
               </CardDescription>
             </CardHeader>
@@ -1174,8 +1166,9 @@ export default function BattleArena({
               </div>
               <Button
                 variant="ghost"
+                size="sm"
                 onClick={cancelAllyTarget}
-                className="w-full rounded-none border border-edge text-xs uppercase tracking-widest text-readout"
+                className="w-full"
               >
                 Cancel
               </Button>

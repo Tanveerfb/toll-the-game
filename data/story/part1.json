@@ -71,7 +71,7 @@
       "teamMode": "canon",
       "rewards": {
         "firstClear": {
-          "gems": 50,
+          "gems": 15,
           "coin": 1500,
           "materials": {
             "training_manual": 2
@@ -133,7 +133,7 @@
       "teamMode": "canon",
       "rewards": {
         "firstClear": {
-          "gems": 50,
+          "gems": 15,
           "coin": 1500,
           "materials": {
             "training_manual": 2
@@ -194,7 +194,7 @@
       "teamMode": "canon",
       "rewards": {
         "firstClear": {
-          "gems": 50,
+          "gems": 15,
           "coin": 1500,
           "materials": {
             "training_manual": 2
@@ -267,7 +267,7 @@
       "teamMode": "canon",
       "rewards": {
         "firstClear": {
-          "gems": 50,
+          "gems": 25,
           "coin": 1500,
           "materials": {
             "training_manual": 2

@@ -51,7 +51,7 @@
       ],
       "rewards": {
         "firstClear": {
-          "gems": 240,
+          "gems": 35,
           "coin": 6800,
           "materials": { "training_manual": 5 },
           "accountXp": 100
@@ -122,7 +122,7 @@
       ],
       "rewards": {
         "firstClear": {
-          "gems": 240,
+          "gems": 40,
           "coin": 6800,
           "materials": { "training_manual_advanced": 1, "training_manual": 5 },
           "accountXp": 105
@@ -227,7 +227,7 @@
       ],
       "rewards": {
         "firstClear": {
-          "gems": 300,
+          "gems": 45,
           "coin": 7600,
           "materials": { "training_manual_advanced": 1, "training_manual": 6 },
           "accountXp": 115

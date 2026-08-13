@@ -190,6 +190,39 @@ covers every band, but the *player* still has no readout.
 **Size:** Small. `canAscend` already compares inventory to `ASCENSION_COSTS`; it
 just needs to return the shortfall instead of a boolean.
 
+### P0. The growth screen needs a real pass — **High**, his own words
+
+> Tanveer, 2026-08-13: *"during character growth, btw we need to make this
+> process much better over UI UX."* Raised while reporting the missing ascension
+> level gate (ruling #85, now fixed). **The gate is done; the UX pass is not.**
+
+**Player:** Levelling and ascending a character reads as one ladder with a
+clear next step, instead of a list of buttons and a paragraph of costs.
+
+**Why:** `CharacterProgressionPanel.tsx` is the only screen that has never had
+a design pass, and it shows:
+
+- **Feeding is a row of "Feed Training Manual (12)" buttons**, one per tier,
+  each granting a fixed XP lump. Getting from Lv1 to Lv20 means clicking one
+  button roughly twenty times. There is no "feed until next level", no
+  quantity, no batch.
+- **The ascension cost is one run-on sentence** — `3x Sea Monster's Eye (8
+  owned) • 10x Corroded Sea Weed (4 owned) • 10000 coin (250000 owned)` — so
+  the player has to read prose to find out which single material is short. This
+  is the same complaint as **P1** below, from the other side of the screen.
+- **Nothing shows the ladder.** A character at ascension 1 Lv14 cannot see that
+  the next stop is Lv20, then an ascension, then Lv30 — the bands exist and are
+  invisible.
+- **The XP bar and the level cap don't explain each other**, so hitting the cap
+  looks like the feed button silently breaking.
+
+**Size:** Medium. No engine or economy change — `feedManual`, `ascensionBlocker`
+and `ASCENSION_COSTS` already hold every rule this needs. It's presentation,
+plus one new store action if batch-feeding is wanted.
+
+**His call:** whether batch-feeding ("feed to next level" / "feed all") is
+allowed at all — it's a real economy convenience, not just a layout fix.
+
 ### P2. "Runs remaining" on the world boss — **Medium**
 
 **Player:** The boss entry shows "3 runs from your next ascension" using your
@@ -218,17 +251,24 @@ itself had forgotten four of them. If the doc lost track, the player has too.
 
 ## Home, navigation, profile
 
-### N0. The shadcn layer is mostly out-voted — **High**, spec written
+### N0. The shadcn layer is mostly out-voted — **High**, ~~spec written~~ **DONE 2026-08-13**
 
-Audited 2026-08-13 at his request. 55 of 75 UI files import nothing from
-`components/ui`; raw `<button>` outnumbers `<Button>` 97 to 36; `label`,
-`select` and `table` have zero importers. The cause is two token systems
+Audited 2026-08-13 at his request. 55 of 75 UI files imported nothing from
+`components/ui`; raw `<button>` outnumbered `<Button>` 97 to 36; `label`,
+`select` and `table` had zero importers. The cause was two token systems
 coexisting in `globals.css` (14 shadcn, 15 Combat Terminal), so every `<Button>`
-overrides its own variant.
+overrode its own variant.
 
-**Full analysis and a phased plan:**
-`docs/superpowers/specs/2026-08-13-shadcn-and-ui-cleanup-design.md`. Three of
-his calls are open there.
+**Built the same day.** `button`/`badge`/`card`/`table`/`tooltip` now default to
+Combat Terminal; `<Button>` usages carrying a className dropped **16 → 6**;
+`label.tsx` deleted; the Auto Clear and effects tables and the TopNav resource
+tooltips converted. Two near-white-button bugs fixed on the way.
+
+**Outcome, and the two things the plan got wrong:**
+`docs/superpowers/specs/2026-08-13-shadcn-and-ui-cleanup-design.md`
+§ "Decisions and what shipped". Note for anyone reading N1 below: the team
+preset chooser is **not** a select candidate — its defect is the `window.prompt`
+calls, which is N1's job, not N0's.
 
 ### N1. Replace the native `prompt()` and `alert()` — **High**
 

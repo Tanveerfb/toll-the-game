@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { rollLimitedPull, rollPermanentPull, rollUniformFromPool } from "@/lib/gacha/pull";
-import type { LimitedBannerConfig } from "@/lib/gacha/banners";
+import type { GemBannerConfig } from "@/lib/gacha/banners";
 
-const banner: LimitedBannerConfig = {
+const banner: GemBannerConfig = {
   id: "test-banner",
   name: "Test Banner",
   featured: ["duke", "lyra", "batra"],
   rate: 0.05,
-  endsAt: "2026-09-05T00:00:00.000Z",
 };
 
 describe("rollLimitedPull", () => {
@@ -61,12 +60,12 @@ describe("rollLimitedPull", () => {
   });
 
   it("pins the empty-featured-array behavior of a direct rollLimitedPull call", () => {
-    // A real banner can never reach this state — getActiveLimitedBanner()
+    // A real banner can never reach this state — getGemBanner()
     // throws if featured is empty — but this pins what rollLimitedPull
     // itself does if ever called with one directly: rollUniformFromPool
     // returns null, and the `!` assertion lets that null through as
     // `characterId: null` at runtime despite the string type.
-    const emptyBanner: LimitedBannerConfig = { ...banner, featured: [] };
+    const emptyBanner: GemBannerConfig = { ...banner, featured: [] };
     const result = rollLimitedPull(emptyBanner, () => 0);
     expect(result).toEqual({ kind: "character", characterId: null });
   });

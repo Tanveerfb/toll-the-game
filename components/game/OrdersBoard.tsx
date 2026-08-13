@@ -200,8 +200,38 @@ function LockedOrders({ onSignIn }: { onSignIn: () => void }): React.JSX.Element
   );
 }
 
-export default function OrdersPanel(): React.JSX.Element | null {
-  const router = useRouter();
+/**
+ * Everything the Bureau Orders board needs, evaluated once.
+ *
+ * Split out of the panel on 2026-08-13 when Orders moved from the home screen
+ * into a navbar button + modal (Tanveer): the button needs the claimable count
+ * to badge itself, and the board needs the full evaluation. Running the
+ * evaluator twice would be wasteful and — worse — could disagree with itself
+ * for a frame after a claim.
+ *
+ * `hidden` is the panel's old "return null" cases hoisted into data, so the
+ * navbar can decide not to render a button at all rather than rendering one
+ * that opens an empty modal.
+ */
+export interface OrdersState {
+  /** Stores haven't rehydrated, or the board is finished — show nothing. */
+  hidden: boolean;
+  /** Signed out with auth available: readable, not claimable. */
+  locked: boolean;
+  /** Claimable orders across every unlocked step, not just the visible tab. */
+  ready: number;
+  claimed: number;
+  total: number;
+  board: OrderProgress[];
+  wholeBoard: OrderProgress[];
+  activeStep: number;
+  setViewedStep: (step: number) => void;
+  claimedOrders: Record<string, boolean>;
+  completed: Record<string, boolean>;
+  claimOrder: (orderId: string, completedChapters: Record<string, boolean>) => boolean;
+}
+
+export function useOrdersState(): OrdersState {
   const { user } = useAuth();
 
   const hasHydrated = usePlayerStore((s) => s.hasHydrated);
@@ -238,10 +268,7 @@ export default function OrdersPanel(): React.JSX.Element | null {
     ],
   );
 
-  const stepOpen = React.useMemo(
-    () => currentStep(context),
-    [context],
-  );
+  const stepOpen = React.useMemo(() => currentStep(context), [context]);
   // Which tab the player is LOOKING at, which is not necessarily the step they
   // are on — they can page back to a finished step to re-read it. Following
   // `stepOpen` automatically would yank the view out from under them the
@@ -255,106 +282,122 @@ export default function OrdersPanel(): React.JSX.Element | null {
   );
   const wholeBoard = React.useMemo(() => evaluateOrders(context), [context]);
 
-  // Both stores are localStorage-backed, so anything rendered before they
-  // rehydrate would be a wrong answer that then visibly corrects itself.
-  if (!hasHydrated || !storyHydrated) return null;
-
   // Claiming needs an account. Gated only when signing in is actually
   // possible: without Firebase env this build has no auth at all (see
   // lib/firebase.ts), and locking the board there would make it permanently
   // unreachable rather than enticing.
   const locked = firebaseEnabled && !user;
 
-  // The board retires once it's finished — a permanently ticked checklist on
-  // the home screen is clutter, and daily missions will want the space. A
-  // signed-out player never reaches that state, so the check follows the gate.
-  if (!locked && allOrdersClaimed(wholeBoard)) return null;
+  // Both stores are localStorage-backed, so anything rendered before they
+  // rehydrate would be a wrong answer that then visibly corrects itself. The
+  // board also retires once it's finished — a permanently ticked checklist is
+  // clutter, and daily missions will want the space. A signed-out player never
+  // reaches that state, so the check follows the gate.
+  const hidden =
+    !hasHydrated ||
+    !storyHydrated ||
+    (!locked && allOrdersClaimed(wholeBoard));
 
-  // Counted across every unlocked step, not just the visible tab — a badge
-  // that ignores the other tab would send the player looking in the wrong one.
-  const ready = claimableCount(wholeBoard);
   const { claimed, total } = orderCompletion(board);
 
+  return {
+    hidden,
+    locked,
+    ready: claimableCount(wholeBoard),
+    claimed,
+    total,
+    board,
+    wholeBoard,
+    activeStep,
+    setViewedStep,
+    claimedOrders,
+    completed,
+    claimOrder,
+  };
+}
+
+/**
+ * The board itself — step tabs and order rows, no surrounding chrome.
+ *
+ * Rendered inside a modal opened from the navbar. It used to be a `<section>`
+ * pinned to the home screen, which meant the game's "what do I do next"
+ * surface was unreachable from every other screen.
+ */
+export default function OrdersBoard({
+  state,
+}: {
+  state: OrdersState;
+}): React.JSX.Element {
+  const router = useRouter();
+  const {
+    locked,
+    board,
+    wholeBoard,
+    activeStep,
+    setViewedStep,
+    claimedOrders,
+    completed,
+    claimOrder,
+  } = state;
+
+  if (locked) {
+    return <LockedOrders onSignIn={() => router.push("/login")} />;
+  }
+
   return (
-    <section className="mt-2.5 border border-edge-strong bg-panel">
-      <header className="flex items-baseline gap-2 border-b border-hairline bg-inset px-3 py-2">
-        <h2 className="font-body text-[11px] font-bold uppercase tracking-[0.2em] text-signal">
-          Bureau orders
-        </h2>
-        <span className="ml-auto font-body text-[11px] tabular-nums text-readout-muted">
-          {locked ? (
-            <span className="text-el-light">Account required</span>
-          ) : (
-            <>
-              {claimed} / {total}
-              {ready > 0 ? (
-                <span className="ml-2 text-el-light">{ready} to claim</span>
+    <>
+      {/* One tab per step. Shown even when only one step is authored — it
+          tells the player the board continues, which a bare list of ten does
+          not (Tanveer, 2026-08-13). */}
+      <div className="hud-scroll -mx-1 mb-2 flex gap-px overflow-x-auto border-b border-hairline bg-inset">
+        {ORDER_STEPS.map((step) => {
+          const unlocked = isStepUnlocked(step, claimedOrders);
+          const active = step === activeStep;
+          const stepReady = claimableCount(
+            wholeBoard.filter((e) => e.order.step === step),
+          );
+          return (
+            <button
+              key={step}
+              type="button"
+              // A locked step is readable, not enterable: seeing what is
+              // coming is the point of the tab existing.
+              onClick={() => setViewedStep(step)}
+              className={`flex shrink-0 items-center gap-1.5 px-3 py-1.5 font-body text-[10px] font-bold uppercase tracking-[0.16em] transition-colors ${
+                active
+                  ? "bg-panel text-signal"
+                  : "text-readout-muted hover:text-readout"
+              }`}
+            >
+              {!unlocked ? <Lock className="h-3 w-3" strokeWidth={2.4} /> : null}
+              Step {step}
+              {stepReady > 0 ? (
+                <span className="border border-el-light px-1 text-el-light tabular-nums">
+                  {stepReady}
+                </span>
               ) : null}
-            </>
-          )}
-        </span>
-      </header>
+            </button>
+          );
+        })}
+      </div>
 
-      {locked ? (
-        <LockedOrders onSignIn={() => router.push("/login")} />
-      ) : (
-        <>
-          {/* One tab per step. Shown even when only one step is authored —
-              it tells the player the board continues, which a bare list of
-              ten does not (Tanveer, 2026-08-13). */}
-          <div className="hud-scroll flex gap-px overflow-x-auto border-b border-hairline bg-inset">
-            {ORDER_STEPS.map((step) => {
-              const unlocked = isStepUnlocked(step, claimedOrders);
-              const active = step === activeStep;
-              const stepReady = claimableCount(
-                wholeBoard.filter((e) => e.order.step === step),
-              );
-              return (
-                <button
-                  key={step}
-                  type="button"
-                  // A locked step is readable, not enterable: seeing what is
-                  // coming is the point of the tab existing.
-                  onClick={() => setViewedStep(step)}
-                  className={`flex shrink-0 items-center gap-1.5 px-3 py-1.5 font-body text-[10px] font-bold uppercase tracking-[0.16em] transition-colors ${
-                    active
-                      ? "bg-panel text-signal"
-                      : "text-readout-muted hover:text-readout"
-                  }`}
-                >
-                  {!unlocked ? (
-                    <Lock className="h-3 w-3" strokeWidth={2.4} />
-                  ) : null}
-                  Step {step}
-                  {stepReady > 0 ? (
-                    <span className="border border-el-light px-1 text-el-light tabular-nums">
-                      {stepReady}
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
+      {!isStepUnlocked(activeStep, claimedOrders) ? (
+        <p className="mb-2 border-b border-hairline pb-2 font-body text-xs text-readout-dim">
+          Claim every order in step {activeStep - 1} to open this one. Progress
+          you make early still counts — it just waits here.
+        </p>
+      ) : null}
 
-          {!isStepUnlocked(activeStep, claimedOrders) ? (
-            <p className="border-b border-hairline px-3 py-2 font-body text-xs text-readout-dim">
-              Claim every order in step {activeStep - 1} to open this one.
-              Progress you make early still counts — it just waits here.
-            </p>
-          ) : null}
-
-          <div className="flex flex-col">
-            {board.map((entry) => (
-              <OrderRow
-                key={entry.order.id}
-                entry={entry}
-                onClaim={() => claimOrder(entry.order.id, completed)}
-                onGo={() => router.push(entry.order.route)}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </section>
+      <div className="flex flex-col">
+        {board.map((entry) => (
+          <OrderRow
+            key={entry.order.id}
+            entry={entry}
+            onClaim={() => claimOrder(entry.order.id, completed)}
+            onGo={() => router.push(entry.order.route)}
+          />
+        ))}
+      </div>
+    </>
   );
 }

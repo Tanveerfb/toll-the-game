@@ -771,7 +771,7 @@ function CharacterListOverlay({
                   )}
                 </div>
                 <Badge
-                  className={`w-full justify-center truncate rounded-none px-1 py-0 font-body text-[9px] uppercase tracking-widest text-void ${ELEMENT_SWATCH[char.color]}`}
+                  className={`w-full justify-center truncate px-1 text-[9px] text-void ${ELEMENT_SWATCH[char.color]}`}
                 >
                   {char.name}
                 </Badge>

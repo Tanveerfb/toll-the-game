@@ -2356,6 +2356,171 @@ from the 3 known unused-import warnings in `tests/duel.test.ts`, unchanged and
 out of scope. Production build green via `NEXT_DIST_DIR=.next-verify`, with
 `tsconfig.json` restored afterwards.
 
+## Session log — 2026-08-13 (part 2): shadcn built, four features, two bugs, the economy audited
+
+Follows the auto session (`018e9d0`) and its spec commit (`fae5f09`). He answered
+the three open calls in the shadcn spec, then steered live through four features
+and two real bugs, ending with an economy retune. Shipped as **`3a04df8`**.
+
+### The shadcn work — spec answered, then built
+
+| Phase | His call | What shipped |
+| --- | --- | --- |
+| 1 — delete dead primitives | "delete `label` + `table`, keep `select`" | **Amended: only `label.tsx` deleted.** See below. |
+| 2 — retheme to Combat Terminal | "yes" | `button`, `badge`, `card` rewritten; overrides stripped across 12 files |
+| 3 — convert for behaviour | "Selects, Tables, Tooltips" | **Tables and Tooltips done. Selects: nothing to convert.** |
+
+**Phase 1 was amended, deliberately.** His two answers contradicted: Phase 1
+deleted `table.tsx`, Phase 3 converted the hand-rolled tables *to* it. Deleting
+and re-adding a primitive inside one batch is the exact failure the spec exists
+to prevent, so `table` was kept and adopted — the same reasoning he accepted for
+`select`, applied to the primitive that had a confirmed consumer waiting. Only
+`label.tsx` went: its 3 raw `<label>` elements all live in `DevGrantPanel` and
+none want the primitive.
+
+**Selects: the spec's own premise was wrong.** It claimed the difficulty picker,
+archive filters and team preset chooser were "hand-rolled buttons doing a
+select's job" — written from import counts, not from reading the markup. Reading
+them: the difficulty picker is a 4-tile segmented control where each tile shows
+its own state (Locked / Cleared / New); the archive filters are multi-select tag
+chips plus a tri-state sort (off / asc / desc) in one control; preset chips
+render member portraits because a preset is recognised by its faces. A Radix
+Select is worse at all three. **The app has zero genuine select candidates.**
+`select.tsx` stays on his call, but the reason given for keeping it — "its
+emptiness is the bug" — is now known to be false.
+
+**Two live bugs the retheme fixed**, both `bg-primary` (shadcn's near-white in
+dark mode) showing through a className that overrode text and border but not
+background: the victory/defeat screen's CLAIM REWARDS / CONTINUE STORY / RETRY /
+REMATCH, and the progression panel's Ascend button. Never reported; invisible in
+review because the overrides *looked* complete.
+
+**Metric.** `<Button>` usages carrying a className went **16 → 6** after Phase 2,
+then to **10** as this session added 6 more Buttons (42 total). All four new
+classNames are `flex-1`. Every surviving one is layout or `chamfer` — none
+restates the palette. *(The spec quotes 6; that was true at Phase 2 and is no
+longer the current number.)*
+
+### Four features, his spec
+
+1. **Auto Clear confirmation** — `components/game/AutoClearConfirm.tsx`. Slider
+   1..affordable, opening at max so the old one-tap behaviour is the default.
+   Preview is a **shift** (stamina and tickets, before → after), plus the
+   difficulty's drop table. Never a predicted haul: each run rolls
+   independently. `maxRuns` is frozen when the button is pressed so regen can't
+   move the ceiling mid-decision.
+2. **Bureau Orders → navbar.** `OrdersPanel.tsx` → **`OrdersBoard.tsx`**, split
+   into a `useOrdersState()` hook + board so the badge and the board share one
+   evaluation (running the evaluator twice could disagree for a frame after a
+   claim). New `OrdersButton` in the resource strip; renders **nothing** when the
+   board is hidden. Removed from `HomeMenu`.
+3. **Summon confirmation** — `components/gacha/ConfirmPullModal.tsx`. Gems and
+   milestone bar before → after, with a callout when this draw crosses a
+   threshold. "Draw again" from the reveal routes through it too.
+4. **Beta Roster is permanent.** `endsAt` removed from data, type and tests.
+   `getActiveLimitedBanner` → **`getGemBanner`**, `getPermanentBanner` →
+   **`getTicketBanner`** — the two banners are two *economies*, not two
+   durations. Tab strip renders only when a second banner exists (today: none).
+   Home screen's "ends in N days" alert replaced with an unclaimed-milestone
+   alert. **`pity.limited` / `pullLimited` deliberately NOT renamed** — they key
+   persisted state, so renaming means a migration that buys the player nothing.
+
+### Two bugs he found in play
+
+- **"Auto clear ×15" read as a skip count.** It was the ticket balance. A bare
+  `×N` beside a verb reads as a count of the verb. First fix moved the count to
+  a sub-line; **he then said drop it from the button entirely** — the balance
+  belongs in the confirm modal, and zero tickets already disables the button via
+  `autoRuns < 1`.
+- **Ascension ignored level** (ruling #85). Materials-only, so a Lv1 character
+  with a full bag could go from ascension 1 to 4 unlevelled. `maxLevelForAscension`
+  had always been correct — it stopped you levelling *past* a band — but nobody
+  wrote the mirror rule. New `ascensionLevelRequirement` / `ascensionBlocker` in
+  `lib/game/ascension.ts`, enforced in `ascendCharacter` and surfaced on the
+  button. The level gate reports **before** materials, so an under-levelled
+  player isn't sent farming for nothing. 8 new tests.
+
+### The economy audit — `docs/design/ECONOMY_AUDIT.md`
+
+He flagged order gems as too generous ("i still have 3k and i went 2 cycles
+through the banner already"). The audit found he was right and that orders were
+not the cause.
+
+| Gem source | Before | After |
+| --- | ---: | ---: |
+| Story first clears | 6,430 | **1,140** |
+| Bureau Orders | 4,600 | **1,500** |
+| Molvarr first clears | 375 | 375 |
+| **Lifetime** | **11,405** | **3,015** |
+
+**Story was 56% of all gems and had never been totalled** — authored per-part
+across sessions with no running sum. The finished story is **24 parts** (12
+exist), budgeted at **3,000 gems** in six tiers of four (70/95/120/140/155/170
+per part). Parts 1–12 hold 1,140; parts 13–24 hold 1,860. The table is in the
+audit so the next twelve aren't improvised the way the first twelve were.
+
+**Manuals are the binding constraint by ~10×** — 780 Training Manuals to take one
+character Lv1→40. Raised tier-1 drops **3–6 → 4–8** (tiers 2–4 shifted to keep
+the monotonic invariant). **This is intended pacing, not a defect:** Lv40 is his
+"hard grinder ceiling" and he does not want mass-Lv40 to be easy.
+
+| Who | To Lv20 | To Lv40 |
+| --- | ---: | ---: |
+| One character | 4.4 d | 18.1 d |
+| **A team of 4** | **17.6 d** | **72.2 d** |
+| All 27 | 118.7 d | 487.5 d |
+
+### What was tried, declined, or deliberately left
+
+- **Deleting `table.tsx`** — his stated Phase 1 answer, not done. It had a
+  confirmed Phase 3 consumer in the same batch. Reasoning above.
+- **Converting anything to `<Select>`** — declined by evidence, not by him. Three
+  candidate sites read and all three rejected. Do not revisit without a new
+  single-choice control.
+- **A ticket count on the Auto Clear button** — built, then removed at his
+  instruction. Don't re-add it.
+- **Renaming `pity.limited` / `pullLimited`** — deliberately skipped. Persisted
+  keys; a migration for a wording change.
+- **Closing the manual gap fully** — deliberately partial. Two levers were left
+  unpulled *and marked do-not-pull*: Advanced Manuals in the tier-1 farm, and
+  flattening the XP curve. Both attack the Lv40 tail, which is the grind he
+  wants. **A future audit finding a shrinking Lv40 number should treat it as a
+  regression, not a win.**
+- **Touching coin / Auto Clear Tickets** — coin is the healthiest number in the
+  audit (5.6 days for a whole character) and needs nothing.
+- **Repurposing Permanent Tickets** — they buy nothing today and are accruing
+  **on purpose**; a shop is planned. Recorded in `GACHA_DESIGN.md`.
+- **The growth-screen UX pass** — his own aside, captured as `UX_IDEAS.md` **P0**,
+  not built. One open call in it (whether batch-feeding is allowed).
+
+### Confidence and gaps
+
+**Verified this session, fresh:** 1201 tests / 96 files pass; `tsc --noEmit`
+exit 0; lint 0 errors + the same 3 known unused-import warnings in
+`tests/duel.test.ts`; `NEXT_DIST_DIR=.next-verify npm run build` compiled in
+4.2s and generated 48/48 static pages. Every number in this section was
+recomputed from shipped data at checkpoint time, not recalled.
+
+**Assumed / unverified:**
+
+- **Every visual change is unlooked-at.** No test covers visual output. The
+  retheme touched the battle result modal, story reward and skip screens, deck
+  preview card, events board, effects modal, top nav and the two new modals.
+  **Tanveer playtests** — this is the usual rule, but the surface is unusually
+  wide this time.
+- **The three new modals have never been opened.** `AutoClearConfirm`,
+  `ConfirmPullModal` and the Orders modal are typechecked and build-clean, and
+  that is all.
+- **Molvarr tiers 2–4 reward numbers are still mine**, including the raised
+  manual ranges (6–11 / 9–15 / 13–21). Tier 1 is his.
+- **The 6/4 Auto Clear Ticket split across orders is still mine**, unreviewed.
+- **`data/characters/master_tao.json` ATK 300 → 270 is HIS edit**, made in the
+  working tree during this session. Flagged to him twice, left untouched, and
+  committed here so it isn't lost. Not a balance change I made.
+
+**What I would check first coming back cold:** open the three new modals, then
+re-read the audit's team-scale table against whatever daily events exist by then.
+
 ## Open Issues
 
 | # | Issue | Where | Severity |
@@ -2385,7 +2550,7 @@ Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier sta
 - Effect application in the battle-event stream (Open Issue #22)
 - Story chapter **mission objectives** (3 per chapter paying gems once), **difficulty tiers**, the **node-path stage map**, and **multi-wave stages with persistent HP** — all scoped out of the 2026-08-09 rewards batch, each its own future batch
 
-Note: "playerStore is a stub" is no longer true — it carries roster, currencies, inventory, per-character progress, stamina, gacha pity, lifetime stats and claimed orders, with migrations at **v7**.
+Note: "playerStore is a stub" is no longer true — it carries roster, currencies, inventory, per-character progress, stamina, gacha pity, lifetime stats, claimed orders, Auto Clear Tickets and per-difficulty clear records, with migrations at **v8**. *(This line read "v7" until 2026-08-13; the v7 → v8 migration shipped with Auto Clear in `018e9d0` and the note was never updated.)*
 
 ## Environment
 

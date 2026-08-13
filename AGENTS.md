@@ -39,7 +39,8 @@ components/
                       PlayerHud, BattleArena (arena shell only)
   game/battle/        Battle overlays split out of BattleArena: TeamUnitTile,
                       UnitDetailPanel, TeamDetailsList, BattleLogDrawer, EffectsList
-  gacha/              BannerScreen, PullReveal, RatesModal, MilestonePicker
+  gacha/              BannerScreen, PullReveal, RatesModal, MilestonePicker,
+                      ConfirmPullModal (summon confirm + currency-shift preview)
   news/               NewsFeedTabs, NewsPostLayout
 hooks/                BattleProvider (phase engine), MechanicProvider (phase queue),
                       AuthProvider, useBattleSequencer (cinematics)

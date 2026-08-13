@@ -1,28 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { usePlayerStore } from "@/store/playerStore";
 import * as bannersModule from "@/lib/gacha/banners";
-import { getActiveLimitedBanner } from "@/lib/gacha/banners";
+import { getGemBanner } from "@/lib/gacha/banners";
 import {
   LIMITED_MILESTONE_FINAL,
   LIMITED_MILESTONE_FIRST,
   PERMANENT_MILESTONE_FINAL,
 } from "@/lib/gacha/milestone";
 
-// getPermanentBanner is wrapped in a vi.fn (delegating to the real
+// getTicketBanner is wrapped in a vi.fn (delegating to the real
 // implementation by default) so individual tests can point it at a fixed
 // non-empty pool without touching real character data (Task 1's
 // `permanentPool` flag isn't set on any shipped character yet). Tests that
 // don't override it exercise the real, currently-empty pool.
 vi.mock("@/lib/gacha/banners", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/gacha/banners")>();
-  return { ...actual, getPermanentBanner: vi.fn(actual.getPermanentBanner) };
+  return { ...actual, getTicketBanner: vi.fn(actual.getTicketBanner) };
 });
 
 function resetToKnownState() {
   // Default: no character flagged `permanentPool` yet, matching real, current
-  // character data — same as the un-mocked getPermanentBanner would return.
+  // character data — same as the un-mocked getTicketBanner would return.
   // Tests that need a populated pool call mockPermanentPool(...) afterward.
-  vi.mocked(bannersModule.getPermanentBanner).mockReturnValue({ id: "permanent", featured: [] });
+  vi.mocked(bannersModule.getTicketBanner).mockReturnValue({ id: "permanent", featured: [] });
   usePlayerStore.setState({
     uid: null,
     roster: ["duke"],
@@ -38,11 +38,11 @@ function resetToKnownState() {
   });
 }
 
-/** Points the mocked getPermanentBanner at a fixed, non-empty pool for a
+/** Points the mocked getTicketBanner at a fixed, non-empty pool for a
  *  single test — the real permanent pool is empty until a character is
  *  hand-flagged `permanentPool: true` (Task 1), which hasn't happened yet. */
 function mockPermanentPool(featured: string[]) {
-  vi.mocked(bannersModule.getPermanentBanner).mockReturnValue({ id: "permanent", featured });
+  vi.mocked(bannersModule.getTicketBanner).mockReturnValue({ id: "permanent", featured });
 }
 
 describe("pullLimited", () => {
@@ -150,7 +150,7 @@ describe("claimLimitedFirst", () => {
     // The two milestones differ only in who chooses — the first rolls a
     // featured unit for you, the final lets you pick one. It used to draw
     // from every playable character in the game (Tanveer, 2026-08-11).
-    const featured = new Set(getActiveLimitedBanner().featured);
+    const featured = new Set(getGemBanner().featured);
     // Every seat in the pool, so a bad pool choice can't slip through on luck.
     for (const roll of [0, 0.25, 0.5, 0.75, 0.99]) {
       resetToKnownState();

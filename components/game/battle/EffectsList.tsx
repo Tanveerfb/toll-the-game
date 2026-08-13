@@ -2,6 +2,14 @@
 
 import React from "react";
 import { ArrowDown, ArrowUp, Sparkles } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { statPhrase } from "@/lib/game/stats";
 import type { BattleCharacter } from "@/types/character";
 import type { StatusEffect } from "@/types/mechanic";
@@ -198,60 +206,63 @@ function EffectTable({
     if (!sourceId) return "—";
     return allUnits.find((u) => u.instanceId === sourceId)?.name ?? "—";
   };
+  // Denser padding than the primitive's default: these rows sit in a modal
+  // that has to hold a list of unbounded length without becoming a scroll of
+  // its own.
+  const CELL = "py-1.5 pr-2 pl-0";
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[24rem] border-collapse font-body text-xs">
-        <thead>
-          <tr className="border-b border-edge text-left font-bold uppercase tracking-[0.14em] text-readout-muted">
-            <th className="py-1 pr-2 font-normal">Effect</th>
-            <th className="py-1 pr-2 font-normal">Value</th>
-            <th className="py-1 pr-2 text-right font-normal">Stacks</th>
-            <th className="py-1 pr-2 text-right font-normal">Turns</th>
-            <th className="py-1 font-normal">From</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(({ effect, category }, idx) => {
-            const style = CATEGORY_STYLE[category];
-            const Icon = style.icon;
-            const duration = effect.buffDuration ?? effect.debuffDuration;
-            const stacks = effect.stacks ?? 1;
-            const desc = effectDescription(effect);
-            return (
-              <tr
-                key={`${effect.type}-${idx}`}
-                className="border-b border-hairline last:border-b-0"
-              >
-                <td className="py-1.5 pr-2">
-                  <span className="flex items-center gap-1.5">
-                    <Icon
-                      className={`h-3 w-3 shrink-0 ${style.chip}`}
-                      strokeWidth={2.6}
-                      aria-hidden
-                    />
-                    <span className="font-heading tracking-[0.04em] text-readout-strong">
-                      {prettyName(effect)}
-                    </span>
+    <Table className="min-w-[24rem]">
+      <TableHeader>
+        <TableRow>
+          <TableHead className="py-1 pr-2 pl-0">Effect</TableHead>
+          <TableHead className="py-1 pr-2 pl-0">Value</TableHead>
+          <TableHead className="py-1 pr-2 pl-0 text-right">Stacks</TableHead>
+          <TableHead className="py-1 pr-2 pl-0 text-right">Turns</TableHead>
+          <TableHead className="py-1 pr-0 pl-0">From</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {rows.map(({ effect, category }, idx) => {
+          const style = CATEGORY_STYLE[category];
+          const Icon = style.icon;
+          const duration = effect.buffDuration ?? effect.debuffDuration;
+          const stacks = effect.stacks ?? 1;
+          const desc = effectDescription(effect);
+          return (
+            <TableRow key={`${effect.type}-${idx}`}>
+              <TableCell className={CELL}>
+                <span className="flex items-center gap-1.5">
+                  <Icon
+                    className={`h-3 w-3 shrink-0 ${style.chip}`}
+                    strokeWidth={2.6}
+                    aria-hidden
+                  />
+                  <span className="font-heading tracking-[0.04em] text-readout-strong">
+                    {prettyName(effect)}
                   </span>
-                </td>
-                <td className="py-1.5 pr-2 text-readout-dim">
-                  {desc ? <DescriptionText text={desc} /> : "—"}
-                </td>
-                <td className="py-1.5 pr-2 text-right tabular-nums text-readout-dim">
-                  {stacks > 1 ? `×${stacks}` : "—"}
-                </td>
-                <td className="py-1.5 pr-2 text-right tabular-nums text-readout-dim">
-                  {duration ?? "—"}
-                </td>
-                <td className="py-1.5 truncate text-readout-muted">
-                  {sourceName(effect.sourceId)}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                </span>
+              </TableCell>
+              <TableCell className={`${CELL} text-readout-dim`}>
+                {desc ? <DescriptionText text={desc} /> : "—"}
+              </TableCell>
+              <TableCell
+                className={`${CELL} text-right tabular-nums text-readout-dim`}
+              >
+                {stacks > 1 ? `×${stacks}` : "—"}
+              </TableCell>
+              <TableCell
+                className={`${CELL} text-right tabular-nums text-readout-dim`}
+              >
+                {duration ?? "—"}
+              </TableCell>
+              <TableCell className="truncate py-1.5 pr-0 pl-0 text-readout-muted">
+                {sourceName(effect.sourceId)}
+              </TableCell>
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </Table>
   );
 }
 

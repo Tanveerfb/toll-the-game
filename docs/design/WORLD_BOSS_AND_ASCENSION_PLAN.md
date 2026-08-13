@@ -88,6 +88,7 @@ users/{uid} {
 - `perLevelGain[stat] = round(base[stat] / 59)` (leveling portion → ~2x at Lv60).
 - `ascensionBump` = discrete flat per stat added at each ascension unlock, summing to ~+1x base across 6 unlocks → **~3x base at fully-ascended Lv60**. Per-band distribution = tuning TODO.
 - Ascension caps the level: `maxLevel = ascension * 10`. Leveling past a band is blocked until the band's cost is paid. **This update: reachable cap = Lv40 (ascension 4 / band 3).**
+- **And the gate runs both ways (added 2026-08-13).** Ascending requires the character to have reached the cap of the band it is leaving: ascension 2 wants Lv20, ascension 3 wants Lv30, ascension 4 wants Lv40. Ascension 1 wants Lv1, so a fresh unit is never blocked from its first. Only the cap half was ever implemented, so a Lv1 character with a full bag could be carried straight from ascension 1 to 4 without being levelled at all — the bands **are** the levelling ladder, and skipping them skipped the loop they pace. `ascensionLevelRequirement` / `ascensionBlocker` in `lib/game/ascension.ts`; enforced in `ascendCharacter` and surfaced on the button.
 
 ---
 

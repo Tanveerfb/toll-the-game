@@ -56,9 +56,9 @@ export default function DevGrantPanel(): React.JSX.Element | null {
   };
 
   return (
-    <Card className="rounded-none border-2 border-sky-400 bg-black/50 ring-0">
-      <CardHeader className="border-b border-hairline px-4 py-2.5">
-        <CardTitle className="font-heading text-lg tracking-[0.12em] text-sky-200">
+    <Card className="border-2 border-sky-400 bg-black/50">
+      <CardHeader className="px-4 py-2.5">
+        <CardTitle className="text-lg tracking-[0.12em] text-sky-200">
           DEV GRANT PANEL
         </CardTitle>
       </CardHeader>
