@@ -1940,6 +1940,40 @@ markdown one):
   watching now that HP is doing double duty as her survivability *and* her
   damage.
 
+## Where things stand — 2026-08-13 (Tanveer's own words)
+
+Asked for a roadmap read-out at the end of the session; his replies are the
+authority here and correct two things these docs had wrong.
+
+**Deployment was never pending.** The docs said "not started, no Vercel project
+linked" and I repeated it. It has been live at
+**https://toll-the-game.vercel.app/** the whole time, and **every push to
+`master` builds automatically**. Corrected in ROADMAP.md too. The practical
+consequence is the important bit: **a push is a deploy.**
+
+| Item | His call |
+| --- | --- |
+| Ascension trials | Future batch, **together**. Shape: a **small boss-rush event**. Clearing one pays **decent rewards** on top of lifting the rank wall |
+| Mobile pass | Its own dedicated session |
+| Audio | He'll drop OST files into the game folder and tell me; then a dedicated session |
+| Story content (Phase 3, objectives, stage map, multi-wave) | Dedicated later, working alongside him — not something to pick up solo |
+| Monetization | Last, after everything above |
+
+**The next code batch is Open Issues #24–27**, his instruction: do them
+together. That's the string-log duplication, the nulled-hit ruling, the
+`undefined` synergy log line, and the hand-animation profiling pass.
+
+One requirement attached to #24 that changes its shape: **the battle log is
+part of the battle UI.** It isn't only an analysis artefact — *"if a player
+needs to read it, it should be readable."* So the in-battle drawer is a
+player-facing feature with its own standards, separate from the JSON reports,
+which he never reads. Recorded as ruling #72.
+
+**Ruling #71 answers #25** and is more specific than any of the three options I
+offered: a card whose damage is nulled to 0 reads **"Tanked"** and nothing
+else, and its damage-scaled after-effects **do not proc** rather than applying
+at zero. Affects bleed, decay and shock so far. No damage floor, no DEF cap.
+
 ## Open Issues
 
 | # | Issue | Where | Severity |
@@ -1951,8 +1985,8 @@ markdown one):
 | 21 | Enemy AI: skill-selection priority rewritten 2026-07-13 (team-wide tiers + per-turn caps). Target-choice heuristics (currently lowest-HP/taunt) may still want tuning per playtest | `lib/game/ai.ts` | Mostly done |
 | 23 | Stamina is effectively unlimited below ~account rank 13: a boss clear pays 100 XP, nearly every early clear ranks up, and a rank-up refills the bar to 120 (three runs). Raised 2026-08-12 with three fixes; Tanveer declined all three — **accepted, not a bug** | `store/playerStore.ts:463`, `lib/game/worldBossRewards.ts` | Design note (accepted) |
 | 22 | Battle log can't show **which buffs/debuffs an action applied** — `battleEvents` doesn't model effect application, so the raw string log remains the only record. Needs an `emit` change in `combat.ts` | `lib/game/combat.ts`, `types/battleEvent.ts` | Open |
-| 24 | **The engine's string log double-prints actions.** Turn 14 of the 08-13 run logged seven Lyra actions where the event stream had two; HP arithmetic proves two resolved, so it's a logging path, not a resolution one. `buildBattleReport` collapses consecutive duplicates as a mitigation; the cause is unfound | `hooks/BattleProvider.tsx`, `lib/game/combat.ts` | Open |
-| 25 | **Flat DEF can reduce a card to literally nothing.** Volcanic Frost resolved for 0 damage against ~400 DEF and applied `decay (0/turn)` with it — an action spent for no effect. Options: a damage floor, a cap on stacked DEF, or a minimum for scaled after-effects. **Tanveer's call** | `lib/game/damage.ts` | Balance decision |
+| 24 | **The engine's string log double-prints actions.** Also: the in-battle log drawer is player-facing and must stay readable (ruling #72), unlike the JSON reports. Turn 14 of the 08-13 run logged seven Lyra actions where the event stream had two; HP arithmetic proves two resolved, so it's a logging path, not a resolution one. `buildBattleReport` collapses consecutive duplicates as a mitigation; the cause is unfound | `hooks/BattleProvider.tsx`, `lib/game/combat.ts` | Open |
+| 25 | **A nulled hit must read "Tanked" and skip its scaled after-effects.** Volcanic Frost resolved for 0 against ~400 DEF and still applied `decay (0/turn)`. **Ruled 2026-08-13 (ruling #71)** — no damage floor, no DEF cap: the card reports "Tanked", no other text, and bleed/decay/shock don't proc when their value nulls to 0. Ready to build | `lib/game/damage.ts`, `lib/game/combat.ts` | Ruled, unbuilt |
 | 26 | Tribe-synergy log lines read `gained 5% undefined` — those kits declare `stats: [...]` rather than `stat`, and the log prints the latter. **The buff itself works.** Cosmetic | `lib/game/passive.ts` | Cosmetic |
 | 27 | **Battle hand animations want a performance pass.** Reported after playtesting 2026-08-13. Suspects ranked in the "Playtest findings" section; start with a profile, not the list | `components/game/battle/Hand.tsx` | Open |
 
@@ -1965,7 +1999,7 @@ Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier sta
 - **Mobile layout pass** — the biggest remaining gap in roadmap item 2
 - **Audio assets** — the music *system* shipped 2026-08-09; `public/audio/` is empty until Tanveer supplies the OST (`docs/AUDIO.md`). No SFX system exists and none is planned.
 - ~~FTUE / onboarding~~ **built 2026-08-13** (Bureau Orders + four battle coach marks). Daily loop and analytics remain — the orders evaluator was built general so daily missions are mostly a data change (see `docs/PRODUCT_AUDIT.md`)
-- Deployment (Vercel target; Firebase project `toll-the-game` exists for auth/Firestore). **Not started** — no Vercel project linked, CLI not installed
+- ~~Deployment~~ — **already live at https://toll-the-game.vercel.app/**, and has been. The Vercel project is linked and every push to `master` auto-builds. These docs said "not started" and I repeated it to Tanveer on 2026-08-13; he corrected it. **A push is a deploy — treat `master` as production.**
 - Effect application in the battle-event stream (Open Issue #22)
 - Story chapter **mission objectives** (3 per chapter paying gems once), **difficulty tiers**, the **node-path stage map**, and **multi-wave stages with persistent HP** — all scoped out of the 2026-08-09 rewards batch, each its own future batch
 

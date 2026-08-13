@@ -89,7 +89,7 @@ This supersedes the "Deliberately Out of Scope" note below — gacha/monetizatio
 ## Phase 4 — Accounts & Ship
 
 - [x] Firebase auth UI (login/profile), persist progress in Firestore (2026-07-11 — `firestore.rules` deployed live; `users/{uid}` carries storyProgress + player state; guest mode without `.env.local`)
-- [ ] Deploy (Vercel free tier fits Next.js 16; Firebase Hosting alternative). **Not started** — no Vercel project linked, CLI not installed (`npm i -g vercel`)
+- [x] Deploy — **live at https://toll-the-game.vercel.app/**. The Vercel project is linked and **every push to `master` triggers a build automatically**, so shipping is a `git push` (Tanveer, 2026-08-13, correcting a stale claim in these docs that it was never started). The Vercel CLI is not installed locally and isn't needed for this flow.
 - [ ] Playtest loop with friends, patch
 
 ## Deliberately Out of Scope (for now)
