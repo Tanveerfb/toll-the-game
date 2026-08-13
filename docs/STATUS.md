@@ -2014,8 +2014,11 @@ point on it, not a new issue.
 ## Session log — 2026-08-13 (auto session): Open Issues #24–27, and what was under them
 
 Tanveer left for work and asked for a long unattended session on the batch he
-had already named. Every issue turned out to be bigger than its ticket. **The
-tree is left uncommitted at his instruction** — nothing here has shipped.
+had already named, then steered it live from mobile once he was back. Every
+issue turned out to be bigger than its ticket.
+
+**Shipped as `018e9d0` (`edbecfd..018e9d0`), 48 files, +4125/−548.** Pushing
+`master` auto-builds to https://toll-the-game.vercel.app/, so this is live.
 
 ### #26 was not cosmetic — six kits' synergies granted nothing
 
