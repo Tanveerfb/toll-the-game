@@ -2360,7 +2360,7 @@ out of scope. Production build green via `NEXT_DIST_DIR=.next-verify`, with
 
 Follows the auto session (`018e9d0`) and its spec commit (`fae5f09`). He answered
 the three open calls in the shadcn spec, then steered live through four features
-and two real bugs, ending with an economy retune. Shipped as **`3a04df8`**.
+and two real bugs, ending with an economy retune. Shipped as **`2136aa2`**.
 
 ### The shadcn work — spec answered, then built
 
