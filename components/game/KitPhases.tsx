@@ -39,6 +39,7 @@ function PhaseKit({
     return (
       <KitDetails
         skills={kit.skills}
+        spSkill={kit.spSkill}
         ultimate={kit.ultimate}
         passives={kit.passives as KitPassiveView[]}
       />
@@ -54,6 +55,9 @@ function PhaseKit({
           slot={`S${index + 1}`}
         />
       ))}
+      {kit.spSkill ? (
+        <SkillDocument skill={kit.spSkill} slot="SP" ranked={false} />
+      ) : null}
       {kit.ultimate ? (
         <SkillDocument skill={kit.ultimate} slot="ULT" />
       ) : null}

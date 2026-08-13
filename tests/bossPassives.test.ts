@@ -194,6 +194,35 @@ describe("bossApplyCorrosion", () => {
     expect(res[0].debuffs.filter((d) => d.type === "corrosion")).toHaveLength(0);
     expect(res[1].debuffs.filter((d) => d.type === "corrosion")).toHaveLength(1);
   });
+
+  // Molvarr P2 was applying a stack every turn, and each stack also feeds
+  // Growing Malice's ATK-per-debuff, so the ultimate compounded into four
+  // figures by mid-fight (Tanveer, 2026-08-13).
+  it("fires only on multiples of everyNTurns", () => {
+    const corroded = (phaseTurn: number) => {
+      const b = boss(
+        [{ type: "bossApplyCorrosion", perTurn: 1, duration: 2, everyNTurns: 3 }],
+        { passiveState: { phaseTurn } },
+      );
+      const res = applyBossTurnStart([b], [char({ instanceId: "a" })], noop)
+        .playerTeam;
+      return res[0].debuffs.filter((d) => d.type === "corrosion").length;
+    };
+    // applyBossTurnStart increments first, so phaseTurn 0/1 → turns 1/2.
+    expect(corroded(0)).toBe(0);
+    expect(corroded(1)).toBe(0);
+    expect(corroded(2)).toBe(1); // turn 3
+    expect(corroded(5)).toBe(1); // turn 6
+  });
+
+  it("still fires every turn when everyNTurns is absent", () => {
+    const b = boss([{ type: "bossApplyCorrosion", perTurn: 1, duration: 2 }], {
+      passiveState: { phaseTurn: 1 },
+    });
+    const res = applyBossTurnStart([b], [char({ instanceId: "a" })], noop)
+      .playerTeam;
+    expect(res[0].debuffs.filter((d) => d.type === "corrosion")).toHaveLength(1);
+  });
 });
 
 describe("bossMaxHpDrain (from turn 10)", () => {

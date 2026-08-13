@@ -106,6 +106,7 @@ export function SkillBlock({
   skill,
   tag,
   onDetails,
+  ranked = true,
 }: {
   skill: CharacterSkillData;
   tag: string;
@@ -113,9 +114,13 @@ export function SkillBlock({
    *  Super Attack row in the battle character-detail screen). Omitted
    *  everywhere else (archive, kit-phases) — no behavior change. */
   onDetails?: () => void;
+  /** False for a skill that never enters the deck and has no rank (boss SP). */
+  ranked?: boolean;
 }): React.ReactNode {
   const rankedLines =
-    skill.type === "ultimate" ? null : buildRankedSkillDescriptions(skill);
+    skill.type === "ultimate" || !ranked
+      ? null
+      : buildRankedSkillDescriptions(skill);
   const chipClass = SKILL_TYPE_CHIP[skill.type] ?? "bg-edge text-readout-strong";
   // Heal skills show their recovery amount in green (7DS convention).
   const numberClassName =
@@ -372,6 +377,7 @@ export function PassiveProse({
  */
 export default function KitDetails({
   skills,
+  spSkill,
   ultimate,
   passive,
   passives,
@@ -379,6 +385,9 @@ export default function KitDetails({
   onPassiveDetails,
 }: {
   skills: CharacterSkillData[];
+  /** Boss auto-fired special. Rankless and never in the deck, but it is one
+   *  of the boss's actions, so it belongs in the Skills list. */
+  spSkill?: CharacterSkillData;
   ultimate?: CharacterSkillData;
   passive?: KitPassiveView;
   passives?: KitPassiveView[];
@@ -404,6 +413,9 @@ export default function KitDetails({
               tag={`S${index + 1}`}
             />
           ))}
+          {spSkill ? (
+            <SkillBlock skill={spSkill} tag="SP" ranked={false} />
+          ) : null}
           {ultimate ? (
             <SkillBlock
               skill={ultimate}

@@ -31,7 +31,7 @@
       "characterId": "molvarr",
       "type": "attack",
       "statMultiplier": "atk",
-      "damageRanked": [260, 290, 350]
+      "damageRanked": [225, 255, 300]
     }
   ],
   "ultimate": {
@@ -73,7 +73,7 @@
           "characterId": "molvarr",
           "type": "attack",
           "statMultiplier": "atk",
-          "damageRanked": [260, 290, 350]
+          "damageRanked": [225, 255, 300]
         }
       ],
       "spSkill": {
@@ -123,12 +123,12 @@
       "skills": [
         {
           "skillName": "Abyssal Pierce",
-          "description": "Does Pierce damage equal to ATK-scaled to all enemies.",
+          "description": "Does Concentrate damage equal to ATK-scaled to all enemies.",
           "characterId": "molvarr",
           "type": "attack",
           "statMultiplier": "atk",
           "damageRanked": [130, 155, 210],
-          "mechanics": [{ "type": "aoe" }, { "type": "pierce" }]
+          "mechanics": [{ "type": "aoe" }, { "type": "concentrate" }]
         },
         {
           "skillName": "Devouring Bite",
@@ -142,14 +142,14 @@
       ],
       "spSkill": {
         "skillName": "Iron Carapace",
-        "description": "Greatly raises ATK and DEF for 2 turns.",
+        "description": "Raises ATK and DEF for 2 turns.",
         "characterId": "molvarr",
         "type": "buff",
         "statMultiplier": "atk",
         "damageRanked": [0, 0, 0],
         "mechanics": [
-          { "type": "buff", "stat": "atk", "valuePercent": 50, "duration": 2, "targetSelf": true },
-          { "type": "buff", "stat": "def", "valuePercent": 50, "duration": 2, "targetSelf": true }
+          { "type": "buff", "stat": "atk", "valuePercent": 30, "duration": 2, "targetSelf": true },
+          { "type": "buff", "stat": "def", "valuePercent": 30, "duration": 2, "targetSelf": true }
         ]
       },
       "ultimate": {
@@ -164,10 +164,10 @@
       "passives": [
         {
           "name": "Corrosive Tide",
-          "description": "# At the start of every turn\n- Applies 1 stack of Corrosion to each enemy for 2 turns\n\n# Against enemies afflicted with Corrosion\n- Damage 20% 👆",
+          "description": "# At the start of every 3rd turn\n- Applies 1 stack of Corrosion to each enemy for 2 turns\n\n# Against enemies afflicted with Corrosion\n- Damage 20% 👆",
           "trigger": "always",
           "mechanics": [
-            { "type": "bossApplyCorrosion", "perTurn": 1, "duration": 2 },
+            { "type": "bossApplyCorrosion", "perTurn": 1, "duration": 2, "everyNTurns": 3 },
             { "type": "bossCorrosionBonus", "percent": 20 }
           ]
         },

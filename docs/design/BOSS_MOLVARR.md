@@ -13,6 +13,13 @@
 - **Multi-phase "hearts"** (7DSGC Ragnarok demonic-beast model): a phase ends
   when its HP bar hits 0, then the next phase begins with a fresh bar.
 
+> **Re-verified against `data/characters/molvarr.json` on 2026-08-13**, after
+> Tanveer's playtest nerf (ruling #73): P1 Crushing Maw 350 → 300 at R3, P2
+> Abyssal Pierce swapped Pierce → Concentrate, P2 SP 50% → 30%, P2 Corrosive
+> Tide now applies on every 3rd phase-turn instead of every turn. The passive
+> percentages below had also drifted (doc said 10%/30%, JSON has 5%/20%) and
+> are corrected.
+>
 > **Stats verified against `data/characters/molvarr.json` on 2026-08-10.** The
 > phase HP/ATK/DEF here changed in the roster stat rebalance (ruling #68), and
 > the per-skill multipliers listed below had already drifted from the JSON
@@ -32,10 +39,10 @@
 ## Phase 1 — HP 5400 | ATK 285 | DEF 175
 - **Skill 1 (Corrosive Surge):** [120/145/190] damage to all enemies; applies
   **Corrosion** for [1/1/2] turns.
-- **Skill 2 (Crushing Maw):** [260/290/350] damage to one enemy.
+- **Skill 2 (Crushing Maw):** [225/255/300] damage to one enemy.
 - **SP Skill:** heals self for 30% of **missing** HP (maxHP - currentHP).
-- **Passive [Main]:** +10% ATK per debuff across ALL enemies, linear
-  (5 debuffs = +50% ATK), recalculated live as debuff count changes.
+- **Passive [Main]:** +5% ATK per debuff across ALL enemies, linear
+  (5 debuffs = +25% ATK), recalculated live as debuff count changes.
 - **SP Passive 1:** every 3rd phase-turn, the 3rd of its 3 actions is forced to
   be the SP Skill (SP is never a normal AI pick).
 - **SP Passive 2:** immune to crowd control — **stun/freeze** only (freeze = a
@@ -47,12 +54,13 @@
   skills for 2 turns** (seal, sealType attack).
 
 ## Phase 2 — HP 7200 | ATK 400 | DEF 230
-- **Skill 1 (Abyssal Pierce):** **Pierce** [130/155/210] damage to all enemies.
+- **Skill 1 (Abyssal Pierce):** **Concentrate** [130/155/210] damage to all
+  enemies (×1.5/1.2/1.1/1.0 for 1/2/3/4 targets).
 - **Skill 2 (Devouring Bite):** [180/220/300] damage to one enemy; lifesteals
   30% of damage.
-- **SP Skill:** raises own ATK and DEF by 50% for 2 turns.
-- **Passive [Main]:** applies 1 Corrosion to each enemy at the start of each
-  (boss) turn; deals +30% damage to enemies that have Corrosion.
+- **SP Skill:** raises own ATK and DEF by 30% for 2 turns.
+- **Passive [Main]:** applies 1 Corrosion to each enemy at the start of every
+  **3rd** (boss) phase-turn; deals +20% damage to enemies that have Corrosion.
 - **SP Passive 1/2/3:** same as Phase 1 (auto-SP-timer now fires P2's SP Skill;
   CC immunity; turn-10 x2 spike).
 - **SP Passive 4:** from **turn 10** (of the phase), all enemies lose 10% of

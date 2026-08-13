@@ -173,6 +173,11 @@ export interface CharacterPhaseData {
 /** Resolved kit for a single phase — passives always normalized to an array. */
 export interface CharacterKitView {
   skills: CharacterSkillData[];
+  /** Auto-fired special. Never in the deck, so it has no rank and no card —
+   *  but it IS part of what the boss does to you, and leaving it out of the
+   *  view meant neither the archive nor the in-battle info panel could show
+   *  it at all (Tanveer, 2026-08-13). */
+  spSkill?: CharacterSkillData;
   ultimate?: CharacterSkillData;
   passives: CharacterPassiveData[];
   atk: number;
@@ -202,6 +207,7 @@ export function getCharacterKit(
   if (phase) {
     return {
       skills: phase.skills,
+      spSkill: phase.spSkill,
       ultimate: phase.ultimate,
       passives: phase.passives ?? [],
       atk: phase.atk,
@@ -235,6 +241,7 @@ export function getCharacterMechanics(character: CharacterData): string[] {
   add(character.passive?.mechanics);
   for (const phase of getCharacterPhases(character)) {
     phase.skills.forEach((s) => add(s.mechanics));
+    add(phase.spSkill?.mechanics);
     add(phase.ultimate?.mechanics);
     (phase.passives ?? []).forEach((p) => add(p.mechanics));
   }

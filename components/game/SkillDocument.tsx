@@ -49,13 +49,19 @@ const SKILL_TYPE_ACCENT: Record<string, string> = {
 export default function SkillDocument({
   skill,
   slot,
+  ranked = true,
 }: {
   skill: CharacterSkillData;
-  /** "S1" / "S2" / "ULT" — the card slot this skill occupies. */
+  /** "S1" / "S2" / "SP" / "ULT" — the card slot this skill occupies. */
   slot: string;
+  /** Set false for a skill that never enters the deck and so has no rank —
+   *  a boss SP Skill. Without it the rank table prints the same row three
+   *  times off a `damageRanked: [0,0,0]` placeholder. */
+  ranked?: boolean;
 }): ReactNode {
   const isUlt = skill.type === "ultimate";
-  const rankedLines = isUlt ? null : buildRankedSkillDescriptions(skill);
+  const rankedLines =
+    isUlt || !ranked ? null : buildRankedSkillDescriptions(skill);
   const metaParts = [...new Set([skill.type, ...getMechanicTypes(skill)])]
     .filter((part) => !(isUlt && part === "ultimate"))
     .map(toTitleCase);

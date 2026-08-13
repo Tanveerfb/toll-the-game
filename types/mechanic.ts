@@ -367,6 +367,11 @@ export interface BossApplyCorrosionMechanic extends MechanicBase {
   type: "bossApplyCorrosion";
   perTurn?: number; // default 1
   duration?: number; // default 2
+  /** Fire only on multiples of N phase-turns (1 = every turn, the default).
+   *  Molvarr P2 runs on 3 — applying it every turn compounded through
+   *  Growing Malice into a several-thousand-damage ultimate (Tanveer,
+   *  2026-08-13). */
+  everyNTurns?: number;
 }
 /** The boss deals `percent`% extra damage to targets afflicted by Corrosion. */
 export interface BossCorrosionBonusMechanic extends MechanicBase {

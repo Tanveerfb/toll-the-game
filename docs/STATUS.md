@@ -1974,6 +1974,37 @@ offered: a card whose damage is nulled to 0 reads **"Tanked"** and nothing
 else, and its damage-scaled after-effects **do not proc** rather than applying
 at zero. Affects bleed, decay and shock so far. No damage floor, no DEF cap.
 
+## Playtest — 2026-08-13 evening: five runs against Molvarr
+
+4 wins, 1 loss. Team was Duke / Lyra / Chiara / Gabrist for three runs, then
+Gabrist swapped for Isolde for the last two. His verdict on the battle
+experience itself: **good** — "enjoyable and UI elements are easy to identify."
+Two things came out of it and both were acted on.
+
+**Molvarr Phase 2 was overtuned.** The phase-2 ultimate hit near **4,000** in
+one fight and ~800 even in the nerfed case. His four changes are ruling #73 and
+are all live. The one worth understanding rather than just recording is the
+last: P2's Corrosive Tide applied a Corrosion stack to every player *every
+turn*, and Growing Malice grants the boss +5% ATK **per enemy debuff stack** —
+so three players × one stack × every turn was compounding the boss's own attack
+into the four-figure ultimate. Moving it to every 3rd turn cuts the feedback
+loop at the source, which is why it does more work than the three flat number
+nerfs combined. Watch one knock-on: Concentrate replaces Pierce on P2's AoE,
+and Concentrate scales *up* as your team shrinks (×1.1 at three targets, ×1.5
+at one), so a losing board now takes more from it, not less.
+
+**Corroded Sea Weed was the only real gate.** He was sitting on 8 eyes against
+4 seaweed with ascension asking 3:10, 6:15, 10:25 — the two dropped at a flat
+1:2 while every band wants 2.5–3.3:1. Base per-clear seaweed doubled 2 → 4 at
+his instruction. `worldBossRewards.test.ts` now asserts the drop ratio covers
+every band's cost ratio, so a future ascension band can't silently reintroduce
+the same squeeze.
+
+**Still open:** the deck drag/merge animations "feel unstable" when hovering a
+held card over another, with visible artifacts. Already Open Issue #27 and
+already deferred by him to a future batch — this playtest is a second data
+point on it, not a new issue.
+
 ## Open Issues
 
 | # | Issue | Where | Severity |
@@ -1988,7 +2019,7 @@ at zero. Affects bleed, decay and shock so far. No damage floor, no DEF cap.
 | 24 | **The engine's string log double-prints actions.** Also: the in-battle log drawer is player-facing and must stay readable (ruling #72), unlike the JSON reports. Turn 14 of the 08-13 run logged seven Lyra actions where the event stream had two; HP arithmetic proves two resolved, so it's a logging path, not a resolution one. `buildBattleReport` collapses consecutive duplicates as a mitigation; the cause is unfound | `hooks/BattleProvider.tsx`, `lib/game/combat.ts` | Open |
 | 25 | **A nulled hit must read "Tanked" and skip its scaled after-effects.** Volcanic Frost resolved for 0 against ~400 DEF and still applied `decay (0/turn)`. **Ruled 2026-08-13 (ruling #71)** — no damage floor, no DEF cap: the card reports "Tanked", no other text, and bleed/decay/shock don't proc when their value nulls to 0. Ready to build | `lib/game/damage.ts`, `lib/game/combat.ts` | Ruled, unbuilt |
 | 26 | Tribe-synergy log lines read `gained 5% undefined` — those kits declare `stats: [...]` rather than `stat`, and the log prints the latter. **The buff itself works.** Cosmetic | `lib/game/passive.ts` | Cosmetic |
-| 27 | **Battle hand animations want a performance pass.** Reported after playtesting 2026-08-13. Suspects ranked in the "Playtest findings" section; start with a profile, not the list | `components/game/battle/Hand.tsx` | Open |
+| 27 | **Battle hand animations want a performance pass.** Reported after playtesting 2026-08-13, and reported again the same evening: dragging a held card over another "feels unstable" and leaves artifacts. Suspects ranked in the "Playtest findings" section; start with a profile, not the list | `components/game/battle/Hand.tsx` | Open |
 
 Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier stats wired, ruling #36), #16 (zero clauses hidden, ruling #44), #15 (firestore.rules deployed live via Firebase MCP 2026-07-11 — cloud saves work for signed-in users; minimal `firebase.json` added), #7 (Mechanic discriminated union — see Working).
 

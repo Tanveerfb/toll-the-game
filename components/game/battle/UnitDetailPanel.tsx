@@ -229,7 +229,7 @@ function Stat({
 }
 
 type KitTab = { key: string; label: string; art: string | null } & (
-  | { kind: "skill"; skill: CharacterSkillData; tag: string }
+  | { kind: "skill"; skill: CharacterSkillData; tag: string; ranked?: boolean }
   | { kind: "passive"; passive: KitPassiveView }
 );
 
@@ -377,6 +377,20 @@ export default function UnitDetailPanel({
       art: getSkillArt(selected.id, skill.skillName),
     });
   });
+  // The SP Skill fires on the boss's own timer instead of off a card, which is
+  // exactly why it needs a tab: it's the one action you can't see coming from
+  // the hand (Tanveer, 2026-08-13).
+  if (kit?.spSkill) {
+    tabs.push({
+      kind: "skill",
+      key: "sp",
+      label: "SP",
+      tag: "SP",
+      skill: kit.spSkill,
+      ranked: false,
+      art: getSkillArt(selected.id, kit.spSkill.skillName),
+    });
+  }
   if (kit?.ultimate) {
     tabs.push({
       kind: "skill",
@@ -689,6 +703,7 @@ export default function UnitDetailPanel({
                   <SkillBlock
                     skill={tab.skill}
                     tag={tab.tag}
+                    ranked={tab.ranked ?? true}
                     onDetails={
                       tab.skill.type === "ultimate"
                         ? () =>

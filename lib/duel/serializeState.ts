@@ -188,7 +188,12 @@ function scheduleBlock(enemyTeam: BattleCharacter[]): string {
         );
       }
       if (m.type === "bossApplyCorrosion") {
-        lines.push(`- ${unit.name}: applies Corrosion to each opposing field unit every turn.`);
+        const everyN = Math.max(1, m.everyNTurns ?? 1);
+        lines.push(
+          everyN === 1
+            ? `- ${unit.name}: applies Corrosion to each opposing field unit every turn.`
+            : `- ${unit.name}: applies Corrosion to each opposing field unit every ${everyN} phase-turns (phase turn ${phaseTurn}; next in ${everyN - (phaseTurn % everyN)}).`,
+        );
       }
     });
   });

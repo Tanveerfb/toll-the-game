@@ -44,4 +44,17 @@ describe("getCharacterKit", () => {
     expect(p2.passives.length).toBeGreaterThan(p1.passives.length);
     expect(p2.passives.map((p) => p.name)).toContain("Drowning Depths");
   });
+
+  // The view dropped spSkill entirely, so the boss's auto-fired special was
+  // invisible in both the archive and the in-battle info panel even though the
+  // engine fires it every 3rd turn (Tanveer, 2026-08-13).
+  it("carries each phase's SP Skill", () => {
+    const molvarr = getCharacterById("molvarr")!;
+    expect(getCharacterKit(molvarr, 0).spSkill?.skillName).toBe("Devour the Tide");
+    expect(getCharacterKit(molvarr, 1).spSkill?.skillName).toBe("Iron Carapace");
+  });
+
+  it("has no SP Skill for a character without one", () => {
+    expect(getCharacterKit(getCharacterById("duke")!, 0).spSkill).toBeUndefined();
+  });
 });

@@ -169,7 +169,7 @@ export function applyBossTurnStart(
     // 3. Apply Corrosion to each field player.
     for (const m of mechs) {
       if (m.type === "bossApplyCorrosion") {
-        players = applyCorrosion(players, boss, m, log);
+        players = applyCorrosion(players, boss, m, phaseTurn, log);
       }
     }
     // 4. Turn-N max-HP drain on each field player.
@@ -252,8 +252,15 @@ function applyCorrosion(
   players: BattleCharacter[],
   boss: BattleCharacter,
   mech: Extract<Mechanic, { type: "bossApplyCorrosion" }>,
+  phaseTurn: number,
   log: (entry: string) => void,
 ): BattleCharacter[] {
+  // Default 1 = every turn, which is how this shipped. Molvarr P2 now runs on
+  // 3: each stack also feeds Growing Malice's ATK-per-debuff, so applying
+  // four stacks a turn to three players was compounding into a four-figure
+  // ultimate by mid-fight (Tanveer, 2026-08-13).
+  const everyN = Math.max(1, mech.everyNTurns ?? 1);
+  if (phaseTurn % everyN !== 0) return players;
   const perTurn = mech.perTurn ?? 1;
   const duration = mech.duration ?? 2;
   return players.map((p) => {

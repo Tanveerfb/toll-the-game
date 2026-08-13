@@ -1,6 +1,9 @@
 export const BONUS_CHANCE = 0.1;
 export const BASE_SEA_MONSTER_EYE = 1;
-export const BASE_CORRODED_SEAWEED = 2;
+/** Doubled from 2 on 2026-08-13. Ascension wants seaweed at 3.3× / 2.5× / 2.5×
+ *  the eye count (lib/game/ascension.ts) but both dropped at a flat 1:2, so
+ *  seaweed was the only real gate while eyes piled up unspent. */
+export const BASE_CORRODED_SEAWEED = 4;
 export const TRAINING_MANUAL_MIN = 3;
 export const TRAINING_MANUAL_MAX = 6;
 export const COIN_MIN = 2000;
