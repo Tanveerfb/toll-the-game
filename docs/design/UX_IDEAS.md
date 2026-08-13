@@ -218,6 +218,18 @@ itself had forgotten four of them. If the doc lost track, the player has too.
 
 ## Home, navigation, profile
 
+### N0. The shadcn layer is mostly out-voted — **High**, spec written
+
+Audited 2026-08-13 at his request. 55 of 75 UI files import nothing from
+`components/ui`; raw `<button>` outnumbers `<Button>` 97 to 36; `label`,
+`select` and `table` have zero importers. The cause is two token systems
+coexisting in `globals.css` (14 shadcn, 15 Combat Terminal), so every `<Button>`
+overrides its own variant.
+
+**Full analysis and a phased plan:**
+`docs/superpowers/specs/2026-08-13-shadcn-and-ui-cleanup-design.md`. Three of
+his calls are open there.
+
 ### N1. Replace the native `prompt()` and `alert()` — **High**
 
 **Player:** Naming or renaming a team preset uses an in-game dialog, not the
