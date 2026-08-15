@@ -139,7 +139,10 @@ describe("description placeholders", () => {
     it("joins three clauses as 'A, B and C'", () => {
       const evilSpirit = meliodasData.ultimate as unknown as CharacterSkillData;
       expect(buildDescriptionForRank(evilSpirit, 2)).toBe(
-        "Cancels buffs and stances, does damage equal to 700% ATK to one enemy and stuns for 2 turns.",
+        // Index 2 is ult level 3, where Meliodas reads 540 — an ultimate
+        // renders at the index it is given, and for an ultimate that index is
+        // the ult level rather than a card rank.
+        "Cancels buffs and stances, does damage equal to 540% ATK to one enemy and stuns for 2 turns.",
       );
     });
 

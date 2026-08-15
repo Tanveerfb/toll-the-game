@@ -65,7 +65,15 @@
     "characterId": "meliodas",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 700,
+    "damage": 450,
+    "damageByUltLevel": [
+      450,
+      495,
+      540,
+      585,
+      630,
+      700
+    ],
     "mechanics": [
       {
         "type": "cancelBuffs"

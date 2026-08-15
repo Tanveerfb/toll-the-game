@@ -112,7 +112,9 @@ describe("single-ally targeting (Leorio's Member of the Zodiac)", () => {
     const ward = isoldeData.ultimate as unknown as CharacterSkillData;
     const text = buildDescriptionForRank(ward, 2);
     expect(text).toBe(
-      "Grants all allies Debuff Immunity and raises their basic stats for 3 turns.",
+      // Index 2 = ult level 3, the level Debuff Immunity first appears at
+      // (minUltLevel 3) and where the buff still runs 2 turns.
+      "Grants all allies Debuff Immunity and raises their basic stats for 2 turns.",
     );
     expect(text.match(/all allies/g)).toHaveLength(1);
   });

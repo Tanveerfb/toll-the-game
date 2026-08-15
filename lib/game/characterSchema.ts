@@ -39,6 +39,12 @@ const skillSchema = z.looseObject({
   description: z.string().optional(),
   damageRanked: z.array(z.number()).length(3).optional(),
   damage: z.number().optional(),
+  /** Ultimates only: the damage multiplier at each ult level, 1 through 6.
+   *  Authored as an explicit ladder rather than a growth percentage because
+   *  the curve differs per character and per ult type (Tanveer, 2026-08-14).
+   *  Absent falls back to the flat `damage`, which is what every boss and NPC
+   *  ultimate uses — they have no ult level to read. */
+  damageByUltLevel: z.array(z.number()).length(6).optional(),
   mechanics: z.array(mechanicSchema).optional(),
 });
 

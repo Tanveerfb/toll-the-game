@@ -44,7 +44,8 @@
     "characterId": "batra",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 400,
+    "damage": 300,
+    "damageByUltLevel": [300, 325, 350, 375, 400, 500],
     "mechanics": [
       {
         "type": "ignite",

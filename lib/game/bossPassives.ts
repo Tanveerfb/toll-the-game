@@ -232,8 +232,18 @@ function recomputeDebuffAtk(
   const oldPct = idx >= 0 ? (boss.buffs[idx].valuePercent ?? 0) : 0;
   if (newPct === oldPct) return;
 
-  // Delta on BASE atk keeps currentAttack consistent as the count changes.
-  boss.currentAttack += Math.floor((boss.atk * (newPct - oldPct)) / 100);
+  // Rebuild from base rather than nudging by a delta.
+  //
+  // This applied `floor(atk * (new - old) / 100)`, and `Math.floor` rounds a
+  // NEGATIVE delta away from zero — at 285 base, +5% added 14 while the
+  // matching -5% subtracted 15. Every debuff that appeared and expired cost the
+  // boss 1 ATK permanently, so its attack decayed across a long fight
+  // (285 -> 299 -> 284 -> 298 -> 283 in a traced P1 run). Recomputing the whole
+  // bonus off `boss.atk` cannot drift: the same count always yields the same
+  // number, whichever direction it was reached from.
+  const oldBonus = Math.floor((boss.atk * oldPct) / 100);
+  const newBonus = Math.floor((boss.atk * newPct) / 100);
+  boss.currentAttack += newBonus - oldBonus;
   const badge: StatusEffect = {
     type: "buff",
     stat: "atk",

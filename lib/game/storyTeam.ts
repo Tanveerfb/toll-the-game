@@ -1,3 +1,7 @@
+import {
+  ascensionMultiplier,
+  levelMultiplier,
+} from "@/lib/game/progression";
 import type { StoryChapter, StoryTeamPick } from "@/types/story";
 
 /** Battle team cap, matching the 1–4 rule enforced everywhere else. */
@@ -16,6 +20,17 @@ export const STORY_TEAM_CAP = 4;
  * levelled Chiara always beats the story's loaner Chiara.
  */
 export const DEFAULT_TRIAL_LEVEL = 10;
+
+/**
+ * Ascension a lent lead fights at when the chapter doesn't say.
+ *
+ * Zero, which keeps every chapter authored before `trialAscension` existed at
+ * exactly the stats it was tuned with. Note this makes a bare `trialLevel`
+ * describe a unit the player could never actually own — `maxLevelForAscension`
+ * caps ascension 0 at level 1 — so a chapter that means "a real Lv N character"
+ * has to say so with `trialAscension`.
+ */
+export const DEFAULT_TRIAL_ASCENSION = 0;
 
 /** Which of a chapter's anchors are being lent rather than owned. */
 export function storyTrialIds(
@@ -51,6 +66,56 @@ export function storyOpenSlots(chapter: StoryChapter): number {
   return Math.max(0, STORY_TEAM_CAP - storyAnchors(chapter).length);
 }
 
+/** The progression a chapter lends an anchor at. */
+export function trialProgression(chapter: StoryChapter): {
+  level: number;
+  ascension: number;
+} {
+  return {
+    level: chapter.trialLevel ?? DEFAULT_TRIAL_LEVEL,
+    ascension: chapter.trialAscension ?? DEFAULT_TRIAL_ASCENSION,
+  };
+}
+
+/**
+ * Whether the chapter's loaner is stronger than what the player has built.
+ *
+ * The comparison is the same sum `progressedStat` multiplies by, so it ranks
+ * the two the way the battle will. Ties go to the trial, which only happens
+ * when the player has built the identical statline anyway.
+ */
+export function trialBeatsOwned(
+  chapter: StoryChapter,
+  ownedProgress: { level: number; ascension: number },
+): boolean {
+  const trial = trialProgression(chapter);
+  const strength = (p: { level: number; ascension: number }) =>
+    levelMultiplier(p.level) + ascensionMultiplier(p.ascension);
+  return strength(trial) >= strength(ownedProgress);
+}
+
+/**
+ * Which owned anchors should default to the lent version.
+ *
+ * Owning a lead used to make a chapter *harder*: `trialLevel` applied only to
+ * units outside the roster, so a player who pulled Duke and hadn't levelled him
+ * fought part 9 at 1.000x while a player who never pulled him got a 2.159x
+ * loaner. Defaulting to whichever is stronger means acquiring a character can
+ * never cost you a fight; the picker then lets the player override it either
+ * way (Tanveer, 2026-08-14 — "most of the other similar games also do provide
+ * 'trial' versions for the character for required story or PVE content").
+ */
+export function defaultTrialSelection(
+  chapter: StoryChapter,
+  ownedIds: string[],
+  progressOf: (id: string) => { level: number; ascension: number },
+): string[] {
+  const owned = new Set(ownedIds);
+  return storyAnchors(chapter)
+    .map((pick) => pick.id)
+    .filter((id) => owned.has(id) && trialBeatsOwned(chapter, progressOf(id)));
+}
+
 /**
  * Builds the team a story battle actually starts with.
  *
@@ -69,11 +134,19 @@ export function resolveStoryTeam(
    *  chapter's `trialLevel`; anchors inside it keep the player's own
    *  progression, which `BattleProvider` reads from the save. */
   ownedIds: string[] = [],
+  /** Owned anchors the player has chosen to play as the LENT version instead
+   *  of their own. Ignored for anchors they don't own — those are always lent,
+   *  since there is no other copy to field. */
+  useTrialFor: string[] = [],
 ): StoryTeamPick[] {
-  const trialLevel = chapter.trialLevel ?? DEFAULT_TRIAL_LEVEL;
+  const { level: trialLevel, ascension: trialAscension } =
+    trialProgression(chapter);
   const owned = new Set(ownedIds);
+  const lentByChoice = new Set(useTrialFor);
   const asTrial = (pick: StoryTeamPick): StoryTeamPick =>
-    owned.has(pick.id) ? pick : { ...pick, level: trialLevel };
+    owned.has(pick.id) && !lentByChoice.has(pick.id)
+      ? pick
+      : { ...pick, level: trialLevel, ascension: trialAscension };
 
   if (!chapter.battle) return [];
   if (chapter.teamMode === "canon") {

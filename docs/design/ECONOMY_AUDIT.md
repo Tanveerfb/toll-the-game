@@ -18,6 +18,14 @@
 > manuals and other stuff... there will be more bosses, more PVE content in
 > general later... you don't have to 'donate' resources right now across current
 > content. a frugal dev and dev helper (you) is good to have right now."*
+>
+> **Re-run 2026-08-14 — this audit had a hole in it.** The original pass sized
+> every source from the files listed above and **never opened
+> `lib/gacha/pull.ts`**, so the 95% "miss" side of the summon table — the game's
+> largest manual and coin faucet — was missing from every total below. §2 now
+> counts it. The correction does not overturn the headline, but it moves the
+> margin a long way; see "The summon miss table" in §2. Manual tiers were
+> reweighted 60/30/10 the same day (Tanveer) as part of the fix.
 
 ## The headline
 
@@ -164,10 +172,54 @@ gate was correct, but it means **the manual bottleneck is now mandatory rather
 than optional**. The fix and this finding are the same day; they should be read
 together.
 
-One-time sources barely dent it: story and orders together pay **153** Training
-Manuals and **21** Advanced (= 23,700 XP), against 78,000 XP for a single
-character. Roughly **30% of one character**, across the entire game's one-time
-content.
+Story and orders together pay **153** Training Manuals and **21** Advanced
+(= 23,700 XP), against 78,000 XP for a single character — roughly **30% of one
+character** across all one-time *content*. But content is not the only source.
+
+### The summon miss table — the source this audit missed
+
+`rollLimitedPull` (`lib/gacha/pull.ts`) resolves 5% to a character and splits
+the other 95% into equal thirds: a coin bundle, a **levelling manual**, or a
+specialty material. So every pull carries manual XP, and the original audit
+counted none of it.
+
+Per pull, at the 60/30/10 tier weights set 2026-08-14 (a manual roll averages
+280 XP; it averaged 500 while the tiers were a uniform third each):
+
+| | per pull |
+| --- | ---: |
+| Manual XP | **88.7** |
+| Coin | **1,425** |
+
+| Gem stock | Pulls | Manual XP | = Training Manuals | Coin |
+| --- | ---: | ---: | ---: | ---: |
+| Starter grant (1,000) | 220 | **19,500** | 195 | 313,500 |
+| Lifetime today (3,015) | 660 | **58,500** | 585 | 940,500 |
+| Lifetime at 24 parts (4,875) | 1,067 | 94,600 | 946 | 1,520,475 |
+
+Read against §2's own figures:
+
+- **Lifetime summons pay 58,500 XP — 75% of a full Lv1→Lv40 climb**, and 2.5×
+  everything story and orders pay put together. Total one-time XP from all
+  sources is therefore ~82,200, which is **105% of one character to Lv40**, not
+  the 30% this document used to claim.
+- **The starter grant alone is 19,500 XP** — almost exactly the 19,000 needed
+  for Lv1→Lv20. A new account can take one character through the entire first
+  ascension band on day one without fighting anything.
+- At the old uniform weights those figures were **34,800** and **104,500 XP**,
+  the latter *more than a whole character's climb*. That is what the reweight
+  removed.
+- **Advanced and Premium Manuals come overwhelmingly from here**, not from
+  content: ~63 Advanced and ~21 Premium across a lifetime of summons, against 21
+  Advanced and zero Premium from story and orders. Worth knowing before ruling
+  #86's "don't put Advanced Manuals in the tier-1 farm" is read as keeping them
+  scarce — the summon table is already their main door.
+
+**This does not overturn the headline.** 780 manuals for one character to Lv40
+still dwarfs any single source, the 18-day / 72-day figures still hold for a
+player levelling from the farm, and Tanveer's Lv40 wall is intact. What changes
+is the *margin*: the first ascension band is far softer than this document
+implied, because summoning quietly pays for it.
 
 ### Levers, if this should change
 
@@ -196,12 +248,17 @@ was applied.
 | | |
 | --- | ---: |
 | One-time sources (story 183k + orders 28k) | 211,000 |
+| **Summon miss table, lifetime (660 pulls × 1,425)** | **940,500** |
 | Molvarr tier 1 farm | ~6,000/clear → **43,200/day** |
 | One character fully built (levelling 156k + ascension 85k) | 241,000 |
 
-Coin is **not** a constraint: 5.6 days of farming covers a whole character, and
-the one-time sources nearly cover one on their own. It is the healthiest number
-in the audit and needs no change.
+Coin is **not** a constraint, and the summon line above makes that emphatic
+rather than merely comfortable: summons alone pay **4.5× every other one-time
+source combined**, enough to fully build three characters before any farming.
+5.6 days of farming covers a whole character on top of that. It is the
+healthiest number in the audit and needs no change — but note that coin is now
+so abundant that it can never be the thing that paces anything, which is worth
+remembering when the shop is priced.
 
 ## 4. Ascension materials
 
@@ -229,7 +286,7 @@ Stamina is the master clock — every farm number above is derived from it. Wort
 noting the cap holds only 3 runs, so a player who cannot check in twice a day
 loses regen to overflow.
 
-## 6. Auto Clear Tickets and Permanent Tickets
+## 6. Parked currencies — tickets and specialty materials
 
 - **Auto Clear Tickets:** 10 from orders (my 6/4 split, still awaiting his
   review) + 5 per account rank-up. Each skips one fight at full stamina cost, so
@@ -238,6 +295,13 @@ loses regen to overflow.
 - **Permanent Tickets:** 2 from orders, 1 per Molvarr first clear. They buy
   nothing today and are **accruing on purpose** — a shop is planned (Tanveer,
   2026-08-13). Do not repurpose them.
+- **Local specialty materials** (Riverstone Fragment, Scorched Ember, Bramble
+  Thorn, Prism Dust): one third of every summon miss, so ~209 of them across a
+  lifetime of pulls. **Nothing consumes them** — they are granted by
+  `lib/gacha/pull.ts`, labelled by `lib/game/materials.ts`, and spent by no
+  system in the game. **Parked on purpose, same as Permanent Tickets**: they
+  are part of the planned shop update (Tanveer, 2026-08-14). Not a leak, and
+  not to be re-flagged by the next audit.
 
 ## Open questions for Tanveer
 

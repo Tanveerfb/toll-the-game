@@ -27,7 +27,13 @@ import {
   limitedGemCost,
   permanentTicketCost,
 } from "@/lib/gacha/cost";
-import { resolvePullResult } from "@/lib/gacha/dupes";
+import {
+  MAX_ULT_LEVEL,
+  resolvePullResult,
+  ultLevelCoinCost,
+} from "@/lib/gacha/dupes";
+import { characterCoinId } from "@/lib/game/materials";
+import { getCharacterById } from "@/lib/game/characterCatalog";
 import type { StoryPayout } from "@/lib/game/storyRewards";
 import { evaluateOrder, getOrder } from "@/lib/game/orders";
 import { firebaseEnabled } from "@/lib/firebase";
@@ -69,8 +75,9 @@ export interface CharacterProgress {
 export type ResolvedPullOutcome =
   | (Extract<PullOutcome, { kind: "character" }> & {
       isNew: boolean;
-      /** Ult level AFTER this pull. `1` on a new unit. */
-      ultLevel: number;
+      /** The coin a duplicate paid, or null when the character was new. Dupes
+       *  no longer raise `ultLevel` directly — the coin does, when spent. */
+      coinId: string | null;
     })
   | Extract<PullOutcome, { kind: "coin" }>
   | Extract<PullOutcome, { kind: "material" }>;
@@ -146,6 +153,14 @@ export interface PlayerState {
   spendStaminaAction: (amount: number) => boolean;
   feedManualToCharacter: (characterId: string, manualTier: ManualTier) => boolean;
   ascendCharacter: (characterId: string) => boolean;
+  /**
+   * Spend character coins to raise an ultimate to `targetLevel`.
+   *
+   * All-or-nothing and forward-only: returns false without changing anything
+   * if the player is short, or if the target is at or below where they already
+   * are (a slider can be dragged backwards, and refunding would duplicate).
+   */
+  levelUpUltimate: (characterId: string, targetLevel: number) => boolean;
   grantWorldBossRewards: (rewards: WorldBossRewards) => void;
   grantStoryRewards: (payout: StoryPayout) => void;
   saveTeamPreset: (name: string, memberIds: string[]) => boolean;
@@ -218,6 +233,16 @@ export const DEFAULT_PITY = {
  *  it works equally against `state.characters` and the local accumulator
  *  gacha actions build up mid-loop. `getCharacterProgress` below delegates
  *  here for the common case of reading straight off live store state. */
+/** Adds one character coin to an inventory, or returns it untouched when the
+ *  pull was a new character (no coin to grant). */
+function grantCoin(
+  inventory: Record<string, number>,
+  coinId: string | null,
+): Record<string, number> {
+  if (!coinId) return inventory;
+  return { ...inventory, [coinId]: (inventory[coinId] ?? 0) + 1 };
+}
+
 function defaultCharacterProgress(
   characters: Record<string, CharacterProgress>,
   characterId: string,
@@ -426,10 +451,42 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     };
   }
 
+  if (version < 9) {
+    // v8 → v9: ult levels stop being free.
+    //
+    // Dupes used to bump `ultLevel` on the spot; they now pay a
+    // character-exclusive coin the player spends deliberately (Tanveer,
+    // 2026-08-14). Every existing save therefore holds ult levels nobody chose.
+    //
+    // Reset them to 1 and hand back one coin per level they had banked, so the
+    // change costs the player nothing — the copies they pulled are still worth
+    // exactly the same number of levels, they just get to decide when and on
+    // what order to spend them. A silent reset without the refund would delete
+    // real pulls.
+    const oldCharacters =
+      (state.characters as Record<string, CharacterProgress> | undefined) ?? {};
+    const inventory = {
+      ...((state.inventory as Record<string, number> | undefined) ?? {}),
+    };
+    const characters: Record<string, CharacterProgress> = {};
+    for (const [id, progress] of Object.entries(oldCharacters)) {
+      const banked = Math.max(0, (progress.ultLevel ?? 1) - 1);
+      if (banked > 0) {
+        const character = getCharacterById(id);
+        if (character) {
+          const coinId = characterCoinId(character);
+          inventory[coinId] = (inventory[coinId] ?? 0) + banked;
+        }
+      }
+      characters[id] = { ...progress, ultLevel: 1 };
+    }
+    state = { ...state, characters, inventory };
+  }
+
   return state as unknown as PersistedPlayerData;
 }
 
-export const CURRENT_PLAYER_STATE_VERSION = 8;
+export const CURRENT_PLAYER_STATE_VERSION = 9;
 
 export const usePlayerStore = create<PlayerState>()(
   persist(
@@ -544,6 +601,35 @@ export const usePlayerStore = create<PlayerState>()(
           characters: {
             ...state.characters,
             [characterId]: { ...progress, ascension: progress.ascension + 1 },
+          },
+        });
+        return true;
+      },
+
+      levelUpUltimate: (characterId, targetLevel) => {
+        const state = get();
+        if (!state.roster.includes(characterId)) return false;
+        const character = getCharacterById(characterId);
+        if (!character) return false;
+
+        const progress = getCharacterProgress(state, characterId);
+        const target = Math.min(Math.max(1, Math.floor(targetLevel)), MAX_ULT_LEVEL);
+        // A slider can be dragged backwards; levelling down is not a thing, and
+        // refunding coins for it would be a duplication exploit.
+        if (target <= progress.ultLevel) return false;
+
+        const coinId = characterCoinId(character);
+        const cost = ultLevelCoinCost(progress.ultLevel, target);
+        const held = state.inventory[coinId] ?? 0;
+        // All-or-nothing: a partial spend would take the coins and leave the
+        // ultimate short of what the player asked for.
+        if (held < cost) return false;
+
+        set({
+          inventory: { ...state.inventory, [coinId]: held - cost },
+          characters: {
+            ...state.characters,
+            [characterId]: { ...progress, ultLevel: target },
           },
         });
         return true;
@@ -673,10 +759,17 @@ export const usePlayerStore = create<PlayerState>()(
         for (let i = 0; i < count; i++) {
           const outcome = rollLimitedPull(banner);
           if (outcome.kind === "character") {
-            const resolution = resolvePullResult(outcome.characterId, roster, characters);
-            if (resolution.isNew) roster.push(outcome.characterId);
-            const existing = defaultCharacterProgress(characters, outcome.characterId);
-            characters[outcome.characterId] = { ...existing, ultLevel: resolution.ultLevel };
+            const resolution = resolvePullResult(outcome.characterId, roster);
+            if (resolution.isNew) {
+              roster.push(outcome.characterId);
+              characters[outcome.characterId] = defaultCharacterProgress(
+                characters,
+                outcome.characterId,
+              );
+            } else if (resolution.coinId) {
+              inventory[resolution.coinId] =
+                (inventory[resolution.coinId] ?? 0) + 1;
+            }
             results.push({ ...outcome, ...resolution });
             continue;
           }
@@ -715,16 +808,24 @@ export const usePlayerStore = create<PlayerState>()(
 
         const roster = [...state.roster];
         const characters = { ...state.characters };
+        const inventory = { ...state.inventory };
         const results: ResolvedPullOutcome[] = [];
 
         for (let i = 0; i < count; i++) {
           const outcome = rollPermanentPull(banner.featured);
           if (!outcome) break;
           if (outcome.kind !== "character") continue; // rollPermanentPull only ever constructs "character" outcomes
-          const resolution = resolvePullResult(outcome.characterId, roster, characters);
-          if (resolution.isNew) roster.push(outcome.characterId);
-          const existing = defaultCharacterProgress(characters, outcome.characterId);
-          characters[outcome.characterId] = { ...existing, ultLevel: resolution.ultLevel };
+          const resolution = resolvePullResult(outcome.characterId, roster);
+          if (resolution.isNew) {
+            roster.push(outcome.characterId);
+            characters[outcome.characterId] = defaultCharacterProgress(
+              characters,
+              outcome.characterId,
+            );
+          } else if (resolution.coinId) {
+            inventory[resolution.coinId] =
+              (inventory[resolution.coinId] ?? 0) + 1;
+          }
           results.push({ ...outcome, ...resolution });
         }
 
@@ -735,6 +836,7 @@ export const usePlayerStore = create<PlayerState>()(
           currencies: { ...state.currencies, permanentTicket: state.currencies.permanentTicket - cost },
           roster,
           characters,
+          inventory,
           // A pull is a pull, whichever banner paid for it.
           stats: { ...state.stats, pulls: state.stats.pulls + results.length },
           pity: { ...state.pity, permanent: permanentPity },
@@ -753,7 +855,7 @@ export const usePlayerStore = create<PlayerState>()(
         );
         if (!characterId) return false;
 
-        const resolution = resolvePullResult(characterId, state.roster, state.characters);
+        const resolution = resolvePullResult(characterId, state.roster);
         const roster = resolution.isNew ? [...state.roster, characterId] : state.roster;
         const existing = defaultCharacterProgress(state.characters, characterId);
 
@@ -765,7 +867,8 @@ export const usePlayerStore = create<PlayerState>()(
         });
         set({
           roster,
-          characters: { ...state.characters, [characterId]: { ...existing, ultLevel: resolution.ultLevel } },
+          characters: { ...state.characters, [characterId]: existing },
+          inventory: grantCoin(state.inventory, resolution.coinId),
           pity: { ...state.pity, limited },
         });
         return { kind: "character", characterId, ...resolution };
@@ -784,13 +887,14 @@ export const usePlayerStore = create<PlayerState>()(
         }
         if (!banner.featured.includes(characterId)) return false;
 
-        const resolution = resolvePullResult(characterId, state.roster, state.characters);
+        const resolution = resolvePullResult(characterId, state.roster);
         const roster = resolution.isNew ? [...state.roster, characterId] : state.roster;
         const existing = defaultCharacterProgress(state.characters, characterId);
 
         set({
           roster,
-          characters: { ...state.characters, [characterId]: { ...existing, ultLevel: resolution.ultLevel } },
+          characters: { ...state.characters, [characterId]: existing },
+          inventory: grantCoin(state.inventory, resolution.coinId),
           // Claiming 600 no longer resets the lap on its own. If 300 is still
           // outstanding the bar keeps running, so that reward can't be lost —
           // which is exactly what the old `resetLimitedLap` did to it.
@@ -818,13 +922,14 @@ export const usePlayerStore = create<PlayerState>()(
         }
         if (!banner.featured.includes(characterId)) return false;
 
-        const resolution = resolvePullResult(characterId, state.roster, state.characters);
+        const resolution = resolvePullResult(characterId, state.roster);
         const roster = resolution.isNew ? [...state.roster, characterId] : state.roster;
         const existing = defaultCharacterProgress(state.characters, characterId);
 
         set({
           roster,
-          characters: { ...state.characters, [characterId]: { ...existing, ultLevel: resolution.ultLevel } },
+          characters: { ...state.characters, [characterId]: existing },
+          inventory: grantCoin(state.inventory, resolution.coinId),
           pity: {
             ...state.pity,
             permanent: settlePermanentLap({
@@ -874,11 +979,7 @@ export const usePlayerStore = create<PlayerState>()(
         // finished).
         if (order.reward.character) {
           const characterId = order.reward.character;
-          const resolution = resolvePullResult(
-            characterId,
-            state.roster,
-            state.characters,
-          );
+          const resolution = resolvePullResult(characterId, state.roster);
           const existing = defaultCharacterProgress(state.characters, characterId);
           set((current) => ({
             roster: resolution.isNew
@@ -886,8 +987,9 @@ export const usePlayerStore = create<PlayerState>()(
               : current.roster,
             characters: {
               ...current.characters,
-              [characterId]: { ...existing, ultLevel: resolution.ultLevel },
+              [characterId]: existing,
             },
+            inventory: grantCoin(current.inventory, resolution.coinId),
           }));
         }
 

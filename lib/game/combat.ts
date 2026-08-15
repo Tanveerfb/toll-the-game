@@ -10,7 +10,7 @@ import { bossDamageMultiplierVsTarget } from "./bossPassives";
 import { getEffectiveCritResist, getEffectiveLifesteal } from "./substats";
 import { applyHeal } from "./heal";
 import { scaleMaxHp } from "./maxHp";
-import { scaledUltDamage } from "./progression";
+import { ultDamageForLevel } from "./progression";
 import { MAX_ULT_LEVEL } from "@/lib/gacha/dupes";
 import { isImmuneToStatDebuff } from "./immunity";
 import { DEFAULT_BLEED_TURNS, DEFAULT_IGNITE_TURNS } from "./dotDurations";
@@ -170,15 +170,11 @@ function getSkillDamagePercent(
   ultLevel: number = 1,
 ): number {
   if (skill.type === "ultimate") {
-    // Ruling 2026-08-11: an ultimate's multiplier grows 60% of its own value
-    // across the six ult levels — a 500% ultimate reads 500 at level 1 and
-    // 800 at level 6. Ranks don't apply to ultimates, so this is the only
-    // number that moves.
-    return scaledUltDamage(
-      (skill as UltimateCard).damage,
-      ultLevel,
-      MAX_ULT_LEVEL,
-    );
+    // Ranks don't apply to ultimates, so the ult level is the only number that
+    // moves. Every playable ultimate authors its own six-value ladder
+    // (`damageByUltLevel`); anything without one — bosses, story NPCs — falls
+    // back to the uniform curve off `damage`.
+    return ultDamageForLevel(skill as UltimateCard, ultLevel, MAX_ULT_LEVEL);
   } else {
     // Heal/buff skills (e.g. Molvarr's SP Skills) carry no damageRanked — no
     // damage. Treat a missing/short array as 0% rather than crashing.
@@ -186,14 +182,36 @@ function getSkillDamagePercent(
   }
 }
 
-function normalizeMechanic(mechanic: Mechanic, rankIndex: number = 0): Mechanic {
+function normalizeMechanic(
+  mechanic: Mechanic,
+  rankIndex: number = 0,
+  /** 0-based ult level, for the `*ByUltLevel` ladders. Ignored by ordinary
+   *  skills, which have a rank instead. */
+  ultIndex: number = 0,
+): Mechanic {
   const norm = { ...mechanic };
   if (norm.valueRanked) norm.value = norm.valueRanked[rankIndex];
   if (norm.stacksRanked) norm.stacks = norm.stacksRanked[rankIndex];
   if (norm.durationRanked) norm.duration = norm.durationRanked[rankIndex];
   if (norm.counterDamagePercentRanked)
     norm.counterDamagePercent = norm.counterDamagePercentRanked[rankIndex];
+  // Ult ladders resolve after the rank ones so an ultimate that somehow
+  // authored both lands on the ult value — an ultimate has no rank, so the
+  // rank read would be reading index 0 of an array that isn't about ranks.
+  if (norm.valueByUltLevel) norm.value = norm.valueByUltLevel[ultIndex];
+  if (norm.durationByUltLevel) norm.duration = norm.durationByUltLevel[ultIndex];
+  if (norm.valuePercentByUltLevel) {
+    (norm as { valuePercent?: number }).valuePercent =
+      norm.valuePercentByUltLevel[ultIndex];
+  }
   return norm;
+}
+
+/** Mechanics gated behind an ult level the caster hasn't reached are dropped
+ *  entirely, not applied at zero — "from level 3 onwards" means it does not
+ *  exist below 3, so nothing should render or log for it. */
+function meetsUltLevelGate(mechanic: Mechanic, ultLevel: number): boolean {
+  return mechanic.minUltLevel == null || ultLevel >= mechanic.minUltLevel;
 }
 
 function formatTurns(duration?: number): string {
@@ -416,9 +434,18 @@ export function executeSkill(
   });
 
   const rankIndex = (action.rank ?? 1) - 1;
-  const skillMechanics = (action.skill.mechanics ?? []).map((m) =>
-    normalizeMechanic(m, rankIndex),
+  // Ult level indexes the `*ByUltLevel` ladders the same way rank indexes the
+  // `*Ranked` ones — one of six values reaches the battle (Tanveer,
+  // 2026-08-14). Clamped so a save above the current cap can't read past the
+  // end of an authored array.
+  const casterUltLevel = Math.min(
+    Math.max(1, source?.ultLevel ?? 1),
+    MAX_ULT_LEVEL,
   );
+  const ultIndex = casterUltLevel - 1;
+  const skillMechanics = (action.skill.mechanics ?? [])
+    .filter((m) => meetsUltLevelGate(m, casterUltLevel))
+    .map((m) => normalizeMechanic(m, rankIndex, ultIndex));
 
   const isAoe = skillMechanics.some(
     (m) => m.type === "aoe" || (m.type === "aoeRanked" && m.ranks?.[rankIndex]),

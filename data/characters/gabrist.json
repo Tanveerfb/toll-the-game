@@ -44,7 +44,8 @@
     "characterId": "gabrist",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 375,
+    "damage": 300,
+    "damageByUltLevel": [300, 330, 360, 390, 420, 450],
     "mechanics": [
       {
         "type": "aoe"

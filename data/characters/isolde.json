@@ -50,7 +50,7 @@
   ],
   "ultimate": {
     "skillName": "Starbound Ward",
-    "description": "Grants all allies Debuff Immunity and raises their basic stats for 3 turns.",
+    "description": "Grants all allies Debuff Immunity and raises their basic stats for [buff.duration] turns.",
     "characterId": "isolde",
     "type": "ultimate",
     "statMultiplier": "hp",
@@ -58,13 +58,14 @@
     "mechanics": [
       {
         "type": "debuffImmunity",
-        "duration": 3
+        "minUltLevel": 3,
+        "durationByUltLevel": [0, 0, 2, 2, 3, 3]
       },
       {
         "type": "buff",
-        "stat": "all",
-        "valuePercent": 30,
-        "duration": 3
+        "stats": ["atk", "def", "hp"],
+        "valuePercentByUltLevel": [30, 30, 30, 50, 50, 50],
+        "durationByUltLevel": [2, 2, 2, 2, 3, 3]
       },
       {
         "type": "aoe"

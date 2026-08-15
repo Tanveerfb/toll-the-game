@@ -294,11 +294,18 @@ describe("Powerful Opponent synergy", () => {
     expect(untouched.currentAttack).toBe(100);
   });
 
-  it("Seras ultimate outdamages her rank-3 skills", () => {
+  // Ruling #2 is read at the TOP of the ult ladder since 2026-08-14: level 1
+  // is deliberately below a rank-3 card (Seras opens at 350, the same as her
+  // best card) and the six levels are what you spend coins to climb.
+  it("Seras ultimate outdamages her rank-3 skills once levelled", () => {
     const ult = serasData.ultimate as unknown as UltimateCard;
     const maxSkill = Math.max(
       ...serasData.skills.map((s) => s.damageRanked[2]),
     );
-    expect(ult.damage).toBeGreaterThan(maxSkill);
+    const ladder = ult.damageByUltLevel;
+    expect(ladder).toHaveLength(6);
+    expect(ladder![ladder!.length - 1]).toBeGreaterThan(maxSkill);
+    // And the ladder only ever climbs.
+    expect([...ladder!].sort((a, b) => a - b)).toEqual(ladder);
   });
 });

@@ -61,7 +61,15 @@
     "characterId": "duke",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 500
+    "damage": 350,
+    "damageByUltLevel": [
+      350,
+      385,
+      430,
+      475,
+      520,
+      575
+    ]
   },
   "passive": {
     "name": "Flowing Ruin",

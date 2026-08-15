@@ -40,13 +40,33 @@ export function worldLevelCapForRank(rank: number): number {
 /**
  * Enemy level at a given difficulty.
  *
- * TUNING — Tanveer, 2026-08-11: "we will fine tune the difficulty and reward
- * scaling later." Difficulty 1 is pinned to level 1 so every currently
- * authored encounter keeps exactly the stats it was tuned with; the step is
- * the placeholder. Eight per level puts difficulty 4 at enemy level 25,
- * roughly a fully-ascended Lv40 roster's match.
+ * Difficulty 1 is pinned to level 1 so every currently authored encounter keeps
+ * exactly the stats it was tuned with.
+ *
+ * **25 per level (Tanveer, 2026-08-14), raised from 8.** The old step made the
+ * dial far weaker than the thing it was meant to measure itself against: WL4
+ * reached 1.407x base stats while a fully-ascended Lv40 roster reaches 2.159x,
+ * so the hardest content in the game was *relatively* easier for a maxed
+ * account than WL1 is for a fresh one. The comment here claimed WL4 was
+ * "roughly a fully-ascended Lv40 roster's match" and was wrong by 53%.
+ *
+ * What 25 actually produces, measured against `progressedStat`:
+ *
+ * | | enemy level | enemy multiplier | player band it answers |
+ * | --- | ---: | ---: | --- |
+ * | WL1 | 1 | 1.000x | Lv1 / asc0 (1.000x) |
+ * | WL2 | 26 | 1.424x | Lv20 / asc1 (1.490x) |
+ * | WL3 | 51 | 1.847x | Lv30 / asc2 (1.824x) |
+ * | WL4 | 76 → **clamped to LEVEL_CAP 60** | 2.000x | Lv40 / asc3 (2.159x) |
+ *
+ * The ladder lands one world level per ascension band, which is the shape the
+ * rank gates already imply. Note WL4 **clamps**: `levelMultiplier` stops paying
+ * out past level 60, so 76 and 60 are the same fight, and a maxed roster still
+ * sits 8% above the hardest setting. Closing that last gap needs enemies to
+ * carry an ascension term too, not a bigger step here — deliberately not built,
+ * since nothing yet asks for it.
  */
-export const ENEMY_LEVEL_PER_DIFFICULTY = 8;
+export const ENEMY_LEVEL_PER_DIFFICULTY = 25;
 
 export function enemyLevelForDifficulty(difficulty: number): number {
   const clamped = clampDifficulty(difficulty);

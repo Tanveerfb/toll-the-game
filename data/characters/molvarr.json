@@ -11,7 +11,7 @@
   "lore": "The Sunken Warden of the lake — a living mountain of corroded stone that Duke and Batra rouse from the depths. It does not tire, and the water it churns eats through armor and flesh alike.",
   "atk": 285,
   "def": 175,
-  "hp": 5400,
+  "hp": 8500,
   "skills": [
     {
       "skillName": "Corrosive Surge",
@@ -51,7 +51,7 @@
   },
   "phases": [
     {
-      "hp": 5400,
+      "hp": 8500,
       "atk": 285,
       "def": 175,
       "skills": [
@@ -103,9 +103,9 @@
         },
         {
           "name": "Ancient Rhythm",
-          "description": "# Every 3rd turn\n- Final action becomes the SP Skill",
+          "description": "# Every 2nd turn\n- Final action becomes the SP Skill",
           "trigger": "always",
-          "mechanics": [{ "type": "bossAutoSp", "everyNTurns": 3 }]
+          "mechanics": [{ "type": "bossAutoSp", "everyNTurns": 2 }]
         },
         {
           "name": "Sunken Awakening",
@@ -117,7 +117,7 @@
       ]
     },
     {
-      "hp": 7200,
+      "hp": 10000,
       "atk": 400,
       "def": 230,
       "skills": [
@@ -173,9 +173,9 @@
         },
         {
           "name": "Ancient Rhythm",
-          "description": "# Every 3rd turn\n- Final action becomes the SP Skill",
+          "description": "# Every 2nd turn\n- Final action becomes the SP Skill",
           "trigger": "always",
-          "mechanics": [{ "type": "bossAutoSp", "everyNTurns": 3 }]
+          "mechanics": [{ "type": "bossAutoSp", "everyNTurns": 2 }]
         },
         {
           "name": "Sunken Awakening",

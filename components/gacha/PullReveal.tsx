@@ -238,7 +238,7 @@ export default function PullReveal({
                         <p
                           className={`font-body text-[9px] font-bold uppercase tracking-[0.12em] ${outcome.isNew ? "text-el-light" : "text-signal"}`}
                         >
-                          {outcome.isNew ? "New" : `Ult ${outcome.ultLevel}`}
+                          {outcome.isNew ? "New" : "+1 Coin"}
                         </p>
                       </div>
                     </>

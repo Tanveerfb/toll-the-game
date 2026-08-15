@@ -41,7 +41,8 @@
     "characterId": "siddiq",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 400,
+    "damage": 325,
+    "damageByUltLevel": [325, 375, 425, 475, 525, 600],
     "mechanics": [
       {
         "type": "cancelBuffs"

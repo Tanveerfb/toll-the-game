@@ -1,8 +1,52 @@
-# Status — 2026-08-09
+# Status — 2026-08-14
 
 Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @ `c3040f7`).
 
 ## Working (implemented, tested, browser-verified)
+
+- **Ult level-up system, Molvarr rework, and a balance/economy audit (2026-08-14)** — one long session that started as a read-only audit and turned into four shipped changes. Rulings **#87–#92**. Verified at the end: `npm run check` green (**1236 tests / 96 files**, 3 pre-existing eslint warnings in `tests/duel.test.ts`, unrelated), clean `next build` (48 routes). **Not browser-verified** — Tanveer does the visual pass.
+
+  ### The audit that started it
+  Read-only pass over kits and balance against the two PVE tracks (story + Molvarr). Measured through `executeSkill` with throwaway harnesses, never hand-rolled. What it found, and what came of each:
+  - **The difficulty dial was far weaker than the player's growth.** `ENEMY_LEVEL_PER_DIFFICULTY` was 8, so WL4 reached 1.407x base stats while a Lv40/asc3 roster reaches 2.159x — the hardest content was *relatively* easier for a maxed account than WL1 is for a fresh one, and the constant's own comment claimed the opposite. Now **25** (ruling #87).
+  - **`ECONOMY_AUDIT.md` had a hole in it.** It sized the whole levelling grind without ever opening `lib/gacha/pull.ts`, so the 95% "miss" side of the summon table — the game's largest manual and coin faucet — was in none of its totals. Recounted; manual tiers reweighted 60/30/10 (ruling #88).
+  - **`balance.ts`'s ult check disagreed with five of eighteen shipped kits**, for two reasons: it counted a heal's percentage as a damage skill to beat, and it ignored ruling #22 (a pre-hit self-buff lands on the same strike). Both fixed, and a roster-level test now runs the linter over the live catalog — nothing had ever pointed it at real kits, which is how it drifted.
+  - **Content the audit flagged but did NOT change** — see "Parked" below and ruling #89.
+
+  ### Molvarr
+  - **P1 8500 / P2 10000, SP cadence every 2nd turn** (was 5400/7200, every 3rd). The problem wasn't difficulty, it was that **the boss never got to use its kit**: at WL1 a Lv20+ team broke P1 on turn 2, so Ancient Rhythm (turn 3) and the ultimate never fired. Measured after: P1's SP fires in 10/10 runs for every team except a maxed trio. Ruling #91.
+  - **Ruling #73's stated mechanism does not exist in the data.** It records the P2 corrosion nerf as "every corrosion stack also feeds Growing Malice" — but **Growing Malice is a P1 passive and Corrosive Tide is a P2 passive**, so they are never active together. The four-figure ultimate was Iron Carapace's +30% ATK lining up with the gauge cycle. Recorded in ruling #90; the nerf itself stands.
+  - **Corrosion is Phase 1's damage, not Phase 2's.** DoT share of total: P1 vs Lv40 **48%**, P2 vs Lv40 13%. Corrosive Surge at R3 flips to a max-HP basis, so it is the one mechanic that scales *up* as the player invests.
+  - **Fixed a real ATK leak in Growing Malice.** `recomputeDebuffAtk` adjusted by a floored delta, and `Math.floor` rounds a negative away from zero — at 285 base, +5% added 14 but −5% subtracted 15, so the boss lost 1 ATK per debuff on/off cycle (traced: 285 → 299 → 284 → 298 → 283). Now rebuilt from base. Two regression tests, **both verified to fail against the old arithmetic** before being kept.
+
+  ### Ult levels and character coins
+  The headline feature. Previously a duplicate pull silently bumped `ultLevel` (capped at 6) and a 7th copy evaporated; the multiplier was a uniform +60% for everyone.
+  - **Dupes now pay a character-exclusive coin** — `{color}_{id}_coin`, e.g. `blue_duke_coin`. Ids and labels are generated from the catalog in `lib/game/materials.ts`, so a new character cannot ship with an inventory key no screen can name. Colour is in the id deliberately: Tanveer plans colour variants of existing characters, and renaming ids already in save files would mean a migration.
+  - **1 coin per level, 5 to max** — six copies including the one that unlocked the character. `levelUpUltimate` is all-or-nothing and forward-only (a slider dragged backwards must not refund).
+  - **Every playable ultimate authors its own six-value ladder** (`damageByUltLevel`), replacing the uniform curve. The curve differs per kit — Mustafa climbs 200→500 (+150%), Meliodas 450→700 (+56%) — because a small flat multiplier and a large one shouldn't grow at the same rate. Bosses and NPCs have no ult level and fall back to flat `damage`.
+  - **Mechanics can ladder too.** Isolde's ultimate deals 0 damage, so a damage ladder does nothing for her; mechanics gained `valuePercentByUltLevel` / `durationByUltLevel` / `minUltLevel`, mirroring the existing `*Ranked` fields. Her Debuff Immunity is `minUltLevel: 3` and is **dropped entirely** below that, not applied at zero — it doesn't render in the description either.
+  - **Save migration v8 → v9**: every ult level resets to 1 and the player gets back **one coin per level they had banked**, so the change costs them nothing. Tested for idempotency. **This runs on the cloud path too** — `AuthProvider` calls `migratePlayerState(data, data.version ?? 2)` on login, and `inventory`/`characters` are both already in `CLOUD_FIELDS`, so coins and ult levels sync without any change to the sync layer.
+  - **UI**: growth modal gained a slider (1→6) clamped to what the player can afford, with the ladder rendered as chips. The archive detail page renders all six levels as a table with the player's current level highlighted — that needed a small client wrapper (`UltimateDocument`), since the archive page is a server component and can't read the store.
+
+  ### Story
+  - **Trial-vs-owned picker.** `trialLevel` only ever applied to units the player did *not* own, so **owning a story lead made the chapter harder** — a player who pulled Duke and hadn't levelled him fought part 9 at 1.000x while a player who never pulled him got the loaner. Owned anchors are now toggleable on the chapter brief, defaulting to whichever version is stronger, so acquiring a character can never cost a fight.
+  - **`trialAscension` added.** A level alone under-describes a unit: `maxLevelForAscension` caps ascension 0 at level 1, so a bare `trialLevel: 20` loaner is 1.322x where a real Lv20 is 1.489x. Part 9 authors **Lv20 / asc1**.
+  - **Part 9 rewards**: ascension materials are first-clear only, **1 eye + 5 seaweed** across the part (half the world boss's bundle), with no farmable ascension drops. Closes the ruling #47 conflict — the world boss is again the only repeatable source.
+
+  ### Parked by decision, not oversight (ruling #89)
+  Do not re-flag these: the six Collab kits have no acquisition path (coming via a dedicated limited banner plus a special story part); the four specialty materials are consumed by nothing (shop update); no fight has more than 2 enemies, leaving ~10 AoE payloads with little to hit (more PVE content is in progress); story has no difficulty scaling and is not getting any — it gets harder through authored content.
+
+  ### Tried and abandoned
+  - **Raising P1's HP alone to make the SP fire.** Swept 5,400 → 13,000. The break turn plateaued at 2.9 because the player's damage ramps with the fight; a maxed trio never saw the SP at any value tested. The cadence change did in one field what +141% HP could not.
+  - **Setting part 9's loaners to a bare `trialLevel: 20`.** That is *lower* than the 22 it replaced (1.322x vs 1.356x) and measured 2/12 wins — it would have made the fight harder while trying to make it easier. Ascension is what a level implies; hence `trialAscension`.
+  - **Rewriting kit JSON via `JSON.parse`/`stringify`.** The repo has **mixed** JSON formatting — collab kits keep arrays expanded one-per-line, the rest keep them inline — so a round-trip reformats whichever half it disagrees with. A first pass produced a 2,099-line diff for ~114 lines of real change; redone as text-level edits that leave each file's style untouched. Note also that the working copy is **CRLF** (git autocrlf), so multi-line patterns need the file's own line ending.
+  - **Wiring story difficulty** (`effectiveDifficulty` / `baseDifficultyForPart`, still uncalled). Proposed and declined — see ruling #89.
+
+  ### Confidence and gaps
+  - **Verified by running it:** all damage figures, hits-to-kill, phase-break turns, SP/ult proc counts and win rates in this section came from throwaway harnesses driving the real engine (`executeSkill`, `applyBossTurnStart`, the real enemy deck with merges, correct tick order). The ATK-leak fix was verified by reverting it and watching the new tests fail. `npm run check` and `next build` were re-run *after* the JSON rewrite, not before.
+  - **Assumed, not verified:** that the retuned Molvarr and the Lv20/asc1 part 9 *feel* right. Every win rate here comes from `getAIMove` driving the **player** side, and that AI was written for the enemy — it does not merge deliberately or time ultimates, so a human will clear faster than these numbers and the boss's kit will fire *less* than measured. Treat the turn counts as an upper bound on how long the boss survives.
+  - **Not verified at all:** anything visual. The growth slider, the ladder chips, the archive ult table and the trial-vs-owned toggle have never been rendered — Tanveer does the visual pass.
+  - **What I'd check first coming back cold:** play one Molvarr run at WL1 with a Lv20-ish team and confirm the SP actually fires and the fight doesn't drag; then pull a dupe and walk the coin → slider → archive-marker loop end to end, since that path crosses the store, the migration and two UI surfaces and has only been tested in pieces.
 
 - **Substat semantics corrected + Lyra's second fight (2026-08-09)** — two shipped no-ops fixed by getting Tanveer's stat vocabulary exactly right.
   - **Substats are percentages, so modifiers add points, not scale.** `effectiveSubstat` was multiplying: Isolde's `+10% lifesteal` aura computed `5 × 1.1 = 5.5` and floored back to **5 — the aura did nothing in every shipped battle**, and any evade buff on the 0% base was likewise a no-op. Now additive (clamped at 0), matching what `evade.ts` already did. Basic stats (ATK/DEF/HP) stay multiplicative.
@@ -473,7 +517,9 @@ Decisions worth keeping:
   the ratio that decides how the game feels.
 - Enemies scaled to hold encounter difficulty: trash HP ×1.5 / ATK ×1.9 / DEF
   ×1.6 (stays trash, still threatens doubled bars), Lyra duel NPCs 14500/265/185,
-  Molvarr P1 5400/285/175 and P2 7200/400/230.
+  Molvarr P1 5400/285/175 and P2 7200/400/230. **Superseded 2026-08-14 —
+  P1 is 8500 and P2 is 10000**, so the boss's own kit gets to fire; see the
+  Molvarr section at the top of this file.
 
 **Untested:** Molvarr's pacing. Phases are ~1.8x longer now and his turn-10 stat
 spike and max-HP drain were tuned against a shorter fight. Needs a world-boss
@@ -1112,7 +1158,9 @@ the close handler), with no skip and no way to review an 11-pull. Materials
 rendered raw ids (`training_manual`). Dupes were invisible even though
 `resolvePullResult` had already computed new-vs-dupe — so `ResolvedPullOutcome`
 now carries `isNew`/`ultLevel` from the store rather than being re-derived by
-diffing the roster afterwards.
+diffing the roster afterwards. **Superseded 2026-08-14 —** the field is
+`isNew`/`coinId` now, because a dupe pays a coin instead of raising the ult
+level on the spot.
 
 ### 6. Ruling #43, refined — and the bug it caught
 
@@ -2525,7 +2573,7 @@ re-read the audit's team-scale table against whatever daily events exist by then
 
 | # | Issue | Where | Severity |
 |---|---|---|---|
-| 6 | Ultimates have no rank while skills rank up — confirmed intended for now; Tanveer may add an ult level-up system later | `types/ultimateCard.ts` | Design note |
+| 6 | ~~Ultimates have no rank while skills rank up~~ — **shipped 2026-08-14.** Ultimates now carry a six-value `damageByUltLevel` ladder indexed by ult level, bought with character coins | `types/ultimateCard.ts` | Closed |
 | 13 | Art nitpicks: Seras's horn-like hair tufts didn't render; Yalina's side braid renders as loose side curls (trigger-word/style limits — see ART_PIPELINE trigger-word table) | `public/characters/` | Cosmetic (re-roll) |
 | 14 | Design feedback 2026-07-11: Mustafa approved; Siddiq redesigned (v2, still AI-invented — awaiting his sheet); Batra reworked per his direction (turban/beard/kesari, no armour). He loves Lyra/Sara/Gabrist; Duke/Yalina/Seras fine for now, iterate later | `docs/ART_PIPELINE.md` | Pending input |
 | 20 | Battle screen overhaul: cinematics shipped 2026-07-12; the 2026-08-04 UX batches did the layout, enemy inspection, info panel, structured log and per-character VFX. **Remaining: mobile pass + sound hooks only** | `components/game/*` | Mostly done |

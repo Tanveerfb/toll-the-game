@@ -40,7 +40,8 @@
     "characterId": "sara",
     "type": "ultimate",
     "statMultiplier": "hp",
-    "damage": 24,
+    "damage": 20,
+    "damageByUltLevel": [20, 23, 26, 29, 32, 40],
     "mechanics": [
       {
         "type": "buff",

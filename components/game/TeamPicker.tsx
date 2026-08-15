@@ -64,6 +64,20 @@ export interface TeamPickerProps {
    * the player, so a character they never pulled just appeared.
    */
   trialIds?: string[];
+  /**
+   * Anchors the player owns AND is currently fielding as the lent version.
+   *
+   * Distinct from `trialIds`, which is "no other copy exists". These are a
+   * choice, so their tile is a button — owning a lead must never be worse than
+   * not owning one (Tanveer, 2026-08-14).
+   */
+  lentByChoiceIds?: string[];
+  /** Toggles an owned anchor between the player's copy and the lent one.
+   *  Omit to render anchors as static tiles, which is what every non-story
+   *  caller wants. */
+  onToggleLent?: (characterId: string) => void;
+  /** Per-anchor caption under the toggle, e.g. "Lv40" vs "Yours Lv12". */
+  anchorNote?: (characterId: string, lent: boolean) => string | null;
 }
 
 const CHIP =
@@ -146,6 +160,9 @@ export default function TeamPicker({
   fieldCap = FIELD_CAP,
   lockedNote = "Required",
   trialIds = [],
+  lentByChoiceIds = [],
+  onToggleLent,
+  anchorNote,
 }: TeamPickerProps): React.JSX.Element {
   const [rosterOpen, setRosterOpen] = React.useState(false);
   const [manageOpen, setManageOpen] = React.useState(false);
@@ -320,25 +337,53 @@ export default function TeamPicker({
 
         <div className="grid grid-cols-4 gap-2 p-3">
           {anchors.map((character, index) => {
-            const trial = trialIds.includes(character.id);
+            const unowned = trialIds.includes(character.id);
+            const lentByChoice = lentByChoiceIds.includes(character.id);
+            const lent = unowned || lentByChoice;
+            // Only an owned anchor can swap: an unowned one has no second copy.
+            const swappable = Boolean(onToggleLent) && !unowned;
+            const note = anchorNote?.(character.id, lent) ?? null;
+            const Tile = swappable ? "button" : "div";
             return (
-            <div
-              key={`anchor-${character.id}-${index}`}
-              className={`relative flex h-24 flex-col justify-end overflow-hidden border bg-inset ${trial ? "border-signal" : "border-role-ultimate"}`}
-            >
-              <Portrait
-                character={character}
-                className="absolute inset-0 h-full w-full"
-              />
-              <span
-                className={`absolute left-0 top-0 z-10 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-widest text-void ${trial ? "bg-signal" : "bg-role-ultimate"}`}
+              <Tile
+                key={`anchor-${character.id}-${index}`}
+                {...(swappable
+                  ? {
+                      type: "button" as const,
+                      onClick: () => onToggleLent?.(character.id),
+                      "aria-pressed": lent,
+                      title: lent
+                        ? `Using the story's ${character.name} — tap to use yours`
+                        : `Using your ${character.name} — tap to use the story's`,
+                    }
+                  : {})}
+                className={`relative flex h-24 w-full flex-col justify-end overflow-hidden border bg-inset text-left ${lent ? "border-signal" : "border-role-ultimate"} ${swappable ? "transition-colors hover:border-signal-strong" : ""}`}
               >
-                {trial ? "Trial" : lockedNote}
-              </span>
-              <span className="relative z-10 w-full bg-void/75 px-1 py-0.5 text-center font-heading text-xs tracking-[0.06em] text-readout-strong">
-                {character.name}
-              </span>
-            </div>
+                <Portrait
+                  character={character}
+                  className="absolute inset-0 h-full w-full"
+                />
+                <span
+                  className={`absolute left-0 top-0 z-10 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-widest text-void ${lent ? "bg-signal" : "bg-role-ultimate"}`}
+                >
+                  {lent ? "Trial" : swappable ? "Yours" : lockedNote}
+                </span>
+                {/* The swap affordance has to be visible without a hover —
+                    this screen is played on touch as much as on desktop. */}
+                {swappable ? (
+                  <span className="absolute right-0 top-0 z-10 bg-void/85 px-1 py-0.5 font-body text-[10px] leading-none text-signal">
+                    ⇄
+                  </span>
+                ) : null}
+                <span className="relative z-10 w-full bg-void/75 px-1 py-0.5 text-center font-heading text-xs tracking-[0.06em] text-readout-strong">
+                  {character.name}
+                </span>
+                {note ? (
+                  <span className="relative z-10 w-full bg-void/75 px-1 pb-0.5 text-center font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-dim">
+                    {note}
+                  </span>
+                ) : null}
+              </Tile>
             );
           })}
 

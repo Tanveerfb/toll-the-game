@@ -29,32 +29,32 @@
 > these numbers.
 
 ## Phase transition rules
-- P2 starts when P1's HP reaches 0 (fresh 7200 bar).
+- P2 starts when P1's HP reaches 0 (fresh 10000 bar).
 - **Boss fully resets:** its own buffs, debuffs on it, and its per-phase timers.
 - **Persists:** player team state (HP, their buffs/debuffs), the **global battle
   turn counter**, and **Corrosion stacks already on the players** (boss-applied
   debuffs on players carry over).
-- The boss's **per-phase trigger counters** ("every 3 turns", "turn 10") reset
+- The boss's **per-phase trigger counters** ("every 2 turns", "turn 10") reset
   to 0 at phase entry. (Global battle counter keeps running independently.)
 
-## Phase 1 — HP 5400 | ATK 285 | DEF 175
+## Phase 1 — HP 8500 | ATK 285 | DEF 175
 - **Skill 1 (Corrosive Surge):** [120/145/190] damage to all enemies; applies
   **Corrosion** for [1/1/2] turns.
 - **Skill 2 (Crushing Maw):** [225/255/300] damage to one enemy.
 - **SP Skill:** heals self for 30% of **missing** HP (maxHP - currentHP).
 - **Passive [Main]:** +5% ATK per debuff across ALL enemies, linear
   (5 debuffs = +25% ATK), recalculated live as debuff count changes.
-- **SP Passive 1:** every 3rd phase-turn, the 3rd of its 3 actions is forced to
+- **SP Passive 1:** every 2nd phase-turn, the 3rd of its 3 actions is forced to
   be the SP Skill (SP is never a normal AI pick).
 - **SP Passive 2:** immune to crowd control — **stun/freeze** only (freeze = a
   stun variant). Seal is NOT blocked. Future CC types join this list.
 - **SP Passive 3:** from **turn 10** (of the phase): x2 ATK, DEF, **and max HP**;
-  current HP scales by the same ratio (e.g. 1800/5400 -> 3600/10800).
+  current HP scales by the same ratio (e.g. 2800/8500 -> 5600/17000).
   **Uncancellable, fires once.**
 - **Ultimate (Sunken Verdict):** 500% ATK to one enemy; **disables attack
   skills for 2 turns** (seal, sealType attack).
 
-## Phase 2 — HP 7200 | ATK 400 | DEF 230
+## Phase 2 — HP 10000 | ATK 400 | DEF 230
 - **Skill 1 (Abyssal Convergence):** **Concentrate** [130/155/210] damage to all
   enemies (×1.5/1.2/1.1/1.0 for 1/2/3/4 targets).
 - **Skill 2 (Devouring Bite):** [180/220/300] damage to one enemy; lifesteals
@@ -125,7 +125,7 @@
    block, `skills[]` of any count, `passives[]` of any count), HP-threshold
    phase transitions with the reset/persist rules above.
 3. **New mechanics/hooks:** Corrosion (maxHP% DoT, uncapped); CC-immunity
-   (block stun); auto-SP-timer (forced Nth action every 3rd phase-turn);
+   (block stun); auto-SP-timer (forced Nth action every Nth phase-turn);
    per-phase turn counter; turn-N stat spike incl. max-HP scaling (uncancellable,
    once); the "+X% dmg vs corroded" and "debuff-count -> ATK" passives;
    **per-character ult-gauge cap** (Molvarr = 10; replace hardcoded 5s in

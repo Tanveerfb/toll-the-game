@@ -53,7 +53,8 @@
     "characterId": "yalina",
     "type": "ultimate",
     "statMultiplier": "hp",
-    "damage": 18,
+    "damage": 15,
+    "damageByUltLevel": [15, 18, 21, 24, 27, 32],
     "mechanics": [
       {
         "type": "amplify",

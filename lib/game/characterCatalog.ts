@@ -37,6 +37,8 @@ export interface CharacterSkillData {
   description?: string;
   damageRanked?: number[];
   damage?: number;
+  /** Ultimates only: damage at ult levels 1–6. See `types/ultimateCard.ts`. */
+  damageByUltLevel?: number[];
   mechanics?: Array<Record<string, unknown>>;
   [key: string]: unknown;
 }

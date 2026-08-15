@@ -85,6 +85,14 @@
     "type": "ultimate",
     "statMultiplier": "atk",
     "damage": 333,
+    "damageByUltLevel": [
+      333,
+      366,
+      399,
+      422,
+      455,
+      499
+    ],
     "mechanics": [
       {
         "type": "buff",

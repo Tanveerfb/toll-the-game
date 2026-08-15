@@ -62,7 +62,15 @@
     "characterId": "killua",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 500,
+    "damage": 350,
+    "damageByUltLevel": [
+      350,
+      400,
+      450,
+      500,
+      550,
+      625
+    ],
     "mechanics": [
       {
         "type": "buff",

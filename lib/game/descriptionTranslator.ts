@@ -496,10 +496,52 @@ function joinClausesAsProse(text: string): string {
   return `${clauses.slice(0, -1).join(", ")}${separator}${last}`;
 }
 
-export function buildDescriptionForRank(
+/**
+ * Collapses an ultimate's ult-level ladders down to the flat scalars the rest
+ * of this pipeline already understands.
+ *
+ * An ultimate has no rank, so the index it is rendered at means ult level
+ * instead — "ult levels work in a similar fashion to skill ranks... only one of
+ * 6 values comes to the battle" (Tanveer, 2026-08-14). Resolving here rather
+ * than teaching every placeholder helper about a second ladder keeps the ult
+ * path identical to the rank path from this point on.
+ *
+ * Mechanics below their `minUltLevel` are dropped outright, so a rank-1
+ * Starbound Ward doesn't advertise a Debuff Immunity it will not grant.
+ */
+function resolveUltLevelLadders(
   skill: CharacterSkillData,
+  index: number,
+): CharacterSkillData {
+  if (skill.type !== "ultimate") return skill;
+  const ultLevel = index + 1;
+  const pick = (arr: unknown, fallback: unknown) =>
+    Array.isArray(arr) ? (arr[index] ?? arr[0]) : fallback;
+
+  const mechanics = (skill.mechanics ?? [])
+    .filter((m) => {
+      const gate = m.minUltLevel as number | undefined;
+      return gate == null || ultLevel >= gate;
+    })
+    .map((m) => ({
+      ...m,
+      value: pick(m.valueByUltLevel, m.value),
+      valuePercent: pick(m.valuePercentByUltLevel, m.valuePercent),
+      duration: pick(m.durationByUltLevel, m.duration),
+    }));
+
+  return {
+    ...skill,
+    damage: pick(skill.damageByUltLevel, skill.damage) as number | undefined,
+    mechanics,
+  } as CharacterSkillData;
+}
+
+export function buildDescriptionForRank(
+  original: CharacterSkillData,
   rankIndex: number,
 ): string {
+  const skill = resolveUltLevelLadders(original, rankIndex);
   const raw = cleanText(skill.description ?? "");
   const damage = getRankDamage(skill, rankIndex);
 
@@ -637,6 +679,40 @@ export function buildRankedSkillDescriptions(
   }
 
   return [buildDescriptionForRank(skill, 0)];
+}
+
+/**
+ * One rendered description per ult level, for an ultimate that authors a
+ * ladder.
+ *
+ * Ultimates deliberately have no rank table (ruling #74 — SP and ULT never
+ * enter the deck), but since 2026-08-14 they DO have six authored values, and
+ * a player deciding whether to spend a coin needs to see what the next level
+ * buys. Returns null for anything without a ladder, which keeps every boss and
+ * NPC ultimate rendering as the single line it has always been.
+ */
+export function buildUltLevelDescriptions(
+  skill: CharacterSkillData,
+): string[] | null {
+  const levels = skill.damageByUltLevel?.length
+    ? skill.damageByUltLevel.length
+    : // A zero-damage ultimate (Isolde) still ladders, but through its
+      // mechanics rather than its damage — look for any ult-level array.
+      (skill.mechanics ?? []).reduce((max, m) => {
+        const arrays = [
+          m.valueByUltLevel,
+          m.valuePercentByUltLevel,
+          m.durationByUltLevel,
+        ];
+        return arrays.reduce<number>(
+          (acc, arr) => (Array.isArray(arr) ? Math.max(acc, arr.length) : acc),
+          max,
+        );
+      }, 0);
+  if (!levels) return null;
+  return Array.from({ length: levels }, (_, index) =>
+    buildDescriptionForRank(skill, index),
+  );
 }
 
 export function buildSingleDescription(skill: CharacterSkillData): string {

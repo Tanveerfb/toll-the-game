@@ -177,6 +177,6 @@ describe("the store", () => {
   });
 
   it("is on the current persisted version", () => {
-    expect(CURRENT_PLAYER_STATE_VERSION).toBe(8);
+    expect(CURRENT_PLAYER_STATE_VERSION).toBe(9);
   });
 });

@@ -7,7 +7,35 @@ export type PullOutcome =
   | { kind: "material"; materialId: string; amount: number };
 
 const COIN_BUNDLES = [1000, 2000, 5000, 10000];
-const LEVEL_MAT_TIERS = ["training_manual", "training_manual_advanced", "training_manual_premium"];
+
+/**
+ * Manual tiers on the miss table, weighted 60/30/10 (Tanveer, 2026-08-14).
+ *
+ * They used to be a uniform third each, which made the miss table the largest
+ * XP faucet in the game and the only source of Premium Manuals — a pull was
+ * worth a mean 500 XP, so the 220 pulls a starter's 1,000 gems buy paid ~34,800
+ * XP, more than every one-time source in the game combined. The weights drop
+ * that to a mean 280 XP per manual roll (~19,500 XP from the same 220 pulls)
+ * and make the high tiers feel like the rarity they are priced at.
+ *
+ * Ordered best-last so the cumulative walk below reads as "common first".
+ */
+const LEVEL_MAT_TIERS = [
+  { id: "training_manual", weight: 0.6 },
+  { id: "training_manual_advanced", weight: 0.3 },
+  { id: "training_manual_premium", weight: 0.1 },
+] as const;
+
+/** The tier a [0,1) roll lands on. Falls through to the last tier so a
+ *  floating-point sum a hair under 1 can't return undefined. */
+function pickManualTier(roll: number): string {
+  let cumulative = 0;
+  for (const tier of LEVEL_MAT_TIERS) {
+    cumulative += tier.weight;
+    if (roll < cumulative) return tier.id;
+  }
+  return LEVEL_MAT_TIERS[LEVEL_MAT_TIERS.length - 1].id;
+}
 
 /** Uniform pick from a pool of character ids. Shared by the Permanent
  *  banner's every-pull-is-a-character roll and the 300-milestone's
@@ -22,8 +50,9 @@ export function rollUniformFromPool(pool: string[], rng: () => number = Math.ran
 
 /** Limited banner roll: flat hit/miss, hit picks a featured unit, miss picks
  *  one of 3 equally-weighted item categories (currency / level-mat /
- *  local-specialty-mat), each split evenly within itself. See "The other
- *  95%" in docs/superpowers/specs/2026-08-01-gacha-design.md.
+ *  local-specialty-mat). Currency and specialty-mat split evenly within
+ *  themselves; level-mat is weighted by tier (see `LEVEL_MAT_TIERS`). See
+ *  "The other 95%" in docs/superpowers/specs/2026-08-01-gacha-design.md.
  *  Calls `rng()` 2 times on a hit (hit-check, then featured-index pick), and
  *  3 times on a miss (hit-check, category pick, then an in-category pick —
  *  bundle amount / manual tier / featured-index-for-specialty-mat). */
@@ -41,8 +70,7 @@ export function rollLimitedPull(banner: GemBannerConfig, rng: () => number = Mat
     return { kind: "coin", amount };
   }
   if (missRoll < third * 2) {
-    const materialId = LEVEL_MAT_TIERS[Math.floor(rng() * LEVEL_MAT_TIERS.length)];
-    return { kind: "material", materialId, amount: 1 };
+    return { kind: "material", materialId: pickManualTier(rng()), amount: 1 };
   }
   const characterId = rollUniformFromPool(banner.featured, rng)!;
   return { kind: "material", materialId: materialForCharacter(characterId), amount: 1 };

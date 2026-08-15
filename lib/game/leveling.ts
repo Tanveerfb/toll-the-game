@@ -1,6 +1,15 @@
-/** XP granted per manual tier — only `training_manual` (tier 1) has a real
- *  drop source (Molvarr) as of this update; tiers 2-3 exist in the model,
- *  granted via the dev panel until a real source is built. */
+/** XP granted per manual tier.
+ *
+ *  Every tier has a real source. Tier 1 drops from Molvarr's farm at every
+ *  world level; **all three drop from the gacha miss table**, weighted 60/30/10
+ *  (`LEVEL_MAT_TIERS` in `lib/gacha/pull.ts`), which is where Advanced and
+ *  Premium overwhelmingly come from. Higher world-boss tiers add Advanced and
+ *  Premium to their farms per ruling #81.
+ *
+ *  This comment previously read "only tier 1 has a real drop source... granted
+ *  via the dev panel until a real source is built", which was false from the
+ *  day gacha shipped and led `docs/design/ECONOMY_AUDIT.md` to size the
+ *  levelling grind without counting summons at all. */
 export const XP_PER_MANUAL_TIER = {
   training_manual: 100,
   training_manual_advanced: 400,

@@ -166,6 +166,47 @@ describe("bossDebuffAtk (dynamic ATK per debuff stack)", () => {
     expect(b.buffs.filter((x) => x.name === "Malice").length).toBe(1);
   });
 
+  // The existing cases above use a 150 base at 10% steps, where every bonus is
+  // a whole number — which is exactly why this survived. Molvarr's real 285
+  // base at 5% is not: floor(285*0.05) = 14 going up, floor(285*-0.05) = -15
+  // coming down, because Math.floor rounds a negative away from zero. Each
+  // appear/expire cycle leaked 1 ATK permanently, so a traced P1 run decayed
+  // 285 -> 299 -> 284 -> 298 -> 283. Fixed by rebuilding the bonus from base
+  // instead of nudging by a delta (2026-08-14).
+  it("returns to exactly base ATK after debuffs come and go, with no drift", () => {
+    const mech = { type: "bossDebuffAtk", percentPerDebuff: 5 } as const;
+    let b = boss([mech], { atk: 285, currentAttack: 285 });
+
+    for (let cycle = 0; cycle < 5; cycle++) {
+      b = applyBossTurnStart([b], [char({ debuffs: [corrosion(1)] })], noop)
+        .enemyTeam[0];
+      expect(out(b)).toBe(285 + Math.floor(285 * 0.05));
+      b = applyBossTurnStart([b], [char({ debuffs: [] })], noop).enemyTeam[0];
+      expect(out(b)).toBe(285);
+    }
+  });
+
+  it("reaches the same ATK whichever direction the count moved", () => {
+    // 1 stack reached by climbing from 0 vs by falling from 2. Under the old
+    // delta arithmetic these disagreed by 1 (299 vs 298): +floor(285*0.05)=14
+    // climbing, but 285+28-floor(285*0.05 rounded down from a negative)=298
+    // falling. The bonus for a given count must not depend on history.
+    const mech = { type: "bossDebuffAtk", percentPerDebuff: 5 } as const;
+    const climbing = applyBossTurnStart(
+      [boss([mech], { atk: 285, currentAttack: 285 })],
+      [char({ debuffs: [corrosion(1)] })],
+      noop,
+    ).enemyTeam[0];
+
+    let falling = boss([mech], { atk: 285, currentAttack: 285 });
+    falling = applyBossTurnStart([falling], [char({ debuffs: [corrosion(2)] })], noop)
+      .enemyTeam[0];
+    falling = applyBossTurnStart([falling], [char({ debuffs: [corrosion(1)] })], noop)
+      .enemyTeam[0];
+
+    expect(out(falling)).toBe(out(climbing));
+  });
+
   const out = (c: BattleCharacter) => c.currentAttack;
 });
 

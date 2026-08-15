@@ -69,7 +69,7 @@ describe("pullLimited", () => {
     expect(usePlayerStore.getState().pity.limited.bar).toBe(50);
   });
 
-  it("a character-hit on an already-owned character is a dupe, incrementing ultLevel", () => {
+  it("a character-hit on an already-owned character pays that character a coin", () => {
     // A constant Math.random mock forces both the hit-check and the
     // featured-index pick to the same value; 0 hits and picks index 0
     // ("duke"), who's already owned (starter) — a real, well-defined dupe
@@ -78,7 +78,10 @@ describe("pullLimited", () => {
     // test only needs to prove the store wiring applies a dupe correctly.
     vi.spyOn(Math, "random").mockReturnValue(0);
     usePlayerStore.getState().pullLimited(1);
-    expect(usePlayerStore.getState().characters.duke?.ultLevel).toBe(2);
+    // A dupe no longer touches ultLevel — it banks a coin the player spends
+    // when they choose to (Tanveer, 2026-08-14).
+    expect(usePlayerStore.getState().characters.duke?.ultLevel ?? 1).toBe(1);
+    expect(usePlayerStore.getState().inventory.blue_duke_coin).toBe(1);
     vi.restoreAllMocks();
   });
 
@@ -220,7 +223,7 @@ describe("claimLimitedFinal", () => {
     // "duke" is the starter, so this is a guaranteed dupe.
     setBar(LIMITED_MILESTONE_FINAL);
     const result = usePlayerStore.getState().claimLimitedFinal("duke");
-    expect(result).toMatchObject({ isNew: false, ultLevel: 2 });
+    expect(result).toMatchObject({ isNew: false, coinId: "blue_duke_coin" });
   });
 });
 

@@ -14,6 +14,7 @@ import {
 import KitPhases from "@/components/game/KitPhases";
 import PreviewButton from "@/components/game/PreviewButton";
 import CharacterProgressionPanel from "@/components/game/CharacterProgressionPanel";
+import UltimateDocument from "@/components/game/UltimateDocument";
 import CharacterStatBars from "@/components/game/CharacterStatBars";
 import { PassiveProse, type KitPassiveView } from "@/components/game/KitDetails";
 import {
@@ -203,7 +204,11 @@ export default async function CharacterDetailPage({
                     />
                   ))}
                   {character.ultimate ? (
-                    <SkillDocument skill={character.ultimate} slot="ULT" />
+                    <UltimateDocument
+                      characterId={character.id}
+                      ultimate={character.ultimate}
+                      storyOnly={character.storyOnly}
+                    />
                   ) : null}
                 </ProseSection>
 

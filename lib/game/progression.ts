@@ -122,3 +122,34 @@ export function scaledUltDamage(
 ): number {
   return Math.round(baseDamage * ultMultiplier(ultLevel, maxUltLevel));
 }
+
+/**
+ * The damage an ultimate deals at a given ult level.
+ *
+ * Two shapes, and the authored ladder always wins:
+ *
+ * 1. **`damageByUltLevel`** — six explicit values, one per level. This is how
+ *    every playable ultimate is authored as of 2026-08-14. The curve is not a
+ *    fixed percentage: Mustafa climbs 200 → 500 (+150%) while Meliodas climbs
+ *    450 → 700 (+56%), because a big flat multiplier and a small one shouldn't
+ *    grow at the same rate.
+ * 2. **`damage` + the uniform `ULT_GAIN_AT_MAX` curve** — the pre-ladder
+ *    behaviour, kept for kits that never opt in. Bosses and story NPCs have no
+ *    ult level at all, so they always read level 1 and land on `damage`.
+ *
+ * Out-of-range levels clamp rather than throw: a save carrying a level above
+ * the current cap (or below 1) should field the nearest legal ultimate, not
+ * crash the battle.
+ */
+export function ultDamageForLevel(
+  ultimate: { damage: number; damageByUltLevel?: number[] },
+  ultLevel: number,
+  maxUltLevel: number,
+): number {
+  const ladder = ultimate.damageByUltLevel;
+  if (ladder && ladder.length > 0) {
+    const index = Math.min(Math.max(1, ultLevel), ladder.length) - 1;
+    return ladder[index];
+  }
+  return scaledUltDamage(ultimate.damage, ultLevel, maxUltLevel);
+}

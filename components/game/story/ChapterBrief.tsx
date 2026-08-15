@@ -14,10 +14,14 @@ import type { StageEffect } from "@/types/stageEffects";
 import { STAMINA_CAP } from "@/lib/game/stamina";
 import { storyAttemptCost } from "@/lib/game/storyRewards";
 import {
+  defaultTrialSelection,
   storyAnchors,
   storyOpenSlots,
   storyTrialIds,
+  trialProgression,
 } from "@/lib/game/storyTeam";
+import { BASE_PROGRESSION } from "@/lib/game/progression";
+import { usePlayerStore } from "@/store/playerStore";
 import type { StoryChapter } from "@/types/story";
 
 /**
@@ -107,10 +111,57 @@ export default function ChapterBrief({
   currentStamina: number;
   /** `picks` are player-chosen character ids; anchors are resolved downstream
    *  by `resolveStoryTeam` so this component never assembles a battle team. */
-  onStart: (picks: string[], skipScenes: boolean) => void;
+  onStart: (picks: string[], skipScenes: boolean, useTrialFor: string[]) => void;
   onBack: () => void;
 }): React.JSX.Element {
   const [picked, setPicked] = React.useState<CharacterData[]>([]);
+
+  // Which owned anchors are being fielded as the story's version. Seeded from
+  // `defaultTrialSelection` so a player is never silently handed the weaker of
+  // the two copies, then fully theirs to override.
+  const progress = usePlayerStore((s) => s.characters);
+  const progressOf = React.useCallback(
+    (id: string) =>
+      progress[id] ?? { level: BASE_PROGRESSION.level, ascension: BASE_PROGRESSION.ascension },
+    [progress],
+  );
+  // Explicit taps only. The effective set is derived from these plus the
+  // default, rather than being seeded into state — a seeded copy would go
+  // stale when the roster or progression arrives late from the cloud, and
+  // re-seeding it from an effect is the setState-in-effect trap.
+  const [override, setOverride] = React.useState<Record<string, boolean>>({});
+  const defaults = React.useMemo(
+    () => defaultTrialSelection(chapter, ownedIds, progressOf),
+    [chapter, ownedIds, progressOf],
+  );
+  const lentByChoice = React.useMemo(() => {
+    const anchorIds = new Set(storyAnchors(chapter).map((a) => a.id));
+    const set = new Set(defaults);
+    for (const [id, lent] of Object.entries(override)) {
+      if (!anchorIds.has(id)) continue;
+      if (lent) set.add(id);
+      else set.delete(id);
+    }
+    return [...set];
+  }, [chapter, defaults, override]);
+
+  const toggleLent = React.useCallback(
+    (id: string) => {
+      const nowLent = !lentByChoice.includes(id);
+      setOverride((prev) => ({ ...prev, [id]: nowLent }));
+    },
+    [lentByChoice],
+  );
+
+  const trial = trialProgression(chapter);
+  const anchorNote = React.useCallback(
+    (id: string, lent: boolean) => {
+      if (lent) return `Lv${trial.level}`;
+      const own = progressOf(id);
+      return `Lv${own.level}`;
+    },
+    [trial.level, progressOf],
+  );
 
   const anchors = React.useMemo(
     () =>
@@ -162,7 +213,7 @@ export default function ChapterBrief({
 
   const start = (skipScenes: boolean) => {
     if (!affordable) return;
-    onStart(picked.map((c) => c.id), skipScenes);
+    onStart(picked.map((c) => c.id), skipScenes, lentByChoice);
   };
 
   return (
@@ -197,6 +248,9 @@ export default function ChapterBrief({
           anchors={anchors}
           openSlots={openSlots}
           trialIds={trialIds}
+          lentByChoiceIds={lentByChoice}
+          onToggleLent={toggleLent}
+          anchorNote={anchorNote}
           title={openSlots === 0 ? "Story team" : "Your team"}
         />
       </div>

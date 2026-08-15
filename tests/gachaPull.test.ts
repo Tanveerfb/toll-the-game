@@ -50,6 +50,44 @@ describe("rollLimitedPull", () => {
     expect(result).toEqual({ kind: "material", materialId: expect.stringMatching(/^training_manual/), amount: 1 });
   });
 
+  // Weighted 60/30/10 (Tanveer, 2026-08-14), previously a uniform third each.
+  // The uniform split made a manual roll worth a mean 500 XP and put Premium
+  // Manuals — the biggest XP item in the game — behind a 1-in-3 miss, which is
+  // how summons quietly became the largest levelling faucet. See
+  // docs/design/ECONOMY_AUDIT.md §2.
+  describe("manual tier weights on the level-mat category", () => {
+    // The third rng() call picks the tier; the first two must both land the
+    // roll in the level-mat third [0.333, 0.667).
+    const tierFor = (tierRoll: number) => {
+      const rolls = [0.4, 0.4, tierRoll];
+      let i = 0;
+      const result = rollLimitedPull(banner, () => rolls[i++]);
+      if (result.kind !== "material") throw new Error(`expected material, got ${result.kind}`);
+      return result.materialId;
+    };
+
+    it("gives tier 1 the first 60%", () => {
+      expect(tierFor(0)).toBe("training_manual");
+      expect(tierFor(0.599)).toBe("training_manual");
+    });
+
+    it("gives Advanced the next 30%", () => {
+      expect(tierFor(0.6)).toBe("training_manual_advanced");
+      expect(tierFor(0.899)).toBe("training_manual_advanced");
+    });
+
+    it("gives Premium the last 10%", () => {
+      expect(tierFor(0.9)).toBe("training_manual_premium");
+      expect(tierFor(0.999)).toBe("training_manual_premium");
+    });
+
+    it("never returns undefined at the top of the range", () => {
+      // Weights summing a hair under 1 in floating point must not fall off the
+      // end of the walk.
+      expect(tierFor(1)).toBe("training_manual_premium");
+    });
+  });
+
   it("lands in the specialty-mat category on a miss with a high miss-roll", () => {
     // rng=0.9 misses (0.9 >= 0.05 rate), then 0.9 as missRoll lands in the
     // final third [0.667, 1) → specialty-mat category, then 0.9 again picks

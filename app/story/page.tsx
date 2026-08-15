@@ -44,13 +44,29 @@ import { useStoryStore } from "@/store/storyStore";
 type View =
   | { kind: "index" }
   | { kind: "brief"; partId: string; chapterId: string }
-  | { kind: "title"; partId: string; chapterId: string; picks: string[] }
-  | { kind: "intro"; partId: string; chapterId: string; picks: string[] }
+  | {
+      kind: "title";
+      partId: string;
+      chapterId: string;
+      picks: string[];
+      useTrialFor: string[];
+    }
+  | {
+      kind: "intro";
+      partId: string;
+      chapterId: string;
+      picks: string[];
+      useTrialFor: string[];
+    }
   | {
       kind: "versus";
       partId: string;
       chapterId: string;
       picks: string[];
+      /** Owned anchors the player chose to field as the story's lent copy.
+       *  Travels with `picks` because a retry after a defeat has to rebuild
+       *  the same team, and the brief is long gone by then. */
+      useTrialFor: string[];
       skipScenes: boolean;
     }
   | {
@@ -58,6 +74,7 @@ type View =
       partId: string;
       chapterId: string;
       picks: string[];
+      useTrialFor: string[];
       /** Set from the brief's SKIP STORY button — skips the outro too, so a
        *  farm run goes brief → versus → battle → rewards. */
       skipScenes: boolean;
@@ -110,13 +127,13 @@ export default function StoryPage(): React.JSX.Element {
   }, [user, hydrateFromCloud]);
 
   const launchBattle = React.useCallback(
-    (partId: string, chapterId: string, picks: string[]) => {
+    (partId: string, chapterId: string, picks: string[], useTrialFor: string[]) => {
       const chapter = getStoryChapter(partId, chapterId);
       if (!chapter?.battle) return;
       // `roster` decides which story leads are lent as trial units — an owned
       // lead keeps the player's own progression instead.
       startCustomBattle(
-        resolveStoryTeam(chapter, picks, roster),
+        resolveStoryTeam(chapter, picks, roster, useTrialFor),
         chapter.battle.enemyTeam,
         {
           stageEffects: chapter.stageEffects,
@@ -174,7 +191,13 @@ export default function StoryPage(): React.JSX.Element {
   /** Brief → battle. Returns false when the player can't afford the attempt,
    *  leaving them on the brief with its insufficient-stamina notice. */
   const beginAttempt = React.useCallback(
-    (partId: string, chapterId: string, picks: string[], skipScenes: boolean): boolean => {
+    (
+      partId: string,
+      chapterId: string,
+      picks: string[],
+      skipScenes: boolean,
+      useTrialFor: string[],
+    ): boolean => {
       if (!chargeAttempt(partId, chapterId)) return false;
       // Remembered on launch, not on selection — a team you assembled and then
       // abandoned isn't the one you want back next time.
@@ -189,8 +212,15 @@ export default function StoryPage(): React.JSX.Element {
       // beat, which also covers the battle's start-up.
       setView(
         skipScenes && !sceneOnly
-          ? { kind: "versus", partId, chapterId, picks, skipScenes: true }
-          : { kind: "title", partId, chapterId, picks },
+          ? {
+              kind: "versus",
+              partId,
+              chapterId,
+              picks,
+              useTrialFor,
+              skipScenes: true,
+            }
+          : { kind: "title", partId, chapterId, picks, useTrialFor },
       );
       return true;
     },
@@ -199,9 +229,14 @@ export default function StoryPage(): React.JSX.Element {
 
   /** Restarts the same battle after a defeat, without replaying the scenes. */
   const retryAttempt = React.useCallback(
-    (partId: string, chapterId: string, picks: string[]): boolean => {
+    (
+      partId: string,
+      chapterId: string,
+      picks: string[],
+      useTrialFor: string[],
+    ): boolean => {
       if (!chargeAttempt(partId, chapterId)) return false;
-      launchBattle(partId, chapterId, picks);
+      launchBattle(partId, chapterId, picks, useTrialFor);
       return true;
     },
     [chargeAttempt, launchBattle],
@@ -234,7 +269,15 @@ export default function StoryPage(): React.JSX.Element {
             // paid for. It restarts the battle directly — replaying the intro
             // scenes on every defeat would be punishing.
             onRetry: () => {
-              if (retryAttempt(view.partId, view.chapterId, view.picks)) return;
+              if (
+                retryAttempt(
+                  view.partId,
+                  view.chapterId,
+                  view.picks,
+                  view.useTrialFor,
+                )
+              )
+                return;
               setView({ kind: "brief", partId: view.partId, chapterId: view.chapterId });
             },
             onQuit: () => {
@@ -271,6 +314,7 @@ export default function StoryPage(): React.JSX.Element {
               partId: view.partId,
               chapterId: view.chapterId,
               picks: view.picks,
+              useTrialFor: view.useTrialFor,
             })
           }
         />
@@ -292,16 +336,27 @@ export default function StoryPage(): React.JSX.Element {
         className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout"
       >
         <VersusSplash
-          playerTeam={resolveStoryTeam(chapter, view.picks)}
+          playerTeam={resolveStoryTeam(
+            chapter,
+            view.picks,
+            roster,
+            view.useTrialFor,
+          )}
           enemyTeam={chapter.battle.enemyTeam}
           chapterTitle={chapter.title}
           onDone={() => {
-            launchBattle(view.partId, view.chapterId, view.picks);
+            launchBattle(
+              view.partId,
+              view.chapterId,
+              view.picks,
+              view.useTrialFor,
+            );
             setView({
               kind: "battle",
               partId: view.partId,
               chapterId: view.chapterId,
               picks: view.picks,
+              useTrialFor: view.useTrialFor,
               skipScenes: view.skipScenes,
             });
           }}
@@ -346,6 +401,9 @@ export default function StoryPage(): React.JSX.Element {
     }
     const isIntro = view.kind === "intro";
     const picks = isIntro ? view.picks : [];
+    // The outro view carries no team, and nothing after it fights — an empty
+    // choice there is correct rather than a lost selection.
+    const useTrialFor = isIntro ? view.useTrialFor : [];
     return (
       <main
         className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout"
@@ -367,6 +425,7 @@ export default function StoryPage(): React.JSX.Element {
                 partId: view.partId,
                 chapterId: view.chapterId,
                 picks,
+                useTrialFor,
                 skipScenes: false,
               });
             } else {
@@ -418,8 +477,14 @@ export default function StoryPage(): React.JSX.Element {
           cleared={completed[chapterKey(part.id, chapter.id)] === true}
           ownedIds={roster}
           currentStamina={getCurrentStamina(stamina)}
-          onStart={(picks, skipScenes) =>
-            beginAttempt(view.partId, view.chapterId, picks, skipScenes)
+          onStart={(picks, skipScenes, useTrialFor) =>
+            beginAttempt(
+              view.partId,
+              view.chapterId,
+              picks,
+              skipScenes,
+              useTrialFor,
+            )
           }
           onBack={() => setView({ kind: "index" })}
         />

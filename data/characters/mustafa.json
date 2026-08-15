@@ -48,7 +48,8 @@
     "characterId": "mustafa",
     "type": "ultimate",
     "statMultiplier": "def",
-    "damage": 225,
+    "damage": 200,
+    "damageByUltLevel": [200, 250, 300, 350, 400, 500],
     "mechanics": [
       {
         "type": "buff",

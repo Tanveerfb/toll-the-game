@@ -9,7 +9,8 @@
       "id": "p9c1",
       "title": "The Sunken Warden",
       "teamMode": "canon",
-      "trialLevel": 22,
+      "trialLevel": 20,
+      "trialAscension": 1,
       "victoryAtEnemyHpPercent": 20,
       "intro": [
         {
@@ -76,12 +77,12 @@
         "firstClear": {
           "gems": 35,
           "coin": 6400,
-          "materials": { "training_manual": 5, "sea_monster_eye": 1 },
+          "materials": { "training_manual": 5, "corroded_seaweed": 2 },
           "accountXp": 80
         },
         "repeat": {
           "coin": { "min": 1400, "max": 2600 },
-          "materials": { "sea_monster_eye": { "min": 0, "max": 1 } }
+          "materials": { "training_manual": { "min": 0, "max": 2 } }
         },
         "replayStamina": 10
       }
@@ -90,7 +91,8 @@
       "id": "p9c2",
       "title": "An Inconvenient Rule",
       "teamMode": "canon",
-      "trialLevel": 22,
+      "trialLevel": 20,
+      "trialAscension": 1,
       "victoryAtEnemyHpPercent": 20,
       "intro": [
         {
@@ -164,12 +166,12 @@
         "firstClear": {
           "gems": 40,
           "coin": 6400,
-          "materials": { "training_manual": 5, "corroded_seaweed": 1 },
+          "materials": { "training_manual": 5, "corroded_seaweed": 2 },
           "accountXp": 85
         },
         "repeat": {
           "coin": { "min": 1400, "max": 2600 },
-          "materials": { "corroded_seaweed": { "min": 0, "max": 1 } }
+          "materials": { "training_manual": { "min": 0, "max": 2 } }
         },
         "replayStamina": 10
       }
@@ -178,7 +180,8 @@
       "id": "p9c3",
       "title": "The Bridge",
       "teamMode": "canon",
-      "trialLevel": 22,
+      "trialLevel": 20,
+      "trialAscension": 1,
       "victoryAtEnemyHpPercent": 20,
       "intro": [
         {
@@ -287,17 +290,14 @@
           "coin": 8000,
           "materials": {
             "training_manual_advanced": 2,
-            "sea_monster_eye": 2,
-            "corroded_seaweed": 2
+            "sea_monster_eye": 1,
+            "corroded_seaweed": 1
           },
           "accountXp": 95
         },
         "repeat": {
           "coin": { "min": 1600, "max": 3000 },
-          "materials": {
-            "sea_monster_eye": { "min": 1, "max": 2 },
-            "corroded_seaweed": { "min": 1, "max": 2 }
-          }
+          "materials": { "training_manual": { "min": 1, "max": 3 } }
         },
         "replayStamina": 12
       }

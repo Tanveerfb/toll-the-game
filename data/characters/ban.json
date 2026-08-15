@@ -70,7 +70,15 @@
     "characterId": "ban",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 600,
+    "damage": 400,
+    "damageByUltLevel": [
+      400,
+      450,
+      500,
+      550,
+      600,
+      650
+    ],
     "mechanics": [
       {
         "type": "extort",

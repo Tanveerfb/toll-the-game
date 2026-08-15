@@ -7,8 +7,10 @@ import {
   progressedStat,
   progressedStats,
   scaledUltDamage,
+  ultDamageForLevel,
   ultMultiplier,
 } from "@/lib/game/progression";
+import { getPlayableCharacters } from "@/lib/game/characterCatalog";
 import { MAX_ULT_LEVEL } from "@/lib/gacha/dupes";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 
@@ -135,5 +137,46 @@ describe("ultMultiplier", () => {
 
   it("survives a single-level ceiling without dividing by zero", () => {
     expect(ultMultiplier(1, 1)).toBe(1);
+  });
+});
+
+/**
+ * Ult ladders (Tanveer, 2026-08-14): "ult levels work in a similar fashion to
+ * skill ranks... only one of 6 values comes to the battle". Every playable
+ * ultimate authors its own six values; the old uniform +60% curve survives only
+ * for kits without a ladder — bosses and story NPCs, which have no ult level.
+ */
+describe("ultDamageForLevel", () => {
+  const duke = { damage: 350, damageByUltLevel: [350, 385, 430, 475, 520, 575] };
+
+  it("reads the authored value for the level", () => {
+    expect(ultDamageForLevel(duke, 1, 6)).toBe(350);
+    expect(ultDamageForLevel(duke, 4, 6)).toBe(475);
+    expect(ultDamageForLevel(duke, 6, 6)).toBe(575);
+  });
+
+  it("clamps rather than reading past the ends of the ladder", () => {
+    expect(ultDamageForLevel(duke, 0, 6)).toBe(350);
+    expect(ultDamageForLevel(duke, 99, 6)).toBe(575);
+  });
+
+  it("falls back to the uniform curve when no ladder is authored", () => {
+    // A boss ultimate: flat `damage`, always fought at level 1.
+    const boss = { damage: 500 };
+    expect(ultDamageForLevel(boss, 1, 6)).toBe(500);
+    expect(ultDamageForLevel(boss, 6, 6)).toBe(800);
+  });
+
+  it("every playable ultimate authors a six-value ladder that only climbs", () => {
+    for (const character of getPlayableCharacters()) {
+      const ult = character.ultimate;
+      if (!ult) continue;
+      const ladder = ult.damageByUltLevel;
+      // Isolde's ultimate deals no damage — hers ladders through mechanics.
+      if (ult.damage === 0 && !ladder) continue;
+      expect(ladder, `${character.id} has no ult ladder`).toHaveLength(6);
+      expect([...ladder!].sort((a, b) => a - b), character.id).toEqual(ladder);
+      expect(ladder![0], `${character.id} level 1`).toBe(ult.damage);
+    }
   });
 });

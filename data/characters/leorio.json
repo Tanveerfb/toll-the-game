@@ -81,7 +81,15 @@
     "characterId": "leorio",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 500,
+    "damage": 325,
+    "damageByUltLevel": [
+      325,
+      360,
+      395,
+      430,
+      465,
+      525
+    ],
     "mechanics": [
       {
         "type": "cancelBuffs"

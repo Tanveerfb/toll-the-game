@@ -320,9 +320,18 @@ describe("migratePlayerState — v6 to v7 (Bureau Orders)", () => {
   it("touches nothing else", () => {
     const result = migratePlayerState(v6, 6);
     expect(result.roster).toEqual(["duke", "sara"]);
-    expect(result.characters).toEqual(v6.characters);
     expect(result.account).toEqual(v6.account);
     expect(result.pity).toEqual(v6.pity);
+    // `characters` is no longer untouched: the v8 → v9 step resets every ult
+    // level and refunds the coins (see its own test below). Level, ascension
+    // and xp still pass through.
+    for (const [id, before] of Object.entries(v6.characters)) {
+      expect(result.characters[id]).toMatchObject({
+        level: before.level,
+        ascension: before.ascension,
+        xp: before.xp,
+      });
+    }
   });
 
   it("lets a returning save claim what it already earned", () => {
@@ -333,5 +342,53 @@ describe("migratePlayerState — v6 to v7 (Bureau Orders)", () => {
     const result = migratePlayerState(v6, 6);
     expect(result.stats.bossClears).toBe(0);
     expect(result.account.rank).toBe(21);
+  });
+});
+
+/**
+ * v8 → v9: dupes stopped granting free ult levels.
+ *
+ * Every pre-v9 save holds ult levels the player never chose. Resetting them
+ * without paying anything back would delete real pulls, so the migration hands
+ * one coin per banked level — the copies are worth exactly what they were, the
+ * player just gets to decide where they go.
+ */
+describe("migratePlayerState — v8 to v9 (ult coins)", () => {
+  const v8 = {
+    roster: ["duke", "sara"],
+    characters: {
+      duke: { level: 30, ascension: 2, xp: 0, ultLevel: 4 },
+      sara: { level: 1, ascension: 0, xp: 0, ultLevel: 1 },
+    },
+    inventory: { training_manual: 3 },
+  };
+
+  it("resets every ultimate to level 1", () => {
+    const result = migratePlayerState(v8, 8);
+    expect(result.characters.duke.ultLevel).toBe(1);
+    expect(result.characters.sara.ultLevel).toBe(1);
+  });
+
+  it("refunds one coin per level that was banked", () => {
+    const result = migratePlayerState(v8, 8);
+    // Duke was at 4, so three levels had been paid for.
+    expect(result.inventory.blue_duke_coin).toBe(3);
+    // Sara was never levelled, so she gets nothing rather than a zero entry.
+    expect(result.inventory.red_sara_coin).toBeUndefined();
+  });
+
+  it("leaves the rest of the inventory alone", () => {
+    expect(migratePlayerState(v8, 8).inventory.training_manual).toBe(3);
+  });
+
+  it("keeps level, ascension and xp", () => {
+    const duke = migratePlayerState(v8, 8).characters.duke;
+    expect(duke).toMatchObject({ level: 30, ascension: 2, xp: 0 });
+  });
+
+  it("is idempotent — re-running at v9 refunds nothing twice", () => {
+    const once = migratePlayerState(v8, 8);
+    const twice = migratePlayerState(once, 9);
+    expect(twice.inventory.blue_duke_coin).toBe(3);
   });
 });

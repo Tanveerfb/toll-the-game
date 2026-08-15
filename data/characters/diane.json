@@ -62,7 +62,15 @@
     "characterId": "diane",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 600,
+    "damage": 400,
+    "damageByUltLevel": [
+      400,
+      440,
+      480,
+      520,
+      560,
+      650
+    ],
     "mechanics": [
       {
         "type": "aoe"

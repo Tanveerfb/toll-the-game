@@ -46,7 +46,8 @@
     "characterId": "seras",
     "type": "ultimate",
     "statMultiplier": "atk",
-    "damage": 500,
+    "damage": 350,
+    "damageByUltLevel": [350, 400, 450, 500, 550, 650],
     "mechanics": [
       {
         "type": "critical",

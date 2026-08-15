@@ -3,6 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 import {
   Tooltip,
   TooltipContent,
@@ -11,6 +12,9 @@ import {
 import DetailOverlay from "@/components/game/DetailOverlay";
 import { usePlayerStore, getCharacterProgress } from "@/store/playerStore";
 import { xpToNext } from "@/lib/game/leveling";
+import { getCharacterById } from "@/lib/game/characterCatalog";
+import { characterCoinId, materialLabel } from "@/lib/game/materials";
+import { MAX_ULT_LEVEL, ultLevelCoinCost } from "@/lib/gacha/dupes";
 import {
   ascensionBlocker,
   ascensionLevelRequirement,
@@ -146,6 +150,125 @@ function GrowthControls({
           No further ascension costed yet (bands 4-6 come in a later update).
         </p>
       )}
+
+      <UltimateLevelControls characterId={characterId} />
+    </div>
+  );
+}
+
+/**
+ * Ult levels, bought with that character's own coins.
+ *
+ * A slider rather than a row of +1 buttons because the whole climb is five
+ * coins: the player picks a destination and pays once, instead of tapping
+ * through five confirmations. The target is clamped to what they can afford,
+ * so the slider can never propose a purchase the store will refuse.
+ */
+function UltimateLevelControls({
+  characterId,
+}: {
+  characterId: string;
+}): React.JSX.Element | null {
+  const state = usePlayerStore();
+  const progress = getCharacterProgress(state, characterId);
+  const character = getCharacterById(characterId);
+
+  const current = progress.ultLevel;
+  const coinId = character ? characterCoinId(character) : null;
+  const held = coinId ? (state.inventory[coinId] ?? 0) : 0;
+  const affordableCeiling = Math.min(MAX_ULT_LEVEL, current + held);
+
+  const [target, setTarget] = React.useState(current);
+  // Derived rather than stored: the reachable ceiling moves as coins are spent
+  // or pulled, and a stale target would offer a purchase that no longer works.
+  const clampedTarget = Math.min(Math.max(target, current), affordableCeiling);
+  const cost = ultLevelCoinCost(current, clampedTarget);
+  const maxed = current >= MAX_ULT_LEVEL;
+  const ladder = character?.ultimate?.damageByUltLevel;
+
+  if (!character?.ultimate) return null;
+
+  return (
+    <div className="border-t border-hairline pt-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="font-body text-xs uppercase tracking-widest text-readout-muted">
+          Ultimate level
+        </p>
+        <p className="font-heading text-lg leading-none tracking-[0.1em] text-readout-strong">
+          {current}
+          <span className="font-body text-xs text-readout-muted">
+            {" "}
+            / {MAX_ULT_LEVEL}
+          </span>
+        </p>
+      </div>
+
+      <p className="mt-1 font-body text-sm text-readout">
+        {materialLabel(coinId ?? "")} — {held} owned
+      </p>
+
+      {/* The ladder, with the level the player is on marked. Seeing the whole
+          curve is the point: the coin cost only reads as worth it next to what
+          the next step actually buys. */}
+      {ladder ? (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {ladder.map((value, index) => {
+            const level = index + 1;
+            const isCurrent = level === current;
+            const isTarget = level > current && level <= clampedTarget;
+            return (
+              <span
+                key={level}
+                className={`chamfer border px-1.5 py-0.5 font-body text-[10px] font-bold tracking-[0.08em] ${
+                  isCurrent
+                    ? "border-signal bg-signal/15 text-signal"
+                    : isTarget
+                      ? "border-role-heal/60 text-role-heal"
+                      : "border-edge text-readout-muted"
+                }`}
+              >
+                UL{level} · {value}%
+              </span>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {maxed ? (
+        <p className="mt-2 font-body text-xs uppercase tracking-widest text-role-heal">
+          Maxed — further copies bank as coins
+        </p>
+      ) : (
+        <>
+          <div className="mt-3 flex items-center gap-3">
+            <Slider
+              value={[clampedTarget]}
+              min={current}
+              max={Math.max(affordableCeiling, current)}
+              step={1}
+              disabled={affordableCeiling <= current}
+              onValueChange={([next]) => setTarget(next)}
+              aria-label="Target ultimate level"
+            />
+            <span className="w-16 shrink-0 text-right font-body text-xs uppercase tracking-[0.14em] text-readout">
+              UL {clampedTarget}
+            </span>
+          </div>
+          <Button
+            className="mt-2"
+            disabled={cost === 0 || held < cost}
+            onClick={() => {
+              if (state.levelUpUltimate(characterId, clampedTarget)) {
+                setTarget(clampedTarget);
+              }
+            }}
+          >
+            {affordableCeiling <= current
+              ? "No coins — summon a duplicate"
+              : `Raise to UL ${clampedTarget} — ${cost} coin${cost === 1 ? "" : "s"}`}
+          </Button>
+        </>
+      )}
     </div>
   );
 }
@@ -192,12 +315,12 @@ export default function CharacterProgressionPanel({
         onClick={() => setOpen(true)}
         className="chamfer flex w-full min-h-11 items-center justify-center border border-role-heal/60 bg-role-heal/8 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-role-heal transition-colors hover:bg-role-heal/16"
       >
-        Growth — level & ascension
+        Growth — level, ascension & ultimate
       </button>
       {open ? (
         <DetailOverlay
           title="Growth"
-          subtitle="Level & ascension"
+          subtitle="Level, ascension & ultimate"
           onClose={() => setOpen(false)}
         >
           <GrowthControls characterId={characterId} />

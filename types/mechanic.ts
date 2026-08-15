@@ -25,6 +25,24 @@ interface MechanicBase {
   stacksRanked?: number[];
   durationRanked?: number[];
   counterDamagePercentRanked?: number[];
+  /**
+   * Ult-level-scaled values [UL1…UL6] — the ultimate's answer to the rank
+   * arrays above, and resolved into the same scalars.
+   *
+   * An ultimate has no rank, so a card ladder can't express a mechanic that
+   * grows with investment. Isolde's Starbound Ward is the reference case: it
+   * deals no damage at all, so `damageByUltLevel` does nothing for her and the
+   * whole value of an ult level lives in the buff it grants (Tanveer,
+   * 2026-08-14: ult levels "work in a similar fashion to skill ranks... only
+   * one of 6 values comes to the battle").
+   */
+  valuePercentByUltLevel?: number[];
+  valueByUltLevel?: number[];
+  durationByUltLevel?: number[];
+  /** Ult level at which this mechanic starts applying at all. Below it the
+   *  mechanic is dropped rather than applied at zero — Isolde's Debuff
+   *  Immunity only exists from ult level 3. */
+  minUltLevel?: number;
   /** Normalized scalars (written by normalizeMechanic, or authored flat). */
   value?: number;
   stacks?: number;

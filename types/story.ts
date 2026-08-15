@@ -109,6 +109,16 @@ export interface StoryChapter {
    *  `DEFAULT_TRIAL_LEVEL`. */
   trialLevel?: number;
   /**
+   * Ascension a lent story lead fights at. Defaults to 0.
+   *
+   * Needed because a level alone under-describes a character: `maxLevelForAscension`
+   * means a real Lv20 unit must be ascension 1 and a real Lv40 unit ascension 3,
+   * so a loaner at `trialLevel: 20` with no ascension is **1.322x** where the
+   * player's own Lv20 is **1.489x** — 13% weaker than the thing it is imitating.
+   * Author this whenever the chapter means "hand them a proper Lv N character".
+   */
+  trialAscension?: number;
+  /**
    * End the battle as a victory once the enemy side falls to this percentage
    * of its pooled HP, instead of requiring every enemy dead.
    *

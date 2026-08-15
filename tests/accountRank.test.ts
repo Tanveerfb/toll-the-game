@@ -18,6 +18,11 @@ import {
   MAX_WORLD_LEVEL,
   worldLevelCapForRank,
 } from "@/lib/game/worldLevel";
+import {
+  ascensionMultiplier,
+  LEVEL_CAP,
+  levelMultiplier,
+} from "@/lib/game/progression";
 
 describe("account rank bands", () => {
   it("puts the walls at the band boundaries Tanveer specified", () => {
@@ -146,6 +151,40 @@ describe("difficulty scaling", () => {
     expect(enemyLevelForDifficulty(99)).toBe(
       enemyLevelForDifficulty(MAX_WORLD_LEVEL),
     );
+  });
+
+  // The step was 8 until 2026-08-14, which put WL4 at 1.407x base stats while a
+  // fully-ascended Lv40 roster reaches 2.159x — the hardest setting in the game
+  // was relatively easier for a maxed account than WL1 is for a fresh one, and
+  // the constant's own comment claimed the opposite. 25 lands one world level
+  // per ascension band.
+  it("puts each world level roughly on an ascension band", () => {
+    const enemyMultiplier = (difficulty: number) =>
+      levelMultiplier(enemyLevelForDifficulty(difficulty));
+
+    const bands = [
+      { level: 1, ascension: 0 },
+      { level: 20, ascension: 1 },
+      { level: 30, ascension: 2 },
+      { level: 40, ascension: 3 },
+    ];
+
+    bands.forEach((band, i) => {
+      const player = levelMultiplier(band.level) + ascensionMultiplier(band.ascension);
+      // Within 10% of the player band it is meant to answer, in either
+      // direction — the dial tracks progression rather than outrunning it.
+      expect(Math.abs(enemyMultiplier(i + 1) - player) / player).toBeLessThan(0.1);
+    });
+  });
+
+  it("tops out below a fully-ascended roster, because the level cap clamps it", () => {
+    // WL4 asks for enemy level 76; `levelMultiplier` stops paying at LEVEL_CAP
+    // 60, so WL4 is 2.000x against a maxed 2.159x. Deliberate and documented —
+    // closing the last 8% needs enemies to carry an ascension term, not a
+    // bigger step here. This pins that the gap is known, not accidental.
+    expect(enemyLevelForDifficulty(MAX_WORLD_LEVEL)).toBeGreaterThan(LEVEL_CAP);
+    expect(levelMultiplier(enemyLevelForDifficulty(MAX_WORLD_LEVEL))).toBe(2);
+    expect(levelMultiplier(40) + ascensionMultiplier(3)).toBeGreaterThan(2);
   });
 });
 

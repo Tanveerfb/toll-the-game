@@ -4,6 +4,7 @@ import { PROSE, ProseTable } from "@/components/ui/prose";
 import type { CharacterSkillData } from "@/lib/game/characterCatalog";
 import {
   buildRankedSkillDescriptions,
+  buildUltLevelDescriptions,
   buildSingleDescription,
   buildSkillKeywordGlossary,
   getMechanicTypes,
@@ -50,6 +51,7 @@ export default function SkillDocument({
   skill,
   slot,
   ranked = true,
+  currentUltLevel,
 }: {
   skill: CharacterSkillData;
   /** "S1" / "S2" / "SP" / "ULT" — the card slot this skill occupies. */
@@ -58,10 +60,22 @@ export default function SkillDocument({
    *  a boss SP Skill. Without it the rank table prints the same row three
    *  times off a `damageRanked: [0,0,0]` placeholder. */
   ranked?: boolean;
+  /**
+   * The player's ult level for this character, when known.
+   *
+   * An ultimate renders its six-level ladder rather than a rank table, and
+   * marks the row the player is actually on — the ladder is only useful next to
+   * "you are here". Omitted (archive browsing an unowned kit, battle info
+   * panels) it still lists every level, just without a marker.
+   */
+  currentUltLevel?: number;
 }): ReactNode {
   const isUlt = skill.type === "ultimate";
+  const ultLines = isUlt ? buildUltLevelDescriptions(skill) : null;
   const rankedLines =
     isUlt || !ranked ? null : buildRankedSkillDescriptions(skill);
+  const lines = ultLines ?? rankedLines;
+  const rowLabel = (index: number) => (ultLines ? `UL${index + 1}` : `R${index + 1}`);
   const metaParts = [...new Set([skill.type, ...getMechanicTypes(skill)])]
     .filter((part) => !(isUlt && part === "ultimate"))
     .map(toTitleCase);
@@ -89,21 +103,32 @@ export default function SkillDocument({
       ) : null}
 
       <div className="mt-1.5 pl-3">
-        {rankedLines ? (
+        {lines ? (
           <ProseTable>
             <thead>
               <tr>
-                <th className={`${PROSE.th} w-10`}>Rank</th>
+                <th className={`${PROSE.th} w-10`}>{ultLines ? "Ult" : "Rank"}</th>
                 <th className={PROSE.th}>Effect</th>
               </tr>
             </thead>
             <tbody>
-              {rankedLines.map((line, index) => (
-                <tr key={`${skill.skillName}-rank-${index + 1}`}>
+              {lines.map((line, index) => {
+                const isCurrent =
+                  ultLines != null && currentUltLevel === index + 1;
+                return (
+                <tr
+                  key={`${skill.skillName}-rank-${index + 1}`}
+                  className={isCurrent ? "bg-signal/10" : undefined}
+                >
                   <td
-                    className={`${PROSE.td} font-body text-[11px] font-bold uppercase tracking-widest text-readout-muted`}
+                    className={`${PROSE.td} font-body text-[11px] font-bold uppercase tracking-widest ${isCurrent ? "text-signal" : "text-readout-muted"}`}
                   >
-                    R{index + 1}
+                    {rowLabel(index)}
+                    {isCurrent ? (
+                      <span className="ml-1 text-signal" aria-label="current level">
+                        ◄
+                      </span>
+                    ) : null}
                   </td>
                   <td className={PROSE.td}>
                     <KeyworkHighlighter
@@ -117,7 +142,8 @@ export default function SkillDocument({
                     />
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </ProseTable>
         ) : (
