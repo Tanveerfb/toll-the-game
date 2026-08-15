@@ -9,6 +9,7 @@ import ChapterCompleteCard from "@/components/game/story/ChapterCompleteCard";
 import ChapterTitleCard from "@/components/game/story/ChapterTitleCard";
 import StoryIndex from "@/components/game/story/StoryIndex";
 import StoryRewardsScreen from "@/components/game/story/StoryRewardsScreen";
+import StoryStage from "@/components/game/story/StoryStage";
 import VersusSplash from "@/components/game/story/VersusSplash";
 import { useAuth } from "@/hooks/AuthProvider";
 import { useBattleContext } from "@/hooks/BattleProvider";
@@ -16,6 +17,7 @@ import { useScreenMusic } from "@/hooks/useScreenMusic";
 import type { MusicRole } from "@/lib/audio/tracks";
 import { getCurrentStamina } from "@/lib/game/stamina";
 import {
+  buildStoryIndexView,
   chapterKey,
   getStoryChapter,
   getStoryPart,
@@ -242,13 +244,23 @@ export default function StoryPage(): React.JSX.Element {
     [chargeAttempt, launchBattle],
   );
 
+  /**
+   * A view whose chapter no longer resolves is a broken route — a chapter id
+   * that stopped existing under a view still holding it. Reset during render
+   * rather than from an effect, which would paint the broken view for a frame
+   * first; the `setView` makes this branch unreachable on the next render, so
+   * it cannot loop. Every guard in this file funnels here rather than
+   * repeating the reset four times.
+   */
+  const bounceToIndex = (): React.JSX.Element => {
+    setView({ kind: "index" });
+    return <StoryStage variant="page" />;
+  };
+
   // ---- Battle view: same single-viewport shell as /practice ----
   if (view.kind === "battle") {
     return (
-      <main
-        className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout"
-      >
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-size-[36px_36px]" />
+      <StoryStage variant="stage" grid>
         <BattleArena
           contextLabel={getStoryChapter(view.partId, view.chapterId)?.title}
           story={{
@@ -280,6 +292,15 @@ export default function StoryPage(): React.JSX.Element {
                 return;
               setView({ kind: "brief", partId: view.partId, chapterId: view.chapterId });
             },
+            // Losing because the team was wrong used to cost a four-step
+            // detour — quit, find the chapter again, reopen the brief. This is
+            // that detour as one button. It doesn't refund the failed
+            // attempt's stamina; starting again from the brief charges afresh,
+            // exactly as the long way round did.
+            onChangeTeam: () => {
+              resetBattle();
+              setView({ kind: "brief", partId: view.partId, chapterId: view.chapterId });
+            },
             onQuit: () => {
               resetBattle();
               setView({ kind: "index" });
@@ -287,7 +308,7 @@ export default function StoryPage(): React.JSX.Element {
           }}
         />
         <Deck />
-      </main>
+      </StoryStage>
     );
   }
 
@@ -295,15 +316,10 @@ export default function StoryPage(): React.JSX.Element {
   if (view.kind === "title") {
     const part = getStoryPart(view.partId);
     const chapter = getStoryChapter(view.partId, view.chapterId);
-    if (!part || !chapter) {
-      setView({ kind: "index" });
-      return <main className="min-h-screen bg-void" />;
-    }
+    if (!part || !chapter) return bounceToIndex();
     const chapterNumber = part.chapters.findIndex((c) => c.id === chapter.id) + 1;
     return (
-      <main
-        className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout"
-      >
+      <StoryStage variant="stage">
         <ChapterTitleCard
           chapterNumber={chapterNumber}
           title={chapter.title}
@@ -318,7 +334,7 @@ export default function StoryPage(): React.JSX.Element {
             })
           }
         />
-      </main>
+      </StoryStage>
     );
   }
 
@@ -327,14 +343,9 @@ export default function StoryPage(): React.JSX.Element {
     const chapter = getStoryChapter(view.partId, view.chapterId);
     // A scene-only chapter can never legitimately reach this view; bouncing
     // to the index beats rendering a splash for a fight that doesn't exist.
-    if (!chapter?.battle) {
-      setView({ kind: "index" });
-      return <main className="min-h-screen bg-void" />;
-    }
+    if (!chapter?.battle) return bounceToIndex();
     return (
-      <main
-        className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout"
-      >
+      <StoryStage variant="stage">
         <VersusSplash
           playerTeam={resolveStoryTeam(
             chapter,
@@ -361,7 +372,7 @@ export default function StoryPage(): React.JSX.Element {
             });
           }}
         />
-      </main>
+      </StoryStage>
     );
   }
 
@@ -373,9 +384,7 @@ export default function StoryPage(): React.JSX.Element {
       ? part.chapters.findIndex((c) => c.id === view.chapterId) + 1
       : 0;
     return (
-      <main
-        className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout"
-      >
+      <StoryStage variant="stage">
         <ChapterCompleteCard
           chapterNumber={chapterNumber}
           title={chapter?.title ?? ""}
@@ -388,27 +397,21 @@ export default function StoryPage(): React.JSX.Element {
             })
           }
         />
-      </main>
+      </StoryStage>
     );
   }
 
   // ---- Scene reader views (intro / outro) ----
   if (view.kind === "intro" || view.kind === "outro") {
     const chapter = getStoryChapter(view.partId, view.chapterId);
-    if (!chapter) {
-      setView({ kind: "index" });
-      return <main className="min-h-screen bg-void" />;
-    }
+    if (!chapter) return bounceToIndex();
     const isIntro = view.kind === "intro";
     const picks = isIntro ? view.picks : [];
     // The outro view carries no team, and nothing after it fights — an empty
     // choice there is correct rather than a lost selection.
     const useTrialFor = isIntro ? view.useTrialFor : [];
     return (
-      <main
-        className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout"
-      >
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-size-[36px_36px]" />
+      <StoryStage variant="stage" grid>
         <StorySceneReader
           key={`${view.partId}-${view.chapterId}-${view.kind}`}
           scenes={isIntro ? chapter.intro : chapter.outro}
@@ -439,23 +442,56 @@ export default function StoryPage(): React.JSX.Element {
             }
           }}
         />
-      </main>
+      </StoryStage>
     );
   }
 
   // ---- Rewards ----
   if (view.kind === "rewards") {
     const chapter = getStoryChapter(view.partId, view.chapterId);
+    /**
+     * Where the story goes next, offered only after a **first clear**.
+     *
+     * `completed` has already taken this chapter by the time rewards renders,
+     * so the index view's `current` is the chapter after this one — no
+     * separate "next" lookup needed. It is deliberately not offered on a
+     * replay: `current` tracks the player's furthest point, so clearing an old
+     * chapter again would advertise a jump to wherever they actually are,
+     * which reads as a bug rather than a shortcut. Replays keep the plain
+     * return to the index, mirroring how `finishChapter` already gives first
+     * clears the completion beat and sends replays straight here.
+     */
+    const progressView = buildStoryIndexView(completed);
+    const next =
+      view.result.firstClear && progressView.current && progressView.lead
+        ? {
+            partId: progressView.lead.id,
+            chapterId: progressView.current.id,
+            title: progressView.current.title,
+            number: progressView.current.number,
+          }
+        : null;
     return (
-      <main
-        className="terminal-grid relative flex min-h-screen items-center justify-center overflow-hidden bg-void px-4 py-8"
-      >
-        <StoryRewardsScreen
-          chapterTitle={chapter?.title ?? ""}
-          result={view.result}
-          onContinue={() => setView({ kind: "index" })}
-        />
-      </main>
+      <StoryStage variant="stage">
+        <div className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 py-8">
+          <StoryRewardsScreen
+            chapterTitle={chapter?.title ?? ""}
+            result={view.result}
+            next={next}
+            onNext={
+              next
+                ? () =>
+                    setView({
+                      kind: "brief",
+                      partId: next.partId,
+                      chapterId: next.chapterId,
+                    })
+                : undefined
+            }
+            onContinue={() => setView({ kind: "index" })}
+          />
+        </div>
+      </StoryStage>
     );
   }
 
@@ -463,13 +499,10 @@ export default function StoryPage(): React.JSX.Element {
   if (view.kind === "brief") {
     const part = getStoryPart(view.partId);
     const chapter = getStoryChapter(view.partId, view.chapterId);
-    if (!part || !chapter) {
-      setView({ kind: "index" });
-      return <main className="min-h-screen bg-void" />;
-    }
+    if (!part || !chapter) return bounceToIndex();
     const chapterNumber = part.chapters.findIndex((c) => c.id === chapter.id) + 1;
     return (
-      <main className="terminal-grid relative min-h-screen bg-void">
+      <StoryStage variant="page">
         <ChapterBrief
           chapter={chapter}
           chapterNumber={chapterNumber}
@@ -488,19 +521,19 @@ export default function StoryPage(): React.JSX.Element {
           }
           onBack={() => setView({ kind: "index" })}
         />
-      </main>
+      </StoryStage>
     );
   }
 
   // ---- Index: every part and its visible chapters, one page ----
   return (
-    <main className="terminal-grid relative min-h-screen bg-void">
+    <StoryStage variant="page">
       <StoryIndex
         completed={completed}
         onSelectChapter={(partId, chapterId) =>
           setView({ kind: "brief", partId, chapterId })
         }
       />
-    </main>
+    </StoryStage>
   );
 }

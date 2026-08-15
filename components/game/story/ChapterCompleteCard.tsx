@@ -8,6 +8,12 @@ import { Button } from "@/components/ui/button";
  * The completion beat, shown between the outro and the rewards card — on a
  * **first clear only**. A fanfare on the fortieth farm run is noise, which is
  * why `app/story/page.tsx` routes replays straight to rewards.
+ *
+ * Tap anywhere advances, matching the title card and the versus splash. It
+ * keeps no auto-advance timer, and that asymmetry is deliberate: those two are
+ * anticipation — you're waiting for something to start, so moving you along is
+ * a courtesy — while this one is arrival, with a reward behind it. Rushing the
+ * beat the player just earned is the one place a timer would be rude.
  */
 export default function ChapterCompleteCard({
   chapterNumber,
@@ -19,7 +25,13 @@ export default function ChapterCompleteCard({
   onContinue: () => void;
 }): React.JSX.Element {
   return (
-    <div className="relative flex h-full w-full flex-1 items-center justify-center overflow-hidden px-6">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onContinue}
+      aria-label="Continue to rewards"
+      className="relative flex h-full w-full flex-1 cursor-pointer items-center justify-center overflow-hidden px-6"
+    >
       <div className="text-center">
         <m.p
           initial={{ opacity: 0, letterSpacing: "0.6em" }}
@@ -57,7 +69,12 @@ export default function ChapterCompleteCard({
           transition={{ duration: 0.4, delay: 0.5 }}
         >
           <Button
-            onClick={onContinue}
+            onClick={(event) => {
+              // The whole card advances on tap, so without this the click
+              // fires the handler here and again on the way up.
+              event.stopPropagation();
+              onContinue();
+            }}
             size="xl"
             className="chamfer mt-8 px-10"
           >

@@ -35,10 +35,20 @@ import type { StoryChapter } from "@/types/story";
  * below the fold.
  */
 
-const TEAM_MODE_NOTE: Record<StoryChapter["teamMode"], string> = {
-  canon: "Canon battle — the story fixes this team",
-  anchored: "Canon leads are fixed; fill the rest from your roster",
-  free: "Bring any team from your roster",
+/**
+ * The team rule, short enough for the fact strip.
+ *
+ * It used to be a full sentence in unlabelled prose above the picker, while
+ * the strip spent a whole cell on the chapter's scene count — a number that
+ * changes nothing the player does here. The rule earns the cell; the count
+ * didn't. The picker itself carries the detail the sentence used to: anchors
+ * render fixed and can't be removed, which shows the rule better than telling
+ * it does.
+ */
+const TEAM_MODE_LABEL: Record<StoryChapter["teamMode"], string> = {
+  canon: "Story fixed",
+  anchored: "Leads fixed",
+  free: "Your pick",
 };
 
 /** "300–800 Coin" / "2 Training Manual" — the brief advertises what a run pays
@@ -223,7 +233,9 @@ export default function ChapterBrief({
         onClick={onBack}
         className="chamfer border border-edge px-3 py-2 font-body text-[11px] font-bold uppercase tracking-[0.2em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
       >
-        ← Chapter select
+        {/* Named for where it lands. It used to say "Chapter select", which is
+            the modal — this goes to the story index. */}
+        ← Story index
       </button>
 
       <header className="mt-4 border-l-2 border-signal pl-3">
@@ -238,9 +250,6 @@ export default function ChapterBrief({
 
       {chapter.battle ? (
       <div className="mt-4">
-        <p className="mb-1.5 font-body text-[11px] leading-relaxed text-readout-dim">
-          {TEAM_MODE_NOTE[chapter.teamMode]}
-        </p>
         <TeamPicker
           ownedIds={ownedIds}
           team={picked}
@@ -327,9 +336,12 @@ export default function ChapterBrief({
         <Fact label={cleared ? "Drops per clear" : "First clear bonus"}>
           {rewardLines.length === 0 ? "Nothing" : rewardLines.join(" · ")}
         </Fact>
-        <Fact label="Scenes">
-          {chapter.intro.length + chapter.outro.length} panels
-        </Fact>
+        {/* A scene-only chapter has no picker, so the team rule has nothing to
+            describe — the strip drops to two cells rather than printing a rule
+            for a fight that doesn't happen. */}
+        {chapter.battle ? (
+          <Fact label="Team">{TEAM_MODE_LABEL[chapter.teamMode]}</Fact>
+        ) : null}
       </div>
 
       {!affordable ? (

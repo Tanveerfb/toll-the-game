@@ -139,6 +139,10 @@ export interface BattleEndHandlers {
   onContinue: () => void;
   /** Defeat → restart (story: same canon battle; world-boss: re-spend stamina) */
   onRetry: () => void;
+  /** Defeat → rebuild the team and come back, without losing the route there.
+   *  Optional: only story mode has a pre-fight screen to return to, so the
+   *  button is absent on the world-boss flow rather than dead. */
+  onChangeTeam?: () => void;
   /** Defeat → abandon (story: back to chapter list; world-boss: back to select) */
   onQuit: () => void;
 }
@@ -1053,6 +1057,15 @@ export default function BattleArena({
                   >
                     RETRY BATTLE
                   </Button>
+                  {battleEnd.onChangeTeam ? (
+                    <Button
+                      variant="outline"
+                      size="xl"
+                      onClick={battleEnd.onChangeTeam}
+                    >
+                      CHANGE TEAM
+                    </Button>
+                  ) : null}
                   <Button variant="outline" size="xl" onClick={battleEnd.onQuit}>
                     {story ? "BACK TO CHAPTERS" : "BACK TO WORLD BOSS"}
                   </Button>

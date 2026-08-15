@@ -46,10 +46,17 @@ function RewardSection({
 export default function StoryRewardsScreen({
   chapterTitle,
   result,
+  next,
+  onNext,
   onContinue,
 }: {
   chapterTitle: string;
   result: StoryClearResult;
+  /** The chapter the story continues into, when there is one and this was a
+   *  first clear. Null on a replay or at the end of the arc, which is what
+   *  drops this screen back to a single CONTINUE. */
+  next?: { title: string; number: number } | null;
+  onNext?: () => void;
   onContinue: () => void;
 }): React.JSX.Element {
   // A chapter can legitimately roll nothing (a 0-min range hitting 0 with no
@@ -78,13 +85,36 @@ export default function StoryRewardsScreen({
         {nothingDropped ? (
           <p className="font-body text-sm text-readout-muted">No drops this run.</p>
         ) : null}
-        <Button
-          onClick={onContinue}
-          size="xl"
-          className="chamfer mt-2"
-        >
-          CONTINUE
-        </Button>
+        {/* Clearing a chapter used to end at the index, leaving the player to
+            find chapter N+1 themselves. Naming the next chapter here is the
+            difference between a story that continues and a menu you keep
+            returning to. */}
+        {next && onNext ? (
+          <div className="mt-2 flex flex-col gap-2">
+            <Button onClick={onNext} size="xl" className="chamfer">
+              CHAPTER {next.number} ▸
+            </Button>
+            <p className="-mt-1 truncate text-center font-body text-[11px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+              {next.title}
+            </p>
+            <Button
+              onClick={onContinue}
+              variant="ghost"
+              size="lg"
+              className="chamfer text-sm hover:text-signal"
+            >
+              BACK TO STORY
+            </Button>
+          </div>
+        ) : (
+          <Button
+            onClick={onContinue}
+            size="xl"
+            className="chamfer mt-2"
+          >
+            CONTINUE
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

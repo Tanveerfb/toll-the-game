@@ -1,8 +1,36 @@
-# Status — 2026-08-14
+# Status — 2026-08-16
 
 Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @ `c3040f7`).
 
 ## Working (implemented, tested, browser-verified)
+
+- **Story flow and screens pass, plus two planning artefacts (2026-08-16)** — rulings **#94–#97**. Verified: `npm run check` green (**1236 tests / 96 files**, same 3 pre-existing eslint warnings in `tests/duel.test.ts`), clean `next build` (48 routes), `tsconfig.json` build churn reverted. **Not browser-verified** — Tanveer does the visual pass.
+
+  ### What this session was, and what it deliberately wasn't
+  He opened wanting to overhaul story UI/UX *and* story content, and asked whether a project-scoped story agent was worth building. Audit of the existing surface found the story UI is **not** in bad shape — the components carry his own prior rulings (portrait-slot fix 2026-07-20, index collapsed to one page 2026-08-11, word-fade reveal replacing character-by-character slicing) — so the answer was to leave the designed parts alone. The real gap is **schema-level**: `StoryScene` has four fields (`speaker`, `portraitId`, `side`, `text`) and no background, which is why `part1.json` writes *"A small rural village. Remote, quiet, self-contained."* as narration and why all 12 parts render over the same void. He picked **flow and screens** for this pass and **background-per-scene** for the later one, ruling out expressions, per-scene audio and camera effects.
+
+  ### Shipped
+  - **`StoryStage`** (`components/game/story/StoryStage.tsx`) — one frame, two variants. `page.tsx` had **three** distinct `<main>` shells across eight branches; rewards was the only viewport-locked-then-scrolling odd one out, which is why the complete card → rewards transition changed viewport treatment mid-beat. The 36px grid overlay stays exactly where it was (battle, scene reader) rather than being normalised, since that would be an unapproved visual change.
+  - **Next chapter from rewards, first clear only** (ruling #97). No new catalog code — `completed` has already taken the chapter by the time rewards renders, so the index view's `current` *is* the next chapter.
+  - **Change team on defeat** (ruling #97). Optional `onChangeTeam` on the shared `BattleEndHandlers`, so the world-boss route is unaffected rather than growing a dead button.
+  - **Interstitial contract unified** (ruling #95) — complete card gained tap-anywhere; its inner button stops propagation so one click doesn't fire the handler twice.
+  - **Brief fact strip** (ruling #96) — scene count out, team rule in; back button renamed `← Story index` because it lands on the index, not the chapter-select modal it used to name.
+  - **`bounceToIndex`** — the four copies of "chapter didn't resolve, reset during render" folded into one documented helper.
+
+  ### Planning artefacts, no code
+  - **`docs/ART_REQUESTS.md`** — the standing ComfyUI queue, created at his request so sessions **append and keep building** instead of stalling on missing art. Carries the entry format, and for scene backgrounds a table of the four ways they *override* `ART_PIPELINE.md` (16:9 not 1024², background removal **never**, no characters in frame, composition must survive portraits at both bottom corners) — that doc is entirely portrait-oriented and following it blindly yields unusable assets. A one-line pointer went into `AGENTS.md` so a fresh clone inherits the rule.
+  - **Story agent deferred, charter recorded.** He wants one eventually — draft/plan filler story content, integrate official plus approved filler, suggest and design NPCs with ComfyUI asset generation. Deferred because two of the three docs it would boot into don't exist (no story canon/voice/schema guide; `KIT_DESIGN.md:83` marks `storyOnly` enemy stat bands **unassigned**) and because ruling #94 is about to change the format anyway. Order when it happens: docs → skill → thin agent over the skill.
+
+  ### Tried and abandoned
+  - **Proposing an agent first.** The instinct was to build `.claude/agents/story.md`; wrong primitive and wrong order. A skill composes better (loads in the main thread *and* inside any agent), and either is only as good as the docs it reads — which is the actual missing piece.
+  - **A layout-first reading of "overhaul the story UI".** The first pass looked for screens to redesign. The screens are fine; the schema is what's thin. Recorded so a future session doesn't re-propose a visual rework of components that already had design passes.
+
+  ### Confidence and gaps
+  - **Verified:** `tsc`, `eslint`, `vitest` (1236 passing) and a full `next build` all run *after* the last edit. The working tree was checked clean of build churn.
+  - **Assumed, not verified:** every visual claim. The unified shells, the two-button rewards end state, the tap-anywhere complete card and the new `Team` cell have never been rendered.
+  - **A judgement call worth his eye:** ruling #96 **deleted** the team-mode sentence rather than relocating it. Defensible — the picker shows the rule — but a first-time player loses the explanation, and it goes back as helper text if the screen reads thin.
+  - **Unverified in the new doc:** `ART_REQUESTS.md`'s 14 background locations were inferred from part titles, taglines and part 1's narration, **not** a scene-by-scene read of all 12 parts. The file says so. Correct the list before generating anything, or the GPU time goes on images no scene references.
+  - **What I'd check first coming back cold:** clear a chapter and confirm the next-chapter button names the right one, then lose a fight and walk Change team → brief → restart.
 
 - **Ult level-up system, Molvarr rework, and a balance/economy audit (2026-08-14)** — one long session that started as a read-only audit and turned into four shipped changes. Rulings **#87–#92**. Verified at the end: `npm run check` green (**1236 tests / 96 files**, 3 pre-existing eslint warnings in `tests/duel.test.ts`, unrelated), clean `next build` (48 routes). **Not browser-verified** — Tanveer does the visual pass.
 
