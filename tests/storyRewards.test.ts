@@ -1,181 +1,154 @@
 import { describe, expect, it } from "vitest";
+import type { MissionOutcome } from "@/lib/game/stageMissions";
 import {
-  describeRewards,
+  describeFarm,
+  describeFirstClear,
   isEmptyPayout,
-  rollStoryRewards,
-  storyAttemptCost,
+  rollStageRewards,
 } from "@/lib/game/storyRewards";
-import type { StoryChapterRewards } from "@/types/story";
+import type { StoryMission, StoryStageRewards } from "@/types/story";
 
-const REWARDS: StoryChapterRewards = {
-  firstClear: { gems: 50, coin: 1500, materials: { training_manual: 2 }, accountXp: 0 },
-  repeat: {
-    coin: { min: 300, max: 800 },
-    materials: { training_manual: { min: 0, max: 2 } },
+/**
+ * Stage payouts (story mode v2, 2026-08-18).
+ *
+ * Two lists, two promises (ruling #80): a **first-clear bundle** of fixed amounts
+ * paid exactly once, and a **farm table** of ranges rolled on every clear. Missions
+ * are a third, independent one-time payout, so meeting one on the fortieth replay
+ * still pays.
+ *
+ * `rng` is injected everywhere, and the roll order is documented in the module —
+ * coin, then materials in key order — so a stubbed generator maps to an entry.
+ */
+
+const REWARDS: StoryStageRewards = {
+  firstClear: {
+    gems: 14,
+    coin: 2000,
+    materials: { training_manual: 3 },
+    accountXp: 20,
   },
-  replayStamina: 5,
+  farm: {
+    coin: { min: 500, max: 1000 },
+    materials: { training_manual: { min: 1, max: 2 } },
+  },
 };
 
-/** Ranges are inclusive on both ends, so the max branch needs an rng that
- *  approaches 1 without reaching it — same trick as worldBossRewards.test. */
-const MIN_RNG = () => 0;
-const MAX_RNG = () => 0.999999;
+const SCENE_REWARDS: StoryStageRewards = {
+  firstClear: { gems: 8, coin: 1000, accountXp: 10 },
+};
 
-describe("rollStoryRewards", () => {
-  it("rolls every range to its exact minimum", () => {
-    const { drops } = rollStoryRewards(REWARDS, false, MIN_RNG);
-    expect(drops.coin).toBe(300);
-    // A 0-roll on a 0-min material records no entry rather than a +0 row.
-    expect(drops.materials).toEqual({});
+/** Always the low end of every range. */
+const low = () => 0;
+/** Always the high end — 0.999 lands on the last integer of any span. */
+const high = () => 0.999;
+
+function metMission(gems: number, claimed = false): MissionOutcome {
+  const mission: StoryMission = {
+    id: `m${gems}`,
+    label: "x",
+    goal: { type: "noLosses" },
+    reward: { gems },
+  };
+  return { mission, met: true, alreadyClaimed: claimed, paysNow: !claimed };
+}
+
+describe("a first clear", () => {
+  it("pays the bundle and a farm roll", () => {
+    // Paying the bundle alone would make the first clear the only clear that never
+    // shows the table it advertises.
+    const result = rollStageRewards(REWARDS, true, [], low);
+    expect(result.firstClear).toMatchObject({ gems: 14, coin: 2000, accountXp: 20 });
+    expect(result.farm).toMatchObject({ coin: 500 });
+    expect(result.total.coin).toBe(2500);
+    expect(result.total.materials.training_manual).toBe(4);
   });
 
-  it("rolls every range to its exact maximum", () => {
-    const { drops } = rollStoryRewards(REWARDS, false, MAX_RNG);
-    expect(drops.coin).toBe(800);
-    expect(drops.materials).toEqual({ training_manual: 2 });
-  });
-
-  it("grants the one-time bundle on a first clear", () => {
-    const result = rollStoryRewards(REWARDS, true, MIN_RNG);
-    expect(result.firstClear).toEqual({
-      gems: 50,
-      coin: 1500,
-      permanentTicket: 0,
-      accountXp: 0,
-      materials: { training_manual: 2 },
-    });
-  });
-
-  it("grants no bundle on a replay", () => {
-    expect(rollStoryRewards(REWARDS, false, MAX_RNG).firstClear).toBeNull();
-  });
-
-  it("totals the bundle and the drops together on a first clear", () => {
-    const result = rollStoryRewards(REWARDS, true, MAX_RNG);
-    expect(result.total).toEqual({
-      gems: 50,
-      coin: 1500 + 800,
-      permanentTicket: 0,
-      accountXp: 0,
-      materials: { training_manual: 2 + 2 },
-    });
-  });
-
-  it("totals to the drops alone on a replay", () => {
-    const result = rollStoryRewards(REWARDS, false, MAX_RNG);
-    expect(result.total).toEqual(result.drops);
-  });
-
-  it("treats absent optional entries as zero, never NaN or undefined keys", () => {
-    const sparse: StoryChapterRewards = {
-      firstClear: {},
-      repeat: {},
-      replayStamina: 0,
-    };
-    const result = rollStoryRewards(sparse, true, MIN_RNG);
-    expect(result.total).toEqual({
-      gems: 0,
-      coin: 0,
-      permanentTicket: 0,
-      accountXp: 0,
-      materials: {},
-    });
-    expect(Number.isNaN(result.total.coin)).toBe(false);
-  });
-
-  it("does not share material objects between the bundle and the total", () => {
-    const result = rollStoryRewards(REWARDS, true, MAX_RNG);
-    result.total.materials.training_manual = 999;
-    expect(result.firstClear?.materials.training_manual).toBe(2);
-  });
-
-  it("rolls a fixed-point range to that exact value", () => {
-    const fixed: StoryChapterRewards = {
-      firstClear: {},
-      repeat: { coin: { min: 500, max: 500 } },
-      replayStamina: 1,
-    };
-    expect(rollStoryRewards(fixed, false, MIN_RNG).drops.coin).toBe(500);
-    expect(rollStoryRewards(fixed, false, MAX_RNG).drops.coin).toBe(500);
+  it("never rolls the bundle — the amounts are exactly as authored", () => {
+    const lowRoll = rollStageRewards(REWARDS, true, [], low);
+    const highRoll = rollStageRewards(REWARDS, true, [], high);
+    expect(lowRoll.firstClear).toEqual(highRoll.firstClear);
   });
 });
 
-/**
- * Every attempt is charged since 2026-08-17 (Tanveer), which retired the rule
- * that uncleared chapters were free however many times you retried them. These
- * assertions used to say the opposite; the story can be stamina-gated now, and
- * that was flagged and confirmed rather than overlooked.
- */
-describe("storyAttemptCost", () => {
-  it("charges the same whether the chapter is cleared or not", () => {
-    expect(storyAttemptCost(REWARDS)).toBe(5);
+describe("a replay", () => {
+  it("pays the farm table only", () => {
+    const result = rollStageRewards(REWARDS, false, [], high);
+    expect(result.firstClear).toBeNull();
+    expect(result.farm).toMatchObject({ coin: 1000 });
+    expect(result.total.gems).toBe(0);
+    expect(result.total.accountXp).toBe(0);
   });
 
-  it("still costs nothing where the chapter is authored free", () => {
-    expect(storyAttemptCost({ ...REWARDS, replayStamina: 0 })).toBe(0);
+  it("still pays a mission met for the first time", () => {
+    // The point of missions being independent: a farm run is where a
+    // `withinTurns` mission usually falls, long after the first clear.
+    const result = rollStageRewards(REWARDS, false, [metMission(3)], low);
+    expect(result.missions.gems).toBe(3);
+    expect(result.total.gems).toBe(3);
+  });
+
+  it("pays nothing for a mission already banked", () => {
+    const result = rollStageRewards(REWARDS, false, [metMission(3, true)], low);
+    expect(result.missions.gems).toBe(0);
+  });
+
+  it("sums several missions met on one run", () => {
+    const result = rollStageRewards(
+      REWARDS,
+      false,
+      [metMission(3), metMission(5)],
+      low,
+    );
+    expect(result.missions.gems).toBe(8);
   });
 });
 
-/**
- * One list of reward lines, shared by the chapter card and the brief. They used
- * to be built privately inside `ChapterBrief`, which is how a card and a brief
- * end up disagreeing about what a chapter pays.
- */
-describe("describeRewards", () => {
-  it("advertises the one-time bundle while the chapter is uncleared", () => {
-    expect(describeRewards(REWARDS, false)).toEqual([
-      "50 Gems",
-      "1500 Coin",
-      "2 Training Manual",
+describe("a scene stage", () => {
+  it("has no farm table, so a replay pays nothing at all", () => {
+    const first = rollStageRewards(SCENE_REWARDS, true, [], low);
+    expect(first.farm).toBeNull();
+    expect(first.total.gems).toBe(8);
+
+    const replay = rollStageRewards(SCENE_REWARDS, false, [], low);
+    expect(replay.farm).toBeNull();
+    expect(isEmptyPayout(replay.total)).toBe(true);
+  });
+});
+
+describe("ranges", () => {
+  it("is inclusive at both bounds", () => {
+    expect(rollStageRewards(REWARDS, false, [], low).farm?.coin).toBe(500);
+    expect(rollStageRewards(REWARDS, false, [], high).farm?.coin).toBe(1000);
+  });
+
+  it("drops a zero roll instead of recording a +0 entry", () => {
+    const zeroable: StoryStageRewards = {
+      firstClear: {},
+      farm: { materials: { training_manual: { min: 0, max: 1 } } },
+    };
+    const result = rollStageRewards(zeroable, false, [], low);
+    expect(result.farm?.materials).toEqual({});
+  });
+});
+
+describe("display lines", () => {
+  it("names the bundle in full", () => {
+    expect(describeFirstClear(REWARDS)).toEqual([
+      "14 Gems",
+      "2000 Coin",
+      "3 Training Manual",
+      "20 Account XP",
     ]);
   });
 
-  it("advertises the repeat ranges once it is cleared", () => {
-    expect(describeRewards(REWARDS, true)).toEqual([
-      "300–800 Coin",
-      "0–2 Training Manual",
-    ]);
-  });
-
-  it("collapses a range whose bounds are equal", () => {
-    const fixed: StoryChapterRewards = {
-      ...REWARDS,
-      repeat: { coin: { min: 500, max: 500 } },
-    };
-    expect(describeRewards(fixed, true)).toEqual(["500 Coin"]);
-  });
-
-  it("names materials rather than printing raw ids", () => {
-    const lines = describeRewards(REWARDS, false);
-    expect(lines.some((line) => line.includes("training_manual"))).toBe(false);
-  });
-
-  it("returns an empty list rather than a placeholder when nothing is paid", () => {
+  it("renders farm ranges, and collapses a fixed one", () => {
+    expect(describeFarm(REWARDS)).toEqual(["500–1000 Coin", "1–2 Training Manual"]);
     expect(
-      describeRewards({ firstClear: {}, repeat: {}, replayStamina: 0 }, false),
-    ).toEqual([]);
-    expect(
-      describeRewards({ firstClear: {}, repeat: {}, replayStamina: 0 }, true),
-    ).toEqual([]);
-  });
-});
-
-describe("isEmptyPayout", () => {
-  it("is true for a payout that grants nothing", () => {
-    expect(
-      isEmptyPayout({ gems: 0, coin: 0, permanentTicket: 0, materials: {}, accountXp: 0 }),
-    ).toBe(true);
+      describeFarm({ firstClear: {}, farm: { coin: { min: 100, max: 100 } } }),
+    ).toEqual(["100 Coin"]);
   });
 
-  it("is false when any material was rolled", () => {
-    expect(
-      isEmptyPayout({
-        gems: 0,
-        coin: 0,
-        permanentTicket: 0,
-        accountXp: 0,
-        materials: { training_manual: 1 },
-      }),
-    ).toBe(false);
+  it("returns nothing for a stage with no farm table", () => {
+    expect(describeFarm(SCENE_REWARDS)).toEqual([]);
   });
 });

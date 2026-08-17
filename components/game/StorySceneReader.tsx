@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { AnimatePresence, m } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import StoryBackdrop from "@/components/game/story/StoryBackdrop";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import {
   autoAdvanceDelayMs,
@@ -52,11 +53,15 @@ export default function StorySceneReader({
    *  top-right control shouldn't destroy an intro you've never seen. Replays
    *  skip immediately (the brief's SKIP STORY already means that). */
   confirmSkip = false,
+  fallbackBackgroundId,
   onFinish,
 }: {
   scenes: StoryScene[];
   chapterTitle: string;
   confirmSkip?: boolean;
+  /** The chapter's locale, used for any scene that doesn't name its own
+   *  background. */
+  fallbackBackgroundId?: string;
   onFinish: () => void;
 }): React.JSX.Element {
   const [index, setIndex] = React.useState(0);
@@ -170,6 +175,13 @@ export default function StorySceneReader({
       className="relative flex h-full w-full flex-1 cursor-pointer flex-col justify-center overflow-hidden text-left"
       aria-label="Advance story"
     >
+      {/* Where this scene happens. A scene's own slug wins; `fallbackBackgroundId`
+          is the chapter's locale, so an author only names a background when the
+          place changes rather than on every line. */}
+      <StoryBackdrop
+        slug={scene.backgroundId ?? fallbackBackgroundId}
+        dim={narration}
+      />
       {/* Letterbox bars. Present for narration only — the cinematic framing is
           what separates narration from a character speaking now that they no
           longer share one identical box. */}

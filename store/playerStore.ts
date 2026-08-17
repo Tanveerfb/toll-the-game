@@ -185,7 +185,7 @@ export interface PlayerState {
    */
   claimOrder: (
     orderId: string,
-    completedChapters: Record<string, boolean>,
+    clearedStages: Record<string, boolean>,
   ) => boolean;
 }
 
@@ -941,7 +941,7 @@ export const usePlayerStore = create<PlayerState>()(
         return { kind: "character", characterId, ...resolution };
       },
 
-      claimOrder: (orderId, completedChapters) => {
+      claimOrder: (orderId, clearedStages) => {
         const state = get();
         const order = getOrder(orderId);
         if (!order) return false;
@@ -957,7 +957,7 @@ export const usePlayerStore = create<PlayerState>()(
         // Re-checked here, not trusted from the panel. The button appearing is
         // a rendering decision; this is the only place the reward is real.
         const progress = evaluateOrder(order, {
-          completedChapters,
+          clearedStages,
           pulls: state.stats.pulls,
           bossClears: state.stats.bossClears,
           presetsSaved: state.presets.length,

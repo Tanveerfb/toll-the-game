@@ -1,10 +1,57 @@
-# Status — 2026-08-17
+# Status — 2026-08-18
 
 Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @ `c3040f7`).
 
 ## Working (implemented, tested, browser-verified)
 
-- **Story mode rebuilt end to end: carousels, a node board, and a results screen (2026-08-17)** — rulings **#98–#105**. Verified after the last edit: `npm run check` green (**1305 tests / 98 files**, same 3 pre-existing eslint warnings in `tests/duel.test.ts`), clean `NEXT_DIST_DIR=.next-verify next build`, `tsconfig.json` churn reverted, `.next-verify` removed. **Not browser-verified** — Tanveer does the visual pass, and this is the largest single batch of unverified UI in the project's history.
+- **Story mode v2 — rebuilt from scratch as Chapter → Stage with waves (2026-08-18)** — rulings **#107** plus his decisions across this session. Verified after the last edit: `npm run check` green (**1218 tests / 95 files**, same 3 pre-existing eslint warnings in `tests/duel.test.ts`), clean `NEXT_DIST_DIR=.next-verify next build` (48 routes), `tsconfig.json` build churn reverted, `.next-verify` removed. **Not browser-verified** — he does the visual pass.
+
+  ### Why it was scrapped rather than fixed
+  Tanveer on v1, one day after it shipped: *"assume our existing story mode doesn't exist at all. i am not planning to recycle anything. its trash for me. it hurts me but that's the truth."* The diagnosis behind that, from reading the canon source and the implementation together:
+  1. **The taxonomy fought the source.** A webtoon chapter became a *Part* and its beats became *chapters*, so the unit a player called a chapter was a beat and nothing on screen matched `Chapter N.md`.
+  2. **The board was starved, not wrong.** One fight per board, 10–20 tiles, everything else empty ground. Three orbs of 1–6 across a single path with one resolving tile is not a decision.
+  3. **Every scene played over the same void** — `StoryScene` had four fields and no background.
+  4. **Nothing to re-enter for**, and the fight you would farm wasn't addressable without re-walking a board.
+
+  ### The shape now
+  - **Chapter = one webtoon chapter** (`c1`, 1:1 with `Chapter 1.md`); **Stage = one playable unit** (`1-1 … 1-5`), addressed directly from the stage list. Stage count per chapter is deliberately uncapped — his call, it depends on what the story and filler need.
+  - **Waves are the mechanic**: a battle stage runs 1–3 consecutive fights where **HP carries over and the fallen stay down** — his ruling #103, decided before v1 and never built because one fight per board meant nothing survived. It's what makes heals, DR, cleanses and the sub slot matter, and it closes the parked "no fight has more than 2 enemies" AoE gap (ruling #89) with content instead of kit changes.
+  - **Missions**: up to 3 optional objectives per stage, seven goal types (`noLosses`, `withinTurns`, `fieldCharacter`, `fieldTag`, `useUltimates`, `firstAttempt`, `allWaves`), each paying a fixed one-time bundle. **Never lost** — an unmet mission reads STILL OPEN and stays claimable forever.
+  - **Rewards** split two ways per ruling #80: a fixed first-clear bundle and a thin farm table (coin + basic manuals only; the farm shape has no field for gems or tickets, so the ban is structural). Missions are a third, independent one-time payout.
+  - **No auto clear**, his call — and `tests/storyCatalog.test.ts` asserts no `autoClearEligible` event names a story chapter or stage, so a future generalisation of the ticket can't quietly include story.
+  - **`origin: "canon" | "filler"` on every stage and scene.** The most important field in the schema: what's invented is auditable, a canon retcon can strip it mechanically, and filler review has something to read.
+  - **Backgrounds** are authored per scene as slugs against `docs/ART_REQUESTS.md` Category A, resolving to a locale-tinted gradient until the plates exist (`lib/game/storyBackgrounds.ts` — an art session fills in one `image` field per slug).
+
+  ### Five screens, mobile-first at 390×844
+  Mockup he approved first: `docs/design/mockups/story-v2.html`. Chapter list → stage list → stage brief → play (scene reader / versus / battle / wave break) → stage result. The stage list is the farming surface; the brief leads with the wave rail; the wave break shows what the last fight cost before the next one starts.
+
+  ### Deleted, not migrated
+  `lib/game/route.ts`, `RouteBoard`, `PartSelect`, `PartBannerCard`, `EntryCard`, the v1 `ChapterSelect`/`ChapterBrief`/`StoryRewardsScreen`/`ChapterCompleteCard`, `SnapCarousel`, all twelve `data/story/part*.json`, `activeRoute` in `storyStore`, and **six** v1 test suites (`route`, `storyRoute`, `storyIndex`, `storyCatalogIntegrity`, `storyTeam`, `storyTrial`) — with `storySchema` and `storyRewards` rewritten in place rather than deleted. **Old progress is dropped** by the v3 migration (his call — the old keys named beats of a structure that no longer exists, so mapping them would be fiction); first-clear bundles become claimable again on an existing save.
+
+  `SnapCarousel` went with them: a chapter list that grows toward 24 entries is scanned, and a carousel that centres one item hides its neighbours behind a fling. Flagged rather than assumed — it was his approved Dokkan idiom on 2026-08-17.
+
+  ### Reused deliberately
+  `TeamPicker` **and `teamPresets`** (his instruction: the existing team and preset picker are used as they are), `storyTeam.ts`'s trial-vs-owned rules (ruling #93), the VN reader internals, `VersusSplash`, `ChapterTitleCard`, `StoryStage`, `stageEffects`, `victoryAtEnemyHpPercent`.
+
+  ### Engine surface touched, minimally
+  One option on `startCustomBattle`: `carryHp` (player HP per character id, clamped to max). Everything else about the wave loop lives in `lib/game/stageRun.ts` as pure functions — survivors, the fallen, turn and ultimate totals, the run summary — so `combat.ts` is untouched by the wave model. **Battle UI's own mobile pass is explicitly out of scope** and gets its own dedicated session (his call, in `docs/ROADMAP.md`).
+
+  ### Bureau Orders had to move with it
+  `chapterCleared {partId, chapterId}` → `stageCleared {chapterId, stageId}` and `chaptersCleared` → `stagesCleared`, with `OrderContext.completedChapters` → `clearedStages`. `lyra-joins` now points at `c1:s5` so step 1 stays completable today; `s2-part-four` still names chapter 4, which doesn't exist yet — an order may name an unadapted chapter and simply stay unmet, which is what keeps his authored intent intact while chapters land one at a time (asserted by test).
+
+  ### Chapter 1 content is provisional
+  Five stages: two canon scene stages (`1-1`, `1-4`), three filler battle stages (`1-2`, `1-3`, `1-5`). Chapter 1 has **no canon fight at all**, so every fight in it is drafted and awaits his approval in the FillerAssist pass. One canon call already made: the mockup's "The Village, Burning" was **dropped** — canon says Duke was away when the raid happened, so `1-2` is a wilderness fight instead and the raid stays untouched. Gems total 70 across the chapter (50 first-clear + 20 missions), on budget against `docs/design/ECONOMY_AUDIT.md`'s tier-1 figure.
+
+  ### Confidence and gaps
+  - **Verified:** `tsc`, `eslint`, `vitest` (1218 passing across 95 files) and a full `next build`, all after the final edit. New pure logic is covered directly by **five** suites: `storySchema` (rejections — numbering, wave/team/farm-table shape, boss-last, mission ids, unknown ids), `stageMissions` (every goal type, plus the clear gate that stops a lost run satisfying `noLosses`), `stageRun` (HP carried, deaths permanent across waves, wipes, summary, HUD bars), `storyRewards` (bundle never rolled, replay pays farm only, missions pay independently, zero rolls dropped), and `storyCatalog` (sequential unlock, one `current` stage, sealed chapters withheld, `stageAfter`, and the Auto-Clear-never-targets-story guard).
+  - **Assumed, not verified:** every visual and interaction claim. Nothing has been rendered — the wave break, the stage rows, the brief's rail and the result screen have never met a browser.
+  - **The bet this design makes** and the one thing tests can't check: that 2–3 waves *feel* like a run rather than a slog. If wave 2 reads as padding, the fix is fewer waves per stage, not more content.
+  - **Known thin:** filler fights in chapter 1 use existing trash kits (`wild_beast`, `road_bandit`, `raider`) because `storyOnly` enemy stat bands are still unassigned (`docs/design/KIT_DESIGN.md:83`) — that blocks new enemy kits from chapter 2 onward.
+  - **Not built from the plan:** the `FillerAssist` skill and `Filler/Drafts.md`, deliberately left until chapter 1's content pass has taught the workflow. `challenge` stages are not in the union at all (his call: don't build yet).
+  - **What I'd check first coming back cold:** open `/story` at 390×693, clear `1-2` (two waves) and watch whether the wave break reads as tension or as a speed bump.
+  - **Re-verified at checkpoint time** (2026-08-18, after these doc edits): `npm run check` green — 1218 tests / 95 files, 3 pre-existing `duel.test.ts` warnings — and `NEXT_DIST_DIR=.next-verify next build` compiled with 48/48 static pages. Two numbers in this section were wrong when first written and were corrected against the repo: it said *eight* v1 test suites were deleted (six were; `storySchema` and `storyRewards` were rewritten in place) and *four* new suites (five). Chapter 1's gem total was checked by summing the JSON: 50 first-clear + 20 mission = 70.
+
+- **RETIRED 2026-08-18 — everything in this section was deleted a day after it shipped.** Tanveer: *"assume our existing story mode doesn't exist at all… its trash for me."* Read it as history and as the reasoning that produced story mode v2 (the section above), not as a description of the game: `SnapCarousel`, `PartSelect`, `ChapterSelect`, `EntryCard`, `RouteBoard`, `lib/game/route.ts`, `activeRoute`, the three orbs, the generated boards, `ROUTE_STEPS_BY_PART` and all twelve `part*.json` are **gone**. Rulings **#94** and **#98–#105** are superseded by **#108**; the ones that survived in substance are named there. **Story mode rebuilt end to end: carousels, a node board, and a results screen (2026-08-17)** — rulings **#98–#105**. Verified after the last edit: `npm run check` green (**1305 tests / 98 files**, same 3 pre-existing eslint warnings in `tests/duel.test.ts`), clean `NEXT_DIST_DIR=.next-verify next build`, `tsconfig.json` churn reverted, `.next-verify` removed. **Not browser-verified** — Tanveer does the visual pass, and this is the largest single batch of unverified UI in the project's history.
 
   ### What the session was
   He opened wanting the story UI/UX overhauled and fed me Dokkan reference screens **section by section**, with the standing instruction *"you don't have to copy everything. you are looking for how UI and layout is optimized in dokkan"* and a target of **9:16 portrait** — which makes this a down-payment on the open `Mobile layout pass` (`docs/ROADMAP.md:67`). Plan approved before any code: `C:\Users\Tanve\.claude\plans\recursive-swinging-noodle.md` (local, not in the repo — copy it here if it needs to outlive his machine).
@@ -2666,16 +2713,17 @@ Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier sta
 
 ## Not Built Yet
 
-- Story **Phase 3** — the bracket part 12 ends on. Not written in the source yet; parts 1–12 are all adapted and `UPCOMING_PARTS` is empty.
+- **Story chapters 2–12** — the twelve webtoon chapters were all adapted under the v1 Part structure and that data was **deleted** on 2026-08-18 with the rebuild. Only **chapter 1** exists in v2 (`data/story/chapter-1.json`); the rest are re-authored one chapter at a time through the FillerAssist pass, against the source beat sheets in `E:\Toll - Web toon`. `UPCOMING_PARTS` is gone — `SOURCE_CHAPTERS_WRITTEN` in `storyCatalog.ts` records that twelve source chapters exist without naming any of them.
+- Story **Phase 3** — the bracket chapter 12 ends on. Not written in the source yet.
 - ~10 additional characters (Tanveer adds when game is in working order)
 - **Mobile layout pass** — the biggest remaining gap in roadmap item 2
 - **Audio assets** — the music *system* shipped 2026-08-09; `public/audio/` is empty until Tanveer supplies the OST (`docs/AUDIO.md`). No SFX system exists and none is planned.
 - ~~FTUE / onboarding~~ **built 2026-08-13** (Bureau Orders + four battle coach marks). Daily loop and analytics remain — the orders evaluator was built general so daily missions are mostly a data change (see `docs/PRODUCT_AUDIT.md`)
 - ~~Deployment~~ — **already live at https://toll-the-game.vercel.app/**, and has been. The Vercel project is linked and every push to `master` auto-builds. These docs said "not started" and I repeated it to Tanveer on 2026-08-13; he corrected it. **A push is a deploy — treat `master` as production.**
 - Effect application in the battle-event stream (Open Issue #22)
-- Story chapter **mission objectives** (3 per chapter paying gems once), **difficulty tiers**, the **node-path stage map**, and **multi-wave stages with persistent HP** — all scoped out of the 2026-08-09 rewards batch, each its own future batch
+- ~~Story chapter **mission objectives**, the **node-path stage map**, **multi-wave stages with persistent HP**~~ — **all three shipped 2026-08-18** in story mode v2, in a different shape than this line imagined: missions are per *stage* (up to 3, seven goal types) rather than three per chapter, the node board was built on 2026-08-17 and then deliberately deleted (ruling #108), and multi-wave persistent HP is the wave loop. Story **difficulty tiers** remain unbuilt and unwanted — story is authored difficulty at base 1x (ruling #87)
 
-Note: "playerStore is a stub" is no longer true — it carries roster, currencies, inventory, per-character progress, stamina, gacha pity, lifetime stats, claimed orders, Auto Clear Tickets and per-difficulty clear records, with migrations at **v8**. *(This line read "v7" until 2026-08-13; the v7 → v8 migration shipped with Auto Clear in `018e9d0` and the note was never updated.)*
+Note: "playerStore is a stub" is no longer true — it carries roster, currencies, inventory, per-character progress, stamina, gacha pity, lifetime stats, claimed orders, Auto Clear Tickets and per-difficulty clear records, with migrations at **v9** (`CURRENT_PLAYER_STATE_VERSION`, verified 2026-08-18). *(This line read "v7" until 2026-08-13 and "v8" until 2026-08-18; v8 shipped with Auto Clear in `018e9d0` and v9 with ult levels in `54ef93b`, and the note lagged both times. `storyStore` is separately at **v3** since the story rebuild.)*
 
 ## Environment
 

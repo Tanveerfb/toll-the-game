@@ -1,0 +1,343 @@
+{
+  "id": "c1",
+  "number": 1,
+  "title": "Rawspent and Ledger",
+  "tagline": "There is no free power.",
+  "coverCharacterId": "duke",
+  "localeId": "village_peaceful",
+  "stages": [
+    {
+      "id": "s1",
+      "number": 1,
+      "name": "The World That Toll Built",
+      "kind": "story",
+      "origin": "canon",
+      "intro": [
+        {
+          "speaker": "Narrator",
+          "backgroundId": "bureau_interior",
+          "origin": "canon",
+          "text": "Six hundred years ago, Toll was discovered in Asia. Life-force energy — generated passively by every living thing. Pain generates more than comfort. Sacrifice more than ease. Death releases everything accumulated in a lifetime, all at once."
+        },
+        {
+          "speaker": "Narrator",
+          "backgroundId": "bureau_interior",
+          "origin": "canon",
+          "text": "Toll can be spent to do impossible things. Move faster than a body allows. Strengthen flesh past its breaking point. Manipulate elements. Reshape matter. Six hundred years of this rewrote the world. But the cost is always paid in kind. There is no free power."
+        },
+        {
+          "speaker": "Narrator",
+          "backgroundId": "bureau_interior",
+          "origin": "canon",
+          "text": "When governments understood what unregulated Toll users meant for public order, the Ledger Bureau was established. Its purpose: certify, track, and licence every Toll user on Earth. A licensed user is called a Ledger. An unlicensed user is called Rawspent. Technically a criminal. Practically — invisible."
+        },
+        {
+          "backgroundId": "village_peaceful",
+          "origin": "canon",
+          "text": "A small rural village. Remote, quiet, self-contained. The kind of place that doesn't appear on important maps."
+        },
+        {
+          "portraitId": "duke",
+          "backgroundId": "village_peaceful",
+          "origin": "canon",
+          "text": "A teenager moves through it with ease. He knows everyone here. Everyone knows him. He leaves for something routine — pack on his back — and turns at the edge of the village to wave. Someone waves back from a doorway."
+        },
+        {
+          "backgroundId": "village_peaceful",
+          "origin": "canon",
+          "text": "He doesn't know it's the last time."
+        }
+      ],
+      "outro": [
+        {
+          "backgroundId": "village_ruins",
+          "origin": "canon",
+          "text": "Days later, he comes back over a familiar hill. The village is wrong. Smoke still rising. Buildings collapsed inward. The specific silence of a place that used to be loud."
+        },
+        {
+          "portraitId": "duke",
+          "backgroundId": "village_ruins",
+          "origin": "canon",
+          "text": "He walks through it. He finds what he finds. Then he stands very still at the edge of the wreckage. Not crying. Not speaking. The moment something gets decided that doesn't get undecided."
+        },
+        {
+          "speaker": "Narrator",
+          "backgroundId": "village_ruins",
+          "origin": "canon",
+          "text": "The raid was ordered. Someone sent people to this village with a purpose. Duke was away when it happened. He was seventeen years old."
+        }
+      ],
+      "waves": [],
+      "team": [],
+      "teamMode": "canon",
+      "missions": [],
+      "rewards": {
+        "firstClear": {
+          "gems": 8,
+          "coin": 1000,
+          "accountXp": 10
+        }
+      },
+      "stamina": 3
+    },
+    {
+      "id": "s2",
+      "number": 2,
+      "name": "The Wilderness Answers",
+      "kind": "battle",
+      "origin": "filler",
+      "intro": [
+        {
+          "backgroundId": "open_road",
+          "origin": "canon",
+          "text": "Duke alone in the wilderness. No teacher. No system. Just terrain and repetition and a body being pushed past where it wants to stop."
+        },
+        {
+          "portraitId": "duke",
+          "backgroundId": "open_road",
+          "origin": "filler",
+          "text": "The wilderness doesn't care that he is grieving. Something has been circling the camp for two nights — patient, and hungry enough to stop being patient."
+        }
+      ],
+      "outro": [
+        {
+          "portraitId": "duke",
+          "backgroundId": "open_road",
+          "origin": "canon",
+          "text": "Past exhaustion, past pain, into something else entirely — his hand strikes and something responds from inside him. Not controlled. Not understood. Just there. Water Toll, raw and unformed, surging through his arm."
+        },
+        {
+          "speaker": "Narrator",
+          "backgroundId": "open_road",
+          "origin": "canon",
+          "text": "Toll awakens when the body spends it without permission. When survival demands more than a person has. Duke didn't unlock it. He wore the lock down."
+        }
+      ],
+      "waves": [
+        { "enemies": [{ "id": "wild_beast" }] },
+        { "enemies": [{ "id": "wild_beast" }, { "id": "wild_beast" }] }
+      ],
+      "team": [{ "id": "duke" }],
+      "teamMode": "canon",
+      "trialLevel": 10,
+      "trialAscension": 1,
+      "missions": [
+        {
+          "id": "m1",
+          "label": "Clear both waves without losing a unit",
+          "goal": { "type": "noLosses" },
+          "reward": { "gems": 3 }
+        },
+        {
+          "id": "m2",
+          "label": "Clear the stage within 10 turns",
+          "goal": { "type": "withinTurns", "turns": 10 },
+          "reward": { "gems": 3 }
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 10,
+          "coin": 1200,
+          "materials": { "training_manual": 2 },
+          "accountXp": 11
+        },
+        "farm": {
+          "coin": { "min": 200, "max": 500 },
+          "materials": { "training_manual": { "min": 0, "max": 1 } }
+        }
+      },
+      "stamina": 5
+    },
+    {
+      "id": "s3",
+      "number": 3,
+      "name": "Nine Years",
+      "kind": "battle",
+      "origin": "filler",
+      "intro": [
+        {
+          "backgroundId": "open_road",
+          "origin": "canon",
+          "text": "Rain, heat, snow — the same movements practiced thousands of times. Falls. Getting up. Bleeding. Continuing. Duke older now. The movements sharper."
+        },
+        {
+          "portraitId": "duke",
+          "backgroundId": "open_road",
+          "origin": "canon",
+          "text": "The shape of a style forming through years of solo repetition — water flowing through the fist, wearing everything down. Fist of Flowing Ruin."
+        },
+        {
+          "backgroundId": "open_road",
+          "origin": "filler",
+          "text": "The wilderness has learned him too. It stopped sending one."
+        }
+      ],
+      "outro": [
+        {
+          "speaker": "Narrator",
+          "backgroundId": "open_road",
+          "origin": "canon",
+          "text": "He trained for nine years. Not to become a fighter. He already was one. He trained because standing still felt like surrender."
+        }
+      ],
+      "waves": [
+        { "enemies": [{ "id": "wild_beast" }, { "id": "wild_beast" }] },
+        { "enemies": [{ "id": "wild_beast", "level": 5 }, { "id": "wild_beast", "level": 5 }] }
+      ],
+      "team": [{ "id": "duke" }],
+      "teamMode": "canon",
+      "trialLevel": 10,
+      "trialAscension": 1,
+      "missions": [
+        {
+          "id": "m3",
+          "label": "Clear both waves",
+          "goal": { "type": "allWaves" },
+          "reward": { "gems": 3 }
+        },
+        {
+          "id": "m4",
+          "label": "Finish a wave with an ultimate",
+          "goal": { "type": "useUltimates", "count": 1 },
+          "reward": { "gems": 3 }
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 10,
+          "coin": 1200,
+          "materials": { "training_manual": 2 },
+          "accountXp": 12
+        },
+        "farm": {
+          "coin": { "min": 300, "max": 700 },
+          "materials": { "training_manual": { "min": 0, "max": 2 } }
+        }
+      },
+      "stamina": 6
+    },
+    {
+      "id": "s4",
+      "number": 4,
+      "name": "The Notice",
+      "kind": "story",
+      "origin": "canon",
+      "intro": [
+        {
+          "backgroundId": "bureau_interior",
+          "origin": "canon",
+          "text": "A small waypoint town — the first settlement he's been near in a while. A public notice board outside a postal building. Bureau announcements, local postings, civic notices."
+        },
+        {
+          "portraitId": "duke",
+          "backgroundId": "bureau_interior",
+          "origin": "canon",
+          "text": "One notice, partially obscured. He peels the corner back. \"THE GRADING — Annual Ledger Certification Examination.\" A location. A date. Open registration. Bureau seal at the bottom."
+        },
+        {
+          "speaker": "Narrator",
+          "backgroundId": "bureau_interior",
+          "origin": "canon",
+          "text": "A Rawspent can't access Bureau records. Can't move through official channels. Can't get close to the kind of people who order things. A Ledger can."
+        }
+      ],
+      "outro": [
+        {
+          "portraitId": "duke",
+          "backgroundId": "bureau_interior",
+          "origin": "canon",
+          "text": "He pulls a worn piece of paper from inside his robe — edges soft from years of handling. Partial names. Locations. Fragments of something he's been building for years. He looks at it, then back at the notice. Refolds it. Puts it back."
+        }
+      ],
+      "waves": [],
+      "team": [],
+      "teamMode": "canon",
+      "missions": [],
+      "rewards": {
+        "firstClear": {
+          "gems": 8,
+          "coin": 1000,
+          "accountXp": 13
+        }
+      },
+      "stamina": 3
+    },
+    {
+      "id": "s5",
+      "number": 5,
+      "name": "Where the Traffic Thins",
+      "kind": "boss",
+      "origin": "filler",
+      "intro": [
+        {
+          "backgroundId": "open_road",
+          "origin": "canon",
+          "text": "Duke back on the road. No ceremony. No dramatic pause. He just walks — unhurried, quietly reading the environment around him."
+        },
+        {
+          "portraitId": "duke",
+          "backgroundId": "open_road",
+          "origin": "filler",
+          "text": "The road narrows where the trees close in. Men wait where the traffic thins, and they have counted him as one man alone."
+        }
+      ],
+      "outro": [
+        {
+          "portraitId": "duke",
+          "backgroundId": "open_road",
+          "origin": "filler",
+          "text": "He leaves them their weapons and takes nothing. He is not owed anything by men on a road. What he is owed is somewhere else, under a seal, behind a licence."
+        },
+        {
+          "speaker": "Narrator",
+          "backgroundId": "open_road",
+          "origin": "canon",
+          "text": "The licence is not the goal. It never was. It's the door."
+        }
+      ],
+      "waves": [
+        { "enemies": [{ "id": "road_bandit" }, { "id": "road_bandit" }] },
+        { "enemies": [{ "id": "road_bandit", "level": 5 }, { "id": "raider" }] },
+        { "enemies": [{ "id": "road_bandit", "level": 12, "ascension": 1 }] }
+      ],
+      "team": [{ "id": "duke" }],
+      "teamMode": "canon",
+      "trialLevel": 10,
+      "trialAscension": 1,
+      "missions": [
+        {
+          "id": "m5",
+          "label": "Clear all three waves without losing a unit",
+          "goal": { "type": "noLosses" },
+          "reward": { "gems": 3 }
+        },
+        {
+          "id": "m6",
+          "label": "Clear the stage within 14 turns",
+          "goal": { "type": "withinTurns", "turns": 14 },
+          "reward": { "gems": 3 }
+        },
+        {
+          "id": "m7",
+          "label": "Use two ultimates across the run",
+          "goal": { "type": "useUltimates", "count": 2 },
+          "reward": { "gems": 2 }
+        }
+      ],
+      "rewards": {
+        "firstClear": {
+          "gems": 14,
+          "coin": 2000,
+          "materials": { "training_manual": 3 },
+          "accountXp": 20
+        },
+        "farm": {
+          "coin": { "min": 500, "max": 1000 },
+          "materials": { "training_manual": { "min": 1, "max": 2 } }
+        }
+      },
+      "stamina": 9
+    }
+  ]
+}

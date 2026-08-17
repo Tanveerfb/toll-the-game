@@ -1,11 +1,11 @@
 [
   {
     "id": "s2-story-five",
-    "title": "Clear five chapters",
+    "title": "Clear ten story stages",
     "hint": "The story keeps paying — first clears hand out gems and manuals.",
     "route": "/story",
     "routeLabel": "Story",
-    "goal": { "type": "chaptersCleared", "count": 5 },
+    "goal": { "type": "stagesCleared", "count": 10 },
     "reward": { "gems": 75, "coin": 5000 },
     "step": 2
   },
@@ -87,11 +87,11 @@
   },
   {
     "id": "s2-part-four",
-    "title": "See Part 4 through to the end",
+    "title": "See Chapter 4 through to the end",
     "hint": "The bureau's hand starts showing around here.",
     "route": "/story",
     "routeLabel": "Story",
-    "goal": { "type": "chapterCleared", "partId": "part4", "chapterId": "p4c3" },
+    "goal": { "type": "stageCleared", "chapterId": "c4", "stageId": "s3" },
     "reward": { "gems": 125, "materials": { "training_manual_advanced": 2 } },
     "step": 2
   },

@@ -29,6 +29,8 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 
 **UI rule: HeroUI was removed 2026-07-06 — do not reintroduce it.** UI primitives live in `components/ui/` (shadcn). Add new ones with `npx shadcn@latest add <component>`.
 
+**Mobile first, desktop second (Tanveer, 2026-08-18).** Most players willing to try the game arrive on a phone, so a phone is the primary target and desktop is the secondary one — not the other way round. Concretely: design canvas **390×844** (9:16 portrait); desktop renders the same column centred at a capped width, never a re-laid-out wide variant; **`dvh`, never `vh`** (Tailwind 4 compiles `screen` to `100vh`, the largest viewport); touch targets **≥44px** with primaries in the thumb-reachable lower third; no affordance that exists only on hover; one vertical scroll per screen, with wide content scrolling inside its own container. **Verify phone width before desktop** — a break at 390px is a blocker, a break at 1440px is a bug. Ruling #107 in `docs/HANDOFF.md`. Battle, gacha, archive and the hub predate this rule and are known debt (`docs/ROADMAP.md`).
+
 ## Folder Structure
 
 ```
@@ -39,6 +41,8 @@ components/
                       typography, shared with mdx-components.tsx)
   game/               Deck, CharacterBrowser, KitDetails, SkillDocument, TeamSelect,
                       PlayerHud, BattleArena (arena shell only)
+  game/story/         Story mode v2 screens: ChapterList, StageList, StageBrief,
+                      WaveBreak, StageResult, StoryBackdrop, StoryStage
   game/battle/        Battle overlays split out of BattleArena: TeamUnitTile,
                       UnitDetailPanel, TeamDetailsList, BattleLogDrawer, EffectsList
   gacha/              BannerScreen, PullReveal, RatesModal, MilestonePicker,
@@ -57,7 +61,7 @@ store/                gameStore.ts (battle + deck), playerStore.ts, storyStore.t
                       settingsStore.ts
 content/news/         MDX patch notes (updates/ + notices/)
 data/characters/      Character kit JSON (source of truth for kits)
-data/story/           Story parts; data/banners/ gacha banners
+data/story/           Story chapters (chapter-N.json); data/banners/ gacha banners
 types/                Shared TypeScript contracts
 tests/                Vitest unit tests (engine, stores, gacha, previews)
 ```
@@ -80,6 +84,8 @@ tests/                Vitest unit tests (engine, stores, gacha, previews)
 ## Design Ownership
 
 Tanveer owns skill names, mechanical effects, damage multipliers, and character-kit JSON decisions. Do not invent or rebalance mechanics unprompted — ask. **He also picks which characters get drafted** — never self-select one.
+
+**Filler story content is allowed since 2026-08-18 (ruling #108), under approval.** Claude may draft filler stages, scenes and NPCs so story mode has enough to play — but **nothing enters the game unapproved**, filler must never contradict or resolve canon (source: `E:\Toll - Web toon`), and **NPC kit numbers stay his**: draft the role, personality and combat concept, then ask. Approved content is recorded in `Filler/Approved_chapter_N.md`, proposals and rejects in `Filler/Drafts.md`, and every filler stage and scene carries `origin: "filler"` in the JSON.
 
 **Before drafting or rebalancing any kit, read `docs/design/KIT_DESIGN.md`.** It carries the stat bands, the wording rules, and the constraints that are easy to get wrong: buffs multiply so magnitudes stay small (self-buff 25/50/75, team-wide 20/30/50), one scaling stat per kit including heals, skill ranks never exceed 3, and inflating a stat silently buffs anything that scales off it.
 

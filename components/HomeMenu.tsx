@@ -16,9 +16,10 @@ import { getGemBanner } from "@/lib/gacha/banners";
 import { LIMITED_MILESTONE_FIRST } from "@/lib/gacha/milestone";
 import { getCurrentStamina } from "@/lib/game/stamina";
 import {
-  chapterKey,
-  getStoryParts,
-  isChapterUnlocked,
+  getStoryChapters,
+  stageKey,
+  stageLabel,
+  isStageUnlocked,
 } from "@/lib/game/storyCatalog";
 import {
   getLastViewedNewsDate,
@@ -62,12 +63,12 @@ function getServerClockSnapshot(): number {
  * inside nested loops defeat React Compiler's memoization preservation, and
  * this walks ~6 chapters.
  */
-function findNextChapter(completed: Record<string, boolean>) {
-  for (const part of getStoryParts()) {
-    for (const chapter of part.chapters) {
-      if (completed[chapterKey(part.id, chapter.id)]) continue;
-      if (!isChapterUnlocked(completed, part.id, chapter.id)) return null;
-      return { part, chapter };
+function findNextStage(cleared: Record<string, boolean>) {
+  for (const chapter of getStoryChapters()) {
+    for (const stage of chapter.stages) {
+      if (cleared[stageKey(chapter.id, stage.id)]) continue;
+      if (!isStageUnlocked(cleared, chapter.id, stage.id)) return null;
+      return { chapter, stage };
     }
   }
   return null;
@@ -157,7 +158,7 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
         : "battle",
   );
 
-  const completed = useStoryStore((s) => s.completed);
+  const cleared = useStoryStore((s) => s.cleared);
   const storyHydrated = useStoryStore((s) => s.hasHydrated);
 
   const playerHydrated = usePlayerStore((s) => s.hasHydrated);
@@ -181,10 +182,10 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
     () => false,
   );
 
-  const nextChapter = findNextChapter(completed);
-  const clearedInPart = nextChapter
-    ? nextChapter.part.chapters.filter(
-        (c) => completed[chapterKey(nextChapter.part.id, c.id)],
+  const nextStage = findNextStage(cleared);
+  const clearedInChapter = nextStage
+    ? nextStage.chapter.stages.filter(
+        (stage) => cleared[stageKey(nextStage.chapter.id, stage.id)],
       ).length
     : 0;
 
@@ -241,16 +242,16 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
               <span className="font-body text-xs uppercase tracking-[0.2em] text-readout-muted">
                 Loading progress…
               </span>
-            ) : nextChapter ? (
+            ) : nextStage ? (
               <>
                 <span className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
-                  Continue · {nextChapter.part.title}
+                  Continue · {nextStage.chapter.title}
                 </span>
                 <span className="font-heading text-2xl leading-tight tracking-[0.04em] text-readout-strong md:text-4xl">
-                  {nextChapter.chapter.title}
+                  {stageLabel(nextStage.chapter, nextStage.stage)} · {nextStage.stage.name}
                 </span>
                 <span className="font-body text-sm text-readout-dim">
-                  {clearedInPart} of {nextChapter.part.chapters.length} chapters
+                  {clearedInChapter} of {nextStage.chapter.stages.length} stages
                   cleared in this part
                 </span>
               </>
@@ -268,7 +269,7 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
               </>
             )}
             <span className="mt-2 flex w-fit items-center gap-1.5 border border-signal bg-signal/10 px-4 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-signal">
-              {nextChapter ? "Resume" : "Story index"}
+              {nextStage ? "Resume" : "Story index"}
               <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.6} />
             </span>
           </span>

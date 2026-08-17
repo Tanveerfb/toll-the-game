@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Story Mode v2 — screen mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* Combat Terminal tokens, copied from styles/globals.css @theme so this file
+     stands alone and still reads as the game. */
+  :root {
+    --void: #06090c;
+    --panel: #0d141b;
+    --panel-raised: #111a23;
+    --inset: #080d12;
+    --gridline: #0e1720;
+    --hairline: #16212b;
+    --edge: #1c2a36;
+    --edge-strong: #31596b;
+    --readout-strong: #eaf2f8;
+    --readout: #cbd8e2;
+    --readout-dim: #8ea6b8;
+    --readout-muted: #5d7285;
+    --signal: #4fd3e8;
+    --signal-dim: #31596b;
+    --el-light: #e8d174;
+    --el-red: #ff5a4e;
+    --el-blue: #37a6ff;
+    --el-green: #35d48b;
+    --el-dark: #a874ff;
+    --heading: "Bangers", "Impact", cursive;
+    --body: "Rajdhani", "Segoe UI", sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--void);
+    color: var(--readout);
+    font-family: var(--body);
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .terminal-grid {
+    background-image:
+      linear-gradient(var(--gridline) 1px, transparent 1px),
+      linear-gradient(90deg, var(--gridline) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  .chamfer {
+    clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  }
+  .chamfer-lg {
+    clip-path: polygon(11px 0, 100% 0, 100% calc(100% - 11px), calc(100% - 11px) 100%, 0 100%, 0 11px);
+  }
+
+  /* ── Page chrome (not part of the game UI) ───────────────────────────── */
+  .sheet { padding: 28px 32px 56px; }
+
+  .sheet-head { border-bottom: 1px solid var(--edge); padding-bottom: 18px; margin-bottom: 8px; }
+  .sheet-head h1 {
+    font-family: var(--heading);
+    font-size: 34px;
+    letter-spacing: 0.06em;
+    color: var(--readout-strong);
+  }
+  .sheet-head p { color: var(--readout-dim); max-width: 88ch; margin-top: 6px; }
+  .sheet-head .rule {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--signal);
+    border: 1px solid var(--signal-dim);
+    padding: 4px 9px;
+  }
+  .tag.warn { color: var(--el-light); border-color: #4a4326; }
+
+  .strip {
+    display: flex;
+    gap: 34px;
+    align-items: flex-start;
+    overflow-x: auto;
+    padding: 28px 0 18px;
+  }
+
+  figure { flex: 0 0 auto; }
+  figcaption {
+    width: 390px;
+    margin-top: 12px;
+    color: var(--readout-dim);
+    font-size: 13.5px;
+    line-height: 1.45;
+  }
+  figcaption b { color: var(--readout-strong); font-weight: 600; }
+  .screen-no {
+    font-family: var(--heading);
+    font-size: 18px;
+    letter-spacing: 0.08em;
+    color: var(--signal);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  /* The device: exactly the 390×844 design canvas, no scaling. */
+  .phone {
+    width: 390px;
+    height: 844px;
+    background: var(--void);
+    border: 1px solid var(--edge);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Game chrome inside the phone ────────────────────────────────────── */
+  .nav {
+    height: 46px;
+    flex: 0 0 auto;
+    border-bottom: 1px solid var(--edge);
+    background: var(--panel);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+  }
+  .nav .back {
+    font-size: 18px;
+    color: var(--readout-dim);
+    width: 26px;
+  }
+  .nav .where {
+    font-family: var(--heading);
+    letter-spacing: 0.07em;
+    font-size: 19px;
+    color: var(--readout-strong);
+  }
+  .nav .spend {
+    margin-left: auto;
+    display: flex;
+    gap: 12px;
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    color: var(--readout-dim);
+  }
+  .nav .spend i { color: var(--signal); font-style: normal; }
+
+  .body-scroll {
+    flex: 1 1 auto;
+    overflow: hidden; /* mockup: one scroll per screen, cropped here */
+    position: relative;
+  }
+
+  .pad { padding: 12px; }
+
+  .eyebrow {
+    font-size: 10.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--readout-muted);
+  }
+
+  /* Chapter cards (screen 1) */
+  .chapter {
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    height: 176px;
+    margin-bottom: 12px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 12px;
+    overflow: hidden;
+  }
+  .chapter .art {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(120% 90% at 78% 18%, rgba(55,166,255,0.30), transparent 62%),
+      linear-gradient(180deg, #12202c 0%, #0b1218 72%);
+  }
+  .chapter .art.ch2 {
+    background:
+      radial-gradient(120% 90% at 74% 20%, rgba(255,90,78,0.26), transparent 62%),
+      linear-gradient(180deg, #1c1418 0%, #0b1218 72%);
+  }
+  .chapter .art.ch3 {
+    background:
+      radial-gradient(120% 90% at 70% 22%, rgba(232,209,116,0.18), transparent 62%),
+      linear-gradient(180deg, #1a1a14 0%, #0b1218 74%);
+  }
+  .chapter .scrim {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 32%, rgba(6,9,12,0.88) 88%);
+  }
+  .chapter .num {
+    position: relative;
+    font-family: var(--heading);
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    color: var(--signal);
+  }
+  .chapter h3 {
+    position: relative;
+    font-family: var(--heading);
+    font-size: 27px;
+    letter-spacing: 0.04em;
+    color: var(--readout-strong);
+    line-height: 1.05;
+  }
+  .chapter p {
+    position: relative;
+    color: var(--readout-dim);
+    font-size: 13px;
+    margin-top: 2px;
+  }
+  .chapter .meters {
+    position: relative;
+    display: flex;
+    gap: 14px;
+    margin-top: 9px;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--readout);
+  }
+  .chapter .meters b { color: var(--readout-strong); font-weight: 600; }
+  .bar {
+    height: 3px;
+    background: var(--inset);
+    border: 1px solid var(--hairline);
+    margin-top: 7px;
+    position: relative;
+  }
+  .bar span { position: absolute; inset: 0 auto 0 0; background: var(--signal); }
+  .chapter .state {
+    position: absolute; top: 10px; right: 10px;
+    font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 3px 8px;
+    border: 1px solid var(--edge-strong);
+    color: var(--signal);
+    background: rgba(6,9,12,0.72);
+  }
+  .chapter .state.done { color: var(--readout-muted); border-color: var(--edge); }
+  .chapter.sealed { height: 84px; justify-content: center; }
+  .chapter.sealed .art { background: linear-gradient(180deg, #0a1016, #080d12); }
+  .chapter.sealed .redact {
+    position: relative;
+    display: flex; align-items: center; gap: 10px;
+    color: var(--readout-muted);
+    font-size: 13px;
+    letter-spacing: 0.14em;
+  }
+  .chapter.sealed .block {
+    height: 11px; width: 148px;
+    background: repeating-linear-gradient(90deg, var(--hairline) 0 8px, transparent 8px 13px);
+  }
+
+  /* Stage rows (screen 2) */
+  .chapter-banner {
+    height: 108px;
+    position: relative;
+    border-bottom: 1px solid var(--edge);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 10px 12px;
+    overflow: hidden;
+  }
+  .chapter-banner .art { position: absolute; inset: 0;
+    background:
+      radial-gradient(110% 100% at 80% 12%, rgba(55,166,255,0.28), transparent 60%),
+      linear-gradient(180deg, #12202c, #090f14);
+  }
+  .chapter-banner .scrim { position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 20%, rgba(6,9,12,0.9)); }
+  .chapter-banner h3 {
+    position: relative; font-family: var(--heading); font-size: 24px;
+    letter-spacing: 0.05em; color: var(--readout-strong);
+  }
+  .chapter-banner .num { position: relative; font-size: 11px; letter-spacing: 0.22em; color: var(--signal); }
+  .chapter-banner .totals { position: relative; margin-top: 4px; font-size: 12px; color: var(--readout-dim); letter-spacing: 0.08em; }
+
+  .stage {
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    border-left: 3px solid var(--edge-strong);
+    padding: 9px 10px;
+    margin-bottom: 9px;
+    min-height: 84px;
+  }
+  .stage.boss { border-left-color: var(--el-red); }
+  .stage.story { border-left-color: var(--el-dark); }
+  .stage.locked { border-left-color: var(--edge); background: #0a1015; }
+  .stage-top { display: flex; align-items: baseline; gap: 8px; }
+  .stage-id {
+    font-family: var(--heading);
+    font-size: 17px;
+    letter-spacing: 0.08em;
+    color: var(--signal);
+  }
+  .stage-name { font-size: 15.5px; font-weight: 600; color: var(--readout-strong); letter-spacing: 0.02em; }
+  .kind {
+    margin-left: auto;
+    font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--readout-dim); border: 1px solid var(--edge); padding: 2px 6px;
+  }
+  .kind.boss { color: var(--el-red); border-color: #4a2622; }
+  .kind.scene { color: var(--el-dark); border-color: #3a2b4d; }
+  .stage-mid {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 7px;
+    font-size: 12.5px; letter-spacing: 0.06em; color: var(--readout-dim);
+  }
+  .waves { display: flex; align-items: center; gap: 4px; color: var(--readout); }
+  .wave-dot {
+    width: 15px; height: 15px; border: 1px solid var(--edge-strong);
+    display: grid; place-items: center; font-size: 9.5px; color: var(--readout);
+  }
+  .wave-dot.boss { border-color: var(--el-red); color: var(--el-red); }
+  .pips { display: flex; gap: 4px; margin-left: auto; }
+  .pip { width: 9px; height: 9px; border: 1px solid var(--edge-strong); }
+  .pip.on { background: var(--el-light); border-color: var(--el-light); }
+  .stage-rewards {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    margin-top: 8px; border-top: 1px solid var(--gridline); padding-top: 7px;
+  }
+  .rw-col .rw-label { font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--readout-muted); }
+  .rw-col .rw-val { font-size: 12.5px; color: var(--readout); margin-top: 2px; }
+  .rw-col .rw-val.claimed { color: var(--readout-muted); text-decoration: line-through; }
+  .gem { color: var(--el-blue); }
+  .coin { color: var(--el-light); }
+  .man { color: var(--el-green); }
+
+  /* Brief (screen 3) */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  .panel > .eyebrow { margin-bottom: 7px; }
+  .wave-rail { display: flex; align-items: center; gap: 6px; }
+  .wave-card {
+    flex: 1 1 0; min-width: 0;
+    background: var(--inset); border: 1px solid var(--edge);
+    padding: 6px;
+  }
+  .wave-card .wl { font-size: 9.5px; letter-spacing: 0.16em; color: var(--readout-muted); }
+  .wave-card.final { border-color: var(--el-red); }
+  .wave-card.final .wl { color: var(--el-red); }
+  .foes { display: flex; gap: 4px; margin-top: 5px; }
+  .foe {
+    width: 30px; height: 30px;
+    background: linear-gradient(160deg, #16222d, #0c1319);
+    border: 1px solid var(--edge-strong);
+    display: grid; place-items: center;
+    font-size: 10px; color: var(--readout-dim);
+  }
+  .foe.big { border-color: var(--el-red); color: var(--el-red); }
+  .arrow { color: var(--readout-muted); font-size: 12px; }
+
+  .mission {
+    display: flex; align-items: center; gap: 9px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--gridline);
+    font-size: 13.5px;
+  }
+  .mission:last-child { border-bottom: 0; }
+  .mbox { width: 16px; height: 16px; border: 1px solid var(--edge-strong); flex: 0 0 auto; }
+  .mbox.done { background: var(--el-light); border-color: var(--el-light); }
+  .mission .pay { margin-left: auto; color: var(--el-blue); font-size: 12.5px; letter-spacing: 0.06em; }
+  .mission.done { color: var(--readout-muted); }
+
+  .team { display: flex; gap: 7px; }
+  .slot {
+    flex: 1 1 0; height: 92px;
+    background: var(--inset); border: 1px solid var(--edge);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 5px; position: relative;
+  }
+  .slot .who { font-size: 11.5px; color: var(--readout-strong); letter-spacing: 0.04em; }
+  .slot .lv { font-size: 10px; color: var(--readout-dim); }
+  .slot.fixed { border-color: var(--edge-strong); }
+  .slot.fixed:after {
+    content: "STORY"; position: absolute; top: 4px; left: 4px;
+    font-size: 8.5px; letter-spacing: 0.14em; color: var(--signal);
+  }
+  .slot.empty { border-style: dashed; align-items: center; justify-content: center; color: var(--readout-muted); }
+  .slot .art-fill { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(55,166,255,0.18), transparent 70%); }
+
+  .cta {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(180deg, transparent, rgba(6,9,12,0.96) 40%);
+    padding: 14px 12px 12px;
+    display: flex; gap: 9px; align-items: center;
+  }
+  .btn {
+    flex: 1 1 auto; height: 48px;
+    background: var(--signal); color: #04222a;
+    border: 0;
+    font-family: var(--heading); font-size: 20px; letter-spacing: 0.09em;
+    display: grid; place-items: center;
+  }
+  .btn.ghost {
+    flex: 0 0 auto; width: 104px;
+    background: transparent; border: 1px solid var(--edge-strong); color: var(--readout);
+    font-size: 15px; letter-spacing: 0.12em; font-family: var(--body); font-weight: 600;
+  }
+  .cost { font-size: 12px; color: var(--readout-dim); letter-spacing: 0.1em; text-align: center; }
+
+  /* Play (screen 4) */
+  .stagebg { position: absolute; inset: 0; }
+  .stagebg.fallback {
+    background:
+      radial-gradient(120% 80% at 50% 8%, rgba(55,166,255,0.16), transparent 60%),
+      linear-gradient(180deg, #101b24 0%, #0a1116 58%, #070c11 100%);
+  }
+  .stagebg .grain { position: absolute; inset: 0; opacity: 0.5;
+    background-image: linear-gradient(var(--gridline) 1px, transparent 1px),
+      linear-gradient(90deg, var(--gridline) 1px, transparent 1px);
+    background-size: 44px 44px; }
+  .bg-note {
+    position: absolute; top: 8px; left: 8px;
+    font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--readout-muted); border: 1px dashed var(--edge); padding: 3px 6px;
+  }
+  .portrait {
+    position: absolute; bottom: 178px; left: 50%; transform: translateX(-50%);
+    width: 210px; height: 340px;
+    background: linear-gradient(180deg, rgba(55,166,255,0.22), rgba(6,9,12,0.05));
+    border-bottom: 1px solid var(--edge-strong);
+    display: grid; place-items: end center;
+    color: var(--readout-muted); font-size: 11px; letter-spacing: 0.14em;
+    padding-bottom: 6px;
+  }
+  .runhud {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(6,9,12,0.82); border: 1px solid var(--edge);
+    padding: 6px 8px; min-width: 132px;
+  }
+  .runhud .wv { font-family: var(--heading); font-size: 15px; letter-spacing: 0.1em; color: var(--el-red); }
+  .runhud .row { display: flex; justify-content: space-between; font-size: 11px; color: var(--readout-dim); margin-top: 3px; }
+  .runhud .hp { height: 3px; background: var(--inset); border: 1px solid var(--hairline); margin-top: 3px; position: relative; }
+  .runhud .hp span { position: absolute; inset: 0 auto 0 0; background: var(--el-green); }
+  .runhud .hp span.low { background: var(--el-red); }
+
+  .plate {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: rgba(8,13,18,0.94);
+    border-top: 1px solid var(--edge-strong);
+    padding: 11px 12px 16px;
+    min-height: 168px;
+  }
+  .plate .speaker {
+    font-family: var(--heading); font-size: 19px; letter-spacing: 0.07em;
+    color: var(--el-blue);
+  }
+  .plate .line { margin-top: 6px; font-size: 16px; line-height: 1.5; color: var(--readout); }
+  .plate .line .dim { color: var(--readout-muted); }
+  .plate .ctrls {
+    display: flex; gap: 8px; align-items: center;
+    margin-top: 11px;
+  }
+  .chip {
+    height: 30px; padding: 0 11px;
+    border: 1px solid var(--edge-strong); color: var(--readout-dim);
+    display: grid; place-items: center; font-size: 12px; letter-spacing: 0.12em;
+  }
+  .chip.on { color: var(--signal); border-color: var(--signal-dim); }
+  .plate .tap { margin-left: auto; color: var(--readout-muted); font-size: 11.5px; letter-spacing: 0.14em; }
+
+  /* Result (screen 5) */
+  .verdict {
+    text-align: center; padding: 18px 12px 10px;
+  }
+  .verdict .word {
+    font-family: var(--heading); font-size: 40px; letter-spacing: 0.08em;
+    color: var(--el-light);
+  }
+  .verdict .sub { color: var(--readout-dim); font-size: 13px; letter-spacing: 0.14em; }
+  .xp { margin: 10px 12px 0; }
+  .xp .row { display: flex; justify-content: space-between; font-size: 12px; color: var(--readout-dim); letter-spacing: 0.08em; }
+  .xp .track { height: 6px; background: var(--inset); border: 1px solid var(--hairline); margin-top: 5px; position: relative; }
+  .xp .track span { position: absolute; inset: 0 auto 0 0; background: var(--signal); }
+  .xp .track i { position: absolute; top: 0; bottom: 0; background: rgba(79,211,232,0.35); font-style: normal; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .rw-panel { background: var(--panel); border: 1px solid var(--edge); padding: 9px; }
+  .rw-panel.first { border-color: var(--el-light); }
+  .rw-panel .hd { font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--readout-muted); }
+  .rw-panel.first .hd { color: var(--el-light); }
+  .rw-line { display: flex; justify-content: space-between; font-size: 13px; margin-top: 6px; color: var(--readout); }
+  .rw-line b { font-weight: 600; color: var(--readout-strong); }
+
+  /* Desktop treatment note */
+  .desktop {
+    margin-top: 34px;
+    border: 1px solid var(--edge);
+    background: var(--panel);
+    padding: 16px;
+  }
+  .desktop h2 { font-family: var(--heading); font-size: 22px; letter-spacing: 0.06em; color: var(--readout-strong); }
+  .desktop p { color: var(--readout-dim); margin-top: 6px; max-width: 100ch; }
+  .desk-demo {
+    margin-top: 14px;
+    height: 210px;
+    border: 1px solid var(--edge);
+    background: var(--inset);
+    display: grid; place-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .desk-demo .col {
+    width: 390px; height: 100%;
+    border-left: 1px solid var(--edge-strong); border-right: 1px solid var(--edge-strong);
+    background: var(--panel);
+    display: grid; place-items: center;
+    color: var(--readout-dim); font-size: 12px; letter-spacing: 0.16em;
+  }
+  .desk-demo .side { position: absolute; top: 12px; font-size: 11px; letter-spacing: 0.16em; color: var(--readout-muted); }
+  .desk-demo .side.l { left: 16px; }
+  .desk-demo .side.r { right: 16px; }
+</style>
+</head>
+<body class="terminal-grid">
+<div class="sheet">
+
+  <header class="sheet-head">
+    <h1>Story Mode v2 — screens</h1>
+    <p>
+      Clean sheet. Chapter → Stage, waves instead of a board, missions per stage, first-clear split from
+      farmable. Every frame below is <b>exactly 390×844</b> — the design canvas, unscaled, so what you see
+      is what a phone gets. Content is real: Chapter 1's beats from <code>Chapter 1.md</code>, with the
+      filler stages marked.
+    </p>
+    <div class="rule">
+      <span class="tag">390 × 844 · mobile first</span>
+      <span class="tag">Combat Terminal palette</span>
+      <span class="tag">Bangers / Rajdhani</span>
+      <span class="tag warn">Filler shown for approval — nothing authored yet</span>
+    </div>
+  </header>
+
+  <div class="strip">
+
+    <!-- ═══════════════ 1. CHAPTER SELECT ═══════════════ -->
+    <figure>
+      <div class="phone">
+        <div class="nav">
+          <span class="back">‹</span>
+          <span class="where">STORY</span>
+          <span class="spend"><span>STA <i>96</i>/120</span></span>
+        </div>
+        <div class="body-scroll">
+          <div class="pad">
+            <div class="eyebrow" style="margin-bottom:9px">ARC ONE — THE GRADING · 2 / 12 CHAPTERS</div>
+
+            <div class="chapter chamfer">
+              <div class="art ch2"></div><div class="scrim"></div>
+              <span class="state">IN PROGRESS</span>
+              <span class="num">CHAPTER 2</span>
+              <h3>Lyra</h3>
+              <p>Mistaken for a bandit on the jungle road.</p>
+              <div class="meters">
+                <span>Stages <b>1</b>/5</span>
+                <span>Missions <b>2</b>/11</span>
+              </div>
+              <div class="bar"><span style="width:20%"></span></div>
+            </div>
+
+            <div class="chapter chamfer">
+              <div class="art"></div><div class="scrim"></div>
+              <span class="state done">COMPLETE</span>
+              <span class="num">CHAPTER 1</span>
+              <h3>Rawspent and Ledger</h3>
+              <p>There is no free power.</p>
+              <div class="meters">
+                <span>Stages <b>5</b>/5</span>
+                <span>Missions <b>9</b>/13</span>
+              </div>
+              <div class="bar"><span style="width:100%"></span></div>
+            </div>
+
+            <div class="chapter sealed chamfer">
+              <div class="art"></div>
+              <div class="redact">
+                <span>CHAPTER 3</span>
+                <span class="block"></span>
+                <span style="margin-left:auto">SEALED</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="screen-no">1 — CHAPTER SELECT</span>
+        Newest-first, so the chapter you're on lands under your thumb with no scroll restoration.
+        Cover art is the chapter's character plate; the gradient is the fallback until ComfyUI lands one.
+        A cleared chapter keeps its <b>mission fraction</b> visible — that's the completionist's reason to
+        come back, and the only thing that stops a finished chapter reading as dead weight.
+        <b>Chapter 3 is withheld, not merely dimmed</b> — its title is a spoiler.
+      </figcaption>
+    </figure>
+
+    <!-- ═══════════════ 2. STAGE LIST ═══════════════ -->
+    <figure>
+      <div class="phone">
+        <div class="nav">
+          <span class="back">‹</span>
+          <span class="where">CHAPTER 1</span>
+          <span class="spend"><span>STA <i>96</i>/120</span></span>
+        </div>
+        <div class="body-scroll">
+          <div class="chapter-banner">
+            <div class="art"></div><div class="scrim"></div>
+            <span class="num">CHAPTER 1</span>
+            <h3>Rawspent and Ledger</h3>
+            <div class="totals">5 STAGES · 13 MISSIONS · 9 CLAIMED</div>
+          </div>
+          <div class="pad">
+
+            <div class="stage story chamfer">
+              <div class="stage-top">
+                <span class="stage-id">1-1</span>
+                <span class="stage-name">The World That Toll Built</span>
+                <span class="kind scene">SCENE</span>
+              </div>
+              <div class="stage-mid">
+                <span>No battle</span>
+                <span>·</span>
+                <span>STA 3</span>
+                <span class="pips"><i class="pip on"></i></span>
+              </div>
+              <div class="stage-rewards">
+                <div class="rw-col"><div class="rw-label">First clear</div>
+                  <div class="rw-val claimed"><span class="gem">15 gems</span> · 10 XP</div></div>
+                <div class="rw-col"><div class="rw-label">Farm</div>
+                  <div class="rw-val" style="color:var(--readout-muted)">—</div></div>
+              </div>
+            </div>
+
+            <div class="stage chamfer">
+              <div class="stage-top">
+                <span class="stage-id">1-2</span>
+                <span class="stage-name">The Wilderness Answers</span>
+                <span class="kind">BATTLE</span>
+              </div>
+              <div class="stage-mid">
+                <span class="waves">
+                  <i class="wave-dot">1</i><span class="arrow">›</span><i class="wave-dot">2</i>
+                </span>
+                <span>·</span>
+                <span>STA 5</span>
+                <span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip"></i></span>
+              </div>
+              <div class="stage-rewards">
+                <div class="rw-col"><div class="rw-label">First clear</div>
+                  <div class="rw-val claimed"><span class="gem">15 gems</span> · 2 manuals</div></div>
+                <div class="rw-col"><div class="rw-label">Farm</div>
+                  <div class="rw-val"><span class="coin">300–800</span> · <span class="man">0–2</span></div></div>
+              </div>
+            </div>
+
+            <div class="stage chamfer">
+              <div class="stage-top">
+                <span class="stage-id">1-3</span>
+                <span class="stage-name">Nine Years</span>
+                <span class="kind">BATTLE</span>
+              </div>
+              <div class="stage-mid">
+                <span class="waves">
+                  <i class="wave-dot">1</i><span class="arrow">›</span><i class="wave-dot">2</i><span class="arrow">›</span><i class="wave-dot">2</i>
+                </span>
+                <span>·</span>
+                <span>STA 8</span>
+                <span class="pips"><i class="pip on"></i><i class="pip"></i><i class="pip"></i></span>
+              </div>
+              <div class="stage-rewards">
+                <div class="rw-col"><div class="rw-label">First clear</div>
+                  <div class="rw-val claimed"><span class="gem">15 gems</span> · 3 manuals</div></div>
+                <div class="rw-col"><div class="rw-label">Farm</div>
+                  <div class="rw-val"><span class="coin">500–1,200</span> · <span class="man">1–2</span></div></div>
+              </div>
+            </div>
+
+            <div class="stage chamfer">
+              <div class="stage-top">
+                <span class="stage-id">1-4</span>
+                <span class="stage-name">The Notice</span>
+                <span class="kind scene">SCENE</span>
+              </div>
+              <div class="stage-mid">
+                <span>No battle</span><span>·</span><span>STA 3</span>
+                <span class="pips"><i class="pip on"></i></span>
+              </div>
+              <div class="stage-rewards">
+                <div class="rw-col"><div class="rw-label">First clear</div>
+                  <div class="rw-val claimed"><span class="gem">10 gems</span> · 12 XP</div></div>
+                <div class="rw-col"><div class="rw-label">Farm</div>
+                  <div class="rw-val" style="color:var(--readout-muted)">—</div></div>
+              </div>
+            </div>
+
+            <div class="stage boss chamfer">
+              <div class="stage-top">
+                <span class="stage-id">1-5</span>
+                <span class="stage-name">Where the Traffic Thins</span>
+                <span class="kind boss">BOSS</span>
+              </div>
+              <div class="stage-mid">
+                <span class="waves">
+                  <i class="wave-dot">2</i><span class="arrow">›</span><i class="wave-dot">2</i><span class="arrow">›</span><i class="wave-dot boss">1</i>
+                </span>
+                <span>·</span>
+                <span>STA 12</span>
+                <span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i></span>
+              </div>
+              <div class="stage-rewards">
+                <div class="rw-col"><div class="rw-label">First clear</div>
+                  <div class="rw-val claimed"><span class="gem">25 gems</span> · 4 manuals</div></div>
+                <div class="rw-col"><div class="rw-label">Farm</div>
+                  <div class="rw-val"><span class="coin">800–1,800</span> · <span class="man">1–3</span></div></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="screen-no">2 — STAGE LIST</span>
+        The farming surface: <b>every stage is tapped directly</b>, no walk to reach one. A row answers the
+        three questions a returning player has — what does it cost, what have I not claimed, what does it
+        still pay. Left border and the kind chip carry the type (violet scene, red boss).
+        <b>Struck-through first-clear</b> means banked; the farm column is what a replay actually pays.
+        Mission pips sit where a thumb can't hide them. Stages <b>1-2</b>, <b>1-3</b> and <b>1-5</b> are the
+        filler ones — Chapter 1 has no canon fight at all. The village raid is deliberately
+        <b>not</b> one of them: canon says Duke was away when it happened.
+      </figcaption>
+    </figure>
+
+    <!-- ═══════════════ 3. STAGE BRIEF ═══════════════ -->
+    <figure>
+      <div class="phone">
+        <div class="nav">
+          <span class="back">‹</span>
+          <span class="where">1-5 · BOSS</span>
+          <span class="spend"><span>STA <i>96</i>/120</span></span>
+        </div>
+        <div class="body-scroll">
+          <div class="pad">
+
+            <div class="panel chamfer">
+              <div class="eyebrow">OPPOSITION · 3 WAVES · HP CARRIES OVER</div>
+              <div class="wave-rail">
+                <div class="wave-card">
+                  <div class="wl">WAVE 1</div>
+                  <div class="foes"><span class="foe">BND</span><span class="foe">BND</span></div>
+                </div>
+                <span class="arrow">›</span>
+                <div class="wave-card">
+                  <div class="wl">WAVE 2</div>
+                  <div class="foes"><span class="foe">BND</span><span class="foe">RDR</span></div>
+                </div>
+                <span class="arrow">›</span>
+                <div class="wave-card final">
+                  <div class="wl">WAVE 3</div>
+                  <div class="foes"><span class="foe big">BOSS</span></div>
+                </div>
+              </div>
+              <div style="margin-top:8px;font-size:12px;color:var(--readout-dim);line-height:1.4">
+                No healing between waves. Fallen units stay down. A wipe restarts the stage and charges again.
+              </div>
+            </div>
+
+            <div class="panel chamfer">
+              <div class="eyebrow">MISSIONS · OPTIONAL · ONE-TIME</div>
+              <div class="mission done">
+                <span class="mbox done"></span>
+                <span>Clear the stage</span>
+                <span class="pay">+10 gems</span>
+              </div>
+              <div class="mission">
+                <span class="mbox"></span>
+                <span>Reach wave 3 with 4 units alive</span>
+                <span class="pay">+15 gems</span>
+              </div>
+              <div class="mission">
+                <span class="mbox"></span>
+                <span>Clear within 12 turns</span>
+                <span class="pay">+15 gems</span>
+              </div>
+            </div>
+
+            <div class="panel chamfer">
+              <div class="eyebrow">TEAM · STORY LEADS FIXED</div>
+              <div class="team">
+                <div class="slot fixed">
+                  <div class="art-fill"></div>
+                  <span class="who">Duke</span><span class="lv">Lv20 · asc1 · trial</span>
+                </div>
+                <div class="slot">
+                  <div class="art-fill"></div>
+                  <span class="who">Lyra</span><span class="lv">Lv14 · asc1</span>
+                </div>
+                <div class="slot">
+                  <div class="art-fill"></div>
+                  <span class="who">Siddiq</span><span class="lv">Lv9 · asc0</span>
+                </div>
+                <div class="slot empty">+ SUB</div>
+              </div>
+              <div style="margin-top:8px;font-size:12px;color:var(--readout-dim)">
+                You own Duke at Lv8 — the story's Lv20 copy is stronger, so it's fielded.
+                <span style="color:var(--signal)">Use mine instead</span>
+              </div>
+            </div>
+
+            <div style="height:96px"></div>
+          </div>
+          <div class="cta">
+            <div style="flex:1 1 auto">
+              <div class="btn chamfer">BEGIN</div>
+              <div class="cost" style="margin-top:5px">COSTS 12 STAMINA · EVERY ATTEMPT</div>
+            </div>
+            <div class="btn ghost chamfer" style="height:48px">SKIP<br>SCENES</div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="screen-no">3 — STAGE BRIEF</span>
+        The wave rail is the whole pitch for the redesign: three fights, <b>one HP pool</b>, no heal
+        between. That's what makes team-building the decision the board pretended to be, and it's what
+        gives DR, heals, cleanses and the sub slot a job. Missions state their pay before you commit.
+        The trial-vs-owned line is your ruling #93 made visible — the game says which copy it's fielding
+        and why, with one tap to override.
+      </figcaption>
+    </figure>
+
+    <!-- ═══════════════ 4. PLAY / SCENE READER ═══════════════ -->
+    <figure>
+      <div class="phone">
+        <div class="stagebg fallback"><div class="grain"></div></div>
+        <span class="bg-note">BG: village_ruins — fallback, plate queued</span>
+
+        <div class="runhud">
+          <div class="wv">WAVE 2 / 3</div>
+          <div class="row"><span>Duke</span><span>68%</span></div>
+          <div class="hp"><span style="width:68%"></span></div>
+          <div class="row"><span>Lyra</span><span>31%</span></div>
+          <div class="hp"><span class="low" style="width:31%"></span></div>
+          <div class="row"><span>Siddiq</span><span>DOWN</span></div>
+          <div class="hp"><span style="width:0%"></span></div>
+        </div>
+
+        <div class="portrait">DUKE — PORTRAIT</div>
+
+        <div class="plate">
+          <div class="speaker">DUKE</div>
+          <div class="line">
+            They came for a village that isn't on any map.
+            <span class="dim">Someone paid for that.</span>
+          </div>
+          <div class="ctrls">
+            <span class="chip on">AUTO</span>
+            <span class="chip">HISTORY</span>
+            <span class="chip">SKIP</span>
+            <span class="tap">TAP ANYWHERE ›</span>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="screen-no">4 — PLAY</span>
+        The reader gains two things it never had. A <b>background slot</b> — the dashed label is the
+        fallback state, and the plate drops in from ComfyUI with no re-edit — and a <b>run HUD</b>, because
+        with waves the player must see what the last fight cost them before the next scene sends them into
+        another. Portrait, word-reveal, AUTO/HISTORY and the tap-anywhere contract are unchanged; those were
+        already right. Battle itself takes over the frame; this HUD is what the scene beats between waves
+        show.
+      </figcaption>
+    </figure>
+
+    <!-- ═══════════════ 5. STAGE RESULT ═══════════════ -->
+    <figure>
+      <div class="phone">
+        <div class="nav">
+          <span class="back">‹</span>
+          <span class="where">1-5 CLEARED</span>
+          <span class="spend"><span>STA <i>84</i>/120</span></span>
+        </div>
+        <div class="body-scroll">
+          <div class="verdict">
+            <div class="word">STAGE CLEAR</div>
+            <div class="sub">3 / 3 WAVES · 11 TURNS · 1 UNIT LOST</div>
+          </div>
+
+          <div class="xp">
+            <div class="row"><span>ACCOUNT RANK 7</span><span>+38 XP</span></div>
+            <div class="track"><span style="width:52%"></span><i style="left:52%;width:14%"></i></div>
+          </div>
+
+          <div class="pad">
+            <div class="panel chamfer" style="margin-top:2px">
+              <div class="eyebrow">MISSIONS</div>
+              <div class="mission done">
+                <span class="mbox done"></span><span>Clear the stage</span>
+                <span class="pay" style="color:var(--readout-muted)">CLAIMED</span>
+              </div>
+              <div class="mission done">
+                <span class="mbox done"></span><span>Clear within 12 turns</span>
+                <span class="pay">+15 gems</span>
+              </div>
+              <div class="mission">
+                <span class="mbox"></span><span>Reach wave 3 with 4 units alive</span>
+                <span class="pay" style="color:var(--readout-muted)">STILL OPEN</span>
+              </div>
+            </div>
+
+            <div class="grid2">
+              <div class="rw-panel first chamfer">
+                <div class="hd">First clear · banked</div>
+                <div class="rw-line"><span>Gems</span><b>—</b></div>
+                <div class="rw-line" style="color:var(--readout-muted);font-size:12px">
+                  Claimed on your first run
+                </div>
+              </div>
+              <div class="rw-panel chamfer">
+                <div class="hd">Farmable</div>
+                <div class="rw-line"><span>Coin</span><b>1,240</b></div>
+                <div class="rw-line"><span>Training Manual</span><b>×2</b></div>
+              </div>
+            </div>
+
+            <div style="height:96px"></div>
+          </div>
+
+          <div class="cta">
+            <div class="btn chamfer">NEXT: 2-1</div>
+            <div class="btn ghost chamfer">AGAIN</div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="screen-no">5 — STAGE RESULT</span>
+        Reads top to bottom as consequence: what the run cost, what it moved, what it paid.
+        <b>Missions tick one at a time</b>, and an unmet one says <b>STILL OPEN</b> rather than failed —
+        it stays claimable forever, so a stage never becomes unwinnable content.
+        First-clear and farmable are two columns because they are two different promises; the banked column
+        stays visible rather than vanishing, which is how a player learns the rule without being told it.
+        <b>NEXT</b> names the actual next stage, and it only appears on a first clear.
+      </figcaption>
+    </figure>
+
+  </div>
+
+  <section class="desktop chamfer-lg">
+    <h2>Desktop treatment</h2>
+    <p>
+      Desktop is the <b>same 390-wide column</b>, centred, with the void grid and chapter art bleeding
+      out around it — not a re-laid-out wide variant and not a phone layout stretched to 1440. Nothing
+      moves position between the two, so there is one layout to reason about and one to fix. The only
+      desktop-specific additions are keyboard paging on lists and a wider art bleed.
+    </p>
+    <div class="desk-demo">
+      <span class="side l">ART BLEED · CHAPTER PLATE</span>
+      <div class="col">SAME 390 COLUMN</div>
+      <span class="side r">ART BLEED · CHAPTER PLATE</span>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

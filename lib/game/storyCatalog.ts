@@ -1,316 +1,259 @@
-import part1 from "@/data/story/part1.json";
-import part2 from "@/data/story/part2.json";
-import part3 from "@/data/story/part3.json";
-import part4 from "@/data/story/part4.json";
-import part5 from "@/data/story/part5.json";
-import part6 from "@/data/story/part6.json";
-import part7 from "@/data/story/part7.json";
-import part8 from "@/data/story/part8.json";
-import part9 from "@/data/story/part9.json";
-import part10 from "@/data/story/part10.json";
-import part11 from "@/data/story/part11.json";
-import part12 from "@/data/story/part12.json";
-import { validateStoryParts } from "@/lib/game/storySchema";
-import type { StoryChapter, StoryPart } from "@/types/story";
-
-// Fail loudly at load time on malformed story JSON or battles that
-// reference characters missing from the catalog — same policy as kits.
-const storyParts: StoryPart[] = validateStoryParts([
-  part1,
-  part2,
-  part3,
-  part4,
-  part5,
-  part6,
-  part7,
-  part8,
-  part9,
-  part10,
-  part11,
-  part12,
-]).sort((a, b) => a.order - b.order);
+import chapter1 from "@/data/story/chapter-1.json";
+import { missionProgress } from "@/lib/game/stageMissions";
+import { validateStoryChapters } from "@/lib/game/storySchema";
+import type { StoryChapter, StoryStage } from "@/types/story";
 
 /**
- * Source chapters not yet adapted — shown as locked banners in the UI.
+ * The story catalog — **Chapter → Stage** (story mode v2, 2026-08-18).
  *
- * Empty as of 2026-08-12: all twelve written webtoon chapters are adapted.
- * Battles exist only where the source has a fight — Tanveer ruled against
- * inventing any — so chapters 3, 4, 6, 11 and 12 are scene-only, which the
- * engine supports and which pays first-clear rewards like any other chapter.
+ * Chapters are authored one at a time, each 1:1 with a webtoon chapter in
+ * `E:\Toll - Web toon`. Only the chapters that exist here are in the game; the
+ * arc's remaining chapters are not advertised as empty shells, because a locked
+ * banner still leaks a title and a title is a spoiler.
  *
- * Phase 3 (the bracket part 12 ends on) isn't written in the source yet, so
- * this stays empty rather than advertising a part that has nothing behind it.
+ * Everything in this file is pure so the visibility and unlock rules stay
+ * unit-testable and the screens stay presentational.
  */
-export const UPCOMING_PARTS: ReadonlyArray<{ order: number; title: string }> =
-  [];
 
-export function getStoryParts(): StoryPart[] {
-  return storyParts;
+const storyChapters: StoryChapter[] = validateStoryChapters([chapter1]).sort(
+  (a, b) => a.number - b.number,
+);
+
+/** Chapters written in the source but not yet adapted — how many, not which.
+ *  Twelve beat sheets exist; the rest of Arc One caps at 24. */
+export const SOURCE_CHAPTERS_WRITTEN = 12;
+
+export function getStoryChapters(): StoryChapter[] {
+  return storyChapters;
 }
 
-export function getStoryPart(partId: string): StoryPart | undefined {
-  return storyParts.find((part) => part.id === partId);
+export function getStoryChapter(chapterId: string): StoryChapter | undefined {
+  return storyChapters.find((chapter) => chapter.id === chapterId);
 }
 
-export function getStoryChapter(
-  partId: string,
+export function getStoryStage(
   chapterId: string,
-): StoryChapter | undefined {
-  return getStoryPart(partId)?.chapters.find(
-    (chapter) => chapter.id === chapterId,
-  );
+  stageId: string,
+): StoryStage | undefined {
+  return getStoryChapter(chapterId)?.stages.find((stage) => stage.id === stageId);
 }
 
-/** Progress key for one chapter — the shape stored in completed maps */
-export function chapterKey(partId: string, chapterId: string): string {
-  return `${partId}:${chapterId}`;
+/** Progress key for one stage — the shape stored in cleared maps. */
+export function stageKey(chapterId: string, stageId: string): string {
+  return `${chapterId}:${stageId}`;
+}
+
+/** `1-3` — what the player calls a stage, and what the UI labels it. */
+export function stageLabel(chapter: StoryChapter, stage: StoryStage): string {
+  return `${chapter.number}-${stage.number}`;
 }
 
 /**
- * Sequential unlock: the very first chapter is always open; every other
- * chapter opens when its predecessor is complete (the last chapter of the
- * previous part for a part's first chapter).
+ * Sequential unlock: the first stage of the first chapter is always open; every
+ * other stage opens when its predecessor is cleared, and a chapter's first stage
+ * opens when the previous chapter's last stage is cleared.
  */
-export function isChapterUnlocked(
-  completed: Record<string, boolean>,
-  partId: string,
+export function isStageUnlocked(
+  cleared: Record<string, boolean>,
   chapterId: string,
+  stageId: string,
 ): boolean {
-  const partIndex = storyParts.findIndex((part) => part.id === partId);
-  if (partIndex === -1) return false;
-  const part = storyParts[partIndex];
-  const chapterIndex = part.chapters.findIndex(
+  const chapterIndex = storyChapters.findIndex(
     (chapter) => chapter.id === chapterId,
   );
   if (chapterIndex === -1) return false;
+  const chapter = storyChapters[chapterIndex];
+  const stageIndex = chapter.stages.findIndex((stage) => stage.id === stageId);
+  if (stageIndex === -1) return false;
 
-  if (chapterIndex > 0) {
-    const previous = part.chapters[chapterIndex - 1];
-    return completed[chapterKey(partId, previous.id)] === true;
+  if (stageIndex > 0) {
+    const previous = chapter.stages[stageIndex - 1];
+    return cleared[stageKey(chapterId, previous.id)] === true;
   }
-  if (partIndex === 0) return true;
+  if (chapterIndex === 0) return true;
 
-  const previousPart = storyParts[partIndex - 1];
-  const lastChapter = previousPart.chapters[previousPart.chapters.length - 1];
-  return completed[chapterKey(previousPart.id, lastChapter.id)] === true;
+  const previousChapter = storyChapters[chapterIndex - 1];
+  const last = previousChapter.stages[previousChapter.stages.length - 1];
+  return cleared[stageKey(previousChapter.id, last.id)] === true;
 }
 
-/** A part is open once its first chapter is */
-export function isPartUnlocked(
-  completed: Record<string, boolean>,
-  partId: string,
+/** A chapter is open once its first stage is. */
+export function isChapterUnlocked(
+  cleared: Record<string, boolean>,
+  chapterId: string,
 ): boolean {
-  const part = getStoryPart(partId);
-  if (!part) return false;
-  return isChapterUnlocked(completed, partId, part.chapters[0].id);
+  const chapter = getStoryChapter(chapterId);
+  if (!chapter) return false;
+  return isStageUnlocked(cleared, chapterId, chapter.stages[0].id);
 }
 
 /**
- * What the index is allowed to show about a chapter.
+ * What the stage list may show about a stage.
  *
- * `sealed` rows render redacted — the row and its position survive, the title
- * and enemies don't. Chapter titles are themselves spoilers ("Nine Years",
- * "The Notice"), which is why a locked chapter used to sit in the list fully
- * legible and merely dimmed (Tanveer, 2026-08-11).
- *
- * Sequential unlock means at most one chapter is ever `current`: the first
- * unlocked chapter you haven't cleared.
+ * Sequential unlock means at most one stage is ever `current`: the first
+ * unlocked stage you haven't cleared. A `sealed` row keeps its number and hides
+ * its name — stage names are themselves spoilers ("Nine Years", "The Notice").
  */
-export type ChapterState = "cleared" | "current" | "sealed";
+export type StageState = "cleared" | "current" | "sealed";
 
-export function getChapterState(
-  completed: Record<string, boolean>,
-  partId: string,
+export function getStageState(
+  cleared: Record<string, boolean>,
   chapterId: string,
-): ChapterState {
-  if (completed[chapterKey(partId, chapterId)] === true) return "cleared";
-  return isChapterUnlocked(completed, partId, chapterId) ? "current" : "sealed";
+  stageId: string,
+): StageState {
+  if (cleared[stageKey(chapterId, stageId)] === true) return "cleared";
+  return isStageUnlocked(cleared, chapterId, stageId) ? "current" : "sealed";
+}
+
+export interface StoryIndexStage {
+  id: string;
+  /** 1-based position within its chapter — kept on sealed rows, which is the
+   *  whole point of hiding the name rather than removing the row. */
+  number: number;
+  label: string;
+  name: string;
+  kind: StoryStage["kind"];
+  state: StageState;
+  stamina: number;
+  /** Enemy ids per wave, front to back — what the row's wave rail renders. */
+  waves: string[][];
+  missionsClaimed: number;
+  missionsTotal: number;
 }
 
 export interface StoryIndexChapter {
   id: string;
-  /** 1-based position within its part — kept on sealed rows, which is the
-   *  whole point of redacting rather than removing them. */
   number: number;
-  title: string;
-  state: ChapterState;
-  enemyIds: string[];
-  replayStamina: number;
-}
-
-export interface StoryIndexPart {
-  id: string;
-  order: number;
   title: string;
   tagline: string;
   coverCharacterId: string;
-  /** Sealed parts show their number and nothing else. */
+  /** Withheld from the list entirely when true — see `visibleChapters`. */
   sealed: boolean;
-  clearedCount: number;
-  chapters: StoryIndexChapter[];
+  clearedStages: number;
+  totalStages: number;
+  missionsClaimed: number;
+  missionsTotal: number;
+  stages: StoryIndexStage[];
 }
 
 /**
- * The whole index in one pass: every part, every chapter, each tagged with
- * what may be shown. Pure, so the visibility rules are unit-testable and the
- * component stays presentational.
+ * The whole index in one pass: every chapter, every stage, each tagged with what
+ * may be shown and how much of it is banked.
+ *
+ * Mission counts ride along because a **cleared** chapter still needs a reason to
+ * exist on the screen, and an unclaimed mission is that reason.
  */
 export function buildStoryIndex(
-  completed: Record<string, boolean>,
-): StoryIndexPart[] {
-  return storyParts.map((part) => {
-    const chapters: StoryIndexChapter[] = part.chapters.map(
-      (chapter, index) => ({
-        id: chapter.id,
-        number: index + 1,
-        title: chapter.title,
-        state: getChapterState(completed, part.id, chapter.id),
-        enemyIds: chapter.battle?.enemyTeam.map((unit) => unit.id) ?? [],
-        replayStamina: chapter.rewards.replayStamina,
-      }),
-    );
+  cleared: Record<string, boolean>,
+  claimedMissions: Record<string, boolean> = {},
+): StoryIndexChapter[] {
+  return storyChapters.map((chapter) => {
+    const stages: StoryIndexStage[] = chapter.stages.map((stage) => {
+      const missions = missionProgress([stage], chapter.id, claimedMissions);
+      return {
+        id: stage.id,
+        number: stage.number,
+        label: stageLabel(chapter, stage),
+        name: stage.name,
+        kind: stage.kind,
+        state: getStageState(cleared, chapter.id, stage.id),
+        stamina: stage.stamina,
+        waves: stage.waves.map((wave) => wave.enemies.map((unit) => unit.id)),
+        missionsClaimed: missions.claimed,
+        missionsTotal: missions.total,
+      };
+    });
+    const missions = missionProgress(chapter.stages, chapter.id, claimedMissions);
     return {
-      id: part.id,
-      order: part.order,
-      title: part.title,
-      tagline: part.tagline,
-      coverCharacterId: part.coverCharacterId,
-      sealed: !isPartUnlocked(completed, part.id),
-      clearedCount: chapters.filter((c) => c.state === "cleared").length,
-      chapters,
+      id: chapter.id,
+      number: chapter.number,
+      title: chapter.title,
+      tagline: chapter.tagline,
+      coverCharacterId: chapter.coverCharacterId,
+      sealed: !isChapterUnlocked(cleared, chapter.id),
+      clearedStages: stages.filter((stage) => stage.state === "cleared").length,
+      totalStages: stages.length,
+      missionsClaimed: missions.claimed,
+      missionsTotal: missions.total,
+      stages,
     };
   });
 }
 
 /**
- * The parts the player may see, newest first.
+ * The chapters the player may see, newest first.
  *
- * A part appears only once the previous part is **complete** (Tanveer,
- * 2026-08-17), which is already what `isPartUnlocked` computes — it asks whether
- * the part's first chapter is unlocked, and that requires the previous part's
- * *last* chapter cleared. So the rule is a filter, not new arithmetic.
+ * A chapter appears only once the previous one is **complete** (ruling #99),
+ * which is already what `isChapterUnlocked` computes. Sealed chapters are
+ * **withheld, not redacted**: a chapter card renders a real title, tagline and
+ * cover, and all three are spoilers, so the list itself has to be the boundary.
  *
- * Dropping sealed parts entirely is stronger than redacting them. A
- * `StoryIndexPart` carries the real `title`, `tagline` and `coverCharacterId`
- * even when sealed, and all three are spoilers — part 9's cover is `molvarr`.
- * The part carousel renders one full banner per entry, so anything in this list
- * is revealed by construction, which makes the list itself the boundary.
- *
- * Newest-first because the carousel scrolls down into the past: the part you're
- * on is the last one unlocked, so it lands on top and the screen opens there
- * with no scroll restoration. A fresh account sees exactly one entry.
+ * Newest-first because the list scrolls down into the past — the chapter you're
+ * on lands on top, under the thumb, with no scroll restoration to get wrong.
  */
-export function visibleParts(
-  completed: Record<string, boolean>,
-): StoryIndexPart[] {
-  return buildStoryIndex(completed)
-    .filter((part) => !part.sealed)
+export function visibleChapters(
+  cleared: Record<string, boolean>,
+  claimedMissions: Record<string, boolean> = {},
+): StoryIndexChapter[] {
+  return buildStoryIndex(cleared, claimedMissions)
+    .filter((chapter) => !chapter.sealed)
     .reverse();
 }
 
 /**
- * The index reads newest-first: the part you're on leads, finished parts
- * collapse beneath it, and everything unreachable becomes a single line
- * (Tanveer, 2026-08-11). Splitting the parts here rather than in the component
- * keeps "which part leads" a testable question.
+ * The single stage the player is up to, or null on a fully cleared catalog.
  *
- * `lead` is the part holding the one `current` chapter. When the whole arc is
- * cleared there is no current chapter, so the last part leads and `current` is
- * null — the index then shows every part as finished rather than rendering an
- * empty lead.
+ * Used two ways: the chapter list opens on its chapter, and the result screen's
+ * `NEXT` names it. Both need the *player's furthest point*, which is why this
+ * reads state rather than taking a position — offering "next" after a replay
+ * would otherwise advertise a jump to wherever they actually are (ruling #97).
  */
-export interface StoryIndexView {
-  lead: StoryIndexPart | null;
-  /** The current chapter inside `lead`, or null on a fully cleared arc. */
-  current: StoryIndexChapter | null;
-  /** Parts before the lead, newest first. */
-  finished: StoryIndexPart[];
-  /** Parts after the lead — a count only; their titles are spoilers. */
-  sealedPartCount: number;
-}
-
-export function buildStoryIndexView(
-  completed: Record<string, boolean>,
-): StoryIndexView {
-  const parts = buildStoryIndex(completed);
-  const leadIndex = parts.findIndex((part) =>
-    part.chapters.some((chapter) => chapter.state === "current"),
-  );
-  if (leadIndex === -1) {
-    // Either everything is cleared, or the catalog is empty.
-    const last = parts.length > 0 ? parts[parts.length - 1] : null;
-    return {
-      lead: last,
-      current: null,
-      finished: parts.slice(0, Math.max(0, parts.length - 1)).reverse(),
-      sealedPartCount: 0,
-    };
+export function currentStage(
+  cleared: Record<string, boolean>,
+): { chapter: StoryChapter; stage: StoryStage } | null {
+  for (const chapter of storyChapters) {
+    for (const stage of chapter.stages) {
+      if (getStageState(cleared, chapter.id, stage.id) === "current") {
+        return { chapter, stage };
+      }
+    }
   }
-  const lead = parts[leadIndex];
-  return {
-    lead,
-    current: lead.chapters.find((c) => c.state === "current") ?? null,
-    finished: parts.slice(0, leadIndex).reverse(),
-    sealedPartCount: parts.length - leadIndex - 1,
-  };
+  return null;
 }
 
-export interface ChapterSearchHit extends StoryIndexChapter {
-  partId: string;
-  partOrder: number;
-  partTitle: string;
+/** The stage after this one, if it exists and is now open — what `NEXT` links
+ *  to. Crosses a chapter boundary, since clearing a boss opens the next one. */
+export function stageAfter(
+  cleared: Record<string, boolean>,
+  chapterId: string,
+  stageId: string,
+): { chapter: StoryChapter; stage: StoryStage } | null {
+  const chapterIndex = storyChapters.findIndex((c) => c.id === chapterId);
+  if (chapterIndex === -1) return null;
+  const chapter = storyChapters[chapterIndex];
+  const stageIndex = chapter.stages.findIndex((s) => s.id === stageId);
+  if (stageIndex === -1) return null;
+
+  if (stageIndex + 1 < chapter.stages.length) {
+    return { chapter, stage: chapter.stages[stageIndex + 1] };
+  }
+  const nextChapter = storyChapters[chapterIndex + 1];
+  if (!nextChapter) return null;
+  return { chapter: nextChapter, stage: nextChapter.stages[0] };
 }
 
-/**
- * Chapter search for the select modal.
- *
- * **Sealed chapters are never returned.** Typing an unreleased chapter's exact
- * title finds nothing, so search can't be turned into an enumeration tool —
- * that would leak straight past the redaction the index is built around. This
- * is a correctness property, not a nicety; `tests/storyIndex.test.ts` asserts
- * it directly.
- *
- * An empty query returns every visible chapter, which is what the modal shows
- * before you type.
- */
-export function searchChapters(
-  completed: Record<string, boolean>,
-  query: string,
-): ChapterSearchHit[] {
-  const needle = query.trim().toLowerCase();
-  return buildStoryIndex(completed).flatMap((part) =>
-    part.chapters
-      .filter((chapter) => chapter.state !== "sealed")
-      .filter(
-        (chapter) =>
-          needle.length === 0 ||
-          chapter.title.toLowerCase().includes(needle) ||
-          // Part titles are fair game here: every chapter that survived the
-          // filter above belongs to a part the player has already opened.
-          part.title.toLowerCase().includes(needle),
-      )
-      .map((chapter) => ({
-        ...chapter,
-        partId: part.id,
-        partOrder: part.order,
-        partTitle: part.title,
-      })),
-  );
-}
-
-/** Cleared chapters over total, across every part — the arc-level progress
- *  line at the top of the index. */
-export function getArcProgress(completed: Record<string, boolean>): {
+/** Cleared stages over total, across every adapted chapter. */
+export function getArcProgress(cleared: Record<string, boolean>): {
   cleared: number;
   total: number;
 } {
-  let cleared = 0;
+  let done = 0;
   let total = 0;
-  for (const part of storyParts) {
-    for (const chapter of part.chapters) {
+  for (const chapter of storyChapters) {
+    for (const stage of chapter.stages) {
       total += 1;
-      if (completed[chapterKey(part.id, chapter.id)] === true) cleared += 1;
+      if (cleared[stageKey(chapter.id, stage.id)] === true) done += 1;
     }
   }
-  return { cleared, total };
+  return { cleared: done, total };
 }

@@ -24,11 +24,11 @@ import { materialLabel } from "@/lib/game/materials";
  */
 
 const goalSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("chaptersCleared"), count: z.number().int().positive() }),
+  z.object({ type: z.literal("stagesCleared"), count: z.number().int().positive() }),
   z.object({
-    type: z.literal("chapterCleared"),
-    partId: z.string().min(1),
+    type: z.literal("stageCleared"),
     chapterId: z.string().min(1),
+    stageId: z.string().min(1),
   }),
   z.object({ type: z.literal("pulls"), count: z.number().int().positive() }),
   z.object({ type: z.literal("characterLevel"), level: z.number().int().positive() }),
@@ -109,24 +109,28 @@ export function getStarterOrders(): Order[] {
 }
 
 /**
- * The orders a specific chapter satisfies.
+ * The orders a specific stage satisfies.
  *
- * Story mode advertises these on the chapter card and confirms them on the clear
- * summary, so a reward tied to a chapter is visible *at* that chapter. Before
- * this, `lyra-joins` — a free character for finishing part 2 — existed only
- * inside the Orders modal in the nav, and nothing on the chapter that grants her
- * said so.
+ * Story mode advertises these on the stage row and confirms them on the clear
+ * summary, so a reward tied to a stage is visible *at* that stage. Before this,
+ * `lyra-joins` — a free character for finishing a chapter — existed only inside
+ * the Orders modal in the nav, and nothing on the stage that grants her said so
+ * (ruling #104).
  *
- * Only `chapterCleared` goals qualify. `chaptersCleared` counts progress across
- * the whole arc, so it belongs to no single chapter and pinning it to one would
- * promise the same reward on every chapter the player opens.
+ * Only `stageCleared` goals qualify. `stagesCleared` counts progress across the
+ * whole arc, so it belongs to no single stage and pinning it to one would promise
+ * the same reward on every stage the player opens.
+ *
+ * A goal may name a chapter that isn't adapted yet: it simply stays unmet until
+ * that chapter ships, which is what keeps his authored intent intact while the
+ * story is written one chapter at a time.
  */
-export function ordersForChapter(partId: string, chapterId: string): Order[] {
+export function ordersForStage(chapterId: string, stageId: string): Order[] {
   return ORDERS.filter(
     (order) =>
-      order.goal.type === "chapterCleared" &&
-      order.goal.partId === partId &&
-      order.goal.chapterId === chapterId,
+      order.goal.type === "stageCleared" &&
+      order.goal.chapterId === chapterId &&
+      order.goal.stageId === stageId,
   );
 }
 
@@ -182,14 +186,13 @@ export function isStepUnlocked(
  */
 export interface OrderContext {
   /**
-   * Cleared story chapters, keyed `partId:chapterId` — the same shape
-   * `storyStore.completed` holds.
+   * Cleared story stages, keyed `chapterId:stageId` — the same shape
+   * `storyStore.cleared` holds.
    *
-   * The map rather than a count, because an order can name a *specific*
-   * chapter: Lyra is given for clearing Part 2 Chapter 2, the point at which
-   * she stops being a story NPC.
+   * The map rather than a count, because an order can name a *specific* stage:
+   * Lyra is given for finishing a chapter, not for clearing any N of them.
    */
-  completedChapters: Record<string, boolean>;
+  clearedStages: Record<string, boolean>;
   pulls: number;
   bossClears: number;
   presetsSaved: number;
@@ -227,25 +230,25 @@ function bestCharacterStat(
 }
 
 /**
- * How `storyStore` keys a cleared chapter.
+ * How `storyStore` keys a cleared stage.
  *
- * Mirrors `chapterKey` in `lib/game/storyCatalog.ts` rather than importing it:
- * that module validates every story JSON at load, and this one is pulled in by
+ * Mirrors `stageKey` in `lib/game/storyCatalog.ts` rather than importing it: that
+ * module validates every story JSON at load, and this one is pulled in by
  * `playerStore`, which half the app imports. `tests/orders.test.ts` asserts the
  * two formats agree, so the copy can't drift.
  */
-function chapterProgressKey(partId: string, chapterId: string): string {
-  return `${partId}:${chapterId}`;
+function stageProgressKey(chapterId: string, stageId: string): string {
+  return `${chapterId}:${stageId}`;
 }
 
 /** Raw progress toward a goal, before any capping. */
 export function measureGoal(goal: OrderGoal, context: OrderContext): number {
   switch (goal.type) {
-    case "chaptersCleared":
-      return Object.values(context.completedChapters).filter(Boolean).length;
-    case "chapterCleared":
-      return context.completedChapters[
-        chapterProgressKey(goal.partId, goal.chapterId)
+    case "stagesCleared":
+      return Object.values(context.clearedStages).filter(Boolean).length;
+    case "stageCleared":
+      return context.clearedStages[
+        stageProgressKey(goal.chapterId, goal.stageId)
       ]
         ? 1
         : 0;
@@ -276,8 +279,8 @@ function requirementOf(goal: OrderGoal): number {
       return goal.ascension;
     case "accountRank":
       return goal.rank;
-    case "chapterCleared":
-      // A named chapter is done or it isn't; there is no progress to show.
+    case "stageCleared":
+      // A named stage is done or it isn't; there is no progress to show.
       return 1;
     default:
       return goal.count;

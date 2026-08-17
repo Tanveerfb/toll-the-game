@@ -1,12 +1,12 @@
 [
   {
     "id": "first-chapter",
-    "title": "Clear your first chapter",
+    "title": "Clear your first stage",
     "hint": "The story is where everything starts.",
     "route": "/story",
     "routeLabel": "Story",
     "goal": {
-      "type": "chaptersCleared",
+      "type": "stagesCleared",
       "count": 1
     },
     "reward": {
@@ -16,14 +16,14 @@
   },
   {
     "id": "lyra-joins",
-    "title": "See Part 2 through to the end",
-    "hint": "Lyra has been fighting beside you on loan. Finish her part and she stays.",
+    "title": "See Chapter 1 through to the end",
+    "hint": "Duke walks out of his village alone. He won't be alone on the road for long.",
     "route": "/story",
     "routeLabel": "Story",
     "goal": {
-      "type": "chapterCleared",
-      "partId": "part2",
-      "chapterId": "p2c2"
+      "type": "stageCleared",
+      "chapterId": "c1",
+      "stageId": "s5"
     },
     "reward": {
       "character": "lyra"

@@ -227,8 +227,10 @@ export interface OrdersState {
   activeStep: number;
   setViewedStep: (step: number) => void;
   claimedOrders: Record<string, boolean>;
-  completed: Record<string, boolean>;
-  claimOrder: (orderId: string, completedChapters: Record<string, boolean>) => boolean;
+  /** Cleared story stages, keyed `chapterId:stageId` — passed straight back into
+   *  `claimOrder`, which re-checks the goal before paying. */
+  cleared: Record<string, boolean>;
+  claimOrder: (orderId: string, clearedStages: Record<string, boolean>) => boolean;
 }
 
 export function useOrdersState(): OrdersState {
@@ -243,12 +245,12 @@ export function useOrdersState(): OrdersState {
   const claimedOrders = usePlayerStore((s) => s.claimedOrders);
   const claimOrder = usePlayerStore((s) => s.claimOrder);
 
-  const completed = useStoryStore((s) => s.completed);
+  const cleared = useStoryStore((s) => s.cleared);
   const storyHydrated = useStoryStore((s) => s.hasHydrated);
 
   const context: OrderContext = React.useMemo(
     () => ({
-      completedChapters: completed,
+      clearedStages: cleared,
       pulls: stats.pulls,
       bossClears: stats.bossClears,
       presetsSaved: presets.length,
@@ -258,7 +260,7 @@ export function useOrdersState(): OrdersState {
       claimed: claimedOrders,
     }),
     [
-      completed,
+      cleared,
       stats,
       presets.length,
       roster.length,
@@ -311,7 +313,7 @@ export function useOrdersState(): OrdersState {
     activeStep,
     setViewedStep,
     claimedOrders,
-    completed,
+    cleared,
     claimOrder,
   };
 }
@@ -336,7 +338,7 @@ export default function OrdersBoard({
     activeStep,
     setViewedStep,
     claimedOrders,
-    completed,
+    cleared,
     claimOrder,
   } = state;
 
@@ -393,7 +395,7 @@ export default function OrdersBoard({
           <OrderRow
             key={entry.order.id}
             entry={entry}
-            onClaim={() => claimOrder(entry.order.id, completed)}
+            onClaim={() => claimOrder(entry.order.id, cleared)}
             onGo={() => router.push(entry.order.route)}
           />
         ))}

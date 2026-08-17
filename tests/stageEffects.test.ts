@@ -7,10 +7,8 @@ import {
   stageAdjustedStats,
   statBoostPercentFor,
 } from "@/lib/game/stageEffects";
-import { validateStoryParts } from "@/lib/game/storySchema";
 import type { BattleCharacter } from "@/types/character";
 import type { StageEffect } from "@/types/stageEffects";
-import part2 from "@/data/story/part2.json";
 
 function unit(overrides: Partial<BattleCharacter> = {}): BattleCharacter {
   return {
@@ -81,10 +79,9 @@ describe("stage effects (Tanveer, 2026-08-10)", () => {
     expect(grouped.both).toHaveLength(0);
   });
 
-  it("Part 2 Chapter 2 carries the effects that replaced lyra_npc_2", () => {
-    const [part] = validateStoryParts([part2]);
-    const chapter = part.chapters.find((c) => c.id === "p2c2");
-    expect(chapter?.battle?.enemyTeam).toEqual([{ id: "lyra_npc" }]);
-    expect(chapter?.stageEffects).toEqual(P2C2);
-  });
+  // The chapter that motivated stage effects (the old Part 2 Chapter 2, a canon
+  // solo team against an elite boss at a permanent action deficit) belonged to the
+  // story structure retired on 2026-08-18. The rules it exercised are covered
+  // above; the authored data that carried them is re-authored per stage now, and
+  // `tests/storySchema.test.ts` checks the shape wherever it appears.
 });

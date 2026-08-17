@@ -6,7 +6,7 @@ import {
   evaluateOrder,
   evaluateOrders,
   getOrder,
-  ordersForChapter,
+  ordersForStage,
   getOrdersForStep,
   getStarterOrders,
   currentStep,
@@ -18,7 +18,7 @@ import {
   type OrderContext,
 } from "@/lib/game/orders";
 import { GAME_ROUTES } from "@/lib/nav/routes";
-import { chapterKey, getStoryChapter } from "@/lib/game/storyCatalog";
+import { getStoryStage, stageKey } from "@/lib/game/storyCatalog";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 
 /**
@@ -30,7 +30,7 @@ import { getCharacterById } from "@/lib/game/characterCatalog";
  */
 
 const EMPTY: OrderContext = {
-  completedChapters: {},
+  clearedStages: {},
   pulls: 0,
   bossClears: 0,
   presetsSaved: 0,
@@ -141,7 +141,7 @@ describe("claiming", () => {
     expect(
       evaluateOrder(order, {
         ...EMPTY,
-        completedChapters: { "part1:p1c1": true },
+        clearedStages: { "c1:s1": true },
       }).claimable,
     ).toBe(true);
   });
@@ -149,7 +149,7 @@ describe("claiming", () => {
   it("stops being claimable once claimed", () => {
     const entry = evaluateOrder(order, {
       ...EMPTY,
-      completedChapters: { "part1:p1c1": true },
+      clearedStages: { "c1:s1": true },
       claimed: { [order.id]: true },
     });
     expect(entry.claimed).toBe(true);
@@ -178,24 +178,24 @@ describe("claiming", () => {
   });
 });
 
-describe("Lyra joins after Part 2", () => {
+describe("Lyra joins after chapter 1", () => {
   const lyra = getOrder("lyra-joins")!;
 
   it("hands over the character herself", () => {
     expect(lyra.reward.character).toBe("lyra");
   });
 
-  it("waits for the specific chapter, not just any two", () => {
-    // Clearing two unrelated chapters must not hand her over.
+  it("waits for the specific stage, not just any two", () => {
+    // Clearing two unrelated stages must not hand her over.
     const elsewhere = {
       ...EMPTY,
-      completedChapters: { "part1:p1c1": true, "part1:p1c2": true },
+      clearedStages: { "c1:s1": true, "c1:s2": true },
     };
     expect(evaluateOrder(lyra, elsewhere).met).toBe(false);
 
     const done = {
       ...EMPTY,
-      completedChapters: { "part2:p2c2": true },
+      clearedStages: { "c1:s5": true },
     };
     expect(evaluateOrder(lyra, done).met).toBe(true);
     expect(evaluateOrder(lyra, done).claimable).toBe(true);
@@ -205,22 +205,22 @@ describe("Lyra joins after Part 2", () => {
     expect(evaluateOrder(lyra, EMPTY).required).toBe(1);
   });
 
-  it("keys chapters exactly the way storyStore does", () => {
-    // `lib/game/orders.ts` rebuilds the `partId:chapterId` key rather than
-    // importing `chapterKey`, to keep the story catalogue out of playerStore's
+  it("keys stages exactly the way storyStore does", () => {
+    // `lib/game/orders.ts` rebuilds the `chapterId:stageId` key rather than
+    // importing `stageKey`, to keep the story catalogue out of playerStore's
     // import graph. This is the guard against those two drifting apart.
     const goal = lyra.goal;
-    if (goal.type !== "chapterCleared") throw new Error("goal type changed");
-    const key = chapterKey(goal.partId, goal.chapterId);
+    if (goal.type !== "stageCleared") throw new Error("goal type changed");
+    const key = stageKey(goal.chapterId, goal.stageId);
     expect(
-      evaluateOrder(lyra, { ...EMPTY, completedChapters: { [key]: true } }).met,
+      evaluateOrder(lyra, { ...EMPTY, clearedStages: { [key]: true } }).met,
     ).toBe(true);
   });
 
-  it("names a chapter that actually exists", () => {
+  it("names a stage that actually exists", () => {
     const goal = lyra.goal;
-    if (goal.type !== "chapterCleared") throw new Error("goal type changed");
-    expect(getStoryChapter(goal.partId, goal.chapterId)).toBeDefined();
+    if (goal.type !== "stageCleared") throw new Error("goal type changed");
+    expect(getStoryStage(goal.chapterId, goal.stageId)).toBeDefined();
   });
 
   it("promises a character the catalogue has", () => {
@@ -281,7 +281,7 @@ describe("the board's ordering", () => {
   it("puts what can be claimed first and what's done last", () => {
     const context: OrderContext = {
       ...EMPTY,
-      completedChapters: { "part1:p1c1": true },
+      clearedStages: { "c1:s1": true },
       pulls: 11,
       claimed: { "first-summon": true },
     };
@@ -293,7 +293,7 @@ describe("the board's ordering", () => {
   it("counts what's claimed and what's ready", () => {
     const board = evaluateOrders({
       ...EMPTY,
-      completedChapters: { "part1:p1c1": true },
+      clearedStages: { "c1:s1": true },
       pulls: 11,
       claimed: { "first-summon": true },
     });
@@ -404,37 +404,40 @@ describe("steps (Tanveer, 2026-08-13)", () => {
  * the clear summary, so the free Lyra is finally visible at the chapter that
  * grants her instead of only inside the nav's Orders modal.
  */
-describe("ordersForChapter", () => {
-  it("finds the order a chapter satisfies", () => {
-    expect(ordersForChapter("part2", "p2c2").map((o) => o.id)).toEqual([
-      "lyra-joins",
-    ]);
-    expect(ordersForChapter("part4", "p4c3").map((o) => o.id)).toEqual([
-      "s2-part-four",
-    ]);
+describe("ordersForStage", () => {
+  it("finds the order a stage satisfies", () => {
+    expect(ordersForStage("c1", "s5").map((o) => o.id)).toEqual(["lyra-joins"]);
   });
 
-  it("returns nothing for a chapter with no order on it", () => {
-    expect(ordersForChapter("part1", "p1c1")).toEqual([]);
+  it("returns nothing for a stage with no order on it", () => {
+    expect(ordersForStage("c1", "s1")).toEqual([]);
   });
 
-  it("ignores arc-wide count goals, which belong to no single chapter", () => {
-    // `first-chapter` is chaptersCleared:1 and would otherwise attach itself to
-    // whichever chapter happened to be the player's first.
+  it("still matches a goal whose chapter is not adapted yet", () => {
+    // Story content ships one chapter at a time, so an order may name a chapter
+    // that does not exist here yet — `s2-part-four` names chapter 4. It must stay
+    // findable (and simply unmet) rather than being silently dropped, which is
+    // what would happen if this filtered on the catalogue.
+    expect(ordersForStage("c4", "s3").map((o) => o.id)).toEqual(["s2-part-four"]);
+  });
+
+  it("ignores arc-wide count goals, which belong to no single stage", () => {
+    // `first-chapter` is stagesCleared:1 and would otherwise attach itself to
+    // whichever stage happened to be the player's first.
     for (const order of getStarterOrders()) {
-      if (order.goal.type !== "chapterCleared") continue;
-      expect(
-        ordersForChapter(order.goal.partId, order.goal.chapterId),
-      ).toContain(order);
+      if (order.goal.type !== "stageCleared") continue;
+      expect(ordersForStage(order.goal.chapterId, order.goal.stageId)).toContain(
+        order,
+      );
     }
     const everyMatch = getStarterOrders().filter(
-      (o) => o.goal.type === "chapterCleared",
+      (o) => o.goal.type === "stageCleared",
     );
     expect(everyMatch).toHaveLength(2);
   });
 
-  it("never returns an order for an unknown chapter", () => {
-    expect(ordersForChapter("part99", "nope")).toEqual([]);
+  it("never returns an order for an unknown stage", () => {
+    expect(ordersForStage("c99", "nope")).toEqual([]);
   });
 });
 

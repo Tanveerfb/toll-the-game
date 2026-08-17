@@ -1,10 +1,21 @@
 import { materialLabel } from "@/lib/game/materials";
+import type { MissionOutcome } from "@/lib/game/stageMissions";
 import type {
-  StoryChapterRewards,
   StoryDropRange,
-  StoryFirstClearBundle,
-  StoryRepeatDrops,
+  StoryFarmDrops,
+  StoryFixedBundle,
+  StoryStageRewards,
 } from "@/types/story";
+
+/**
+ * What a stage pays.
+ *
+ * Two lists, two different promises (ruling #80): a **first-clear bundle** of
+ * fixed amounts paid exactly once, and a **farm table** of ranges rolled on every
+ * clear including the first. Missions are a third, independent one-time payout —
+ * they hang off the same run but are not part of either list, so meeting a
+ * mission on the tenth replay still pays.
+ */
 
 /** A flat, already-rolled reward bundle ready to hand to the player store. */
 export interface StoryPayout {
@@ -12,20 +23,23 @@ export interface StoryPayout {
   coin: number;
   permanentTicket: number;
   materials: Record<string, number>;
-  /** Account XP — first clears only, so this is 0 on every replay. */
+  /** Account XP — one-time sources only, so this is 0 on a plain replay. */
   accountXp: number;
 }
 
-export interface StoryClearResult {
+export interface StageClearResult {
   /** Null on a replay — the bundle is one-time. */
   firstClear: StoryPayout | null;
-  /** Rolled on every clear, first one included. */
-  drops: StoryPayout;
-  /** `firstClear` + `drops`, what the player actually receives this run. */
+  /** Rolled on every clear, first one included. Null on a scene stage, which
+   *  has no farm table at all. */
+  farm: StoryPayout | null;
+  /** Missions this run met that hadn't been banked yet. */
+  missions: StoryPayout;
+  /** Loot the player actually receives this run — the sum of the above. */
   total: StoryPayout;
 }
 
-function emptyPayout(): StoryPayout {
+export function emptyPayout(): StoryPayout {
   return { gems: 0, coin: 0, permanentTicket: 0, materials: {}, accountXp: 0 };
 }
 
@@ -35,7 +49,7 @@ function rollRange(range: StoryDropRange, rng: () => number): number {
   return range.min + Math.floor(rng() * (range.max - range.min + 1));
 }
 
-function fromBundle(bundle: StoryFirstClearBundle): StoryPayout {
+export function fromBundle(bundle: StoryFixedBundle): StoryPayout {
   return {
     gems: bundle.gems ?? 0,
     coin: bundle.coin ?? 0,
@@ -47,19 +61,19 @@ function fromBundle(bundle: StoryFirstClearBundle): StoryPayout {
 
 /** Roll order is fixed and documented so tests can map an `rng()` call to an
  *  entry: coin first, then each material in the object's own key order. */
-function rollDrops(repeat: StoryRepeatDrops, rng: () => number): StoryPayout {
+function rollFarm(farm: StoryFarmDrops, rng: () => number): StoryPayout {
   const payout = emptyPayout();
-  if (repeat.coin) payout.coin = rollRange(repeat.coin, rng);
-  for (const [id, range] of Object.entries(repeat.materials ?? {})) {
+  if (farm.coin) payout.coin = rollRange(farm.coin, rng);
+  for (const [id, range] of Object.entries(farm.materials ?? {})) {
     const rolled = rollRange(range, rng);
     // A 0 roll is a real outcome for a 0-min range; don't record an entry for
-    // it, or the rewards screen shows "+0 Training Manual".
+    // it, or the result screen shows "+0 Training Manual".
     if (rolled > 0) payout.materials[id] = rolled;
   }
   return payout;
 }
 
-function addPayouts(a: StoryPayout, b: StoryPayout): StoryPayout {
+export function addPayouts(a: StoryPayout, b: StoryPayout): StoryPayout {
   const materials = { ...a.materials };
   for (const [id, qty] of Object.entries(b.materials)) {
     materials[id] = (materials[id] ?? 0) + qty;
@@ -74,42 +88,36 @@ function addPayouts(a: StoryPayout, b: StoryPayout): StoryPayout {
 }
 
 /**
- * Rolls a chapter clear. `rng` is injectable (defaults to `Math.random`) so
- * tests can force both bounds of every range deterministically — same
- * contract as `rollWorldBossRewards`.
+ * Rolls a stage clear. `rng` is injectable (defaults to `Math.random`) so tests
+ * can force both bounds of every range deterministically — same contract as
+ * `rollWorldBossRewards`.
  *
- * A first clear grants the one-time bundle AND a drop roll. Paying the bundle
- * alone would mean the first clear of a chapter is the only clear that never
- * shows the drop table it is advertising.
+ * A first clear grants the bundle **and** a farm roll. Paying the bundle alone
+ * would make the first clear the only clear that never shows the table it is
+ * advertising.
+ *
+ * `missionOutcomes` may be empty; only outcomes with `paysNow` contribute, so a
+ * caller can pass every mission on the stage without filtering first.
  */
-export function rollStoryRewards(
-  rewards: StoryChapterRewards,
+export function rollStageRewards(
+  rewards: StoryStageRewards,
   isFirstClear: boolean,
+  missionOutcomes: MissionOutcome[] = [],
   rng: () => number = Math.random,
-): StoryClearResult {
+): StageClearResult {
   const firstClear = isFirstClear ? fromBundle(rewards.firstClear) : null;
-  const drops = rollDrops(rewards.repeat, rng);
-  return {
-    firstClear,
-    drops,
-    total: firstClear ? addPayouts(firstClear, drops) : drops,
-  };
-}
+  const farm = rewards.farm ? rollFarm(rewards.farm, rng) : null;
+  const missions = missionOutcomes
+    .filter((outcome) => outcome.paysNow)
+    .reduce(
+      (sum, outcome) => addPayouts(sum, fromBundle(outcome.mission.reward)),
+      emptyPayout(),
+    );
 
-/**
- * Stamina this attempt costs — the same whether the chapter is cleared or not.
- *
- * **Supersedes the 2026-08-09 ruling** that uncleared chapters were always free
- * however many times they were retried. Tanveer, 2026-08-17: *"we are charging
- * sta for story now. all of them. first try and reattempts all cost sta."* The
- * consequence is deliberate and was flagged before he confirmed it: story
- * progress can now be stamina-gated, so a player who wipes twice waits.
- *
- * A chapter authored at `replayStamina: 0` is still free — several scene-only
- * chapters are, and a chapter with nothing to fight has nothing to charge for.
- */
-export function storyAttemptCost(rewards: StoryChapterRewards): number {
-  return rewards.replayStamina;
+  let total = missions;
+  if (firstClear) total = addPayouts(total, firstClear);
+  if (farm) total = addPayouts(total, farm);
+  return { firstClear, farm, missions, total };
 }
 
 /** "300–800" for a range, "2" for a fixed amount. */
@@ -117,34 +125,27 @@ function rangeLabel(min: number, max: number): string {
   return min === max ? `${min}` : `${min}–${max}`;
 }
 
-/**
- * What a chapter pays, as display lines.
- *
- * Lifted out of `ChapterBrief`, which had it as a private hook, because the
- * chapter card now advertises the same thing — and `OrdersBoard` already keeps a
- * third copy of this idea. One list, one place, so the brief and the card can
- * never disagree about what a chapter is worth.
- *
- * Branching on `cleared` is the point: an uncleared chapter advertises its
- * one-time bundle, because that's what you're about to earn, while a cleared one
- * advertises the repeat ranges, because that's what farming it actually pays.
- */
-export function describeRewards(
-  rewards: StoryChapterRewards,
-  cleared: boolean,
-): string[] {
+/** The first-clear bundle as display lines — what an uncleared stage advertises,
+ *  and what a cleared one shows struck through as banked. */
+export function describeFirstClear(rewards: StoryStageRewards): string[] {
   const lines: string[] = [];
-  if (!cleared) {
-    const { gems, coin, permanentTicket, materials } = rewards.firstClear;
-    if (gems) lines.push(`${gems} Gems`);
-    if (coin) lines.push(`${coin} Coin`);
-    if (permanentTicket) lines.push(`${permanentTicket} Permanent Ticket`);
-    for (const [id, qty] of Object.entries(materials ?? {})) {
-      if (qty) lines.push(`${qty} ${materialLabel(id)}`);
-    }
-    return lines;
+  const { gems, coin, permanentTicket, materials, accountXp } = rewards.firstClear;
+  if (gems) lines.push(`${gems} Gems`);
+  if (coin) lines.push(`${coin} Coin`);
+  if (permanentTicket) lines.push(`${permanentTicket} Permanent Ticket`);
+  for (const [id, qty] of Object.entries(materials ?? {})) {
+    if (qty) lines.push(`${qty} ${materialLabel(id)}`);
   }
-  const { coin, materials } = rewards.repeat;
+  if (accountXp) lines.push(`${accountXp} Account XP`);
+  return lines;
+}
+
+/** The farm table as display lines. Empty for a scene stage, which is why the
+ *  stage row renders an em dash there rather than an empty column. */
+export function describeFarm(rewards: StoryStageRewards): string[] {
+  if (!rewards.farm) return [];
+  const lines: string[] = [];
+  const { coin, materials } = rewards.farm;
   if (coin) lines.push(`${rangeLabel(coin.min, coin.max)} Coin`);
   for (const [id, range] of Object.entries(materials ?? {})) {
     lines.push(`${rangeLabel(range.min, range.max)} ${materialLabel(id)}`);
@@ -153,12 +154,13 @@ export function describeRewards(
 }
 
 /** True when a payout would grant nothing — used to skip an empty section on
- *  the rewards screen rather than render a heading with no rows under it. */
+ *  the result screen rather than render a heading with no rows under it. */
 export function isEmptyPayout(payout: StoryPayout): boolean {
   return (
     payout.gems === 0 &&
     payout.coin === 0 &&
     payout.permanentTicket === 0 &&
+    payout.accountXp === 0 &&
     Object.keys(payout.materials).length === 0
   );
 }

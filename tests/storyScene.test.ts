@@ -113,29 +113,29 @@ describe("auto-advance dwell", () => {
 
 describe("narration vs dialogue", () => {
   it("treats a speakerless scene as narration", () => {
-    expect(isNarration({ text: "The village is quiet." })).toBe(true);
+    expect(isNarration({ origin: "canon", text: "The village is quiet." })).toBe(true);
   });
 
   it("treats a scene with a speaker as dialogue", () => {
-    expect(isNarration({ speaker: "Duke", text: "I'm going." })).toBe(false);
+    expect(isNarration({ speaker: "Duke", origin: "canon", text: "I'm going." })).toBe(false);
   });
 
   it("treats an explicit Narrator speaker as narration, not a cast member", () => {
     // Part 1 authors most of its prose this way.
-    expect(isNarration({ speaker: "Narrator", text: "Six hundred years ago…" })).toBe(
+    expect(isNarration({ speaker: "Narrator", origin: "canon", text: "Six hundred years ago…" })).toBe(
       true,
     );
-    expect(isNarration({ speaker: "narrator", text: "lowercase too" })).toBe(true);
-    expect(isNarration({ speaker: " Narrator ", text: "padded" })).toBe(true);
+    expect(isNarration({ speaker: "narrator", origin: "canon", text: "lowercase too" })).toBe(true);
+    expect(isNarration({ speaker: " Narrator ", origin: "canon", text: "padded" })).toBe(true);
   });
 });
 
 describe("portrait slot memory", () => {
   const scenes: StoryScene[] = [
-    { text: "Narration, nobody on screen." },
-    { speaker: "Duke", portraitId: "duke", text: "Left speaker." },
-    { speaker: "Lyra", portraitId: "lyra", side: "right", text: "Right speaker." },
-    { speaker: "Duke", portraitId: "duke", text: "Back to the left." },
+    { origin: "canon", text: "Narration, nobody on screen." },
+    { speaker: "Duke", portraitId: "duke", origin: "canon", text: "Left speaker." },
+    { speaker: "Lyra", portraitId: "lyra", side: "right", origin: "canon", text: "Right speaker." },
+    { speaker: "Duke", portraitId: "duke", origin: "canon", text: "Back to the left." },
   ];
 
   it("shows nobody before any portrait appears", () => {
@@ -152,7 +152,7 @@ describe("portrait slot memory", () => {
   });
 
   it("defaults a portrait with no side to the left", () => {
-    expect(portraitSlotsAt([{ portraitId: "duke", text: "x" }], 0)).toEqual({
+    expect(portraitSlotsAt([{ portraitId: "duke", origin: "canon", text: "x" }], 0)).toEqual({
       left: "duke",
       right: null,
     });

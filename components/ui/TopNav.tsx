@@ -132,13 +132,13 @@ export default function TopNav() {
   const roster = usePlayerStore((s) => s.roster);
   const characters = usePlayerStore((s) => s.characters);
   const claimedOrders = usePlayerStore((s) => s.claimedOrders);
-  const completed = useStoryStore((s) => s.completed);
+  const cleared = useStoryStore((s) => s.cleared);
   const storyHydrated = useStoryStore((s) => s.hasHydrated);
 
   const orderBoard = React.useMemo(
     () =>
       evaluateOrders({
-        completedChapters: completed,
+        clearedStages: cleared,
         pulls: stats.pulls,
         bossClears: stats.bossClears,
         presetsSaved: presets.length,
@@ -147,7 +147,7 @@ export default function TopNav() {
         characters,
         claimed: claimedOrders,
       }),
-    [completed, stats, presets.length, roster.length, account.rank, characters, claimedOrders],
+    [cleared, stats, presets.length, roster.length, account.rank, characters, claimedOrders],
   );
 
   const now = React.useSyncExternalStore(

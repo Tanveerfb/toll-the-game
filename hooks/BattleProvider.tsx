@@ -105,6 +105,9 @@ interface BattleContextType {
        *  of its pooled HP — for authored battles the story says you don't win.
        *  See lib/game/victoryCondition.ts. */
       victoryAtEnemyHpPercent?: number;
+      /** Player HP per character id, so a story stage's waves carry attrition
+       *  (ruling #103). Absent unit = starts full. */
+      carryHp?: Record<string, number>;
     },
   ) => void;
   lastBattleConfig: { playerPicks: TeamPick[]; enemyPicks: TeamPick[] } | null;
@@ -887,6 +890,18 @@ export default function BattleProvider({
        *  its pooled HP — for authored battles the story says you do not win.
        *  See lib/game/victoryCondition.ts. */
       victoryAtEnemyHpPercent?: number;
+      /**
+       * Player HP to start at, per character id — how a story stage's waves
+       * carry attrition (his ruling #103: HP persists between fights, the
+       * fallen stay down).
+       *
+       * Only the player side, and only HP: gauges, buffs and debuffs reset, so a
+       * wave is a fresh fight fought by a worn team. Clamped to the unit's max,
+       * which matters because a later wave may carry different stage effects and
+       * therefore a different max HP. A unit absent from the map starts full,
+       * which makes this safe to pass on wave 1.
+       */
+      carryHp?: Record<string, number>;
     },
   ) => {
     const preview = options?.preview === true;
@@ -947,6 +962,12 @@ export default function BattleProvider({
         },
       );
       const staged = stageStats(team, progressed);
+      const carried =
+        team === "player" ? options?.carryHp?.[pick.id] : undefined;
+      const startingHp =
+        carried === undefined
+          ? staged.hp
+          : Math.max(1, Math.min(staged.hp, Math.round(carried)));
       return {
         ...(raw as unknown as Omit<
           BattleCharacter,
@@ -966,7 +987,7 @@ export default function BattleProvider({
         ...staged,
         currentAttack: staged.atk,
         currentDefense: staged.def,
-        currentHP: staged.hp,
+        currentHP: startingHp,
         ultGauge: 0,
         // Carried onto the unit so combat can scale the ultimate and the info
         // panel can show it, rather than re-reading the store mid-battle.

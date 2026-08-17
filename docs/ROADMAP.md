@@ -64,8 +64,9 @@ This supersedes the "Deliberately Out of Scope" note below — gacha/monetizatio
 - [x] Card art v1 (2026-07-07): fully AI-generated locally (ComfyUI + Animagine XL 4.0, Dokkan × 7DSGC style, per Tanveer's direction) — all 9 characters, wired into archive tiles, character detail, team select slots/roster, deck cards, and arena avatars. Pipeline + prompts documented in `docs/ART_PIPELINE.md`
 - [x] Card art v2/v3 (2026-07-07): Duke/Gabrist/Yalina/Lyra redesigned from Tanveer's direction, ref photos, and concept art (`docs/design/characters/refs/`); image cache-busting via `?v=ART_VERSION` + `images.localPatterns`
 - [ ] Basic sound hooks (optional, cheap with framer-motion already present)
-- [ ] Mobile layout pass
+- [ ] Mobile layout pass — **reframed 2026-08-18 (ruling #107): mobile is the default posture, not a late pass.** Everything built from here is authored at 390×844 first and desktop second. What remains here is the *debt* from the screens built before the rule: **battle**, **gacha**, **archive** and the **hub**. Story mode was a partial down-payment (9:16 pass, 2026-08-17) and story mode v2 is built mobile-first from the start.
 - [ ] Battle screen user-friendliness overhaul — **[Tanveer]** scheduled after all mechanics work as expected (his call, 2026-07-11)
+- [ ] **Battle UI mobile-first pass — its own dedicated session** (his call, 2026-08-18). The largest piece of the ruling #107 debt: the arena, hand, deck, unit tiles and overlays were all built desktop-first. Deliberately NOT folded into the story-mode v2 rebuild, which hands off to the battle screen as it stands.
 
 ## Phase 3 — Content & Story Mode
 
