@@ -4,7 +4,7 @@ Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @
 
 ## Working (implemented, tested, browser-verified)
 
-- **Story mode v2 — rebuilt from scratch as Chapter → Stage with waves (2026-08-18)** — rulings **#107** plus his decisions across this session. Verified after the last edit: `npm run check` green (**1218 tests / 95 files**, same 3 pre-existing eslint warnings in `tests/duel.test.ts`), clean `NEXT_DIST_DIR=.next-verify next build` (48 routes), `tsconfig.json` build churn reverted, `.next-verify` removed. **Not browser-verified** — he does the visual pass.
+- **Story mode v2 — rebuilt from scratch as Chapter → Stage with waves (2026-08-18, `8b56767`)** — rulings **#107–#108**. Verified after the last edit: `npm run check` green (**1218 tests / 95 files**, same 3 pre-existing eslint warnings in `tests/duel.test.ts`), clean `NEXT_DIST_DIR=.next-verify next build` (48 routes), `tsconfig.json` build churn reverted, `.next-verify` removed. **Not browser-verified** — he does the visual pass.
 
   ### Why it was scrapped rather than fixed
   Tanveer on v1, one day after it shipped: *"assume our existing story mode doesn't exist at all. i am not planning to recycle anything. its trash for me. it hurts me but that's the truth."* The diagnosis behind that, from reading the canon source and the implementation together:
