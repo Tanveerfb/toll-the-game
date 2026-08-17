@@ -129,14 +129,129 @@ signature effect contained near the body.
 
 ---
 
-## Category C — Miscellaneous
+## Category C — Inventory icons
+
+**Status: open. Nothing in this category exists yet — `public/` has no items
+directory at all.**
+
+**Why:** every inventory surface renders materials and currencies as *text*.
+`materialLabel()` ([`lib/game/materials.ts:85`](../lib/game/materials.ts)) returns a
+string and that string is all any screen has: the profile inventory, the ascension
+cost list, the gacha miss-table payout, the story chapter rewards, the clear summary.
+An icon set is the single cheapest upgrade to how the game reads, because these
+appear on nearly every screen.
+
+### Specs for this whole category — these override ART_PIPELINE defaults
+
+| Aspect | Character portraits (existing) | Inventory icons (this category) |
+|---|---|---|
+| Size | 1024×1024 | **512×512** is plenty — these never render above ~66px |
+| Background removal | Required | **Required**, same rule — they sit on `bg-panel` and `bg-inset` |
+| Subject | Full figure | **One object, centred, filling ~80% of frame** |
+| Legibility target | Reads at card size | **Must read at 24px.** Silhouette does the work, not detail |
+
+- **No text, no numerals, no borders.** Quantity (`×7`) and any frame are drawn by
+  the UI, so baked-in chrome fights it.
+- **Consistent light from upper-left across the whole set**, or they won't read as one
+  family when six sit in a row.
+- **Pitch to the dark UI.** These land on near-black panels; a bright white-background
+  icon look will glow wrongly. Same world, same cel shading, muted.
+- **Key each item to its element hue where one applies** — the tokens are in
+  `styles/globals.css`: `el-blue #37a6ff`, `el-red #ff5a4e`, `el-green #35d48b`,
+  `el-light #e8d174`, `el-dark #a874ff`.
+
+**Lands at:** `public/items/<slug>.png`. Needs a `lib/game/materialArt.ts` mirroring
+`characterArt.ts` — same `id → path | null` contract, same `ART_VERSION` cache-bust,
+and `next.config.ts` `images.localPatterns` needs `/items/**` adding. None of that
+exists; whoever wires the first icon builds it. Until then every surface keeps the
+text label, which is the existing fallback and is fine.
+
+### C1 — Currencies (5)
+
+The most-seen art in the game; they sit in the nav on every screen.
+
+| Slug | Label | Notes |
+|---|---|---|
+| `gems` | Gems | Premium currency. Faceted crystal cluster, `el-blue`→`el-dark` range |
+| `coin` | Coin | Soft currency. A struck coin, worn metal, `el-light`. Must not read as a character coin (C5) |
+| `permanent_ticket` | Permanent Ticket | Guaranteed-summon ticket. A stamped pass or token, `el-light` seal |
+| `auto_clear_ticket` | Auto-Clear Ticket | Skips a fight. Same ticket family as above but visibly different — a punched/torn edge reads best at 24px |
+| `stamina` | Stamina | Regenerating run currency. Not a material; appears in the nav and on every brief |
+
+### C2 — Ascension materials (2)
+
+World-boss exclusive by design — story never drops these.
+
+| Slug | Label | Notes |
+|---|---|---|
+| `sea_monster_eye` | Sea Monster's Eye | Molvarr drop. A large lidless eye, wet, cold light. `el-blue` |
+| `corroded_seaweed` | Corroded Sea Weed | Molvarr drop. Blackened kelp fronds, corrosion. `el-green` pitched sickly |
+
+### C3 — Training manuals (3, a tier ladder)
+
+**Generate these as a set in one pass** — the whole job is that tier is legible at a
+glance. A bound book/scroll silhouette held constant, escalating only in binding,
+trim and glow: plain → gilded → radiant.
+
+| Slug | Label | Tier read |
+|---|---|---|
+| `training_manual` | Training Manual | Base. Plain cloth binding, no glow |
+| `training_manual_advanced` | Advanced Training Manual | Mid. Metal trim, faint `el-light` edge |
+| `training_manual_premium` | Premium Training Manual | Top. Ornate, clear `el-light` glow |
+
+### C4 — Local specialty materials (4)
+
+Granted by the gacha miss-table, mapped from a character's colour
+([`lib/gacha/materials.ts:7`](../lib/gacha/materials.ts)). Note **`prism_dust` serves
+both `light` and `dark`**, so it should not lean hard on either hue.
+
+| Slug | Label | Colour | Notes |
+|---|---|---|---|
+| `riverstone_fragment` | Riverstone Fragment | blue | Water-smoothed stone shard, `el-blue` |
+| `scorched_ember` | Scorched Ember | red | Cooling ember, cracked crust with heat inside, `el-red` |
+| `bramble_thorn` | Bramble Thorn | green | Barbed thorn sprig, `el-green` |
+| `prism_dust` | Prism Dust | light **and** dark | Loose refracting powder/shards. Iridescent rather than gold or violet, since it stands for both |
+
+### C5 — Character coins: 5 frames, not 18 icons
+
+**Do not generate one icon per character.** `characterCoinId()` produces
+`{color}_{id}_coin` for **every playable character** — 18 today and one more with every
+character added, so a per-character icon is a treadmill that guarantees a missing asset.
+
+Generate **five empty coin frames**, one per colour, and composite the existing
+character portrait into the centre in code — the same trick already used for banner
+splashes (see "Banner splash art" in `ART_PIPELINE.md`). The portraits exist; the frames
+are what's missing.
+
+| Slug | Colour | Rim hue |
+|---|---|---|
+| `coin_frame_blue` | blue | `el-blue` |
+| `coin_frame_red` | red | `el-red` |
+| `coin_frame_green` | green | `el-green` |
+| `coin_frame_light` | light | `el-light` |
+| `coin_frame_dark` | dark | `el-dark` |
+
+Each: a struck-metal ring with an empty circular window in the middle, no portrait, no
+text. Transparent centre and transparent outside, so the portrait shows through and the
+coin can sit on any panel. Keep the rim thin — at 44px a heavy rim swallows the face.
+
+**Status:** `open` · **Requested:** 2026-08-17, for the inventory/clear-summary icon
+pass. C1 is the highest value (nav-wide), C5 the highest leverage (5 assets cover 18+
+ids).
+
+---
+
+## Category D — Miscellaneous
 
 **Status: open, nothing queued.**
 
-Anything that is neither a character nor a scene background — UI textures, banner
-composites, item icons, material art. One banner composite exists
-(`public/banners/`); its compositing approach is documented under
-"Banner splash art" in `ART_PIPELINE.md`.
+Anything that is neither a character, a scene background, nor an inventory icon — UI
+textures, banner composites. One banner composite exists (`public/banners/`); its
+compositing approach is documented under "Banner splash art" in `ART_PIPELINE.md`.
+
+**Board terrain** for the story node board will land here once the route work starts
+(16:9, no background removal, no characters) — not requested yet, because the board's
+own visuals aren't built.
 
 ---
 

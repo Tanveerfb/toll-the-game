@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Story flow v2 — five screens at 9:16</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* Combat Terminal tokens, from styles/globals.css */
+  :root{
+    --void:#06090c; --panel:#0d141b; --panel-raised:#111a23; --inset:#080d12;
+    --gridline:#0e1720; --hairline:#16212b; --edge:#1c2a36; --edge-strong:#31596b;
+    --readout-strong:#eaf2f8; --readout:#cbd8e2; --readout-dim:#8ea6b8; --readout-muted:#5d7285;
+    --signal:#4fd3e8; --signal-dim:#31596b;
+    --el-light:#e8d174; --el-red:#ff5a4e; --el-blue:#37a6ff; --el-green:#35d48b; --el-dark:#a874ff;
+    --heading:'Bangers',cursive; --body:'Rajdhani',sans-serif;
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:#04070a;color:var(--readout);font-family:var(--body);
+    background-image:linear-gradient(to right,rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.02) 1px,transparent 1px);
+    background-size:44px 44px;
+  }
+  h1,h2,h3,h4{font-family:var(--heading);font-weight:400;margin:0;letter-spacing:.04em}
+  .wrap{max-width:1600px;margin:0 auto;padding:26px 20px 70px}
+  .doc-head{border-left:2px solid var(--signal);padding-left:14px;margin-bottom:8px}
+  .doc-head h1{font-size:36px;color:var(--readout-strong);line-height:1}
+  .kicker{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3em;color:var(--signal)}
+  .dim{color:var(--readout-dim);font-size:13.5px}
+  .muted{color:var(--readout-muted);font-size:12px}
+  .lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:var(--readout-muted)}
+  .chamfer{clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+
+  .locks{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 30px}
+  .lock{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--edge);background:var(--panel);padding:4px 10px;color:var(--readout-dim)}
+  .lock b{color:var(--signal);font-weight:700}
+
+  /* phone frames */
+  .rack{display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start}
+  .slot{width:390px}
+  .slot > figcaption{margin:0 0 8px}
+  .slot h3{font-size:22px;color:var(--readout-strong)}
+  .phone{
+    width:390px;height:693px;position:relative;overflow:hidden;
+    border:1px solid var(--edge-strong);background:var(--void);
+    box-shadow:0 0 0 6px #0a0f14, 0 18px 40px rgba(0,0,0,.6);
+    display:flex;flex-direction:column;
+  }
+  .ratio{font-size:11px;color:var(--readout-muted);letter-spacing:.12em}
+
+  /* mocked nav (78px, two rows) */
+  .nav{flex:none;border-bottom:1px solid var(--edge);background:rgba(6,9,12,.9)}
+  .nav-r1{height:44px;display:flex;align-items:center;gap:10px;padding:0 10px}
+  .nav-r2{height:33px;border-top:1px solid var(--hairline);display:flex;align-items:center;gap:8px;padding:0 10px}
+  .wordmark{font-family:var(--heading);font-size:19px;color:var(--signal);letter-spacing:.1em}
+  .navchip{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--readout-muted);border:1px solid var(--hairline);padding:2px 6px}
+  .navchip.on{color:var(--signal);border-color:var(--signal-dim)}
+  .screen{flex:1;min-height:0;display:flex;flex-direction:column;position:relative}
+
+  /* shared bits */
+  .hdrstrip{flex:none;padding:8px 12px;border-bottom:1px solid var(--hairline);background:var(--inset);display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .bar{height:3px;background:var(--hairline);width:150px}
+  .bar>i{display:block;height:100%;background:var(--signal)}
+  .pill{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--edge);background:var(--inset);padding:2px 7px;color:var(--readout-dim);white-space:nowrap}
+  .pill.sig{border-color:var(--signal-dim);color:var(--signal)}
+  .pill.gold{border-color:rgba(232,209,116,.5);color:var(--el-light)}
+  .pill.green{border-color:rgba(53,212,139,.45);color:var(--el-green)}
+  .btn{font-family:var(--heading);letter-spacing:.1em;border:1px solid var(--edge-strong);background:transparent;color:var(--readout-dim);cursor:pointer;transition:transform .16s var(--ease),border-color .16s,color .16s}
+  .btn:hover{border-color:var(--signal);color:var(--signal)}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--signal);border-color:var(--signal);color:var(--void)}
+  .btn:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--signal)}
+  .safe{padding-bottom:14px} /* stands in for env(safe-area-inset-bottom) */
+
+  /* ---------- 1. PART SELECT (snap carousel) ---------- */
+  .carousel{flex:1;min-height:0;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;padding:6px 10px}
+  .carousel::-webkit-scrollbar{display:none}
+  .pcard{scroll-snap-align:center;position:relative;height:224px;margin:8px 0;overflow:hidden;border:1px solid var(--edge);background:var(--inset);transition:transform .25s var(--ease),opacity .25s var(--ease),border-color .25s}
+  .pcard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 14%;opacity:.62}
+  .pcard .scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(6,9,12,.98) 22%,rgba(6,9,12,.55) 58%,rgba(6,9,12,.15) 100%)}
+  .pcard .body{position:absolute;left:0;right:0;bottom:0;padding:12px 14px}
+  .pcard .num{font-size:10px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--signal)}
+  .pcard h4{font-size:30px;line-height:.95;color:var(--readout-strong);margin-top:2px}
+  .pcard .tag{font-size:12px;color:var(--readout-dim);margin-top:4px;line-height:1.35;max-width:34ch}
+  .pcard .prog{position:absolute;right:10px;top:10px}
+  .pcard.off{transform:scale(.9);opacity:.34;filter:grayscale(.7)}
+  .pcard.on{border-color:var(--signal);box-shadow:0 0 0 1px rgba(79,211,232,.25),0 10px 26px rgba(0,0,0,.55)}
+  .tapcue{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;font-family:var(--heading);font-size:15px;letter-spacing:.18em;color:var(--signal);text-shadow:0 0 10px rgba(79,211,232,.5)}
+  .stamp{position:absolute;right:12px;bottom:12px;font-family:var(--heading);font-size:17px;letter-spacing:.12em;color:var(--el-green);border:2px solid var(--el-green);padding:1px 8px;transform:rotate(-7deg);opacity:.92}
+
+  /* ---------- 2. CHAPTER SELECT ---------- */
+  .hero{flex:none;height:300px;position:relative;overflow:hidden;border-bottom:1px solid var(--edge)}
+  .hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%;opacity:.7}
+  .hero .scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(6,9,12,.97) 14%,rgba(6,9,12,.4) 60%,transparent 100%)}
+  .hero .body{position:absolute;left:0;right:0;bottom:0;padding:12px 14px}
+  .clist{flex:1;min-height:0;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;padding:6px 10px 0}
+  .clist::-webkit-scrollbar{display:none}
+  .ecard{scroll-snap-align:center;position:relative;margin:7px 0;border:1px solid var(--edge);background:var(--panel);transition:transform .2s var(--ease),opacity .2s var(--ease),border-color .2s}
+  .ecard.off{opacity:.4;transform:scale(.96);filter:grayscale(.6)}
+  .ecard.on{border-color:var(--signal)}
+  .ebanner{position:absolute;top:-1px;left:-1px;font-family:var(--heading);font-size:12px;letter-spacing:.14em;padding:1px 8px;background:var(--el-green);color:var(--void)}
+  .etitle{padding:9px 11px 7px;border-bottom:1px solid var(--hairline);display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .etitle .t{font-family:var(--heading);font-size:19px;letter-spacing:.04em;color:var(--readout-strong)}
+  .erow{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hairline)}
+  .ecell{background:var(--panel-raised);padding:7px 10px 9px;min-height:56px}
+  .chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--readout);border:1px solid var(--hairline);background:var(--inset);padding:2px 6px;margin:2px 3px 0 0}
+  .ribbon{position:absolute;right:-1px;bottom:-1px;font-family:var(--heading);font-size:13px;letter-spacing:.1em;padding:2px 9px;background:var(--el-light);color:var(--void)}
+  .ribbon.done{background:var(--edge);color:var(--readout-muted)}
+  .cfoot{flex:none;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid var(--hairline);background:var(--inset)}
+
+  /* ---------- 3. BRIEF ---------- */
+  .scroller{flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:10px}
+  .scroller::-webkit-scrollbar{display:none}
+  .box{border:1px solid var(--edge);background:var(--panel);padding:9px 10px;margin-bottom:7px}
+  /* TeamPicker, as actually built (components/game/TeamPicker.tsx) */
+  .tpk{border:1px solid var(--signal);background:var(--panel);margin-bottom:7px}
+  .tpk-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--hairline);padding:6px 10px}
+  .tpk-head h5{font-family:var(--heading);font-size:17px;letter-spacing:.12em;color:var(--signal);margin:0}
+  .tpk-count{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--readout-muted);font-variant-numeric:tabular-nums}
+  .tpk-count span{color:var(--readout-dim);margin-left:7px}
+  .presetrow{display:flex;flex-wrap:wrap;align-items:center;gap:5px;border-bottom:1px solid var(--hairline);padding:6px 10px}
+  .presetrow .plbl{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--readout-muted);margin-right:2px}
+  .pchip{display:flex;align-items:center;gap:6px;min-height:34px;border:1px solid var(--edge);background:rgba(6,9,12,.6);padding:3px 8px;font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--readout-dim);cursor:pointer}
+  .pchip.on{border-color:var(--signal);background:rgba(79,211,232,.1);color:var(--signal)}
+  .pchip.dash{border-style:dashed}
+  .pfaces{display:flex;gap:1px}
+  .pfaces span{display:block;width:18px;height:18px;overflow:hidden;border:1px solid var(--hairline);background:var(--inset)}
+  .pfaces img{width:100%;height:100%;object-fit:cover;object-position:top}
+  .tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:9px}
+  .tslot{position:relative;height:96px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;border:1px solid var(--edge);background:var(--inset)}
+  .tslot.anchor{border-color:var(--el-light)}
+  .tslot.trial{border-color:var(--signal)}
+  .tslot.picked{border-color:rgba(79,211,232,.6)}
+  .tslot.sub img{opacity:.7;filter:grayscale(1)}
+  .tslot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}
+  .tbadge{position:absolute;left:0;top:0;z-index:2;padding:1px 5px;font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--void)}
+  .tbadge.gold{background:var(--el-light)} .tbadge.sig{background:var(--signal)}
+  .tbadge.subtag{background:rgba(6,9,12,.85);color:var(--readout-dim);border-right:1px solid var(--edge);border-bottom:1px solid var(--edge)}
+  .tswap{position:absolute;right:0;top:0;z-index:2;background:rgba(6,9,12,.85);padding:1px 4px;font-size:10px;line-height:1.2;color:var(--signal)}
+  .tname{position:relative;z-index:2;width:100%;background:rgba(6,9,12,.75);padding:1px 3px;text-align:center;font-family:var(--heading);font-size:12px;letter-spacing:.06em;color:var(--readout-strong)}
+  .tnote{position:relative;z-index:2;width:100%;background:rgba(6,9,12,.75);padding:0 3px 2px;text-align:center;font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--readout-dim)}
+  .tempty{height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:1px dashed var(--edge);color:var(--readout-muted);font-size:26px;line-height:1;cursor:pointer}
+  .tempty small{font-size:8.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+  .trialnote{border-top:1px solid var(--hairline);padding:6px 10px;font-size:11px;line-height:1.45;color:var(--readout-dim)}
+  .trialnote b{color:var(--signal);font-weight:600}
+  .rulebox{border:1px solid var(--signal-dim);background:rgba(79,211,232,.05);padding:9px 10px;margin-bottom:7px}
+  .rulebox p{margin:4px 0 0;font-size:13px;line-height:1.45;color:var(--readout)}
+  .facts{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--edge);border:1px solid var(--edge);margin-bottom:7px}
+  .facts>div{background:var(--panel-raised);padding:6px 8px}
+  .facts .v{font-family:var(--heading);font-size:16px;color:var(--readout-strong)}
+  .toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--edge);background:var(--panel);padding:8px 10px;margin-bottom:7px}
+  .sw{width:40px;height:20px;border:1px solid var(--edge-strong);background:var(--inset);position:relative}
+  .sw>i{position:absolute;top:1px;left:1px;width:16px;height:16px;background:var(--readout-muted)}
+  .sw.on{border-color:var(--signal)}
+  .sw.on>i{left:auto;right:1px;background:var(--signal)}
+  .startbar{flex:none;display:flex;gap:8px;padding:9px 10px;border-top:1px solid var(--hairline);background:var(--inset)}
+
+  /* ---------- 4. NODE BOARD ---------- */
+  .board{flex:1;min-height:0;position:relative;overflow:hidden;background:
+     radial-gradient(120% 80% at 30% 12%, #14202b 0%, #0b1218 46%, #06090c 100%)}
+  .board .fog{position:absolute;inset:0;background:radial-gradient(70% 50% at 50% 55%,transparent 0%,rgba(4,7,10,.72) 100%);pointer-events:none}
+  .board svg{position:absolute;inset:0;width:100%;height:100%}
+  .plate{position:absolute;top:8px;left:8px;display:flex;align-items:center;gap:7px;z-index:3}
+  .plate .nameplate{font-family:var(--heading);font-size:16px;letter-spacing:.06em;color:var(--readout-strong);background:linear-gradient(90deg,rgba(6,9,12,.95),rgba(6,9,12,.5));border-left:2px solid var(--signal);padding:3px 12px 3px 8px}
+  .boardtop{position:absolute;top:8px;right:8px;display:flex;gap:6px;z-index:3}
+  .tile{cursor:pointer}
+  .tile .disc{filter:drop-shadow(0 3px 4px rgba(0,0,0,.6))}
+  .tile.locked{cursor:default}
+  .badge circle{filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
+  .orbrail{flex:none;display:flex;align-items:center;justify-content:center;gap:14px;padding:8px 12px;background:linear-gradient(to top,var(--inset),rgba(8,13,18,.4));border-top:1px solid var(--hairline)}
+  .orb{width:62px;height:62px;border-radius:50%;border:2px solid var(--el-light);background:radial-gradient(circle at 34% 28%,#3a3320,#171a12 72%);color:var(--el-light);font-family:var(--heading);font-size:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .16s var(--ease),opacity .2s;box-shadow:0 0 18px rgba(232,209,116,.18),inset 0 2px 6px rgba(255,255,255,.08)}
+  .orb:hover{transform:translateY(-2px) scale(1.04)}
+  .orb:active{transform:scale(.96)}
+  .orb.spent{opacity:.28;border-color:var(--edge);color:var(--readout-muted);box-shadow:none;cursor:default;background:var(--inset)}
+  .party{flex:none;border-top:1px solid var(--hairline);background:var(--inset);padding:7px 10px}
+  .units{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:5px}
+  .unit{border:1px solid var(--edge);background:var(--panel);padding:5px 6px}
+  .unit .nm{font-size:11px;font-weight:600;color:var(--readout);display:flex;align-items:center;gap:4px;white-space:nowrap}
+  .hp{height:6px;background:var(--inset);border:1px solid var(--hairline);margin-top:4px;overflow:hidden}
+  .hp>i{display:block;height:100%;transition:width .45s var(--ease)}
+  .ok>i{background:var(--el-green)} .warn>i{background:var(--el-light)} .crit>i{background:var(--el-red)}
+  .pc{font-size:10px;font-weight:700;color:var(--readout-dim);font-variant-numeric:tabular-nums;margin-top:2px}
+  .out{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--el-red)}
+  .nextup{display:flex;align-items:center;gap:5px}
+  .face{width:22px;height:22px;border:1px solid var(--el-red);background:var(--inset);overflow:hidden}
+  .face img{width:100%;height:100%;object-fit:cover;object-position:top}
+
+  /* ---------- 5. SUMMARY ---------- */
+  .sumtitle{text-align:center;padding:14px 12px 8px}
+  .sumtitle .p{font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--readout-muted)}
+  .sumtitle h4{font-size:27px;color:var(--readout-strong);margin-top:2px;line-height:1}
+  .rankpanel{border:1px solid var(--edge);background:var(--panel);padding:9px 11px;margin:0 10px 8px}
+  .rankrow{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .rankrow .k{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--readout-muted)}
+  .rankrow .v{font-family:var(--heading);font-size:21px;color:var(--el-light)}
+  .xp{height:6px;background:var(--inset);border:1px solid var(--hairline);margin:7px 0 6px}
+  .xp>i{display:block;height:100%;background:var(--signal)}
+  .grid5{display:flex;flex-wrap:wrap;gap:7px;padding:2px 0 0}
+  .item{position:relative;width:66px;text-align:center}
+  .item .ico{height:52px;border:1px solid var(--edge-strong);background:radial-gradient(circle at 40% 30%,var(--panel-raised),var(--inset));display:flex;align-items:center;justify-content:center;font-size:22px}
+  .item .qty{font-size:11px;font-weight:700;color:var(--readout);margin-top:2px;font-variant-numeric:tabular-nums}
+  .bonus{position:absolute;top:-6px;left:-4px;font-family:var(--heading);font-size:10px;letter-spacing:.08em;background:var(--el-light);color:var(--void);padding:0 5px;transform:rotate(-8deg)}
+  .unlock{margin:0 10px 8px;border-left:2px solid var(--el-light);background:rgba(232,209,116,.06);padding:8px 10px;font-size:12.5px;color:var(--readout)}
+  .sumacts{flex:none;padding:9px 10px;border-top:1px solid var(--hairline);background:var(--inset);display:flex;flex-direction:column;gap:7px}
+
+  /* annotations */
+  ul.notes{list-style:none;margin:12px 0 0;padding:0;width:390px}
+  ul.notes li{display:flex;gap:9px;padding:7px 0;border-top:1px solid var(--hairline);font-size:13.5px;line-height:1.5}
+  ul.notes li:first-child{border-top:none}
+  .tag{flex:none;font-size:9px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;padding:2px 6px;height:17px;line-height:13px;border:1px solid transparent}
+  .t-new{background:rgba(79,211,232,.12);color:var(--signal);border-color:var(--signal-dim)}
+  .t-ref{background:rgba(232,209,116,.1);color:var(--el-light);border-color:rgba(232,209,116,.4)}
+  .t-you{background:rgba(255,90,78,.1);color:var(--el-red);border-color:rgba(255,90,78,.4)}
+  .t-keep{background:rgba(53,212,139,.1);color:var(--el-green);border-color:rgba(53,212,139,.4)}
+  b.hl{color:var(--readout-strong);font-weight:600}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="doc-head">
+    <div class="kicker">Mockup v2 · 2026-08-17 · nothing implemented</div>
+    <h1>Story flow — five screens</h1>
+  </div>
+  <p class="dim" style="max-width:80ch">Every frame is <b class="hl">390×693 — true 9:16</b> — with the real two-row nav (78px) drawn in, so what you see is the actual space each screen gets on a phone. Game palette and fonts throughout. Character art is loaded from <code>public/</code>, so it's the real thing.</p>
+
+  <div class="locks">
+    <span class="lock">Chapter <b>= route</b></span>
+    <span class="lock">Movement <b>3 orbs</b></span>
+    <span class="lock">HP <b>persists</b></span>
+    <span class="lock">Death <b>lasts the run</b></span>
+    <span class="lock">Wipe <b>restarts route</b></span>
+    <span class="lock">Stamina <b>every attempt</b></span>
+    <span class="lock">Difficulty <b>global WL</b></span>
+  </div>
+
+  <div class="rack">
+
+    <!-- ══════════════ 1 · PART SELECT ══════════════ -->
+    <figure class="slot" style="margin:0">
+      <figcaption><h3>1 · Part select</h3><span class="ratio">390 × 693 · snap carousel</span></figcaption>
+      <div class="phone">
+        <div class="nav">
+          <div class="nav-r1"><span class="wordmark">TOLL</span><span class="navchip on">STORY</span><span class="navchip">GACHA</span><span class="navchip">ARCHIVE</span></div>
+          <div class="nav-r2"><span class="navchip">STA 48/60</span><span class="navchip">◈ 1240</span><span class="navchip">◇ 8.2k</span></div>
+        </div>
+        <div class="screen">
+          <div class="hdrstrip">
+            <div>
+              <div class="lbl" style="color:var(--signal)">Arc one · Main story</div>
+              <div class="bar" style="margin-top:5px"><i style="width:35%"></i></div>
+            </div>
+            <span class="pill">7 / 37</span>
+          </div>
+          <div class="carousel">
+            <div class="pcard off">
+              <img src="../../../public/characters/chiara.png" alt="" />
+              <div class="scrim"></div>
+              <div class="body"><div class="num">Part 3</div><h4>The Toll Collector</h4></div>
+              <span class="pill prog">0 / 3</span>
+            </div>
+
+            <div class="pcard on">
+              <img src="../../../public/characters/lyra.png" alt="" />
+              <div class="scrim"></div>
+              <div class="body">
+                <div class="num">Current · Part 2</div>
+                <h4>The Weight of the Toll</h4>
+                <p class="tag">Everyone pays. Some pay twice, and Lyra is still counting.</p>
+              </div>
+              <span class="pill prog sig">1 / 2</span>
+              <span class="tapcue">TAP</span>
+            </div>
+
+            <div class="pcard off">
+              <img src="../../../public/characters/duke.png" alt="" />
+              <div class="scrim"></div>
+              <div class="body"><div class="num">Part 1</div><h4>Rawspent and Ledger</h4></div>
+              <span class="stamp">CLEAR</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul class="notes">
+        <li><span class="tag t-new">New</span><span><b class="hl">Only reached parts exist here.</b> Part 3 shows because Part 2 was opened; nothing beyond renders at all, so no redaction is needed and no title, tagline or cover can leak.</span></li>
+        <li><span class="tag t-ref">Ref</span><span>Newest on top, so the part you're on is the top card and the screen opens already centred on it.</span></li>
+        <li><span class="tag t-new">New</span><span>A finished part keeps its <b class="hl">CLEAR</b> stamp instead of a progress pill — farmable, and visibly done.</span></li>
+      </ul>
+    </figure>
+
+    <!-- ══════════════ 2 · CHAPTER SELECT ══════════════ -->
+    <figure class="slot" style="margin:0">
+      <figcaption><h3>2 · Chapter select</h3><span class="ratio">hero + reward cards</span></figcaption>
+      <div class="phone">
+        <div class="nav">
+          <div class="nav-r1"><span class="wordmark">TOLL</span><span class="navchip on">STORY</span><span class="navchip">GACHA</span><span class="navchip">ARCHIVE</span></div>
+          <div class="nav-r2"><span class="navchip">STA 48/60</span><span class="navchip">◈ 1240</span><span class="navchip">◇ 8.2k</span></div>
+        </div>
+        <div class="screen">
+          <div class="hero">
+            <img src="../../../public/characters/lyra.png" alt="" />
+            <div class="scrim"></div>
+            <div class="body">
+              <div class="lbl" style="color:var(--signal)">Part 2 · Chapter 2</div>
+              <h4 style="font-size:26px;color:var(--readout-strong);line-height:1">Recalibration</h4>
+              <p class="tag" style="font-size:12px;color:var(--readout-dim);margin-top:4px;max-width:36ch">The bureau reads her ledger back to her, line by line, and asks which line she'd like to keep.</p>
+            </div>
+            <span class="pill" style="position:absolute;right:10px;top:10px">ⓘ</span>
+          </div>
+
+          <div class="clist">
+            <div class="ecard on">
+              <span class="ebanner">CLEARED</span>
+              <div class="etitle" style="padding-top:14px"><span class="t">2. Recalibration</span><span class="pill gold">STA 12</span></div>
+              <div class="erow">
+                <div class="ecell"><div class="lbl">Clear reward</div><span class="chip">50 ◈ Gems</span></div>
+                <div class="ecell"><div class="lbl">Farmable</div><span class="chip">300–800 Coin</span><span class="chip">1–2 Manual</span></div>
+              </div>
+              <span class="ribbon">◈ LYRA</span>
+            </div>
+
+            <div class="ecard off">
+              <span class="ebanner">CLEARED</span>
+              <div class="etitle" style="padding-top:14px"><span class="t">1. Nine Years</span><span class="pill gold">STA 10</span></div>
+              <div class="erow">
+                <div class="ecell"><div class="lbl">Clear reward</div><span class="chip">40 ◈ Gems</span></div>
+                <div class="ecell"><div class="lbl">Farmable</div><span class="chip">250–600 Coin</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cfoot safe">
+            <button class="btn chamfer" style="font-size:14px;padding:8px 14px">‹‹‹ PARTS</button>
+            <span class="muted">1 of 2 cleared</span>
+          </div>
+        </div>
+      </div>
+      <ul class="notes">
+        <li><span class="tag t-ref">Ref</span><span><b class="hl">The card is the stage-list card</b> — status banner, number and title, stamina, then the two reward columns. "Farmable" is your preview-of-drops; it swaps to the first-clear bundle when uncleared.</span></li>
+        <li><span class="tag t-new">New</span><span><b class="hl">The ribbon is a real reward, not a mission count.</b> <code>◈ LYRA</code> is the Bureau Order that already fires on <code>part2/p2c2</code>. It goes dim once claimed, and chapters with no order attached show nothing.</span></li>
+        <li><span class="tag t-ref">Ref</span><span>The hero re-renders as you scroll, so the list stays compact and the focused chapter gets the art.</span></li>
+      </ul>
+    </figure>
+
+    <!-- ══════════════ 3 · BRIEF ══════════════ -->
+    <figure class="slot" style="margin:0">
+      <figcaption><h3>3 · Brief</h3><span class="ratio">presets · rules · route preview</span></figcaption>
+      <div class="phone">
+        <div class="nav">
+          <div class="nav-r1"><span class="wordmark">TOLL</span><span class="navchip on">STORY</span><span class="navchip">GACHA</span><span class="navchip">ARCHIVE</span></div>
+          <div class="nav-r2"><span class="navchip">STA 48/60</span><span class="navchip">◈ 1240</span><span class="navchip">◇ 8.2k</span></div>
+        </div>
+        <div class="screen">
+          <div class="hdrstrip">
+            <div><div class="lbl" style="color:var(--signal)">Part 2 · Chapter 2</div><div style="font-family:var(--heading);font-size:20px;color:var(--readout-strong)">Recalibration</div></div>
+            <span class="pill">WL 2</span>
+          </div>
+
+          <div class="scroller">
+            <!-- The real TeamPicker, unchanged: same header, preset chips with
+                 member faces, 4-col grid of h-24 portrait tiles, trial note. -->
+            <div class="tpk chamfer">
+              <div class="tpk-head">
+                <h5>Your team</h5>
+                <span class="tpk-count">3 / 4<span>3 on field</span></span>
+              </div>
+
+              <div class="presetrow">
+                <span class="plbl">Preset</span>
+                <button class="pchip on">
+                  <span class="pfaces">
+                    <span><img src="../../../public/characters/duke.png" alt="" /></span>
+                    <span><img src="../../../public/characters/lyra.png" alt="" /></span>
+                    <span><img src="../../../public/characters/seras.png" alt="" /></span>
+                  </span>
+                  Main
+                </button>
+                <button class="pchip">
+                  <span class="pfaces">
+                    <span><img src="../../../public/characters/duke.png" alt="" /></span>
+                    <span><img src="../../../public/characters/isolde.png" alt="" /></span>
+                  </span>
+                  Farm
+                </button>
+                <button class="pchip dash">+ Save current</button>
+                <button class="pchip" aria-label="Manage presets">⋯</button>
+              </div>
+
+              <div class="tgrid">
+                <div class="tslot trial">
+                  <img src="../../../public/characters/lyra.png" alt="" />
+                  <span class="tbadge sig">Trial</span>
+                  <span class="tswap">⇄</span>
+                  <span class="tname">Lyra</span>
+                  <span class="tnote">Lv20</span>
+                </div>
+                <div class="tslot anchor">
+                  <img src="../../../public/characters/duke.png" alt="" />
+                  <span class="tbadge gold">Yours</span>
+                  <span class="tswap">⇄</span>
+                  <span class="tname">Duke</span>
+                  <span class="tnote">Lv30</span>
+                </div>
+                <div class="tslot picked">
+                  <img src="../../../public/characters/seras.png" alt="" />
+                  <span class="tname">Seras</span>
+                </div>
+                <div class="tempty">+<small>Sub</small></div>
+              </div>
+
+              <p class="trialnote"><b>Lyra</b> leads this chapter and isn't on your roster. A story version is lent for this battle only — not added to your roster, and nothing they earn is kept.</p>
+            </div>
+
+            <div class="box">
+              <div class="lbl">The route</div>
+              <svg viewBox="0 0 340 54" style="width:100%;height:auto;margin-top:6px" role="img" aria-label="Route preview: five tiles with one fork, boss last">
+                <line x1="18" y1="27" x2="88" y2="27" stroke="var(--edge-strong)" stroke-width="1.5"/>
+                <line x1="88" y1="27" x2="168" y2="12" stroke="var(--edge-strong)" stroke-width="1.5"/>
+                <line x1="88" y1="27" x2="168" y2="42" stroke="var(--edge-strong)" stroke-width="1.5"/>
+                <line x1="168" y1="12" x2="248" y2="27" stroke="var(--edge-strong)" stroke-width="1.5"/>
+                <line x1="168" y1="42" x2="248" y2="27" stroke="var(--edge-strong)" stroke-width="1.5"/>
+                <line x1="248" y1="27" x2="316" y2="27" stroke="var(--edge-strong)" stroke-width="1.5"/>
+                <circle cx="18" cy="27" r="8" fill="var(--inset)" stroke="var(--readout-muted)" stroke-width="1.5"/>
+                <rect x="80" y="19" width="16" height="16" transform="rotate(45 88 27)" fill="var(--inset)" stroke="var(--el-red)" stroke-width="1.5"/>
+                <polygon points="168,4 175,8 175,16 168,20 161,16 161,8" fill="var(--inset)" stroke="var(--el-green)" stroke-width="1.5"/>
+                <rect x="160" y="34" width="16" height="16" transform="rotate(45 168 42)" fill="var(--inset)" stroke="var(--el-red)" stroke-width="1.5"/>
+                <circle cx="248" cy="27" r="4" fill="var(--edge)"/>
+                <polygon points="316,14 321,24 332,25 324,32 326,43 316,37 306,43 308,32 300,25 311,24" fill="var(--inset)" stroke="var(--el-light)" stroke-width="1.4"/>
+              </svg>
+              <div class="muted" style="margin-top:4px">5 tiles · 2 fights · 1 fork · boss ends the route</div>
+            </div>
+
+            <div class="rulebox">
+              <div class="lbl" style="color:var(--signal)">How a route works</div>
+              <p>Damage <b class="hl">carries between tiles</b>. A unit that falls is <b class="hl">out for the rest of the run</b> — your bench takes over. Wipe and the <b class="hl">whole route restarts</b>, and the next attempt costs stamina again.</p>
+            </div>
+
+            <div class="toggle">
+              <div><div class="lbl">Scenario</div><div class="muted">Skip story scenes on this route</div></div>
+              <span class="sw"><i></i></span>
+            </div>
+
+            <div class="facts">
+              <div><div class="lbl">Stamina</div><div class="v">−12</div></div>
+              <div><div class="lbl">On clear</div><div class="v" style="font-size:13px">300–800 Coin</div></div>
+              <div><div class="lbl">Team</div><div class="v" style="font-size:13px">Leads fixed</div></div>
+            </div>
+          </div>
+
+          <div class="startbar safe">
+            <button class="btn chamfer" style="font-size:14px;padding:9px 12px">‹‹‹</button>
+            <button class="btn primary chamfer" style="flex:1;font-size:19px;padding:9px">START · 12 STA</button>
+          </div>
+        </div>
+      </div>
+      <ul class="notes">
+        <li><span class="tag t-keep">Built</span><span><b class="hl">That's the real <code>TeamPicker</code>, unchanged</b> — same header and count, preset chips carrying member faces, the 4-column grid of 96px portrait tiles, <code>Trial</code>/<code>Yours</code> badges with the <code>⇄</code> swap, the <code>Sub</code> slot, and the trial note. No new picker, no numbered tabs: presets are named chips because a team is recognised by its faces faster than by a number.</span></li>
+        <li><span class="tag t-keep">Built</span><span><b class="hl">No "last clear" button needed.</b> The picker already seeds itself from <code>lastTeam</code> on open, once, and never over a selection you've made — so the brief arrives pre-filled with whatever last went into battle.</span></li>
+        <li><span class="tag t-ref">Ref</span><span><b class="hl">Scenario is a remembered toggle</b>, not a second button. Replaces the FARM RUN button from v1.</span></li>
+        <li><span class="tag t-new">New</span><span>The rule box states the three things a player can't safely learn by playing — where the sentence ruling #96 deleted comes back, as the rule that needed saying.</span></li>
+        <li><span class="tag t-you">Flag</span><span>Two known picker issues get more exposure now it's a primary mobile screen: the slot grid is <code>grid-cols-4</code> with no responsive fallback (~85px tiles at 390px), and <b class="hl">saving or renaming a preset calls <code>window.prompt</code></b> — a system sheet over the game, already logged as the most obvious prototype tell left in the UI. Neither is in this plan's scope; both are cheap to fix if you want them in.</span></li>
+      </ul>
+    </figure>
+
+    <!-- ══════════════ 4 · NODE BOARD ══════════════ -->
+    <figure class="slot" style="margin:0">
+      <figcaption><h3>4 · The node board</h3><span class="ratio">tap an orb — it moves</span></figcaption>
+      <div class="phone">
+        <div class="nav">
+          <div class="nav-r1"><span class="wordmark">TOLL</span><span class="navchip on">STORY</span><span class="navchip">GACHA</span><span class="navchip">ARCHIVE</span></div>
+        </div>
+        <div class="screen">
+          <div class="board">
+            <svg viewBox="0 0 390 400" preserveAspectRatio="xMidYMid slice" aria-label="Route board: a lattice of tiles with the party token and a boss">
+              <!-- ground texture: scattered debris so it reads as a place -->
+              <g opacity=".5">
+                <ellipse cx="52" cy="88" rx="16" ry="5" fill="#101a22"/>
+                <ellipse cx="330" cy="140" rx="20" ry="6" fill="#101a22"/>
+                <ellipse cx="96" cy="330" rx="24" ry="7" fill="#0e1720"/>
+                <ellipse cx="290" cy="352" rx="16" ry="5" fill="#0e1720"/>
+                <path d="M44 84c4-7 12-7 16 0 3 5-1 8-8 8s-11-3-8-8z" fill="#182530"/>
+                <path d="M322 136c5-8 14-8 19 0 3 6-2 9-9 9s-13-3-10-9z" fill="#182530"/>
+                <path d="M86 326c6-9 16-9 22 0 4 6-2 10-11 10s-15-4-11-10z" fill="#16222c"/>
+              </g>
+
+              <!-- path -->
+              <g fill="none" stroke-linecap="round">
+                <path d="M312 66 L246 116 L312 166" stroke="#1d2b37" stroke-width="9"/>
+                <path d="M246 116 L180 166 L246 216" stroke="#1d2b37" stroke-width="9"/>
+                <path d="M180 166 L114 216 L180 266" stroke="#1d2b37" stroke-width="9"/>
+                <path d="M312 166 L246 216 L312 266" stroke="#1d2b37" stroke-width="9"/>
+                <path d="M180 266 L114 316" stroke="#1d2b37" stroke-width="9"/>
+                <path d="M246 216 L180 266" stroke="#1d2b37" stroke-width="9"/>
+                <path d="M312 266 L246 316" stroke="#1d2b37" stroke-width="9"/>
+                <path d="M114 316 L74 344" stroke="#1d2b37" stroke-width="9"/>
+                <!-- walked, lit -->
+                <path id="walked" d="M312 66 L246 116" stroke="var(--signal-dim)" stroke-width="4" opacity=".9"/>
+              </g>
+
+              <!-- START -->
+              <ellipse cx="312" cy="70" rx="17" ry="7" fill="#1b4d3a" stroke="var(--el-green)" stroke-width="1.5"/>
+              <text x="312" y="52" text-anchor="middle" font-family="Bangers" font-size="13" fill="var(--el-green)" letter-spacing="1">START</text>
+
+              <!-- tiles: disc + object. shape carries type, colour is secondary -->
+              <!-- loot tile -->
+              <g class="tile" id="t-loot">
+                <ellipse class="disc" cx="312" cy="170" rx="19" ry="8" fill="#16222c" stroke="var(--edge-strong)"/>
+                <rect x="304" y="148" width="16" height="18" rx="2" fill="#2a3a24" stroke="var(--el-green)" stroke-width="1.5"/>
+                <rect x="307" y="144" width="10" height="5" fill="var(--el-green)" opacity=".8"/>
+              </g>
+              <!-- fight tiles: diamond -->
+              <g class="tile">
+                <ellipse class="disc" cx="180" cy="170" rx="19" ry="8" fill="#16222c" stroke="var(--edge-strong)"/>
+                <rect x="169" y="139" width="22" height="22" transform="rotate(45 180 150)" fill="#2b1a1c" stroke="var(--el-red)" stroke-width="1.5"/>
+                <text x="180" y="155" text-anchor="middle" font-size="12" fill="var(--el-red)">⚔</text>
+              </g>
+              <g class="tile">
+                <ellipse class="disc" cx="246" cy="220" rx="19" ry="8" fill="#16222c" stroke="var(--edge-strong)"/>
+                <rect x="235" y="189" width="22" height="22" transform="rotate(45 246 200)" fill="#2b1a1c" stroke="var(--el-red)" stroke-width="1.5"/>
+                <text x="246" y="205" text-anchor="middle" font-size="12" fill="var(--el-red)">⚔</text>
+              </g>
+              <!-- heal tile: hexagon -->
+              <g class="tile" id="t-heal">
+                <ellipse class="disc" cx="114" cy="220" rx="19" ry="8" fill="#16222c" stroke="var(--edge-strong)"/>
+                <polygon points="114,186 127,193 127,208 114,215 101,208 101,193" fill="#16302a" stroke="var(--el-green)" stroke-width="1.5"/>
+                <text x="114" y="205" text-anchor="middle" font-size="12" fill="var(--el-green)">✚</text>
+              </g>
+              <!-- scene tile: circle -->
+              <g class="tile">
+                <ellipse class="disc" cx="312" cy="270" rx="19" ry="8" fill="#16222c" stroke="var(--edge-strong)"/>
+                <circle cx="312" cy="252" r="11" fill="#1a2530" stroke="var(--readout-dim)" stroke-width="1.5"/>
+                <text x="312" y="257" text-anchor="middle" font-size="11" fill="var(--readout-dim)">❝</text>
+              </g>
+              <!-- empty -->
+              <ellipse cx="180" cy="270" rx="16" ry="7" fill="#131e27" stroke="var(--edge)"/>
+              <ellipse cx="246" cy="320" rx="16" ry="7" fill="#131e27" stroke="var(--edge)"/>
+
+              <!-- boss + STOP -->
+              <g>
+                <ellipse cx="114" cy="320" rx="24" ry="9" fill="#2a1622" stroke="var(--el-light)" stroke-width="1.5"/>
+                <polygon points="114,272 122,296 147,296 127,311 134,335 114,321 94,335 101,311 81,296 106,296" fill="#241c14" stroke="var(--el-light)" stroke-width="2"/>
+                <text x="114" y="309" text-anchor="middle" font-size="12" fill="var(--el-light)">★</text>
+                <rect x="132" y="326" width="34" height="13" rx="2" fill="#3a1113" stroke="var(--el-red)"/>
+                <text x="149" y="336" text-anchor="middle" font-family="Bangers" font-size="10" fill="#ffb3ad" letter-spacing="1">STOP</text>
+                <text x="114" y="262" text-anchor="middle" font-family="Bangers" font-size="13" fill="var(--el-light)" letter-spacing=".5">CHIARA</text>
+              </g>
+
+              <!-- landing badges: one per orb, positioned by script -->
+              <g class="badge" id="b0"><circle r="11" fill="#0a1015" stroke="var(--signal)" stroke-width="1.5"/><text y="5" text-anchor="middle" font-family="Bangers" font-size="13" fill="var(--signal)"></text></g>
+              <g class="badge" id="b1"><circle r="11" fill="#0a1015" stroke="var(--signal)" stroke-width="1.5"/><text y="5" text-anchor="middle" font-family="Bangers" font-size="13" fill="var(--signal)"></text></g>
+              <g class="badge" id="b2"><circle r="11" fill="#0a1015" stroke="var(--signal)" stroke-width="1.5"/><text y="5" text-anchor="middle" font-family="Bangers" font-size="13" fill="var(--signal)"></text></g>
+
+              <!-- party token: real portrait in a card frame -->
+              <g id="token" style="transition:transform .5s cubic-bezier(.16,1,.3,1)">
+                <ellipse cx="246" cy="122" rx="20" ry="8" fill="rgba(79,211,232,.16)"/>
+                <clipPath id="clipTok"><rect x="232" y="82" width="28" height="34"/></clipPath>
+                <image href="../../../public/characters/duke.png" x="222" y="72" width="48" height="52" clip-path="url(#clipTok)" preserveAspectRatio="xMidYMin slice"/>
+                <rect x="232" y="82" width="28" height="34" fill="none" stroke="var(--signal)" stroke-width="2"/>
+              </g>
+            </svg>
+            <div class="fog"></div>
+            <div class="plate"><span class="nameplate">Recalibration</span><span class="pill">WL 2</span></div>
+            <div class="boardtop"><span class="pill sig">◈ 3</span><span class="pill">MENU</span></div>
+          </div>
+
+          <div class="orbrail">
+            <button class="orb" data-orb="0">–</button>
+            <button class="orb" data-orb="1">–</button>
+            <button class="orb" data-orb="2">–</button>
+          </div>
+
+          <div class="party safe">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span class="lbl">Party</span>
+              <span class="nextup"><span class="muted">Next up</span>
+                <span class="face"><img src="../../../public/characters/chiara.png" alt="" /></span>
+                <span class="face"><img src="../../../public/npc/molvarr.png" alt="" /></span>
+              </span>
+            </div>
+            <div class="units">
+              <div class="unit"><span class="nm">Duke</span><span class="hp warn" data-bar="duke"><i style="width:62%"></i></span><span class="pc" data-pc="duke">62%</span></div>
+              <div class="unit"><span class="nm">Lyra</span><span class="hp ok"><i style="width:88%"></i></span><span class="pc">88%</span></div>
+              <div class="unit" style="border-color:rgba(255,90,78,.4)"><span class="nm">Seras <span style="color:var(--el-red)">✕</span></span><span class="hp crit"><i style="width:0%"></i></span><span class="out">Out for the run</span></div>
+              <div class="unit" style="border-color:var(--signal-dim)"><span class="nm">Yalina <span style="color:var(--signal);font-size:9px">↑IN</span></span><span class="hp ok"><i style="width:100%"></i></span><span class="pc">100%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul class="notes">
+        <li><span class="tag t-new">New</span><span><b class="hl">It's a place, not a diagram</b> — lit path over dark ground, tiles as objects standing on discs, debris and fog for depth, and your lead's portrait as the token. Terrain art replaces the gradient when ComfyUI delivers; the fallback stands on its own.</span></li>
+        <li><span class="tag t-you">Yours</span><span><b class="hl">Three orbs, each an independent random 1–6.</b> Using one re-rolls <i>that</i> orb only — the other two keep their values, so there's no spent state and no waiting: you always hold three live options. Tap around and watch the badges move.</span></li>
+        <li><span class="tag t-ref">Ref</span><span>Badges show each value's landing tile <i>before</i> you commit, and <b class="hl">only the tile you land on triggers</b> — that's what makes the orbs a decision rather than a dice roll. Landing the heal tile is the visible payoff; landing a fight costs HP that carries.</span></li>
+        <li><span class="tag t-you">Flag</span><span><b class="hl">1–6 with instant re-rolls means routes need length.</b> One tap can cover six tiles, so a 5-tile route is crossed in one or two moves and the orbs become decoration. The tension isn't distance — it's that all three options can be bad. That's a constraint on how routes get authored, not a rule change.</span></li>
+        <li><span class="tag t-you">Yours</span><span>Party HP is <b class="hl">four per-unit bars, not one pooled bar</b> — the bench promotes on a specific unit's death, so pooling would make that unreadable. Downed carries a glyph and words, never colour alone.</span></li>
+        <li><span class="tag t-new">New</span><span>Nav drops to <b class="hl">one row (44px)</b> here, as it already does in battle — the board gets the height back.</span></li>
+      </ul>
+    </figure>
+
+    <!-- ══════════════ 5 · CLEAR SUMMARY ══════════════ -->
+    <figure class="slot" style="margin:0">
+      <figcaption><h3>5 · Clear summary</h3><span class="ratio">cumulative payout · no timer</span></figcaption>
+      <div class="phone">
+        <div class="nav">
+          <div class="nav-r1"><span class="wordmark">TOLL</span><span class="navchip on">STORY</span><span class="navchip">GACHA</span><span class="navchip">ARCHIVE</span></div>
+          <div class="nav-r2"><span class="navchip">STA 36/60</span><span class="navchip">◈ 1290</span><span class="navchip">◇ 8.9k</span></div>
+        </div>
+        <div class="screen">
+          <div class="sumtitle">
+            <div class="p">The Weight of the Toll</div>
+            <h4>Recalibration</h4>
+            <div style="margin-top:6px"><span class="pill green">ROUTE CLEARED</span></div>
+          </div>
+
+          <div class="rankpanel">
+            <div class="rankrow"><span class="k">Rank</span><span class="v">12</span></div>
+            <div class="xp"><i style="width:64%"></i></div>
+            <div class="rankrow"><span class="k">Until next rank</span><span class="muted" style="font-variant-numeric:tabular-nums">1,850 XP</span></div>
+            <div class="rankrow" style="margin-top:7px;border-top:1px solid var(--hairline);padding-top:7px">
+              <span class="k">Gained</span><span class="muted" style="color:var(--el-light);font-weight:700">+620 Coin · +50 Gems</span>
+            </div>
+          </div>
+
+          <div class="rankpanel" style="background:var(--panel)">
+            <div class="lbl">Obtained</div>
+            <div class="grid5">
+              <div class="item"><span class="bonus">BONUS</span><div class="ico" style="border-color:var(--el-light)">◈</div><div class="qty">50 Gems</div></div>
+              <div class="item"><div class="ico">◇</div><div class="qty">×620</div></div>
+              <div class="item"><div class="ico">▤</div><div class="qty">×2</div></div>
+              <div class="item"><div class="ico">✦</div><div class="qty">×1</div></div>
+            </div>
+          </div>
+
+          <div class="unlock"><b class="hl">◈ LYRA joins you.</b> Claim her in Orders.</div>
+
+          <div class="sumacts safe">
+            <button class="btn primary chamfer" style="font-size:19px;padding:10px">CHAPTER 3 ▸</button>
+            <div style="display:flex;gap:7px">
+              <button class="btn chamfer" style="flex:1;font-size:15px;padding:9px">ATTEMPT AGAIN · 12</button>
+              <button class="btn chamfer" style="flex:1;font-size:15px;padding:9px">CHAPTERS</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul class="notes">
+        <li><span class="tag t-you">Yours</span><span><b class="hl">No clear time</b>, per your call — and nothing tracks it today anyway.</span></li>
+        <li><span class="tag t-new">New</span><span>The <b class="hl">BONUS</b> badge marks first-clear-only entries. Free: <code>rollStoryRewards</code> already returns <code>firstClear</code> and <code>drops</code> separately.</span></li>
+        <li><span class="tag t-new">New</span><span>The unlock line closes the loop the chapter card opened — it advertised <code>◈ LYRA</code>, this confirms her. Omitted entirely when there's nothing, rather than printing "None".</span></li>
+        <li><span class="tag t-you">Flag</span><span><code>accountXp</code> is first-clear-only today, so that rank bar <b class="hl">won't move on a farm run</b>. Economy call, not a layout one.</span></li>
+      </ul>
+    </figure>
+
+  </div>
+
+  <p class="muted" style="border-top:1px solid var(--hairline);padding-top:14px;margin-top:34px">
+    Mockup only — no component under <code>components/game/story/</code> has been touched. Palette and fonts mirror <code>styles/globals.css</code>; art is loaded from <code>public/</code>. Plan: <code>~/.claude/plans/recursive-swinging-noodle.md</code>.
+  </p>
+</div>
+
+<script>
+  /* Orb movement, per Tanveer 2026-08-17: three orbs, each an independent
+     random 1-6. Using one re-rolls THAT orb only, so you always hold three
+     live options and there is no spent state. Badges show where each value
+     would land before you commit; only the landing tile triggers. */
+  (function () {
+    // Walk order through the drawn discs — index 8 is the boss (terminal).
+    var PATH = [
+      { x: 312, y: 70,  type: "start", label: "Start" },
+      { x: 246, y: 120, type: "here",  label: "Recalibration" },
+      { x: 180, y: 170, type: "fight", label: "Fight — 2 enemies" },
+      { x: 114, y: 220, type: "heal",  label: "Supply cache — party healed" },
+      { x: 180, y: 270, type: "empty", label: "Empty ground — nothing here" },
+      { x: 246, y: 220, type: "fight", label: "Fight — 3 enemies" },
+      { x: 312, y: 270, type: "scene", label: "Scene — she says it plainly" },
+      { x: 246, y: 320, type: "empty", label: "Empty ground — nothing here" },
+      { x: 114, y: 320, type: "boss",  label: "CHIARA — route ends here" }
+    ];
+    var BOSS = PATH.length - 1;
+    var TOKEN_X = 246, TOKEN_Y = 122;
+
+    var token = document.getElementById("token");
+    var plate = document.querySelector(".nameplate");
+    var bar = document.querySelector('[data-bar="duke"]');
+    var pc = document.querySelector('[data-pc="duke"]');
+    var orbs = Array.prototype.slice.call(document.querySelectorAll(".orb"));
+    var badges = [0, 1, 2].map(function (i) { return document.getElementById("b" + i); });
+
+    var at = 1;          // current tile index
+    var hp = 62;         // Duke, so the HP handoff is visible across tiles
+    var values = [roll(), roll(), roll()];
+
+    function roll() { return 1 + Math.floor(Math.random() * 6); }
+
+    function setHp(next) {
+      hp = Math.max(0, Math.min(100, next));
+      if (!bar || !pc) return;
+      bar.className = "hp " + (hp > 65 ? "ok" : hp > 30 ? "warn" : "crit");
+      bar.querySelector("i").style.width = hp + "%";
+      pc.textContent = hp + "%";
+    }
+
+    function paint() {
+      orbs.forEach(function (o, i) { o.textContent = String(values[i]); });
+
+      var used = {};
+      badges.forEach(function (b, i) {
+        if (!b) return;
+        if (at >= BOSS) { b.style.display = "none"; return; }
+        var target = Math.min(at + values[i], BOSS);
+        var p = PATH[target];
+        // Two orbs can land the same tile — nudge so both stay readable.
+        var nudge = (used[target] || 0) * 15;
+        used[target] = (used[target] || 0) + 1;
+        b.style.display = "";
+        b.setAttribute("transform", "translate(" + (p.x + 22 + nudge) + "," + (p.y - 26) + ")");
+        b.querySelector("text").textContent = String(values[i]);
+      });
+
+      if (at >= BOSS) {
+        orbs.forEach(function (o) { o.classList.add("spent"); });
+      }
+    }
+
+    function use(i) {
+      if (at >= BOSS) return;
+      at = Math.min(at + values[i], BOSS);
+      var tile = PATH[at];
+
+      token.setAttribute(
+        "transform",
+        "translate(" + (tile.x - TOKEN_X) + "," + (tile.y - TOKEN_Y) + ")"
+      );
+      if (plate) plate.textContent = tile.label;
+
+      if (tile.type === "fight") setHp(hp - (18 + Math.floor(Math.random() * 22)));
+      else if (tile.type === "heal") setHp(95);
+      else if (tile.type === "boss") setHp(hp - 12);
+
+      values[i] = roll();   // only this orb re-rolls
+      paint();
+    }
+
+    orbs.forEach(function (orb, i) {
+      orb.addEventListener("click", function () { use(i); });
+    });
+    paint();
+  })();
+</script>
+</body>
+</html>

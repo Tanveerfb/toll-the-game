@@ -2,6 +2,7 @@ import { z } from "zod";
 import step1Orders from "@/data/orders/step-1.json";
 import step2Orders from "@/data/orders/step-2.json";
 import { getCharacterById } from "@/lib/game/characterCatalog";
+import { materialLabel } from "@/lib/game/materials";
 
 /**
  * Bureau Orders — the starter objective list.
@@ -105,6 +106,46 @@ export const ORDER_STEPS: readonly number[] = [
 
 export function getStarterOrders(): Order[] {
   return ORDERS;
+}
+
+/**
+ * The orders a specific chapter satisfies.
+ *
+ * Story mode advertises these on the chapter card and confirms them on the clear
+ * summary, so a reward tied to a chapter is visible *at* that chapter. Before
+ * this, `lyra-joins` — a free character for finishing part 2 — existed only
+ * inside the Orders modal in the nav, and nothing on the chapter that grants her
+ * said so.
+ *
+ * Only `chapterCleared` goals qualify. `chaptersCleared` counts progress across
+ * the whole arc, so it belongs to no single chapter and pinning it to one would
+ * promise the same reward on every chapter the player opens.
+ */
+export function ordersForChapter(partId: string, chapterId: string): Order[] {
+  return ORDERS.filter(
+    (order) =>
+      order.goal.type === "chapterCleared" &&
+      order.goal.partId === partId &&
+      order.goal.chapterId === chapterId,
+  );
+}
+
+/**
+ * An order's reward in as few words as a ribbon allows — "Lyra", "125 Gems".
+ *
+ * A character is named alone even when the order also pays currency: the
+ * character is the reason anyone cares, and a ribbon has room for one idea.
+ */
+export function describeOrderReward(reward: OrderReward): string {
+  if (reward.character) {
+    return getCharacterById(reward.character)?.name ?? reward.character;
+  }
+  if (reward.gems) return `${reward.gems} Gems`;
+  if (reward.coin) return `${reward.coin} Coin`;
+  if (reward.permanentTicket) return `${reward.permanentTicket} Ticket`;
+  if (reward.autoClearTickets) return `${reward.autoClearTickets} Auto-Clear`;
+  const first = Object.entries(reward.materials ?? {})[0];
+  return first ? `${first[1]} ${materialLabel(first[0])}` : "Reward";
 }
 
 export function getOrdersForStep(step: number): Order[] {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  describeRewards,
   isEmptyPayout,
   rollStoryRewards,
   storyAttemptCost,
@@ -99,13 +100,63 @@ describe("rollStoryRewards", () => {
   });
 });
 
+/**
+ * Every attempt is charged since 2026-08-17 (Tanveer), which retired the rule
+ * that uncleared chapters were free however many times you retried them. These
+ * assertions used to say the opposite; the story can be stamina-gated now, and
+ * that was flagged and confirmed rather than overlooked.
+ */
 describe("storyAttemptCost", () => {
-  it("is free for an uncleared chapter, however many retries it takes", () => {
-    expect(storyAttemptCost(REWARDS, false)).toBe(0);
+  it("charges the same whether the chapter is cleared or not", () => {
+    expect(storyAttemptCost(REWARDS)).toBe(5);
   });
 
-  it("charges the replay cost once the chapter is cleared", () => {
-    expect(storyAttemptCost(REWARDS, true)).toBe(5);
+  it("still costs nothing where the chapter is authored free", () => {
+    expect(storyAttemptCost({ ...REWARDS, replayStamina: 0 })).toBe(0);
+  });
+});
+
+/**
+ * One list of reward lines, shared by the chapter card and the brief. They used
+ * to be built privately inside `ChapterBrief`, which is how a card and a brief
+ * end up disagreeing about what a chapter pays.
+ */
+describe("describeRewards", () => {
+  it("advertises the one-time bundle while the chapter is uncleared", () => {
+    expect(describeRewards(REWARDS, false)).toEqual([
+      "50 Gems",
+      "1500 Coin",
+      "2 Training Manual",
+    ]);
+  });
+
+  it("advertises the repeat ranges once it is cleared", () => {
+    expect(describeRewards(REWARDS, true)).toEqual([
+      "300–800 Coin",
+      "0–2 Training Manual",
+    ]);
+  });
+
+  it("collapses a range whose bounds are equal", () => {
+    const fixed: StoryChapterRewards = {
+      ...REWARDS,
+      repeat: { coin: { min: 500, max: 500 } },
+    };
+    expect(describeRewards(fixed, true)).toEqual(["500 Coin"]);
+  });
+
+  it("names materials rather than printing raw ids", () => {
+    const lines = describeRewards(REWARDS, false);
+    expect(lines.some((line) => line.includes("training_manual"))).toBe(false);
+  });
+
+  it("returns an empty list rather than a placeholder when nothing is paid", () => {
+    expect(
+      describeRewards({ firstClear: {}, repeat: {}, replayStamina: 0 }, false),
+    ).toEqual([]);
+    expect(
+      describeRewards({ firstClear: {}, repeat: {}, replayStamina: 0 }, true),
+    ).toEqual([]);
   });
 });
 

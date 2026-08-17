@@ -1,3 +1,4 @@
+import { materialLabel } from "@/lib/game/materials";
 import type {
   StoryChapterRewards,
   StoryDropRange,
@@ -96,15 +97,59 @@ export function rollStoryRewards(
 }
 
 /**
- * Stamina this attempt costs. An uncleared chapter is free however many times
- * it is retried — the story is never stamina-locked, only the farm is
- * (Tanveer, 2026-08-09).
+ * Stamina this attempt costs — the same whether the chapter is cleared or not.
+ *
+ * **Supersedes the 2026-08-09 ruling** that uncleared chapters were always free
+ * however many times they were retried. Tanveer, 2026-08-17: *"we are charging
+ * sta for story now. all of them. first try and reattempts all cost sta."* The
+ * consequence is deliberate and was flagged before he confirmed it: story
+ * progress can now be stamina-gated, so a player who wipes twice waits.
+ *
+ * A chapter authored at `replayStamina: 0` is still free — several scene-only
+ * chapters are, and a chapter with nothing to fight has nothing to charge for.
  */
-export function storyAttemptCost(
+export function storyAttemptCost(rewards: StoryChapterRewards): number {
+  return rewards.replayStamina;
+}
+
+/** "300–800" for a range, "2" for a fixed amount. */
+function rangeLabel(min: number, max: number): string {
+  return min === max ? `${min}` : `${min}–${max}`;
+}
+
+/**
+ * What a chapter pays, as display lines.
+ *
+ * Lifted out of `ChapterBrief`, which had it as a private hook, because the
+ * chapter card now advertises the same thing — and `OrdersBoard` already keeps a
+ * third copy of this idea. One list, one place, so the brief and the card can
+ * never disagree about what a chapter is worth.
+ *
+ * Branching on `cleared` is the point: an uncleared chapter advertises its
+ * one-time bundle, because that's what you're about to earn, while a cleared one
+ * advertises the repeat ranges, because that's what farming it actually pays.
+ */
+export function describeRewards(
   rewards: StoryChapterRewards,
   cleared: boolean,
-): number {
-  return cleared ? rewards.replayStamina : 0;
+): string[] {
+  const lines: string[] = [];
+  if (!cleared) {
+    const { gems, coin, permanentTicket, materials } = rewards.firstClear;
+    if (gems) lines.push(`${gems} Gems`);
+    if (coin) lines.push(`${coin} Coin`);
+    if (permanentTicket) lines.push(`${permanentTicket} Permanent Ticket`);
+    for (const [id, qty] of Object.entries(materials ?? {})) {
+      if (qty) lines.push(`${qty} ${materialLabel(id)}`);
+    }
+    return lines;
+  }
+  const { coin, materials } = rewards.repeat;
+  if (coin) lines.push(`${rangeLabel(coin.min, coin.max)} Coin`);
+  for (const [id, range] of Object.entries(materials ?? {})) {
+    lines.push(`${rangeLabel(range.min, range.max)} ${materialLabel(id)}`);
+  }
+  return lines;
 }
 
 /** True when a payout would grant nothing — used to skip an empty section on

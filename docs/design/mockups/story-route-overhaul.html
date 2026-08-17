@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Story route overhaul — menu / brief / stage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* Combat Terminal tokens, lifted from styles/globals.css so this mockup is
+     judged in the game's own palette rather than a generic wireframe one. */
+  :root {
+    --void:#06090c; --panel:#0d141b; --panel-raised:#111a23; --inset:#080d12;
+    --gridline:#0e1720; --hairline:#16212b; --edge:#1c2a36; --edge-strong:#31596b;
+    --readout-strong:#eaf2f8; --readout:#cbd8e2; --readout-dim:#8ea6b8; --readout-muted:#5d7285;
+    --signal:#4fd3e8; --signal-dim:#31596b;
+    --el-light:#e8d174; --el-red:#ff5a4e; --el-blue:#37a6ff; --el-green:#35d48b; --el-dark:#a874ff;
+    --heading:'Bangers', cursive; --body:'Rajdhani', sans-serif;
+    --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--void); color:var(--readout);
+    font-family:var(--body); font-size:16px; line-height:1.5;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,.022) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,.022) 1px, transparent 1px);
+    background-size:44px 44px;
+  }
+  .wrap { max-width:1180px; margin:0 auto; padding:28px 20px 80px; }
+  h1,h2,h3,h4 { font-family:var(--heading); font-weight:400; margin:0; letter-spacing:.04em; }
+  .chamfer { clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px); }
+  .kicker { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.3em; color:var(--signal); }
+  .lbl { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.22em; color:var(--readout-muted); }
+  .dim { color:var(--readout-dim); font-size:13px; }
+  .muted { color:var(--readout-muted); font-size:12px; }
+
+  /* doc chrome */
+  .doc-head { border-left:2px solid var(--signal); padding-left:14px; margin-bottom:8px; }
+  .doc-head h1 { font-size:38px; color:var(--readout-strong); line-height:1; }
+  .locked { display:flex; flex-wrap:wrap; gap:6px; margin:16px 0 34px; }
+  .lock { font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    border:1px solid var(--edge); background:var(--panel); padding:4px 10px; color:var(--readout-dim); }
+  .lock b { color:var(--signal); font-weight:700; }
+
+  section.screen { margin:0 0 54px; }
+  .screen > header { display:flex; align-items:baseline; gap:12px; margin-bottom:6px; }
+  .screen > header h2 { font-size:27px; color:var(--readout-strong); }
+  .frame { border:1px solid var(--edge); background:var(--panel); padding:16px; margin-top:14px; }
+  .row { border:1px solid var(--edge); background:var(--panel-raised); padding:10px 12px; }
+  .flx { display:flex; align-items:center; gap:10px; }
+  .sb { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .pill { font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+    border:1px solid var(--edge); background:var(--inset); padding:2px 8px; color:var(--readout-dim); white-space:nowrap; }
+  .pill.sig { border-color:var(--signal-dim); color:var(--signal); }
+  .pill.cost { border-color:var(--el-light); color:var(--el-light); }
+  .btn { font-family:var(--heading); font-size:19px; letter-spacing:.1em; padding:11px 18px; text-align:center;
+    border:1px solid var(--edge-strong); background:transparent; color:var(--readout-dim); cursor:pointer;
+    transition:transform .16s var(--ease), border-color .16s, color .16s; }
+  .btn:hover { border-color:var(--signal); color:var(--signal); }
+  .btn:active { transform:scale(.97); }
+  .btn.primary { background:var(--signal); border-color:var(--signal); color:var(--void); }
+  .btn:focus-visible { outline:2px solid var(--signal); outline-offset:2px; }
+  .facts { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--edge); border:1px solid var(--edge); }
+  .facts > div { background:var(--panel-raised); padding:8px 11px; }
+  .facts .v { font-family:var(--heading); font-size:19px; color:var(--readout-strong); letter-spacing:.03em; }
+  @media (max-width:620px){ .facts { grid-template-columns:repeat(2,1fr); } }
+
+  /* annotations */
+  ul.notes { list-style:none; margin:14px 0 0; padding:0; }
+  ul.notes li { display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--hairline); font-size:14px; }
+  ul.notes li:first-child { border-top:none; }
+  .tag { flex:none; font-size:9px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    padding:2px 7px; height:18px; line-height:14px; border:1px solid transparent; }
+  .t-new { background:rgba(79,211,232,.12); color:var(--signal); border-color:var(--signal-dim); }
+  .t-chg { background:rgba(232,209,116,.1); color:var(--el-light); border-color:rgba(232,209,116,.4); }
+  .t-keep { color:var(--readout-muted); border-color:var(--edge); }
+  .t-a11y { background:rgba(53,212,139,.1); color:var(--el-green); border-color:rgba(53,212,139,.4); }
+  b.hl { color:var(--readout-strong); font-weight:600; }
+
+  /* ---- route map (vertical zigzag: one layout, all widths) ---- */
+  .stage { border:1px solid var(--edge); background:var(--panel); }
+  .stage-top { display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 14px; border-bottom:1px solid var(--hairline); background:var(--inset); }
+  .route-scroll { position:relative; padding:10px 0 4px; }
+  .map { position:relative; width:100%; max-width:520px; margin:0 auto; }
+  .map svg { display:block; width:100%; height:auto; }
+  .node { cursor:pointer; }
+  .node:focus-visible rect, .node:focus-visible circle, .node:focus-visible polygon { outline:none; }
+  .node .halo { opacity:0; transition:opacity .2s var(--ease); }
+  .node:hover .halo, .node:focus-visible .halo { opacity:1; }
+  .node[aria-disabled="true"] { cursor:default; }
+  .glyph-line { stroke:var(--edge); stroke-width:2; }
+  .glyph-line.walked { stroke:var(--signal-dim); }
+  .glyph-line.open { stroke:var(--signal); stroke-dasharray:5 5; }
+  .nlabel { font-family:var(--body); font-size:12px; font-weight:600; fill:var(--readout-dim); letter-spacing:.04em; }
+  .nsub { font-family:var(--body); font-size:10.5px; font-weight:500; fill:var(--readout-muted); }
+  .ntitle { font-family:var(--heading); font-size:15px; fill:var(--readout-strong); letter-spacing:.04em; }
+  @keyframes pulse { 0%,100% { r:24; opacity:.55 } 50% { r:27; opacity:.15 } }
+  .here-ring { animation:pulse 2.2s var(--ease) infinite; }
+  @media (prefers-reduced-motion:reduce){ .here-ring { animation:none; } .btn { transition:none; } }
+
+  /* party strip */
+  .party { border-top:1px solid var(--hairline); background:var(--inset); padding:10px 14px 12px; }
+  .units { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:8px; }
+  @media (max-width:620px){ .units { grid-template-columns:repeat(2,1fr); } }
+  .unit { border:1px solid var(--edge); background:var(--panel); padding:7px 8px; }
+  .uname { font-size:12.5px; font-weight:600; color:var(--readout); display:flex; align-items:center; gap:5px; }
+  .bar { height:7px; background:var(--inset); border:1px solid var(--hairline); margin-top:5px; position:relative; overflow:hidden; }
+  .bar > i { display:block; height:100%; transition:width .4s var(--ease); }
+  .hp-ok > i { background:var(--el-green); }
+  .hp-warn > i { background:var(--el-light); }
+  .hp-crit > i { background:var(--el-red); }
+  .ustat { display:flex; justify-content:space-between; align-items:baseline; margin-top:3px; }
+  .ustat .n { font-size:11px; font-weight:700; color:var(--readout-dim); font-variant-numeric:tabular-nums; }
+  .down { color:var(--el-red); font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+  .in { color:var(--signal); font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+  .legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:12px; font-size:12px; color:var(--readout-muted); }
+  .legend span { display:flex; align-items:center; gap:6px; }
+  .swatch { width:14px; height:14px; display:inline-block; }
+  .note-inline { border-left:2px solid var(--signal); background:rgba(79,211,232,.05); padding:9px 12px; margin-top:8px; }
+  .note-inline p { margin:0; font-size:13.5px; color:var(--readout); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="doc-head">
+    <div class="kicker">Mockup · 2026-08-17 · not shipped</div>
+    <h1>Story route overhaul</h1>
+  </div>
+  <p class="dim" style="max-width:76ch">Three screens: the <b class="hl">menu</b>, the <b class="hl">brief</b>, and the new <b class="hl">stage</b>. Rendered in the real Combat Terminal palette and fonts so the judgement is about layout, not colour translation. Nothing here is wired to the game.</p>
+
+  <div class="locked">
+    <span class="lock">Chapter <b>=</b> one route</span>
+    <span class="lock">Movement <b>branching walk</b></span>
+    <span class="lock">HP <b>persists</b>, HP only</span>
+    <span class="lock">Death <b>lasts the run</b></span>
+    <span class="lock">Wipe <b>restarts route</b></span>
+    <span class="lock">Stamina <b>every attempt</b></span>
+  </div>
+
+  <!-- ═══════════ STAGE (lead: it's the new screen) ═══════════ -->
+  <section class="screen">
+    <header><span class="kicker">Screen 1</span><h2>Stage — the route</h2></header>
+    <p class="dim" style="max-width:76ch">Vertical zigzag, one layout at every width. The reference is portrait and a column fits an arbitrary tile count without ever scrolling sideways — a horizontal map would need a second layout for phones. Tap a lit node to walk. Try the fork.</p>
+
+    <div class="stage chamfer">
+      <div class="stage-top">
+        <div>
+          <div class="lbl" style="color:var(--signal)">Part 2 · Chapter 4</div>
+          <h3 style="font-size:20px;color:var(--readout-strong)">The Lake</h3>
+        </div>
+        <div class="flx" style="gap:7px">
+          <span class="pill" id="progress-pill">Tile 2 / 5</span>
+          <span class="pill sig" id="loot-pill">◈ 3 collected</span>
+          <span class="pill">Menu</span>
+        </div>
+      </div>
+
+      <div class="route-scroll">
+        <div class="map">
+          <svg viewBox="0 0 520 700" role="img" aria-label="Route map. Five tiles from start to boss, with one fork.">
+            <!-- connectors -->
+            <line class="glyph-line walked" x1="120" y1="640" x2="120" y2="560"/>
+            <line class="glyph-line walked" x1="120" y1="560" x2="300" y2="480"/>
+            <line class="glyph-line open"   id="edge-a" x1="300" y1="480" x2="150" y2="360"/>
+            <line class="glyph-line open"   id="edge-b" x1="300" y1="480" x2="400" y2="330"/>
+            <line class="glyph-line"        x1="150" y1="360" x2="260" y2="200"/>
+            <line class="glyph-line"        x1="400" y1="330" x2="260" y2="200"/>
+            <line class="glyph-line"        x1="260" y1="200" x2="260" y2="110"/>
+
+            <!-- tile 1: cleared scene (circle = scene) -->
+            <g>
+              <circle cx="120" cy="640" r="17" fill="var(--inset)" stroke="var(--signal-dim)" stroke-width="2"/>
+              <text x="120" y="646" text-anchor="middle" font-size="15" fill="var(--signal-dim)">✓</text>
+              <text x="152" y="638" class="nlabel">Scene</text>
+              <text x="152" y="653" class="nsub">The lake at dawn · read</text>
+            </g>
+
+            <!-- tile 2: cleared fight (diamond = fight) -->
+            <g>
+              <rect x="103" y="543" width="34" height="34" transform="rotate(45 120 560)" fill="var(--inset)" stroke="var(--signal-dim)" stroke-width="2"/>
+              <text x="120" y="566" text-anchor="middle" font-size="14" fill="var(--signal-dim)">✓</text>
+              <text x="152" y="558" class="nlabel">Fight</text>
+              <text x="152" y="573" class="nsub">2 enemies · cleared, −38% HP</text>
+            </g>
+
+            <!-- tile 3: HERE -->
+            <g>
+              <circle class="here-ring" cx="300" cy="480" r="24" fill="none" stroke="var(--signal)" stroke-width="1.5" opacity=".55"/>
+              <rect x="286" y="466" width="28" height="28" fill="var(--signal)" opacity=".14"/>
+              <rect x="286" y="466" width="28" height="28" fill="none" stroke="var(--signal)" stroke-width="2"/>
+              <text x="300" y="486" text-anchor="middle" font-size="13" fill="var(--signal)">▲</text>
+              <text x="336" y="477" class="ntitle" fill="var(--signal)">YOU ARE HERE</text>
+              <text x="336" y="493" class="nsub">Two ways on — pick one</text>
+            </g>
+
+            <!-- fork A: event (hexagon = event) -->
+            <g class="node" id="node-a" role="button" tabindex="0" aria-label="Take the long way: supply cache event tile, then the boss">
+              <circle class="halo" cx="150" cy="360" r="30" fill="var(--signal)" opacity=".1"/>
+              <polygon points="150,338 169,349 169,371 150,382 131,371 131,349" fill="var(--panel-raised)" stroke="var(--el-green)" stroke-width="2"/>
+              <text x="150" y="366" text-anchor="middle" font-size="14" fill="var(--el-green)">◈</text>
+              <text x="186" y="354" class="nlabel" fill="var(--readout)">Event · supply cache</text>
+              <text x="186" y="369" class="nsub">Heals the party · long way round</text>
+            </g>
+
+            <!-- fork B: fight -->
+            <g class="node" id="node-b" role="button" tabindex="0" aria-label="Take the short way: a fight against two enemies, then the boss">
+              <circle class="halo" cx="400" cy="330" r="32" fill="var(--signal)" opacity=".1"/>
+              <rect x="381" y="311" width="38" height="38" transform="rotate(45 400 330)" fill="var(--panel-raised)" stroke="var(--el-red)" stroke-width="2"/>
+              <text x="400" y="336" text-anchor="middle" font-size="14" fill="var(--el-red)">⚔</text>
+              <text x="400" y="292" text-anchor="middle" class="nlabel" fill="var(--readout)">Fight · 2 enemies</text>
+              <text x="400" y="307" text-anchor="middle" class="nsub">Short way · no heal</text>
+            </g>
+
+            <!-- merge -->
+            <circle cx="260" cy="200" r="7" fill="var(--inset)" stroke="var(--edge)" stroke-width="2"/>
+            <text x="278" y="204" class="nsub">paths rejoin</text>
+
+            <!-- boss (star, heaviest node) -->
+            <g>
+              <circle cx="260" cy="110" r="40" fill="none" stroke="var(--el-light)" stroke-width="1" opacity=".22"/>
+              <polygon points="260,74 272,100 300,104 280,124 285,152 260,138 235,152 240,124 220,104 248,100"
+                       fill="var(--panel-raised)" stroke="var(--el-light)" stroke-width="2"/>
+              <text x="260" y="118" text-anchor="middle" font-size="14" fill="var(--el-light)">★</text>
+              <text x="260" y="42" text-anchor="middle" class="ntitle" fill="var(--el-light)">BOSS · CHIARA</text>
+              <text x="260" y="58" text-anchor="middle" class="nsub">Route ends here · rewards paid</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="party">
+        <div class="sb"><span class="lbl">Party</span><span class="muted">carries to the next tile</span></div>
+        <div class="units">
+          <div class="unit">
+            <div class="uname">Duke</div>
+            <div class="bar hp-warn"><i style="width:62%"></i></div>
+            <div class="ustat"><span class="n" data-hp="duke">62%</span></div>
+          </div>
+          <div class="unit">
+            <div class="uname">Seras</div>
+            <div class="bar hp-ok"><i style="width:88%"></i></div>
+            <div class="ustat"><span class="n" data-hp="seras">88%</span></div>
+          </div>
+          <div class="unit" style="border-color:rgba(255,90,78,.45)">
+            <div class="uname">Isolde <span aria-hidden="true" style="color:var(--el-red)">✕</span></div>
+            <div class="bar hp-crit"><i style="width:0%"></i></div>
+            <div class="ustat"><span class="down">Down · out for the run</span></div>
+          </div>
+          <div class="unit" style="border-color:var(--signal-dim)">
+            <div class="uname">Yalina <span class="in">↑ in</span></div>
+            <div class="bar hp-ok"><i style="width:100%"></i></div>
+            <div class="ustat"><span class="n">100%</span><span class="muted">from bench</span></div>
+          </div>
+        </div>
+        <div class="legend">
+          <span><svg width="15" height="15" aria-hidden="true"><circle cx="7.5" cy="7.5" r="6" fill="none" stroke="var(--readout-dim)" stroke-width="1.5"/></svg> Scene</span>
+          <span><svg width="15" height="15" aria-hidden="true"><rect x="2.5" y="2.5" width="10" height="10" transform="rotate(45 7.5 7.5)" fill="none" stroke="var(--el-red)" stroke-width="1.5"/></svg> Fight</span>
+          <span><svg width="15" height="15" aria-hidden="true"><polygon points="7.5,1.5 13,4.7 13,11.3 7.5,14.5 2,11.3 2,4.7" fill="none" stroke="var(--el-green)" stroke-width="1.5"/></svg> Event</span>
+          <span><svg width="15" height="15" aria-hidden="true"><polygon points="7.5,1 9.4,5.6 14,6 10.5,9.2 11.5,14 7.5,11.4 3.5,14 4.5,9.2 1,6 5.6,5.6" fill="none" stroke="var(--el-light)" stroke-width="1.2"/></svg> Boss</span>
+        </div>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li><span class="tag t-new">New</span><span><b class="hl">The party strip is the feature.</b> Four bars that survive tile boundaries. Everything else on this screen is navigation; this is the only element that remembers, and it's what turns four fights into a run.</span></li>
+      <li><span class="tag t-a11y">A11y</span><span><b class="hl">Tile type is carried by shape, not colour.</b> Circle scene, diamond fight, hexagon event, star boss — so the map still parses without colour vision, and the legend names all four. Same rule on the downed unit: an <span aria-hidden="true">✕</span> glyph and the words "out for the run", never a red bar alone.</span></li>
+      <li><span class="tag t-new">New</span><span><b class="hl">A fork states both costs before you commit.</b> The long way heals, the short way doesn't. Unlit paths stay low-contrast; only reachable nodes are tappable, and the walked path is drawn in dim signal so the route reads as history behind you.</span></li>
+      <li><span class="tag t-new">New</span><span><b class="hl">Boss is the heaviest node</b> — biggest glyph, gold, its own halo, and it says the route ends there. It's the only node that pays out.</span></li>
+      <li><span class="tag t-chg">Changed</span><span><b class="hl">Scenes and the versus splash survive as-is</b>, entered from a node instead of a fixed slot in a linear flow. No existing screen is thrown away.</span></li>
+      <li><span class="tag t-a11y">A11y</span><span>Nodes are real buttons: <code>role="button"</code>, tab-reachable, 44px+ hit area, visible focus ring. The "you are here" pulse is behind <code>prefers-reduced-motion</code>.</span></li>
+    </ul>
+
+    <div class="note-inline"><p><b class="hl">Open question for you:</b> the event tile above heals. That's the only release valve attrition has, and it's a mechanic — so its size (flat %? scaling? full?) is yours to set, not mine. Same for whether an event tile can also hurt.</p></div>
+  </section>
+
+  <!-- ═══════════ BRIEF ═══════════ -->
+  <section class="screen">
+    <header><span class="kicker">Screen 2</span><h2>Brief — the contract</h2></header>
+    <p class="dim" style="max-width:76ch">Was a pre-<i>fight</i> screen. Now it sells a whole run, and it's the last place three new rules can be stated before stamina is spent.</p>
+
+    <div class="frame chamfer">
+      <button class="btn" style="font-size:13px;padding:7px 12px">← Story index</button>
+
+      <div style="border-left:2px solid var(--signal);padding-left:12px;margin-top:14px">
+        <div class="lbl" style="color:var(--signal)">Part 2 · Chapter 4</div>
+        <h3 style="font-size:30px;color:var(--readout-strong)">The Lake</h3>
+      </div>
+
+      <div class="row chamfer" style="margin-top:12px">
+        <div class="sb"><span class="lbl">The route</span><span class="muted">5 tiles · 3 fights · 1 fork</span></div>
+        <svg viewBox="0 0 480 74" style="width:100%;height:auto;margin-top:8px" role="img" aria-label="Route preview: scene, fight, a fork between an event and a fight, then the boss">
+          <line x1="30" y1="37" x2="120" y2="37" class="glyph-line"/>
+          <line x1="120" y1="37" x2="240" y2="16" class="glyph-line"/>
+          <line x1="120" y1="37" x2="240" y2="58" class="glyph-line"/>
+          <line x1="240" y1="16" x2="350" y2="37" class="glyph-line"/>
+          <line x1="240" y1="58" x2="350" y2="37" class="glyph-line"/>
+          <line x1="350" y1="37" x2="430" y2="37" class="glyph-line"/>
+          <circle cx="30" cy="37" r="11" fill="var(--inset)" stroke="var(--readout-muted)" stroke-width="1.5"/>
+          <rect x="109" y="26" width="22" height="22" transform="rotate(45 120 37)" fill="var(--inset)" stroke="var(--el-red)" stroke-width="1.5"/>
+          <polygon points="240,5 249,10.5 249,21.5 240,27 231,21.5 231,10.5" fill="var(--inset)" stroke="var(--el-green)" stroke-width="1.5"/>
+          <rect x="229" y="47" width="22" height="22" transform="rotate(45 240 58)" fill="var(--inset)" stroke="var(--el-red)" stroke-width="1.5"/>
+          <circle cx="350" cy="37" r="5" fill="var(--edge)"/>
+          <polygon points="430,22 435,33 447,34 438,42 440,54 430,48 420,54 422,42 413,34 425,33" fill="var(--inset)" stroke="var(--el-light)" stroke-width="1.5"/>
+          <text x="30" y="64" text-anchor="middle" class="nsub">scene</text>
+          <text x="120" y="64" text-anchor="middle" class="nsub">fight</text>
+          <text x="240" y="74" text-anchor="middle" class="nsub">fork</text>
+          <text x="430" y="70" text-anchor="middle" class="nsub">boss</text>
+        </svg>
+      </div>
+
+      <div class="row chamfer" style="margin-top:8px;border-color:var(--signal-dim);background:rgba(79,211,232,.04)">
+        <div class="lbl" style="color:var(--signal)">How a route works</div>
+        <p style="margin:5px 0 0;font-size:14.5px;color:var(--readout)">
+          Damage <b class="hl">carries between tiles</b>. A unit that falls is <b class="hl">out for the rest of the run</b> — your bench takes over. Wipe and the <b class="hl">whole route restarts</b>, and the next attempt costs stamina again.
+        </p>
+      </div>
+
+      <div class="row chamfer" style="margin-top:8px">
+        <div class="sb"><span class="lbl">Your team</span><span class="muted">2 anchors · 1 open · 1 bench</span></div>
+        <div class="flx" style="margin-top:9px;gap:8px;align-items:stretch">
+          <div style="flex:1;border:1px solid var(--signal-dim);background:var(--inset);padding:12px 6px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:var(--readout-strong)">Duke</div><div class="muted">Lv30 · fixed</div>
+          </div>
+          <div style="flex:1;border:1px solid var(--signal-dim);background:var(--inset);padding:12px 6px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:var(--readout-strong)">Seras</div><div class="muted">Lv28 · fixed</div>
+          </div>
+          <div style="flex:1;border:1px solid var(--edge);background:var(--inset);padding:12px 6px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:var(--readout)">Isolde</div><div class="muted">Lv24</div>
+          </div>
+          <div style="flex:1;border:1px dashed var(--edge-strong);background:transparent;padding:12px 6px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:var(--signal)">+ Bench</div><div class="muted">enters on a death</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row chamfer" style="margin-top:8px">
+        <div class="lbl">Boss</div>
+        <div class="flx" style="margin-top:7px;gap:10px">
+          <div style="width:46px;height:46px;border:1px solid var(--el-red);background:var(--inset);flex:none"></div>
+          <div>
+            <div style="font-size:14.5px;font-weight:600;color:var(--readout-strong)">Chiara</div>
+            <div class="muted">+ 4 enemies across the 2 earlier fights</div>
+          </div>
+        </div>
+        <div class="flx" style="margin-top:9px;gap:6px;flex-wrap:wrap">
+          <span class="pill" style="border-color:rgba(255,90,78,.5);color:var(--el-red)">Enemy: +20% ATK</span>
+          <span class="pill">Both: heals capped at 30%</span>
+        </div>
+      </div>
+
+      <div class="facts" style="margin-top:8px">
+        <div><div class="lbl">Stamina</div><div class="v">−12 <span class="muted" style="font-variant-numeric:tabular-nums">48 / 60</span></div></div>
+        <div><div class="lbl">First clear bonus</div><div class="v" style="font-size:15px">50 Gems · 2 Manual</div></div>
+        <div><div class="lbl">Team</div><div class="v" style="font-size:15px">Leads fixed</div></div>
+      </div>
+
+      <div class="flx" style="margin-top:11px;gap:9px">
+        <button class="btn primary chamfer" style="flex:1">BEGIN ROUTE · 12 STAMINA</button>
+        <button class="btn chamfer" style="flex:none">FARM RUN ▸</button>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li><span class="tag t-new">New</span><span><b class="hl">Route preview, forks included.</b> Without it the player pays 12 stamina for an unknown length. It's the same glyph vocabulary as the stage, so the map is already familiar the first time it's walked.</span></li>
+      <li><span class="tag t-new">New</span><span><b class="hl">The rule box.</b> Three rules that cannot be discovered safely by playing. This is where ruling #96's deleted sentence effectively returns — as the rule that <i>needed</i> stating, not the team-mode one.</span></li>
+      <li><span class="tag t-chg">Changed</span><span><b class="hl">The bench slot becomes a real decision.</b> Subs exist to absorb a death, and attrition is the first mechanic that makes them matter, so the slot says what it's for.</span></li>
+      <li><span class="tag t-chg">Changed</span><span><b class="hl">"Against" → "Boss".</b> Printing every enemy on every tile would be a wall; name the boss, count the rest.</span></li>
+      <li><span class="tag t-chg">Changed</span><span><b class="hl">Skip story → Farm run.</b> On a cleared chapter it collapses the route to the fight that pays. Attrition belongs to first clears; grinding stays fast.</span></li>
+      <li><span class="tag t-keep">Kept</span><span>Fact strip, stage-effect chips, insufficient-stamina notice, trial/owned anchor toggles, back button naming.</span></li>
+    </ul>
+  </section>
+
+  <!-- ═══════════ MENU ═══════════ -->
+  <section class="screen">
+    <header><span class="kicker">Screen 3</span><h2>Menu — story index</h2></header>
+    <p class="dim" style="max-width:76ch">Deliberately the smallest change of the three. The 2026-08-11 shape holds — one current row, everything else behind chapter select, flat against content growth. Rows only gain what a paid route forces them to say.</p>
+
+    <div class="frame chamfer">
+      <div style="border-left:2px solid var(--signal);padding-left:12px">
+        <div class="lbl" style="color:var(--signal)">Arc one</div>
+        <h3 style="font-size:34px;color:var(--readout-strong);line-height:1">Main Story</h3>
+        <div style="height:3px;background:var(--hairline);max-width:280px;margin-top:7px"><div style="height:100%;width:35%;background:var(--signal)"></div></div>
+        <div class="muted" style="font-variant-numeric:tabular-nums;margin-top:3px">7 OF 20 CHAPTERS CLEARED</div>
+      </div>
+
+      <div class="chamfer" style="margin-top:14px;border:1px solid var(--signal);background:var(--inset);padding:12px 14px;position:relative;overflow:hidden">
+        <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,9,12,.97) 42%,rgba(6,9,12,.3) 100%)"></div>
+        <div style="position:relative">
+          <div class="lbl" style="color:var(--signal)">Current · Part 2</div>
+          <h3 style="font-size:26px;color:var(--readout-strong)">The Weight of the Toll</h3>
+          <div class="dim" style="max-width:44ch">Everyone pays. Some pay twice.</div>
+        </div>
+        <span class="pill" style="position:absolute;top:11px;right:12px">3 / 6</span>
+      </div>
+
+      <div class="row chamfer" style="margin-top:7px">
+        <div class="sb">
+          <div style="min-width:0">
+            <div class="lbl">Chapter 4</div>
+            <div style="font-family:var(--heading);font-size:22px;color:var(--readout-strong);letter-spacing:.04em">The Lake</div>
+            <div class="flx" style="margin-top:7px;gap:6px;flex-wrap:wrap">
+              <span class="pill">
+                <svg width="46" height="9" style="vertical-align:-1px" aria-hidden="true">
+                  <circle cx="4" cy="4.5" r="3" fill="none" stroke="var(--readout-muted)" stroke-width="1"/>
+                  <rect x="11" y="1.5" width="6" height="6" transform="rotate(45 14 4.5)" fill="none" stroke="var(--el-red)" stroke-width="1"/>
+                  <polygon points="24,1 28,3 28,6 24,8 20,6 20,3" fill="none" stroke="var(--el-green)" stroke-width="1"/>
+                  <rect x="31" y="1.5" width="6" height="6" transform="rotate(45 34 4.5)" fill="none" stroke="var(--el-red)" stroke-width="1"/>
+                  <polygon points="43,1 44.5,4 47,4.3 45,6 45.6,8.6 43,7.2 40.4,8.6 41,6 39,4.3 41.5,4" fill="none" stroke="var(--el-light)" stroke-width=".8"/>
+                </svg>
+                5 tiles
+              </span>
+              <span class="pill">3 fights</span>
+              <span class="pill sig">◈ Training Manual</span>
+            </div>
+          </div>
+          <div style="text-align:right;flex:none">
+            <span class="pill cost">−12 stamina</span>
+            <div class="dim" style="margin-top:8px">Begin ▸</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row chamfer" style="margin-top:7px;opacity:.8">
+        <div class="sb"><span class="dim">◈ All chapters in this part (6)</span><span class="dim">▸</span></div>
+      </div>
+      <div style="margin-top:7px;border:1px dashed var(--edge);padding:9px;text-align:center">
+        <span class="muted" style="letter-spacing:.16em">◈ 4 PARTS SEALED · 6 MORE IN DEVELOPMENT</span>
+      </div>
+
+      <div class="lbl" style="margin:18px 0 7px;border-bottom:1px solid var(--hairline);padding-bottom:5px">Completed</div>
+      <div class="row chamfer">
+        <div class="sb">
+          <span class="flx" style="gap:12px"><span class="lbl">Part 1</span><span style="font-family:var(--heading);font-size:19px;color:var(--readout-dim);letter-spacing:.04em">A Village, Quietly</span></span>
+          <span class="flx" style="gap:12px"><span class="pill" style="border-color:rgba(53,212,139,.4);color:var(--el-green)">✓ 6 / 6</span><span class="muted">CHAPTERS ▸</span></span>
+        </div>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li><span class="tag t-new">New</span><span><b class="hl">Stamina cost on the row.</b> Every attempt is paid now, so the price belongs before the tap, not on the next screen.</span></li>
+      <li><span class="tag t-new">New</span><span><b class="hl">Route shape as a glyph run.</b> Five miniature tile shapes plus "5 tiles / 3 fights" — the same vocabulary as the brief and the stage. Length is the single most useful thing to know before committing stamina to a route.</span></li>
+      <li><span class="tag t-new">New</span><span><b class="hl">Featured reward</b>, taken from the stage-list reference: one line for what this route is farmed for.</span></li>
+      <li><span class="tag t-keep">Kept</span><span>Arc header and progress, lead part banner with cover art, one current chapter row, the chapter-select modal, the sealed/upcoming one-liner, collapsed completed parts.</span></li>
+    </ul>
+  </section>
+
+  <p class="muted" style="border-top:1px solid var(--hairline);padding-top:14px">
+    Mockup only — no component in <code>components/game/story/</code> has been touched. Palette and fonts mirror <code>styles/globals.css</code>; the real screens sit under the game nav, which this file doesn't draw.
+  </p>
+</div>
+
+<script>
+  // Minimal fork interaction so the route reads as a decision rather than a diagram.
+  (function () {
+    var walked = false;
+    var loot = document.getElementById('loot-pill');
+    var progress = document.getElementById('progress-pill');
+    var duke = document.querySelector('[data-hp="duke"]');
+    var dukeBar = duke ? duke.closest('.unit').querySelector('.bar') : null;
+
+    function take(which) {
+      if (walked) return;
+      walked = true;
+      var keep = document.getElementById(which === 'a' ? 'node-a' : 'node-b');
+      var drop = document.getElementById(which === 'a' ? 'node-b' : 'node-a');
+      var keepEdge = document.getElementById(which === 'a' ? 'edge-a' : 'edge-b');
+      var dropEdge = document.getElementById(which === 'a' ? 'edge-b' : 'edge-a');
+
+      keepEdge.setAttribute('class', 'glyph-line walked');
+      dropEdge.setAttribute('class', 'glyph-line');
+      drop.style.opacity = '.3';
+      drop.setAttribute('aria-disabled', 'true');
+      drop.removeAttribute('tabindex');
+      keep.setAttribute('aria-disabled', 'true');
+      keep.removeAttribute('tabindex');
+
+      if (progress) progress.textContent = 'Tile 3 / 5';
+
+      if (which === 'a') {
+        // supply cache: the release valve
+        if (duke && dukeBar) {
+          dukeBar.className = 'bar hp-ok';
+          dukeBar.querySelector('i').style.width = '94%';
+          duke.textContent = '94%';
+        }
+        if (loot) loot.textContent = '◈ 4 collected';
+      } else {
+        // short way: a fight, and it costs
+        if (duke && dukeBar) {
+          dukeBar.className = 'bar hp-crit';
+          dukeBar.querySelector('i').style.width = '21%';
+          duke.textContent = '21%';
+        }
+      }
+    }
+
+    ['a', 'b'].forEach(function (k) {
+      var el = document.getElementById('node-' + k);
+      if (!el) return;
+      el.addEventListener('click', function () { take(k); });
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); take(k); }
+      });
+    });
+  })();
+</script>
+</body>
+</html>

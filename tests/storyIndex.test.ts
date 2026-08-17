@@ -7,6 +7,7 @@ import {
   getChapterState,
   getStoryParts,
   searchChapters,
+  visibleParts,
 } from "@/lib/game/storyCatalog";
 
 /**
@@ -206,5 +207,67 @@ describe("getArcProgress", () => {
     const progress = getArcProgress(everything);
     expect(progress.cleared).toBe(progress.total);
     expect(second).toBeDefined();
+  });
+});
+
+/**
+ * The part carousel renders one full banner per entry — cover art, title and
+ * tagline, all of them spoilers on a part the player hasn't reached. So unlike
+ * chapter rows, which redact, parts are *withheld*: the list is the boundary
+ * (Tanveer, 2026-08-17). These assertions are that policy.
+ */
+describe("visibleParts", () => {
+  /** Every chapter of every part up to but excluding `partIndex`. */
+  const clearParts = (partIndex: number): Record<string, boolean> =>
+    Object.fromEntries(
+      parts
+        .slice(0, partIndex)
+        .flatMap((part) =>
+          part.chapters.map((c) => [chapterKey(part.id, c.id), true]),
+        ),
+    );
+
+  it("shows exactly one part on a fresh save", () => {
+    const visible = visibleParts({});
+    expect(visible).toHaveLength(1);
+    expect(visible[0].id).toBe(first.id);
+  });
+
+  it("never returns a sealed part, at any progress point", () => {
+    // Every prefix of the arc, part by part, plus every chapter within part 1.
+    for (let p = 0; p <= parts.length; p += 1) {
+      for (const part of visibleParts(clearParts(p))) {
+        expect(part.sealed).toBe(false);
+      }
+    }
+    for (let c = -1; c < first.chapters.length; c += 1) {
+      const completed = c < 0 ? {} : clearThrough(c);
+      for (const part of visibleParts(completed)) {
+        expect(part.sealed).toBe(false);
+      }
+    }
+  });
+
+  it("holds a part back until the previous one is finished, not merely started", () => {
+    // Part 1 open but not done — part 2 must stay hidden however far in you are.
+    for (let c = 0; c < first.chapters.length - 1; c += 1) {
+      expect(visibleParts(clearThrough(c))).toHaveLength(1);
+    }
+    // Its last chapter is the one that reveals the next part, and only one.
+    const afterPartOne = visibleParts(clearThrough(first.chapters.length - 1));
+    expect(afterPartOne).toHaveLength(2);
+    expect(afterPartOne.map((part) => part.id)).toContain(second.id);
+  });
+
+  it("reads newest first, so the current part lands on top", () => {
+    const visible = visibleParts(clearParts(3));
+    expect(visible.map((part) => part.order)).toEqual(
+      [...visible.map((part) => part.order)].sort((a, b) => b - a),
+    );
+    expect(visible[0].order).toBeGreaterThan(visible[visible.length - 1].order);
+  });
+
+  it("shows every part once the arc is finished", () => {
+    expect(visibleParts(clearParts(parts.length))).toHaveLength(parts.length);
   });
 });

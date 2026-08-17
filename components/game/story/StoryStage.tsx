@@ -33,7 +33,11 @@ export default function StoryStage({
       className={
         variant === "stage"
           ? "terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout"
-          : "terminal-grid relative min-h-screen bg-void"
+          : // `min-h-screen` is `100vh` in Tailwind 4 — the *largest* viewport.
+            // With mobile browser chrome showing that is taller than what you
+            // can see, so a document screen reported as scrollable with nothing
+            // at the bottom. `dvh` tracks the visible area instead.
+            "terminal-grid relative min-h-dvh bg-void"
       }
     >
       {grid ? (

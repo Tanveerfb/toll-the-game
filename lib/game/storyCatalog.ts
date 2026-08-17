@@ -183,6 +183,32 @@ export function buildStoryIndex(
 }
 
 /**
+ * The parts the player may see, newest first.
+ *
+ * A part appears only once the previous part is **complete** (Tanveer,
+ * 2026-08-17), which is already what `isPartUnlocked` computes — it asks whether
+ * the part's first chapter is unlocked, and that requires the previous part's
+ * *last* chapter cleared. So the rule is a filter, not new arithmetic.
+ *
+ * Dropping sealed parts entirely is stronger than redacting them. A
+ * `StoryIndexPart` carries the real `title`, `tagline` and `coverCharacterId`
+ * even when sealed, and all three are spoilers — part 9's cover is `molvarr`.
+ * The part carousel renders one full banner per entry, so anything in this list
+ * is revealed by construction, which makes the list itself the boundary.
+ *
+ * Newest-first because the carousel scrolls down into the past: the part you're
+ * on is the last one unlocked, so it lands on top and the screen opens there
+ * with no scroll restoration. A fresh account sees exactly one entry.
+ */
+export function visibleParts(
+  completed: Record<string, boolean>,
+): StoryIndexPart[] {
+  return buildStoryIndex(completed)
+    .filter((part) => !part.sealed)
+    .reverse();
+}
+
+/**
  * The index reads newest-first: the part you're on leads, finished parts
  * collapse beneath it, and everything unreachable becomes a single line
  * (Tanveer, 2026-08-11). Splitting the parts here rather than in the component

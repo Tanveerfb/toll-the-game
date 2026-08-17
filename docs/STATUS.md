@@ -1,8 +1,57 @@
-# Status — 2026-08-16
+# Status — 2026-08-17
 
 Living snapshot. History of the resurrection audit is in git (`docs/STATUS.md` @ `c3040f7`).
 
 ## Working (implemented, tested, browser-verified)
+
+- **Story mode rebuilt end to end: carousels, a node board, and a results screen (2026-08-17)** — rulings **#98–#105**. Verified after the last edit: `npm run check` green (**1305 tests / 98 files**, same 3 pre-existing eslint warnings in `tests/duel.test.ts`), clean `NEXT_DIST_DIR=.next-verify next build`, `tsconfig.json` churn reverted, `.next-verify` removed. **Not browser-verified** — Tanveer does the visual pass, and this is the largest single batch of unverified UI in the project's history.
+
+  ### What the session was
+  He opened wanting the story UI/UX overhauled and fed me Dokkan reference screens **section by section**, with the standing instruction *"you don't have to copy everything. you are looking for how UI and layout is optimized in dokkan"* and a target of **9:16 portrait** — which makes this a down-payment on the open `Mobile layout pass` (`docs/ROADMAP.md:67`). Plan approved before any code: `C:\Users\Tanve\.claude\plans\recursive-swinging-noodle.md` (local, not in the repo — copy it here if it needs to outlive his machine).
+
+  The flow went from `index → brief → title → intro → versus → battle → outro → complete → rewards` to **part select → chapter select → brief → title → board → scene/fight tiles → clear summary**.
+
+  ### Shipped
+  - **`SnapCarousel`** — the repo's **first scroll-snap**. CSS `snap-y snap-mandatory` + the existing `hud-scroll` idiom, focus from an `IntersectionObserver` inset to a 10% band across the middle, arrow-key paging handled on the container (the items are buttons, so their keydown bubbles — no window listener, no ref indirection), `usePrefersReducedMotion()` gating smooth scroll. **Not** a framer-motion drag: `MotionProvider` loads `domAnimation`, which excludes `drag`, and the standing ruling against pulling in `domMax` for one screen (`battle/Hand.tsx:26-30`) holds. Native snap also gives correct touch momentum free.
+  - **Part select** (`PartSelect` + `PartBannerCard`), replacing `StoryIndex` entirely. `visibleParts()` in `storyCatalog.ts` is `buildStoryIndex` filtered to `!sealed` and reversed. Sealed parts **do not render at all** — which is stronger than the redaction the old index used, because a `StoryIndexPart` carries a real title, tagline and cover even when sealed, and part 9's cover is `molvarr`.
+  - **Chapter select** (`ChapterSelect` + `EntryCard`), replacing `ChapterSelectModal`. Hero panel over a snapped list of reward cards — status banner, numbered title, `STA`, and a Clear/Farmable reward pair, which is the "preview of farmable stuff" he pointed at. Opens on the chapter you're up to, not chapter one.
+  - **The ribbon is a real reward, not a mission counter.** `ordersForChapter()` + `describeOrderReward()` surface the Bureau Order a chapter satisfies — `◈ LYRA` on `part2/p2c2`, `◈ 125 Gems` on `part4/p4c3` — dimmed once claimed. The free Lyra was previously invisible from story mode, buried in a nav modal.
+  - **The node board** (`RouteBoard` + `lib/game/route.ts`). Three orbs, each an independent 1–6; spending one re-rolls that orb alone; only the landing tile resolves; the boss is a **STOP** immediately before the finish that no roll can pass; a defeat restarts the whole route and charges again. Movement is animated tile by tile via `walkPath`, because watching the token cross tiles that *don't* resolve is the only thing that makes that rule legible.
+  - **Boards are generated, not authored** — `buildRoute()` with `ROUTE_STEPS_BY_PART` (part 1: 10, part 2: 5, part 3: 20, part 4: 15, else 10), placement seeded off the chapter id so a board is stable across visits and differs between chapters. `route?` on `StoryChapter` overrides it per chapter. 37 hand-written graphs would have been churn nobody could keep consistent.
+  - **`activeRoute`** on `storyStore` (position, orbs, resolved tiles, banked loot) with a **v1 → v2 migration** to `null`. Persisted because a route spans several taps and phones close tabs; deliberately *not* cloud-synced, since merging two devices' positions has no correct answer.
+  - **Clear summary** — account rank panel with the XP bar, a `BONUS`-badged item grid, an unlock line, `ATTEMPT AGAIN`. No clear time, on his instruction, and nothing tracks one anyway.
+  - **Two project skills**: `/comfypending` (append art requests) and `/latticePlan` (a consultant for board shapes, carrying the arithmetic — average roll 3.5, so a board takes ~N/3.5 moves to cross).
+  - **`docs/ART_REQUESTS.md` Category C** — every iconless inventory item. 19 assets cover it, including the leverage case: **5 coin frames rather than 18 coin icons**, since `characterCoinId()` mints one per playable character and per-character icons are a treadmill.
+  - **`min-h-screen` → `min-h-dvh`** on `StoryStage`'s page variant. Tailwind 4 compiles `screen` to `100vh`, the *largest* viewport, so every story document screen was taller than the visible area with browser chrome showing.
+
+  ### Bugs found and fixed while building
+  - **Banked loot could leak between chapters.** `finishChapter` read whatever route sat in the store without checking it belonged to the chapter being finished, so an abandoned route's loot would pay out on a different chapter. Now matched on `partId`/`chapterId`.
+  - **A defeat restarted only the fight**, not the route — which would have made the board free to re-roll: keep the banked loot, take another swing at the boss for nothing.
+  - **The token snapped to its destination** on any mid-walk re-render. `react-hooks/set-state-in-effect` caught it; the position is now derived (`walkTo ?? at`) rather than mirrored in an effect.
+  - **A test asserted the retired free-retry rule.** I claimed no test did, from a truncated grep, and was wrong — `tests/storyRewards.test.ts` had it.
+
+  ### Deliberately not done
+  - **No `BattleProvider` change.** The plan called for a surviving-HP handoff so damage would carry between tiles — the riskiest item in it. **It evaporated:** one fight per board means nothing survives between tiles. It comes back the moment a board gets a second fight, and only then.
+  - **Chapter search across parts is gone** with `ChapterSelectModal`. `searchChapters()` is still exported and still tested, so the affordance can return; a per-part screen had nowhere honest to put a cross-part search box.
+  - **No filler fights.** See the gap below — this is the whole of workflow part 2.
+
+  ### The gap that matters: 19 of 37 chapters have no battle
+  Counted from `data/story/part*.json`, not inferred. **Parts 3, 4, 6, 11 and 12 contain no fight at all** — every chapter in them is scenes, and part 12 is the finale. The worst case was self-inflicted: part 3 has the longest boards (20 tiles) and zero fights, so I generated twenty tiles of empty ground three times.
+
+  Mitigated rather than solved: **a chapter with no battle now gets no board** and plays as the scene reader it always was. The board therefore exists for 18 chapters. Tanveer's read: *"we don't have filler fights to cover the content. this is where 2nd part of our workflow starts."*
+
+  Workflow part 2 (story content adaptation) is blocked on three things, two of them his:
+  1. **An explicit reversal** of the ruling recorded at `lib/game/storyCatalog.ts:36` — *battles exist only where the source has a fight; Tanveer ruled against inventing any*.
+  2. **`storyOnly` enemy stat bands**, which `docs/design/KIT_DESIGN.md:83` still marks **unassigned**. Kit ownership is his and this blocks everything downstream.
+  3. **A story canon/voice doc**, the same gap that deferred the story agent (charter: draft filler, integrate official plus approved filler, design NPCs). Order recorded then and still right: docs → skill → agent.
+
+  ### Confidence and gaps
+  - **Verified:** `tsc`, `eslint`, `vitest` (1305 passing across 98 files) and a full `next build`, all after the final edit. New pure logic is covered directly — 43 tests on `route.ts` (orb bounds, per-orb re-roll, the STOP guarantee fired at every roll 1–6, `walkPath` agreeing with `landingsFrom`, all 37 chapters producing walkable boards), 8 on `activeRoute`, 5 on `visibleParts` looping every progress point, plus `ordersForChapter` and `describeRewards`.
+  - **Assumed, not verified:** **every visual and interaction claim.** Nothing has been rendered. The snap carousel's proportional sizing (`h-[42%]` items, `h-[29%]` spacers) is arithmetic that has never met a browser; the 155ms-per-tile walk and the 260ms arrival beat are guesses at feel; the board's zig-zag has never been seen at 20 rows on a phone.
+  - **Known thin:** part 2's five-tile board crosses in one or two moves, so the orbs barely matter there — flagged to him twice, unresolved. Generated boards place loot identically for a given chapter, so a farmed route pays predictably.
+  - **Untouched balance debt:** none, as it happens — the attrition retune I flagged earlier is moot for the same reason the HP handoff is.
+  - **Doc staleness I did not sweep:** this file is 2,636 lines and I read only its head. Earlier sections still reference `StoryIndex`, `ChapterSelectModal` and `ChapterRow` as live components; all three are deleted. Treat any pre-2026-08-17 mention of them as history.
+  - **What I'd check first coming back cold:** open `/story` at 390×693, walk part 1 chapter 1 end to end, and watch whether the token's walk reads as travel or as jitter.
 
 - **Story flow and screens pass, plus two planning artefacts (2026-08-16)** — rulings **#94–#97**. Verified: `npm run check` green (**1236 tests / 96 files**, same 3 pre-existing eslint warnings in `tests/duel.test.ts`), clean `next build` (48 routes), `tsconfig.json` build churn reverted. **Not browser-verified** — Tanveer does the visual pass.
 

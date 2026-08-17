@@ -7,7 +7,9 @@ import StorySceneReader from "@/components/game/StorySceneReader";
 import ChapterBrief from "@/components/game/story/ChapterBrief";
 import ChapterCompleteCard from "@/components/game/story/ChapterCompleteCard";
 import ChapterTitleCard from "@/components/game/story/ChapterTitleCard";
-import StoryIndex from "@/components/game/story/StoryIndex";
+import ChapterSelect from "@/components/game/story/ChapterSelect";
+import PartSelect from "@/components/game/story/PartSelect";
+import RouteBoard from "@/components/game/story/RouteBoard";
 import StoryRewardsScreen from "@/components/game/story/StoryRewardsScreen";
 import StoryStage from "@/components/game/story/StoryStage";
 import VersusSplash from "@/components/game/story/VersusSplash";
@@ -15,8 +17,11 @@ import { useAuth } from "@/hooks/AuthProvider";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import { useScreenMusic } from "@/hooks/useScreenMusic";
 import type { MusicRole } from "@/lib/audio/tracks";
+import { describeOrderReward, ordersForChapter } from "@/lib/game/orders";
+import { rollOrbs, routeFor } from "@/lib/game/route";
 import { getCurrentStamina } from "@/lib/game/stamina";
 import {
+  buildStoryIndex,
   buildStoryIndexView,
   chapterKey,
   getStoryChapter,
@@ -45,6 +50,8 @@ import { useStoryStore } from "@/store/storyStore";
  */
 type View =
   | { kind: "index" }
+  /** The chapters of one part. `index` picks the part; this picks the chapter. */
+  | { kind: "chapterSelect"; partId: string }
   | { kind: "brief"; partId: string; chapterId: string }
   | {
       kind: "title";
@@ -52,13 +59,28 @@ type View =
       chapterId: string;
       picks: string[];
       useTrialFor: string[];
+      skipScenes: boolean;
     }
+  /** The board. Scenes and the fight are entered *from* here and return here,
+   *  which is what replaced the old fixed title → intro → versus → battle run. */
   | {
-      kind: "intro";
+      kind: "board";
       partId: string;
       chapterId: string;
       picks: string[];
       useTrialFor: string[];
+      skipScenes: boolean;
+    }
+  /** A scene block, played from a board tile. `which` says which block, and the
+   *  route context rides along so finishing returns to the board. */
+  | {
+      kind: "scene";
+      which: "intro" | "outro";
+      partId: string;
+      chapterId: string;
+      picks: string[];
+      useTrialFor: string[];
+      skipScenes: boolean;
     }
   | {
       kind: "versus";
@@ -81,7 +103,6 @@ type View =
        *  farm run goes brief → versus → battle → rewards. */
       skipScenes: boolean;
     }
-  | { kind: "outro"; partId: string; chapterId: string }
   | {
       kind: "complete";
       partId: string;
@@ -96,8 +117,8 @@ type View =
 function musicRoleFor(view: View): MusicRole {
   switch (view.kind) {
     case "title":
-    case "intro":
-    case "outro":
+    case "scene":
+    case "board":
       return "storyScene";
     case "versus":
     case "battle":
@@ -115,11 +136,16 @@ export default function StoryPage(): React.JSX.Element {
   const { startCustomBattle } = useBattleContext();
   const { resetBattle } = useGameStore();
   const { completed, markChapterComplete, hydrateFromCloud } = useStoryStore();
+  const activeRoute = useStoryStore((s) => s.activeRoute);
+  const beginRoute = useStoryStore((s) => s.beginRoute);
+  const advanceRoute = useStoryStore((s) => s.advanceRoute);
+  const clearRoute = useStoryStore((s) => s.clearRoute);
   const roster = usePlayerStore((s) => s.roster);
   const stamina = usePlayerStore((s) => s.stamina);
   const spendStaminaAction = usePlayerStore((s) => s.spendStaminaAction);
   const grantStoryRewards = usePlayerStore((s) => s.grantStoryRewards);
   const rememberLastTeam = usePlayerStore((s) => s.rememberLastTeam);
+  const claimedOrders = usePlayerStore((s) => s.claimedOrders);
   const [view, setView] = React.useState<View>({ kind: "index" });
 
   useScreenMusic(musicRoleFor(view));
@@ -162,9 +188,35 @@ export default function StoryPage(): React.JSX.Element {
         return;
       }
       const isFirstClear = completed[chapterKey(partId, chapterId)] !== true;
-      const result = rollStoryRewards(chapter.rewards, isFirstClear);
+      const rolled = rollStoryRewards(chapter.rewards, isFirstClear);
+      // Loot picked up on the board is paid here, folded into the drops so the
+      // summary shows one haul rather than two ledgers. Banked amounts were
+      // already rolled when each tile resolved.
+      // Only this chapter's own walk pays in. A route abandoned on another
+      // chapter must never leak its loot into this payout.
+      const walk = useStoryStore.getState().activeRoute;
+      const banked =
+        walk && walk.partId === partId && walk.chapterId === chapterId
+          ? walk
+          : null;
+      const withLoot = (payout: typeof rolled.drops) => {
+        if (!banked) return payout;
+        const materials = { ...payout.materials };
+        for (const [id, qty] of Object.entries(banked.bankedMaterials)) {
+          materials[id] = (materials[id] ?? 0) + qty;
+        }
+        return { ...payout, coin: payout.coin + banked.bankedCoin, materials };
+      };
+      const result: StoryClearResult = {
+        firstClear: rolled.firstClear,
+        drops: withLoot(rolled.drops),
+        total: withLoot(rolled.total),
+      };
       grantStoryRewards(result.total);
       markChapterComplete(partId, chapterId, user?.uid);
+      // The walk is over the moment it pays out; leaving it behind would let a
+      // reload drop the player back onto a finished board.
+      clearRoute();
       // The completion beat is for finishing a chapter, not for finishing a
       // farm run — a fanfare on the fortieth clear is noise.
       setView(
@@ -173,21 +225,20 @@ export default function StoryPage(): React.JSX.Element {
           : { kind: "rewards", partId, chapterId, result },
       );
     },
-    [completed, grantStoryRewards, markChapterComplete, user?.uid],
+    [completed, grantStoryRewards, markChapterComplete, clearRoute, user?.uid],
   );
 
-  /** Pays for one attempt. Uncleared chapters cost nothing however many times
-   *  they are retried, so the narrative can never be stamina-locked — only
-   *  farming a cleared chapter is gated (Tanveer, 2026-08-09). */
+  /** Pays for one attempt. Charged on every attempt since 2026-08-17 — first
+   *  clear and retries alike — which retires the older rule that kept uncleared
+   *  chapters free so the story could never be stamina-locked. It can be now. */
   const chargeAttempt = React.useCallback(
     (partId: string, chapterId: string): boolean => {
       const chapter = getStoryChapter(partId, chapterId);
       if (!chapter) return false;
-      const cleared = completed[chapterKey(partId, chapterId)] === true;
-      const cost = storyAttemptCost(chapter.rewards, cleared);
+      const cost = storyAttemptCost(chapter.rewards);
       return cost === 0 || spendStaminaAction(cost);
     },
-    [completed, spendStaminaAction],
+    [spendStaminaAction],
   );
 
   /** Brief → battle. Returns false when the player can't afford the attempt,
@@ -205,43 +256,75 @@ export default function StoryPage(): React.JSX.Element {
       // abandoned isn't the one you want back next time.
       if (picks.length > 0) rememberLastTeam(picks);
 
-      // A scene-only chapter has nothing to fight, so it can't skip to a VS
-      // beat that will never resolve — it always opens on the title card and
-      // walks intro → outro → complete → rewards (Tanveer, 2026-08-11).
-      const sceneOnly = !getStoryChapter(partId, chapterId)?.battle;
+      const chapter = getStoryChapter(partId, chapterId);
+      if (!chapter) return false;
 
-      // A farm run jumps the title card and the scenes but still gets the VS
-      // beat, which also covers the battle's start-up.
+      /**
+       * A chapter with no battle gets no board.
+       *
+       * 19 of the 37 authored chapters are scene-only, because the source has no
+       * fight there and inventing one was ruled out. A board for those is a map
+       * with nothing to decide — every tile is empty ground and the only thing
+       * that resolves is the scene — so they keep the plain reader they always
+       * had. When filler fights are authored (story content adaptation), this
+       * branch is what goes away.
+       */
+      if (!chapter.battle) {
+        clearRoute();
+        if (skipScenes) {
+          finishChapter(partId, chapterId);
+        } else {
+          setView({
+            kind: "scene",
+            which: "intro",
+            partId,
+            chapterId,
+            picks,
+            useTrialFor,
+            skipScenes,
+          });
+        }
+        return true;
+      }
+
+      // One attempt buys one walk. Starting a route discards any route already in
+      // progress, which is what makes abandoning one cost its stamina.
+      const part = getStoryPart(partId);
+      const route = routeFor(chapter, part?.order ?? 1);
+      const start = route.nodes.find((node) => node.type === "start");
+      beginRoute(partId, chapterId, start?.id ?? route.nodes[0].id, rollOrbs());
+
+      // The title card still opens a route; a farm run skips it, as it always
+      // skipped the scenes.
       setView(
-        skipScenes && !sceneOnly
-          ? {
-              kind: "versus",
-              partId,
-              chapterId,
-              picks,
-              useTrialFor,
-              skipScenes: true,
-            }
-          : { kind: "title", partId, chapterId, picks, useTrialFor },
+        skipScenes
+          ? { kind: "board", partId, chapterId, picks, useTrialFor, skipScenes }
+          : { kind: "title", partId, chapterId, picks, useTrialFor, skipScenes },
       );
       return true;
     },
-    [chargeAttempt, rememberLastTeam],
+    [beginRoute, chargeAttempt, clearRoute, finishChapter, rememberLastTeam],
   );
 
-  /** Restarts the same battle after a defeat, without replaying the scenes. */
-  const retryAttempt = React.useCallback(
-    (
-      partId: string,
-      chapterId: string,
-      picks: string[],
-      useTrialFor: string[],
-    ): boolean => {
+  /**
+   * A defeat restarts the **whole route**, not the fight (Tanveer, 2026-08-17).
+   *
+   * The board is rebuilt from its start tile and the attempt is charged again, so
+   * losing costs the walk as well as the stamina. Retrying the fight alone would
+   * make the board free to re-roll — you would keep the loot you had banked and
+   * take another swing at the boss for nothing.
+   */
+  const restartRoute = React.useCallback(
+    (partId: string, chapterId: string): boolean => {
       if (!chargeAttempt(partId, chapterId)) return false;
-      launchBattle(partId, chapterId, picks, useTrialFor);
+      const chapter = getStoryChapter(partId, chapterId);
+      if (!chapter) return false;
+      const route = routeFor(chapter, getStoryPart(partId)?.order ?? 1);
+      const start = route.nodes.find((node) => node.type === "start");
+      beginRoute(partId, chapterId, start?.id ?? route.nodes[0].id, rollOrbs());
       return true;
     },
-    [chargeAttempt, launchBattle],
+    [beginRoute, chargeAttempt],
   );
 
   /**
@@ -264,32 +347,42 @@ export default function StoryPage(): React.JSX.Element {
         <BattleArena
           contextLabel={getStoryChapter(view.partId, view.chapterId)?.title}
           story={{
+            // The boss is the last tile before the finish, so winning it ends
+            // the walk: the outro plays and the route pays out. There is no
+            // extra tap onto the finish tile — arriving is the same event.
             onContinue: () => {
               resetBattle();
               if (view.skipScenes) {
                 finishChapter(view.partId, view.chapterId);
               } else {
                 setView({
-                  kind: "outro",
+                  kind: "scene",
+                  which: "outro",
                   partId: view.partId,
                   chapterId: view.chapterId,
+                  picks: view.picks,
+                  useTrialFor: view.useTrialFor,
+                  skipScenes: view.skipScenes,
                 });
               }
             },
-            // A retry is a fresh attempt: it re-charges stamina if the chapter
-            // is already cleared, and drops back to the brief if it can't be
-            // paid for. It restarts the battle directly — replaying the intro
-            // scenes on every defeat would be punishing.
+            // A retry is a fresh attempt at the *route*: charged again, walked
+            // from the start, banked loot gone. If it can't be paid for, the
+            // player lands on the brief with its insufficient-stamina notice.
             onRetry: () => {
-              if (
-                retryAttempt(
-                  view.partId,
-                  view.chapterId,
-                  view.picks,
-                  view.useTrialFor,
-                )
-              )
+              resetBattle();
+              if (restartRoute(view.partId, view.chapterId)) {
+                setView({
+                  kind: "board",
+                  partId: view.partId,
+                  chapterId: view.chapterId,
+                  picks: view.picks,
+                  useTrialFor: view.useTrialFor,
+                  skipScenes: view.skipScenes,
+                });
                 return;
+              }
+              clearRoute();
               setView({ kind: "brief", partId: view.partId, chapterId: view.chapterId });
             },
             // Losing because the team was wrong used to cost a four-step
@@ -299,11 +392,15 @@ export default function StoryPage(): React.JSX.Element {
             // exactly as the long way round did.
             onChangeTeam: () => {
               resetBattle();
+              clearRoute();
               setView({ kind: "brief", partId: view.partId, chapterId: view.chapterId });
             },
+            // Quitting mid-fight abandons the route, which is the wipe rule: the
+            // stamina is spent and the board is gone.
             onQuit: () => {
               resetBattle();
-              setView({ kind: "index" });
+              clearRoute();
+              setView({ kind: "chapterSelect", partId: view.partId });
             },
           }}
         />
@@ -324,13 +421,16 @@ export default function StoryPage(): React.JSX.Element {
           chapterNumber={chapterNumber}
           title={chapter.title}
           partTitle={part.title}
+          // The title card opens onto the board now, not straight into the
+          // scenes — the scenes are a tile you walk to.
           onDone={() =>
             setView({
-              kind: "intro",
+              kind: "board",
               partId: view.partId,
               chapterId: view.chapterId,
               picks: view.picks,
               useTrialFor: view.useTrialFor,
+              skipScenes: view.skipScenes,
             })
           }
         />
@@ -401,45 +501,113 @@ export default function StoryPage(): React.JSX.Element {
     );
   }
 
-  // ---- Scene reader views (intro / outro) ----
-  if (view.kind === "intro" || view.kind === "outro") {
+  // ---- Scene reader, played from a board tile ----
+  if (view.kind === "scene") {
     const chapter = getStoryChapter(view.partId, view.chapterId);
     if (!chapter) return bounceToIndex();
-    const isIntro = view.kind === "intro";
-    const picks = isIntro ? view.picks : [];
-    // The outro view carries no team, and nothing after it fights — an empty
-    // choice there is correct rather than a lost selection.
-    const useTrialFor = isIntro ? view.useTrialFor : [];
+    const isIntro = view.which === "intro";
     return (
       <StoryStage variant="stage" grid>
         <StorySceneReader
-          key={`${view.partId}-${view.chapterId}-${view.kind}`}
+          key={`${view.partId}-${view.chapterId}-${view.which}`}
           scenes={isIntro ? chapter.intro : chapter.outro}
           chapterTitle={chapter.title}
           // Only guard scenes the player has never seen; a replay's skip is
           // already an explicit choice made on the brief.
           confirmSkip={completed[chapterKey(view.partId, view.chapterId)] !== true}
           onFinish={() => {
-            if (!isIntro) {
-              finishChapter(view.partId, view.chapterId);
-            } else if (chapter.battle) {
+            // The intro is a tile, so it hands the player back to the board to
+            // keep walking — unless there is no board, in which case the chapter
+            // is scenes end to end and runs intro straight into outro.
+            if (isIntro && !chapter.battle) {
               setView({
-                kind: "versus",
+                kind: "scene",
+                which: "outro",
                 partId: view.partId,
                 chapterId: view.chapterId,
-                picks,
-                useTrialFor,
-                skipScenes: false,
+                picks: view.picks,
+                useTrialFor: view.useTrialFor,
+                skipScenes: view.skipScenes,
+              });
+            } else if (isIntro) {
+              setView({
+                kind: "board",
+                partId: view.partId,
+                chapterId: view.chapterId,
+                picks: view.picks,
+                useTrialFor: view.useTrialFor,
+                skipScenes: view.skipScenes,
               });
             } else {
-              // Scene-only chapter: the intro runs straight into the outro,
-              // with no versus beat and nothing to fight.
-              setView({
-                kind: "outro",
-                partId: view.partId,
-                chapterId: view.chapterId,
-              });
+              finishChapter(view.partId, view.chapterId);
             }
+          }}
+        />
+      </StoryStage>
+    );
+  }
+
+  // ---- The board ----
+  if (view.kind === "board") {
+    const part = getStoryPart(view.partId);
+    const chapter = getStoryChapter(view.partId, view.chapterId);
+    if (!part || !chapter) return bounceToIndex();
+    const route = routeFor(chapter, part.order);
+    // A route that isn't the one in the store means a reload landed here with
+    // stale view state; send the player back rather than walking a board whose
+    // position we don't have.
+    if (
+      !activeRoute ||
+      activeRoute.partId !== view.partId ||
+      activeRoute.chapterId !== view.chapterId
+    ) {
+      setView({ kind: "brief", partId: view.partId, chapterId: view.chapterId });
+      return <StoryStage variant="stage" />;
+    }
+    const bankedCount =
+      Object.values(activeRoute.bankedMaterials).reduce((sum, n) => sum + n, 0) +
+      (activeRoute.bankedCoin > 0 ? 1 : 0);
+    return (
+      <StoryStage variant="stage" grid>
+        <RouteBoard
+          route={route}
+          chapterTitle={chapter.title}
+          at={activeRoute.at}
+          orbs={activeRoute.orbs}
+          bankedCoin={activeRoute.bankedCoin}
+          bankedCount={bankedCount}
+          skipScenes={view.skipScenes}
+          onMove={(to, orbs, loot) => {
+            // Loot pays once: a tile already resolved banks nothing on a second
+            // landing, which matters the moment routes gain loops.
+            const already = activeRoute.resolved.includes(to);
+            advanceRoute(to, orbs, already ? undefined : loot);
+          }}
+          onScene={(which) =>
+            setView({
+              kind: "scene",
+              which,
+              partId: view.partId,
+              chapterId: view.chapterId,
+              picks: view.picks,
+              useTrialFor: view.useTrialFor,
+              skipScenes: view.skipScenes,
+            })
+          }
+          onFight={() =>
+            setView({
+              kind: "versus",
+              partId: view.partId,
+              chapterId: view.chapterId,
+              picks: view.picks,
+              useTrialFor: view.useTrialFor,
+              skipScenes: view.skipScenes,
+            })
+          }
+          onFinish={() => finishChapter(view.partId, view.chapterId)}
+          onQuit={() => {
+            clearRoute();
+            setView({ kind: "chapterSelect", partId: view.partId });
           }}
         />
       </StoryStage>
@@ -471,26 +639,45 @@ export default function StoryPage(): React.JSX.Element {
             number: progressView.current.number,
           }
         : null;
+    // A Bureau Order this clear just satisfied and hasn't been claimed yet. The
+    // chapter card advertised it; this is the other half of that promise.
+    const order = ordersForChapter(view.partId, view.chapterId)[0];
+    const unlock =
+      order && claimedOrders[order.id] !== true
+        ? describeOrderReward(order.reward)
+        : null;
     return (
       <StoryStage variant="stage">
-        <div className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 py-8">
-          <StoryRewardsScreen
-            chapterTitle={chapter?.title ?? ""}
-            result={view.result}
-            next={next}
-            onNext={
-              next
-                ? () =>
-                    setView({
-                      kind: "brief",
-                      partId: next.partId,
-                      chapterId: next.chapterId,
-                    })
-                : undefined
-            }
-            onContinue={() => setView({ kind: "index" })}
-          />
-        </div>
+        <StoryRewardsScreen
+          partTitle={getStoryPart(view.partId)?.title ?? ""}
+          chapterTitle={chapter?.title ?? ""}
+          result={view.result}
+          next={next}
+          unlock={unlock}
+          attemptCost={chapter ? storyAttemptCost(chapter.rewards) : 0}
+          onNext={
+            next
+              ? () =>
+                  setView({
+                    kind: "brief",
+                    partId: next.partId,
+                    chapterId: next.chapterId,
+                  })
+              : undefined
+          }
+          // Straight back to the brief, which is where a farm loop wants to
+          // restart: the team is remembered and one tap runs it again.
+          onAgain={() =>
+            setView({
+              kind: "brief",
+              partId: view.partId,
+              chapterId: view.chapterId,
+            })
+          }
+          onContinue={() =>
+            setView({ kind: "chapterSelect", partId: view.partId })
+          }
+        />
       </StoryStage>
     );
   }
@@ -519,20 +706,40 @@ export default function StoryPage(): React.JSX.Element {
               useTrialFor,
             )
           }
+          // Back goes to the part's chapter list, which is where the player came
+          // from — not all the way out to part select.
+          onBack={() => setView({ kind: "chapterSelect", partId: view.partId })}
+        />
+      </StoryStage>
+    );
+  }
+
+  // ---- Chapter select: the chapters of one part, hero over a snapped list ----
+  if (view.kind === "chapterSelect") {
+    const part = buildStoryIndex(completed).find((p) => p.id === view.partId);
+    if (!part) return bounceToIndex();
+    return (
+      <StoryStage variant="stage">
+        <ChapterSelect
+          part={part}
+          completed={completed}
+          onSelectChapter={(partId, chapterId) =>
+            setView({ kind: "brief", partId, chapterId })
+          }
           onBack={() => setView({ kind: "index" })}
         />
       </StoryStage>
     );
   }
 
-  // ---- Index: every part and its visible chapters, one page ----
+  // ---- Part select: one banner per reached part, snapped vertically ----
+  // Locked to the viewport rather than scrolling: a carousel is a moment you
+  // flick through, not a document that can outgrow a screen.
   return (
-    <StoryStage variant="page">
-      <StoryIndex
+    <StoryStage variant="stage">
+      <PartSelect
         completed={completed}
-        onSelectChapter={(partId, chapterId) =>
-          setView({ kind: "brief", partId, chapterId })
-        }
+        onSelectPart={(partId) => setView({ kind: "chapterSelect", partId })}
       />
     </StoryStage>
   );

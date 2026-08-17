@@ -5,14 +5,14 @@ import Image from "next/image";
 import TeamPicker from "@/components/game/TeamPicker";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { getCharacterById, type CharacterData } from "@/lib/game/characterCatalog";
-import { materialLabel } from "@/lib/game/materials";
+import { routeFor } from "@/lib/game/route";
+import { describeRewards, storyAttemptCost } from "@/lib/game/storyRewards";
 import {
   describeStageEffect,
   groupStageEffects,
 } from "@/lib/game/stageEffects";
 import type { StageEffect } from "@/types/stageEffects";
 import { STAMINA_CAP } from "@/lib/game/stamina";
-import { storyAttemptCost } from "@/lib/game/storyRewards";
 import {
   defaultTrialSelection,
   storyAnchors,
@@ -51,33 +51,10 @@ const TEAM_MODE_LABEL: Record<StoryChapter["teamMode"], string> = {
   free: "Your pick",
 };
 
-/** "300–800 Coin" / "2 Training Manual" — the brief advertises what a run pays
- *  before the player spends stamina on it. */
-function rangeLabel(min: number, max: number): string {
-  return min === max ? `${min}` : `${min}–${max}`;
-}
-
-function useRewardLines(chapter: StoryChapter, cleared: boolean): string[] {
-  return React.useMemo(() => {
-    const lines: string[] = [];
-    if (!cleared) {
-      const { gems, coin, permanentTicket, materials } = chapter.rewards.firstClear;
-      if (gems) lines.push(`${gems} Gems`);
-      if (coin) lines.push(`${coin} Coin`);
-      if (permanentTicket) lines.push(`${permanentTicket} Permanent Ticket`);
-      for (const [id, qty] of Object.entries(materials ?? {})) {
-        if (qty) lines.push(`${qty} ${materialLabel(id)}`);
-      }
-      return lines;
-    }
-    const { coin, materials } = chapter.rewards.repeat;
-    if (coin) lines.push(`${rangeLabel(coin.min, coin.max)} Coin`);
-    for (const [id, range] of Object.entries(materials ?? {})) {
-      lines.push(`${rangeLabel(range.min, range.max)} ${materialLabel(id)}`);
-    }
-    return lines;
-  }, [chapter, cleared]);
-}
+/** The reward lines used to be built here, privately. They moved to
+ *  `describeRewards` in `lib/game/storyRewards.ts` once the chapter card started
+ *  advertising the same thing — two copies of "what does this chapter pay" is
+ *  exactly how a card and a brief end up disagreeing. */
 
 /** One cell of the fact strip. Opposition isn't here — it has portraits of its
  *  own below, and printing the same names twice was what made the old stack of
@@ -185,9 +162,20 @@ export default function ChapterBrief({
     () => storyTrialIds(chapter, ownedIds),
     [chapter, ownedIds],
   );
-  const cost = storyAttemptCost(chapter.rewards, cleared);
+  // The board this attempt buys. Generated from the chapter unless one is
+  // authored, so the preview can never disagree with what gets walked.
+  const route = React.useMemo(
+    () => routeFor(chapter, partOrder ?? 1),
+    [chapter, partOrder],
+  );
+  const lootTiles = route.nodes.filter((node) => node.type === "loot").length;
+
+  const cost = storyAttemptCost(chapter.rewards);
   const affordable = currentStamina >= cost;
-  const rewardLines = useRewardLines(chapter, cleared);
+  const rewardLines = React.useMemo(
+    () => describeRewards(chapter.rewards, cleared),
+    [chapter.rewards, cleared],
+  );
 
   const enemies = (chapter.battle?.enemyTeam ?? []).map((pick) => ({
     id: pick.id,
@@ -233,9 +221,10 @@ export default function ChapterBrief({
         onClick={onBack}
         className="chamfer border border-edge px-3 py-2 font-body text-[11px] font-bold uppercase tracking-[0.2em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
       >
-        {/* Named for where it lands. It used to say "Chapter select", which is
-            the modal — this goes to the story index. */}
-        ← Story index
+        {/* Named for where it lands. It has moved twice now: it said "Chapter
+            select" when that was a modal, then "Story index" when back went to
+            the index — and now back really does go to a chapter list again. */}
+        ‹‹‹ Chapters
       </button>
 
       <header className="mt-4 border-l-2 border-signal pl-3">
@@ -263,6 +252,60 @@ export default function ChapterBrief({
           title={openSlots === 0 ? "Story team" : "Your team"}
         />
       </div>
+      ) : null}
+
+      {/* One attempt now buys a whole walk, so the brief says how long it is
+          before the stamina is spent. A scene-only chapter has no board — it
+          plays as scenes — so neither this nor the rules below apply to it. */}
+      {chapter.battle ? (
+      <>
+      <div className="mt-2.5 border border-edge bg-panel px-3 py-2.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="font-body text-[9px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+            The route
+          </p>
+          <span className="font-body text-[10px] font-bold uppercase tracking-[0.14em] tabular-nums text-readout-dim">
+            {route.nodes.length} tiles · {lootTiles} loot ·{" "}
+            {chapter.battle ? "1 fight" : "no fight"}
+          </span>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-1">
+          {route.nodes.map((node) => (
+            <span
+              key={node.id}
+              title={node.type}
+              className={`h-2.5 w-2.5 ${
+                node.type === "boss"
+                  ? "bg-el-light"
+                  : node.type === "loot"
+                    ? "bg-el-green"
+                    : node.type === "scene"
+                      ? "bg-signal-dim"
+                      : node.type === "finish"
+                        ? "border border-role-heal"
+                        : "bg-edge"
+              } ${node.type === "boss" ? "" : "rounded-full"}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Three rules a player cannot safely discover by playing. */}
+      <div className="mt-2.5 border border-signal-dim bg-signal/4 px-3 py-2.5">
+        <p className="font-body text-[9px] font-bold uppercase tracking-[0.22em] text-signal">
+          How a route works
+        </p>
+        <p className="mt-1 font-body text-[12.5px] leading-relaxed text-readout">
+          Three orbs, each rolling 1–6 — spend one to move that many tiles, and it
+          re-rolls. Only the tile you land on happens.{" "}
+          <span className="text-readout-strong">
+            The fight can never be skipped
+          </span>
+          , and losing it restarts the whole route — which costs the stamina
+          again.
+        </p>
+      </div>
+      </>
       ) : null}
 
       {/* Opposition and the stage rules read as one block: both describe what

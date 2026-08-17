@@ -79,9 +79,15 @@ export interface StoryRepeatDrops {
 export interface StoryChapterRewards {
   firstClear: StoryFirstClearBundle;
   repeat: StoryRepeatDrops;
-  /** Stamina charged to replay this chapter once cleared. Attempts at an
-   *  uncleared chapter are always free, however many times they are retried,
-   *  so the narrative can never be stamina-locked — only farming is gated. */
+  /**
+   * Stamina charged for one attempt at this chapter.
+   *
+   * Charged on **every** attempt since 2026-08-17, first clear and retries
+   * alike (Tanveer). It used to be free until a chapter was cleared, on the
+   * grounds that the narrative should never be stamina-locked; that rule is
+   * retired and story progress is now gated like everything else. The name is
+   * kept because it is in authored JSON for all 37 chapters.
+   */
   replayStamina: number;
 }
 
@@ -100,6 +106,17 @@ export interface StoryChapter {
   /** Required: a chapter that silently defaults is a chapter someone forgot
    *  to finish, and the schema should say so at load. */
   teamMode: StoryTeamMode;
+  /**
+   * The board this chapter is walked on. Omitted means `generateLinearRoute`
+   * builds one from `intro` and `battle`, which is how all 37 authored chapters
+   * keep working untouched — a generated route is start → intro → the fight, and
+   * the fight is terminal.
+   *
+   * Typed loosely here on purpose: `lib/game/route.ts` owns `StoryRoute`, and
+   * importing it into the shared contract would point the type layer at a
+   * gameplay module. The schema validates the real shape at load.
+   */
+  route?: import("@/lib/game/route").StoryRoute;
   /** Encounter-level modifiers for this fight. Absent or empty = a standard
    *  fight, which is the default (Tanveer, 2026-08-10). */
   stageEffects?: StageEffect[];

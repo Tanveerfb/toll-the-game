@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   allOrdersClaimed,
   claimableCount,
+  describeOrderReward,
   evaluateOrder,
   evaluateOrders,
   getOrder,
+  ordersForChapter,
   getOrdersForStep,
   getStarterOrders,
   currentStep,
@@ -394,5 +396,67 @@ describe("steps (Tanveer, 2026-08-13)", () => {
     // Tanveer, 2026-08-13: "let's give our 10 tickets for now". Placeholder
     // like every other order reward — his to tune.
     expect(summariseRewards(getStarterOrders()).autoClearTickets).toBe(10);
+  });
+});
+
+/**
+ * Story mode advertises a chapter's order on the chapter card and confirms it on
+ * the clear summary, so the free Lyra is finally visible at the chapter that
+ * grants her instead of only inside the nav's Orders modal.
+ */
+describe("ordersForChapter", () => {
+  it("finds the order a chapter satisfies", () => {
+    expect(ordersForChapter("part2", "p2c2").map((o) => o.id)).toEqual([
+      "lyra-joins",
+    ]);
+    expect(ordersForChapter("part4", "p4c3").map((o) => o.id)).toEqual([
+      "s2-part-four",
+    ]);
+  });
+
+  it("returns nothing for a chapter with no order on it", () => {
+    expect(ordersForChapter("part1", "p1c1")).toEqual([]);
+  });
+
+  it("ignores arc-wide count goals, which belong to no single chapter", () => {
+    // `first-chapter` is chaptersCleared:1 and would otherwise attach itself to
+    // whichever chapter happened to be the player's first.
+    for (const order of getStarterOrders()) {
+      if (order.goal.type !== "chapterCleared") continue;
+      expect(
+        ordersForChapter(order.goal.partId, order.goal.chapterId),
+      ).toContain(order);
+    }
+    const everyMatch = getStarterOrders().filter(
+      (o) => o.goal.type === "chapterCleared",
+    );
+    expect(everyMatch).toHaveLength(2);
+  });
+
+  it("never returns an order for an unknown chapter", () => {
+    expect(ordersForChapter("part99", "nope")).toEqual([]);
+  });
+});
+
+describe("describeOrderReward", () => {
+  it("names the character alone, since that is the reason anyone cares", () => {
+    const lyra = getOrder("lyra-joins");
+    expect(lyra).toBeDefined();
+    expect(describeOrderReward(lyra!.reward)).toBe("Lyra");
+  });
+
+  it("falls back to the headline currency", () => {
+    expect(describeOrderReward({ gems: 125 })).toBe("125 Gems");
+    expect(describeOrderReward({ coin: 5000 })).toBe("5000 Coin");
+  });
+
+  it("names a material when that is all there is", () => {
+    expect(describeOrderReward({ materials: { training_manual: 3 } })).toBe(
+      "3 Training Manual",
+    );
+  });
+
+  it("never returns an empty string", () => {
+    expect(describeOrderReward({})).toBe("Reward");
   });
 });
