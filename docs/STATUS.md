@@ -24,7 +24,7 @@ and live on the deploy.
 
 ## Working (implemented, tested, browser-verified)
 
-- **Engine correctness pass + five project skills (2026-08-20)** — no feature work; the session was skills, bug fixes and specs. Verified at checkpoint time: `npm run check` green (**1,235 tests / 98 files**, same 3 pre-existing eslint warnings in `tests/duel.test.ts`), clean `NEXT_DIST_DIR=.next-verify next build` (48/48 static pages), `tsconfig.json` churn reverted, `.next-verify` removed. **Not browser-verified.**
+- **Engine correctness pass + five project skills (2026-08-20, `6f077d5`)** — no feature work; the session was skills, bug fixes and specs. Verified at checkpoint time: `npm run check` green (**1,235 tests / 98 files**, same 3 pre-existing eslint warnings in `tests/duel.test.ts`), clean `NEXT_DIST_DIR=.next-verify next build` (48/48 static pages), `tsconfig.json` churn reverted, `.next-verify` removed. **Not browser-verified.**
 
   ### Three live engine bugs, all one family
   A mechanic covering several stats is authored `stats: ["atk","evade"]` with no `stat` field — the shape ruling #55 actively encourages. Every reader matching on `entry.stat` alone silently dropped the whole entry.
@@ -340,6 +340,8 @@ and live on the deploy.
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
 
 ## Session log — 2026-08-20: skills, an engine bug family, and six Dokkan kits
+
+Commit `6f077d5`.
 
 A talk-and-specs session. He asked twice for no builds, so after the morning's
 fixes nothing was implemented — the output is skills, rulings and `Plans/`.
