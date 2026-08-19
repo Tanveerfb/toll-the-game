@@ -15,7 +15,7 @@ export default function Practice() {
 
   if (isInitializing) {
     return (
-      <main className="relative min-h-screen bg-void text-readout">
+      <main className="relative min-h-dvh bg-void text-readout">
         <TeamSelect onStart={startCustomBattle} />
       </main>
     );

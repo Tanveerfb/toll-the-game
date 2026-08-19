@@ -23,7 +23,7 @@ const characters: CharacterBrowserItem[] = getAllCharacters()
 
 export default function NpcArchivePage() {
   return (
-    <main className="terminal-grid min-h-screen bg-void">
+    <main className="terminal-grid min-h-dvh bg-void">
       <section className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-8">
         <header className="border-l-2 border-signal pl-3">
           <span className="block font-body text-[10px] font-bold uppercase tracking-[0.34em] text-signal">

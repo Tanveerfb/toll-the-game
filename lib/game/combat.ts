@@ -7,7 +7,11 @@ import { syncExtortLinks } from "./effects";
 import { getEffectiveAttack, getEffectiveDefense, statPhrase } from "./stats";
 import { ultGaugeMax } from "./ultGauge";
 import { bossDamageMultiplierVsTarget } from "./bossPassives";
-import { getEffectiveCritResist, getEffectiveLifesteal } from "./substats";
+import {
+  effectiveSubstat,
+  getEffectiveCritResist,
+  getEffectiveLifesteal,
+} from "./substats";
 import { applyHeal } from "./heal";
 import { scaleMaxHp } from "./maxHp";
 import { ultDamageForLevel } from "./progression";
@@ -86,7 +90,16 @@ export function getCritChance(char: BattleCharacter): number {
     const steps = Math.floor(lostPercent / (deathblow.hpStepPercent ?? 3));
     chance += steps * (deathblow.critPerStepPercent ?? 2);
   }
-  return chance;
+  // Skills and ultimates raise crit chance too, not just passives (Tanveer,
+  // 2026-08-19: *"skills or ults can also increase crit chance, just like how
+  // chiara increases her evade chance"*). This used to return the Deathblow
+  // contribution alone, so any authored crit-chance buff was inert — it would
+  // have rendered on the card and never reached the roll at all.
+  //
+  // `effectiveSubstat` gives buffs, debuffs, `stats` arrays and the clamp in
+  // one, which is the path crit damage, lifesteal and recovery rate already
+  // take. Unlike evade, crit chance IS inside "all stats" (ruling #55).
+  return effectiveSubstat(char, "critChance", chance);
 }
 
 // Charged-style passive (Seras): the unit gains a stack whenever it receives
@@ -1268,7 +1281,22 @@ export function executeSkill(
         );
         targetEffects.push("cleansed all debuffs");
       }
-      if ((mech.type === "buff" || mech.type === "stance") && !mech.targetSelf) {
+      // `isHealOrBuff` is required, matching the three branches around this
+      // one (cleanse, debuffImmunity, healOverTime). Without it, a buff that
+      // isn't `targetSelf` applied to whoever the skill was *hitting* — so an
+      // attack carrying an ally-intended buff handed it to the enemy it just
+      // struck, and the caster's team got nothing. Verified 2026-08-20 against
+      // a constructed kit; no shipped kit reaches it, because all four
+      // non-self buffs in the roster sit on zero-damage support skills.
+      //
+      // This makes such a mechanic inert rather than harmful. Buffing your own
+      // team from an attacking skill is a separate capability that needs a
+      // declared audience — see the `applyTo` note in docs/HANDOFF.md.
+      if (
+        (mech.type === "buff" || mech.type === "stance") &&
+        !mech.targetSelf &&
+        isHealOrBuff
+      ) {
         const percent = mech.valuePercent || mech.value;
         const scalesHp =
           percent && (mech.stat === "hp" || mech.stat === "all" ||

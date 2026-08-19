@@ -14,6 +14,23 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 
 **Never block on missing art.** If a feature needs an image the game doesn't have, append a request to `docs/ART_REQUESTS.md`, ship the feature with a fallback, and move on — ComfyUI runs in its own dedicated sessions, and that file is what they read.
 
+## Project Skills
+
+`.claude/skills/` holds the workflows this project repeats. Invoke the skill instead of re-deriving its rules — that is the whole reason they exist.
+
+| Skill | Use it when |
+| --- | --- |
+| `FillerAssist` | Authoring or reworking a story chapter — canon read, filler under his approval, then `data/story/chapter-N.json` |
+| `kitwords` | Writing the player-facing text for a kit — skill and passive descriptions, in the game's voice |
+| `kitcheck` | Before shipping any edit to `data/characters/*.json`. Audits wording and structure; **never** touches a number |
+| `mobilecheck` | Before shipping a screen, or when reworking one built before 2026-08-18. One screen per run |
+| `ruling` | He settles a design question. Numbered entry, his words, supersede links, propagation |
+| `comfypending` | A feature needs art the game doesn't have |
+
+`Plans/` holds specced-but-unbuilt work — dated design files a future session can pick up cold. Tanveer builds those in their own dedicated sessions; **don't start one mid-conversation**, and don't let a plan rot silently: if the code it describes changes, the plan is stale and says so or goes.
+
+**A project skill names the files it owns, and dies with them.** Every skill carries a "Where the truth lives" section listing its sources. When those files are deleted, the skill is deleted in the same commit. `latticePlan` outlived `lib/game/route.ts` by one commit and spent it teaching a system that no longer existed — docs get skimmed, skills get followed, so a stale skill does more damage than a stale doc.
+
 ## Stack
 
 | Technology          | Role                                             |
@@ -27,7 +44,7 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 | Zustand             | Global game state management                     |
 | Vitest              | Unit tests (`tests/`)                            |
 
-**UI rule: HeroUI was removed 2026-07-06 — do not reintroduce it.** UI primitives live in `components/ui/` (shadcn). Add new ones with `npx shadcn@latest add <component>`.
+UI primitives live in `components/ui/` (shadcn) and already default to the Combat Terminal look — add new ones with `npx shadcn@latest add <component>`, and don't restate the theme at the usage (ruling #84).
 
 **Mobile first, desktop second (Tanveer, 2026-08-18).** Most players willing to try the game arrive on a phone, so a phone is the primary target and desktop is the secondary one — not the other way round. Concretely: design canvas **390×844** (9:16 portrait); desktop renders the same column centred at a capped width, never a re-laid-out wide variant; **`dvh`, never `vh`** (Tailwind 4 compiles `screen` to `100vh`, the largest viewport); touch targets **≥44px** with primaries in the thumb-reachable lower third; no affordance that exists only on hover; one vertical scroll per screen, with wide content scrolling inside its own container. **Verify phone width before desktop** — a break at 390px is a blocker, a break at 1440px is a bug. Ruling #107 in `docs/HANDOFF.md`. Battle, gacha, archive and the hub predate this rule and are known debt (`docs/ROADMAP.md`).
 

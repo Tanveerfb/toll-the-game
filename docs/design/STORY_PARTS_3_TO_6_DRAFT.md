@@ -1,6 +1,13 @@
 # Story parts 3–6 — adaptation draft
 
-**Status: DRAFT for Tanveer's review. Nothing here is in `data/story/`.**
+**Status: RETIRED STRUCTURE, LIVE PROSE (2026-08-19).** The parts/chapters/board
+system this draft is written against was deleted in `8b56767` — story mode is
+Chapters and Stages now (`docs/HANDOFF.md` ruling #108). Ignore every structural
+claim below: parts, boards, tiles, per-chapter battles. The **narrative** work —
+beat selection, what each webtoon chapter has to land, cast present, tone — is
+still good and is the reason this file survives. Re-author through the
+`FillerAssist` skill, which maps beats onto stages.
+
 Written 2026-08-11 from `E:\Toll - Web toon` (`Master_Context.md`, `Chapter 3–6.md`).
 Story is Tanveer's to own — this is a proposed mapping, not a decision.
 

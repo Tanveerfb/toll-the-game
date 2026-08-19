@@ -58,7 +58,7 @@
   ],
   "ultimate": {
     "skillName": "Speed of Lightning",
-    "description": "Permanently raises ATK and DEF; then does damage equal to ATK-scaled to one enemy.",
+    "description": "Raises ATK and DEF; then does damage equal to ATK-scaled to one enemy.",
     "characterId": "killua",
     "type": "ultimate",
     "statMultiplier": "atk",

@@ -127,7 +127,7 @@ export default function BannerScreen(): React.JSX.Element {
     `Draw ×${count} · ${count === 1 ? singleCost : multiCost} ${unit}`;
 
   return (
-    <main className="terminal-grid min-h-screen bg-void">
+    <main className="terminal-grid min-h-dvh bg-void">
       <section className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-6 md:px-8">
         {ticketBannerAvailable ? (
           <div className="flex gap-1.5 border-b border-edge pb-2">

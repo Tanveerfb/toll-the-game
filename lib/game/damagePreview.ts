@@ -488,17 +488,27 @@ function applyPreHitSelfBuffs(
       return;
     }
 
-    if (mechanic.stat === "atk") {
+    // Matches `stat: "atk"` and `stats: ["atk", ...]` alike. One entry may
+    // cover several stats — "raises ATK and DEF" is ONE buff (ruling #55) —
+    // and reading only `stat` left every such self-buff out of the estimate,
+    // understating Duke's Surge and Killua's ultimate. Ruling #22 says a
+    // self-buff applies before the damage calc and the same strike benefits,
+    // so the preview has to include it or it lies about the hit.
+    const touches = (name: string) =>
+      mechanic.stat === name ||
+      (Array.isArray(mechanic.stats) && mechanic.stats.includes(name));
+
+    if (touches("atk")) {
       atk *= 1 + percent / 100;
       notes.push(`Self ATK buff included (+${percent}%).`);
     }
 
-    if (mechanic.stat === "def") {
+    if (touches("def")) {
       def *= 1 + percent / 100;
       notes.push(`Self DEF buff included (+${percent}%).`);
     }
 
-    if (mechanic.stat === "hp") {
+    if (touches("hp")) {
       hp *= 1 + percent / 100;
       notes.push(`Self HP buff included (+${percent}%).`);
     }

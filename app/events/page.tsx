@@ -163,7 +163,7 @@ function AutoClearResults({
   const totalStamina = runs.reduce((sum, run) => sum + run.staminaUsed, 0);
 
   return (
-    <main className="terminal-grid flex min-h-screen items-center justify-center bg-void px-4 py-6">
+    <main className="terminal-grid flex min-h-dvh items-center justify-center bg-void px-4 py-6">
       <div className="w-full max-w-lg border border-edge-strong bg-panel">
         <div className="border-b border-hairline bg-inset px-5 py-4">
           <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
@@ -525,7 +525,7 @@ export default function EventsPage(): React.JSX.Element {
   if (view.kind === "results") {
     const rows = rewardRows(view.rewards);
     return (
-      <main className="terminal-grid flex min-h-screen items-center justify-center bg-void px-4">
+      <main className="terminal-grid flex min-h-dvh items-center justify-center bg-void px-4">
         <div className="w-full max-w-md border border-edge-strong bg-panel">
           <div className="border-b border-hairline bg-inset px-5 py-4">
             <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
@@ -584,7 +584,7 @@ export default function EventsPage(): React.JSX.Element {
     const autoRuns = Math.min(auto.affordable, maxBatchSize(event.staminaCost));
 
     return (
-      <main className="terminal-grid min-h-screen bg-void">
+      <main className="terminal-grid min-h-dvh bg-void">
         <section className="mx-auto flex w-full max-w-4xl flex-col gap-3 px-4 py-6 md:px-8">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <button
@@ -853,7 +853,7 @@ export default function EventsPage(): React.JSX.Element {
   }
 
   return (
-    <main className="terminal-grid min-h-screen bg-void">
+    <main className="terminal-grid min-h-dvh bg-void">
       <section className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 py-6 md:px-8">
         <header className="border-l-2 border-signal pl-3">
           <span className="block font-body text-[10px] font-bold uppercase tracking-[0.34em] text-signal">

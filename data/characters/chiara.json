@@ -80,7 +80,7 @@
   ],
   "ultimate": {
     "skillName": "All In",
-    "description": "Raises ATK and evade chance for 3 turns; then does damage equal to ATK-scaled to all enemies.",
+    "description": "Increases ATK and evade chance by [buff.value]% for [buff.duration] turns; then does damage equal to ATK-scaled to all enemies.",
     "characterId": "chiara",
     "type": "ultimate",
     "statMultiplier": "atk",
@@ -96,14 +96,10 @@
     "mechanics": [
       {
         "type": "buff",
-        "stat": "atk",
-        "valuePercent": 30,
-        "duration": 3,
-        "targetSelf": true
-      },
-      {
-        "type": "buff",
-        "stat": "evade",
+        "stats": [
+          "atk",
+          "evade"
+        ],
         "valuePercent": 33,
         "duration": 3,
         "targetSelf": true

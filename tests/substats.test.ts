@@ -6,6 +6,9 @@ import {
   getEffectiveCritResist,
 } from "@/lib/game/substats";
 import { getDamageReductionMultiplier } from "@/lib/game/stats";
+import { getEvadeChance } from "@/lib/game/evade";
+import { getCritChance } from "@/lib/game/combat";
+import chiara from "@/data/characters/chiara.json";
 import { scaleMaxHp, inverseHpPercent } from "@/lib/game/maxHp";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import type { BattleCharacter } from "@/types/character";
@@ -495,5 +498,89 @@ describe("Kind Hearted Friend's two halves target differently", () => {
 
   it.each(["seras", "batra"])("%s's passive still says 'all stats'", (id) => {
     expect(getCharacterById(id)?.passive?.description).toContain("all stats");
+  });
+});
+
+describe("substat buffs authored as a stats array (ruling #55)", () => {
+  /**
+   * One entry may cover a basic stat and a substat together — Chiara's
+   * ultimate raises ATK and evade chance as a single effect, so it is one
+   * pill and one thing to cleanse. `evade.ts` matched on `stat === "evade"`
+   * alone, so merging Chiara's two entries into one silently zeroed her
+   * dodge: the buff rendered on the card and never reached the roll.
+   *
+   * Same failure family as the lifesteal/evade no-ops #55 was written for.
+   */
+  const mk = (buffs: unknown[]) =>
+    ({ buffs, debuffs: [], passiveState: {} }) as unknown as BattleCharacter;
+
+  it("reads evade from a stats array, not just a bare stat", () => {
+    expect(
+      getEvadeChance(mk([{ type: "buff", stat: "evade", valuePercent: 33 }])),
+    ).toBe(33);
+    expect(
+      getEvadeChance(
+        mk([{ type: "buff", stats: ["atk", "evade"], valuePercent: 33 }]),
+      ),
+    ).toBe(33);
+  });
+
+  it("keeps evade out of reach of stat: 'all'", () => {
+    // Ruling #55: "all stats" is basic stats plus substats, EXCLUDING damage
+    // reduction and evade chance. This is why evade can't just call
+    // `entryAffectsStat`, which honours "all".
+    expect(
+      getEvadeChance(mk([{ type: "buff", stat: "all", valuePercent: 30 }])),
+    ).toBe(0);
+  });
+
+  it("Chiara's shipped ultimate actually grants her dodge", () => {
+    const ult = chiara.ultimate as unknown as {
+      mechanics: { type: string; stats?: string[]; valuePercent?: number }[];
+    };
+    const evadeEntry = ult.mechanics.find(
+      (m) => m.type === "buff" && m.stats?.includes("evade"),
+    );
+    expect(evadeEntry).toBeDefined();
+    expect(
+      getEvadeChance(mk([{ type: "buff", ...evadeEntry }])),
+    ).toBe(evadeEntry?.valuePercent);
+  });
+});
+
+describe("crit chance is buffable by skills and ultimates", () => {
+  /**
+   * Tanveer, 2026-08-19: *"skills or ults can also increase crit chance, just
+   * like how chiara increases her evade chance."* `getCritChance` summed only
+   * the Deathblow passive and returned, so an authored crit buff never reached
+   * the roll in `combat.ts`.
+   */
+  const mk = (buffs: unknown[], debuffs: unknown[] = []) =>
+    ({ buffs, debuffs, passiveState: {} }) as unknown as BattleCharacter;
+
+  it("base is 0 with no sources (ruling #16)", () => {
+    expect(getCritChance(mk([]))).toBe(0);
+  });
+
+  it("a skill buff raises it, in percentage points", () => {
+    expect(
+      getCritChance(mk([{ type: "buff", stat: "critChance", valuePercent: 50 }])),
+    ).toBe(50);
+  });
+
+  it("reads a stats array and clamps at zero", () => {
+    expect(
+      getCritChance(
+        mk([{ type: "buff", stats: ["atk", "critChance"], valuePercent: 20 }]),
+      ),
+    ).toBe(20);
+    expect(
+      getCritChance(
+        mk(
+          [{ type: "buff", stat: "critChance", valuePercent: 10 }],
+          [{ type: "debuff", stat: "critChance", valuePercent: 40 }],
+        ),
+      ),
+    ).toBe(0);
   });
 });

@@ -22,7 +22,7 @@ const characters: CharacterBrowserItem[] = getPlayableCharacters().map(
 
 export default function ArchivePage() {
   return (
-    <main className="terminal-grid min-h-screen bg-void">
+    <main className="terminal-grid min-h-dvh bg-void">
       <section className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-8">
         <header className="flex flex-wrap items-center gap-x-4 gap-y-3 border-l-2 border-signal pl-3">
           <div>

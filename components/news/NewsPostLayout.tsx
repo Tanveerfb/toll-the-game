@@ -76,7 +76,7 @@ export default function NewsPostLayout({
   children,
 }: NewsPostLayoutProps) {
   return (
-    <main className="terminal-grid min-h-screen bg-void">
+    <main className="terminal-grid min-h-dvh bg-void">
       <div className="mx-auto w-full max-w-2xl px-6 py-8">
         <Link
           href="/news"

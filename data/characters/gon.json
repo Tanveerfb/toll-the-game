@@ -60,7 +60,7 @@
   ],
   "ultimate": {
     "skillName": "Jajanken Combo",
-    "description": "Permanently raises ATK; greatly raises DEF for 1 turn; then does damage equal to ATK-scaled to one enemy.",
+    "description": "Raises ATK; greatly raises DEF for 1 turn; then does damage equal to ATK-scaled to one enemy.",
     "characterId": "gon",
     "type": "ultimate",
     "statMultiplier": "atk",

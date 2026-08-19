@@ -91,7 +91,7 @@ export default async function CharacterDetailPage({
   const isMultiPhase = getCharacterPhases(character).length > 1;
 
   return (
-    <main className="terminal-grid min-h-screen bg-void">
+    <main className="terminal-grid min-h-dvh bg-void">
       <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8">
         <Link
           href="/archive"

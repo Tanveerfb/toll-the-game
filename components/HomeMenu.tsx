@@ -211,7 +211,7 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
   }
 
   return (
-    <main className="terminal-grid min-h-screen bg-void">
+    <main className="terminal-grid min-h-dvh bg-void">
       <section className="mx-auto w-full max-w-5xl px-4 py-5 md:px-8 md:py-7">
         {/* HERO — the one thing to do next, derived from progress rather than
             fixed. The menu this replaced gave MAIN STORY and LOGIN the same

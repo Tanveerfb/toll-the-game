@@ -574,6 +574,18 @@ const STAT_LABELS: Record<string, string> = {
   hp: "HP",
   all: "all stats",
   damageReduction: "damage reduction",
+  // Substats were missing here, so a pill covering one fell through to
+  // `stat.toUpperCase()` and read "EVADE" while the description said "evade
+  // chance" — which also meant the combined key ("raises atk and evade") could
+  // never match the sentence it was built for. Kept separate from
+  // `STAT_WORD` in stats.ts on purpose: that map is battle-log voice and calls
+  // `damageReduction` "damage taken", from the victim's side.
+  evade: "evade chance",
+  damageDealt: "damage dealt",
+  critChance: "crit chance",
+  critDamage: "crit damage",
+  recoveryRate: "recovery rate",
+  lifesteal: "lifesteal",
 };
 
 // Dokkan-style tier words (Tanveer's scheme, mirrors the lowers glossary):
@@ -588,12 +600,17 @@ const STAT_LABELS: Record<string, string> = {
  * Thresholds rather than exact matches, so an off-tier value still picks the
  * nearest honest word instead of falling through to the plain one.
  */
-function tierWord(value: number, falling: boolean): string {
+function tierWord(value: number, falling: boolean): string | undefined {
   const base = falling ? "lowers" : "raises";
-  const massivelyAt = falling ? 80 : 100;
-  if (value >= massivelyAt) return `massively ${base}`;
-  if (value >= 50) return `greatly ${base}`;
-  return base;
+  // EXACT values, not thresholds (Tanveer, 2026-08-19): "'raises' MUST be 30%.
+  // It can't fluctuate, even by 1%. If I allow it, next time you would propose
+  // 'greatly raises' to accept even 55%." A value that isn't on the scale is
+  // written "Increases/Decreases X by N%" instead, with the number visible —
+  // so it needs no pill, and gets none.
+  if (value === (falling ? 80 : 100)) return `massively ${base}`;
+  if (value === 50) return `greatly ${base}`;
+  if (value === 30) return base;
+  return undefined;
 }
 
 /**
@@ -628,14 +645,19 @@ export function buildSkillKeywordGlossary(
           : undefined);
     if (!value) continue;
 
-    // No resolvable duration = permanent — the wording says so explicitly
-    // ("Permanently raises ATK") instead of relying on omission.
-    const duration =
-      getRankedValue(mech.durationRanked, rankIndex) ??
-      (typeof mech.duration === "number" ? mech.duration : undefined);
-    const permanent = duration === undefined;
-
-    const tier = `${permanent ? "permanently " : ""}${tierWord(value, mech.type === "debuff")}`;
+    const word = tierWord(value, mech.type === "debuff");
+    // No tier word means the description states the number itself, so there is
+    // nothing for a pill to reveal.
+    if (!word) continue;
+    // The key is the bare tier word, with no "permanently " prefix.
+    //
+    // Permanence is no longer written into the description (Tanveer,
+    // 2026-08-19: *"we don't need 'permanently' in the description… players
+    // will notice this on their own"*), so a prefixed key would no longer
+    // match the text it was built for and every permanent buff would silently
+    // lose its pill. What signals permanence to the reader is that the clause
+    // carries no duration — and the comma that gives it a clause of its own.
+    const tier = word;
     const statLabel = stat.includes("+")
       ? stat
           .split("+")

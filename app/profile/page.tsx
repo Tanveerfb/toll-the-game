@@ -117,7 +117,7 @@ export default function ProfilePage() {
   const nextWall = RANK_WALLS.find((wall) => wall > account.rank);
 
   return (
-    <main className="terminal-grid min-h-screen bg-void">
+    <main className="terminal-grid min-h-dvh bg-void">
       <section className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-8">
         {/* The page opens with what it's about. It used to open with a Stamina
             card, and the account itself was a line of email text near the

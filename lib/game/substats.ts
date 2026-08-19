@@ -21,7 +21,7 @@ const DEFAULT_RECOVERY_RATE_PERCENT = 100;
 const DEFAULT_LIFESTEAL_PERCENT = 5;
 const DEFAULT_CRIT_RESIST_PERCENT = 10;
 
-function effectiveSubstat(
+export function effectiveSubstat(
   char: BattleCharacter,
   statKey: string,
   base: number,

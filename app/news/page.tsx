@@ -13,7 +13,7 @@ export default async function NewsPage() {
   ]);
 
   return (
-    <main className="terminal-grid min-h-screen bg-void">
+    <main className="terminal-grid min-h-dvh bg-void">
       <div className="mx-auto w-full max-w-2xl px-6 py-8">
         <header className="border-l-2 border-signal pl-3">
           <span className="block font-body text-[10px] font-bold uppercase tracking-[0.34em] text-signal">

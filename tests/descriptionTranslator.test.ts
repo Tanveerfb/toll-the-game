@@ -32,20 +32,34 @@ describe("description placeholders", () => {
     expect(rock["greatly raises atk"]).toBe("Increases ATK by 50%");
     expect(rock["greatly raises"]).toBe("Increases ATK by 50%"); // loose-wording fallback
 
-    // Gon ult: permanent +30% ATK ("permanently raises") and 1-turn +50% DEF
-    // ("greatly raises") — permanence is explicit in the wording now.
+    // Gon ult: a permanent +30% ATK and a 1-turn +50% DEF, side by side in
+    // one sentence. Since 2026-08-19 the permanent one carries no "permanently"
+    // prefix — in the text or in the key — so the two pills are "raises" and
+    // "greatly raises". They share a substring and that is fine: they sit at
+    // different positions, and the extractor matches longest-first without
+    // overlapping.
     const combo = buildSkillKeywordGlossary(
       gonData.ultimate as CharacterSkillData,
       0,
     );
-    expect(combo["permanently raises atk"]).toBe("Increases ATK by 30%");
+    expect(combo["raises atk"]).toBe("Increases ATK by 30%");
     expect(combo["greatly raises def"]).toBe("Increases DEF by 50%");
+    expect(Object.keys(combo).some((k) => k.includes("permanently"))).toBe(
+      false,
+    );
   });
 
-  it("wording tiers are asymmetric: massively is 100%+ up, but 80%+ down", () => {
-    // Tanveer, 2026-08-09: canonical tiers are 30/50/100 raising and 30/50/80
-    // lowering — a stat can never be reduced to zero in battle, so 80% is the
-    // ceiling a "lowers" effect is written against.
+  it("tier words name exact values, and an off-scale value gets none", () => {
+    // Tanveer, 2026-08-19, overturning the earlier threshold reading:
+    // *"'raises' MUST be 30%. It can't fluctuate, even by 1%. If I allow it,
+    // next time you would propose 'greatly raises' to accept even 55%."*
+    // The scale is 30/50/100 raising and 30/50/80 lowering — asymmetric at the
+    // top because a stat can never be reduced to zero in battle.
+    //
+    // An off-scale value is written "Increases/Decreases X by N%" with the
+    // number in the text, so there is nothing for a pill to reveal and none is
+    // built. This test previously asserted 85% up rendered "greatly raises",
+    // which is exactly the drift the ruling exists to stop.
     const glossaryFor = (mechanics: unknown[]) =>
       buildSkillKeywordGlossary(
         {
@@ -58,25 +72,46 @@ describe("description placeholders", () => {
         0,
       );
 
-    // 85% up is "greatly", not "massively" — it hasn't reached 100.
-    const under = glossaryFor([{ type: "buff", stat: "atk", valuePercent: 85 }]);
-    expect(under["permanently greatly raises atk"]).toBe("Increases ATK by 85%");
+    // 30 / 50 / 100 up.
+    expect(
+      glossaryFor([{ type: "buff", stat: "atk", valuePercent: 30 }])[
+        "raises atk"
+      ],
+    ).toBe("Increases ATK by 30%");
+    expect(
+      glossaryFor([{ type: "buff", stat: "atk", valuePercent: 50 }])[
+        "greatly raises atk"
+      ],
+    ).toBe("Increases ATK by 50%");
+    expect(
+      glossaryFor([{ type: "buff", stat: "atk", valuePercent: 100 }])[
+        "massively raises atk"
+      ],
+    ).toBe("Increases ATK by 100%");
 
-    // 100% up is where "massively" starts.
-    const at = glossaryFor([{ type: "buff", stat: "atk", valuePercent: 100 }]);
-    expect(at["permanently massively raises atk"]).toBe("Increases ATK by 100%");
+    // Down, 80 is already "massively" and 50 is still only "greatly".
+    expect(
+      glossaryFor([
+        { type: "debuff", stat: "def", valuePercent: 80, duration: 2 },
+      ])["massively lowers def"],
+    ).toBe("Reduces DEF by 80%");
+    expect(
+      glossaryFor([
+        { type: "debuff", stat: "def", valuePercent: 50, duration: 2 },
+      ])["greatly lowers def"],
+    ).toBe("Reduces DEF by 50%");
 
-    // Down, 80% is already "massively".
-    const down = glossaryFor([
-      { type: "debuff", stat: "def", valuePercent: 80, duration: 2 },
+    // Off the scale in either direction: no key at all, at any spelling.
+    for (const value of [20, 33, 45, 85, 99]) {
+      const off = glossaryFor([{ type: "buff", stat: "atk", valuePercent: value }]);
+      expect(Object.keys(off), `${value}% should produce no tier pill`).toEqual(
+        [],
+      );
+    }
+    const offDown = glossaryFor([
+      { type: "debuff", stat: "def", valuePercent: 70, duration: 2 },
     ]);
-    expect(down["massively lowers def"]).toBe("Reduces DEF by 80%");
-
-    // ...and 50% down is still only "greatly".
-    const mid = glossaryFor([
-      { type: "debuff", stat: "def", valuePercent: 50, duration: 2 },
-    ]);
-    expect(mid["greatly lowers def"]).toBe("Reduces DEF by 50%");
+    expect(Object.keys(offDown)).toEqual([]);
   });
 
   it("same-tier multi-stat phrases get a combined key ('raises atk and def')", () => {
@@ -96,7 +131,7 @@ describe("description placeholders", () => {
     );
   });
 
-  it("permanent multi-stat raises combine under the permanently key (Killua ult)", () => {
+  it("a permanent multi-stat raise keys off the bare tier word (Killua ult)", () => {
     const skill = {
       skillName: "T",
       characterId: "t",
@@ -107,8 +142,12 @@ describe("description placeholders", () => {
         { type: "buff", stat: "def", valuePercent: 30 },
       ],
     } as unknown as CharacterSkillData;
+    // No duration anywhere = permanent, and the reader is told that by the
+    // absence of a duration rather than by the word (Tanveer, 2026-08-19:
+    // *"we don't need 'permanently' in the description… players will notice
+    // this on their own"*). A prefixed key would no longer match the text.
     const glossary = buildSkillKeywordGlossary(skill, 0);
-    expect(glossary["permanently raises atk and def"]).toBe(
+    expect(glossary["raises atk and def"]).toBe(
       "Increases ATK by 30%; Increases DEF by 30%",
     );
   });

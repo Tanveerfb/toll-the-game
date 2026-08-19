@@ -117,7 +117,7 @@ export default function LoginPage(): React.JSX.Element {
     .join(", ");
 
   return (
-    <main className="terminal-grid relative min-h-screen overflow-hidden bg-void">
+    <main className="terminal-grid relative min-h-dvh overflow-hidden bg-void">
       {/* Key art, pushed well back. It sets the tone; the panel does the work. */}
       <Image
         src="/banners/debut-2026-08.png"
@@ -129,7 +129,7 @@ export default function LoginPage(): React.JSX.Element {
       />
       <span className="pointer-events-none absolute inset-0 bg-linear-to-b from-void/70 via-void/85 to-void" />
 
-      <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-5 px-5 py-10">
+      <section className="relative z-10 mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-5 px-5 py-10">
         <header className="border-l-2 border-signal pl-3">
           <span className="block font-heading text-2xl tracking-[0.28em] text-signal">
             TOLL
