@@ -6,7 +6,7 @@ audit is in git (`docs/STATUS.md` @ `c3040f7`).
 
 ## Start here
 
-**State:** Chapter 1 is content-complete. Four new enemy kits (the road
+**State:** Chapter 1 is content-complete, committed as `afd66a4`. Four new enemy kits (the road
 checkpoint), 37 art assets, four engine capabilities, plus the five `Plans/`
 specs from 2026-08-20. Suite **1,286 tests / 102 files** green, build clean.
 
@@ -374,6 +374,8 @@ approval came in chat and has never been seen running.
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
 
 ## Session log - 2026-08-21: the road checkpoint, and 37 art assets
+
+Landed as `afd66a4`.
 
 **Verified at close:** `npm run check` green - **1,286 tests / 102 files**, the
 same 3 pre-existing `no-unused-vars` warnings in `tests/duel.test.ts` and no
