@@ -1,0 +1,93 @@
+{
+  "id": "checkpoint_enforcer",
+  "name": "Checkpoint Enforcer",
+  "color": "red",
+  "storyOnly": true,
+  "tags": [
+    "Human"
+  ],
+  "lore": "The one who does the actual stopping. Carries a hooked blade meant for canvas and rope, and uses it on neither.",
+  "atk": 275,
+  "def": 75,
+  "hp": 3300,
+  "skills": [
+    {
+      "skillName": "Raise the Price",
+      "description": "Increases all allies' ATK by [buff.value]% for [buff.duration] turns.",
+      "characterId": "checkpoint_enforcer",
+      "type": "buff",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        0,
+        0,
+        0
+      ],
+      "mechanics": [
+        {
+          "type": "buff",
+          "stat": "atk",
+          "valueRanked": [
+            50,
+            75,
+            100
+          ],
+          "durationRanked": [
+            1,
+            2,
+            2
+          ],
+          "applyTo": "allies"
+        }
+      ]
+    },
+    {
+      "skillName": "Hook and Tear",
+      "description": "Does damage equal to ATK-scaled to one enemy; inflicts Bleed.",
+      "characterId": "checkpoint_enforcer",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        165,
+        205,
+        250
+      ],
+      "mechanics": [
+        {
+          "type": "bleed",
+          "duration": 1
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Collect in Kind",
+    "description": "Greatly raises DEF for 1 turn; does damage equal to ATK-scaled to one enemy.",
+    "characterId": "checkpoint_enforcer",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 300,
+    "mechanics": [
+      {
+        "type": "buff",
+        "stat": "def",
+        "valuePercent": 50,
+        "duration": 1,
+        "applyTo": "self"
+      }
+    ]
+  },
+  "passive": {
+    "name": "Open Wound",
+    "description": "# Basic effects\n- Damage dealt 25% 👆 against enemies affected by Bleed",
+    "trigger": "always",
+    "mechanics": [
+      {
+        "type": "targetTagBonus",
+        "conditionStatuses": [
+          "bleed"
+        ],
+        "valuePercent": 25
+      }
+    ]
+  }
+}

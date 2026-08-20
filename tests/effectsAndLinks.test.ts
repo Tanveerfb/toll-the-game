@@ -149,7 +149,9 @@ describe("ruling #30 — uncancellable entries are effects, not buffs/debuffs", 
       type: "heal",
       statMultiplier: "atk",
       damageRanked: [0, 0, 0],
-      mechanics: [{ type: "cleanse" }],
+      // Audience is declared now — an audience-less mechanic is a SELF one
+      // (spec Plans/2026-08-20-mechanic-application.md, Part A).
+      mechanics: [{ type: "cleanse", applyTo: "oneAlly" }],
     } as SkillCard;
     const result = executeSkill(
       { sourceInstanceId: "h", skill, targetInstanceId: "ally", rank: 1 },

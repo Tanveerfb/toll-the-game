@@ -34,7 +34,29 @@ export function entryAffectsStat(
   entry: { stat?: string; stats?: string[] },
   stat: string,
 ): boolean {
-  if (entry.stat === stat || entry.stat === "all") return true;
+  return entryTouchesStat(entry, stat, { allCounts: true });
+}
+
+/**
+ * The same match, with the `stat: "all"` question handed back to the caller.
+ *
+ * Ruling #55 puts **damage reduction and evade chance outside "all stats"**,
+ * and #36 makes `damageDealt` a damage modifier rather than a stat, so the
+ * three of them must be reachable by exact name and by a `stats` array but
+ * never by `"all"`. Every other consumer wants `"all"` to count, which is what
+ * `entryAffectsStat` is for.
+ *
+ * The `allCounts` flag is deliberately explicit rather than inferred from the
+ * stat name: a reader added later has to state which side of #55 its stat sits
+ * on, instead of inheriting an answer it never considered.
+ */
+export function entryTouchesStat(
+  entry: { stat?: string; stats?: string[] },
+  stat: string,
+  { allCounts }: { allCounts: boolean },
+): boolean {
+  if (entry.stat === stat) return true;
+  if (allCounts && entry.stat === "all") return true;
   return entry.stats?.includes(stat) ?? false;
 }
 
@@ -125,28 +147,51 @@ export function getEffectiveDefense(char: BattleCharacter): number {
  * Damage-modifier stats (ruling #36): sources stack MULTIPLICATIVELY.
  * These are never baked into currentAttack/currentDefense, so preApplied
  * entries are read here too (unlike effectiveStat).
+ *
+ * Both readers below go through `entryTouchesStat` with `allCounts: false`,
+ * so an effect authored as ONE entry covering several stats —
+ * `stats: ["atk","damageDealt"]`, the shape ruling #55 encourages — applies,
+ * while `stat: "all"` still cannot reach either of them (#55, #36).
  */
 export function getDamageDealtMultiplier(char: BattleCharacter): number {
   let mult = 1;
   for (const buff of char.buffs) {
-    if (buff.stat === "damageDealt") {
+    if (entryTouchesStat(buff, "damageDealt", { allCounts: false })) {
       mult *= 1 + (buff.valuePercent ?? buff.value ?? 0) / 100;
     }
   }
   for (const debuff of char.debuffs) {
-    if (debuff.stat === "damageDealt") {
+    if (entryTouchesStat(debuff, "damageDealt", { allCounts: false })) {
       mult *= 1 - (debuff.valuePercent ?? debuff.value ?? 0) / 100;
     }
   }
   return Math.max(0, mult);
 }
 
+/**
+ * Incoming-damage multiplier: 1 is "no reduction", 0.75 is 25% reduction.
+ *
+ * Debuffs push the multiplier back toward 1 (Tanveer, 2026-08-20: "we do have
+ * to fix evade and DR parts too" — it read buffs only, the lone asymmetry with
+ * its twin above). They can strip damage reduction away entirely and no
+ * further: the multiplier is clamped at 1, so a DR debuff never becomes damage
+ * amplification. Making a target take EXTRA damage is the attacker's
+ * `damageDealt` job, not a negative DR.
+ *
+ * Buff stacking stays multiplicative and unchanged — 25% then 40% is
+ * 0.75 × 0.6, not 65% (Mustafa's Fortress and Iron Wall depend on it).
+ */
 export function getDamageReductionMultiplier(char: BattleCharacter): number {
   let mult = 1;
   for (const buff of char.buffs) {
-    if (buff.stat === "damageReduction") {
+    if (entryTouchesStat(buff, "damageReduction", { allCounts: false })) {
       mult *= 1 - (buff.valuePercent ?? buff.value ?? 0) / 100;
     }
   }
-  return Math.max(0, mult);
+  for (const debuff of char.debuffs) {
+    if (entryTouchesStat(debuff, "damageReduction", { allCounts: false })) {
+      mult *= 1 + (debuff.valuePercent ?? debuff.value ?? 0) / 100;
+    }
+  }
+  return Math.min(1, Math.max(0, mult));
 }

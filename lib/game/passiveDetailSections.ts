@@ -1,9 +1,13 @@
 import type { KitPassiveView } from "@/components/game/KitDetails";
+import {
+  rawPassiveMechanics,
+  rawPassiveTrigger,
+} from "@/lib/game/passiveBlocks";
 import { isStructuredPassiveMarkup, parsePassiveMarkup } from "@/lib/game/passiveMarkup";
 
 /**
  * Passive Details content pattern (2026-07-24 battle UI overhaul, spec §5):
- * categorized condition headers (e.g. "Basic effect(s)", "When attacking",
+ * categorized condition headers (e.g. "Basic effects", "When attacking",
  * "Every turn") each followed by a bulleted effect list — a legible template
  * for multi-effect passives (Molvarr-style boss passives) instead of one
  * dense paragraph.
@@ -20,7 +24,7 @@ export interface PassiveDetailSection {
 }
 
 const TRIGGER_LABELS: Record<string, string> = {
-  always: "Basic effect(s)",
+  always: "Basic effects",
   afterSkill: "After using a skill",
   beforeSkill: "Before using a skill",
   onAllySkill: "When an ally uses a skill",
@@ -35,11 +39,11 @@ const TRIGGER_LABELS: Record<string, string> = {
   onRoundEnd: "At the end of turn",
   onTurnStart: "At the start of turn",
   onTurnEnd: "At the end of turn",
-  aura: "Basic effect(s)",
+  aura: "Basic effects",
 };
 
 function humanizeTrigger(trigger?: string): string {
-  if (!trigger) return "Basic effect(s)";
+  if (!trigger) return "Basic effects";
   if (TRIGGER_LABELS[trigger]) return TRIGGER_LABELS[trigger];
   return trigger
     .replace(/([A-Z])/g, " $1")
@@ -59,7 +63,7 @@ function resolveHeader(
 ): string {
   if (mechanicTriggerText) return mechanicTriggerText;
   if (mechanicTrigger) return humanizeTrigger(mechanicTrigger);
-  return humanizeTrigger(passive.trigger);
+  return humanizeTrigger(rawPassiveTrigger(passive));
 }
 
 /** The structured `#`/`-`/`--` format (lib/game/passiveMarkup.ts) already
@@ -69,7 +73,7 @@ function resolveHeader(
  *  existing grey-clarifier-line convention elsewhere). */
 function sectionsFromStructuredMarkup(description: string): PassiveDetailSection[] {
   return parsePassiveMarkup(description).map((section) => ({
-    header: section.heading || "Basic effect(s)",
+    header: section.heading || "Basic effects",
     bullets: section.bullets.flatMap((bullet) => [
       bullet.text,
       ...bullet.comments.map((comment) => `※ ${comment}`),
@@ -80,7 +84,9 @@ function sectionsFromStructuredMarkup(description: string): PassiveDetailSection
 export function buildPassiveDetailSections(
   passive: KitPassiveView,
 ): PassiveDetailSection[] {
-  const mechanics = passive.mechanics ?? [];
+  const mechanics = rawPassiveMechanics(passive) as NonNullable<
+    typeof passive.mechanics
+  >;
   const description = passive.description?.trim() || "";
 
   if (mechanics.length === 0) {
@@ -89,7 +95,7 @@ export function buildPassiveDetailSections(
     }
     return [
       {
-        header: humanizeTrigger(passive.trigger),
+        header: humanizeTrigger(rawPassiveTrigger(passive)),
         bullets: [description || "To be added."],
       },
     ];
@@ -125,7 +131,7 @@ export function buildPassiveDetailSections(
     }
     return [
       {
-        header: humanizeTrigger(passive.trigger),
+        header: humanizeTrigger(rawPassiveTrigger(passive)),
         bullets: [description || "To be added."],
       },
     ];

@@ -46,6 +46,10 @@ number behind it.
 | Skill ranks never exceed 3; ultimates carry no rank | #1 |
 | Only `damageRanked` and `*Ranked` values scale with rank; flat values never do | #1 |
 | Synergies target **basic stats** unless they are Seras's or Batra's | #14 |
+| A friendly mechanic that the prose says hits allies declares `applyTo` (or `applyToRanked`). **Silence means self** — an undeclared ally buff is a self buff, not a bug the engine will guess around | #55, mechanic-application spec |
+| `applyTo` reads `self` / `oneAlly` / `allies` / `alliesExceptSelf` / `enemies`, and `aoe` means **all enemies**, never all allies | — |
+| A self buff written *after* the damage clause carries `requiresDamage: true`; one written before does not | #22 |
+| A passive's `#` headings line up with its blocks, and an unconditional block is headed `# Basic effects` | — |
 | Passes `characterSchema.ts` | — |
 
 ## Wording checks
@@ -53,8 +57,9 @@ number behind it.
 | Check | Cites |
 |---|---|
 | Tier words match their thresholds — **only where a tier word is actually used**. Up: 30 "raises" / 50 "greatly" / 100 "massively". Down: 30 / 50 / **80** (the ceiling is lower on purpose — a stat can't reach zero) | #26, #56 |
+| **The brackets in his draft decide what scales — nothing else does.** `[350]%` is ranked; `for 1 turn` written plain is flat, and so is a magnitude with no bracket. Inventing a `valueRanked` for an unbracketed value is the failure that produces every other finding in this row: *"Raises DEF for 1 turn and does [350]% damage"* became a ranked `[25,40,50]` DEF buff, which then made the tier word wrong at both ends. **A tier word and a ranked value are mutually exclusive** — a tier word means flat and unstated (*"Raises ATK and DEF for 2 turns"*), a `[buff.value]%` placeholder means shown and neutral (*"Increases all allies' ATK by [buff.value]%"*). To vary the word, the sanctioned form is a conditional (`[debuff? greatly lowers : lowers]`), which keys off state, not rank. **When a draft and the JSON disagree, re-read the draft — do not repair the JSON from memory** | #1, #26 |
 | Semicolons separate the distinct parts of a description | #28 |
-| Permanence is **stated**, not implied by omitting a duration — "Permanently raises ATK" | #28 |
+| Permanence is shown by **clause scope**, never by the word "Permanently" — it is gone from descriptions and from pill keys alike ("no comma, no perma"). A **debuff** must always state a duration; permanence is buff-side only | #110, amends #28 |
 | One hover pill per distinct effect; phrase-level keys, not per-word pills. Generic words like "stance" are not glossary keys | #27 |
 | No "own" — a raise always means the skill user | #26 |
 | Durations and flags live in the text; the tooltip shows the **percentage only** | #26 |

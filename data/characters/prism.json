@@ -30,7 +30,8 @@
           "type": "aoe"
         },
         {
-          "type": "cleanse"
+          "type": "cleanse",
+          "applyTo": "allies"
         }
       ]
     }

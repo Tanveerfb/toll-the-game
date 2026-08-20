@@ -1,9 +1,16 @@
+import {
+  findAnyPassiveMechanic,
+  findPassiveMechanic,
+  hasPassiveTrigger,
+  passiveMechanics,
+} from "@/lib/game/passiveBlocks";
 import { BattleCharacter } from "@/types/character";
 import { Action } from "@/types/action";
 import { calculateDamage } from "./damage";
 import { getEvadeChance } from "./evade";
 import { trySurviveLethal } from "./lethal";
 import { syncExtortLinks } from "./effects";
+import { applyDefeatPassives } from "./onDefeat";
 import { getEffectiveAttack, getEffectiveDefense, statPhrase } from "./stats";
 import { ultGaugeMax } from "./ultGauge";
 import { bossDamageMultiplierVsTarget } from "./bossPassives";
@@ -30,7 +37,7 @@ import type {
   BattleEventTarget,
   BattleEventCounter,
 } from "@/types/battleEvent";
-import type { StatusEffect } from "@/types/mechanic";
+import type { MechanicAudience, StatusEffect } from "@/types/mechanic";
 
 /**
  * Effects that exist only as a consequence of the hit LANDING, and so do not
@@ -82,9 +89,7 @@ function stripOwnEffect(
 // hpStepPercent of max HP lost.
 export function getCritChance(char: BattleCharacter): number {
   let chance = 0;
-  const deathblow = char.passive?.mechanics?.find(
-    (m) => m.type === "deathblow",
-  );
+  const deathblow = findAnyPassiveMechanic(char, "deathblow");
   if (deathblow && !char.isSub) {
     const lostPercent = (1 - char.currentHP / char.hp) * 100;
     const steps = Math.floor(lostPercent / (deathblow.hpStepPercent ?? 3));
@@ -106,10 +111,7 @@ export function getCritChance(char: BattleCharacter): number {
 // or evades an attack; each stack adds ATK/DEF now and evade chance via
 // getEvadeChance.
 function gainChargedStack(char: BattleCharacter, log: (e: string) => void) {
-  if (char.passive?.trigger !== "onAttackReceived") return;
-  const mech = char.passive.mechanics?.find(
-    (m) => m.type === "chargedStacks",
-  );
+  const mech = findPassiveMechanic(char, "onAttackReceived", "chargedStacks");
   if (!mech) return;
   const maxStacks = mech.maxStacks ?? 5;
   const current = (char.passiveState.chargedStacks as number) || 0;
@@ -134,12 +136,13 @@ function gainAttackReceivedShift(
   char: BattleCharacter,
   log: (e: string) => void,
 ) {
-  if (char.passive?.trigger !== "onAttackReceived") return;
-  const mech = char.passive.mechanics?.find(
-    (m) => m.type === "statShiftAfterAttacks",
+  const mech = findPassiveMechanic(
+    char,
+    "onAttackReceived",
+    "statShiftAfterAttacks",
   );
   if (!mech) return;
-  if (char.isSub && char.passive.worksFromSub !== true) return;
+  if (char.isSub && char.passive?.worksFromSub !== true) return;
   if (char.passiveState.statShiftTriggered) return;
 
   const required = mech.attacksRequired ?? 10;
@@ -159,10 +162,10 @@ function gainAttackReceivedShift(
     stats: ["atk", "def"],
     uncancellable: true,
     preApplied: true,
-    name: char.passive.name,
+    name: char.passive?.name,
   });
   log(
-    `${char.name}'s ${char.passive.name} activates! ATK ${atkShift >= 0 ? "+" : ""}${atkShift}, DEF ${defShift >= 0 ? "+" : ""}${defShift}.`,
+    `${char.name}'s ${char.passive?.name} activates! ATK ${atkShift >= 0 ? "+" : ""}${atkShift}, DEF ${defShift >= 0 ? "+" : ""}${defShift}.`,
   );
 }
 
@@ -360,12 +363,11 @@ export function executeSkill(
   }
 
   // -- PRE-SKILL PASSIVES (Batra's HP consume)
-  if (
-    updatedSource.passive &&
-    updatedSource.passive.trigger === "beforeSkill"
-  ) {
-    const consumeMech = updatedSource.passive.mechanics?.find(
-      (m) => m.type === "consumeHpPercent",
+  {
+    const consumeMech = findPassiveMechanic(
+      updatedSource,
+      "beforeSkill",
+      "consumeHpPercent",
     );
     if (consumeMech) {
       const consumeAmt = Math.floor(
@@ -380,24 +382,22 @@ export function executeSkill(
   }
 
   // -- PASSIVE TRIGGER: onFirstAction (Lyra)
-  if (
-    updatedSource.passive &&
-    updatedSource.passive.trigger === "onFirstAction"
-  ) {
+  if (hasPassiveTrigger(updatedSource, "onFirstAction")) {
     if (
       actionIndex === 0 &&
       !updatedSource.passiveState.firstActionTriggeredThisTurn
     ) {
       log(
-        `${updatedSource.name}'s passive '${updatedSource.passive.name}' triggered!`,
+        `${updatedSource.name}'s passive '${updatedSource.passive?.name}' triggered!`,
       );
       // Read the buff off the kit rather than hardcoding it. This used to push
       // a literal `valuePercent: 50` while both Lyra kits authored 150, so the
       // passive silently applied a third of its stated strength and no amount
       // of editing the JSON changed anything (Tanveer, 2026-08-09).
-      const firstActionBuffs = (updatedSource.passive.mechanics ?? []).filter(
-        (m) => m.type === "buff",
-      );
+      const firstActionBuffs = passiveMechanics(
+        updatedSource,
+        "onFirstAction",
+      ).filter((m) => m.type === "buff");
       const applied = firstActionBuffs.length > 0
         ? firstActionBuffs
         : // A kit with the trigger but no buff mechanic keeps the historical
@@ -429,11 +429,9 @@ export function executeSkill(
     if (
       !ally.isSub &&
       ally.currentHP > 0 &&
-      ally.passive?.trigger === "onAllySkill"
+      hasPassiveTrigger(ally, "onAllySkill")
     ) {
-      const mech = ally.passive.mechanics?.find(
-        (m) => m.type === "momentumStacks",
-      );
+      const mech = findPassiveMechanic(ally, "onAllySkill", "momentumStacks");
       if (mech) {
         const currentStacks = (ally.passiveState.momentumStacks as number) || 0;
         if (currentStacks < mech.maxStacks) {
@@ -548,13 +546,24 @@ export function executeSkill(
     targets = [actualTarget];
   }
 
-  // Self-targeted buffs apply BEFORE the damage calc (Tanveer ruling:
-  // "buff first, hit boosted" — Gon's Jajanken Rock benefits from its own
-  // +30% ATK). They apply to the source regardless of who the skill targets
-  // (e.g. Draw Fire taunts enemies while buffing Yalina herself).
-  skillMechanics.forEach((mech) => {
-    if ((mech.type === "buff" || mech.type === "stance") && mech.targetSelf) {
-      updatedSource.buffs.push({
+  // Who a mechanic lands on, independent of who the SKILL targets. Absent
+  // means self (Tanveer, 2026-08-20: "it wouldn't say allies if the default is
+  // self only") — which inverts the old fallback, where a friendly mechanic
+  // without `targetSelf` inherited the skill's targets. Every kit that leaned
+  // on that inference now declares `applyTo`.
+  const audienceFor = (mech: Mechanic): MechanicAudience => {
+    const ranked = mech.applyToRanked;
+    const perRank = Array.isArray(ranked)
+      ? (ranked[rankIndex] ?? ranked[0])
+      : undefined;
+    return perRank ?? mech.applyTo ?? "self";
+  };
+  const isSelfMechanic = (mech: Mechanic) =>
+    Boolean(mech.targetSelf) || audienceFor(mech) === "self";
+
+  const applySelfBuff = (mech: Mechanic) => {
+    if (mech.type !== "buff" && mech.type !== "stance") return;
+    updatedSource.buffs.push({
         type: mech.type,
         stat: mech.stat,
         stats: mech.stats,
@@ -569,12 +578,83 @@ export function executeSkill(
         unstackable: mech.unstackable,
         uncancellable: mech.uncancellable,
       });
-      log(
-        `[Action] ${updatedSource.name} gained ${mech.type} to ${statPhrase(mech)} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim() +
-          ".",
-      );
-    }
+    log(
+      `[Action] ${updatedSource.name} gained ${mech.type} to ${statPhrase(mech)} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim() +
+        ".",
+    );
+  };
+
+  // Self buffs apply BEFORE the damage calc (ruling #22, "buff first, hit
+  // boosted" — Gon's Jajanken Rock benefits from its own +30% ATK), unless the
+  // mechanic declares `requiresDamage`, which moves it after the hit and makes
+  // it conditional on connecting (Part B of the spec).
+  skillMechanics.forEach((mech) => {
+    if (isSelfMechanic(mech) && !mech.requiresDamage) applySelfBuff(mech);
   });
+
+  // A friendly mechanic on an ATTACKING skill: the target loop below walks
+  // the enemy team, so an allies-audience mechanic can never ride it. Applied
+  // here instead, once per ally — this is the capability Part A exists for
+  // ("greatly raises ATK, damages the enemy, raises allies' DEF (self
+  // excluded)"). On a support skill the loop already walks the caster's team,
+  // so `landsOnLoopTarget` handles it there and keeps the per-target log line.
+  if (!isHealOrBuff) {
+    skillMechanics.forEach((mech) => {
+      const audience = audienceFor(mech);
+      if (audience !== "allies" && audience !== "alliesExceptSelf") return;
+      alliedTeamForSource
+        .filter((ally) => ally.currentHP > 0 && !ally.isSub)
+        .filter(
+          (ally) =>
+            audience !== "alliesExceptSelf" ||
+            ally.instanceId !== updatedSource.instanceId,
+        )
+        .forEach((ally) => {
+          if (mech.type === "buff" || mech.type === "stance") {
+            const percent = mech.valuePercent || mech.value;
+            const scalesHp = Boolean(
+              percent &&
+                (mech.stat === "hp" ||
+                  mech.stat === "all" ||
+                  (mech.stats ?? []).includes("hp")),
+            );
+            ally.buffs.push({
+              type: mech.type,
+              stat: mech.stat,
+              stats: mech.stats,
+              valuePercent: percent,
+              buffDuration: mech.duration,
+              name: mech.name,
+              unstackable: mech.unstackable,
+              uncancellable: mech.uncancellable,
+              hpScalePercent: scalesHp ? percent : undefined,
+            });
+            if (scalesHp && percent) {
+              Object.assign(ally, scaleMaxHp(ally, percent));
+            }
+            log(
+              `[Action] ${ally.name} gained ${mech.type} to ${statPhrase(mech)} by ${toPercentText(percent)}${formatTurns(mech.duration)}`.trim() +
+                ".",
+            );
+          } else if (mech.type === "cleanse") {
+            // Ruling #30: uncancellable entries are "effects", not debuffs.
+            ally.debuffs = ally.debuffs.filter((d) => d.uncancellable);
+            log(`[Action] ${ally.name} was cleansed of all debuffs.`);
+          } else if (mech.type === "debuffImmunity") {
+            ally.debuffs = ally.debuffs.filter((d) => d.uncancellable);
+            ally.buffs.push({
+              type: "buff",
+              debuffImmune: true,
+              buffDuration: mech.duration,
+              name: mech.name || "Debuff Immunity",
+            });
+            log(
+              `[Action] ${ally.name} gained Debuff Immunity${formatTurns(mech.duration)}.`,
+            );
+          }
+        });
+    });
+  }
 
   // Pre-calculate base stat — effective values honor stat buffs/debuffs
   const statMulti = action.skill.statMultiplier;
@@ -612,9 +692,7 @@ export function executeSkill(
 
   // Deathblow (Meliodas): +damagePerStepPercent per hpStepPercent of max HP
   // lost. Inactive from the sub position by design.
-  const deathblowMech = updatedSource.passive?.mechanics?.find(
-    (m) => m.type === "deathblow",
-  );
+  const deathblowMech = findAnyPassiveMechanic(updatedSource, "deathblow");
   if (deathblowMech && !updatedSource.isSub && isAttack) {
     const lostPercent =
       (1 - updatedSource.currentHP / updatedSource.hp) * 100;
@@ -640,15 +718,13 @@ export function executeSkill(
   }
 
   // Yalina Momentum passive damage boost
-  if (
-    updatedSource.passive &&
-    updatedSource.passive.trigger === "onAllySkill" &&
-    isAttack
-  ) {
+  if (hasPassiveTrigger(updatedSource, "onAllySkill") && isAttack) {
     const stacks = (updatedSource.passiveState.momentumStacks as number) || 0;
     if (stacks > 0) {
-      const mech = updatedSource.passive.mechanics?.find(
-        (m) => m.type === "momentumStacks",
+      const mech = findPassiveMechanic(
+        updatedSource,
+        "onAllySkill",
+        "momentumStacks",
       );
       if (mech) {
         const bonus = stacks * mech.valuePercent;
@@ -662,8 +738,8 @@ export function executeSkill(
   // -- FLOWING RUIN CONSUME (Duke) — at conditionStacks, this action consumes
   // all stacks for bonus damage and applies an ATK debuff to every target hit
   let flowingRuinMech: ConditionalBuffMechanic | undefined;
-  if (updatedSource.passive?.trigger === "afterSkill" && isAttack) {
-    const mech = updatedSource.passive.mechanics?.find(
+  if (hasPassiveTrigger(updatedSource, "afterSkill") && isAttack) {
+    const mech = passiveMechanics(updatedSource, "afterSkill").find(
       (m): m is ConditionalBuffMechanic =>
         m.type === "conditionalBuff" && Boolean(m.conditionStacks),
     );
@@ -675,7 +751,7 @@ export function executeSkill(
       const bonus = mech.damageBonusPercent ?? 50;
       baseDamage *= 1 + bonus / 100;
       log(
-        `${updatedSource.name}'s ${updatedSource.passive.name} empowers this attack (+${bonus}% damage)!`,
+        `${updatedSource.name}'s ${updatedSource.passive?.name} empowers this attack (+${bonus}% damage)!`,
       );
     }
   }
@@ -716,9 +792,11 @@ export function executeSkill(
       // (no carrying a leftover 1-2 stacks toward a future cast); the
       // cumulative trigger count across the whole battle is capped at
       // maxTriggers via passiveState.igniteConsumeTriggers.
-      if (updatedSource.passive?.trigger === "onIgniteConsume") {
-        const healMech = updatedSource.passive.mechanics?.find(
-          (m) => m.type === "heal",
+      {
+        const healMech = findPassiveMechanic(
+          updatedSource,
+          "onIgniteConsume",
+          "heal",
         );
         if (healMech?.conditionStacks) {
           const maxTriggers = healMech.maxTriggers ?? Infinity;
@@ -746,7 +824,7 @@ export function executeSkill(
               triggersUsed + triggersToApply;
             if (actualHealed > 0) {
               log(
-                `${updatedSource.name}'s ${updatedSource.passive.name} restores ${actualHealed} HP!`,
+                `${updatedSource.name}'s ${updatedSource.passive?.name} restores ${actualHealed} HP!`,
               );
             }
           }
@@ -1272,8 +1350,29 @@ export function executeSkill(
     }
 
     // Friendly buffs/cleanses applied even if it's an attack (if targetSelf is true or targets are allies)
+    // Does this mechanic land on the unit this iteration is handling? A
+    // declared friendly audience only rides the loop when the loop is already
+    // walking the caster's own team (a heal/buff/support skill); on an
+    // attacking skill the ally pass above has already applied it, once.
+    const landsOnLoopTarget = (mech: Mechanic) => {
+      const audience = audienceFor(mech);
+      if (audience === "enemies") {
+        return updatedTarget.team !== updatedSource.team;
+      }
+      if (audience === "self") return false;
+      if (!isHealOrBuff) return false;
+      if (updatedTarget.team !== updatedSource.team) return false;
+      if (
+        audience === "alliesExceptSelf" &&
+        updatedTarget.instanceId === updatedSource.instanceId
+      ) {
+        return false;
+      }
+      return true;
+    };
+
     skillMechanics.forEach((mech) => {
-      if (mech.type === "cleanse" && isHealOrBuff) {
+      if (mech.type === "cleanse" && landsOnLoopTarget(mech)) {
         // Ruling #30: uncancellable entries are "effects", not debuffs —
         // cleanse can't touch them
         updatedTarget.debuffs = updatedTarget.debuffs.filter(
@@ -1294,8 +1393,7 @@ export function executeSkill(
       // declared audience — see the `applyTo` note in docs/HANDOFF.md.
       if (
         (mech.type === "buff" || mech.type === "stance") &&
-        !mech.targetSelf &&
-        isHealOrBuff
+        landsOnLoopTarget(mech)
       ) {
         const percent = mech.valuePercent || mech.value;
         const scalesHp =
@@ -1324,7 +1422,7 @@ export function executeSkill(
           `applied ${mech.type} to ${statPhrase(mech)} by ${toPercentText(percent)}${formatTurns(mech.duration)}`.trim(),
         );
       }
-      if (mech.type === "debuffImmunity" && !mech.targetSelf && isHealOrBuff) {
+      if (mech.type === "debuffImmunity" && landsOnLoopTarget(mech)) {
         // Ruling #30 precedent (same as cleanse): uncancellable entries are
         // "effects", not debuffs — immunity can't strip those.
         updatedTarget.debuffs = updatedTarget.debuffs.filter(
@@ -1340,7 +1438,9 @@ export function executeSkill(
           `cleansed debuffs and gained Debuff Immunity${formatTurns(mech.duration)}`,
         );
       }
-      if (mech.type === "healOverTime" && !mech.targetSelf && isHealOrBuff) {
+      // Stays per-target by nature: its value is a share of THIS target's
+      // heal, so it can only be applied where that number exists.
+      if (mech.type === "healOverTime" && landsOnLoopTarget(mech)) {
         // Valued off THIS cast's heal amount (e.g. heal 200 -> 30% = 60/turn
         // for `duration` turns), same convention as Shock/Bleed valuing off
         // the hit that applied them.
@@ -1485,14 +1585,30 @@ export function executeSkill(
     );
   }
 
+  // -- SELF BUFFS THAT REQUIRE THE HIT TO CONNECT (Part B)
+  //
+  // "Causes damage AND raises DEF" — the buff is conditional on connecting
+  // (Tanveer, 2026-08-20: "the nulled or evasion from enemy will not activate
+  // the self buff for the caster"), and applies exactly ONCE however many
+  // enemies were struck: "as long as atleast 1 enemy is hit, the self buff
+  // would activate. but multiple instances of enemy hit by same attack
+  // wouldn't cause multiple self buffs activating."
+  //
+  // `totalDamageDealt` is that single "did anything connect" flag — a tanked
+  // hit (#71) and an evaded one both contribute 0, and a hit that kills still
+  // counts.
+  if (totalDamageDealt > 0) {
+    skillMechanics.forEach((mech) => {
+      if (mech.requiresDamage && isSelfMechanic(mech)) applySelfBuff(mech);
+    });
+  }
+
   // -- POST-DAMAGE PASSIVES
-  if (
-    totalDamageDealt > 0 &&
-    updatedSource.passive &&
-    updatedSource.passive.trigger === "onDamageDealt"
-  ) {
-    const lifestealMech = updatedSource.passive.mechanics?.find(
-      (m) => m.type === "healLifesteal",
+  if (totalDamageDealt > 0) {
+    const lifestealMech = findPassiveMechanic(
+      updatedSource,
+      "onDamageDealt",
+      "healLifesteal",
     );
     if (
       lifestealMech &&
@@ -1512,8 +1628,8 @@ export function executeSkill(
   }
 
   // Flowing Ruin stack gain — every action (skills and ultimate) grants one
-  if (updatedSource.passive && updatedSource.passive.trigger === "afterSkill") {
-    const stackMech = updatedSource.passive.mechanics?.find(
+  if (hasPassiveTrigger(updatedSource, "afterSkill")) {
+    const stackMech = passiveMechanics(updatedSource, "afterSkill").find(
       (m): m is BuffMechanic => m.type === "buff" && Boolean(m.maxStacks),
     );
     const maxStacks = stackMech?.maxStacks ?? 3;
@@ -1522,10 +1638,15 @@ export function executeSkill(
     if (currentStacks < maxStacks) {
       updatedSource.passiveState.flowingRuinStacks = currentStacks + 1;
       log(
-        `${updatedSource.name} gains a ${updatedSource.passive.name} stack (${currentStacks + 1}/${maxStacks}).`,
+        `${updatedSource.name} gains a ${updatedSource.passive?.name} stack (${currentStacks + 1}/${maxStacks}).`,
       );
     }
   }
+
+  // Anything this action killed gets its parting passive before the extort
+  // sync, so a unit that dies here has already paid out by the time links are
+  // reconciled against who is still standing.
+  applyDefeatPassives(updatedTeams, log);
 
   // Ruling #32: Extort self-buffs live only while a linked debuff survives
   // on a living enemy (covers deaths and cleanses caused by this action)

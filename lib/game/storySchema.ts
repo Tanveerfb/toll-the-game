@@ -130,6 +130,11 @@ const missionGoalSchema = z.discriminatedUnion("type", [
     count: z.number().int().positive(),
   }),
   z.object({ type: z.literal("useUltimates"), count: z.number().int().positive() }),
+  z.object({
+    type: z.literal("useSkillRank"),
+    rank: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+    count: z.number().int().positive(),
+  }),
   z.object({ type: z.literal("firstAttempt") }),
   z.object({ type: z.literal("allWaves") }),
 ]);

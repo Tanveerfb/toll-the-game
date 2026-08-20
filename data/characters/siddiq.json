@@ -26,7 +26,8 @@
       "damageRanked": [440, 540, 680],
       "mechanics": [
         {
-          "type": "cleanse"
+          "type": "cleanse",
+          "applyToRanked": ["oneAlly", "allies", "allies"]
         },
         {
           "type": "aoeRanked",

@@ -54,6 +54,13 @@ export interface KitPassiveView {
   triggerText?: string;
   description?: string;
   mechanics?: PassiveMechanicEntry[];
+  /** Block-authored passives (types/passive.ts). Read through
+   *  `rawPassiveMechanics` / `rawPassiveTrigger`, never directly. */
+  blocks?: Array<{
+    trigger?: string;
+    heading?: string;
+    mechanics?: PassiveMechanicEntry[];
+  }>;
 }
 
 const UI = {

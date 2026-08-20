@@ -35,6 +35,11 @@
         },
         {
           "type": "buff",
+          "applyToRanked": [
+            "oneAlly",
+            "allies",
+            "allies"
+          ],
           "stats": [
             "atk",
             "def"

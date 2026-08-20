@@ -92,19 +92,37 @@ describe("descriptions state the duration", () => {
     expect(text).not.toContain("1 turns");
   });
 
-  it("Bleed lasts 2 turns at every rank across the roster (Tanveer, 2026-08-09)", () => {
+  it("Bleed defaults to 2 turns, and a kit that authors one gets what it wrote", () => {
+    // Tanveer, 2026-08-09: the house default is 2. Amended 2026-08-21 — a kit
+    // may author its own, which `dotDurations.ts` always supported ("unless the
+    // kit says otherwise") and this test used to forbid. The Checkpoint
+    // Enforcer's Bleed is a deliberate 1.
+    //
+    // What still holds roster-wide: a Bleed that says nothing lasts 2. The
+    // assertion moved from "every Bleed is 2" to "every Bleed is what it says,
+    // and silence means 2", which is the rule the module documents.
     getAllCharacters().forEach((character) => {
       character.skills.forEach((skill) => {
         const bleed = skill.mechanics?.find((m) => m.type === "bleed");
         if (!bleed) return;
+        const authored = bleed as { duration?: number; durationRanked?: number[] };
         [0, 1, 2].forEach((rank) => {
+          const expected =
+            authored.durationRanked?.[rank] ?? authored.duration ?? 2;
           expect(
             resolveDotDuration(bleed, rank),
             `${character.id} / ${skill.skillName} R${rank + 1}`,
-          ).toBe(2);
+          ).toBe(expected);
         });
       });
     });
+  });
+
+  it("an unauthored Bleed still lasts 2 turns", () => {
+    // The half of the old assertion that is still a rule, kept explicit so
+    // changing the default fails here rather than silently across the roster.
+    expect(resolveDotDuration({ type: "bleed" }, 0)).toBe(2);
+    expect(resolveDotDuration({ type: "bleed" }, 2)).toBe(2);
   });
 
   it("never states a duration twice", () => {

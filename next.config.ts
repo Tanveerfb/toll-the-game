@@ -31,6 +31,14 @@ const nextConfig: NextConfig = {
         // Gacha banner splash art (see lib/gacha/banners.ts + components/gacha).
         pathname: "/banners/**",
       },
+      {
+        // Inventory icons and coin frames (see lib/game/materialArt.ts).
+        pathname: "/items/**",
+      },
+      {
+        // Story scene backdrops (see lib/game/storyBackgrounds.ts).
+        pathname: "/backgrounds/**",
+      },
     ],
     // Banner splash art ships as a hand-written placeholder SVG (no query
     // string, no external source) — safe to allow through the optimizer.

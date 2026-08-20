@@ -19,13 +19,18 @@ import molvarr from "@/data/characters/molvarr.json";
 import mustafa from "@/data/characters/mustafa.json";
 import prism from "@/data/characters/prism.json";
 import raider from "@/data/characters/raider.json";
+import checkpointBruiser from "@/data/characters/checkpoint_bruiser.json";
+import checkpointEnforcer from "@/data/characters/checkpoint_enforcer.json";
+import fordBandit from "@/data/characters/ford_bandit.json";
 import roadBandit from "@/data/characters/road_bandit.json";
 import sara from "@/data/characters/sara.json";
 import seras from "@/data/characters/seras.json";
 import siddiq from "@/data/characters/siddiq.json";
+import tollCollector from "@/data/characters/toll_collector.json";
 import wildBeast from "@/data/characters/wild_beast.json";
 import yalina from "@/data/characters/yalina.json";
 import { characterSchema, validateCharacters } from "@/lib/game/characterSchema";
+import { rawPassiveMechanics } from "@/lib/game/passiveBlocks";
 
 export type CharacterColor = "light" | "red" | "blue" | "green" | "dark";
 
@@ -71,7 +76,10 @@ export interface CharacterData {
    *  — never set automatically. Absent/false = not in the pool. */
   permanentPool?: boolean;
   /**
-   * Enemy action-economy tier. "elite" (named bosses — Tao/Seras/Lyra_npc)
+   * Enemy action-economy tier. "elite" (named bosses — `lyra_npc` and
+   * `molvarr`, the only two kits carrying it; this used to claim
+   * "Tao/Seras/Lyra_npc", but Master Tao and Seras are playable kits with no
+   * tier at all — the same doc-drift family as ruling #5)
    * always act 3× per turn even solo; unset/other kits are low-mid and get
    * the team +1-action bonus instead. See lib/game/ai.ts.
    */
@@ -110,10 +118,14 @@ const rawCharacters = [
   mustafa,
   prism,
   raider,
+  checkpointBruiser,
+  checkpointEnforcer,
+  fordBandit,
   roadBandit,
   sara,
   seras,
   siddiq,
+  tollCollector,
   wildBeast,
   yalina,
 ];
@@ -240,12 +252,12 @@ export function getCharacterMechanics(character: CharacterData): string[] {
   };
   character.skills.forEach((s) => add(s.mechanics));
   add(character.ultimate?.mechanics);
-  add(character.passive?.mechanics);
+  add(rawPassiveMechanics(character.passive));
   for (const phase of getCharacterPhases(character)) {
     phase.skills.forEach((s) => add(s.mechanics));
     add(phase.spSkill?.mechanics);
     add(phase.ultimate?.mechanics);
-    (phase.passives ?? []).forEach((p) => add(p.mechanics));
+    (phase.passives ?? []).forEach((p) => add(rawPassiveMechanics(p)));
   }
   return [...types].sort();
 }

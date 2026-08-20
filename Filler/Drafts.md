@@ -82,6 +82,58 @@ needed.**
 Matches tier 1 of the `docs/design/ECONOMY_AUDIT.md` table (70 per chapter for
 chapters 1–4). Farm pays coin and training manuals only — no gems, per #47/#80.
 
+### Stage 1-3 "Nine Years" — revised 2026-08-21
+
+Wave 2's beasts became **Ford Bandits** (2 units). The training years now include
+one human encounter, which is what makes the beasts in wave 1 read as a different
+kind of problem. Canon touched: none — the chapter states nine years of solo
+wilderness training and does not enumerate what he fought.
+
+Mission `m4` changed from an ultimate goal to **"Play four Rank 2 cards"**, the
+first use of the `useSkillRank` goal added the same day.
+
+### Stage 1-5 "Where the Traffic Thins" — rebuilt 2026-08-21, `approved`
+
+Was three waves of `road_bandit`, ending on a level-12 `road_bandit` — the same
+mook as wave 1 wearing a bigger number. Rebuilt as **the checkpoint**, his design:
+
+| Wave | Enemies |
+|---|---|
+| 1 | 2 × Ford Bandit — opportunists at the crossing |
+| 2 | Bruiser, Enforcer, Bruiser — the muscle on the barrier |
+| 3 | Enforcer, **the Toll Collector**, Bruiser |
+
+**What it is:** a licensed Ledger running an unofficial checkpoint on a road
+nobody watches, charging travellers to pass. Duke breaks it and walks on — to go
+and get the same licence.
+
+**Why the game needs it:** the chapter's climax was a recoloured mook, and waves 2
+and 3 are the game's first **three-enemy** fights (his ask). Thematically it is
+the only thing chapter 1 can show Duke about what a licence actually buys, and it
+touches no thread: no name, no raid connection, no outcome that carries.
+
+**Canon touched:** none. An incident on a journey the chapter states happens.
+
+**Bleed resolved 2026-08-21:** the Enforcer's Bleed is **1 turn**, as he
+originally specified. Ruling #52 amended — 2 is the default, not a roster-wide
+mandate.
+
+**Changed without being asked, flagged for reversal:**
+- `teamMode` **`canon` → `anchored`**. Every other chapter-1 stage fields Duke
+  alone; against three enemies that is 2 player actions against 3, at the
+  chapter's hardest fight. `anchored` keeps Duke fixed and lets the player bring
+  their own units, which is what makes a three-enemy wave a fight rather than a
+  wall. One field to flip back.
+- The Toll Collector is **not `tier: "elite"`** — proposed, then **confirmed by
+  him 2026-08-21** (*"collector isn't a elite"*). Elite would hold him at 3
+  actions after his escort dies; his passive is built to fade as they fall, and
+  elite would fight that design. The fight thins out rather than escalating,
+  deliberately.
+
+**Missions rebuilt** to the types he asked for, gems unchanged at 8:
+`Play five Rank 2 cards` (3) · `Clear within 12 turns` (3) · `Fire three
+ultimates` (2). Chapter total still **70**, matching tier 1 of `ECONOMY_AUDIT`.
+
 ### Open for his decision
 
 1. Do 1-2, 1-3 and 1-5 stay, as drafted?

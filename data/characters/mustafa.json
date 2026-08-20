@@ -21,6 +21,7 @@
         },
         {
           "type": "stance",
+          "applyTo": "allies",
           "stat": "damageReduction",
           "valueRanked": [25, 40, 60],
           "durationRanked": [1, 1, 2]

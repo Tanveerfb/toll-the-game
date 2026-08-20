@@ -47,6 +47,14 @@ const NPC_ART = new Set([
   "molvarr",
   // NPC boss copy of a playable char (reuses lyra art, tweaked stats)
   "lyra_npc",
+  // Chapter 1 road opposition (2026-08-21). tests/characterArt.test.ts enforces
+  // both halves of the contract — every kit registered here, and every
+  // registered id pointing at a file that exists — so a kit and its portrait
+  // land in the same commit or neither does.
+  "ford_bandit",
+  "checkpoint_bruiser",
+  "checkpoint_enforcer",
+  "toll_collector",
 ]);
 
 /**

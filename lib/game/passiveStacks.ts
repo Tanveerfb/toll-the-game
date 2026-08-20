@@ -1,5 +1,10 @@
 import { BattleCharacter } from "@/types/character";
 import { getCharacterById } from "@/lib/game/characterCatalog";
+import {
+  findAnyPassiveMechanic,
+  passiveMechanics,
+  rawPassiveMechanics,
+} from "@/lib/game/passiveBlocks";
 
 // Per-character passive readout for the battle info panel. Several shapes,
 // dispatched in priority order by getPassiveReadout() below — see
@@ -123,7 +128,7 @@ function kitMechanics(unitId: string): Array<Record<string, unknown>> {
   const kit = getCharacterById(unitId);
   if (!kit) return [];
   return [
-    ...(kit.passive?.mechanics ?? []),
+    ...rawPassiveMechanics(kit.passive as Record<string, unknown> | undefined),
     ...kit.skills.flatMap((s) => s.mechanics ?? []),
     ...(kit.ultimate?.mechanics ?? []),
   ];
@@ -168,7 +173,7 @@ function bossDebuffAtkReadout(
   unit: BattleCharacter,
   context: PassiveReadoutContext,
 ): PassiveReadout | null {
-  const mech = unit.passive?.mechanics?.find((m) => m.type === "bossDebuffAtk");
+  const mech = findAnyPassiveMechanic(unit, "bossDebuffAtk");
   if (!mech || mech.type !== "bossDebuffAtk") return null;
   const opposingTeam =
     unit.team === "player" ? context.enemyTeam : context.playerTeam;
@@ -187,9 +192,7 @@ function bossDebuffAtkReadout(
 /** Gon/Killua's Rookie Hunter/Prodigy Assassin: progress toward the one-time
  *  stat shift after `attacksRequired` attacks received. */
 function attacksReceivedShiftReadout(unit: BattleCharacter): PassiveReadout | null {
-  const mech = unit.passive?.mechanics?.find(
-    (m) => m.type === "statShiftAfterAttacks",
-  );
+  const mech = findAnyPassiveMechanic(unit, "statShiftAfterAttacks");
   if (!mech || mech.type !== "statShiftAfterAttacks") return null;
   const required = mech.attacksRequired ?? 10;
   const fired = Boolean(unit.passiveState?.statShiftTriggered);
@@ -207,7 +210,7 @@ function attacksReceivedShiftReadout(unit: BattleCharacter): PassiveReadout | nu
 /** Siddiq's Vampiric Roots: a conditional pill lit whenever the live HP gate
  *  is satisfied — toggles all battle, not a one-shot. */
 function conditionalHpReadout(unit: BattleCharacter): PassiveReadout | null {
-  const mech = unit.passive?.mechanics?.find((m) => m.type === "healLifesteal");
+  const mech = findAnyPassiveMechanic(unit, "healLifesteal");
   if (!mech || mech.type !== "healLifesteal") return null;
   const hpConditionPercent = mech.hpConditionPercent ?? 50;
   const conditionMet = unit.currentHP < unit.hp * (hpConditionPercent / 100);
@@ -219,7 +222,7 @@ function conditionalHpReadout(unit: BattleCharacter): PassiveReadout | null {
 
 /** Sara's Nine Lives: a one-shot pill, stays visible (dimmed) after firing. */
 function oneShotPillReadout(unit: BattleCharacter): PassiveReadout | null {
-  const mech = unit.passive?.mechanics?.find((m) => m.type === "surviveLethal");
+  const mech = findAnyPassiveMechanic(unit, "surviveLethal");
   if (!mech) return null;
   return {
     label: unit.passive!.name,
@@ -235,7 +238,7 @@ function rankUpCountdownReadout(
   unit: BattleCharacter,
   context: PassiveReadoutContext,
 ): PassiveReadout | null {
-  const mech = unit.passive?.mechanics?.find((m) => m.type === "rankUpOwnDeck");
+  const mech = findAnyPassiveMechanic(unit, "rankUpOwnDeck");
   if (!mech || mech.type !== "rankUpOwnDeck") return null;
   const atTurn = mech.atTurn ?? 3;
   const fired = Boolean(unit.passiveState?.rankUpOwnDeckTriggered);
@@ -257,9 +260,7 @@ function multiTickReadout(
   unit: BattleCharacter,
   context: PassiveReadoutContext,
 ): PassiveReadout | null {
-  const mech = unit.passive?.mechanics?.find(
-    (m) => m.type === "characterSynergy",
-  );
+  const mech = findAnyPassiveMechanic(unit, "characterSynergy");
   if (!mech || mech.type !== "characterSynergy") return null;
   const requiredIds = mech.requiredCharacterIds ?? [];
   const ownTeam = unit.team === "player" ? context.playerTeam : context.enemyTeam;
@@ -301,7 +302,7 @@ const NON_ALWAYS_ACTIVE_TYPES = new Set([
  *  synergy with nothing else interesting going on) — a flat "ACTIVE" marker,
  *  no number, no tag. */
 function alwaysActiveReadout(unit: BattleCharacter): PassiveReadout | null {
-  const mechanics = unit.passive?.mechanics ?? [];
+  const mechanics = passiveMechanics(unit);
   const types = mechanics.map((m) => m.type);
   const hasAura = types.includes("aura");
   const hasOnlyPlainSynergy =

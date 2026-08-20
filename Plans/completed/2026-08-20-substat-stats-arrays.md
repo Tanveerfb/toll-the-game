@@ -1,6 +1,8 @@
 # Spec — substat readers that miss `stats` arrays
 
-**Status:** found 2026-08-20, not built. **Latent** — no shipped kit reaches the
+> **BUILT 2026-08-20.** Shipped as `entryTouchesStat` in `lib/game/stats.ts` (explicit `allCounts` flag), with both damage-modifier readers and `getEvadeChance` migrated onto it and debuff handling added. Tests: `tests/substats.test.ts`. The text below is the record of why, kept as written.
+
+**Status:** built 2026-08-20 (see the banner above). **Latent** — no shipped kit reaches the
 two remaining cases. Small, mechanical, no open decisions.
 
 **One sentence:** an effect covering several stats is authored as

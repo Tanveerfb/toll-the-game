@@ -174,17 +174,28 @@ function resolveMechanicField(
   return undefined;
 }
 
+/**
+ * Positional reference: the Nth mechanic on the skill, regardless of its type.
+ *
+ * The optional `field` matches the `[type.field]` syntax and is what makes two
+ * mechanics of the SAME type addressable — `[type.duration]` can only ever
+ * reach the first `buff`, so a skill raising DEF for 4 turns and ATK for 1
+ * could not name the second one without typing the number into the prose.
+ * Fieldless keeps its old meaning (Chiara's "House Rules" relies on it), where
+ * `resolveMechanicField` picks `valuePercent` before `duration`.
+ */
 function resolveByMechanicIndex(
   skill: CharacterSkillData,
   mechanicIndex: number,
   rankIndex: number,
+  field?: string,
 ): string {
   const mechanic = getMechanics(skill)[mechanicIndex];
   if (!mechanic) {
     return "";
   }
 
-  const value = resolveMechanicField(mechanic, rankIndex);
+  const value = resolveMechanicField(mechanic, rankIndex, field);
   return typeof value === "number" ? formatNumber(value) : "";
 }
 
@@ -254,12 +265,15 @@ function replaceMechanicPlaceholders(
         : falsyValue.trim(),
   );
 
-  result = result.replace(/\[([xyzwv])-ranked\]/gi, (_, letter: string) => {
-    const index = LETTER_INDEX[letter.toLowerCase()];
-    return typeof index === "number"
-      ? resolveByMechanicIndex(skill, index, rankIndex)
-      : "";
-  });
+  result = result.replace(
+    /\[([xyzwv])-ranked(?:\.([a-zA-Z_]+))?\]/gi,
+    (_, letter: string, field?: string) => {
+      const index = LETTER_INDEX[letter.toLowerCase()];
+      return typeof index === "number"
+        ? resolveByMechanicIndex(skill, index, rankIndex, field)
+        : "";
+    },
+  );
 
   result = result.replace(/\b([xyzwv])-ranked\b/gi, (_, letter: string) => {
     const index = LETTER_INDEX[letter.toLowerCase()];
@@ -311,12 +325,14 @@ function dropZeroValueClauses(
       // (e.g. two "seal" entries) and can't disambiguate them by type name
       // alone (Chiara's "House Rules": seals two different skill
       // categories, each with its own per-rank on/off duration).
-      const indexMatches = [...clause.matchAll(/\[([xyzwv])-ranked\]/gi)];
-      return !indexMatches.some(([, letter]) => {
+      const indexMatches = [
+        ...clause.matchAll(/\[([xyzwv])-ranked(?:\.([a-zA-Z_]+))?\]/gi),
+      ];
+      return !indexMatches.some(([, letter, field]) => {
         const index = LETTER_INDEX[letter.toLowerCase()];
         return (
           typeof index === "number" &&
-          resolveByMechanicIndex(skill, index, rankIndex) === "0"
+          resolveByMechanicIndex(skill, index, rankIndex, field) === "0"
         );
       });
     })

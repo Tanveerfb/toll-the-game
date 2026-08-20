@@ -1,3 +1,5 @@
+import { findPassiveMechanic } from "@/lib/game/passiveBlocks";
+import { entryTouchesStat } from "@/lib/game/stats";
 import { BattleCharacter } from "@/types/character";
 
 /**
@@ -9,11 +11,9 @@ export function getEvadeChance(char: BattleCharacter): number {
   let chance = 0;
 
   // Charged-style passives: +evadePerStackPercent per stack
-  if (char.passive?.trigger === "onAttackReceived") {
-    const mech = char.passive.mechanics?.find(
-      (m) => m.type === "chargedStacks",
-    );
-    if (mech && mech.type === "chargedStacks") {
+  {
+    const mech = findPassiveMechanic(char, "onAttackReceived", "chargedStacks");
+    if (mech) {
       const stacks = (char.passiveState.chargedStacks as number) || 0;
       chance += stacks * (mech.evadePerStackPercent ?? 5);
     }
@@ -32,11 +32,19 @@ export function getEvadeChance(char: BattleCharacter): number {
   // chance and damage reduction outside "all stats", which is why this can't
   // just call `entryAffectsStat`.
   const touchesEvade = (entry: { stat?: string; stats?: string[] }) =>
-    entry.stat === "evade" || (entry.stats?.includes("evade") ?? false);
+    entryTouchesStat(entry, "evade", { allCounts: false });
 
   for (const buff of char.buffs) {
     if (touchesEvade(buff)) chance += buff.valuePercent ?? 0;
   }
 
-  return chance;
+  // Evade debuffs subtract percentage points and cannot push the chance below
+  // zero — the same shape `effectiveSubstat` uses for crit damage, lifesteal
+  // and recovery rate. Evade was the last substat reading buffs only
+  // (Tanveer, 2026-08-20: "we do have to fix evade and DR parts too").
+  for (const debuff of char.debuffs) {
+    if (touchesEvade(debuff)) chance -= debuff.valuePercent ?? 0;
+  }
+
+  return Math.max(0, chance);
 }

@@ -27,6 +27,18 @@ export const MECHANIC_INFO: Record<MechanicType, MechanicInfo> = {
     desc: "Crit package: ignore DEF %, bonus damage %, ignores type matchups.",
     template: { ignoreDefensePercent: 50, damageBonusPercent: 50 },
   },
+  effective: {
+    desc: "Attack is effective against all types: never disadvantaged, still advantaged where earned.",
+    template: {},
+  },
+  guard: {
+    desc: "Passive. Attackers always hit this unit as if type-disadvantaged. Crits bypass it.",
+    template: {},
+  },
+  targetTagBonus: {
+    desc: "+% damage while the target carries one of these tags/colours.",
+    template: { conditionTags: ["Demon"], valuePercent: 30 },
+  },
   buff: {
     desc: "Raises a stat for a duration.",
     template: { stat: "atk", valuePercent: 25, duration: 2, targetSelf: true },

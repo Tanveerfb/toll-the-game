@@ -148,9 +148,9 @@ describe("a buff never lands on the unit being attacked", () => {
    * this one did not.
    *
    * Found 2026-08-20 while mapping a Dokkan kit that buffs allies and damages
-   * an enemy in one card. No shipped kit reached it — all four non-self buffs
-   * in the roster sit on zero-damage support skills — so the fix is inert for
-   * the current roster and stops the trap for the next author.
+   * an enemy in one card. That kit shape is now authorable: a mechanic
+   * declares its own audience, and an audience-less one is a SELF mechanic
+   * (Tanveer: "it wouldn't say allies if the default is self only").
    */
   const mk = (id: string, team: "player" | "enemy") =>
     ({
@@ -184,11 +184,81 @@ describe("a buff never lands on the unit being attacked", () => {
       () => {},
     );
 
-    // The self-buff still lands — that half was always correct.
-    expect(result.playerTeam[0].buffs).toHaveLength(1);
-    expect(result.playerTeam[0].buffs[0].stat).toBe("atk");
+    // Both buffs land on the CASTER: one says `targetSelf`, the other names no
+    // audience at all, which means the same thing.
+    expect(result.playerTeam[0].buffs.map((b) => b.stat)).toEqual([
+      "atk",
+      "def",
+    ]);
     // And the enemy is not handed a 60% DEF buff by the card that hit it.
     expect(result.enemyTeam[0].buffs).toEqual([]);
     expect(result.playerTeam[1].buffs).toEqual([]);
+  });
+
+  it("an attacking skill can buff the caster's team when it says so", () => {
+    // The Dokkan shape that prompted Part A: three audiences in one card —
+    // "greatly raises ATK, causes damage to enemy, raises allies' DEF by 60%
+    // for 1 turn (self excluded)".
+    const skill = {
+      skillName: "Three Audiences", characterId: "a", type: "attack",
+      statMultiplier: "atk", damageRanked: [200, 200, 200],
+      mechanics: [
+        { type: "buff", stat: "atk", valuePercent: 50, targetSelf: true },
+        {
+          type: "buff",
+          applyTo: "alliesExceptSelf",
+          stat: "def",
+          valuePercent: 60,
+          duration: 1,
+        },
+      ],
+    } as unknown as CharacterSkillData;
+
+    const result = executeSkill(
+      {
+        sourceInstanceId: "caster",
+        skill: skill as never,
+        targetInstanceId: "foe",
+        rank: 1,
+      },
+      {
+        playerTeam: [mk("caster", "player"), mk("ally", "player")],
+        enemyTeam: [mk("foe", "enemy")],
+      },
+      () => {},
+    );
+
+    expect(result.playerTeam[0].buffs.map((b) => b.stat)).toEqual(["atk"]);
+    expect(result.playerTeam[1].buffs.map((b) => b.stat)).toEqual(["def"]);
+    expect(result.enemyTeam[0].buffs).toEqual([]);
+    // The hit still happened.
+    expect(result.enemyTeam[0].currentHP).toBeLessThan(3000);
+  });
+
+  it("`allies` includes the caster, `alliesExceptSelf` does not", () => {
+    const withSelf = {
+      skillName: "Team Wide", characterId: "a", type: "attack",
+      statMultiplier: "atk", damageRanked: [200, 200, 200],
+      mechanics: [
+        { type: "buff", applyTo: "allies", stat: "def", valuePercent: 60, duration: 1 },
+      ],
+    } as unknown as CharacterSkillData;
+
+    const result = executeSkill(
+      {
+        sourceInstanceId: "caster",
+        skill: withSelf as never,
+        targetInstanceId: "foe",
+        rank: 1,
+      },
+      {
+        playerTeam: [mk("caster", "player"), mk("ally", "player")],
+        enemyTeam: [mk("foe", "enemy")],
+      },
+      () => {},
+    );
+
+    expect(result.playerTeam[0].buffs.map((b) => b.stat)).toEqual(["def"]);
+    expect(result.playerTeam[1].buffs.map((b) => b.stat)).toEqual(["def"]);
   });
 });

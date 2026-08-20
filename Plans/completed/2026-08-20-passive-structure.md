@@ -1,6 +1,8 @@
 # Spec — passives: multiple condition blocks, and conditions on the target
 
-**Status:** designed, not built. Found 2026-08-20 while mapping Dokkan passives
+> **BUILT 2026-08-20.** `PassiveBlock` in `types/passive.ts`, `lib/game/passiveBlocks.ts` as the sole reader (enforced by a scan in `tests/passiveBlocks.test.ts`), one queue registration per block, and `targetTagBonus` for §4. Molvarr's phase-passive ARRAY was left as authored — it flattens identically. The text below is the record of why, kept as written.
+
+**Status:** built 2026-08-20 (see the banner above). Found 2026-08-20 while mapping Dokkan passives
 onto our kit format, at Tanveer's direction: *"you can ignore what's not in our
 game pretty much. but learn from how the dokkan words and frames the
 descriptions."*

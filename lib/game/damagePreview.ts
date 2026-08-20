@@ -1,4 +1,8 @@
 import {
+  rawPassiveMechanics,
+  rawPassiveTrigger,
+} from "@/lib/game/passiveBlocks";
+import {
   getCharacterKit,
   getCharacterPhases,
   registerDraftCharacter,
@@ -212,7 +216,7 @@ function hasMechanic(skill: CharacterSkillData, type: string): boolean {
 
 function hasPassiveMechanic(character: CharacterData, type: string): boolean {
   return (
-    character.passive?.mechanics?.some(
+    rawPassiveMechanics(character.passive).some(
       (mechanic) => typeof mechanic.type === "string" && mechanic.type === type,
     ) ?? false
   );
@@ -534,7 +538,7 @@ function getCurrentHpAfterPassive(
   notes: string[],
 ): number {
   const initialHp = character.hp * ((scenario.attackerHpPercent ?? 100) / 100);
-  const consumeHpMechanic = passive?.mechanics?.find(
+  const consumeHpMechanic = rawPassiveMechanics(passive).find(
     (mechanic) =>
       typeof mechanic.type === "string" && mechanic.type === "consumeHpPercent",
   );
@@ -579,7 +583,7 @@ function applySkillDamageModifiers(
     );
   }
 
-  const deathblowMechanic = passive?.mechanics?.find(
+  const deathblowMechanic = rawPassiveMechanics(passive).find(
     (mechanic) =>
       typeof mechanic.type === "string" && mechanic.type === "deathblow",
   );
@@ -645,8 +649,11 @@ function applySkillDamageModifiers(
     }
   }
 
-  if (character.id === "yalina" && passive?.trigger === "onAllySkill") {
-    const momentumMechanic = passive.mechanics?.find(
+  if (
+    character.id === "yalina" &&
+    rawPassiveTrigger(passive) === "onAllySkill"
+  ) {
+    const momentumMechanic = rawPassiveMechanics(passive).find(
       (mechanic) =>
         typeof mechanic.type === "string" && mechanic.type === "momentumStacks",
     );
@@ -995,7 +1002,7 @@ function getExtraEffectNotes(
 
   if (character.id === "master_tao" && hasMechanic(skill, "consumeIgnite")) {
     const igniteStacks = scenario.targetIgniteStacks ?? 0;
-    const passiveHealMechanic = passive?.mechanics?.find(
+    const passiveHealMechanic = rawPassiveMechanics(passive).find(
       (mechanic) =>
         typeof mechanic.type === "string" && mechanic.type === "heal",
     );
@@ -1021,10 +1028,10 @@ function getExtraEffectNotes(
 
   if (
     character.id === "siddiq" &&
-    passive?.trigger === "onDamageDealt" &&
+    rawPassiveTrigger(passive) === "onDamageDealt" &&
     damage > 0
   ) {
-    const healMechanic = passive.mechanics?.find(
+    const healMechanic = rawPassiveMechanics(passive).find(
       (mechanic) =>
         typeof mechanic.type === "string" && mechanic.type === "healLifesteal",
     );
@@ -1315,7 +1322,7 @@ function buildPassiveRows(
 ): DamagePreviewRow[] {
   return passives.map((passive, index) => {
     const { conditions, effects } = describePassiveLines(passive);
-    const mechanics = (passive.mechanics ?? []).map((mechanic) =>
+    const mechanics = rawPassiveMechanics(passive).map((mechanic) =>
       normalizeMechanic(mechanic, 0),
     );
     // Description first (it's authored and accurate); the mechanical summary
@@ -1323,8 +1330,9 @@ function buildPassiveRows(
     const fallback = summarizeSupportEffects(mechanics);
     // The Scenario column is "when", the Result column is "what" — so a
     // structured passive's `#` condition belongs in Scenario, not Result.
-    const trigger = passive.trigger
-      ? passive.trigger.replace(/^on/, "").replace(/([A-Z])/g, " $1").trim()
+    const rawTrigger = rawPassiveTrigger(passive);
+    const trigger = rawTrigger
+      ? rawTrigger.replace(/^on/, "").replace(/([A-Z])/g, " $1").trim()
       : "";
     return {
       id: `passive-${phaseLabel ?? "base"}-${index}`,

@@ -107,10 +107,12 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 49. **Story repeat drops roll a range per entry** (2026-08-09): `{min, max}` inclusive — not fixed amounts, not a weighted table.
 50. **Story environment backgrounds are deferred** (2026-08-09). *Reversed 2026-08-18 by the story mode v2 build (#108) — kept because the reason still constrains the art.* The original: scene art is the biggest lever on "scenes look cheap", and he was not committing the art direction yet — no generated plates, no blurred-character fallback, no stylised abstract backdrops, don't add them unprompted.
 
-    **What is true now:** `StoryScene` carries a `backgroundId`, and `lib/game/storyBackgrounds.ts` maps 14 locale slugs to a tinted gradient. **The art direction is still uncommitted** — the gradient is a fallback, not a decision, and the 14 plates sit in Category A of `docs/ART_REQUESTS.md` awaiting a ComfyUI session. So the live half of this ruling is: the *slot* exists, the *look* is still his call, and nothing stylised gets invented to fill it.
+    **What is true now:** `StoryScene` carries a `backgroundId`, and `lib/game/storyBackgrounds.ts` maps 14 locale slugs to a tinted gradient. **Updated 2026-08-21:** 18 plates are drawn and wired, covering chapters 1-3; the registry's other slugs still resolve to their gradient. Three of the original 14 slugs were retired as non-canon once the beat sheets were read (`gamblers_table`, `the_bridge`, `overseer_dining`). The gradient remains a real fallback, not a placeholder to be raced - a slug nobody has drawn still renders. The look of the drawn plates is his to accept or reject; nothing stylised gets invented beyond what the chapters describe.
 
 51. **Audio is music only, and Tanveer supplies it** (2026-08-09): background OST, no SFX of any kind — no battle sounds, no UI clicks, no text blips. The system shipped; `public/audio/` is empty and the game is silent by design until he adds the files listed in `docs/AUDIO.md`.
 52. **DoT default durations** (2026-08-09): Ignite lasts **3 turns** and Bleed **2**, unless a kit says otherwise (`lib/game/dotDurations.ts`). Descriptions state the duration automatically — it's derived from the mechanic by the translator, never authored into the prose, so text can't drift from data. Bleed is a flat 2 at every rank roster-wide; no kit scales it any more.
+
+    **Amended 2026-08-21.** The last sentence was enforced as "every Bleed on every kit resolves to 2", which is stricter than this ruling's own "unless a kit says otherwise" and than `dotDurations.ts`. Tanveer authored the Checkpoint Enforcer's Bleed at **1 turn** and confirmed it when the conflict was raised. So: **2 is the default a Bleed gets when it says nothing**, and a kit may author its own duration. `tests/dotDurations.test.ts` now asserts that shape rather than the blanket 2.
 53. **Ordinary story enemies are tanky, not deadly** (2026-08-09): low ATK, large HP pools, plus an anti-stall passive that triples their stats at turn 10 (`bossStatSpike`, multiplier 3) so a fight can't be stalled out. `applyBossTurnStart` runs for any enemy carrying a turn-start mechanic, not just phased bosses.
 54. **A story NPC is a separate character that happens to share art** (2026-08-09, **reversed and widened 2026-08-19**). The original said a `storyOnly` kit may diverge in stats, multipliers and ultimate damage, but that *passives stay in sync*. That half is gone. Tanveer: *"story versions of chars may have same visual elements (artwork) but their kit could be completely different and that includes the element color too. future proof and scalable this way."*
 
@@ -426,7 +428,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
     Recorded with the worked examples in `.claude/skills/kitwords/EXAMPLES.md`.
 
-111. **[Guard] and [Effective] are a paired type-matchup override** (2026-08-20). **Designed, deliberately NOT built** — *"we don't have to add that in our db yet."* Recorded now so the semantics survive; neither word appears anywhere in the engine or the kits today.
+111. **[Guard] and [Effective] are a paired type-matchup override** (2026-08-20). Designed on 2026-08-20 — *"we don't have to add that in our db yet"* — and **built 2026-08-20** as `resolveTypeModifier` (`lib/game/typeAdvantage.ts`), read by `damage.ts`. **No kit authors either word yet**, which is the half of his instruction that still holds: the capability exists, the roster does not use it, and putting it on a card is his call.
 
     Two mirrored mechanics that overrule the type chart (#11) without touching colours:
 
@@ -444,7 +446,57 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
     **Effective is not `critical`** — his correction, and worth keeping because the two look similar from the outside. `critical` *ignores* the matchup in both directions and carries a whole package with it (50% DEF ignore, crit damage, #16). Effective **keeps** the matchup and only removes its downside.
 
-    **Where it would live:** `damage.ts:85`, the one line that applies `getTypeModifier`. No targeting involved, so this is independent of `Plans/2026-08-20-mechanic-application.md`.
+    **Where it lives:** `resolveTypeModifier` in `lib/game/typeAdvantage.ts`, called from the `!criticalMechanic` branch of `damage.ts` — which is what makes "critical bypasses both" fall out for free rather than needing a guard of its own. `getTypeModifier` stays the raw chart lookup, because #11 quotes it as the plain matchup.
+
+    **Guard is no protection against a crit.** Deliberate, not an oversight — say so in whatever UI copy explains Guard, or players will read it as a bug.
+
+    **Open:** do two sources of Guard stack, or is it a fixed floor? Built as a fixed floor (a second source changes nothing), because the effect is a floor rather than a magnitude. Unconfirmed by him.
+
+112. **A mechanic declares who it hits, and silence means self** (2026-08-20). *"you will need to factor in caster and its team alongside target enemy during skill or ult uses. so that buffs or debuffs hit specific parties rather than mix n match."*
+
+    Every mechanic may carry `applyTo` — `self`, `oneAlly`, `allies`, `alliesExceptSelf`, `enemies` — or `applyToRanked` for an audience that widens with rank. **Absent means self**: *"it wouldn't say allies if the default is self only."* That **inverts** the old fallback, where a friendly mechanic without `targetSelf` inherited whoever the skill targeted, so the six kits that leaned on inference now declare it in their JSON (isolde ×4, leorio, mustafa, prism, siddiq; iron's Iron Wall becomes the self stance it was meant to be).
+
+    How it reads on the card: *"if it targets allies including the caster then only 'allies' otherwise 'allies (excluding self)'."* Ally breadth lives in the value (`oneAlly` vs `allies`); enemy breadth stays in `aoe`, which means *"all present enemies on the field. (sub enemy who's not on field yet wouldn't count)"*.
+
+    Leorio's ladders by rank — *"a chosen ally at R1 yes. then friendly AOE or 'allies' (not allies (excluding himself)) at R2+"* — as `applyToRanked: ["oneAlly", "allies", "allies"]`.
+
+    **Deferred, and stated so it is not mistaken for an oversight:** `aoe` does **not** yet narrow to enemies-only on support skills. A heal skill's targets still come from `aoe` + skill type, because the heal amount has no audience of its own; narrowing `aoe` first would leave every ally heal aimed at the enemy team. `aoeRanked` likewise stays on Leorio and Siddiq rather than retiring.
+
+113. **"Damage first, then the buff" is a real order, not phrasing** (2026-08-20). *"damage needs to be done to enemy first before the self buff activates. it is different than buff first and then do damage."*
+
+    Default stays #22 — a self buff applies before the damage calc and the same strike benefits. A mechanic declaring `requiresDamage: true` moves after the hit **and becomes conditional on connecting**: *"the nulled or evasion from enemy will not activate the self buff for the caster."* A tanked hit (#71) and an evaded one grant nothing; a hit that kills still counts.
+
+    On an AoE it arms once and applies once: *"as long as atleast 1 enemy is hit, the self buff would activate. but multiple instances of enemy hit by same attack wouldn't cause multiple self buffs activating."*
+
+    It matters wherever the skill scales off the stat being raised — a DEF-scaled attack with a self-DEF buff boosts its own damage. Mustafa's Tea Time Tremor is exactly that shape, ships unflagged, and is unchanged.
+
+114. **One passive, made of blocks** (2026-08-20). *"Keep it the dokkan way. it basically is a single but possibly long passive. this means molvarr passives can be combined into one per phase too."*
+
+    A passive is a list of blocks, each with its own trigger, mechanics and `#` heading, so "ATK up always, plus more when attacking a [Demon]" is one passive rather than two. The single-trigger shorthand (`trigger` + `mechanics`) is one block and stays valid — every shipped kit authors it that way. Registration is per block, so a passive can now fire at two different phases.
+
+    - **`worksFromSub` stays per passive**, not per block — *"stays per passive."*
+    - **Unconditional effects are headed `# Basic effects`** — *"'always' block can be renamed to 'basic effects' block i guess. much more generalized but simple."* (The UI previously printed "Basic effect(s)".)
+
+115. **Light and dark are premium** (2026-08-21). *"light and dark are premium and don't try to fill them up unless i request it."*
+
+    Generic story enemies take **red, blue or green**. A gap in the type chart is not a reason to spend a premium colour — the chapter-1 checkpoint kits were originally proposed with a light-coloured leader to close the light hole and were rebuilt red. `tests/checkpointKits.test.ts` asserts it for that set. Existing dark-coloured mobs (`road_bandit`, `iron`) predate the ruling and stay.
+
+116. **The enemy side only ever plays Rank 1** (2026-08-21, engine fact he pushed back into the open). *"you are assuming all things activating at R3, aka worst case possible."*
+
+    `initializeEnemyDeck` builds the enemy hand with `initialCardsFor` — one R1 card per skill — and the AI never merges. The only rank-up path in the codebase is `rankUpOwnDeck` (Chiara). So **R1 is the only rank an enemy kit actually ships**; R2/R3 exist in the JSON for completeness and are unreachable without a stage effect that ranks enemies up.
+
+    Two consequences worth holding onto:
+
+    - **Cost an enemy kit at R1**, not at its top row. A balance read taken off the R3 sheet is a read of a card that cannot be dealt.
+    - **Three enemies share three actions**, not three each (`actionsForTurn`, capped at 3 both sides). A wave that wants to buff twice and attack has spent its whole turn.
+
+117. **A dying unit can pay its team** (2026-08-21). The `onDefeat` passive trigger, added for the Checkpoint Bruiser's *"when this character is defeated, heal all allies."*
+
+    Applies to the owner's **own team only** — a legacy, not a revenge strike; a dying unit that hurts its killer would be a different trigger. Runs as a post-pass over both teams from `executeSkill` and from the DoT tick, because a unit can die in more than one place and wiring the same effect into each is how one of them ends up missing it. Fires once per unit, guarded by `passiveState`, since a corpse stays on the field until turn-start cleanup.
+    - **Conditions may read the target's tags.** *"just assume it would target a tag such as 'Powerful Opponent' or something instead of extreme class enemy."* Keyed on an authored tag, never derived from `tier: "elite"` — *"'tier' or 'elite' is not a tag. its an enemy type I guess."* Symmetric by construction, so *"what if an enemy does extra damage against 'human' characters?"* needs no extra code.
+    - **No collision on a shared tag string**, because a tag is a property of the character: *"Human Fairy Hybrid Female Powerful Opponent tags. her npc version would also carry those. simple."* Seras's synergy reads her teammates' tags; a boss-facing condition reads the target's. Both readings are true at once (amends #54).
+
+    **Not built, and on his roadmap rather than a gap** — *"this mechanic will definitely come in the future. just our game isn't complex at this point. baby steps."* The highest-value missing piece is **counting the character's own attacks**: `statShiftAfterAttacks` and `chargedStacks` count attacks *received*, `momentumStacks` counts cards the *team* plays, and nothing counts what this character did.
 
     **CRITICAL bypasses both** (his answer, 2026-08-20): *"critical is seperate mechanic. it ignores all types and does bonus damage based on critdamage. bypasses guard too."* So `critical` stays exactly as `damage.ts:84` has it — the matchup, Guard and Effective are all skipped, and crit damage applies instead. **Guard therefore offers no protection against a crit**, which is a deliberate consequence, not an oversight.
 

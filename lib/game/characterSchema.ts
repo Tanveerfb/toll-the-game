@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MECHANIC_TYPES } from "@/types/mechanic";
+import { PASSIVE_TRIGGERS } from "@/types/passive";
 
 // Runtime shape-check for data/characters/*.json — kits are hand-edited and
 // act as the source of truth, so a typo should fail loudly at load time with
@@ -7,28 +8,23 @@ import { MECHANIC_TYPES } from "@/types/mechanic";
 // per-type fields (counterDamagePercentRanked, sealType, …) that stay open,
 // but the `type` string itself must be a known mechanic (STATUS #7).
 
-const PASSIVE_TRIGGERS = [
-  "onBattleStart",
-  "aura",
-  "always",
-  "beforeSkill",
-  "afterSkill",
-  "onFirstAction",
-  "onAllySkill",
-  "onAttackReceived",
-  "onLethalDamage",
-  "onDamageDealt",
-  "onRoundEnd",
-  "onNewTurn",
-  "onIgniteConsume",
-  "OnPlayerTurnStart",
-  "OnPlayerTurnEnd",
-  "OnEnemyTurnStart",
-  "OnEnemyTurnEnd",
+// PASSIVE_TRIGGERS is imported, not redeclared — see the note on the type.
+
+const AUDIENCES = [
+  "self",
+  "oneAlly",
+  "allies",
+  "alliesExceptSelf",
+  "enemies",
 ] as const;
 
 const mechanicSchema = z.looseObject({
   type: z.enum(MECHANIC_TYPES),
+  /** Declared audience — absent means self (types/mechanic.ts). */
+  applyTo: z.enum(AUDIENCES).optional(),
+  applyToRanked: z.array(z.enum(AUDIENCES)).length(3).optional(),
+  /** Lands after the hit, and only if it connected. */
+  requiresDamage: z.boolean().optional(),
 });
 
 const skillSchema = z.looseObject({
@@ -48,12 +44,30 @@ const skillSchema = z.looseObject({
   mechanics: z.array(mechanicSchema).optional(),
 });
 
-const passiveSchema = z.looseObject({
-  name: z.string().min(1),
-  description: z.string().min(1),
+/** One condition heading of a passive: its own trigger and its own mechanics
+ *  (types/passive.ts). */
+const passiveBlockSchema = z.looseObject({
   trigger: z.enum(PASSIVE_TRIGGERS),
+  heading: z.string().min(1).optional(),
   mechanics: z.array(mechanicSchema).optional(),
 });
+
+/**
+ * A passive is EITHER the single-block shorthand (`trigger` + `mechanics`,
+ * what all 27 shipped kits author) or a `blocks` list. Requiring one of the
+ * two is what stops a kit shipping with mechanics no trigger ever fires.
+ */
+const passiveSchema = z
+  .looseObject({
+    name: z.string().min(1),
+    description: z.string().min(1),
+    trigger: z.enum(PASSIVE_TRIGGERS).optional(),
+    mechanics: z.array(mechanicSchema).optional(),
+    blocks: z.array(passiveBlockSchema).min(1).optional(),
+  })
+  .refine((p) => Boolean(p.trigger) || Boolean(p.blocks?.length), {
+    message: "passive needs either a `trigger` or a non-empty `blocks` list",
+  });
 
 export const characterSchema = z.looseObject({
   id: z.string().min(1),

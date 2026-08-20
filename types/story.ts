@@ -160,6 +160,13 @@ export type StoryMissionGoal =
   | { type: "fieldTag"; tag: string; count: number }
   /** Fire at least N player ultimates across the run. */
   | { type: "useUltimates"; count: number }
+  /**
+   * Play at least N player cards of a given rank across the run.
+   *
+   * Ultimates never count — they carry no rank at all (engine rule), so a
+   * rank goal is always about the three-card ladder and never about the ult.
+   */
+  | { type: "useSkillRank"; rank: 1 | 2 | 3; count: number }
   /** Clear on an attempt that wasn't a retry of a lost run. */
   | { type: "firstAttempt" }
   /** Reach and clear the final wave. Trivial on a 1-wave stage, real on 3. */

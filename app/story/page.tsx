@@ -159,14 +159,23 @@ export default function StoryPage(): React.JSX.Element {
     const fallenIds = battle.playerTeam
       .filter((unit) => unit.currentHP <= 0)
       .map((unit) => unit.id);
-    const ultimates = battle.battleEvents.filter(
-      (event) => event.kind === "action" && event.isUlt && event.sourceTeam === "player",
-    ).length;
+    // One pass over the player's actions: ultimates and ranked cards are
+    // mutually exclusive, since an ultimate carries no rank at all. `rank` is
+    // optional on the event and an absent rank reads as 1, matching the
+    // sequencer's own convention.
+    let ultimates = 0;
+    const rankUses: Record<1 | 2 | 3, number> = { 1: 0, 2: 0, 3: 0 };
+    for (const event of battle.battleEvents) {
+      if (event.kind !== "action" || event.sourceTeam !== "player") continue;
+      if (event.isUlt) ultimates += 1;
+      else rankUses[event.rank ?? 1] += 1;
+    }
     return applyWaveOutcome(run, {
       survivors,
       fallenIds,
       turns: battle.playerTurns,
       ultimates,
+      rankUses,
     });
   }, []);
 

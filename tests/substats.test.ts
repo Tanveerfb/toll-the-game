@@ -5,7 +5,10 @@ import {
   getEffectiveLifesteal,
   getEffectiveCritResist,
 } from "@/lib/game/substats";
-import { getDamageReductionMultiplier } from "@/lib/game/stats";
+import {
+  getDamageReductionMultiplier,
+  getDamageDealtMultiplier,
+} from "@/lib/game/stats";
 import { getEvadeChance } from "@/lib/game/evade";
 import { getCritChance } from "@/lib/game/combat";
 import chiara from "@/data/characters/chiara.json";
@@ -582,5 +585,85 @@ describe("crit chance is buffable by skills and ultimates", () => {
         ),
       ),
     ).toBe(0);
+  });
+});
+
+/**
+ * Ruling #55's one-effect-one-entry shape means a modifier covering several
+ * stats is authored `stats: [...]` with no `stat` field. Every reader keyed on
+ * `entry.stat` alone silently dropped the whole entry — three live bugs on
+ * 2026-08-20 (evade, crit chance, the damage preview). These are the last two
+ * readers in that family, plus the debuff halves evade and DR were missing.
+ * Spec: Plans/2026-08-20-substat-stats-arrays.md
+ */
+describe("damage modifiers read `stats` arrays but never `all`", () => {
+  it("raises damage dealt from an array-authored buff", () => {
+    const c = makeChar({
+      buffs: [{ type: "buff", stats: ["atk", "damageDealt"], valuePercent: 50 }],
+    } as Partial<BattleCharacter>);
+    expect(getDamageDealtMultiplier(c)).toBeCloseTo(1.5);
+  });
+
+  it("reduces incoming damage from an array-authored buff", () => {
+    const c = makeChar({
+      buffs: [
+        { type: "buff", stats: ["def", "damageReduction"], valuePercent: 25 },
+      ],
+    } as Partial<BattleCharacter>);
+    expect(getDamageReductionMultiplier(c)).toBeCloseTo(0.75);
+  });
+
+  it("keeps `stat: \"all\"` out of both — #55 excludes damage reduction, #36 makes damageDealt a modifier", () => {
+    const c = makeChar({
+      buffs: [{ type: "buff", stat: "all", valuePercent: 50 }],
+    } as Partial<BattleCharacter>);
+    expect(getDamageDealtMultiplier(c)).toBe(1);
+    expect(getDamageReductionMultiplier(c)).toBe(1);
+  });
+
+  it("leaves single-stat authoring and multiplicative buff stacking unchanged", () => {
+    const c = makeChar({
+      buffs: [
+        { type: "buff", stat: "damageReduction", valuePercent: 25 },
+        { type: "buff", stat: "damageReduction", valuePercent: 40 },
+      ],
+    } as Partial<BattleCharacter>);
+    // 0.75 * 0.6 — Mustafa's Fortress and Iron Wall depend on this, NOT on 65%.
+    expect(getDamageReductionMultiplier(c)).toBeCloseTo(0.45);
+  });
+
+  it("lets a debuff strip damage reduction away, but never past zero", () => {
+    const stripped = makeChar({
+      buffs: [{ type: "buff", stat: "damageReduction", valuePercent: 25 }],
+      debuffs: [{ type: "debuff", stats: ["damageReduction"], valuePercent: 25 }],
+    } as Partial<BattleCharacter>);
+    expect(getDamageReductionMultiplier(stripped)).toBeCloseTo(0.9375);
+
+    const overStripped = makeChar({
+      debuffs: [{ type: "debuff", stat: "damageReduction", valuePercent: 60 }],
+    } as Partial<BattleCharacter>);
+    // A DR debuff removes reduction; it never becomes damage amplification.
+    expect(getDamageReductionMultiplier(overStripped)).toBe(1);
+  });
+
+  it("subtracts evade debuffs and floors the chance at zero", () => {
+    const partial = makeChar({
+      buffs: [{ type: "buff", stats: ["atk", "evade"], valuePercent: 33 }],
+      debuffs: [{ type: "debuff", stat: "evade", valuePercent: 10 }],
+    } as Partial<BattleCharacter>);
+    expect(getEvadeChance(partial)).toBe(23);
+
+    const floored = makeChar({
+      buffs: [{ type: "buff", stat: "evade", valuePercent: 10 }],
+      debuffs: [{ type: "debuff", stats: ["evade"], valuePercent: 40 }],
+    } as Partial<BattleCharacter>);
+    expect(getEvadeChance(floored)).toBe(0);
+  });
+
+  it("still keeps `stat: \"all\"` away from evade chance", () => {
+    const c = makeChar({
+      buffs: [{ type: "buff", stat: "all", valuePercent: 50 }],
+    } as Partial<BattleCharacter>);
+    expect(getEvadeChance(c)).toBe(0);
   });
 });

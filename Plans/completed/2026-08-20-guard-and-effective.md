@@ -1,6 +1,8 @@
 # Spec — [Guard] and [Effective], a paired type-matchup override
 
-**Status:** designed, not built. Tanveer, 2026-08-20: *"we don't have to add that
+> **BUILT 2026-08-20.** `resolveTypeModifier` in `lib/game/typeAdvantage.ts`, read by `damage.ts`; mechanics `guard` (passive) and `effective` (skill). Guard stacking was built as a fixed floor — §5's open detail, still unconfirmed. **No kit authors either word.** Tests: `tests/typeMatchupOverrides.test.ts`. The text below is the record of why, kept as written.
+
+**Status:** built 2026-08-20 (see the banner above). Tanveer, 2026-08-20: *"we don't have to add that
 in our db yet."* Ledger entry: **ruling #111**.
 
 **Neither word exists anywhere in the engine or the kits today** — verified by

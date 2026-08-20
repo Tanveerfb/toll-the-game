@@ -67,6 +67,11 @@ const CHARACTER_VFX: Record<string, CharacterVfx> = {
   prism: { tint: "rgba(240,171,252,0.8)", shape: "shard" },
   raider: { tint: "rgba(251,146,60,0.75)", shape: "slash" },
   road_bandit: { tint: "rgba(248,113,113,0.75)", shape: "slash" },
+  // Chapter 1 road opposition (2026-08-21)
+  ford_bandit: { tint: "rgba(125,211,252,0.8)", shape: "ripple" },
+  checkpoint_bruiser: { tint: "rgba(163,230,53,0.75)", shape: "quake" },
+  checkpoint_enforcer: { tint: "rgba(190,18,60,0.8)", shape: "slash" },
+  toll_collector: { tint: "rgba(217,119,6,0.8)", shape: "bloom" },
   wild_beast: { tint: "rgba(253,186,116,0.8)", shape: "paw" },
 };
 

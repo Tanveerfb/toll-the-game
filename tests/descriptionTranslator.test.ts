@@ -197,6 +197,60 @@ describe("description placeholders", () => {
     });
   });
 
+  describe("positional placeholders can name a field", () => {
+    // Two mechanics of the SAME type with different durations: `[buff.duration]`
+    // resolves the FIRST one, so the second is unreachable by type name.
+    // `[x-ranked.duration]` addresses it by position instead.
+    // Spec: Plans/2026-08-20-placeholder-disambiguation.md
+    const twoBuffs = {
+      skillName: "Two Buffs",
+      description:
+        "Greatly raises DEF for [x-ranked.duration] turns, greatly raises ATK for [y-ranked.duration] turns and does damage equal to ATK-scaled to all enemies.",
+      characterId: "test",
+      type: "attack",
+      statMultiplier: "atk",
+      damageRanked: [100, 100, 100],
+      mechanics: [
+        { type: "buff", stat: "def", valuePercent: 50, duration: 4, targetSelf: true },
+        { type: "buff", stat: "atk", valuePercent: 50, duration: 1, targetSelf: true },
+      ],
+    } as unknown as CharacterSkillData;
+
+    it("reaches the second mechanic of the same type", () => {
+      const out = buildDescriptionForRank(twoBuffs, 0);
+      expect(out).toContain("DEF for 4 turns");
+      expect(out).toContain("ATK for 1 turn");
+    });
+
+    it("disagrees with the fieldless form, which is the whole bug", () => {
+      const fieldless = {
+        ...twoBuffs,
+        description: "Raises DEF for [x-ranked] turns.",
+      } as unknown as CharacterSkillData;
+      // Fieldless picks valuePercent first — 50, not the duration.
+      expect(buildDescriptionForRank(fieldless, 0)).toContain("for 50 turns");
+      expect(buildDescriptionForRank(twoBuffs, 0)).toContain("DEF for 4 turns");
+    });
+
+    it("still hides a clause whose positional duration resolves to 0 (#44)", () => {
+      const laddered = {
+        skillName: "Laddered",
+        description:
+          "Does damage equal to ATK-scaled to one enemy; stuns for [y-ranked.duration] turns.",
+        characterId: "test",
+        type: "attack",
+        statMultiplier: "atk",
+        damageRanked: [100, 100, 100],
+        mechanics: [
+          { type: "buff", stat: "atk", valuePercent: 30, duration: 2, targetSelf: true },
+          { type: "stun", durationRanked: [0, 1, 2] },
+        ],
+      } as unknown as CharacterSkillData;
+      expect(buildDescriptionForRank(laddered, 0)).not.toContain("stuns");
+      expect(buildDescriptionForRank(laddered, 2)).toContain("stuns for 2 turns");
+    });
+  });
+
   it("leaves unresolvable placeholders (keyword highlights) untouched", () => {
     const skill: CharacterSkillData = {
       skillName: "Test",

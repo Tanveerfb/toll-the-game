@@ -21,7 +21,15 @@ what the entry says.
 2. **Check for a duplicate.** Grep the slug and the subject. If an entry exists,
    *update it* rather than adding a second — a queue with two versions of one request
    wastes GPU time on whichever the session reads first.
-3. **Work out which category it belongs to**, and read that category's spec table.
+3. **Before generating anything, verify the entry against the repo.** An entry is
+   written at one moment and read at another, and the code moves in between. Category A
+   listed fourteen scene backgrounds derived from `data/story/part*.json` — a file
+   structure story mode v2 deleted, leaving one chapter file that references **four**
+   slugs. Generating the list as written would have been ten plates for scenes that do
+   not exist. Grep for what actually references the asset, correct the entry, then
+   generate. A stale entry is worse than a missing one, because it reads as approved
+   work.
+4. **Work out which category it belongs to**, and read that category's spec table.
    Several categories deliberately **override** the `ART_PIPELINE.md` defaults (scene
    backgrounds are 16:9 and must never have their background removed; inventory icons
    are 512px and must read at 24px). Getting that wrong produces unusable assets.

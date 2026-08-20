@@ -1,5 +1,6 @@
 ﻿import { BattleCharacter } from "@/types/character";
 import { scaleMaxHp } from "@/lib/game/maxHp";
+import { passiveBlocks, findAnyPassiveMechanic } from "@/lib/game/passiveBlocks";
 import { entryAffectsStat, statPhrase } from "@/lib/game/stats";
 import { QueueItem } from "@/hooks/MechanicProvider";
 import { BattlePhase, StatusEffect } from "@/types/mechanic";
@@ -19,24 +20,34 @@ function mapTriggerToPhase(trigger: string): BattlePhase | null {
 }
 
 export function registerCharacterPassives(character: BattleCharacter, registerToQueue: RegisterFn) {
-  if (!character.passive) return;
+  const passive = character.passive;
+  if (!passive) return;
 
-  // Synergy/aura mechanics are battle-start effects even when the passive's
-  // main trigger is combat-time (e.g. Batra's beforeSkill HP consume, Seras's
+  // One registration per BLOCK, not per passive. A passive with a "# Basic
+  // effects" aura block and a conditional combat block needs both phases —
+  // registering only the first trigger is exactly what the block format
+  // exists to stop (Plans/2026-08-20-passive-structure.md).
+  const blocks = passiveBlocks(passive);
+  blocks.forEach((block, blockIndex) => {
+  // A single-block passive keeps its historic queue id — every kit in the
+  // roster is single-block, and the id is what callers look the item up by.
+  const blockSuffix = blocks.length > 1 ? `_${blockIndex}` : "";
+  // Synergy/aura mechanics are battle-start effects even when the block's
+  // trigger is combat-time (e.g. Batra's beforeSkill HP consume, Seras's
   // onAttackReceived Charged) -- without this fallback they never register.
-  const hasBattleStartMechanics = character.passive.mechanics?.some(
+  const hasBattleStartMechanics = block.mechanics?.some(
     (m) => m.type === "synergy" || m.type === "aura",
   );
   const phase =
-    mapTriggerToPhase(character.passive.trigger) ??
+    mapTriggerToPhase(block.trigger) ??
     (hasBattleStartMechanics ? "OnBattleStart" : null);
 
   if (phase) {
     registerToQueue({
-      id: `${character.instanceId}_passive_${character.passive.name}`,
+      id: `${character.instanceId}_passive_${passive.name}${blockSuffix}`,
       phase: phase,
       sourceInstanceId: character.instanceId,
-      mechanicId: character.passive.name,
+      mechanicId: passive.name,
       action: async (source, teams, log) => {
         // Default-deny: a passive only fires from the bench if its data
         // explicitly opts in with worksFromSub: true (Tanveer ruling
@@ -50,7 +61,11 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
         const mutateTeam = [...teams[teamKey]];
         let changed = false;
 
-        source.passive?.mechanics?.forEach((mech) => {
+        // Re-read from the live source rather than closing over `block`,
+        // so a phase swap that replaces the passive is honoured.
+        const blockMechanics =
+          passiveBlocks(source.passive)[blockIndex]?.mechanics ?? [];
+        blockMechanics.forEach((mech) => {
           if (mech.type === "synergy") {
             const conditionTags = mech.conditionTags;
             const count = conditionTags ? mutateTeam.filter(c => c.tags?.some(t => conditionTags.includes(t))).length : 1;
@@ -117,7 +132,10 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
           // the flag's pre-existing behavior for Gabrist). Isolde's aura
           // ("Increase all allies HP related stats by 10%") has no such
           // condition at all, so the gate no longer requires the flag.
-          if (mech.type === "aura") {
+          // The conditional variant is registered separately below and
+          // rechecked every turn; applying it here too would bake in a copy
+          // that never comes off.
+          if (mech.type === "aura" && mech.conditionMinLivingAllies == null) {
             mutateTeam.forEach((ally, idx) => {
               const buff: StatusEffect = {
                 type: "buff", stat: mech.stat, stats: mech.stats, valuePercent: mech.valuePercent, uncancellable: true, name: source.passive!.name
@@ -148,10 +166,12 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
       }
     });
   }
+  });
 
   registerTurnRamp(character, registerToQueue);
   registerMaxHpShred(character, registerToQueue);
   registerCharacterSynergy(character, registerToQueue);
+  registerConditionalAura(character, registerToQueue);
   registerRandomTurnEffect(character, registerToQueue);
 }
 
@@ -164,9 +184,7 @@ function registerCharacterSynergy(
   character: BattleCharacter,
   registerToQueue: RegisterFn,
 ) {
-  const mech = character.passive?.mechanics?.find(
-    (m) => m.type === "characterSynergy",
-  );
+  const mech = findAnyPassiveMechanic(character, "characterSynergy");
   if (!mech || mech.type !== "characterSynergy") return;
 
   const passiveName = character.passive!.name;
@@ -319,9 +337,7 @@ function registerCharacterSynergy(
 // Giant's Will (Diane): +valuePercent base ATK at the start of each of her
 // team's turns AFTER the first, up to maxStacks. Uncancellable.
 function registerTurnRamp(character: BattleCharacter, registerToQueue: RegisterFn) {
-  const mech = character.passive?.mechanics?.find(
-    (m) => m.type === "turnRamp",
-  );
+  const mech = findAnyPassiveMechanic(character, "turnRamp");
   if (!mech || mech.type !== "turnRamp") return;
 
   registerToQueue({
@@ -386,9 +402,7 @@ function registerTurnRamp(character: BattleCharacter, registerToQueue: RegisterF
 // resets the stacks (Tanveer ruling: full revert; no free heal on revert,
 // current HP just re-clamps under the restored max).
 function registerMaxHpShred(character: BattleCharacter, registerToQueue: RegisterFn) {
-  const mech = character.passive?.mechanics?.find(
-    (m) => m.type === "maxHpShred",
-  );
+  const mech = findAnyPassiveMechanic(character, "maxHpShred");
   if (!mech || mech.type !== "maxHpShred") return;
 
   registerToQueue({
@@ -474,9 +488,7 @@ function registerRandomTurnEffect(
   character: BattleCharacter,
   registerToQueue: RegisterFn,
 ) {
-  const mech = character.passive?.mechanics?.find(
-    (m) => m.type === "randomTurnEffect",
-  );
+  const mech = findAnyPassiveMechanic(character, "randomTurnEffect");
   if (!mech || mech.type !== "randomTurnEffect") return;
   const options = mech.options;
   if (!options || options.length === 0) return;
@@ -586,4 +598,93 @@ function registerRandomTurnEffect(
       return { ...teams, [teamKey]: team, [enemyKey]: enemies };
     },
   });
+}
+
+
+/**
+ * An `aura` that only holds while enough teammates are still standing.
+ *
+ * The plain aura path applies once at battle start and never looks again, which
+ * is right for "this team is 10% tougher because she's here" and wrong for "the
+ * boss is protected *by his crew*". This variant rechecks at the owner's turn
+ * start and removes itself the moment the condition fails, so killing the
+ * escort actually strips the protection.
+ *
+ * Deliberately pushes an ordinary (non-`preApplied`) buff: ATK and DEF are read
+ * dynamically through `effectiveStat`, so adding and removing the entry is the
+ * whole operation, with no stat baking to reverse. HP is excluded for exactly
+ * that reason — see `conditionMinLivingAllies`.
+ */
+function registerConditionalAura(
+  character: BattleCharacter,
+  registerToQueue: RegisterFn,
+) {
+  const mech = findAnyPassiveMechanic(character, "aura");
+  if (!mech || mech.type !== "aura" || mech.conditionMinLivingAllies == null) {
+    return;
+  }
+
+  const passiveName = character.passive!.name;
+  const badge = `${passiveName} (escort)`;
+  const required = mech.conditionMinLivingAllies;
+  const percent = mech.valuePercent;
+  const target: { stat?: string; stats?: string[] } = mech.stats
+    ? { stats: mech.stats }
+    : { stat: mech.stat ?? "def" };
+
+  const recheck = async (
+    source: BattleCharacter,
+    teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
+    log: (e: string) => void,
+  ) => {
+    const teamKey = source.team === "player" ? "playerTeam" : "enemyTeam";
+    const team = teams[teamKey];
+    // "Other" allies: the owner never counts toward its own condition.
+    const others = team.filter(
+      (c) => c.instanceId !== source.instanceId && c.currentHP > 0 && !c.isSub,
+    ).length;
+    const shouldHold = others >= required && source.currentHP > 0;
+    const held = team.some((c) => c.buffs.some((b) => b.name === badge));
+
+    if (shouldHold === held) return teams;
+
+    const next = team.map((ally) => {
+      if (shouldHold) {
+        if (ally.currentHP <= 0 || ally.buffs.some((b) => b.name === badge)) {
+          return ally;
+        }
+        return {
+          ...ally,
+          buffs: [
+            ...ally.buffs,
+            {
+              type: "buff" as const,
+              ...target,
+              valuePercent: percent,
+              uncancellable: true,
+              name: badge,
+            },
+          ],
+        };
+      }
+      return { ...ally, buffs: ally.buffs.filter((b) => b.name !== badge) };
+    });
+
+    log(
+      shouldHold
+        ? `${source.name}'s ${passiveName} shields the team (+${percent}% ${statPhrase(target)}).`
+        : `${source.name} stands alone — ${passiveName} fades.`,
+    );
+    return { ...teams, [teamKey]: next };
+  };
+
+  for (const phase of ["OnBattleStart", "OnPlayerTurnStart", "OnEnemyTurnStart"] as const) {
+    registerToQueue({
+      id: `${character.instanceId}_passive_${passiveName}_condAura_${phase}`,
+      phase,
+      sourceInstanceId: character.instanceId,
+      mechanicId: badge,
+      action: recheck,
+    });
+  }
 }

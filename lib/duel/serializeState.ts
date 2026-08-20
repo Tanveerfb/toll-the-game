@@ -1,3 +1,4 @@
+import { passiveMechanics } from "@/lib/game/passiveBlocks";
 import type { BattleCharacter } from "@/types/character";
 import type { ActionCard } from "@/types/action";
 import type { StatusEffect } from "@/types/mechanic";
@@ -162,7 +163,7 @@ function scheduleBlock(enemyTeam: BattleCharacter[]): string {
   enemyTeam.forEach((unit) => {
     const phase = activePhase(unit);
     const passives = phase?.passives ?? (unit.passive ? [unit.passive] : []);
-    const mechs = passives.flatMap((p) => p?.mechanics ?? []);
+    const mechs = passives.flatMap((p) => passiveMechanics({ passive: p }));
     const phaseTurn = (unit.passiveState.phaseTurn as number) ?? 0;
 
     mechs.forEach((m) => {

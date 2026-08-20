@@ -114,10 +114,29 @@
         }
       ],
       "waves": [
-        { "enemies": [{ "id": "wild_beast" }] },
-        { "enemies": [{ "id": "wild_beast" }, { "id": "wild_beast" }] }
+        {
+          "enemies": [
+            {
+              "id": "wild_beast"
+            }
+          ]
+        },
+        {
+          "enemies": [
+            {
+              "id": "wild_beast"
+            },
+            {
+              "id": "wild_beast"
+            }
+          ]
+        }
       ],
-      "team": [{ "id": "duke" }],
+      "team": [
+        {
+          "id": "duke"
+        }
+      ],
       "teamMode": "canon",
       "trialLevel": 10,
       "trialAscension": 1,
@@ -125,26 +144,45 @@
         {
           "id": "m1",
           "label": "Clear both waves without losing a unit",
-          "goal": { "type": "noLosses" },
-          "reward": { "gems": 3 }
+          "goal": {
+            "type": "noLosses"
+          },
+          "reward": {
+            "gems": 3
+          }
         },
         {
           "id": "m2",
           "label": "Clear the stage within 10 turns",
-          "goal": { "type": "withinTurns", "turns": 10 },
-          "reward": { "gems": 3 }
+          "goal": {
+            "type": "withinTurns",
+            "turns": 10
+          },
+          "reward": {
+            "gems": 3
+          }
         }
       ],
       "rewards": {
         "firstClear": {
           "gems": 10,
           "coin": 1200,
-          "materials": { "training_manual": 2 },
+          "materials": {
+            "training_manual": 2
+          },
           "accountXp": 11
         },
         "farm": {
-          "coin": { "min": 200, "max": 500 },
-          "materials": { "training_manual": { "min": 0, "max": 1 } }
+          "coin": {
+            "min": 200,
+            "max": 500
+          },
+          "materials": {
+            "training_manual": {
+              "min": 0,
+              "max": 1
+            }
+          }
         }
       },
       "stamina": 5
@@ -182,10 +220,33 @@
         }
       ],
       "waves": [
-        { "enemies": [{ "id": "wild_beast" }, { "id": "wild_beast" }] },
-        { "enemies": [{ "id": "wild_beast", "level": 5 }, { "id": "wild_beast", "level": 5 }] }
+        {
+          "enemies": [
+            {
+              "id": "wild_beast"
+            },
+            {
+              "id": "wild_beast"
+            }
+          ]
+        },
+        {
+          "enemies": [
+            {
+              "id": "ford_bandit"
+            },
+            {
+              "id": "ford_bandit",
+              "level": 5
+            }
+          ]
+        }
       ],
-      "team": [{ "id": "duke" }],
+      "team": [
+        {
+          "id": "duke"
+        }
+      ],
       "teamMode": "canon",
       "trialLevel": 10,
       "trialAscension": 1,
@@ -193,26 +254,46 @@
         {
           "id": "m3",
           "label": "Clear both waves",
-          "goal": { "type": "allWaves" },
-          "reward": { "gems": 3 }
+          "goal": {
+            "type": "allWaves"
+          },
+          "reward": {
+            "gems": 3
+          }
         },
         {
           "id": "m4",
-          "label": "Finish a wave with an ultimate",
-          "goal": { "type": "useUltimates", "count": 1 },
-          "reward": { "gems": 3 }
+          "label": "Play four Rank 2 cards",
+          "goal": {
+            "type": "useSkillRank",
+            "rank": 2,
+            "count": 4
+          },
+          "reward": {
+            "gems": 3
+          }
         }
       ],
       "rewards": {
         "firstClear": {
           "gems": 10,
           "coin": 1200,
-          "materials": { "training_manual": 2 },
+          "materials": {
+            "training_manual": 2
+          },
           "accountXp": 12
         },
         "farm": {
-          "coin": { "min": 300, "max": 700 },
-          "materials": { "training_manual": { "min": 0, "max": 2 } }
+          "coin": {
+            "min": 300,
+            "max": 700
+          },
+          "materials": {
+            "training_manual": {
+              "min": 0,
+              "max": 2
+            }
+          }
         }
       },
       "stamina": 6
@@ -272,69 +353,153 @@
       "intro": [
         {
           "backgroundId": "open_road",
-          "origin": "canon",
+          "origin": "filler",
           "text": "Duke back on the road. No ceremony. No dramatic pause. He just walks — unhurried, quietly reading the environment around him."
         },
         {
-          "portraitId": "duke",
           "backgroundId": "open_road",
           "origin": "filler",
-          "text": "The road narrows where the trees close in. Men wait where the traffic thins, and they have counted him as one man alone."
-        }
-      ],
-      "outro": [
+          "text": "The road narrows where the trees close in. At the ford, men are already standing in the water, and they have counted him as one man alone."
+        },
         {
-          "portraitId": "duke",
           "backgroundId": "open_road",
           "origin": "filler",
-          "text": "He leaves them their weapons and takes nothing. He is not owed anything by men on a road. What he is owed is somewhere else, under a seal, behind a licence."
+          "text": "Past the crossing the road is barred. A pole across two posts, a table beside it, and men who are not soldiers wearing one piece each of something official."
         },
         {
           "speaker": "Narrator",
           "backgroundId": "open_road",
-          "origin": "canon",
+          "origin": "filler",
+          "text": "Behind the table, a man in a Bureau coat going grey at the seams writes something in a ledger without looking up. There is a toll on this road. He decided so."
+        }
+      ],
+      "outro": [
+        {
+          "backgroundId": "open_road",
+          "origin": "filler",
+          "text": "The pole is down and the table is on its side. The man in the coat sits in the dirt beside it, still holding the pen, still not sorry."
+        },
+        {
+          "backgroundId": "open_road",
+          "origin": "filler",
+          "text": "Duke reads the ledger before he goes. Names, dates, amounts. Every one of them paid. Not one of them owed."
+        },
+        {
+          "speaker": "Narrator",
+          "backgroundId": "open_road",
+          "origin": "filler",
+          "text": "A licence lets a man do that, and lets nobody above him care. Duke is walking to go and get one."
+        },
+        {
+          "speaker": "Narrator",
+          "backgroundId": "open_road",
+          "origin": "filler",
           "text": "The licence is not the goal. It never was. It's the door."
         }
       ],
       "waves": [
-        { "enemies": [{ "id": "road_bandit" }, { "id": "road_bandit" }] },
-        { "enemies": [{ "id": "road_bandit", "level": 5 }, { "id": "raider" }] },
-        { "enemies": [{ "id": "road_bandit", "level": 12, "ascension": 1 }] }
+        {
+          "enemies": [
+            {
+              "id": "ford_bandit"
+            },
+            {
+              "id": "ford_bandit",
+              "level": 5
+            }
+          ]
+        },
+        {
+          "enemies": [
+            {
+              "id": "checkpoint_bruiser"
+            },
+            {
+              "id": "checkpoint_enforcer"
+            },
+            {
+              "id": "checkpoint_bruiser"
+            }
+          ]
+        },
+        {
+          "enemies": [
+            {
+              "id": "checkpoint_enforcer"
+            },
+            {
+              "id": "toll_collector"
+            },
+            {
+              "id": "checkpoint_bruiser"
+            }
+          ]
+        }
       ],
-      "team": [{ "id": "duke" }],
-      "teamMode": "canon",
+      "team": [
+        {
+          "id": "duke"
+        }
+      ],
+      "teamMode": "anchored",
       "trialLevel": 10,
       "trialAscension": 1,
       "missions": [
         {
           "id": "m5",
-          "label": "Clear all three waves without losing a unit",
-          "goal": { "type": "noLosses" },
-          "reward": { "gems": 3 }
+          "label": "Play five Rank 2 cards",
+          "goal": {
+            "type": "useSkillRank",
+            "rank": 2,
+            "count": 5
+          },
+          "reward": {
+            "gems": 3
+          }
         },
         {
           "id": "m6",
-          "label": "Clear the stage within 14 turns",
-          "goal": { "type": "withinTurns", "turns": 14 },
-          "reward": { "gems": 3 }
+          "label": "Clear the stage within 12 turns",
+          "goal": {
+            "type": "withinTurns",
+            "turns": 12
+          },
+          "reward": {
+            "gems": 3
+          }
         },
         {
           "id": "m7",
-          "label": "Use two ultimates across the run",
-          "goal": { "type": "useUltimates", "count": 2 },
-          "reward": { "gems": 2 }
+          "label": "Fire three ultimates across the run",
+          "goal": {
+            "type": "useUltimates",
+            "count": 3
+          },
+          "reward": {
+            "gems": 2
+          }
         }
       ],
       "rewards": {
         "firstClear": {
           "gems": 14,
           "coin": 2000,
-          "materials": { "training_manual": 3 },
+          "materials": {
+            "training_manual": 3
+          },
           "accountXp": 20
         },
         "farm": {
-          "coin": { "min": 500, "max": 1000 },
-          "materials": { "training_manual": { "min": 1, "max": 2 } }
+          "coin": {
+            "min": 500,
+            "max": 1000
+          },
+          "materials": {
+            "training_manual": {
+              "min": 1,
+              "max": 2
+            }
+          }
         }
       },
       "stamina": 9

@@ -1,0 +1,99 @@
+{
+  "id": "toll_collector",
+  "name": "The Toll Collector",
+  "color": "red",
+  "storyOnly": true,
+  "tags": [
+    "Human"
+  ],
+  "lore": "A licensed Ledger running a checkpoint nobody authorised, on a road nobody watches. The coat is genuine, going grey at the seams. The seal is the only part he still polishes.",
+  "atk": 250,
+  "def": 165,
+  "hp": 6400,
+  "skills": [
+    {
+      "skillName": "State Your Business",
+      "description": "Taunts; reduces damage taken by [stance.value]% for [stance.duration] turn.",
+      "characterId": "toll_collector",
+      "type": "stance",
+      "statMultiplier": "def",
+      "damageRanked": [
+        0,
+        0,
+        0
+      ],
+      "mechanics": [
+        {
+          "type": "taunt",
+          "duration": 1
+        },
+        {
+          "type": "stance",
+          "stat": "damageReduction",
+          "valueRanked": [
+            35,
+            48,
+            60
+          ],
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "skillName": "Levy",
+      "description": "Does Pierce damage equal to ATK-scaled to all enemies.",
+      "characterId": "toll_collector",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        165,
+        205,
+        250
+      ],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "pierce"
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Settle the Account",
+    "description": "Cancels buffs and stances; does damage equal to ATK-scaled to one enemy; lowers ATK for [debuff.duration] turns.",
+    "characterId": "toll_collector",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 300,
+    "mechanics": [
+      {
+        "type": "cancelBuffs"
+      },
+      {
+        "type": "cancelStances"
+      },
+      {
+        "type": "debuff",
+        "stat": "atk",
+        "valuePercent": 30,
+        "duration": 2
+      }
+    ]
+  },
+  "passive": {
+    "name": "Men on the Gate",
+    "description": "# While at least one other ally is alive\n- All allies' DEF 30% 👆",
+    "trigger": "aura",
+    "triggerText": "While at least one other ally is alive",
+    "mechanics": [
+      {
+        "type": "aura",
+        "stat": "def",
+        "valuePercent": 30,
+        "conditionMinLivingAllies": 1
+      }
+    ]
+  }
+}

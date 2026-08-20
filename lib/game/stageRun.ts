@@ -24,6 +24,8 @@ export interface WaveOutcome {
   turns: number;
   /** Player ultimates fired this wave. */
   ultimates: number;
+  /** Player cards played this wave, by rank. Ultimates excluded — no rank. */
+  rankUses: Record<1 | 2 | 3, number>;
 }
 
 export interface StageRunState {
@@ -40,6 +42,7 @@ export interface StageRunState {
   fallen: string[];
   turns: number;
   ultimatesUsed: number;
+  rankUses: Record<1 | 2 | 3, number>;
   /** True once this run follows a defeat on the same stage. */
   isRetry: boolean;
   /** Set when the last wave has been won. */
@@ -62,6 +65,7 @@ export function beginRun(
     fallen: [],
     turns: 0,
     ultimatesUsed: 0,
+    rankUses: { 1: 0, 2: 0, 3: 0 },
     isRetry,
     complete: stage.waves.length === 0,
   };
@@ -94,6 +98,11 @@ export function applyWaveOutcome(
     fallen,
     turns: state.turns + outcome.turns,
     ultimatesUsed: state.ultimatesUsed + outcome.ultimates,
+    rankUses: {
+      1: state.rankUses[1] + outcome.rankUses[1],
+      2: state.rankUses[2] + outcome.rankUses[2],
+      3: state.rankUses[3] + outcome.rankUses[3],
+    },
     complete: waveIndex >= state.waveCount,
   };
 }
@@ -135,6 +144,7 @@ export function toSummary(state: StageRunState): StageRunSummary {
     fielded: state.team.map((pick) => pick.id),
     fallen: state.fallen,
     ultimatesUsed: state.ultimatesUsed,
+    rankUses: state.rankUses,
     isRetry: state.isRetry,
   };
 }

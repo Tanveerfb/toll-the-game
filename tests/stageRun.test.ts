@@ -77,6 +77,7 @@ describe("carrying attrition forward", () => {
       fallenIds: ["sara"],
       turns: 4,
       ultimates: 1,
+      rankUses: { 1: 0, 2: 0, 3: 0 },
     });
 
     expect(run.waveIndex).toBe(1);
@@ -93,12 +94,14 @@ describe("carrying attrition forward", () => {
       fallenIds: ["sara", "lyra"],
       turns: 5,
       ultimates: 0,
+      rankUses: { 1: 0, 2: 0, 3: 0 },
     });
     const afterTwo = applyWaveOutcome(afterOne, {
       survivors: [{ id: "duke", hp: 400 }],
       fallenIds: [],
       turns: 3,
       ultimates: 1,
+      rankUses: { 1: 0, 2: 0, 3: 0 },
     });
     expect(afterTwo.fallen.sort()).toEqual(["lyra", "sara"]);
     expect(waveTeam(afterTwo).map((p) => p.id)).toEqual(["duke"]);
@@ -111,12 +114,14 @@ describe("carrying attrition forward", () => {
       fallenIds: ["sara"],
       turns: 2,
       ultimates: 0,
+      rankUses: { 1: 0, 2: 0, 3: 0 },
     });
     const twice = applyWaveOutcome(once, {
       survivors: [{ id: "duke", hp: 500 }],
       fallenIds: ["sara"],
       turns: 2,
       ultimates: 0,
+      rankUses: { 1: 0, 2: 0, 3: 0 },
     });
     expect(twice.fallen).toEqual(["sara"]);
   });
@@ -127,6 +132,7 @@ describe("carrying attrition forward", () => {
       fallenIds: [],
       turns: 1,
       ultimates: 0,
+      rankUses: { 1: 0, 2: 0, 3: 0 },
     });
     expect(run.carryHp.duke).toBe(1);
   });
@@ -138,12 +144,14 @@ describe("carrying attrition forward", () => {
       fallenIds: [],
       turns: 4,
       ultimates: 1,
+      rankUses: { 1: 0, 2: 0, 3: 0 },
     });
     run = applyWaveOutcome(run, {
       survivors: [{ id: "duke", hp: 8 }],
       fallenIds: [],
       turns: 3,
       ultimates: 2,
+      rankUses: { 1: 0, 2: 0, 3: 0 },
     });
     expect(run.turns).toBe(7);
     expect(run.ultimatesUsed).toBe(3);
@@ -156,6 +164,7 @@ describe("carrying attrition forward", () => {
       fallenIds: [],
       turns: 1,
       ultimates: 0,
+      rankUses: { 1: 0, 2: 0, 3: 0 },
     });
     run = applyWaveOutcome(run, win(900));
     expect(run.complete).toBe(false);
@@ -173,6 +182,7 @@ describe("wipes", () => {
       fallenIds: ["duke", "lyra", "sara"],
       turns: 6,
       ultimates: 0,
+      rankUses: { 1: 0, 2: 0, 3: 0 },
     });
     expect(isWipe(run)).toBe(true);
     expect(waveTeam(run)).toEqual([]);
@@ -186,6 +196,7 @@ describe("summarising for missions", () => {
       fallenIds: ["sara"],
       turns: 9,
       ultimates: 2,
+      rankUses: { 1: 0, 2: 0, 3: 0 },
     });
     const summary = toSummary(run);
     expect(summary).toMatchObject({
@@ -224,6 +235,7 @@ describe("the between-waves HUD", () => {
       fallenIds: ["sara"],
       turns: 3,
       ultimates: 0,
+      rankUses: { 1: 0, 2: 0, 3: 0 },
     });
     expect(runHealthBars(run, maxOf)).toEqual([
       { id: "duke", hp: 1200, max: 2000 },

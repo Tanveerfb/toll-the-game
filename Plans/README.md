@@ -8,35 +8,36 @@ does today with file:line, what is already done so nobody redoes it, what is
 still his to decide, and how to verify. A plan whose code has since changed is
 **stale and says so, or goes** — same rule as the project skills.
 
-All five came out of one session, 2026-08-20, mapping Dokkan kits onto our engine
-to learn its wording. **They are independent** — none blocks another, and they
-can ship in any order.
+## Open
 
-## Ready to build — no decisions pending
+Nothing. All five specs written 2026-08-20 were built the same day and moved to
+[`completed/`](completed/).
 
-| Spec | What | Size |
-|---|---|---|
-| [substat-stats-arrays](2026-08-20-substat-stats-arrays.md) | Readers matching on `entry.stat` silently drop entries authored as `stats: [...]` — the shape ruling #55 actively encourages. Three instances were fixed on 2026-08-20; two remain, currently latent. Also closes evade and damage reduction ignoring debuffs | Two functions in `stats.ts`, one in `evade.ts` |
-| [placeholder-disambiguation](2026-08-20-placeholder-disambiguation.md) | `[buff.duration]` resolves to the **first** mechanic of a type, so a skill with two buffs of different durations can't be authored without literal numbers. `[x-ranked]` would disambiguate but takes no field | One regex + one forwarded argument. `resolveMechanicField` already accepts the field |
-| [mechanic-application](2026-08-20-mechanic-application.md) **Part B** | A self-buff can't land *after* the hit. Must be gated on connecting and applied **once** however many enemies were struck | Split one loop; hoist a "did anything connect" flag |
-| [mechanic-application](2026-08-20-mechanic-application.md) **Part A** | A mechanic declares who it hits (`self` / `oneAlly` / `allies` / `alliesExceptSelf` / `enemies`), ranked where needed. Default is **self**, which inverts today's fallback | Largest of the five — rewrites how every mechanic branch finds its subject |
-| [passive-structure](2026-08-20-passive-structure.md) | One passive per character, restructured as **blocks** each with its own trigger. Molvarr's 3 and 4 phase passives collapse to one per phase; the playable/boss split disappears. Plus target-tag conditions | 105 `.passive` call sites — build a flattener first |
+## Completed
 
-## Needs a decision first
+Built 2026-08-20, in this order. Each file is kept as written — the record of
+what was decided and why — and none describes unbuilt work any more.
 
-| Spec | What | Open |
-|---|---|---|
-| [guard-and-effective](2026-08-20-guard-and-effective.md) | Paired type-matchup overrides — Guard forces the disadvantaged multiplier, Effective floors it at neutral, both present cancel to 1.0. `critical` bypasses both (ruling #111) | One detail: do two sources of Guard stack, or is it a fixed floor? |
+| Spec | What shipped |
+|---|---|
+| [substat-stats-arrays](completed/2026-08-20-substat-stats-arrays.md) | `entryTouchesStat` with an explicit "does `all` count?" flag; `getDamageDealtMultiplier` and `getDamageReductionMultiplier` now read `stats` arrays; evade and damage reduction read debuffs, clamped |
+| [placeholder-disambiguation](completed/2026-08-20-placeholder-disambiguation.md) | `[x-ranked.duration]` — positional refs take a field, so two mechanics of the same type are both addressable. Zero-clause dropping (#44) follows |
+| [guard-and-effective](completed/2026-08-20-guard-and-effective.md) | `resolveTypeModifier` (ruling #111). Guard on the defender, Effective on the skill, both cancelling to 1.0; `critical` bypasses both by construction. **No kit authors either word — that is his call** |
+| [passive-structure](completed/2026-08-20-passive-structure.md) | One passive made of blocks, one registration per block, `lib/game/passiveBlocks.ts` as the only reader. Plus `targetTagBonus`, an attacker's passive reading the target's tags (ruling #114) |
+| [mechanic-application](completed/2026-08-20-mechanic-application.md) | **Part A** `applyTo` / `applyToRanked` with self as the default audience (ruling #112); **Part B** `requiresDamage`, a self buff that lands after the hit and only once (ruling #113) |
 
-Everything else is settled. [mechanic-application](2026-08-20-mechanic-application.md)
-**Part A** and [passive-structure](2026-08-20-passive-structure.md) had their last
-questions answered 2026-08-20 and are ready to build — Part A is simply the
-largest of the five, and passive-structure carries a 105-call-site migration.
+### Deliberately left out of those builds
 
-**Parts A and B share a file** because both restructure the same region of
-`executeSkill` — the self-buff loop at `combat.ts:556` and the `targets.forEach`
-after it. Building them separately means restructuring it twice. B is smaller and
-unblocked; if only one ships, ship B.
+- **`aoe` narrowing to enemies-only** (mechanic-application A4d). A heal skill's
+  targets still come from `aoe` plus the skill type, because a heal amount has
+  no audience of its own — narrowing `aoe` first would aim every ally heal at
+  the enemy team. `aoeRanked` stays on Leorio and Siddiq for the same reason.
+  Recorded in ruling #112.
+- **Rewriting Molvarr's phase passives as blocks.** The array form still loads
+  and flattens identically; converting it is authoring cosmetics with real
+  transcription risk, and buys nothing the block reader doesn't already give.
+- **Guard stacking.** Built as a fixed floor — a second source of Guard changes
+  nothing. Still unconfirmed by him (`completed/2026-08-20-guard-and-effective.md` §5).
 
 ## Highest-value thing not yet specced
 
@@ -50,12 +51,13 @@ existing counter has the wrong subject: `statShiftAfterAttacks` and
 `chargedStacks` count attacks **received**, `momentumStacks` counts cards the
 **team** plays. Nothing counts what this character did.
 
-Details in [passive-structure §5](2026-08-20-passive-structure.md), recorded as
-roadmap rather than as a gap.
+Details in [passive-structure §5](completed/2026-08-20-passive-structure.md),
+recorded as roadmap rather than as a gap.
 
-## Verification, for all of them
+## Verification, for anything new
 
-- `npm run check` — baseline **1,235 passing / 98 files** as of 2026-08-20.
+- `npm run check` — baseline **1,270 passing / 101 files** as of 2026-08-20,
+  after the five builds.
 - Build with `NEXT_DIST_DIR` set. **:3000 is his dev server — never start or kill
   one.**
 - **The visual pass is his.** Several of these touch `lib/game/combat.ts`, the

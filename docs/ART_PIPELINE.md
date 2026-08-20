@@ -43,6 +43,8 @@ photorealistic, 3d, busy background, multiple characters
 | crown ("at the crown") | literal gold crown | "top of head" |
 | cuffs ("collar and cuffs") | handcuffs + wrist chains | "sleeve borders" |
 | chain ("hair chain") | wrist/neck chains | drop it |
+| game item icon | a whole icon **sheet** — a grid of 20 small gems, not one gem | "still life, a single X, centered on a plain dark background" |
+| ticket / ticket stub / pass (paper) | a framed picture, a poster, or an abstract smear | make it a **metal plaque**; see the inventory-icon section |
 
 **Standing rule (2026-08-02): keep backgrounds cleanly removable.** Every future gen (new character
 or a redesign) needs its background to lift out cleanly with `remove_background` (BiRefNet
@@ -178,6 +180,180 @@ composite built from existing character portraits:
 **Debut/V1 banner** (`public/banners/debut-2026-08.png`, 2026-08-02): Duke, Seras (heroes, larger/
 lower), Lyra, Sara, Chiara, Gabrist. Title reads "V1. BETA ROSTER BANNER" (Tanveer's rename from the
 generic "Debut Banner" — see `docs/design/GACHA_DESIGN.md`).
+
+## Inventory icons (2026-08-20)
+
+512×512 RGBA cutouts in `public/items/`, registered in `lib/game/materialArt.ts`.
+Brief and per-item notes: Category C of `docs/ART_REQUESTS.md`. Fifteen shipped in one
+session (14 rendered + a coin salvaged from a two-coin roll); the five coin frames are
+**not** rendered at all — see below.
+
+**Generate at 1024, ship at 512.** SDXL is undertrained at 512 and a direct 512 render
+comes out mushy. Render 1024 → `remove_background` → downscale.
+
+**Frame the icon in post, not in the prompt.** This is the single biggest win of the
+batch. Weighting "filling the frame" up to 1.4–1.45 does not make the object bigger —
+it makes Animagine produce **macro abstraction** (a gold coin became a gold ribbon; a
+scroll became a rose). Prompt calmly for "a single X, centered, the whole object
+visible with a little space around it", then after cutting the background out, crop to
+the **alpha bounding box** and pad back to square with a fixed 6% margin. Every icon
+then fills the same share of its own frame regardless of how the model framed it, which
+is what Category C's "must read at 24px" actually depends on.
+
+**Say "still life", never "game item icon".** See the trigger-word table — that phrase
+returns a grid of twenty small items.
+
+**This checkpoint draws what anime draws.** Crystals, eyes, thorns, books, embers,
+metal plaques: first or second roll. A blank paper ticket stub: **five failed rolls**
+across four differently-worded attempts (framed picture → red blob → abstract shapes →
+featureless card). Both tickets shipped only once they were re-conceived as *stamped
+metal plaques* — gold with a star for the permanent ticket, steel with an arrow for the
+auto-clear one. If an item is not a thing anime illustration draws, change the object
+rather than the adjectives.
+
+**BiRefNet punches holes in an object whose colour matches its plate.** The leather
+training manual came back as a hollow frame because its brown cover matched the brown
+background. Fix: flood the background inward from the image border, and anything
+background-coloured the flood cannot reach is an interior hole — make it opaque. Apply
+this **per icon, never across the set**: `bramble_thorn`'s stem curls into a closed loop
+that is supposed to be see-through, and a blanket fill turns it into a blob.
+
+**Silhouettes have to differ inside a family.** Five currencies sit next to each other in
+the nav, so they were deliberately given five shapes: round coin, tall gold plaque, square
+steel plaque, crystal cluster, single amber shard. Two of the shipped icons stay weak at
+24px — `bramble_thorn` and `corroded_seaweed` are thin-line subjects with no mass — which
+is recorded in ART_REQUESTS rather than fixed, since both read fine at 44px and up.
+
+## Character coin frames — drawn, not generated (2026-08-20)
+
+`public/items/coin_frame_{blue,red,green,light,dark}.png` are rendered by a **PIL script**,
+not by ComfyUI. A character portrait is composited through the middle in code, so the
+transparent window has to be exactly concentric, exactly circular and identical across all
+five — a txt2img roll gives a slightly off-centre, slightly elliptical ring every time and
+the compositor cannot rely on it. The script supersamples 4× for antialiasing and shades a
+bevel lit from the upper left, with a darkened outer contour and an occlusion ring just
+inside the window so the portrait reads as sitting *in* the coin. Five frames cover all 18+
+coin ids and never go stale as characters are added.
+
+## Story scene backgrounds (2026-08-20)
+
+1344×768, in `public/backgrounds/`, registered by filling in `image:` on the matching slug
+in `lib/game/storyBackgrounds.ts` — one edit lights up every scene using that slug. Specs
+and constraints: Category A of `docs/ART_REQUESTS.md` (no characters, quiet lower third,
+never background-removed, pitched darker than a character card).
+
+**Generate only slugs the story actually references.** The registry carries 14 slugs;
+`data/story/chapter-1.json` names 4. Rendering the other ten would be art for scenes that
+do not exist.
+
+**A location's before/after pair must be img2img, never two txt2img prompts.** This was
+learned the expensive way on `village_ruins`: **five** txt2img attempts across four
+rewordings all failed, alternating between **intact** buildings (a creepy-but-whole village,
+a two-storey town street) and **empty land** with no buildings at all (aerial green fields,
+burned stakes in mud). Adding "collapsed / charred / ruins / destroyed" moves it between
+those two failure modes rather than to the middle, and even the individually-good rolls were
+architecturally unrelated to `village_peaceful` — the model will not hold building design
+across two separate prompts.
+
+**img2img from the accepted plate solved it on the first batch.** There is no img2img action
+on the MCP's `generate_image`; build the graph (`create_workflow` template `img2img`, or POST
+the graph straight to `127.0.0.1:8188/prompt`) with the sibling plate staged into ComfyUI's
+input dir. Findings worth keeping:
+
+- **Denoise 0.84 is the number.** 0.60 leaves the village essentially undamaged, 0.72 damages
+  it but keeps the grass green, 0.84 fully re-renders the surfaces while holding the layout,
+  the hut silhouettes and the horizon. 0.88 starts losing the composition.
+- **Do not ask for an empty foreground here.** Adding "(wide establishing shot with an empty
+  clear dirt lane in the foreground:1.3)" pushed every building to the frame edges and
+  returned burned *farmland*. The quiet lower third came for free from the source plate's own
+  composition — the source is already doing that work, so let it.
+- Negative-prompt `empty field, bare land, no buildings, plowed farmland` to hold the
+  buildings in frame at high denoise.
+
+## What this checkpoint can and cannot compose (2026-08-20)
+
+Fifteen scene plates in one session produced a reliable map. Animagine is an anime
+**character** model; its background competence is uneven in ways that are consistent
+enough to plan around. **When a plate fails, change the framing to a mode on the left,
+rather than rewording the same framing.** Rewording burns rolls; re-framing works
+first or second try.
+
+| Renders well, first or second roll | Fails repeatedly, however worded |
+|---|---|
+| Streets and avenues in one-point perspective | Aerial / bird's-eye cityscapes |
+| Interiors with furniture in them | Empty plazas, courtyards, forecourts |
+| Landscape with one clear subject (a boulder, a hut row) | "A clearing" — open ground ringed by trees |
+| Forest and foliage depth | Rows of benches (returns a counter every time) |
+| Building rendered *in isolation* | That same building with sky and ground around it |
+
+Worked examples of the re-framing move:
+
+- **`city_toll_metropolis`** — "vast city panorama from a rooftop" gave a flat field of
+  rubble twice. Re-framed as *a wide avenue seen down its length, tall blocks either side,
+  viaduct overhead, cranes above the rooflines* → first try. The scale cues survive fine at
+  street level.
+- **`exam_compound_exterior`** — "a walled courtyard compound" gave abstract pillars.
+  Re-framed as *an avenue running between two long administrative halls* → first try.
+- **`exam_waiting_room`** — three attempts at "rows of wooden benches" all returned a
+  reception counter. Solved by **reuse**: a colonnaded hall generated as a rejected
+  compound attempt was a better waiting hall than anything the bench prompts produced.
+  Check the reject pile before re-rolling.
+
+**`bureau_exterior` needed a composite.** Eight attempts established that this model will
+render a fine civic building on a blank void and will not put a sky and a street around it
+— any denoise low enough to keep the architecture also keeps the emptiness, and any denoise
+high enough to fill the frame destroys the building. The pipeline that worked:
+
+1. Generate the building alone (it comes out on a flat field, which is the usual failure).
+2. `remove_background` it — a flat field cuts perfectly.
+3. **Block the composition in with PIL**: sky gradient, horizon haze band, ground plane,
+   subject seated on the horizon at a chosen scale with a contact shadow.
+4. img2img that composite at **denoise 0.42–0.60** so the model only blends and details a
+   composition it did not have to invent.
+5. Grade (below).
+
+**Grade every plate before shipping.** Category A wants backgrounds "darker and less
+saturated than a character card", and a roll that looks right on its own is reliably a stop
+or two too bright for a layer that sits behind cel-shaded figures. Three operations:
+slight desaturation, a blend toward a cool dark, and a **bottom-weighted vignette** — which
+does double duty, since the dialogue box sits in the lower third and needs the contrast.
+
+**img2img denoise ladder for scene plates** (source is a sibling plate):
+
+| Denoise | What it does |
+|---|---|
+| 0.42–0.60 | Blends a composite; will **not** change time of day — a dusk prompt at 0.45 still returned daylight |
+| 0.55–0.66 | Weather swap on the same terrain (the training ridge's snow and storm variants) |
+| ~0.68 | Changes the light convincingly while holding architecture (the venue's day → night) |
+| 0.72–0.84 | Full surface re-render keeping layout (`village_ruins`, the pine → jungle conversion) |
+| 0.88+ | Composition starts going |
+
+**Low denoise on high-frequency foliage speckles.** A 0.50 pass over a dense jungle plate
+came back covered in noise dots. Either go above ~0.7 there or grade instead.
+
+**Grade, don't re-roll, for a time-of-day sibling.** `jungle_path_dusk` is a graded copy of
+the day plate after img2img dusk attempts failed twice. Same place, obviously, and free.
+
+**`jungle_clearing` took eight attempts and its own method.** Straight prompting for
+"open ground ringed by jungle" returns, in order: mush, a pond, a botanical specimen
+illustration on a blank field, and — from an img2img over open ground — hands growing out
+of the soil. What worked: **block the ground in with PIL, then img2img at denoise 0.80.**
+Sample the source plate's own trail colour rather than inventing a brown, lay it into a
+feathered ellipse across the lower half with a little noise and a front-to-back luminance
+ramp, then let the model turn that flat field into real ground.
+
+The denoise number is the whole trick and it is narrow:
+
+- **Below ~0.7 over dense foliage the image shreds into vertical stripe noise.** Not
+  softening — total destruction. The high-frequency trunks amplify into bars. This is the
+  same failure as the speckled dusk attempt, and the flat blocked-in region makes it worse
+  because the sampler has nothing to lock onto.
+- **~0.80** re-renders everything while still following the blocked composition.
+- **0.88+** turns the clearing into a ravine.
+
+So the composite-and-blend recipe splits in two: a **hard-edged subject on smooth ground**
+(`bureau_exterior`) blends at 0.42–0.60, and an **organic high-frequency scene**
+(`jungle_clearing`) needs 0.80. Low denoise is not the safe default it looks like.
 
 ## Adding a New Character
 

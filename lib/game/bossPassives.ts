@@ -1,3 +1,4 @@
+import { passiveMechanics } from "@/lib/game/passiveBlocks";
 import type { BattleCharacter, CharacterPhase } from "@/types/character";
 import type { Mechanic, StatusEffect } from "@/types/mechanic";
 import type { SkillCard } from "@/types/skillCard";
@@ -44,7 +45,9 @@ export function activeSpSkill(char: BattleCharacter): SkillCard | undefined {
 export function activeBossMechanics(char: BattleCharacter): Mechanic[] {
   const phase = activePhase(char);
   const passives = phase?.passives ?? (char.passive ? [char.passive] : []);
-  return passives.flatMap((p) => p.mechanics ?? []);
+  // Through passiveBlocks so a passive authored as blocks contributes all of
+  // them, not just the shorthand pair.
+  return passives.flatMap((p) => passiveMechanics({ passive: p }));
 }
 
 /** Total debuff STACKS across the opposing team's field units (each entry

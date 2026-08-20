@@ -50,7 +50,7 @@ describe("Debuff Immunity (Isolde's Starbound Ward)", () => {
     statMultiplier: "atk",
     damage: 0,
     mechanics: [
-      { type: "debuffImmunity", duration: 3 },
+      { type: "debuffImmunity", applyTo: "allies", duration: 3 },
       { type: "aoe" },
     ],
   };
@@ -166,7 +166,7 @@ describe("Ally-wide buff bakes HP for stat 'hp'/'all' (Isolde's Starbound Ward)"
       statMultiplier: "atk",
       damage: 0,
       mechanics: [
-        { type: "buff", stat: "all", valuePercent: 30, duration: 3 },
+        { type: "buff", applyTo: "allies", stat: "all", valuePercent: 30, duration: 3 },
         { type: "aoe" },
       ],
     };
@@ -202,8 +202,8 @@ describe("healOverTime mechanic (Isolde's Threads of Renewal)", () => {
       statMultiplier: "hp",
       damageRanked: [30, 30, 30],
       mechanics: [
-        { type: "cleanse" },
-        { type: "healOverTime", valuePercent: 30, duration: 2 },
+        { type: "cleanse", applyTo: "allies" },
+        { type: "healOverTime", applyTo: "allies", valuePercent: 30, duration: 2 },
       ],
     };
     const result = executeSkill(
@@ -597,8 +597,8 @@ describe("Starbound Ward is buff-only (2026-08-09)", () => {
     statMultiplier: "atk",
     damage: 0,
     mechanics: [
-      { type: "debuffImmunity", duration: 3 },
-      { type: "buff", stat: "all", valuePercent: 30, duration: 3 },
+      { type: "debuffImmunity", applyTo: "allies", duration: 3 },
+      { type: "buff", applyTo: "allies", stat: "all", valuePercent: 30, duration: 3 },
       { type: "aoe" },
     ],
   };

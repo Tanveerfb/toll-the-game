@@ -1,0 +1,87 @@
+{
+  "id": "ford_bandit",
+  "name": "Ford Bandit",
+  "color": "blue",
+  "storyOnly": true,
+  "tags": [
+    "Human"
+  ],
+  "lore": "Works the river crossings, where a cart has to slow and a traveller has to wade. Uses Toll the way a crowbar uses leverage — no art to it, and it does not need any.",
+  "atk": 260,
+  "def": 85,
+  "hp": 3200,
+  "skills": [
+    {
+      "skillName": "Undertow",
+      "description": "Raises DEF for 1 turn; does damage equal to ATK-scaled to one enemy.",
+      "characterId": "ford_bandit",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        230,
+        285,
+        350
+      ],
+      "mechanics": [
+        {
+          "type": "buff",
+          "stat": "def",
+          "duration": 1,
+          "applyTo": "self",
+          "valuePercent": 30
+        }
+      ]
+    },
+    {
+      "skillName": "Strip the Cart",
+      "description": "Cancels buffs and does damage equal to ATK-scaled to one enemy.",
+      "characterId": "ford_bandit",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        215,
+        265,
+        325
+      ],
+      "mechanics": [
+        {
+          "type": "cancelBuffs"
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Drag Him Under",
+    "description": "Greatly raises ATK and DEF for 1 turn; does damage equal to ATK-scaled to one enemy.",
+    "characterId": "ford_bandit",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 450,
+    "mechanics": [
+      {
+        "type": "buff",
+        "stats": [
+          "atk",
+          "def"
+        ],
+        "valuePercent": 50,
+        "duration": 1,
+        "applyTo": "self"
+      }
+    ]
+  },
+  "passive": {
+    "name": "Footing",
+    "description": "# Each time this character is attacked\n- ATK and DEF 5% 👆 (max 10 times)",
+    "trigger": "onAttackReceived",
+    "triggerText": "Each time this character is attacked",
+    "mechanics": [
+      {
+        "type": "chargedStacks",
+        "maxStacks": 10,
+        "atkPerStackPercent": 5,
+        "defPerStackPercent": 5
+      }
+    ]
+  }
+}

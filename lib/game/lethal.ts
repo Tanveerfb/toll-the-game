@@ -1,4 +1,5 @@
 import type { BattleCharacter } from "@/types/character";
+import { findPassiveMechanic } from "@/lib/game/passiveBlocks";
 import { getEffectiveHealAmount } from "./heal";
 
 /**
@@ -18,13 +19,10 @@ export function trySurviveLethal(
   char: BattleCharacter,
   incomingDamage: number,
 ): number | null {
-  if (!char.passive || char.passive.trigger !== "onLethalDamage") return null;
   if (char.passiveState.lethalSurvived) return null;
 
-  const mech = char.passive.mechanics?.find(
-    (m) => m.type === "surviveLethal",
-  );
-  if (!mech || mech.type !== "surviveLethal") return null;
+  const mech = findPassiveMechanic(char, "onLethalDamage", "surviveLethal");
+  if (!mech) return null;
 
   const hpCondition = (mech.hpConditionPercent ?? 30) / 100;
   if (char.currentHP < char.hp * hpCondition) return null;

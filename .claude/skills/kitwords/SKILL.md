@@ -33,6 +33,10 @@ one *writes*. "Is this right?" is `kitcheck`; "how should this read?" is here.
   about what a sentence will actually look like; `buildDescriptionForRank` is
   what a player sees.
 - `lib/game/mechanicGlossary.ts` — the vocabulary that becomes hover pills.
+- `types/mechanic.ts` — `MechanicAudience` (`applyTo`) and `requiresDamage`, the
+  two fields that decide who a clause names and where it sits in the sentence.
+- `types/passive.ts` — `PassiveBlock`, the heading-per-condition shape passive
+  markdown mirrors.
 - `data/characters/*.json` — the shipped corpus, and the real style reference.
 - `EXAMPLES.md`, beside this file — lines Tanveer has confirmed good or bad.
   **Read it every time; append whenever he rules on one.**
@@ -58,12 +62,13 @@ Clauses render in resolution order, joined as prose. Order carries real meaning
 *after* does not. "Cancels buffs, does damage…, greatly lowers ATK" is a
 statement about resolution, not a stylistic choice.
 
-**A self-buff cannot be written after the damage clause — the engine has no such
-order.** There is one self-buff path (`combat.ts:556`), it is unconditional, and
-it runs **before** the damage calc (#22). Copy a source that reads "causes damage
-… and raises DEF" and you produce a sentence the engine contradicts — and since
-clause order *is* resolution order, that position also carries #75's tanked-hit
-meaning.
+**A self-buff written after the damage clause needs `requiresDamage` on the
+mechanic.** The default self-buff path runs **before** the damage calc (#22), so
+a sentence reading "causes damage … and raises DEF" contradicts the engine
+unless the mechanic declares `requiresDamage: true` — which also makes the buff
+conditional on the hit connecting. Since clause order *is* resolution order,
+that position carries #75's tanked-hit meaning too, and now the engine agrees
+with it.
 
 **This is a real difference, not punctuation.** Tanveer, 2026-08-20: *"damage
 needs to be done to enemy first before the self buff activates. it is different
@@ -72,10 +77,11 @@ boosted; buff-after means the hit lands unbuffed and the buff only matters
 going forward. On a skill scaling off the stat being raised, that is the whole
 card.
 
-So: **put the self-buff first, and say what you changed.** If a draft
-deliberately orders it after the damage, that card cannot be authored faithfully
-today — flag it rather than shipping a stronger version.
-See `Plans/2026-08-20-mechanic-application.md`, Part B.
+So: **match the clause order to the flag.** Buff first and no flag, or buff
+after the damage clause and `requiresDamage` on the mechanic — never a draft
+ordered one way and authored the other, which silently ships a stronger card
+than the draft describes. On an AoE the flagged buff applies **once**, however
+many enemies were struck.
 
 **Author with semicolons; the game prints prose.** `joinClausesAsProse` turns
 the survivors into "A and B" / "A, B and C". The semicolons exist so
@@ -169,12 +175,17 @@ the same line: ATK is permanent, only DEF carries the 1 turn.
 targets all present enemies on the field. (sub enemy who's not on field yet
 wouldn't count)."* A team-wide friendly effect says "allies"; it is not an AoE.
 
-⚠️ **The engine does not implement audiences yet.** Today a mechanic's target is
-inferred from the skill's type, so an ally buff on an attacking skill is inert
-(it used to land on the enemy — fixed 2026-08-20). Spec:
-`Plans/2026-08-20-mechanic-application.md`, Part A. Until it ships, a kit that mixes
-audiences in one card **cannot be authored** — say so rather than writing text
-the engine can't honour.
+**Audiences are declared, not inferred** (shipped 2026-08-20). A mechanic
+carries `applyTo` — `self` (the default, and what silence means), `oneAlly`,
+`allies`, `alliesExceptSelf`, `enemies` — or `applyToRanked` for an audience
+that widens with rank, the way Leorio's does. A card mixing three audiences
+("raises own ATK, damages the enemy, raises allies' DEF") is authorable, so
+write it plainly.
+
+⚠️ **A friendly mechanic with no `applyTo` is a SELF mechanic**, not an ally
+one. That is the inversion: before 2026-08-20 it inherited the skill's targets.
+If a draft means allies, the JSON has to say so — flag a kit whose prose names
+allies while the mechanic declares nothing.
 
 ### Say it once
 
@@ -271,16 +282,16 @@ What keeps prose and data in sync. Never type a number the mechanic holds.
 | `[buff.value]`, `[extort.value]`, `[lifesteal.valuePercent]` | the field's value at this rank | an explicit percentage |
 | `[ignite.stacks]`, `[decay.stacks]` | stack counts | "applies N stacks" |
 | `[x-ranked]`, `[y-ranked]` | first / second ranked ladder on the skill | two ladders in one description |
+| `[x-ranked.duration]`, `[y-ranked.value]` | that positional mechanic's named field | **two mechanics of the same type** |
 | `[debuff? greatly lowers : lowers]` | branches on whether that mechanic resolves | a clause whose wording changes by rank |
 | `[aoeRanked? allies : one ally]` | branches on a rank-gated mechanic | a skill that becomes AoE at higher rank |
 
-⚠️ **Two mechanics of the same type cannot both be placeheld.** `[buff.duration]`
-resolves to the **first** buff on the skill, and `[x-ranked]` takes no field so it
-returns the value, not the duration — a skill with buffs of 4 and 1 turns renders
-"4 turns" twice, or "50 turns" twice. Until
-`Plans/2026-08-20-placeholder-disambiguation.md` ships, **write those durations
-literally and say so in your reply**, so the drift risk is visible rather than
-silent.
+**Two mechanics of the same type are addressed by position, with a field.**
+`[buff.duration]` resolves to the **first** buff on the skill, so a card raising
+DEF for 4 turns and ATK for 1 rendered "4 turns" twice; bare `[x-ranked]` takes
+no field and printed the stat percentage instead ("50 turns"). Since 2026-08-20
+the positional form takes a field — `[x-ranked.duration]` — and that is what you
+use. **Never write the duration literally** to work around it.
 
 **A clause whose placeholder resolves to 0 is dropped whole** (#44) — a rank-1
 Lightning Palm doesn't mention its stun; rank 2+ does. That is why each effect
@@ -304,6 +315,14 @@ writes "(up)" / "(down)" — copy the emoji from an existing kit rather than
 retyping it.
 
 - Headings are **conditions**; bullets are **what happens**.
+- **Unconditional effects go under `# Basic effects`** — Tanveer, 2026-08-20:
+  *"'always' block can be renamed to 'basic effects' block i guess. much more
+  generalized but simple."* Use that heading verbatim; it is also what the
+  archive prints for a block with no heading of its own. Don't leave an
+  always-on effect as a bare leading bullet before the first heading.
+- A passive is **one passive made of blocks**, each block a heading with its own
+  trigger and mechanics. Several headings is normal, not a sign the kit should
+  be split into two passives.
 - Numbers are literal here — passives carry no placeholder system, which is
   exactly why `tests/passiveDescriptionSync.test.ts` exists: every "N%" in the
   prose must be backed by a real value in the mechanic data.

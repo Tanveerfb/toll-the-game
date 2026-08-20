@@ -1,0 +1,102 @@
+{
+  "id": "checkpoint_bruiser",
+  "name": "Checkpoint Bruiser",
+  "color": "green",
+  "storyOnly": true,
+  "tags": [
+    "Human"
+  ],
+  "lore": "Local muscle, paid in coin and permission. Wears one piece of Bureau kit that was never issued to him and does not fit.",
+  "atk": 250,
+  "def": 100,
+  "hp": 3500,
+  "skills": [
+    {
+      "skillName": "Close the Gate",
+      "description": "Increases all allies' DEF by [buff.value]% for [buff.duration] turns.",
+      "characterId": "checkpoint_bruiser",
+      "type": "buff",
+      "statMultiplier": "def",
+      "damageRanked": [
+        0,
+        0,
+        0
+      ],
+      "mechanics": [
+        {
+          "type": "buff",
+          "stat": "def",
+          "valueRanked": [
+            50,
+            75,
+            100
+          ],
+          "durationRanked": [
+            1,
+            2,
+            2
+          ],
+          "applyTo": "allies"
+        }
+      ]
+    },
+    {
+      "skillName": "Clear the Road",
+      "description": "Cancels buffs and does Pierce damage equal to ATK-scaled to all enemies.",
+      "characterId": "checkpoint_bruiser",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        165,
+        205,
+        250
+      ],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "pierce"
+        },
+        {
+          "type": "cancelBuffs"
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Make an Example",
+    "description": "Greatly raises ATK for 1 turn; does damage equal to ATK-scaled to one enemy.",
+    "characterId": "checkpoint_bruiser",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 300,
+    "mechanics": [
+      {
+        "type": "buff",
+        "stat": "atk",
+        "valuePercent": 50,
+        "duration": 1,
+        "applyTo": "self"
+      }
+    ]
+  },
+  "passive": {
+    "name": "Paid in Advance",
+    "description": "# When this character is defeated\n- Heals all allies by 20% of their max HP\n- All allies' ATK 20% 👆 for 2 turns",
+    "trigger": "onDefeat",
+    "triggerText": "When this character is defeated",
+    "mechanics": [
+      {
+        "type": "heal",
+        "maxHpPercent": 20
+      },
+      {
+        "type": "buff",
+        "stat": "atk",
+        "valuePercent": 20,
+        "duration": 2
+      }
+    ]
+  }
+}

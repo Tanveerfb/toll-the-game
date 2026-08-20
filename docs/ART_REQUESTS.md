@@ -39,7 +39,9 @@ a record of what exists is as useful as a record of what doesn't.
 
 ## Category A — Story scene backgrounds
 
-**Status: open, blocked on nothing. Highest-value batch in this file.**
+**Status: delivered 2026-08-20** for everything chapter 1 references — all four slugs are
+shipped and wired. The remaining ten registered slugs are **not** requested; no authored
+scene references them yet. See the corrected list below.
 
 **Why:** `StoryScene` currently has four fields — `speaker`, `portraitId`, `side`,
 `text` ([`types/story.ts:8`](../types/story.ts)) — and no background. Every scene in
@@ -73,39 +75,44 @@ Three more constraints specific to how the reader renders:
   the whole scene. Style still reads as the same world — cel shading, clean lineart —
   just pitched down.
 
-**Lands at:** `public/backgrounds/<slug>.png`. Needs a `lib/game/backgroundArt.ts`
+**Lands at:** `public/backgrounds/<slug>.webp`. Needs a `lib/game/backgroundArt.ts`
 mirroring the existing `characterArt.ts` id→path map, plus a `background?: string`
 field on `StoryScene`. Neither exists yet — whoever does the scene-direction pass
 builds them.
 
-### The location list is a first-pass inference, not a survey
+### The location list — corrected 2026-08-20
 
-Derived from part titles, taglines and part 1's narration on 2026-08-16 — **not**
-from reading all 12 parts scene by scene. Treat it as a starting shape. Whoever runs
-the scene-direction pass should walk `data/story/part*.json` properly and correct
-this list before generating anything, because a wrong location list wastes GPU time
-on images no scene references.
+The original list was inferred from part titles and taglines and told whoever ran the
+pass to *"walk `data/story/part*.json` properly and correct this list before generating
+anything"*. That survey is no longer possible the way it was written: story mode v2
+replaced parts with chapters in `8b56767`, and `data/story/` now holds exactly one file,
+`chapter-1.json`. Grepping it for `backgroundId` and `localeId` gives the real demand:
 
-Roughly one background per distinct place, reused across every scene set there:
-
-| Slug | Place | Appears around |
+| Slug | Scenes referencing it | State |
 |---|---|---|
-| `village_peaceful` | Small remote rural village, intact, quiet | Part 1 opening |
-| `village_ruins` | Same village burned — smoke, collapsed buildings | Part 1, the raid |
-| `bureau_interior` | Ledger Bureau office — institutional, cold | Part 1 "The Notice" |
-| `open_road` | Long travel road, wilderness | Parts 2–3 |
-| `exam_staging` | Ledger Exam registration ground, crowded | Part 3 "Number 22" |
-| `exam_ground` | Phase 1 terrain — open, contested | Parts 3, 6 |
-| `zipline_ridge` | Elevated crossing, rope span | Part 4 |
-| `scorched_earth` | Burned battlefield after a fire fight | Parts 4–5 |
-| `gamblers_table` | Interior, low light, a table | Part 7 |
-| `the_lake` | Wide dark lake — Molvarr's water | Parts 8–9 |
-| `the_bridge` | The lake's only crossing | Part 9 |
-| `holding_room` | Bare examinee quarters, two beds | Parts 10–11 |
-| `overseer_dining` | The old man's dinner room | Part 11 |
-| `final_phase` | Phase 3 arena | Part 12 |
+| `open_road` | 12 | **delivered** 2026-08-20 |
+| `bureau_interior` | 7 | **delivered** 2026-08-20 |
+| `village_peaceful` | 3 + the chapter `localeId` | **delivered** 2026-08-20 |
+| `village_ruins` | 3 | **delivered** 2026-08-20 — img2img, see below |
 
-**Status:** `open` · **Requested:** 2026-08-16, for the scene-direction pass.
+The other ten slugs registered in `lib/game/storyBackgrounds.ts` (`exam_staging`,
+`exam_ground`, `zipline_ridge`, `scorched_earth`, `gamblers_table`, `the_lake`,
+`the_bridge`, `holding_room`, `overseer_dining`, `final_phase`) are **not requested**.
+They are anticipated locations from the twelve-part outline, and no authored scene names
+any of them. Generating them now is art for scenes that do not exist — request them when
+the chapter that uses them is authored, one location per distinct place.
+
+### village_ruins — delivered, after five failures and one change of method
+
+Five txt2img rolls failed, alternating between intact buildings and bare land with no
+buildings. The fix was **img2img from the shipped `village_peaceful` plate at denoise 0.84**,
+which holds the layout and hut silhouettes while fully re-rendering the surfaces — so the two
+plates finally read as the same place before and after. Full findings, including the denoise
+ladder and the foreground mistake, are in `ART_PIPELINE.md`. Treat img2img as the default
+method for any before/after location pair from here.
+
+**Status:** `done 2026-08-20` for all referenced slugs · **Requested:** 2026-08-16, for the
+scene-direction pass; worked 2026-08-20.
 
 ---
 
@@ -131,8 +138,10 @@ signature effect contained near the body.
 
 ## Category C — Inventory icons
 
-**Status: open. Nothing in this category exists yet — `public/` has no items
-directory at all.**
+**Status: delivered 2026-08-20.** All 15 material icons and all 5 coin frames ship in
+`public/items/`, registered in `lib/game/materialArt.ts`, with `/items/**` allowed in
+`next.config.ts`. Three items deviate from the brief below and two are weak at 24px —
+both recorded under Delivered. The how-to lessons are in `ART_PIPELINE.md`.
 
 **Why:** every inventory surface renders materials and currencies as *text*.
 `materialLabel()` ([`lib/game/materials.ts:85`](../lib/game/materials.ts)) returns a
@@ -160,7 +169,7 @@ appear on nearly every screen.
   `styles/globals.css`: `el-blue #37a6ff`, `el-red #ff5a4e`, `el-green #35d48b`,
   `el-light #e8d174`, `el-dark #a874ff`.
 
-**Lands at:** `public/items/<slug>.png`. Needs a `lib/game/materialArt.ts` mirroring
+**Lands at:** `public/items/<slug>.webp`. Needs a `lib/game/materialArt.ts` mirroring
 `characterArt.ts` — same `id → path | null` contract, same `ART_VERSION` cache-bust,
 and `next.config.ts` `images.localPatterns` needs `/items/**` adding. None of that
 exists; whoever wires the first icon builds it. Until then every surface keeps the
@@ -235,9 +244,14 @@ Each: a struck-metal ring with an empty circular window in the middle, no portra
 text. Transparent centre and transparent outside, so the portrait shows through and the
 coin can sit on any panel. Keep the rim thin — at 44px a heavy rim swallows the face.
 
-**Status:** `open` · **Requested:** 2026-08-17, for the inventory/clear-summary icon
-pass. C1 is the highest value (nav-wide), C5 the highest leverage (5 assets cover 18+
+**Status:** `done 2026-08-20` · **Requested:** 2026-08-17, for the inventory/clear-summary
+icon pass. C1 is the highest value (nav-wide), C5 the highest leverage (5 assets cover 18+
 ids).
+
+**Still text-only:** the icons exist and nothing renders them yet. Every inventory surface
+still shows `materialLabel()`'s string, which is the designed fallback — wiring the profile
+inventory, ascension cost list, gacha payout, chapter rewards and clear summary to
+`getMaterialArt()` is a UI pass, not an art one.
 
 ---
 
@@ -257,4 +271,87 @@ own visuals aren't built.
 
 ## Delivered
 
-Nothing yet — this file was created 2026-08-16.
+### 2026-08-20 — Category C, the whole inventory set (20 assets)
+
+`public/items/*.png`, 512×512 RGBA, registered in `lib/game/materialArt.ts`.
+
+**C1 currencies (5)** — `gems`, `coin`, `permanent_ticket`, `auto_clear_ticket`, `stamina`.
+Five deliberately different silhouettes, because these five sit next to each other in the
+nav: round coin, tall gold plaque, square steel plaque, crystal cluster, single amber shard.
+
+**C2 ascension (2)** — `sea_monster_eye`, `corroded_seaweed`.
+**C3 manuals (3)** — generated as one set from a shared seed; the ladder reads plain cloth →
+leather with steel fittings and a clasp → gilded filigree with a warm edge glow.
+**C4 specialties (4)** — `riverstone_fragment`, `scorched_ember`, `bramble_thorn`,
+`prism_dust`. `prism_dust` stays iridescent rather than gold or violet, since it serves both
+`light` and `dark`.
+**C5 coin frames (5)** — drawn with a PIL script rather than generated, so the transparent
+window is exactly concentric and identical across all five; a portrait is composited through
+it in code via `getCoinFrameArt()`. Verified compositing cleanly with five real portraits at
+44px and 28px.
+
+**Three deviations from the brief above, all for legibility:**
+
+- `permanent_ticket` and `auto_clear_ticket` are **stamped metal plaques**, not paper — a
+  gold plaque with a star emblem and a steel plaque with an arrow. The brief asked for a
+  stamped pass and a punched/torn paper stub; paper failed five rolls (framed picture, red
+  blob, abstract shapes, featureless card) because this checkpoint does not draw blank paper.
+  They still read as a matched pair, and as tickets rather than currency.
+- `prism_dust` is **a single iridescent crystal cone**, not the loose powder heap the brief
+  describes. A heap of dust has no silhouette at 24px; the cone does, and keeps the opal
+  rainbow sheen the brief asked for.
+- `stamina` is a **faceted amber shard**. The brief left the object open (it only said "not a
+  material; appears in the nav and on every brief"); amber energy was chosen to read as
+  life-force at a glance and to differ in shape from the blue-violet `gems` cluster.
+
+**Two known-weak icons, not blocking:** `bramble_thorn` and `corroded_seaweed` are thin-line
+subjects with no mass, so they mush at 24px. Both read fine at 44px and up, which is where
+they actually appear. Worth a reroll with a chunkier subject if either ever renders that
+small.
+
+### 2026-08-20 — Category A, chapters 1–3 (14 plates)
+
+Generated after reading all twelve beat sheets and `Master_Context.md`, so these are the
+places the chapters actually describe rather than inferences from part titles. All graded
+before shipping and registered in `lib/game/storyBackgrounds.ts`.
+
+**Three non-canon slugs retired** (Tanveer, 2026-08-20) and replaced with what the
+chapters need. Each keeps a comment in the registry naming what it replaced:
+
+| Retired | Replaced by | Why |
+|---|---|---|
+| `gamblers_table` | `admin_room` | Ch7 is Chiara reporting in the monitor room; no gambling table exists in Arc One. Ch6, 7, 8 and 10 all play in that room |
+| `the_bridge` | `lake_shore` | Ch9 turns on there being no crossing — Molvarr *is* the bridge. The chapters need the near shore: flag 1, the speaker pole |
+| `overseer_dining` | `common_space_night` | Ch11 puts Duke and Tao in the candidates' shared common space at night, not a private dining room |
+
+**Chapter 1 (8 plates)** — `city_toll_metropolis`, `bureau_exterior`, `waypoint_town`,
+`wilderness_ridge_summer` / `_snow` / `_storm`, plus `village_peaceful` and `village_ruins`
+from earlier. The training-montage triplet is one place in three weathers: the snow and
+storm plates are img2img derivatives of the summer one, so the montage reads as time
+passing rather than three locations.
+
+**Chapter 2 (4 plates)** — `jungle_path_day`, `jungle_path_dusk` (a graded copy of the day
+plate, so it is unmistakably the same trail), `jungle_deep`, and `jungle_clearing`, which
+took eight attempts and a method of its own (ground blocked in with PIL, img2img at 0.80).
+
+**Chapter 3 (4 plates)** — `exam_compound_exterior`, `exam_registration_hall`,
+`exam_waiting_room`, `exam_venue_courtyard`. Four views of one building; the courtyard is
+the compound at night via img2img at denoise 0.68.
+
+**All art is WebP as of 2026-08-20** — backgrounds at lossy q90, icons at q90 with
+`alpha_quality=100` so the cutout edges stay lossless (they render down to 24px, where a
+soft edge reads as a halo). 18.4MB of PNG became 2.2MB with no visible loss.
+
+**Method notes that changed how this category gets made:** re-frame a failing plate into a
+composition the checkpoint can do rather than rewording it; composite-and-blend when it
+renders a subject but won't place it in an environment; grade every plate down before
+shipping. All written up in `ART_PIPELINE.md`.
+
+### 2026-08-20 — Category A, all four referenced backgrounds
+
+`public/backgrounds/{village_peaceful,village_ruins,bureau_interior,open_road}.png`, 1344×768, wired by
+filling in `image:` on the matching slug in `lib/game/storyBackgrounds.ts`. All three keep
+the lower third quiet for the dialogue box, carry no characters, and sit darker and less
+saturated than a character card. `village_ruins` came last and by a different route — five
+failed txt2img rolls, then img2img from the `village_peaceful` plate, which is now the
+documented method for any before/after pair.

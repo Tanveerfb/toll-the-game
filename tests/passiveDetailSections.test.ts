@@ -11,7 +11,7 @@ describe("buildPassiveDetailSections", () => {
     };
     const sections = buildPassiveDetailSections(passive);
     expect(sections).toHaveLength(1);
-    expect(sections[0].header).toBe("Basic effect(s)");
+    expect(sections[0].header).toBe("Basic effects");
     expect(sections[0].bullets).toEqual([
       "Increases ATK by 5% for each debuff present on the enemy team.",
     ]);

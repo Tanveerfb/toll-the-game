@@ -1,4 +1,4 @@
-# Status — 2026-08-20
+# Status — 2026-08-21
 
 Living snapshot. Session history is folded to
 [`docs/archive/STATUS-2026-08.md`](archive/STATUS-2026-08.md); the resurrection
@@ -6,23 +6,57 @@ audit is in git (`docs/STATUS.md` @ `c3040f7`).
 
 ## Start here
 
-**State:** Story mode v2 shipped 2026-08-18. The 2026-08-20 session built no
-features — it produced five project skills, fixed three live engine bugs, and
-left five specs in `Plans/`. Suite is **1,235 tests / 98 files** green.
+**State:** Chapter 1 is content-complete. Four new enemy kits (the road
+checkpoint), 37 art assets, four engine capabilities, plus the five `Plans/`
+specs from 2026-08-20. Suite **1,286 tests / 102 files** green, build clean.
 
-**Next:** Pick a spec from [`Plans/README.md`](../Plans/README.md).
-`substat-stats-arrays` is the cheapest and closes the bug family that produced
-three real failures on 2026-08-20.
+**Next:** His visual pass — 37 assets and a rebuilt stage 1-5, none of it seen in
+a browser. Then chapters 4-6 art, starting with `admin_room` (four chapters play
+in that one room) and the lake set.
 
-**Blocked on:** One detail — do two sources of Guard stack, or is it a fixed
-floor? (`Plans/2026-08-20-guard-and-effective.md` §5.) Nothing else waits on him.
+**Blocked on:** Nothing. The two open kit questions from 2026-08-20 ([Guard]
+stacking, whether any kit carries [Guard]/[Effective]) are still unanswered but
+block nothing - no kit uses either.
 
-**Don't trust:** Nothing from 2026-08-20 is browser-verified. Eleven screens had
-`min-h-screen` swapped to `min-h-dvh` and **he has not looked at them**; Chiara's
-and Isolde's cards changed text. Chapter 1's filler stages are still unapproved
-and live on the deploy.
+**Don't trust:** Nothing from 2026-08-20/21 is browser-verified. The riskiest
+code is `lib/game/combat.ts` targeting and the new `onDefeat` post-pass; the
+riskiest art call is whether the plates read correctly behind the dialogue box at
+390px. Chapter 1's filler stages are approved in `Filler/Drafts.md`, but that
+approval came in chat and has never been seen running.
 
 ## Working (implemented, tested, browser-verified)
+
+- **All five `Plans/` specs built (2026-08-20)** — one session, no new features, five engine capabilities. Verified after the doc edits: `npm run check` green (**1,270 tests / 101 files**, same 3 pre-existing eslint warnings in `tests/duel.test.ts`), clean `NEXT_DIST_DIR=.next-verify next build`, `.next-verify` removed. **Not browser-verified.** Rulings **#112–#114** added; **#111** amended from "designed, not built" to built.
+
+  ### Substat readers that missed `stats` arrays — closed
+  `entryTouchesStat(entry, stat, { allCounts })` in `lib/game/stats.ts` replaces three near-copies of the same match. The `allCounts` flag is deliberately explicit: ruling #55 puts **damage reduction and evade chance outside "all stats"** and #36 makes `damageDealt` a damage modifier, so those three must be reachable by exact name and by a `stats` array but never by `"all"` — a reader added later has to state which side of #55 its stat sits on instead of inheriting an answer it never considered. `getDamageDealtMultiplier` and `getDamageReductionMultiplier` now read arrays; **evade and damage reduction now read debuffs**, which they never did (*"we do have to fix evade and DR parts too"*). A DR debuff can strip reduction to zero and no further — making a target take *extra* damage is the attacker's `damageDealt` job, not a negative DR.
+
+  ### Placeholders can name a field positionally
+  `[x-ranked.duration]` — `resolveByMechanicIndex` forwards a field to `resolveMechanicField`, which already accepted one. That makes **two mechanics of the same type** both addressable; before, `[buff.duration]` resolved the first buff and bare `[x-ranked]` printed the stat percentage where a duration belonged, silently. `dropZeroValueClauses` learned the same form, so a zero-duration clause authored positionally still hides (#44). `kitwords` no longer tells the author to write those durations literally.
+
+  ### [Guard] and [Effective] (#111) — built, unused
+  `resolveTypeModifier` in `lib/game/typeAdvantage.ts`; `getTypeModifier` stays the raw chart lookup because #11 quotes it as the plain matchup. Both live inside `damage.ts`'s `!criticalMechanic` branch, which is what makes **"critical bypasses both"** fall out with no code of its own. **Guard is no protection against a crit** — deliberate, and it needs saying in UI copy or it reads as a bug. **Guard stacking was built as a fixed floor** (a second source changes nothing); that was the one open detail in the spec and is still unconfirmed. **No kit authors either word** — putting them on a card is his call.
+
+  ### Mechanic audiences (#112) — the riskiest change here
+  A mechanic declares `applyTo` (`self` / `oneAlly` / `allies` / `alliesExceptSelf` / `enemies`) or `applyToRanked`. **Absent means self**, which *inverts* the old fallback where a friendly mechanic without `targetSelf` inherited whoever the skill targeted. Six kits leaned on that inference and now declare it: `isolde` (cleanse + healOverTime + ult buff + ult debuffImmunity), `leorio` (`applyToRanked: ["oneAlly","allies","allies"]`), `mustafa`, `prism`, `siddiq`. `iron`'s Iron Wall becomes the self stance it was always meant to be, with nothing to author.
+
+  The spec's own migration table listed **four** kits; auditing the roster found **six** — it missed Isolde's skill and Prism's/Siddiq's aoe cleanses. That gap is why the audience check is a `kitcheck` row now.
+
+  **Deliberately not built: A4d, `aoe` narrowing to enemies-only.** A heal skill's targets still come from `aoe` plus the skill type, because a heal *amount* has no audience of its own — narrowing `aoe` first would aim every ally heal at the enemy team, and the spec doesn't define a skill-level audience for heals. `aoeRanked` stays on Leorio and Siddiq for the same reason. Recorded in #112 and in `Plans/README.md`.
+
+  ### Damage-then-buff (#113)
+  `requiresDamage: true` moves a self buff after the hit **and** makes it conditional on connecting — a tanked (#71) or evaded hit grants nothing, a hit that kills counts, and an AoE arms it once however many enemies were struck. `totalDamageDealt` was already the "did anything connect" flag, so this is a loop split rather than new plumbing. Default is unflagged, so #22 and all 27 kits are untouched.
+
+  ### One passive, made of blocks (#114)
+  `PassiveBlock` in `types/passive.ts`, with `lib/game/passiveBlocks.ts` as the **only** reader — a site keeping the old `char.passive?.trigger` + `.mechanics` pair sees just the first block and drops the rest without erroring, and both forms still typecheck, so `tests/passiveBlocks.test.ts` scans `lib/`, `hooks/`, `components/`, `app/` and `store/` for it. Registration is per block, so a passive can fire at two phases; a single-block passive keeps its historic queue id because callers look items up by it. Also `targetTagBonus` — an attacker's passive reading the *target's* tags, symmetric so *"what if an enemy does extra damage against 'human' characters?"* needs no extra code.
+
+  **Molvarr's phase-passive array was left as authored.** It flattens identically through the block reader; converting it is authoring cosmetics with real transcription risk and buys nothing.
+
+  ### Two stale claims corrected in passing
+  `characterCatalog.ts` documented the elite bosses as *"Tao/Seras/Lyra_npc"* — only `lyra_npc` and `molvarr` carry `tier: "elite"`, and Master Tao and Seras are playable kits with no tier at all (same drift family as #5). And `kitcheck` still told the reader permanence is stated with the word "Permanently", which #110 had reversed the same day.
+
+  ### Skill edits
+  `kitwords` — positional placeholders with fields (replacing the write-it-literally workaround), declared audiences and the self-default warning, `requiresDamage` clause order, `# Basic effects` as the heading for unconditional blocks. `kitcheck` — four new audit rows and the #110 correction above.
 
 - **Engine correctness pass + five project skills (2026-08-20, `6f077d5`)** — no feature work; the session was skills, bug fixes and specs. Verified at checkpoint time: `npm run check` green (**1,235 tests / 98 files**, same 3 pre-existing eslint warnings in `tests/duel.test.ts`), clean `NEXT_DIST_DIR=.next-verify next build` (48/48 static pages), `tsconfig.json` churn reverted, `.next-verify` removed. **Not browser-verified.**
 
@@ -338,6 +372,135 @@ and live on the deploy.
 - **Enemy AI priority (ruling 2026-07-13)** — `getAIMove` picks across the whole acting pool by priority: ultimate (gauge full) → new buff (max 1/turn) or heal (ally <50%) → stance (max 1/turn, not already held) → debuff/disable (max 1/turn) → attack → other. Caps hold across the turn via a shared `AITurnContext` (`freshAITurnContext`/`noteAIAction`).
 - **Fixes (2026-07-12/13)** — Mustafa's Earth Stance: Fortress is a team-wide (aoe) DR stance, no ally pick; single-target attacks retarget to a living enemy when their marked target died mid-queue (focus-fire no longer wastes cards on a corpse).
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
+
+## Session log - 2026-08-21: the road checkpoint, and 37 art assets
+
+**Verified at close:** `npm run check` green - **1,286 tests / 102 files**, the
+same 3 pre-existing `no-unused-vars` warnings in `tests/duel.test.ts` and no
+errors. `NEXT_DIST_DIR=.next-verify next build` compiled successfully;
+`.next-verify` removed and `tsconfig.json` churn reverted.
+
+### Art: 37 assets, and a map of what this checkpoint can compose
+
+19 inventory icons (`public/items/`, 612KB) and 18 scene backgrounds
+(`public/backgrounds/`, 1.8MB), all **WebP** - 18.4MB of PNG became 2.2MB at
+lossy q90, with `alpha_quality=100` on the icons so cutout edges stay lossless at
+the 24px they render down to. Registries: `lib/game/materialArt.ts` (new) and
+`lib/game/storyBackgrounds.ts`.
+
+The durable output is not the assets, it is `ART_PIPELINE.md`'s new section on
+what Animagine will and will not compose. **It renders streets,
+interiors-with-furniture, and landscapes-with-a-subject; it fails at aerial
+cityscapes, empty courtyards, clearings, and rows of benches** - and no amount of
+rewording fixes the second list. Re-framing does, first or second try: the city
+became an avenue seen down its length, the exam compound became an avenue between
+two halls. Three techniques were established and written up:
+
+- **img2img from a sibling plate** for any before/after or same-place variant.
+  `village_ruins` failed **five** txt2img attempts and landed first batch at
+  denoise 0.84. The denoise ladder is in the doc and it is narrow.
+- **Composite-and-blend** when the model renders a subject but will not place it
+  in an environment (`bureau_exterior`, 8 attempts): generate the subject alone,
+  `remove_background`, block the composition in with PIL, blend at 0.42-0.60.
+- **Grade every plate down** before shipping, with a bottom-weighted vignette -
+  Category A wants these darker than a character card, and the dialogue box sits
+  in the lower third.
+
+`jungle_clearing` took eight attempts and its own recipe (PIL-blocked ground,
+img2img at 0.80 - below ~0.7 dense foliage shreds into stripe noise, above ~0.85
+the composition goes).
+
+**Three registry slugs were retired as non-canon** after reading all twelve beat
+sheets: `gamblers_table` to `admin_room`, `the_bridge` to `lake_shore`,
+`overseer_dining` to `common_space_night`. Each replacement carries a comment
+naming what it replaced and why.
+
+### The road checkpoint: four kits, four engine capabilities
+
+`ford_bandit`, `checkpoint_bruiser`, `checkpoint_enforcer`, `toll_collector` -
+his kit designs, my stats and derived ranks. Stage 1-5 rebuilt from three waves
+of one recoloured mook into Ford Bandits, then three muscle, then Enforcer +
+Collector + Bruiser - the game's first **three-enemy** waves. Chapter economy
+still lands on exactly **70 gems**.
+
+Four capabilities they needed, none of which existed:
+
+- **`onDefeat` passive trigger** (`lib/game/onDefeat.ts`) - a dying unit pays its
+  own team. Post-pass over both teams from `executeSkill` *and* the DoT tick,
+  because a unit can die in more than one place; fires once, guarded by
+  `passiveState`, since a corpse stays on the field until turn-start cleanup.
+- **`conditionStatuses` on `targetTagBonus`** - "damage up against enemies
+  affected by Bleed".
+- **`conditionMinLivingAllies` on `aura`** - a team buff **rechecked at the
+  owner's turn start and dropped when the condition fails**. Plain `aura` applies
+  once at battle start and is never revisited, so the Collector's protection
+  would never have fallen off; this follows `characterSynergy`'s existing dynamic
+  pattern.
+- **`useSkillRank` mission goal** - his ask. The action battle event already
+  carried `rank`, so it was one union member, one case, one accumulator field.
+
+### What he corrected me on
+
+- **I rank-scaled a tier word, then hallucinated his spec while fixing it.** His
+  draft read *"Raises DEF for 1 turn and does [350]% damage"* - only `[350]` is
+  bracketed. I invented a ranked `[25, 40, 50]` DEF buff, which made the tier
+  word wrong at both ends, then "fixed" it by deleting *his* word instead of *my*
+  invention. **The brackets are the whole notation**; unbracketed means flat,
+  tier words included. Banked in `kitcheck` and in session memory, with the step
+  that would actually have prevented it: **re-read the draft, do not repair the
+  JSON from memory.**
+- **I costed the kits at R3, which the enemy can never play.**
+  `initializeEnemyDeck` builds one R1 card per skill and the AI never merges, so
+  a balance read off the top row is a read of a card that cannot be dealt. He
+  also pointed out three enemies share three actions, not three each. Ruling
+  #116.
+- **Light and dark are premium.** The Collector was proposed as light to close a
+  type-chart hole; rebuilt red. Ruling #115.
+- **Bleed is 1 turn on this kit.** I had set 2, citing a test asserting
+  roster-wide 2. The test was stricter than the rule it enforced -
+  `dotDurations.ts` has always said "unless the kit says otherwise". Ruling #52
+  amended: 2 is the **default**, not a mandate.
+
+### Two bugs the guards caught before they shipped
+
+- **`characterSchema.ts` kept its own copy of the passive-trigger list.** Adding
+  `onDefeat` to the type left the schema unaware, and the catalog *silently
+  drops* kits that fail validation - so all four vanished with no error at all.
+  `PASSIVE_TRIGGERS` is now one exported const both sides derive from.
+- **The bleed condition would never have fired.** A TS error revealed `bleed` is
+  not a `StatusEffectType`; combat stores it as
+  `{ type: "damageOverTime", name: "Bleed" }`. The matcher now checks name, type
+  and stat, because which field a status lands in depends on the status.
+
+### What was deferred, and to what
+
+- **Ch1-3 props (11 assets)** - queued in the manifest, not started. Cheap and
+  reliable; the icon batch went 14/14.
+- **Chapters 4-12 art** - `admin_room` first by reach. The full 94-asset manifest
+  is the artifact published 2026-08-20.
+- **`public/characters` + `public/npc` are still 99MB of PNG.** The same WebP
+  conversion would take them to roughly 12MB. Not done because they are already
+  in git history and that is his call.
+- **Icons render nowhere.** `getMaterialArt` has zero callers; every inventory
+  surface still shows the text label, which is the designed fallback.
+
+### Confidence and gaps
+
+**Verified:** every count in this entry was read off disk at close, not recalled.
+Suite and build output above are from the final run. Kit values were re-read from
+the JSON and checked field by field against his original message.
+
+**Assumed:** the four enemy statlines are mine - `storyOnly` bands are still
+unassigned at `KIT_DESIGN.md:83`, so there is no spec to check them against. The
+de-facto roadside band (HP 3000-3600 / ATK 245-285 / DEF 65-90) is an observation
+from three existing kits, not a rule.
+
+**Untested:** the checkpoint fight has never been played. Three-enemy waves are
+new to the game, the `onDefeat` heal and the fading aura have unit tests but no
+playtest, and `teamMode: "anchored"` on 1-5 changes who the player can field.
+
+**What I would check first coming back cold:** whether stage 1-5 is winnable, and
+whether the Collector's aura visibly drops when his escort dies.
 
 ## Session log — 2026-08-20: skills, an engine bug family, and six Dokkan kits
 

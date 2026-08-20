@@ -1,5 +1,6 @@
 "use client";
 
+import { findAnyPassiveMechanic } from "@/lib/game/passiveBlocks";
 import { BattleCharacter } from "@/types/character";
 import { BattlePhase } from "@/types/mechanic";
 import React, { useEffect } from "react";
@@ -20,6 +21,7 @@ import { applyAdjacentMerges } from "@/lib/game/deck";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { transitionBossPhases } from "@/lib/game/phases";
 import { applyBossTurnStart, bossForcedSpAction } from "@/lib/game/bossPassives";
+import { applyDefeatPassives } from "@/lib/game/onDefeat";
 import { tickTeamBuffs, tickTeamDebuffs } from "@/lib/game/tick";
 import { syncExtortLinks } from "@/lib/game/effects";
 import { ensureFieldUnit, promoteSubs } from "@/lib/game/sub";
@@ -325,6 +327,11 @@ export default function BattleProvider({
           currentTeams = { ...currentTeams, enemyTeam: ticked };
         }
 
+        // A damage-over-time tick can kill, and a unit that dies to poison owes
+        // the same parting passive as one that dies to a card (`onDefeat`).
+        // executeSkill runs its own pass; this is the DoT path's.
+        applyDefeatPassives(currentTeams, addToBattleLog);
+
         // Multi-phase boss turn-start passives (Molvarr): per-phase turn
         // counter, debuff-count ATK, per-turn Corrosion, turn-N drain, the
         // one-time stat spike. Runs before the boss acts; Corrosion it applies
@@ -404,12 +411,9 @@ export default function BattleProvider({
           const teamSide: "player" | "enemy" = isPlayerSide ? "player" : "enemy";
           const displayedTurn = useGameStore.getState().currentTurn + 1;
           const applyRankUp = (c: (typeof updatedTeams.playerTeam)[number]) => {
-            const mech = c.passive?.mechanics?.find(
-              (m) => m.type === "rankUpOwnDeck",
-            );
+            const mech = findAnyPassiveMechanic(c, "rankUpOwnDeck");
             if (
               mech &&
-              mech.type === "rankUpOwnDeck" &&
               c.currentHP > 0 &&
               !c.isSub &&
               displayedTurn === (mech.atTurn ?? 3) &&

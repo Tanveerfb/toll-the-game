@@ -39,6 +39,15 @@ export interface StageRunSummary {
   fallen: string[];
   /** Player ultimates fired across every wave. */
   ultimatesUsed: number;
+  /**
+   * Player cards played across every wave, counted by rank.
+   *
+   * Keyed 1/2/3 rather than an array so a missing rank reads as absent instead
+   * of as index confusion. Ultimates are excluded at the counting site — they
+   * have no rank, so folding them in would make a rank goal satisfiable by
+   * something that isn't a ranked card at all.
+   */
+  rankUses: Record<1 | 2 | 3, number>;
   /** True when this attempt followed a defeat on the same stage without leaving
    *  the stage shell — what `firstAttempt` disqualifies. */
   isRetry: boolean;
@@ -52,6 +61,7 @@ export function emptyRunSummary(wavesTotal: number): StageRunSummary {
     fielded: [],
     fallen: [],
     ultimatesUsed: 0,
+    rankUses: { 1: 0, 2: 0, 3: 0 },
     isRetry: false,
   };
 }
@@ -90,6 +100,8 @@ export function isGoalMet(goal: StoryMissionGoal, run: StageRunSummary): boolean
       return taggedCount(run.fielded, goal.tag) >= goal.count;
     case "useUltimates":
       return run.ultimatesUsed >= goal.count;
+    case "useSkillRank":
+      return (run.rankUses[goal.rank] ?? 0) >= goal.count;
     case "firstAttempt":
       return !run.isRetry;
     case "allWaves":

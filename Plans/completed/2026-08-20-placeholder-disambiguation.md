@@ -1,6 +1,8 @@
 # Spec — placeholders can't tell two same-type mechanics apart
 
-**Status:** found 2026-08-20, not built. Small, self-contained, no design
+> **BUILT 2026-08-20.** `[x-ranked.duration]` and friends resolve in `descriptionTranslator.ts`, including inside `dropZeroValueClauses`. Tests: `tests/descriptionTranslator.test.ts`. The text below is the record of why, kept as written.
+
+**Status:** built 2026-08-20 (see the banner above). Small, self-contained, no design
 decisions pending — it can land in any session.
 
 **Impact:** a kit shape that is routine in the source material cannot be authored

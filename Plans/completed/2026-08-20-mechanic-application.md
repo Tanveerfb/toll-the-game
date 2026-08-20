@@ -1,6 +1,8 @@
 # Spec — mechanic application: audience and timing
 
-**Status:** designed, not built. Two changes to how a mechanic lands, merged
+> **BUILT 2026-08-20**, both parts. `applyTo`/`applyToRanked` with self as the default audience, and `requiresDamage` for a buff that lands after the hit. Six kits migrated. **A4d (`aoe` narrowing to enemies-only) was deliberately not built** — see the note at the end of `Plans/README.md`. Tests: `tests/allyTargeting.test.ts`, `tests/mechanicTiming.test.ts`.
+
+**Status:** built 2026-08-20 (see the banner above). Two changes to how a mechanic lands, merged
 2026-08-20 because **both restructure the same region of `executeSkill`** — the
 self-buff loop at `combat.ts:556` and the `targets.forEach` that follows it.
 Building them separately means restructuring that region twice.

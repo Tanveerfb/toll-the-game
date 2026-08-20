@@ -17,7 +17,8 @@
       "damageRanked": [20, 25, 30],
       "mechanics": [
         {
-          "type": "cleanse"
+          "type": "cleanse",
+          "applyToRanked": ["oneAlly", "allies", "allies"]
         },
         {
           "type": "aoeRanked",
@@ -25,6 +26,7 @@
         },
         {
           "type": "healOverTime",
+          "applyToRanked": ["oneAlly", "allies", "allies"],
           "valuePercent": 30,
           "durationRanked": [1, 1, 2]
         }
@@ -58,11 +60,13 @@
     "mechanics": [
       {
         "type": "debuffImmunity",
+        "applyTo": "allies",
         "minUltLevel": 3,
         "durationByUltLevel": [0, 0, 2, 2, 2, 3]
       },
       {
         "type": "buff",
+        "applyTo": "allies",
         "stats": ["atk", "def", "hp"],
         "valuePercentByUltLevel": [20, 20, 30, 30, 50, 50],
         "durationByUltLevel": [2, 2, 2, 2, 2, 3]
