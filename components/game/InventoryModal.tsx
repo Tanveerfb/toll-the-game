@@ -3,6 +3,7 @@
 import React from "react";
 import { Coins, Gem, Ticket } from "lucide-react";
 import DetailOverlay from "@/components/game/DetailOverlay";
+import ItemIcon from "@/components/game/ItemIcon";
 import { usePlayerStore } from "@/store/playerStore";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { MATERIAL_IDS, materialLabel } from "@/lib/game/materials";
@@ -40,6 +41,44 @@ function Figure({
       {hint ? (
         <span className="font-body text-[10px] text-readout-muted">{hint}</span>
       ) : null}
+    </div>
+  );
+}
+
+/** A held currency: icon, count, name. The icon comes from `public/items/` and
+ *  falls back to the lucide glyph this panel carried before the art landed. */
+function Currency({
+  id,
+  fallback: Fallback,
+  label,
+  value,
+}: {
+  id: string;
+  fallback: React.ElementType;
+  label: string;
+  value: number;
+}): React.JSX.Element {
+  return (
+    <div className="flex items-center gap-2 border border-hairline bg-panel px-3 py-2">
+      <ItemIcon
+        id={id}
+        size={28}
+        alt=""
+        fallback={
+          <Fallback
+            className="h-4 w-4 shrink-0 text-readout-muted"
+            strokeWidth={2.2}
+          />
+        }
+      />
+      <span className="min-w-0">
+        <span className="block font-heading text-lg leading-none text-readout-strong tabular-nums">
+          {value.toLocaleString()}
+        </span>
+        <span className="block font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-muted">
+          {label}
+        </span>
+      </span>
     </div>
   );
 }
@@ -98,39 +137,24 @@ export default function InventoryModal({
         <section>
           <SectionHead>Currencies</SectionHead>
           <div className="grid grid-cols-3 gap-2">
-            <div className="flex items-center gap-2 border border-hairline bg-panel px-3 py-2">
-              <Gem className="h-4 w-4 shrink-0 text-readout-muted" strokeWidth={2.2} />
-              <span className="min-w-0">
-                <span className="block font-heading text-lg leading-none text-readout-strong tabular-nums">
-                  {currencies.gems.toLocaleString()}
-                </span>
-                <span className="block font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-muted">
-                  Gems
-                </span>
-              </span>
-            </div>
-            <div className="flex items-center gap-2 border border-hairline bg-panel px-3 py-2">
-              <Coins className="h-4 w-4 shrink-0 text-readout-muted" strokeWidth={2.2} />
-              <span className="min-w-0">
-                <span className="block font-heading text-lg leading-none text-readout-strong tabular-nums">
-                  {currencies.coin.toLocaleString()}
-                </span>
-                <span className="block font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-muted">
-                  Coin
-                </span>
-              </span>
-            </div>
-            <div className="flex items-center gap-2 border border-hairline bg-panel px-3 py-2">
-              <Ticket className="h-4 w-4 shrink-0 text-readout-muted" strokeWidth={2.2} />
-              <span className="min-w-0">
-                <span className="block font-heading text-lg leading-none text-readout-strong tabular-nums">
-                  {currencies.permanentTicket.toLocaleString()}
-                </span>
-                <span className="block font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-muted">
-                  Tickets
-                </span>
-              </span>
-            </div>
+            <Currency
+              id="gems"
+              fallback={Gem}
+              label="Gems"
+              value={currencies.gems}
+            />
+            <Currency
+              id="coin"
+              fallback={Coins}
+              label="Coin"
+              value={currencies.coin}
+            />
+            <Currency
+              id="permanent_ticket"
+              fallback={Ticket}
+              label="Tickets"
+              value={currencies.permanentTicket}
+            />
           </div>
         </section>
 
@@ -145,9 +169,10 @@ export default function InventoryModal({
               {held.map((id) => (
                 <div
                   key={id}
-                  className="flex items-baseline justify-between gap-2 border border-hairline bg-panel px-3 py-2"
+                  className="flex items-center gap-2 border border-hairline bg-panel px-3 py-2"
                 >
-                  <span className="min-w-0 truncate font-body text-xs text-readout-dim">
+                  <ItemIcon id={id} size={28} alt="" />
+                  <span className="min-w-0 flex-1 truncate font-body text-xs text-readout-dim">
                     {materialLabel(id)}
                   </span>
                   <span className="shrink-0 font-heading text-lg leading-none text-readout-strong tabular-nums">

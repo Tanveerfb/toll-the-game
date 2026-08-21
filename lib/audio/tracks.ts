@@ -7,8 +7,9 @@
  * resolves to silence, not an error; see `lib/audio/music.ts`. The filenames
  * each role expects are documented in `docs/AUDIO.md`.
  *
- * Music only — no SFX bus here or anywhere (Tanveer, 2026-08-09). A future
- * SFX system belongs beside this module, not inside it.
+ * Music only. There is an SFX bus as of 2026-08-21 (ruling #121, reversing the
+ * 2026-08-09 note that used to sit here) and it lives *beside* this module in
+ * `lib/audio/cues.ts` + `lib/audio/sfx.ts`, exactly as that note asked.
  */
 export type MusicRole =
   | "menu"

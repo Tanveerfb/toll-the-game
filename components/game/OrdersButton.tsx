@@ -37,7 +37,7 @@ export default function OrdersButton(): React.JSX.Element | null {
               ? `Bureau Orders — ${state.ready} ready to claim`
               : "Bureau Orders"
         }
-        className={`flex shrink-0 items-center gap-1.5 border bg-void px-2 py-0.5 transition-colors ${
+        className={`flex min-h-11 shrink-0 items-center gap-1.5 border bg-void px-2 transition-colors ${
           badge
             ? "border-el-light/60 text-el-light hover:border-el-light"
             : "border-hairline text-readout-dim hover:border-edge-strong hover:text-readout"

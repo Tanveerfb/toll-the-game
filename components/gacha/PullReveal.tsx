@@ -9,6 +9,7 @@ import { Coins, ScrollText } from "lucide-react";
 import type { ResolvedPullOutcome } from "@/store/playerStore";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { getCharacterById } from "@/lib/game/characterCatalog";
+import ItemIcon from "@/components/game/ItemIcon";
 import { materialLabel } from "@/lib/game/materials";
 import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
 
@@ -164,7 +165,7 @@ export default function PullReveal({
       aria-label="Pull results"
       className="fixed inset-0 z-50 flex items-center justify-center bg-void/90 px-3 py-4 backdrop-blur-sm"
     >
-      <div className="chamfer-lg flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden border border-edge-strong bg-panel">
+      <div className="chamfer-lg flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden border border-edge-strong bg-panel">
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-hairline bg-inset px-4 py-2.5">
           <span className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
             Result · {results.length} pull{results.length === 1 ? "" : "s"}
@@ -173,7 +174,7 @@ export default function PullReveal({
             <button
               type="button"
               onClick={skip}
-              className="border border-edge px-3 py-1 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-signal hover:text-signal"
+              className="flex min-h-11 items-center border border-edge px-3 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-signal hover:text-signal"
             >
               Skip ▸▸
             </button>
@@ -245,11 +246,20 @@ export default function PullReveal({
                   ) : (
                     <>
                       <div className="flex aspect-square items-center justify-center bg-void text-readout-muted">
-                        {outcome.kind === "coin" ? (
-                          <Coins className="h-6 w-6" strokeWidth={1.8} />
-                        ) : (
-                          <ScrollText className="h-6 w-6" strokeWidth={1.8} />
-                        )}
+                        <ItemIcon
+                          id={
+                            outcome.kind === "coin" ? "coin" : outcome.materialId
+                          }
+                          size={56}
+                          alt=""
+                          fallback={
+                            outcome.kind === "coin" ? (
+                              <Coins className="h-6 w-6" strokeWidth={1.8} />
+                            ) : (
+                              <ScrollText className="h-6 w-6" strokeWidth={1.8} />
+                            )
+                          }
+                        />
                       </div>
                       <div className="px-1.5 py-1">
                         <p className="truncate font-body text-[10px] font-semibold leading-tight text-readout">
@@ -288,7 +298,7 @@ export default function PullReveal({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 border border-edge px-4 py-2.5 text-center font-body text-[11px] font-bold uppercase tracking-[0.16em] text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
+            className="min-h-11 flex-1 border border-edge px-4 py-2.5 text-center font-body text-[11px] font-bold uppercase tracking-[0.16em] text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
           >
             Done
           </button>
@@ -296,7 +306,7 @@ export default function PullReveal({
             type="button"
             onClick={onDrawAgain}
             disabled={!canDrawAgain || revealing}
-            className="flex-1 border border-signal bg-signal/12 px-4 py-2.5 text-center font-body text-[11px] font-bold uppercase tracking-[0.16em] text-signal transition-colors hover:bg-signal/20 disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted"
+            className="min-h-11 flex-1 border border-signal bg-signal/12 px-4 py-2.5 text-center font-body text-[11px] font-bold uppercase tracking-[0.16em] text-signal transition-colors hover:bg-signal/20 disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted"
           >
             {drawLabel}
           </button>

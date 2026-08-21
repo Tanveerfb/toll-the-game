@@ -5,6 +5,9 @@ import { useGameStore, SequencedBattleEvent } from "@/store/gameStore";
 import type { Color } from "@/types/color";
 import { getRevealTier } from "@/lib/game/revealTier";
 import { resetPlayback, skipPlayback } from "@/lib/game/playback";
+import { getSfxBus } from "@/lib/audio/sfx";
+import type { SfxCue } from "@/lib/audio/cues";
+import { useSettingsStore } from "@/store/settingsStore";
 
 /**
  * Replays structured battle events as a timed cinematic: attacker lunge,
@@ -345,6 +348,21 @@ export function useBattleSequencer(
       .setPresentedHp((prev) => ({ ...prev, [instanceId]: hp }));
   }, []);
 
+  /**
+   * Fire a sound effect at the animated moment, not the engine's.
+   *
+   * The store is read at call time rather than subscribed to: this hook's
+   * playback loop is a long-lived async function, and a captured volume would
+   * be whatever it was when the fight started. Reading through means turning
+   * the volume down mid-battle takes effect on the next hit.
+   *
+   * Silent today — `public/audio/sfx/` is empty on purpose (`docs/AUDIO.md`).
+   */
+  const playCue = React.useCallback((cue: SfxCue) => {
+    const { musicVolume, musicMuted } = useSettingsStore.getState();
+    getSfxBus().play(cue, { volume: musicVolume, muted: musicMuted });
+  }, []);
+
   const flashUnit = React.useCallback(
     (instanceId: string, color: Color, strong: boolean, shake: boolean) => {
       const flash: SequencerFlash = { key: nextKey(), color, strong };
@@ -412,6 +430,7 @@ export function useBattleSequencer(
       // Ultimate cutscene: screen dims first, held through the slam-in banner
       // and the whole reveal, restored once the impact/shake/flash settle.
       if (tier.cutscene) {
+        playCue("ultimate");
         setView((v) => ({ ...v, dim: true }));
       }
 
@@ -498,6 +517,7 @@ export function useBattleSequencer(
         for (let i = 0; i < orderedTargets.length; i++) {
           const t = orderedTargets[i];
           if (t.evaded) {
+            playCue("evade");
             setView((v) => ({ ...v, evading: { ...v.evading, [t.instanceId]: true } }));
             addFloater(t.instanceId, "EVADE", "evade");
             scheduleTimeout(() => {
@@ -514,6 +534,11 @@ export function useBattleSequencer(
             // what happened. No HP call either; the bar did not move.
             addFloater(t.instanceId, "TANKED", "info");
           } else if (t.damage !== undefined) {
+            // Sound lands with the visual impact, not with the engine's
+            // resolve — the two are up to a second apart during playback, and
+            // a hit you hear before you see it reads as a bug.
+            playCue(t.crit ? "critical" : "hit");
+            if (t.killed) playCue("defeat");
             const strong = Boolean(
               t.crit || t.killed || ev.isUlt || tier.burstStrong,
             );
@@ -614,6 +639,7 @@ export function useBattleSequencer(
       addSweep,
       anchorFor,
       flashUnit,
+      playCue,
       scheduleTimeout,
       showHp,
       sleep,

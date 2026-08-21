@@ -316,7 +316,7 @@ export function EffectsTables({
             type="button"
             onClick={onToggleUncancellable}
             aria-expanded={showUncancellable}
-            className="flex w-full items-center justify-between border border-dashed border-edge px-2 py-1 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted transition-colors hover:border-edge-strong hover:text-readout"
+            className="flex min-h-11 w-full items-center justify-between border border-dashed border-edge px-3 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted transition-colors hover:border-edge-strong hover:text-readout"
           >
             <span>
               {grey.length} fixed effect{grey.length === 1 ? "" : "s"}

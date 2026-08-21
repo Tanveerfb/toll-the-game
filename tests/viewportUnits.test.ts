@@ -51,6 +51,22 @@ describe("viewport units are dynamic (ruling #107)", () => {
     expect(offenders).toEqual([]);
   });
 
+  /**
+   * The check above only ever matched `100vh` and `h-screen`, and that is
+   * exactly how `ModalShell`'s `max-h-[80vh]` and `DetailOverlay`'s
+   * `max-h-[85vh]` survived the 2026-08-19 sweep — a static viewport unit
+   * inside an arbitrary-value class, in the two shells that sit behind every
+   * modal and every battle detail panel. Any `vh` in a *height* is the bug;
+   * `vw` and `vmin` are untouched, and a width like `max-w-[92vw]` is fine.
+   */
+  it("no height is measured in static vh, in any form", () => {
+    const offenders = files
+      .map((rel) => [rel, code(rel)] as const)
+      .filter(([, src]) => /\b(min-|max-)?h-\[[^\]]*\d(?:\.\d+)?vh\b/.test(src))
+      .map(([rel]) => rel);
+    expect(offenders).toEqual([]);
+  });
+
   it("the dynamic units are actually in use, so this isn't passing by absence", () => {
     const users = files.filter((rel) => /\b(min-)?h-dvh\b/.test(code(rel)));
     expect(users.length).toBeGreaterThanOrEqual(10);

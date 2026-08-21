@@ -11,10 +11,7 @@ import {
   getUnitBorderClass,
 } from "@/lib/game/elementSwatch";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
-import {
-  EffectCountStrip,
-  effectCounts,
-} from "@/components/game/battle/EffectsList";
+import { EffectCountStrip } from "@/components/game/battle/EffectsList";
 import type { BattleCharacter } from "@/types/character";
 import type { SequencerFlash } from "@/hooks/useBattleSequencer";
 
@@ -34,28 +31,24 @@ const DANGER_PERCENT = 30;
  */
 function StatusChips({
   unit,
-  onOpen,
 }: {
   unit: BattleCharacter;
-  onOpen: (unit: BattleCharacter) => void;
 }): React.JSX.Element {
-  const { buffs, debuffs } = effectCounts(unit);
   return (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-        onOpen(unit);
-      }}
-      title={buffs + debuffs > 0 ? "View effects" : undefined}
-      aria-label="View status effects"
-      className="flex h-4 w-full cursor-pointer items-center gap-0.5 overflow-hidden"
+    // A readout, not a control (Tanveer, 2026-08-21). It was a 16px-tall
+    // button — the smallest tappable thing in the game — nested inside the
+    // tile, which is itself a button that opens the same detail panel one
+    // level up. Two targets, one of them unhittable, for one destination. The
+    // counts stay; tapping the tile is how you get to what they stand for.
+    <span
+      aria-hidden
+      className="flex h-4 w-full items-center gap-0.5 overflow-hidden"
     >
       {/* Counts, not a chip per effect, and the same encoding the info panel
           uses — the strip used to truncate at CHIP_LIMIT and add "+3", which
           told you less than a number would have (Tanveer, 2026-08-13). */}
       <EffectCountStrip unit={unit} className="text-[10px]" />
-    </button>
+    </span>
   );
 }
 
@@ -81,7 +74,6 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
   fx,
   onInspect,
   onMark,
-  onOpenEffects,
 }: {
   unit: BattleCharacter;
   isEnemy: boolean;
@@ -92,7 +84,6 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
   onInspect: (unit: BattleCharacter) => void;
   /** Enemy-only: focus-fire marking, via its own reticle button. */
   onMark: (instanceId: string) => void;
-  onOpenEffects: (unit: BattleCharacter) => void;
 }): React.JSX.Element {
   // During playback the sequencer feeds exact per-event HP snapshots so the
   // bar (and the DOWN stamp) land at the impact moment, not at resolve time
@@ -110,9 +101,17 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
       data-battle-instance={unit.instanceId}
       className={`relative h-full min-h-0 ${fx.shaking ? (fx.flash?.strong ? "battle-shake-strong" : "battle-shake") : ""} ${fx.evading ? "battle-evade" : ""}`}
     >
-      <div
+      {/* A real `<button>`, not a clickable `<div>` (2026-08-21). It was the
+          latter, which meant the primary way to inspect a unit mid-fight could
+          not be reached by a keyboard at all. Turning it into a button is only
+          possible because focus-fire moved out — a `<button>` inside a
+          `<button>` is invalid HTML, and that nesting is why this stayed a div
+          for as long as it did. */}
+      <button
+        type="button"
         onClick={() => onInspect(unit)}
-        className={`flex h-full min-h-0 cursor-pointer flex-col overflow-hidden border bg-panel transition-colors ${getUnitBorderClass(unit.color)} ${isMarked ? "shadow-[0_0_0_1px_var(--color-el-red)]" : ""}`}
+        aria-label={`${unit.name} — details`}
+        className={`flex h-full min-h-0 w-full cursor-pointer flex-col overflow-hidden border bg-panel text-left transition-colors ${getUnitBorderClass(unit.color)} ${isMarked ? "shadow-[0_0_0_1px_var(--color-el-red)]" : ""}`}
       >
         {/* PORTRAIT */}
         <div className="relative min-h-0 flex-1 overflow-hidden bg-inset">
@@ -144,7 +143,10 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
           {/* A full gauge used to be a glow on five 1px slivers. It's the
               single most decision-changing fact on the tile. */}
           {ultFull && !isDead ? (
-            <span className="absolute inset-x-0 top-0 bg-el-light px-1 py-px text-center font-body text-[8px] font-bold uppercase leading-none tracking-[0.16em] text-void">
+            // Keeps clear of the focus-fire reticle in the same corner.
+            <span
+              className={`absolute inset-x-0 top-0 bg-el-light px-1 py-px text-center font-body text-[8px] font-bold uppercase leading-none tracking-[0.16em] text-void ${canTarget ? "pr-10" : ""}`}
+            >
               Ult Ready
             </span>
           ) : null}
@@ -194,27 +196,6 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
             <span className="min-w-0 flex-1 truncate font-heading text-xs tracking-[0.04em] text-readout-strong">
               {unit.name}
             </span>
-            {canTarget ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMark(unit.instanceId);
-                }}
-                aria-label={
-                  isMarked ? "Clear focus fire" : "Focus fire on this enemy"
-                }
-                aria-pressed={isMarked}
-                title={isMarked ? "Focus-firing this enemy" : "Focus fire"}
-                className={`flex h-5 w-5 shrink-0 items-center justify-center border transition-colors ${
-                  isMarked
-                    ? "border-el-red bg-el-red/20 text-el-red"
-                    : "border-edge text-readout-muted hover:border-el-red hover:text-el-red"
-                }`}
-              >
-                <Crosshair className="h-3 w-3" strokeWidth={2.2} />
-              </button>
-            ) : null}
           </div>
 
           {/* Current HP leads; max is a quiet divisor. It used to be the
@@ -249,9 +230,37 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
             </span>
           </div>
 
-          <StatusChips unit={unit} onOpen={onOpenEffects} />
+          <StatusChips unit={unit} />
         </div>
-      </div>
+      </button>
+
+      {/* Focus fire — a SIBLING of the tile button, not a child of it.
+          It moved out of the readout row on 2026-08-21 (a 20px square wedged
+          between the name and the element pip, for a per-turn combat decision),
+          and it has to live outside the button rather than on top of it inside:
+          nesting one button in another is invalid HTML, and that nesting was
+          the thing keeping the tile from being a button at all. Sitting here it
+          overlays the portrait's top-right corner at a real 44px, opposite the
+          brackets it toggles. */}
+      {canTarget ? (
+        <button
+          type="button"
+          onClick={() => onMark(unit.instanceId)}
+          aria-label={isMarked ? "Clear focus fire" : "Focus fire on this enemy"}
+          aria-pressed={isMarked}
+          className={`absolute right-0 top-0 z-10 flex h-11 w-11 items-center justify-center transition-colors ${
+            isMarked ? "text-el-red" : "text-readout-muted hover:text-el-red"
+          }`}
+        >
+          <span
+            className={`flex h-6 w-6 items-center justify-center border bg-void/70 ${
+              isMarked ? "border-el-red bg-el-red/20" : "border-edge"
+            }`}
+          >
+            <Crosshair className="h-3.5 w-3.5" strokeWidth={2.2} />
+          </span>
+        </button>
+      ) : null}
     </div>
   );
 });

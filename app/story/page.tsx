@@ -36,6 +36,7 @@ import {
   getStoryChapter,
   getStoryStage,
   stageAfter,
+  stageBackgroundId,
   stageKey,
   stageLabel,
   visibleChapters,
@@ -362,7 +363,11 @@ export default function StoryPage(): React.JSX.Element {
       run.carryHp[id] ??
       1;
     return (
-      <StoryStage variant="stage">
+      <StoryStage
+        variant="stage"
+        backgroundId={stageBackgroundId(stage, getStoryChapter(run.chapterId))}
+        dimBackground
+      >
         <WaveBreak
           cleared={run.waveIndex}
           total={run.waveCount}
@@ -381,7 +386,7 @@ export default function StoryPage(): React.JSX.Element {
     const chapter = getStoryChapter(run.chapterId);
     if (!stage || !chapter) return bounce();
     return (
-      <StoryStage variant="stage">
+      <StoryStage variant="stage" backgroundId={stageBackgroundId(stage, chapter)}>
         <VersusSplash
           playerTeam={waveTeam(run)}
           enemyTeam={waveEnemies(stage, run)}
@@ -434,7 +439,7 @@ export default function StoryPage(): React.JSX.Element {
     const chapter = getStoryChapter(run.chapterId);
     if (!stage || !chapter) return bounce();
     return (
-      <StoryStage variant="stage">
+      <StoryStage variant="stage" backgroundId={stageBackgroundId(stage, chapter)}>
         <ChapterTitleCard
           chapterNumber={chapter.number}
           title={stage.name}
@@ -471,7 +476,11 @@ export default function StoryPage(): React.JSX.Element {
         ? describeOrderReward(order.reward)
         : null;
     return (
-      <StoryStage variant="stage">
+      <StoryStage
+        variant="stage"
+        backgroundId={stageBackgroundId(stage, chapter, "end")}
+        dimBackground
+      >
         <StageResult
           chapterTitle={chapter.title}
           stageLabel={stageLabel(chapter, stage)}
@@ -516,7 +525,11 @@ export default function StoryPage(): React.JSX.Element {
     const stage = getStoryStage(view.chapterId, view.stageId);
     if (!chapter || !stage) return bounce();
     return (
-      <StoryStage variant="page">
+      <StoryStage
+        variant="page"
+        backgroundId={stageBackgroundId(stage, chapter)}
+        dimBackground
+      >
         <StageBrief
           chapter={chapter}
           stage={stage}
@@ -541,7 +554,7 @@ export default function StoryPage(): React.JSX.Element {
     );
     if (!chapter || !index) return bounce();
     return (
-      <StoryStage variant="page">
+      <StoryStage variant="page" backgroundId={chapter.localeId} dimBackground>
         <StageList
           index={index}
           chapter={chapter}

@@ -143,6 +143,56 @@ function getCharacterInitial(name?: string): string {
   return name.trim().charAt(0).toUpperCase();
 }
 
+/** Radius and circumference of the hold ring. The circumference is handed to
+ *  CSS because `stroke-dashoffset` animates from it to zero, and CSS has no
+ *  way to compute 2πr. */
+const RING_R = 17;
+const RING_C = 2 * Math.PI * RING_R;
+
+/**
+ * The hold-to-open ring.
+ *
+ * Mounted once a press outlasts a tap, unmounted the instant it ends — so its
+ * animation starts and stops with the gesture and needs no progress state.
+ * It fills over the remainder of the hold, not the whole of it, because the
+ * first `TAP_MAX_MS` is already spent by the time it appears.
+ */
+function HoldRing({ durationMs }: { durationMs: number }): React.JSX.Element {
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-void/55"
+    >
+      <svg viewBox="0 0 44 44" className="h-11 w-11 -rotate-90">
+        <circle
+          cx="22"
+          cy="22"
+          r={RING_R}
+          fill="none"
+          strokeWidth="3"
+          className="stroke-edge-strong"
+        />
+        <circle
+          cx="22"
+          cy="22"
+          r={RING_R}
+          fill="none"
+          strokeWidth="3"
+          strokeLinecap="butt"
+          strokeDasharray={RING_C}
+          className="hold-ring-sweep stroke-signal"
+          style={
+            {
+              "--hold-circumference": RING_C,
+              "--hold-duration": `${durationMs}ms`,
+            } as React.CSSProperties
+          }
+        />
+      </svg>
+    </span>
+  );
+}
+
 /* ── animation constants ────────────────────────────────────────────────── */
 
 const EASE_OUT = "cubic-bezier(0.16, 0.9, 0.28, 1)";
@@ -154,10 +204,31 @@ const MERGE_FLY_MS = 220;
 const MERGE_PUNCH_MS = 260;
 const EXIT_MS = 200;
 /** Pointer travel that turns a press into a drag. Below this it's still a tap
- *  (or a hold), which is what makes hold-to-highlight possible at all. */
+ *  (or a hold), which is what makes the hold gesture possible at all. */
 const DRAG_THRESHOLD_PX = 6;
-/** How long a press must be held before partners light up. */
-const HOLD_MS = 180;
+/**
+ * A release faster than this is a **tap** — it plays the card.
+ *
+ * It is also when the hold ring appears. Below it nothing is drawn, so an
+ * ordinary tap never flashes a ring on its way out.
+ */
+const TAP_MAX_MS = 180;
+/**
+ * A press this long opens the card's details — the full sweep of the ring
+ * (Tanveer, 2026-08-21: *"they have to hold that until the animation plays
+ * before the modal opens"*).
+ *
+ * **Change here and the ring follows**, because the ring's duration is derived
+ * from this constant rather than written into the CSS.
+ *
+ * Was 3000 for about an hour. Three seconds is *confirmation* length — the
+ * pacing of "delete this permanently", not of "what does this card do", and
+ * reading a card is something you want mid-fight with a turn to finish.
+ * 1500 still reads as a deliberate press rather than a slow tap, which is all
+ * the ring has to prove (Tanveer, 2026-08-21: *"3s sure is long. maybe try
+ * 1.5sec?"*).
+ */
+const HOLD_DETAIL_MS = 1500;
 
 /* ── the hand ───────────────────────────────────────────────────────────── */
 
@@ -174,6 +245,14 @@ export interface HandProps {
   onReorder: (draggedCardId: string, targetCardId: string) => void;
   onPreviewStart: (card: ActionCard) => void;
   onPreviewEnd: () => void;
+  /**
+   * Press-and-hold a card. On a desktop the floating preview above the hand
+   * answers "what does this do"; a phone has no hover, so before 2026-08-21
+   * there was **no way at all** to read a card's skill in battle. Hold is that
+   * way (Tanveer: *"tap and hold will open the details of that card in an
+   * overlay modal"*).
+   */
+  onDetail: (card: ActionCard) => void;
   /** True while a card can merge by the *button's* looser rule. Kept as a
    *  prop so the hand doesn't re-derive a mechanic it doesn't own. */
   canUseMergeButton: (card: ActionCard) => boolean;
@@ -190,11 +269,32 @@ export default function Hand({
   onReorder,
   onPreviewStart,
   onPreviewEnd,
+  onDetail,
   canUseMergeButton,
 }: HandProps): React.JSX.Element {
   const nodes = React.useRef(new Map<string, HTMLDivElement>());
 
   const [holdId, setHoldId] = React.useState<string | null>(null);
+  /**
+   * The card currently showing a hold ring.
+   *
+   * Set once a press outlasts a tap, cleared the moment it ends — so mounting
+   * the ring is what starts its animation, and there is no progress value to
+   * drive from React. A 3s fill re-rendering the hand every frame would be a
+   * lot of work for a gesture whose only output is one modal.
+   */
+  const [ringId, setRingId] = React.useState<string | null>(null);
+  /**
+   * A card whose Merge button has been pressed, waiting for you to pick which
+   * partner it eats.
+   *
+   * Merging used to be a drag, and a drag is the one gesture a phone can't
+   * spare here — it fights the horizontal scroll of the row it happens in, on
+   * a card 56px wide. So on touch the card's own Merge button arms instead:
+   * partners light up, everything else recedes, and a tap commits (Tanveer,
+   * 2026-08-21). Drag still works and is still the faster desktop path.
+   */
+  const [armedId, setArmedId] = React.useState<string | null>(null);
   const [dragId, setDragId] = React.useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = React.useState<string | null>(null);
   const [mergeTargetId, setMergeTargetId] = React.useState<string | null>(null);
@@ -215,11 +315,18 @@ export default function Hand({
     originY: number;
     /** Past the drag threshold — a drag, not a tap or a hold. */
     active: boolean;
-    /** The hold timer fired: this press was an inspection, not a play. */
+    /** The hold ran its full course: this press opened the details, so the
+     *  release must not also play the card. */
     held: boolean;
+    /** When the press started, so the release can tell a tap from an abandoned
+     *  hold — the two mean opposite things and must not share an outcome. */
+    startedAt: number;
     dropTargetId: string | null;
     mergeTargetId: string | null;
-    holdTimer: ReturnType<typeof setTimeout> | null;
+    /** Shows the ring once the press outlasts a tap. */
+    ringTimer: ReturnType<typeof setTimeout> | null;
+    /** Opens the details when the ring completes. */
+    detailTimer: ReturnType<typeof setTimeout> | null;
   } | null>(null);
 
   /**
@@ -247,11 +354,21 @@ export default function Hand({
     return moveCardById(cards, dragId, dropTargetId);
   }, [cards, dragId, dropTargetId, mergeTargetId]);
 
+  // Partners light for two different reasons — a drag in progress, and an
+  // armed Merge button — and they light identically, because to the player
+  // they mean the same thing: these are the cards this one can eat.
+  const focusId = armedId ?? holdId;
   const partnerIds = React.useMemo(() => {
-    if (!holdId) return new Set<string>();
-    const held = cards.find((c) => c.id === holdId);
+    if (!focusId) return new Set<string>();
+    const held = cards.find((c) => c.id === focusId);
     return held ? new Set(mergePartnerIds(held, cards)) : new Set<string>();
-  }, [holdId, cards]);
+  }, [focusId, cards]);
+
+  // Derived, not cleaned up in an effect: an arm whose partners have left the
+  // hand — a fresh deal, a merge committed elsewhere — simply stops counting
+  // as armed. Reconciling it with a `setArmedId(null)` would be a second
+  // render to reach a state this expression already describes.
+  const armed = armedId !== null && partnerIds.size > 0 ? armedId : null;
 
   /* ── FLIP + ghosts ────────────────────────────────────────────────────── */
 
@@ -335,9 +452,11 @@ export default function Hand({
 
   const endInteraction = React.useCallback(() => {
     const live = press.current;
-    if (live?.holdTimer) clearTimeout(live.holdTimer);
+    if (live?.ringTimer) clearTimeout(live.ringTimer);
+    if (live?.detailTimer) clearTimeout(live.detailTimer);
     press.current = null;
     setHoldId(null);
+    setRingId(null);
     setDragId(null);
     setDropTargetId(null);
     setMergeTargetId(null);
@@ -353,12 +472,24 @@ export default function Hand({
 
       node.setPointerCapture?.(event.pointerId);
 
-      const holdTimer = setTimeout(() => {
+      // Two stages, because a press means three different things depending on
+      // how long it lasts: a tap plays the card, an abandoned hold does
+      // nothing, and a completed hold opens the details. The ring exists to
+      // make the difference between the last two visible while it's happening.
+      const ringTimer = setTimeout(() => {
         const live = press.current;
         if (!live || live.active) return;
+        setRingId(card.id);
+      }, TAP_MAX_MS);
+
+      const detailTimer = setTimeout(() => {
+        const live = press.current;
+        if (!live || live.active) return;
+        // `held` is what stops the release from also playing the card.
         live.held = true;
-        setHoldId(card.id);
-      }, HOLD_MS);
+        setRingId(null);
+        onDetail(card);
+      }, HOLD_DETAIL_MS);
 
       press.current = {
         id: card.id,
@@ -367,9 +498,11 @@ export default function Hand({
         originY: event.clientY,
         active: false,
         held: false,
+        startedAt: Date.now(),
         dropTargetId: null,
         mergeTargetId: null,
-        holdTimer,
+        ringTimer,
+        detailTimer,
       };
 
       const onMove = (moveEvent: PointerEvent) => {
@@ -381,7 +514,10 @@ export default function Hand({
         if (!live.active) {
           if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
           live.active = true;
-          if (live.holdTimer) clearTimeout(live.holdTimer);
+          // A drag is not a hold. Both timers die here, ring included.
+          if (live.ringTimer) clearTimeout(live.ringTimer);
+          if (live.detailTimer) clearTimeout(live.detailTimer);
+          setRingId(null);
           // Freeze the layout BEFORE the first preview reorder can move it.
           dragRects.current = [];
           nodes.current.forEach((node, id) => {
@@ -455,8 +591,25 @@ export default function Hand({
         endInteraction();
 
         if (!wasActive) {
-          // A tap plays the card; a press-and-hold only ever inspected it.
-          if (!wasHeld) onSelect(card.id);
+          // A completed hold opened the details; it does not also play a card.
+          if (wasHeld) return;
+          // An *abandoned* hold does nothing at all. Falling through to "play
+          // the card" would mean letting go of a ring you decided against
+          // costs you an action — the worst possible reading of a release, and
+          // the one a player would hit precisely when they weren't sure.
+          if (Date.now() - live.startedAt >= TAP_MAX_MS) return;
+          // While a Merge is armed, a tap answers *that* question instead of
+          // playing a card — tapping a partner commits the merge, tapping
+          // anything else (the armed card included) backs out. Playing a card
+          // by accident here would cost an action, so the safe reading wins.
+          if (armed) {
+            setArmedId(null);
+            if (card.id !== armed && partnerIds.has(card.id)) {
+              onReorder(armed, card.id);
+            }
+            return;
+          }
+          onSelect(card.id);
           return;
         }
 
@@ -470,7 +623,16 @@ export default function Hand({
       window.addEventListener("pointerup", onUp);
       window.addEventListener("pointercancel", onUp);
     },
-    [cards, interactive, endInteraction, onReorder, onSelect],
+    [
+      cards,
+      interactive,
+      endInteraction,
+      onReorder,
+      onSelect,
+      onDetail,
+      armed,
+      partnerIds,
+    ],
   );
 
   /* ── render ───────────────────────────────────────────────────────────── */
@@ -478,7 +640,21 @@ export default function Hand({
   return (
     <div
       data-tutorial="hand"
-      className="hud-scroll flex w-full touch-none justify-center gap-1 overflow-x-auto border border-hairline bg-void/70 p-2"
+      // Centred while the hand fits, scrolled from the left once it doesn't.
+      // `justify-center` alone clips the first card unreachably when the
+      // content overflows — auto margins on the end children centre without
+      // that failure mode, which matters now that a full hand *does* overflow.
+      // `touch-pan-x`, not `touch-none`. It was `touch-none` — harmless while
+      // cards squeezed and the row never overflowed, and a trap the moment
+      // they stopped: eight cards at a 56px floor DO overflow, and
+      // `touch-none` would have left the player unable to swipe to the ones
+      // off-screen. Vertical panning stays suppressed so a press on a card
+      // can't be stolen by the page scrolling under it.
+      //
+      // Cost, accepted: drag-to-reorder no longer works by touch, because the
+      // same horizontal swipe now scrolls the row. Mouse drag is unaffected,
+      // and merging by touch goes through the card's Merge button (#118).
+      className="hud-scroll flex w-full touch-pan-x justify-start gap-1 overflow-x-auto border border-hairline bg-void/70 p-2 [&>*:first-child]:ml-auto [&>*:last-child]:mr-auto"
     >
       {displayed.map((card) => {
         const char = playerTeam.find(
@@ -495,10 +671,10 @@ export default function Hand({
         const isDragged = dragId === card.id;
         const isPartner = partnerIds.has(card.id);
         const isMergeTarget = mergeTargetId === card.id;
-        // Everything that isn't a partner recedes while a card is held, so the
-        // ones that matter are the ones you can see.
+        // Everything that isn't a partner recedes while a card is dragged or
+        // a merge is armed, so the ones that matter are the ones you can see.
         const dimmed =
-          holdId !== null && holdId !== card.id && !isPartner && !isMergeTarget;
+          focusId !== null && focusId !== card.id && !isPartner && !isMergeTarget;
 
         return (
           <div
@@ -513,8 +689,17 @@ export default function Hand({
             onMouseLeave={onPreviewEnd}
             onFocus={() => onPreviewStart(card)}
             onBlur={onPreviewEnd}
+            // A long press is the details gesture now, and on touch the OS
+            // reads the same press as "select this text / open a menu".
+            onContextMenu={(e) => e.preventDefault()}
+            // `min-w-14` is the floor, and it is the whole fix: these were
+            // `flex-1 min-w-0`, so a full hand of eight divided 390px into
+            // 43px slivers and the row it sits in — which has always been
+            // `overflow-x-auto` — never scrolled, because nothing ever
+            // overflowed. With a floor the cards keep their shape and the
+            // container finally does its job.
             className={`
-              relative flex h-32 min-w-0 max-w-24 flex-1 select-none flex-col overflow-hidden rounded-xl border bg-panel
+              no-callout relative flex h-32 min-w-14 max-w-24 flex-1 select-none flex-col overflow-hidden rounded-xl border bg-panel
               ${frame.borderClass}
               ${interactive ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
               ${interactive && !isDragged ? "transition-transform duration-150 hover:-translate-y-2" : ""}
@@ -596,21 +781,57 @@ export default function Hand({
               <Button
                 variant="secondary"
                 size="xs"
+                aria-pressed={armed === card.id}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onMerge(card.id);
+                  const partners = mergePartnerIds(card, cards);
+                  // One partner is not a choice, so don't stage one — the
+                  // store picks the same card either way. Arming only earns
+                  // its extra tap when there is something to decide, and with
+                  // two partners there genuinely is: a merge grants +1 ult
+                  // gauge to the *eaten* card's owner.
+                  if (partners.length <= 1) {
+                    setArmedId(null);
+                    onMerge(card.id);
+                    return;
+                  }
+                  setArmedId((current) =>
+                    current === card.id ? null : card.id,
+                  );
                 }}
-                className="absolute bottom-6 right-0.5 h-5 bg-void/85 px-1 text-[9px] tracking-[0.08em]"
+                // Opted out of the 44px floor the button scale enforces: it
+                // sits *on* a 56px card and a 44px control would cover the
+                // name and cost underneath it. Ruling #119 allows the opt-out
+                // with a reason; this is the reason. The card is what would
+                // have to grow, and it can't without the hand scrolling
+                // further than one swipe.
+                className={`absolute bottom-6 right-0.5 h-5 min-h-0 px-1 py-0 text-[9px] tracking-[0.08em] ${
+                  armed === card.id
+                    ? "border-el-light bg-el-light text-void"
+                    : "bg-void/85"
+                }`}
               >
-                Merge
+                {armed === card.id ? "Pick" : "Merge"}
               </Button>
+            ) : null}
+
+            {/* The commit target, once a merge is armed. Covers the card so
+                the tap that lands here can't be mistaken for playing it. */}
+            {armed !== null && armed !== card.id && isPartner ? (
+              <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-el-light py-px text-center font-body text-[8px] font-bold uppercase tracking-[0.16em] text-void">
+                Tap
+              </span>
             ) : null}
 
             {isStunned ? (
               <div className="absolute inset-0 flex items-center justify-center bg-void/40 font-body text-[10px] font-bold uppercase tracking-widest text-readout-strong">
                 Stunned
               </div>
+            ) : null}
+
+            {ringId === card.id ? (
+              <HoldRing durationMs={HOLD_DETAIL_MS - TAP_MAX_MS} />
             ) : null}
           </div>
         );

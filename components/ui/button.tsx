@@ -54,17 +54,30 @@ const buttonVariants = cva(
        * together: small controls are body-font uppercase readouts, large ones
        * are heading-font display text. Splitting them into separate props
        * would just mean every usage setting both.
+       *
+       * **Every size is at least 44px tall (2026-08-21, ruling #107.)** Five of
+       * the nine used to sit under it — `default` at 36px worst of all, since
+       * 20 of the 51 call sites take it implicitly and never state a size at
+       * all. That is why hand-fixing screens didn't work: a screen authored
+       * mobile-first still got a 36px button, and `components/game/story/`,
+       * the calibration set, shipped two of them.
+       *
+       * The **type scale is untouched** — a small control still reads small.
+       * What changed is the box, via `min-h`/`min-w` floors rather than bigger
+       * `h-*`, so a row of controls keeps its rhythm and only the ones that
+       * were too small to hit grow.
        */
       size: {
-        xs: "h-6 px-2 font-body text-[10px] font-bold uppercase tracking-[0.14em]",
-        sm: "h-7 px-3 font-body text-[11px] font-bold uppercase tracking-[0.14em]",
-        default: "h-9 px-4 font-heading text-sm tracking-[0.12em]",
-        lg: "h-11 px-5 font-heading text-base tracking-[0.12em]",
-        xl: "h-12 px-6 font-heading text-lg tracking-[0.14em]",
-        icon: "size-9",
-        "icon-xs": "size-6",
-        "icon-sm": "size-7",
-        "icon-lg": "size-11",
+        xs: "min-h-11 px-2 py-1 font-body text-[10px] font-bold uppercase tracking-[0.14em]",
+        sm: "min-h-11 px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.14em]",
+        default: "min-h-11 px-4 py-2 font-heading text-sm tracking-[0.12em]",
+        lg: "min-h-11 px-5 py-2 font-heading text-base tracking-[0.12em]",
+        xl: "min-h-12 px-6 py-2.5 font-heading text-lg tracking-[0.14em]",
+        // One icon size, not four. `icon-xs`/`icon-sm`/`icon-lg` were 24/28/44
+        // and had zero callers; with a 44px floor the first two would have
+        // been `icon` under another name, which is a scale that lies about
+        // what it offers.
+        icon: "size-11",
       },
     },
     defaultVariants: {

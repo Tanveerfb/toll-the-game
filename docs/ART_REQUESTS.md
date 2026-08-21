@@ -257,11 +257,48 @@ inventory, ascension cost list, gacha payout, chapter rewards and clear summary 
 
 ## Category D — Miscellaneous
 
-**Status: open, nothing queued.**
+**Status: D1 delivered 2026-08-22. Nothing queued.**
 
 Anything that is neither a character, a scene background, nor an inventory icon — UI
 textures, banner composites. One banner composite exists (`public/banners/`); its
 compositing approach is documented under "Banner splash art" in `ART_PIPELINE.md`.
+
+### D1 — app-icon — the game's mark, for a home screen and a browser tab
+
+- **Purpose:** the icon of the installed game. The PWA manifest
+  (`app/manifest.ts`) points at it, and it is also the browser tab favicon —
+  the first and smallest thing anyone sees of this game, and currently the only
+  piece of its visual identity that does not exist. **The repo has no icon at
+  all today**: no favicon, no `public/icons/`, nothing.
+- **Specs:** **512×512 PNG**, square. **Do NOT remove the background** — this is
+  the one icon category that must be opaque, because a transparent app icon
+  renders on whatever the launcher decides, usually white, and this game's
+  identity is its near-black ground. Two hard constraints beyond the usual:
+  - **Readable at 48px.** That is the real size on a home screen. One shape, one
+    accent, no fine detail, no text smaller than about a fifth of the frame.
+  - **Maskable-safe.** Android crops app icons to a circle, a squircle or a
+    rounded square depending on the launcher. **Keep everything meaningful
+    inside the middle 80%** and treat the outer 10% on each edge as croppable.
+    A border drawn at the very edge will be cut off on most phones.
+- **Prompt notes:** Combat Terminal palette from `styles/globals.css` — ground
+  `--color-void #06090c`, accent `--color-signal #4fd3e8`, optional edge
+  `--color-edge-strong #31596b`. **What the mark actually depicts is Tanveer's
+  call and is not decided** — do not invent a logo. The placeholder currently
+  shipping is simply the letter **T**; a monogram is the safe interpretation if
+  no direction is given, but a real emblem is the point of this request.
+- **Lands at:** `public/icons/app-icon.png`. Registration is a **deletion**, not
+  a new map: `app/icon.tsx` generates the placeholder today and should be
+  removed, with `app/manifest.ts`'s `icons[].src` pointed at the new file.
+  Whoever delivers this does both edits — leaving the generated route in place
+  means the real art is never seen.
+- **Fallback shipping today:** `app/icon.tsx`, an `ImageResponse` drawing the
+  letter T in signal cyan on void. Install works, the tab has an icon, and it is
+  obviously typographic and obviously temporary.
+- **Status:** `done 2026-08-22` — **drawn, not generated.** See the Delivered
+  entry at the bottom for why, and for what ComfyUI actually produced when
+  asked. Reopen this entry if the drawn mark is ever replaced by real art.
+- **Requested:** 2026-08-21, for the PWA work — the game is installable to a
+  home screen now, and installing it puts this icon on someone's phone.
 
 **Board terrain** for the story node board will land here once the route work starts
 (16:9, no background removal, no characters) — not requested yet, because the board's
@@ -270,6 +307,47 @@ own visuals aren't built.
 ---
 
 ## Delivered
+
+### 2026-08-22 — D1, the app icon (drawn, after ComfyUI declined)
+
+`public/icons/app-icon.png` + `app/icon.png`, written by
+`scripts/logo_candidates.py --ship`. Tanveer picked it from five candidates.
+
+**The mark:** a gate standing inside a coin, one gold bar down across the
+opening. A coin is a payment, a barred gate is a road you cannot pass, and the
+toll is what connects them — the game's name in one shape. Round, so every
+launcher mask takes nothing from it.
+
+**Why it is drawn and not rendered.** Two attempts, both recorded in
+`ART_PIPELINE.md` under "Logos and marks":
+
+1. **Animagine returns an item sheet.** Four directions — crest, elemental
+   shards, coin, gateway — eight images, every one a scatter of ~20 objects,
+   several with a stray hand. Same failure as "game item icon" in Category C,
+   and a property of the model rather than the adjectives.
+2. **Flux is not installed here**, despite `flux1-dev-fp8-e4m3fn.safetensors`
+   sitting in `checkpoints/`. It is UNet-only and fails at `CLIPTextEncode`
+   with `clip input is invalid: None`; this ComfyUI has no Flux text encoders
+   and no Flux VAE. All five vector LoRAs are behind that same ~10GB gap.
+
+The recipe that *did* fix Animagine is worth keeping even though the roll was
+not used: **`no humans` as a positive booru tag** plus a short subject line.
+That produced a single clean centred arch on black, on palette. It was rejected
+for a different reason — it is an illustration, and an illustration dies at
+48px. An app icon is a geometry problem (exact centring, 80% maskable safe
+zone, legible at thumbnail), which is the same argument that made the five coin
+frames a PIL script.
+
+**Two revisions, both figure-ground problems invisible at full size:** two
+concentric rings moiréd at 48px, and the gate was originally cut *out* of a
+cyan face, which made the dark shape the figure and the whole thing read as a
+padlock. Inverted to a dark face with a cyan gate.
+
+**If real art ever replaces it:** delete `app/icon.png` and
+`public/icons/app-icon.png`, drop the new file at the same public path, and
+leave `app/manifest.ts` alone — it points at a stable path for exactly this.
+
+
 
 ### 2026-08-20 — Category C, the whole inventory set (20 assets)
 

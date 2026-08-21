@@ -208,7 +208,7 @@ export default function AccountModal({
               type="button"
               onClick={resetTutorial}
               disabled={!tutorialDismissed && tutorialSeenCount === 0}
-              className="shrink-0 border border-edge px-3 py-1.5 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-signal hover:text-signal disabled:opacity-40"
+              className="flex min-h-11 shrink-0 items-center border border-edge px-3 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-signal hover:text-signal disabled:opacity-40"
             >
               Show again
             </button>
@@ -221,7 +221,7 @@ export default function AccountModal({
               type="button"
               onClick={onSignOut}
               disabled={signingOut}
-              className="border border-edge px-4 py-2 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-readout-dim transition-colors hover:border-el-red hover:text-el-red disabled:opacity-50"
+              className="flex min-h-11 items-center border border-edge px-4 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-readout-dim transition-colors hover:border-el-red hover:text-el-red disabled:opacity-50"
             >
               {signingOut ? "Signing out…" : "Sign out"}
             </button>
@@ -229,7 +229,7 @@ export default function AccountModal({
             <button
               type="button"
               onClick={() => router.push("/login")}
-              className="border border-signal bg-signal/10 px-4 py-2 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-signal transition-colors hover:bg-signal/20"
+              className="flex min-h-11 items-center border border-signal bg-signal/10 px-4 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-signal transition-colors hover:bg-signal/20"
             >
               Sign in
             </button>

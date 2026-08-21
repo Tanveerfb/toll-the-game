@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import ItemIcon from "@/components/game/ItemIcon";
 import React from "react";
 import { usePlayerStore, type ResolvedPullOutcome } from "@/store/playerStore";
 import { getGemBanner, getTicketBanner } from "@/lib/gacha/banners";
@@ -83,6 +84,8 @@ export default function BannerScreen(): React.JSX.Element {
     ? LIMITED_GEM_COST.multi
     : PERMANENT_TICKET_COST.multi;
   const balance = isLimited ? currencies.gems : currencies.permanentTicket;
+  /** The banner's currency, as a material id - what its icon resolves from. */
+  const currencyIcon = isLimited ? "gems" : "permanent_ticket";
   const unit = isLimited ? "gems" : "tickets";
 
   // The permanent pool is every character flagged `permanentPool`, which is
@@ -139,12 +142,17 @@ export default function BannerScreen(): React.JSX.Element {
                   setTab(t);
                   setNotice(null);
                 }}
-                className={`border px-3.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] transition-colors ${
+                className={`flex items-center gap-1.5 border px-3.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] transition-colors ${
                   tab === t
                     ? "border-signal bg-signal/10 text-signal"
                     : "border-edge text-readout-dim hover:border-edge-strong hover:text-readout"
                 }`}
               >
+                <ItemIcon
+                  id={t === "limited" ? "gems" : "permanent_ticket"}
+                  size={18}
+                  alt=""
+                />
                 {t === "limited" ? "Gems" : "Tickets"}
               </button>
             ))}
@@ -333,7 +341,8 @@ export default function BannerScreen(): React.JSX.Element {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-body text-sm font-bold tabular-nums text-readout-strong">
+          <span className="flex items-center gap-1.5 font-body text-sm font-bold tabular-nums text-readout-strong">
+            <ItemIcon id={currencyIcon} size={22} alt="" />
             {hasHydrated ? balance.toLocaleString() : "—"}{" "}
             <span className="font-semibold uppercase tracking-[0.12em] text-readout-muted">
               {unit}
@@ -343,7 +352,7 @@ export default function BannerScreen(): React.JSX.Element {
           <button
             type="button"
             onClick={() => setShowRates(true)}
-            className="border border-edge px-3 py-1.5 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
+            className="flex min-h-11 items-center border border-edge px-3 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
           >
             Rates &amp; pool
           </button>
@@ -369,6 +378,7 @@ export default function BannerScreen(): React.JSX.Element {
           count={pendingDraw}
           cost={pendingDraw === 1 ? singleCost : multiCost}
           unit={unit}
+          iconId={currencyIcon}
           balance={balance}
           bar={bar}
           barGain={

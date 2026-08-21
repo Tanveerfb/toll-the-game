@@ -224,6 +224,59 @@ steel plaque, crystal cluster, single amber shard. Two of the shipped icons stay
 24px — `bramble_thorn` and `corroded_seaweed` are thin-line subjects with no mass — which
 is recorded in ART_REQUESTS rather than fixed, since both read fine at 44px and up.
 
+## Logos and marks — drawn, not generated (2026-08-22)
+
+The app icon was the second asset in this project that a diffusion model could
+not produce, and it failed for the same reason as the first (the coin frames):
+**a mark is geometry, and a roll cannot promise geometry.**
+
+**Animagine returns an item sheet when asked for an emblem.** Four directions —
+metal crest, five elemental shards, engraved coin, stone gateway — eight images,
+and every one came back as a scatter of about twenty small objects, several with
+a stray hand and baked-in gibberish text. This is the same failure the inventory
+pass hit with the phrase "game item icon", except here it fired on *"emblem"*,
+*"badge"*, *"medallion"* and *"crest"* too. Treat all of them as set-words: they
+summon a collection, not a single object, and no amount of "a single" in front
+fixes it.
+
+**Two things did fix it**, and they are worth reusing for any object render:
+
+1. **`no humans` as a POSITIVE booru tag.** Animagine is a character model; with
+   no character in the prompt it invents one, and `hands` in the negative does
+   not stop it. `no humans` does, immediately. Pair it with `simple background,
+   black background` — also booru tags, also positive.
+2. **A short subject line.** The failing prompts stacked six adjectives and a
+   colour list. **A colour list makes it draw one object per colour** — "crimson,
+   azure, emerald, gold, violet" produced five separate gems every time. One
+   subject, one accent colour, and stop.
+
+With both applied, `a single stone gateway arch, centered, closed barrier pole,
+glowing cyan lantern` produced a clean single centred object on black, first
+roll. It was still not used — see below.
+
+**Flux is not usable on this install.** `flux1-dev-fp8-e4m3fn.safetensors` sits
+in `checkpoints/` but is **UNet-only**: it fails at `CLIPTextEncode` with
+`clip input is invalid: None`. There are no Flux text encoders (`umt5_xxl` is
+WAN's) and no Flux VAE. All five vector/icon LoRAs — `Simple_Vector_Flux_v2`,
+`flux_vector_style`, `Icon-Kit`, `DD-vector-v2`, `Vector_lora_weights` — are
+behind that same ~10GB download and are equally unavailable until it happens.
+
+**Why the good roll still lost.** It is an *illustration*, and an illustration
+dies at 48px: thin columns, fine lineart and lantern detail all collapse into
+mush. An app icon has three requirements that are arithmetic rather than art —
+exact centring, an 80% maskable safe zone (Android crops to a circle, a squircle
+or a rounded square depending on the launcher), and legibility at thumbnail. So
+the shipped mark is drawn: `scripts/logo_candidates.py`, five candidates plus a
+contact sheet that renders each at 256/96/48px, because **the only size that
+matters is the one nobody checks until the icon is on a phone.**
+
+**Two revisions, both figure-ground problems invisible at full size.** Two
+concentric rings moiréd at 48px — one ring now. And the gate was originally cut
+*out* of a cyan coin face, which made the dark shape the figure and the whole
+mark read as a **padlock**; inverting it to a dark face with a cyan gate fixed
+it, and is also the version that still reads as an arch at 32px rather than
+going to a blob.
+
 ## Character coin frames — drawn, not generated (2026-08-20)
 
 `public/items/coin_frame_{blue,red,green,light,dark}.png` are rendered by a **PIL script**,

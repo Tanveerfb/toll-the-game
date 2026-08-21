@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Battle screen at 390 — the layout, as decided</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* Combat Terminal tokens, copied from styles/globals.css @theme so this file
+     stands alone and still reads as the game. */
+  :root {
+    --void: #06090c;
+    --panel: #0d141b;
+    --panel-raised: #111a23;
+    --inset: #080d12;
+    --gridline: #0e1720;
+    --hairline: #16212b;
+    --edge: #1c2a36;
+    --edge-strong: #31596b;
+    --readout-strong: #eaf2f8;
+    --readout: #cbd8e2;
+    --readout-dim: #8ea6b8;
+    --readout-muted: #5d7285;
+    --signal: #4fd3e8;
+    --signal-dim: #31596b;
+    --el-light: #e8d174;
+    --el-red: #ff5a4e;
+    --el-blue: #37a6ff;
+    --el-green: #35d48b;
+    --el-dark: #a874ff;
+    --heading: "Bangers", "Impact", cursive;
+    --body: "Rajdhani", "Segoe UI", sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--void);
+    color: var(--readout);
+    font-family: var(--body);
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    padding: 28px 20px 60px;
+  }
+
+  .terminal-grid {
+    background-image:
+      linear-gradient(var(--gridline) 1px, transparent 1px),
+      linear-gradient(90deg, var(--gridline) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  h1 {
+    font-family: var(--heading);
+    font-size: 34px;
+    letter-spacing: 0.08em;
+    color: var(--readout-strong);
+  }
+  .eyebrow {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.34em; color: var(--signal);
+  }
+  .masthead { border-left: 2px solid var(--signal); padding-left: 12px; max-width: 78ch; }
+  .masthead p { margin-top: 8px; color: var(--readout-dim); line-height: 1.6; font-size: 14px; }
+  .masthead p b { color: var(--readout-strong); font-weight: 700; }
+
+  /* ── frames ─────────────────────────────────────────────────────────── */
+  .frames {
+    display: flex; gap: 26px; margin-top: 28px;
+    overflow-x: auto; padding-bottom: 18px; align-items: flex-start;
+  }
+  .frame { flex: 0 0 auto; width: 390px; }
+  .frame > figcaption { margin-bottom: 10px; }
+  .frame h2 {
+    font-family: var(--heading); font-size: 21px; letter-spacing: 0.06em;
+    color: var(--readout-strong);
+  }
+  .frame .note { font-size: 12.5px; color: var(--readout-muted); line-height: 1.5; margin-top: 3px; }
+  .frame .note.bad { color: var(--el-red); }
+  .frame .note.good { color: var(--el-green); }
+
+  /* The phone itself: 390x844 minus the 46px nav the battle screen hides
+     row 2 for, so 798px of actual screen. */
+  .phone {
+    width: 390px; height: 798px;
+    border: 1px solid var(--edge-strong);
+    background: var(--void);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── shared battle chrome ───────────────────────────────────────────── */
+  .status {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--hairline); background: var(--inset);
+    padding: 5px 10px;
+  }
+  .status .turn { font-family: var(--heading); font-size: 15px; letter-spacing: .1em; color: var(--readout-strong); }
+  .status .phase { font-size: 11px; text-transform: uppercase; letter-spacing: .16em; color: var(--signal); }
+  .status .bar { margin-left: auto; height: 6px; width: 40px; border: 1px solid var(--edge); background: var(--void); }
+  .status .bar i { display: block; height: 100%; width: 62%; background: var(--signal); }
+
+  .field { flex: 1 1 auto; display: flex; min-height: 0; }
+  .rows {
+    flex: 1 1 auto; min-width: 0; display: grid;
+    grid-template-rows: minmax(0,1fr) auto minmax(0,1fr);
+    gap: 4px; padding: 6px 8px 6px 12px;
+  }
+  .rowlabel { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .18em; color: var(--readout-muted); margin-bottom: 4px; }
+  .tiles { display: flex; gap: 8px; align-items: center; justify-content: center; min-height: 0; }
+  .tile {
+    flex: 1 1 0; min-width: 0; aspect-ratio: 9/16; max-height: 100%;
+    border: 1px solid var(--edge); background: var(--panel);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .tile .art { flex: 1 1 auto; background: var(--inset); position: relative; min-height: 0; }
+  .tile .art::after {
+    content: ""; position: absolute; inset: 18% 22%;
+    border: 1px dashed var(--edge-strong); opacity: .5;
+  }
+  .tile .foot { flex: 0 0 auto; border-top: 1px solid var(--hairline); background: var(--inset); padding: 3px 4px; }
+  .tile .nm { font-family: var(--heading); font-size: 11px; letter-spacing: .04em; color: var(--readout-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile .hp { height: 4px; background: var(--void); border: 1px solid var(--hairline); margin-top: 3px; }
+  .tile .hp i { display: block; height: 100%; width: 74%; background: var(--readout); }
+  .tile .ult { height: 8px; background: var(--void); border: 1px solid var(--hairline); margin-top: 3px; }
+  .tile .ult i { display: block; height: 100%; width: 40%; background: rgba(232,209,116,.35); }
+  .tile.enemy { border-color: rgba(255,90,78,.5); }
+
+  .centerline { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 2px 0; }
+  .centerline span { font-family: var(--heading); font-size: 13px; letter-spacing: .2em; color: var(--readout-muted); }
+  .centerline i { flex: 1; height: 1px; background: var(--edge); }
+
+  .ticker {
+    flex: 0 0 auto; min-height: 44px; display: flex; align-items: center;
+    border-top: 1px solid var(--hairline); background: rgba(6,9,12,.7);
+    padding: 0 12px; font-size: 12px; color: var(--readout);
+  }
+  .ticker b { color: var(--signal); margin-right: 6px; font-weight: 400; }
+
+  .deck { flex: 0 0 auto; padding: 6px 8px 8px; }
+  .actionrow { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .pips { display: flex; align-items: center; gap: 4px; border: 1px solid var(--hairline); background: var(--inset); padding: 0 6px; min-height: 44px; flex: 0 0 auto; }
+  .pips small { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--readout-muted); }
+  .pips u { display: block; width: 8px; height: 12px; border: 1px solid var(--edge); background: var(--void); }
+  .pips u.on { border-color: var(--signal); background: var(--signal); }
+  .slots { display: flex; gap: 6px; flex: 1 1 auto; min-width: 0; overflow-x: auto; }
+  .slot { flex: 0 0 auto; min-height: 44px; width: 56px; border: 1px dashed var(--edge); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--readout-muted); }
+  .btn {
+    min-height: 44px; padding: 0 14px; border: 1px solid var(--signal);
+    background: rgba(79,211,232,.1); color: var(--signal);
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .14em;
+    display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  }
+  .btn.ghost { border-color: var(--edge); background: transparent; color: var(--readout-dim); }
+
+  .hand { display: flex; gap: 4px; border: 1px solid var(--hairline); background: rgba(6,9,12,.7); padding: 8px; overflow-x: auto; }
+  .card {
+    flex: 1 1 0; height: 128px; border: 1px solid var(--edge-strong);
+    background: var(--panel); display: flex; flex-direction: column; overflow: hidden;
+  }
+  .card .cart { flex: 1 1 auto; background: var(--inset); min-height: 0; }
+  .card .cfoot { flex: 0 0 auto; border-top: 1px solid var(--hairline); padding: 2px 3px; }
+  .card .cfoot b { display: block; font-size: 9px; font-weight: 600; color: var(--readout-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .cfoot i { display: block; font-size: 8px; font-weight: 700; color: var(--readout-muted); font-style: normal; }
+  .card.squeezed { flex: 1 1 0; min-width: 0; }
+  .card.floored { flex: 0 0 auto; width: 68px; }
+  .card.ult { border-color: var(--el-light); }
+
+  .teambar { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 6px; }
+  .dots { display: flex; gap: 3px; }
+  .dots u { display: block; width: 9px; height: 9px; background: var(--readout-dim); }
+  .dots u.dead { background: var(--edge); }
+  .teambar span { font-size: 9px; text-transform: uppercase; letter-spacing: .2em; color: var(--readout-muted); }
+
+  /* ── the rail, in its three forms ───────────────────────────────────── */
+  .rail {
+    flex: 0 0 auto; width: 56px; border-left: 1px solid var(--hairline);
+    background: var(--inset); display: flex; flex-direction: column;
+    align-items: center; gap: 4px; padding: 6px;
+  }
+  .railbtn {
+    width: 44px; height: 40px; border: 1px solid var(--edge); background: var(--panel-raised);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 8px; text-transform: uppercase; letter-spacing: .1em; color: var(--readout-dim);
+  }
+  .railbtn em { font-style: normal; font-size: 13px; color: var(--readout); }
+
+  .dock {
+    flex: 0 0 auto; display: flex; gap: 6px; align-items: stretch;
+    border-top: 1px solid var(--hairline); background: var(--inset); padding: 6px 8px;
+  }
+  .dockbtn {
+    flex: 1 1 0; min-height: 44px; border: 1px solid var(--edge); background: var(--panel-raised);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    font-size: 8px; text-transform: uppercase; letter-spacing: .1em; color: var(--readout-dim);
+  }
+  .dockbtn em { font-style: normal; font-size: 14px; color: var(--readout); }
+  .dockbtn.danger { border-color: rgba(255,90,78,.5); color: var(--el-red); }
+  .dockbtn.danger em { color: var(--el-red); }
+
+  .sheetbar { flex: 0 0 auto; display: flex; gap: 6px; border-top: 1px solid var(--hairline); background: var(--inset); padding: 6px 8px; }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 5;
+    border-top: 1px solid var(--edge-strong); background: var(--panel);
+    padding: 10px 10px 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    box-shadow: 0 -18px 50px rgba(0,0,0,.7);
+  }
+  .sheet .dockbtn { flex: none; min-height: 56px; }
+  .sheet .grab { grid-column: 1 / -1; height: 4px; width: 44px; background: var(--edge-strong); margin: 0 auto 4px; }
+
+  /* ── measurement callouts ───────────────────────────────────────────── */
+  .measure {
+    position: absolute; z-index: 6; font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .1em;
+    background: var(--el-light); color: var(--void); padding: 1px 5px;
+  }
+  .measure.warn { background: var(--el-red); color: #fff; }
+
+  /* ── decision block ─────────────────────────────────────────────────── */
+  .calls { margin-top: 40px; display: grid; gap: 18px; max-width: 78ch; }
+  .call { border: 1px solid var(--edge); background: var(--panel); padding: 14px 16px; }
+  .call h3 { font-family: var(--heading); font-size: 19px; letter-spacing: .06em; color: var(--readout-strong); }
+  .call p { margin-top: 6px; font-size: 14px; line-height: 1.6; color: var(--readout-dim); }
+  .call p b { color: var(--readout-strong); font-weight: 700; }
+  .call .opts { margin-top: 10px; display: grid; gap: 6px; }
+  .call .opt { display: grid; grid-template-columns: auto 1fr; gap: 10px; font-size: 13.5px; line-height: 1.55; color: var(--readout-dim); }
+  .call .opt u { text-decoration: none; font-weight: 700; color: var(--signal); text-transform: uppercase; letter-spacing: .1em; font-size: 11px; padding-top: 3px; }
+  .call.open { border-color: var(--el-light); }
+  .call.open h3 { color: var(--el-light); }
+
+  .foot { margin-top: 34px; font-size: 12.5px; color: var(--readout-muted); max-width: 78ch; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <span class="eyebrow">Ruling #107 · battle screen</span>
+  <h1>Battle at 390</h1>
+  <p>
+    Three renderings of the same fight on a 390×844 phone, at true size — this is
+    <b>798px tall</b>, which is 844 minus the nav row the battle screen keeps.
+  </p>
+  <p>
+    <b>Decided and built, 2026-08-21.</b> This file is now the record of that
+    decision rather than a set of questions: frame <b>B</b> is what shipped, with
+    the card floor at <b>56px</b> and merge arming from the card's own button.
+    Each call below carries what was chosen and why. Ruling <b>#118</b> in
+    <code>docs/HANDOFF.md</code> is the authority; if the two ever disagree, the
+    ledger wins and this file is stale.
+  </p>
+</header>
+
+<div class="frames">
+
+  <!-- ─────────────────────────── TODAY ─────────────────────────── -->
+  <figure class="frame">
+    <figcaption>
+      <h2>Before</h2>
+      <p class="note bad">Rail ate 56px of 390 · tiles 72px · hand cards 43px · ticker line</p>
+    </figcaption>
+    <div class="phone terminal-grid">
+      <div class="status">
+        <span class="turn">TURN 4</span>
+        <span class="phase">Your move</span>
+        <span class="bar"><i></i></span>
+      </div>
+
+      <div class="field">
+        <div class="rows" style="padding-right:8px">
+          <div style="display:flex;flex-direction:column;min-height:0">
+            <div class="rowlabel">Hostiles</div>
+            <div class="tiles">
+              <div class="tile enemy"><div class="art"></div><div class="foot"><div class="nm">Bandit</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile enemy"><div class="art"></div><div class="foot"><div class="nm">Bruiser</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile enemy"><div class="art"></div><div class="foot"><div class="nm">Enforc…</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile enemy"><div class="art"></div><div class="foot"><div class="nm">Collec…</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+            </div>
+          </div>
+          <div class="centerline"><i></i><span>VS</span><i></i></div>
+          <div style="display:flex;flex-direction:column;min-height:0">
+            <div class="rowlabel">Your team</div>
+            <div class="tiles">
+              <div class="tile"><div class="art"></div><div class="foot"><div class="nm">Duke</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile"><div class="art"></div><div class="foot"><div class="nm">Seras</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile"><div class="art"></div><div class="foot"><div class="nm">Lyra</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile"><div class="art"></div><div class="foot"><div class="nm">Chiara</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+            </div>
+          </div>
+        </div>
+        <aside class="rail">
+          <span class="measure warn" style="top:2px;right:2px">56px</span>
+          <div class="railbtn"><em>»</em>2×</div>
+          <div class="railbtn"><em>▤</em>Log</div>
+          <div class="railbtn"><em>☠</em>Foe</div>
+          <div class="railbtn"><em>◈</em>Team</div>
+          <div class="railbtn"><em>⏻</em>Exit</div>
+        </aside>
+      </div>
+
+      <div class="ticker"><b>►</b> Duke used Flowing Ruin — 2,140 damage</div>
+
+      <div class="deck">
+        <div class="actionrow">
+          <div class="pips"><small>Actions</small><u class="on"></u><u class="on"></u><u></u></div>
+          <div class="slots"><div class="slot">3</div></div>
+          <div class="btn ghost">Reset</div>
+          <div class="btn">End</div>
+        </div>
+        <div class="hand" style="position:relative">
+          <span class="measure warn" style="top:-9px;left:8px">43px each</span>
+          <div class="card squeezed"><div class="cart"></div><div class="cfoot"><b>Cut</b><i>R2</i></div></div>
+          <div class="card squeezed"><div class="cart"></div><div class="cfoot"><b>Cut</b><i>R1</i></div></div>
+          <div class="card squeezed"><div class="cart"></div><div class="cfoot"><b>Gua</b><i>R1</i></div></div>
+          <div class="card squeezed"><div class="cart"></div><div class="cfoot"><b>Men</b><i>R3</i></div></div>
+          <div class="card squeezed"><div class="cart"></div><div class="cfoot"><b>Vei</b><i>R1</i></div></div>
+          <div class="card squeezed"><div class="cart"></div><div class="cfoot"><b>Cut</b><i>R2</i></div></div>
+          <div class="card squeezed"><div class="cart"></div><div class="cfoot"><b>Gua</b><i>R1</i></div></div>
+          <div class="card squeezed ult"><div class="cart"></div><div class="cfoot"><b>Ult</b><i>—</i></div></div>
+        </div>
+        <div class="teambar">
+          <span class="dots"><u></u><u></u><u></u><u class="dead"></u></span>
+          <span>vs</span>
+          <span class="dots"><u></u><u></u><u class="dead"></u><u class="dead"></u></span>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <!-- ─────────────────────── A · CONTROL DOCK ─────────────────────── -->
+  <figure class="frame">
+    <figcaption>
+      <h2>A · Dock — not taken</h2>
+      <p class="note">Considered and set aside: five permanent buttons still hold ~56px of height.</p>
+    </figcaption>
+    <div class="phone terminal-grid">
+      <div class="status">
+        <span class="turn">TURN 4</span>
+        <span class="phase">Your move</span>
+        <span class="bar"><i></i></span>
+      </div>
+
+      <div class="field">
+        <div class="rows" style="padding-right:12px;position:relative">
+          <span class="measure" style="top:2px;right:2px">86px tiles</span>
+          <div style="display:flex;flex-direction:column;min-height:0">
+            <div class="rowlabel">Hostiles</div>
+            <div class="tiles">
+              <div class="tile enemy"><div class="art"></div><div class="foot"><div class="nm">Bandit</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile enemy"><div class="art"></div><div class="foot"><div class="nm">Bruiser</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile enemy"><div class="art"></div><div class="foot"><div class="nm">Enforcer</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile enemy"><div class="art"></div><div class="foot"><div class="nm">Collector</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+            </div>
+          </div>
+          <div class="centerline"><i></i><span>VS</span><i></i></div>
+          <div style="display:flex;flex-direction:column;min-height:0">
+            <div class="rowlabel">Your team</div>
+            <div class="tiles">
+              <div class="tile"><div class="art"></div><div class="foot"><div class="nm">Duke</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile"><div class="art"></div><div class="foot"><div class="nm">Seras</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile"><div class="art"></div><div class="foot"><div class="nm">Lyra</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile"><div class="art"></div><div class="foot"><div class="nm">Chiara</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ticker"><b>►</b> Duke used Flowing Ruin — 2,140 damage</div>
+
+      <div class="deck">
+        <div class="actionrow">
+          <div class="pips"><small>Actions</small><u class="on"></u><u class="on"></u><u></u></div>
+          <div class="slots"><div class="slot">3</div></div>
+          <div class="btn ghost">Reset</div>
+          <div class="btn">End</div>
+        </div>
+        <div class="hand" style="position:relative">
+          <span class="measure" style="top:-9px;left:8px">68px · scrolls →</span>
+          <div class="card floored"><div class="cart"></div><div class="cfoot"><b>Cutting</b><i>R2 · 180%</i></div></div>
+          <div class="card floored"><div class="cart"></div><div class="cfoot"><b>Cutting</b><i>R1 · 120%</i></div></div>
+          <div class="card floored"><div class="cart"></div><div class="cfoot"><b>Guard</b><i>R1 · —</i></div></div>
+          <div class="card floored"><div class="cart"></div><div class="cfoot"><b>Mend</b><i>R3 · heal</i></div></div>
+          <div class="card floored"><div class="cart"></div><div class="cfoot"><b>Veil</b><i>R1 · —</i></div></div>
+          <div class="card floored ult"><div class="cart"></div><div class="cfoot"><b>Ultimate</b><i>ready</i></div></div>
+        </div>
+      </div>
+
+      <div class="dock" style="position:relative">
+        <span class="measure" style="top:-9px;left:8px">thumb third</span>
+        <div class="dockbtn"><em>»</em>Speed</div>
+        <div class="dockbtn"><em>▤</em>Log</div>
+        <div class="dockbtn"><em>☠</em>Foe</div>
+        <div class="dockbtn"><em>◈</em>Team</div>
+        <div class="dockbtn danger"><em>⏻</em>Exit</div>
+      </div>
+    </div>
+  </figure>
+
+  <!-- ─────────────────────── B · SHEET ─────────────────────── -->
+  <figure class="frame">
+    <figcaption>
+      <h2>B · Built</h2>
+      <p class="note good">Shipped. Skip and Speed stay out; the rest sit behind Controls. Cards floored at 56px.</p>
+    </figcaption>
+    <div class="phone terminal-grid">
+      <div class="status">
+        <span class="turn">TURN 4</span>
+        <span class="phase">Your move</span>
+        <span class="bar"><i></i></span>
+      </div>
+
+      <div class="field">
+        <div class="rows" style="padding-right:12px;position:relative">
+          <span class="measure" style="top:2px;right:2px">92px tiles</span>
+          <div style="display:flex;flex-direction:column;min-height:0">
+            <div class="rowlabel">Hostiles</div>
+            <div class="tiles">
+              <div class="tile enemy"><div class="art"></div><div class="foot"><div class="nm">Bandit</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile enemy"><div class="art"></div><div class="foot"><div class="nm">Bruiser</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile enemy"><div class="art"></div><div class="foot"><div class="nm">Enforcer</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+            </div>
+          </div>
+          <div class="centerline"><i></i><span>VS</span><i></i></div>
+          <div style="display:flex;flex-direction:column;min-height:0">
+            <div class="rowlabel">Your team</div>
+            <div class="tiles">
+              <div class="tile"><div class="art"></div><div class="foot"><div class="nm">Duke</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile"><div class="art"></div><div class="foot"><div class="nm">Seras</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+              <div class="tile"><div class="art"></div><div class="foot"><div class="nm">Lyra</div><div class="hp"><i></i></div><div class="ult"><i></i></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ticker"><b>►</b> Duke used Flowing Ruin — 2,140 damage</div>
+
+      <div class="deck">
+        <div class="actionrow">
+          <div class="pips"><small>Actions</small><u class="on"></u><u class="on"></u><u></u></div>
+          <div class="slots"><div class="slot">3</div></div>
+          <div class="btn ghost">Reset</div>
+          <div class="btn">End</div>
+        </div>
+        <div class="hand">
+          <div class="card floored"><div class="cart"></div><div class="cfoot"><b>Cutting</b><i>R2 · 180%</i></div></div>
+          <div class="card floored"><div class="cart"></div><div class="cfoot"><b>Cutting</b><i>R1 · 120%</i></div></div>
+          <div class="card floored"><div class="cart"></div><div class="cfoot"><b>Guard</b><i>R1 · —</i></div></div>
+          <div class="card floored"><div class="cart"></div><div class="cfoot"><b>Mend</b><i>R3 · heal</i></div></div>
+          <div class="card floored ult"><div class="cart"></div><div class="cfoot"><b>Ultimate</b><i>ready</i></div></div>
+        </div>
+      </div>
+
+      <div class="sheetbar">
+        <div class="dockbtn" style="flex:0 0 96px"><em>»</em>Speed 2×</div>
+        <div class="dockbtn" style="flex:1 1 auto"><em>⋯</em>Controls</div>
+      </div>
+
+      <!-- the sheet, shown open -->
+      <div class="sheet">
+        <span class="grab"></span>
+        <div class="dockbtn"><em>▤</em>Log</div>
+        <div class="dockbtn"><em>☠</em>Foe</div>
+        <div class="dockbtn"><em>◈</em>Team</div>
+        <div class="dockbtn"><em>»</em>Speed</div>
+        <div class="dockbtn"><em>⏸</em>Skip</div>
+        <div class="dockbtn danger"><em>⏻</em>Exit</div>
+      </div>
+    </div>
+  </figure>
+
+</div>
+
+<!-- ─────────────────────────── the calls ─────────────────────────── -->
+<section class="calls">
+
+  <div class="call">
+    <h3>Call 1 — where the six controls live &nbsp;·&nbsp; <span style="color:var(--el-green)">B, the sheet</span></h3>
+    <p>
+      Tanveer: <b>"i want the options to hide in a modal behind a button
+      click."</b> The rail was the right answer on a desktop, where 56px off the
+      side of a 1440px window costs nothing. At 390 it was <b>14% of the screen,
+      permanently</b>, taken from the one region that has real work to do, and
+      sitting under the top half where a thumb doesn't reach.
+    </p>
+    <div class="opts">
+      <div class="opt"><u>Built</u><span><b>Skip and Speed stay in the open</b> — Skip exists for the few seconds an animation is playing, and neither survives being two taps away. <b>Log, Foe, Team and Exit</b> sit behind <em>Controls</em>, which opens a <b>bottom-anchored</b> sheet: everything in it is something a thumb has to reach, so a centred modal would have been the wrong shape.</span></div>
+      <div class="opt"><u>Also</u><span><code>RailButton</code> became <code>ControlButton</code>. A component named after a thing that no longer exists is the same failure as a skill outliving its subject.</span></div>
+      <div class="opt"><u>Not taken</u><span>The dock (frame A). Five permanent buttons still hold ~56px of height, and the sheet gives that back for one extra tap on the four controls you touch least.</span></div>
+    </div>
+  </div>
+
+  <div class="call">
+    <h3>Call 2 — may a hand card shrink? &nbsp;·&nbsp; <span style="color:var(--el-green)">B, floor at 56px</span></h3>
+    <p>
+      The hand holds up to eight cards (<b>4 field units → 8</b>). They were
+      <b>flex-1 with no minimum</b> inside a container that already scrolled —
+      so instead of scrolling, eight cards divided 390px into <b>43px
+      slivers</b>, and the container never scrolled at all, because nothing ever
+      overflowed it.
+    </p>
+    <div class="opts">
+      <div class="opt"><u>Built</u><span><code>min-w-14</code> — 56px. Six cards visible, swipe for the rest, and the row finally does what it was always built to do.</span></div>
+      <div class="opt"><u>Caught</u><span>Centring had to change with it. Plain <code>justify-center</code> makes the <b>first</b> card unreachable once content overflows — a real bug, and one that only appears now that overflow actually happens. Auto margins on the end children centre while it fits and don't clip when it doesn't.</span></div>
+    </div>
+  </div>
+
+  <div class="call">
+    <h3>Call 3 — merge, on a phone &nbsp;·&nbsp; <span style="color:var(--el-green)">the card's own button arms it</span></h3>
+    <p>
+      Merging was <b>drag one card onto another</b>, and a drag is the one
+      gesture that can't be spared here — it fights the horizontal scroll of the
+      row it happens in, on a card 56px wide.
+    </p>
+    <div class="opts">
+      <div class="opt"><u>Built</u><span>Tap <b>Merge</b> on a card → partners light, everything else recedes → tap one to commit. With a <b>single</b> partner it commits on the spot: there is nothing to choose, and the store would have picked the same card anyway.</span></div>
+      <div class="opt"><u>Why</u><span>The second tap earns its place only when there are two partners — and then it matters, because a merge grants <b>+1 ult gauge to the eaten card's owner</b>. That was a choice the code used to make for you.</span></div>
+      <div class="opt"><u>Kept</u><span>Drag still works, and is still the faster desktop path.</span></div>
+    </div>
+  </div>
+
+  <div class="call">
+    <h3>Call 4 — what a tile shows &nbsp;·&nbsp; <span style="color:var(--el-green)">keep focus-fire, strip becomes a readout</span></h3>
+    <p>
+      The footer carried a <b>16px effect strip</b> and a <b>20px focus-fire
+      toggle</b> alongside the name, HP number, HP bar and ult gauge.
+    </p>
+    <div class="opts">
+      <div class="opt"><u>Built</u><span>The strip is a <b>readout</b>. It was a button nested inside the tile — which is itself a button, to the same detail panel. Two targets, one of them unhittable, for one destination.</span></div>
+      <div class="opt"><u>Built</u><span><b>Focus-fire moved onto the portrait</b>, top-right, at a real 44px. It's a per-turn combat decision and it was the smallest control on the screen. The "Ult Ready" banner pads around it.</span></div>
+      <div class="opt"><u>Note</u><span>Tap-and-hold on a tile opens its details — which already worked, because a long press ending in a release still fires a click. No code was needed for it.</span></div>
+    </div>
+  </div>
+
+  <div class="call">
+    <h3>Cut — the event ticker</h3>
+    <p>
+      Tanveer: <b>"if someone needs to know what happened then they can just
+      check the log."</b> One line restating the last action, holding a 44px
+      band in the tightest vertical space on the screen, duplicating what the
+      log drawer holds in full. Its slot is where the control bar sits now.
+    </p>
+  </div>
+
+  <div class="call open">
+    <h3>His find — a skill you couldn't read</h3>
+    <p>
+      Not in the audit, and worse than it sounds: <b>"on mobile, there is
+      usually no way to see what skills or ults do when they are in deck."</b>
+      The card preview was hover-only, so on a phone <b>there was no way to read
+      a skill in battle at all</b> — you played cards from memory.
+    </p>
+    <div class="opts">
+      <div class="opt"><u>Built</u><span><b>Tap plays a card; press-and-hold opens its full description</b> — name, type, rank, power, the text resolved to that card's rank, and a footnote per mechanic it names. Shared with the desktop preview (<code>CardDetail</code>) so the two can't drift into telling different stories.</span></div>
+      <div class="opt"><u>Then</u><span><b>"it has to play a 3 sec commitment type progression circle that fills before the modal opens."</b> A ring appears once the press outlasts a tap and fills over the remaining time; the modal opens when it completes. One constant (<code>HOLD_DETAIL_MS</code>) drives both the timer and the ring's CSS duration, so the animation can't promise a different length than the code enforces.</span></div>
+      <div class="opt"><u>Tuned</u><span>Built at 3000ms, flagged as <i>confirmation</i> length — the pacing of "delete this permanently", not of "what does this card do" — and cut to <b>1500ms</b> within the hour: <b>"3s sure is long. maybe try 1.5sec?"</b> The ring only has to prove the press was deliberate.</span></div>
+      <div class="opt"><u>The catch</u><span>One gesture, three endings — and the middle one is the dangerous one. A quick release plays the card; a completed hold opens details; an <b>abandoned</b> hold does <b>nothing</b>. Falling through to "play the card" there would spend an action at the exact moment the player decided against something.</span></div>
+      <div class="opt"><u>Knock-on</u><span>Hold used to light merge partners. Freeing it is what made the arming flow in Call 3 possible — the two changes are one decision, not two. And the row went <code>touch-none</code> → <code>touch-pan-x</code>: blocking every touch gesture was harmless while nothing overflowed and a trap the moment cards got a floor. Trade: no drag-to-reorder by touch, since that swipe now scrolls.</span></div>
+    </div>
+  </div>
+
+</section>
+
+<p class="foot">
+  The rest of the mobile pass shipped alongside this: the button scale carries a
+  44px floor at every size, mechanic keywords open on tap instead of hover, the
+  modal shells measure in <code>dvh</code>, the nav's counters and route links
+  are 44px, and the arena's coach, detail panel and action slots are all sized.
+  Rulings <b>#118–120</b> in <code>docs/HANDOFF.md</code> are the authority; if
+  this file and the ledger ever disagree, the ledger wins and this file is stale.
+  <br /><br />
+  <b>None of this is browser-verified.</b> Everything above is static analysis
+  and reading the JSX — the visual pass is Tanveer's.
+</p>
+
+</body>
+</html>

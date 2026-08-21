@@ -14,15 +14,12 @@ import {
 } from "@/components/ui/card";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import type { ActionCard } from "@/types/action";
-import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
-import type { CharacterSkillData } from "@/lib/game/characterCatalog";
-import {
-  buildDescriptionForRank,
-  buildSkillKeywordGlossary,
-} from "@/lib/game/descriptionTranslator";
-import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
 import { mergePartnerIds } from "@/lib/game/handTransition";
 import Hand from "@/components/game/battle/Hand";
+import CardDetail, {
+  skillPowerText,
+} from "@/components/game/battle/CardDetail";
+import DetailOverlay from "@/components/game/DetailOverlay";
 import {
   useDealSequence,
   usePrefersReducedMotion,
@@ -31,17 +28,6 @@ import { actionsForTurn } from "@/lib/game/actionEconomy";
 import { bonusActionsFor } from "@/lib/game/stageEffects";
 import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
 import type { BattleCharacter } from "@/types/character";
-import {
-  extractKeywordFootnotes,
-  formatFootnoteLabel,
-} from "@/lib/game/keywordFootnotes";
-
-function getSkillPowerText(card: ActionCard): string {
-  if (card.skill.type === "ultimate") {
-    return `Power ${card.skill.damage}`;
-  }
-  return `Power ${card.skill.damageRanked[card.rank - 1]}`;
-}
 
 /** Merge tier. Deliberately not stars — a star row reads as rarity, which is
  *  a different axis and one this game also has. */
@@ -73,16 +59,6 @@ function getColorTokenClasses(color?: string): string {
     default:
       return "border-el-light/80 bg-el-light/10";
   }
-}
-
-function getSkillDescription(card: ActionCard): string {
-  const skillData = card.skill as CharacterSkillData;
-
-  if (!skillData.description || skillData.description.trim().length === 0) {
-    return "No description available.";
-  }
-
-  return buildDescriptionForRank(skillData, card.rank - 1);
 }
 
 // Compact per-unit dots (spec §1 item 6, "Team bar") — an at-a-glance
@@ -228,31 +204,15 @@ export default function Deck() {
     [],
   );
 
-  const previewDescription = React.useMemo(
-    () => (previewCard ? getSkillDescription(previewCard) : ""),
-    [previewCard],
-  );
-
-  // Tiered stat wording ("raises", "greatly lowers") resolves to this card's
-  // actual numbers at its rank
-  const previewGlossary = React.useMemo(
-    () =>
-      previewCard
-        ? {
-            ...mechanicGlossary,
-            ...buildSkillKeywordGlossary(
-              previewCard.skill as CharacterSkillData,
-              previewCard.rank - 1,
-            ),
-          }
-        : mechanicGlossary,
-    [previewCard],
-  );
-
-  const previewKeywordDefinitions = React.useMemo(
-    () => extractKeywordFootnotes(previewDescription, previewGlossary),
-    [previewDescription, previewGlossary],
-  );
+  /**
+   * The card a press-and-hold opened.
+   *
+   * Separate state from `previewCard` on purpose: the preview is transient and
+   * pointer-driven (it hides 120ms after the pointer leaves), while this is a
+   * modal the player dismisses. Sharing one value would have the hover timers
+   * closing a dialogue someone is reading.
+   */
+  const [detailCard, setDetailCard] = React.useState<ActionCard | null>(null);
 
   return (
     <div
@@ -273,7 +233,7 @@ export default function Deck() {
                   </CardTitle>
                   <CardDescription className="tracking-[0.12em]">
                     {previewCard.skill.type} • Rank {previewCard.rank} •{" "}
-                    {getSkillPowerText(previewCard)}
+                    {skillPowerText(previewCard)}
                   </CardDescription>
                 </div>
                 <span className="rounded-none border border-el-light/70 bg-el-light/15 px-2 py-0.5 font-body text-xs uppercase tracking-[0.12em] text-el-light">
@@ -282,37 +242,23 @@ export default function Deck() {
               </div>
             </CardHeader>
             <CardContent className="px-4 py-3">
-              <p className="font-body text-sm text-readout">
-                <KeyworkHighlighter
-                  text={previewDescription}
-                  className="font-body text-sm text-readout"
-                  glossary={previewGlossary}
-                  keywordClassName="inline-flex cursor-help items-center rounded-none border border-edge-strong bg-transparent px-1 py-[1px] font-body text-xs uppercase tracking-[0.06em] text-readout-strong"
-                />
-              </p>
-
-              {previewKeywordDefinitions.length > 0 ? (
-                <>
-                  <div className="my-3 border-t border-edge" />
-                  <div className="space-y-1">
-                    {previewKeywordDefinitions.map((entry) => (
-                      <p
-                        key={entry.keyword}
-                        className="font-body text-xs text-readout-dim"
-                      >
-                        <span className="mr-1 text-readout-muted">※</span>
-                        <span className="font-semibold text-signal">
-                          {formatFootnoteLabel(entry.keyword)}
-                        </span>
-                        <span className="text-readout"> — {entry.meaning}</span>
-                      </p>
-                    ))}
-                  </div>
-                </>
-              ) : null}
+              <CardDetail card={previewCard} />
             </CardContent>
           </Card>
         </div>
+      ) : null}
+
+      {/* The same body, as a modal. Hover can't happen on a phone, so before
+          this existed a player on the device the game targets had no way to
+          read a card's skill mid-fight. */}
+      {detailCard ? (
+        <DetailOverlay
+          title={detailCard.skill.skillName}
+          subtitle={`${detailCard.skill.type} · Rank ${detailCard.rank} · ${skillPowerText(detailCard)}`}
+          onClose={() => setDetailCard(null)}
+        >
+          <CardDetail card={detailCard} />
+        </DetailOverlay>
       ) : null}
 
       {/* Action economy, queue, controls. The queue scrolls; the controls do
@@ -355,7 +301,7 @@ export default function Deck() {
                 onMouseLeave={endPreview}
                 onFocus={() => beginPreview(card)}
                 onBlur={endPreview}
-                className={`flex h-9 min-w-0 max-w-44 shrink-0 cursor-pointer items-center gap-1.5 border px-1.5 transition-colors ${getColorTokenClasses(char?.color)} ${isUlt ? "ring-1 ring-el-light/80 shadow-[0_0_8px_rgba(232,209,116,0.45)]" : ""}`}
+                className={`flex min-h-11 min-w-0 max-w-44 shrink-0 cursor-pointer items-center gap-1.5 border px-1.5 transition-colors ${getColorTokenClasses(char?.color)} ${isUlt ? "ring-1 ring-el-light/80 shadow-[0_0_8px_rgba(232,209,116,0.45)]" : ""}`}
               >
                 {char && getCharacterArt(char.id) ? (
                   <Image
@@ -390,7 +336,7 @@ export default function Deck() {
               key={`pass-${i}`}
               type="button"
               onClick={() => isPlayerActionPhase && removeNullAction()}
-              className="flex h-9 w-14 shrink-0 items-center justify-center border border-edge bg-panel-raised/60 font-body text-[9px] uppercase tracking-widest text-readout-dim transition-colors hover:border-el-red/70 hover:text-el-red"
+              className="flex min-h-11 w-14 shrink-0 items-center justify-center border border-edge bg-panel-raised/60 font-body text-[9px] uppercase tracking-widest text-readout-dim transition-colors hover:border-el-red/70 hover:text-el-red"
             >
               Pass
             </button>
@@ -403,7 +349,7 @@ export default function Deck() {
               onClick={() => isPlayerActionPhase && addNullAction()}
               disabled={!isPlayerActionPhase}
               title="Tap to pass this action"
-              className="flex h-9 w-14 shrink-0 items-center justify-center border border-dashed border-edge font-body text-[10px] text-readout-muted transition-colors enabled:hover:border-edge-strong enabled:hover:text-readout-dim disabled:cursor-not-allowed"
+              className="flex min-h-11 w-14 shrink-0 items-center justify-center border border-dashed border-edge font-body text-[10px] text-readout-muted transition-colors enabled:hover:border-edge-strong enabled:hover:text-readout-dim disabled:cursor-not-allowed"
             >
               {slotsUsed + i + 1}
             </button>
@@ -447,6 +393,7 @@ export default function Deck() {
         onReorder={reorderDeckCard}
         onPreviewStart={beginPreview}
         onPreviewEnd={endPreview}
+        onDetail={setDetailCard}
         canUseMergeButton={canMergeCard}
       />
 

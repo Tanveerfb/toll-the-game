@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Boxes, ChevronRight, UserCog } from "lucide-react";
+import ItemIcon from "@/components/game/ItemIcon";
 import { useAuth } from "@/hooks/AuthProvider";
 import { usePlayerStore } from "@/store/playerStore";
 import { useSettingsStore } from "@/store/settingsStore";
@@ -35,11 +36,15 @@ function getServerClockSnapshot(): number {
 
 function Resource({
   label,
+  iconId,
   value,
   suffix,
   percent,
 }: {
   label: string;
+  /** Currency/material id whose icon sits beside the name. Omitted for the
+   *  figures that aren't things you hold (roster count). */
+  iconId?: string;
   value: string;
   suffix?: string;
   /** Adds a fill bar — only worth it for a value that refills on its own. */
@@ -47,7 +52,8 @@ function Resource({
 }): React.JSX.Element {
   return (
     <div className="flex min-w-[8rem] flex-1 flex-col gap-1 border border-hairline bg-panel px-3 py-2">
-      <span className="font-body text-[9px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+      <span className="flex items-center gap-1.5 font-body text-[9px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+        {iconId ? <ItemIcon id={iconId} size={18} alt="" /> : null}
         {label}
       </span>
       <span className="font-heading text-xl leading-none tracking-[0.04em] text-readout-strong tabular-nums">
@@ -183,16 +189,19 @@ export default function ProfilePage() {
         <div className="mt-3 flex flex-wrap gap-2">
           <Resource
             label="Stamina"
+            iconId="stamina"
             value={ready ? `${currentStamina}` : dash}
             suffix={`/${STAMINA_CAP}`}
             percent={ready ? (currentStamina / STAMINA_CAP) * 100 : 0}
           />
           <Resource
             label="Gems"
+            iconId="gems"
             value={ready ? currencies.gems.toLocaleString() : dash}
           />
           <Resource
             label="Coin"
+            iconId="coin"
             value={ready ? currencies.coin.toLocaleString() : dash}
           />
           <Resource

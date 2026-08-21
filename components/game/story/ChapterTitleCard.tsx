@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { tapSurfaceProps } from "@/lib/a11y";
 import { m } from "framer-motion";
 
 /** How long the card holds before moving on by itself. */
@@ -32,10 +33,7 @@ export default function ChapterTitleCard({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onDone}
-      aria-label="Continue"
+      {...tapSurfaceProps(onDone, "Continue")}
       className="relative flex h-full w-full flex-1 cursor-pointer items-center justify-center overflow-hidden px-6"
     >
       <div className="text-center">

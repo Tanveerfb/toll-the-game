@@ -2,7 +2,7 @@
 import { scaleMaxHp } from "@/lib/game/maxHp";
 import { passiveBlocks, findAnyPassiveMechanic } from "@/lib/game/passiveBlocks";
 import { entryAffectsStat, statPhrase } from "@/lib/game/stats";
-import { QueueItem } from "@/hooks/MechanicProvider";
+import type { QueueItem } from "@/lib/game/mechanicQueue";
 import { BattlePhase, StatusEffect } from "@/types/mechanic";
 
 type RegisterFn = (item: QueueItem) => void;

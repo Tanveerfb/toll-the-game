@@ -1,7 +1,19 @@
 # Audio — what to drop in, and where
 
-Music only. There is no SFX system and none is planned in the current batches
-(Tanveer, 2026-08-09) — no battle sounds, no UI clicks, no text blips.
+**Music and sound effects.** This file said *"there is no SFX system and none
+is planned"* (Tanveer, 2026-08-09) until **2026-08-21**, when he asked for one.
+Both buses now exist and both are **silent until the files arrive** — that is
+the designed state, not a bug.
+
+| Bus | Manifest | Player |
+|---|---|---|
+| Music | `lib/audio/tracks.ts` | `lib/audio/music.ts` (two-deck crossfade) |
+| Effects | `lib/audio/cues.ts` | `lib/audio/sfx.ts` (howler, pooled voices) |
+
+The two are deliberately separate modules. Music plays one long file at a time
+and wants fades; effects are short, overlapping and numerous, and an
+`HTMLAudioElement` restarts rather than layering when asked to play something
+already playing.
 
 The game asks for music by **role**, never by filename, so a screen never
 names a file. The role → file map is `lib/audio/tracks.ts`.
@@ -19,6 +31,40 @@ or a console warning storm.
 | `story-scene.ogg` | `storyScene` | Intro and outro scene reader | yes |
 | `battle.ogg` | `battle` | VS splash and every battle | yes |
 | `victory.ogg` | `victory` | Chapter complete and the rewards screen | **no** |
+
+## Sound effects
+
+Drop these into `public/audio/sfx/`. Callers ask for a **cue**, never a
+filename, so `lib/audio/cues.ts` is the only place a path appears.
+
+| File | Cue | Fires on |
+|---|---|---|
+| `card-play.ogg` | `cardPlay` | A card is committed to the action queue |
+| `card-merge.ogg` | `cardMerge` | Two cards merge into a higher rank |
+| `hit.ogg` | `hit` | A normal attack connects |
+| `critical.ogg` | `critical` | A CRITICAL connects |
+| `evade.ogg` | `evade` | An attack is evaded |
+| `ultimate.ogg` | `ultimate` | An ultimate fires (the cut-in beat) |
+| `defeat.ogg` | `defeat` | A unit drops to zero |
+| `turn-end.ogg` | `turnEnd` | The turn resolves and passes over |
+| `victory.ogg` | `victory` | Battle won |
+| `defeat-screen.ogg` | `defeatScreen` | Battle lost |
+
+**Which sounds these are is yours.** The manifest names the *moments* the game
+asks about; the character of each is a design call, not an engineering one.
+
+Two behaviours worth knowing before you cut them:
+
+- **Effects fire on the animated beat, not the engine's.** Playback runs up to
+  a second behind resolution, and a hit you hear before you see it reads as a
+  bug. `hooks/useBattleSequencer.ts` fires each cue at its impact frame.
+- **Repeats inside a few frames are throttled** (`throttleMs` per cue). One
+  AoE can ask for `hit` eight times in a frame; without it that is one loud
+  click rather than eight hits. Raise the value if a cue still stacks.
+
+Levels use the same per-entry `gain` trim as music, multiplied by the player's
+volume. There is no separate effects slider — one control governs both, which
+is a thing to design once there is something to balance against.
 
 ### Format
 

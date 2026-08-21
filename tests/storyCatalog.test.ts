@@ -9,6 +9,7 @@ import {
   isChapterUnlocked,
   isStageUnlocked,
   stageAfter,
+  stageBackgroundId,
   stageKey,
   stageLabel,
   visibleChapters,
@@ -147,5 +148,56 @@ describe("auto clear never touches story", () => {
     for (const event of eligible) {
       expect(storyIds.has(event.id)).toBe(false);
     }
+  });
+});
+
+
+/**
+ * Which plate a stage plays over (2026-08-21). Every story screen except the
+ * scene reader used to sit on the bare terminal grid, because backgrounds are
+ * authored per scene and nothing else had a scene to read one from.
+ */
+describe("stageBackgroundId", () => {
+  const chapter = getStoryChapters()[0];
+
+  it("opens a stage where its first intro scene does", () => {
+    const stage = chapter.stages[0];
+    const firstAuthored = stage.intro.find((scene) => scene.backgroundId);
+    expect(firstAuthored).toBeDefined();
+    expect(stageBackgroundId(stage, chapter)).toBe(firstAuthored!.backgroundId);
+  });
+
+  it("ends a stage where its last outro scene does", () => {
+    const stage = chapter.stages[0];
+    const lastAuthored = [...stage.outro]
+      .reverse()
+      .find((scene) => scene.backgroundId);
+    expect(lastAuthored).toBeDefined();
+    expect(stageBackgroundId(stage, chapter, "end")).toBe(
+      lastAuthored!.backgroundId,
+    );
+  });
+
+  it("moves between the two — a stage does not have to end where it started", () => {
+    // Chapter 1 stage 1 opens in a Bureau office and closes on the burned
+    // village. A result screen showing the office would be telling the wrong
+    // half of the stage.
+    const stage = chapter.stages[0];
+    expect(stageBackgroundId(stage, chapter)).not.toBe(
+      stageBackgroundId(stage, chapter, "end"),
+    );
+  });
+
+  it("falls back to the chapter's locale when a stage names nothing", () => {
+    const stage = { ...chapter.stages[0], intro: [], outro: [] };
+    expect(stageBackgroundId(stage, chapter)).toBe(chapter.localeId);
+    expect(stageBackgroundId(stage, chapter, "end")).toBe(chapter.localeId);
+  });
+
+  it("returns undefined rather than guessing, with neither", () => {
+    // `getStoryBackground` renders a neutral tint for an unknown slug, so an
+    // undefined here is a fallback, not a crash.
+    const stage = { ...chapter.stages[0], intro: [], outro: [] };
+    expect(stageBackgroundId(stage)).toBeUndefined();
   });
 });

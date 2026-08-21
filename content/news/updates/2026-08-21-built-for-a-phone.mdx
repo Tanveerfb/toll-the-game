@@ -1,0 +1,96 @@
+export const metadata = {
+  title: "Built for a Phone",
+  date: "2026-08-21",
+  summary:
+    "Every button is now big enough to press, every keyword explains itself when you tap it, and nothing gets cut off by the notch.",
+};
+
+Most people who try this game will try it on a phone. The game was not built
+that way — it was built on a desktop, where a 28px button is a comfortable
+target and hovering over a word is how you find out what it means. Neither of
+those is true on a touchscreen.
+
+This pass fixes that everywhere except one screen, which is called out at the
+bottom. No combat rules changed.
+
+## Keywords Explain Themselves on Tap
+
+Skill and passive descriptions are full of highlighted mechanic words — Ignite,
+Pierce, Extort, and the rest. On a desktop you hover one to see what it does.
+
+On a phone there was no way to see it at all. The explanation existed, it was
+attached to a hover, and a touchscreen has no hover — so the words looked
+meaningful and did nothing.
+
+**Tap any highlighted keyword now** and its definition opens. The same applies
+to the arrows in passives, the resource counters in the top bar, and the reason
+a greyed-out button is greyed out. Hovering still works if you have a mouse.
+
+## Everything Is Big Enough to Press
+
+The whole control set was resized against a 44px minimum — the size a thumb
+actually needs.
+
+- **End Turn**, **Reset** and the action slots in battle
+- **Navigation** — the route icons, the resource counters, the profile button
+- **Summon**, **Claim**, **Rates** and the milestone picker
+- The **unit stepper** and section tabs in a character's battle detail
+- Kit sections in the Archive, Bureau Orders, account controls
+
+The volume slider and the Auto Clear run counter were 4px and 6px tall
+respectively. Both are now proper controls you can actually drag.
+
+## Nothing Hidden Behind a Wide Screen
+
+Several things were only drawn once the screen got wide enough — which on a
+phone meant never.
+
+- A **Bureau Order** now shows what it pays on its own line, instead of only
+  showing you the objective
+- The battle **progress bar** is always visible
+- The **chapter you're fighting in** appears on a tablet, not just a desktop
+- Your **account rank bar** shows at every width
+
+## Fits the Screen It's On
+
+Full-height screens now measure the screen you can actually see rather than the
+one you'd have if the browser bars went away, so the phantom scroll at the
+bottom of a few pages is gone. Pop-ups do the same, so a long one no longer runs
+off the bottom.
+
+The game also paints edge to edge on phones with a notch or a home indicator,
+and the buttons pinned to the bottom of a screen sit above the indicator instead
+of under it.
+
+## The Battle Screen, Rebuilt
+
+Resizing wasn't enough here — the shape was wrong.
+
+**Hold a card to see what it does.** Card descriptions used to appear on hover,
+which meant that on a phone there was no way to read a skill mid-fight at all.
+You played from memory.
+
+Now a **tap plays a card**, and **holding one opens its full description** —
+power, effects, and what every mechanic in it means. Keep holding and a ring
+fills; when it completes, the card opens. Let go early and nothing happens, so
+a hold you change your mind about never costs you an action. Tapping a unit on
+the battlefield opens theirs the same way.
+
+**The control rail is gone.** Speed and Skip stay where they were. Log, enemy
+details, team details and Exit now live behind a **Controls** button that opens a
+panel from the bottom of the screen. That gives an eighth of the screen width
+back to the fight.
+
+**Cards stopped shrinking.** A full hand of eight used to squeeze each card down
+to about a thumbnail's width. Cards now hold their size and the hand scrolls
+sideways instead.
+
+**Merging is a tap.** Press **Merge** on a card and its matching cards light up —
+tap the one you want. If there's only one match it merges immediately. Dragging
+still works.
+
+**Focus-fire is a real button.** It was a 20px square wedged next to an enemy's
+name; it's now a proper target on the portrait itself.
+
+One thing was removed: the single line under the battlefield that repeated the
+last action. The battle log has all of it, in order.

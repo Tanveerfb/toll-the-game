@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Slider } from "@/components/ui/slider";
 import { useSettingsStore } from "@/store/settingsStore";
 
 /**
@@ -54,7 +55,7 @@ export default function AudioControl(): React.JSX.Element {
         // palette reserves cyan for exactly that (element hues belong to
         // units). It sits in the nav on every screen, so it was the most
         // visible thing still on the old utilities.
-        className={`flex h-7 w-7 items-center justify-center border text-xs transition-colors ${
+        className={`flex h-11 w-11 items-center justify-center border text-base transition-colors ${
           silent
             ? "border-hairline text-readout-muted hover:text-readout-dim"
             : "border-edge text-signal hover:border-signal"
@@ -63,8 +64,10 @@ export default function AudioControl(): React.JSX.Element {
         {silent ? "♪̸" : "♪"}
       </button>
 
+      {/* `top-12` clears the trigger, which grew from 28px to 44px on
+          2026-08-21. */}
       {open ? (
-        <div className="absolute right-0 top-9 z-50 w-56 border border-edge-strong bg-panel/95 p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
+        <div className="absolute right-0 top-12 z-50 w-56 border border-edge-strong bg-panel/95 p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <p className="font-heading text-xs tracking-[0.16em] text-readout-dim">
               MUSIC
@@ -72,7 +75,7 @@ export default function AudioControl(): React.JSX.Element {
             <button
               type="button"
               onClick={() => setMuted(!muted)}
-              className={`border px-2 py-0.5 font-body text-[10px] uppercase tracking-[0.14em] transition-colors ${
+              className={`min-h-11 border px-3 font-body text-[10px] uppercase tracking-[0.14em] transition-colors ${
                 muted
                   ? "border-signal bg-signal/10 text-signal"
                   : "border-edge text-readout-dim hover:text-readout-strong"
@@ -82,14 +85,17 @@ export default function AudioControl(): React.JSX.Element {
             </button>
           </div>
 
-          <input
-            type="range"
+          {/* Was a bare `<input type="range">` at `h-1` — a 4px band, on the
+              one control that ships in the nav of every screen. The `Slider`
+              primitive keeps the hairline track and gives it a 44px grab area
+              (ruling #107). */}
+          <Slider
+            className="mt-3"
             min={0}
             max={100}
-            value={Math.round(volume * 100)}
-            onChange={(event) => setVolume(Number(event.target.value) / 100)}
+            value={[Math.round(volume * 100)]}
+            onValueChange={([next]) => setVolume(next / 100)}
             aria-label="Music volume"
-            className="mt-3 h-1 w-full appearance-none bg-inset accent-[var(--color-signal)] disabled:opacity-40"
             disabled={muted}
           />
           <p className="mt-2 font-body text-[10px] uppercase tracking-[0.14em] text-readout-muted">

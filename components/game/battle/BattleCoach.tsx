@@ -121,18 +121,21 @@ function CoachCard({
       <p className="mt-1 font-body text-[11px] leading-snug text-readout-dim">
         {step.body}
       </p>
-      <div className="mt-2 flex items-center justify-between">
+      {/* This is the first thing a new player is asked to press, and both
+          controls were unpressable on a phone: Skip all was bare 9px text with
+          no padding at all (~12px tall) and Got it was ~22px. */}
+      <div className="mt-1 flex items-center justify-between">
         <button
           type="button"
           onClick={onSkipAll}
-          className="font-body text-[9px] font-bold uppercase tracking-[0.14em] text-readout-muted transition-colors hover:text-el-red"
+          className="flex min-h-11 items-center pr-3 font-body text-[9px] font-bold uppercase tracking-[0.14em] text-readout-muted transition-colors hover:text-el-red"
         >
           Skip all
         </button>
         <button
           type="button"
           onClick={onNext}
-          className="border border-signal px-2.5 py-1 font-body text-[9px] font-bold uppercase tracking-[0.14em] text-signal transition-colors hover:bg-signal/20"
+          className="flex min-h-11 items-center border border-signal px-4 font-body text-[9px] font-bold uppercase tracking-[0.14em] text-signal transition-colors hover:bg-signal/20"
         >
           Got it
         </button>

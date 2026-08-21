@@ -46,6 +46,7 @@ import {
   enemyLevelForDifficulty,
   worldLevelCapForRank,
 } from "@/lib/game/worldLevel";
+import ItemIcon from "@/components/game/ItemIcon";
 import { materialLabel } from "@/lib/game/materials";
 import {
   AUTO_CLEAR_IS_NEVER_FIRST_CLEAR,
@@ -76,8 +77,13 @@ interface AutoClearRun {
   rewards: WorldBossRewards;
 }
 
-/**
- * A clear's payout, itemised, zeroes dropped.
+/** `[iconId, label, amount]`. The id is what `ItemIcon` resolves art from and
+ *  is empty for a payout with nothing to draw. */
+type RewardRow = [string, string, number];
+/** The same, with the amount already formatted — ranges can't be numbers. */
+type PreviewRow = [string, string, string];
+
+/** * A clear's payout, itemised, zeroes dropped.
  *
  * A boss clear pays SEVEN things. The results screen used to list four of them
  * — no gems, no permanent ticket, no account XP — and `WORLD_BOSS_AND_ASCENSION_PLAN.md`
@@ -85,19 +91,29 @@ interface AutoClearRun {
  * screen can quietly agree with each other and both be wrong (2026-08-13).
  * Read from the reward object so a new field can't be forgotten twice.
  */
-function rewardRows(rewards: WorldBossRewards): Array<[string, number]> {
-  const rows: Array<[string, number]> = [
-    [materialLabel("sea_monster_eye"), rewards.sea_monster_eye],
-    [materialLabel("corroded_seaweed"), rewards.corroded_seaweed],
-    [materialLabel("training_manual"), rewards.training_manual],
-    [materialLabel("training_manual_advanced"), rewards.training_manual_advanced],
-    [materialLabel("training_manual_premium"), rewards.training_manual_premium],
-    ["Coin", rewards.coin],
-    ["Gems", rewards.gems],
-    ["Permanent Ticket", rewards.permanentTicket],
-    ["Account XP", rewards.accountXp],
+function rewardRows(rewards: WorldBossRewards): RewardRow[] {
+  const rows: RewardRow[] = [
+    ["sea_monster_eye", materialLabel("sea_monster_eye"), rewards.sea_monster_eye],
+    ["corroded_seaweed", materialLabel("corroded_seaweed"), rewards.corroded_seaweed],
+    ["training_manual", materialLabel("training_manual"), rewards.training_manual],
+    [
+      "training_manual_advanced",
+      materialLabel("training_manual_advanced"),
+      rewards.training_manual_advanced,
+    ],
+    [
+      "training_manual_premium",
+      materialLabel("training_manual_premium"),
+      rewards.training_manual_premium,
+    ],
+    ["coin", "Coin", rewards.coin],
+    ["gems", "Gems", rewards.gems],
+    ["permanent_ticket", "Permanent Ticket", rewards.permanentTicket],
+    // Account XP is a number, not a thing you hold — no icon exists and none
+    // should, so its id is empty and `ItemIcon` renders nothing for it.
+    ["", "Account XP", rewards.accountXp],
   ];
-  return rows.filter(([, value]) => value > 0);
+  return rows.filter(([, , value]) => value > 0);
 }
 
 /** What the brief promises. Ranges, not guarantees — the roll happens on
@@ -105,33 +121,52 @@ function rewardRows(rewards: WorldBossRewards): Array<[string, number]> {
  *  playing for", which nothing did before. */
 /** One tier's farmable table, as ranges. Built from the tier so it cannot
  *  drift from what the fight actually pays. */
-function farmablePreview(difficulty: number): Array<[string, string]> {
+function farmablePreview(difficulty: number): PreviewRow[] {
   const { farmable } = getBossTier(difficulty);
   const bonus = ([base, chance]: [number, number]) =>
     chance > 0 ? `${base}–${base + 1}` : `${base}`;
   const range = ([min, max]: [number, number]) =>
     max > min ? `${min.toLocaleString()}–${max.toLocaleString()}` : `${min}`;
-  const rows: Array<[string, string]> = [
-    [materialLabel("sea_monster_eye"), bonus(farmable.sea_monster_eye)],
-    [materialLabel("corroded_seaweed"), bonus(farmable.corroded_seaweed)],
-    [materialLabel("training_manual"), range(farmable.training_manual)],
-    [materialLabel("training_manual_advanced"), range(farmable.training_manual_advanced)],
-    [materialLabel("training_manual_premium"), range(farmable.training_manual_premium)],
-    ["Coin", range(farmable.coin)],
-    ["Account XP", `${farmable.accountXp}`],
+  const rows: PreviewRow[] = [
+    [
+      "sea_monster_eye",
+      materialLabel("sea_monster_eye"),
+      bonus(farmable.sea_monster_eye),
+    ],
+    [
+      "corroded_seaweed",
+      materialLabel("corroded_seaweed"),
+      bonus(farmable.corroded_seaweed),
+    ],
+    [
+      "training_manual",
+      materialLabel("training_manual"),
+      range(farmable.training_manual),
+    ],
+    [
+      "training_manual_advanced",
+      materialLabel("training_manual_advanced"),
+      range(farmable.training_manual_advanced),
+    ],
+    [
+      "training_manual_premium",
+      materialLabel("training_manual_premium"),
+      range(farmable.training_manual_premium),
+    ],
+    ["coin", "Coin", range(farmable.coin)],
+    ["", "Account XP", `${farmable.accountXp}`],
   ];
   // A tier that doesn't drop a manual tier shouldn't advertise "0".
-  return rows.filter(([, value]) => value !== "0");
+  return rows.filter(([, , value]) => value !== "0");
 }
 
 /** The one-off bundle for a tier. Fixed amounts, never rolled and never
  *  scaled — each tier's bundle is authored at the value it should pay
  *  (Tanveer, 2026-08-13: "first clear doesn't need to scale with world level"). */
-function firstClearPreview(difficulty: number): Array<[string, string]> {
-  return rewardRows(getBossTier(difficulty).firstClear).map(([label, value]) => [
-    label,
-    value.toLocaleString(),
-  ]);
+function firstClearPreview(difficulty: number): PreviewRow[] {
+  return rewardRows(getBossTier(difficulty).firstClear).map(
+    ([id, label, value]): PreviewRow => [id, label, value.toLocaleString()],
+  );
 }
 
 /**
@@ -247,12 +282,13 @@ function AutoClearResults({
           onClose={() => setOpen(null)}
         >
           <div className="flex flex-col gap-1.5">
-            {rewardRows(openRewards).map(([label, value]) => (
+            {rewardRows(openRewards).map(([id, label, value]) => (
               <div
                 key={label}
-                className="flex items-baseline justify-between gap-3 border-b border-hairline pb-1.5 last:border-b-0"
+                className="flex items-center justify-between gap-3 border-b border-hairline pb-1.5 last:border-b-0"
               >
-                <span className="font-body text-sm text-readout-dim">
+                <span className="flex min-w-0 items-center gap-2 font-body text-sm text-readout-dim">
+                  <ItemIcon id={id} size={26} alt="" />
                   {label}
                 </span>
                 <span className="font-heading text-lg tabular-nums text-readout-strong">
@@ -536,12 +572,13 @@ export default function EventsPage(): React.JSX.Element {
             </p>
           </div>
           <div className="flex flex-col gap-1.5 px-5 py-4">
-            {rows.map(([label, value]) => (
+            {rows.map(([id, label, value]) => (
               <div
                 key={label}
-                className="flex items-baseline justify-between gap-3 border-b border-hairline pb-1.5 last:border-b-0"
+                className="flex items-center justify-between gap-3 border-b border-hairline pb-1.5 last:border-b-0"
               >
-                <span className="font-body text-sm text-readout-dim">
+                <span className="flex min-w-0 items-center gap-2 font-body text-sm text-readout-dim">
+                  <ItemIcon id={id} size={26} alt="" />
                   {label}
                 </span>
                 <span className="font-heading text-lg tabular-nums text-readout-strong">
@@ -714,16 +751,19 @@ export default function EventsPage(): React.JSX.Element {
                         First clear · once only
                       </p>
                       <div className="mb-3 flex flex-wrap gap-1.5">
-                        {firstClearPreview(difficulty).map(([label, amount]) => (
+                        {firstClearPreview(difficulty).map(([id, label, amount]) => (
                           <span
                             key={label}
-                            className="min-w-[7rem] flex-1 border border-el-light/40 bg-el-light/5 px-2.5 py-1.5"
+                            className="flex min-w-[7rem] flex-1 items-center gap-2 border border-el-light/40 bg-el-light/5 px-2.5 py-1.5"
                           >
-                            <span className="block font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-muted">
-                              {label}
-                            </span>
-                            <span className="block font-heading text-base text-readout-strong">
-                              {amount}
+                            <ItemIcon id={id} size={28} alt="" />
+                            <span className="min-w-0">
+                              <span className="block font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+                                {label}
+                              </span>
+                              <span className="block font-heading text-base text-readout-strong">
+                                {amount}
+                              </span>
                             </span>
                           </span>
                         ))}
@@ -735,16 +775,19 @@ export default function EventsPage(): React.JSX.Element {
                     Every clear
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {farmablePreview(difficulty).map(([label, range]) => (
+                    {farmablePreview(difficulty).map(([id, label, range]) => (
                       <span
                         key={label}
-                        className="min-w-[7rem] flex-1 border border-hairline bg-inset px-2.5 py-1.5"
+                        className="flex min-w-[7rem] flex-1 items-center gap-2 border border-hairline bg-inset px-2.5 py-1.5"
                       >
-                        <span className="block font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-muted">
-                          {label}
-                        </span>
-                        <span className="block font-heading text-base text-readout-strong">
-                          {range}
+                        <ItemIcon id={id} size={28} alt="" />
+                        <span className="min-w-0">
+                          <span className="block font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+                            {label}
+                          </span>
+                          <span className="block font-heading text-base text-readout-strong">
+                            {range}
+                          </span>
                         </span>
                       </span>
                     ))}

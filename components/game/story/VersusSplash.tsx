@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { tapSurfaceProps } from "@/lib/a11y";
 import Image from "next/image";
 import { m } from "framer-motion";
 import { getCharacterArt } from "@/lib/game/characterArt";
@@ -37,10 +38,7 @@ export default function VersusSplash({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onDone}
-      aria-label="Start battle"
+      {...tapSurfaceProps(onDone, "Start battle")}
       className="relative flex h-full w-full flex-1 cursor-pointer items-center justify-center overflow-hidden"
     >
       <TeamSide picks={playerTeam} side="left" />

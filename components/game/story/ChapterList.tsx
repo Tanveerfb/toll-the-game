@@ -60,8 +60,10 @@ function ChapterCard({
     ? Math.round((chapter.clearedStages / chapter.totalStages) * 100)
     : 0;
   // The chapter's own locale tints the card, so two chapters never look alike
-  // even before any cover art is drawn.
-  const [tintFrom] = getStoryBackground(undefined).tint;
+  // even before any cover art is drawn. This read `undefined` until 2026-08-21,
+  // which meant every card fell back to the same neutral tint — the comment was
+  // right and the call was not.
+  const [tintFrom] = getStoryBackground(chapter.localeId).tint;
 
   return (
     <button

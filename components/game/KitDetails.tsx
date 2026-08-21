@@ -168,7 +168,7 @@ export function SkillBlock({
             <button
               type="button"
               onClick={onDetails}
-              className="shrink-0 chamfer border border-edge px-2 py-1 font-body text-[10px] uppercase tracking-widest text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+              className="flex min-h-11 shrink-0 chamfer items-center border border-edge px-3 font-body text-[10px] uppercase tracking-widest text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
             >
               Details
             </button>
@@ -308,7 +308,7 @@ export function PassiveProse({
             <button
               type="button"
               onClick={onDetails}
-              className="shrink-0 chamfer border border-edge px-2 py-1 font-body text-[10px] uppercase tracking-widest text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+              className="flex min-h-11 shrink-0 chamfer items-center border border-edge px-3 font-body text-[10px] uppercase tracking-widest text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
             >
               Details
             </button>

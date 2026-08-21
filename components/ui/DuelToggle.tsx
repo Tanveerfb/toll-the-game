@@ -36,7 +36,7 @@ export default function DuelToggle(): React.JSX.Element | null {
           : "Dev: let Claude play the enemy side of the next battle"
       }
       aria-pressed={duelMode}
-      className={`shrink-0 border px-2 py-0.5 font-body text-[10px] uppercase tracking-[0.14em] transition-colors ${
+      className={`flex min-h-11 shrink-0 items-center border px-2 font-body text-[10px] uppercase tracking-[0.14em] transition-colors ${
         duelMode
           ? "border-violet-400 text-violet-200"
           : "border-hairline text-readout-muted hover:text-readout-dim"

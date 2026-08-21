@@ -58,7 +58,7 @@ function Row({
         <button
           type="button"
           onClick={onClaim}
-          className="shrink-0 border border-el-light bg-el-light/12 px-4 py-2 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-el-light transition-colors hover:bg-el-light/20"
+          className="flex min-h-11 shrink-0 items-center border border-el-light bg-el-light/12 px-4 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-el-light transition-colors hover:bg-el-light/20"
         >
           Claim
         </button>

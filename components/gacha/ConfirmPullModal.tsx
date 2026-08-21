@@ -3,6 +3,7 @@
 import React from "react";
 import { ArrowRight } from "lucide-react";
 import DetailOverlay from "@/components/game/DetailOverlay";
+import ItemIcon from "@/components/game/ItemIcon";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -22,12 +23,16 @@ import { Button } from "@/components/ui/button";
 /** One before → after row. */
 function ShiftRow({
   label,
+  iconId,
   before,
   after,
   unit,
   tone = "default",
 }: {
   label: string;
+  /** Currency this row is about - the icon makes the spend row scannable
+   *  without reading the label. Omitted for rows that aren't a currency. */
+  iconId?: string;
   before: number;
   after: number;
   unit: string;
@@ -43,6 +48,7 @@ function ShiftRow({
         : "text-readout-dim";
   return (
     <div className="flex items-center gap-2 border border-hairline bg-panel px-3 py-2">
+      {iconId ? <ItemIcon id={iconId} size={20} alt="" /> : null}
       <span className="min-w-0 flex-1 truncate font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-muted">
         {label}
       </span>
@@ -73,6 +79,7 @@ export default function ConfirmPullModal({
   count,
   cost,
   unit,
+  iconId,
   balance,
   bar,
   barGain,
@@ -86,6 +93,8 @@ export default function ConfirmPullModal({
   cost: number;
   /** "gems" / "tickets". Already plural. */
   unit: string;
+  /** The currency's material id, for its icon - `gems` or `permanent_ticket`. */
+  iconId?: string;
   balance: number;
   bar: number;
   /** What this draw adds to the milestone bar. */
@@ -111,6 +120,7 @@ export default function ConfirmPullModal({
       <div className="flex flex-col gap-1.5">
         <ShiftRow
           label={unit}
+          iconId={iconId}
           before={balance}
           after={balanceAfter}
           unit={unit}

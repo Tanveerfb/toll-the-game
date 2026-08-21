@@ -125,32 +125,92 @@ function rangeLabel(min: number, max: number): string {
   return min === max ? `${min}` : `${min}–${max}`;
 }
 
-/** The first-clear bundle as display lines — what an uncleared stage advertises,
- *  and what a cleared one shows struck through as banked. */
-export function describeFirstClear(rewards: StoryStageRewards): string[] {
-  const lines: string[] = [];
-  const { gems, coin, permanentTicket, materials, accountXp } = rewards.firstClear;
-  if (gems) lines.push(`${gems} Gems`);
-  if (coin) lines.push(`${coin} Coin`);
-  if (permanentTicket) lines.push(`${permanentTicket} Permanent Ticket`);
-  for (const [id, qty] of Object.entries(materials ?? {})) {
-    if (qty) lines.push(`${qty} ${materialLabel(id)}`);
-  }
-  if (accountXp) lines.push(`${accountXp} Account XP`);
-  return lines;
+/**
+ * One advertised reward, split into its parts so a screen can draw it rather
+ * than only print it.
+ *
+ * The `describe*` functions below are `${amount} ${label}` over this list, which
+ * is deliberate: the icon rows and the text rows are the same reward in two
+ * renderings, and deriving one from the other is what stops them disagreeing
+ * about what a stage pays.
+ */
+export interface RewardItem {
+  /** Stable across renders — a currency name or the material id. */
+  key: string;
+  /** What `getMaterialArt` resolves the icon from, or null for a payout with no
+   *  item behind it at all (account XP is a number, not a thing you hold). */
+  iconId: string | null;
+  /** "2" for a fixed amount, "300–800" for a farm range. */
+  amount: string;
+  label: string;
 }
 
-/** The farm table as display lines. Empty for a scene stage, which is why the
- *  stage row renders an em dash there rather than an empty column. */
-export function describeFarm(rewards: StoryStageRewards): string[] {
-  if (!rewards.farm) return [];
-  const lines: string[] = [];
-  const { coin, materials } = rewards.farm;
-  if (coin) lines.push(`${rangeLabel(coin.min, coin.max)} Coin`);
-  for (const [id, range] of Object.entries(materials ?? {})) {
-    lines.push(`${rangeLabel(range.min, range.max)} ${materialLabel(id)}`);
+/** The first-clear bundle — what an uncleared stage advertises, and what a
+ *  cleared one shows struck through as banked. */
+export function firstClearItems(rewards: StoryStageRewards): RewardItem[] {
+  const items: RewardItem[] = [];
+  const { gems, coin, permanentTicket, materials, accountXp } = rewards.firstClear;
+  if (gems)
+    items.push({ key: "gems", iconId: "gems", amount: `${gems}`, label: "Gems" });
+  if (coin)
+    items.push({ key: "coin", iconId: "coin", amount: `${coin}`, label: "Coin" });
+  if (permanentTicket)
+    items.push({
+      key: "ticket",
+      iconId: "permanent_ticket",
+      amount: `${permanentTicket}`,
+      label: "Permanent Ticket",
+    });
+  for (const [id, qty] of Object.entries(materials ?? {})) {
+    if (qty)
+      items.push({ key: id, iconId: id, amount: `${qty}`, label: materialLabel(id) });
   }
-  return lines;
+  if (accountXp)
+    items.push({
+      key: "accountXp",
+      iconId: null,
+      amount: `${accountXp}`,
+      label: "Account XP",
+    });
+  return items;
+}
+
+/** The farm table. Empty for a scene stage, which is why the stage row renders
+ *  an em dash there rather than an empty column. */
+export function farmItems(rewards: StoryStageRewards): RewardItem[] {
+  if (!rewards.farm) return [];
+  const items: RewardItem[] = [];
+  const { coin, materials } = rewards.farm;
+  if (coin)
+    items.push({
+      key: "coin",
+      iconId: "coin",
+      amount: rangeLabel(coin.min, coin.max),
+      label: "Coin",
+    });
+  for (const [id, range] of Object.entries(materials ?? {})) {
+    items.push({
+      key: id,
+      iconId: id,
+      amount: rangeLabel(range.min, range.max),
+      label: materialLabel(id),
+    });
+  }
+  return items;
+}
+
+function asLines(items: RewardItem[]): string[] {
+  return items.map((item) => `${item.amount} ${item.label}`);
+}
+
+/** The first-clear bundle as display lines. */
+export function describeFirstClear(rewards: StoryStageRewards): string[] {
+  return asLines(firstClearItems(rewards));
+}
+
+/** The farm table as display lines. */
+export function describeFarm(rewards: StoryStageRewards): string[] {
+  return asLines(farmItems(rewards));
 }
 
 /** True when a payout would grant nothing — used to skip an empty section on

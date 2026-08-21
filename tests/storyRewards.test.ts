@@ -3,6 +3,8 @@ import type { MissionOutcome } from "@/lib/game/stageMissions";
 import {
   describeFarm,
   describeFirstClear,
+  farmItems,
+  firstClearItems,
   isEmptyPayout,
   rollStageRewards,
 } from "@/lib/game/storyRewards";
@@ -150,5 +152,64 @@ describe("display lines", () => {
 
   it("returns nothing for a stage with no farm table", () => {
     expect(describeFarm(SCENE_REWARDS)).toEqual([]);
+  });
+});
+
+
+/**
+ * The itemised form the brief draws from (2026-08-21). The text lines are
+ * `${amount} ${label}` over the same list, and this is what holds them to it —
+ * two renderings of one reward that could otherwise drift into disagreeing
+ * about what a stage pays.
+ */
+describe("reward items", () => {
+  const rewards: StoryStageRewards = {
+    firstClear: {
+      gems: 30,
+      coin: 500,
+      permanentTicket: 1,
+      materials: { training_manual: 2 },
+      accountXp: 120,
+    },
+    farm: {
+      coin: { min: 300, max: 800 },
+      materials: { training_manual: { min: 1, max: 3 } },
+    },
+  };
+
+  it("agrees with the text lines, item for item", () => {
+    expect(
+      firstClearItems(rewards).map((i) => `${i.amount} ${i.label}`),
+    ).toEqual(describeFirstClear(rewards));
+    expect(farmItems(rewards).map((i) => `${i.amount} ${i.label}`)).toEqual(
+      describeFarm(rewards),
+    );
+  });
+
+  it("gives every held reward an icon id", () => {
+    const ids = firstClearItems(rewards).map((i) => i.iconId);
+    expect(ids).toEqual([
+      "gems",
+      "coin",
+      "permanent_ticket",
+      "training_manual",
+      // Account XP is a number, not a thing you hold.
+      null,
+    ]);
+  });
+
+  it("writes a farm range as a range and a fixed amount as a number", () => {
+    const items = farmItems(rewards);
+    expect(items.find((i) => i.key === "coin")?.amount).toBe("300–800");
+    expect(
+      farmItems({
+        ...rewards,
+        farm: { coin: { min: 400, max: 400 }, materials: {} },
+      }).find((i) => i.key === "coin")?.amount,
+    ).toBe("400");
+  });
+
+  it("is empty for a scene stage, which has no farm table at all", () => {
+    expect(farmItems({ firstClear: rewards.firstClear })).toEqual([]);
   });
 });

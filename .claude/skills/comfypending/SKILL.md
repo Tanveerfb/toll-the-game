@@ -18,6 +18,13 @@ what the entry says.
 1. **Read the file.** Its entry format, its category list and its per-category spec
    tables are the source of truth, not this skill. Categories get added over time; do
    not assume the set.
+1b. **If you are about to GENERATE rather than just queue**, confirm the server is
+   reachable *and* has what the plan needs — `get_system_stats action:"health"` lists
+   checkpoints, LoRAs, VAEs and text encoders in one call. A model file sitting in
+   `checkpoints/` is not proof it can run: `flux1-dev-fp8-e4m3fn.safetensors` is
+   UNet-only and dies at `CLIPTextEncode`, and all five vector LoRAs on this box are
+   unusable behind the same missing encoders. Thirty seconds here, versus discovering
+   it mid-batch.
 2. **Check for a duplicate.** Grep the slug and the subject. If an entry exists,
    *update it* rather than adding a second — a queue with two versions of one request
    wastes GPU time on whichever the session reads first.
@@ -61,6 +68,19 @@ The file's own format block is authoritative. It asks for:
 - **Prefer a frame over a per-instance icon.** If a request scales with content
   (per character, per chapter), ask whether a small set of frames composited in code
   covers it. Five coin frames beat eighteen coin icons and never go stale.
+- **Prefer DRAWING over generating when the requirement is geometry.** Exact
+  centring, a fixed safe zone, a shape that must read at 32px, anything a
+  compositor has to rely on — a txt2img roll cannot promise any of it. Two
+  assets have now been drawn in Python for this reason: the five coin frames
+  (2026-08-20) and the app icon (2026-08-22). If the acceptance criteria are
+  arithmetic, say so in the entry and write a script; a request that ComfyUI
+  structurally cannot satisfy wastes a whole session before anyone notices.
+- **Check the model can draw the subject at all before queueing a batch.**
+  `ART_PIPELINE.md` keeps the running list of what this checkpoint can and
+  cannot compose. Animagine returns an **item sheet** for "emblem", "badge",
+  "medallion" and "crest" the same way it does for "game item icon" — eight
+  images established that, after the pipeline doc had already warned about the
+  category. Read that section first; it is cheaper than the batch.
 - **Never invent game content to justify art.** Art follows an approved design and never
   leads it — Tanveer owns kits, mechanics and characters (see `AGENTS.md`). If the thing
   the art depicts doesn't exist yet, say that in the entry rather than designing it.

@@ -168,12 +168,18 @@ export default function StorySceneReader({
   };
 
   return (
+    // Deliberately NOT `tapSurfaceProps`: this reader already listens for Enter
+    // and Space on `window` (see the effect above), because in a visual novel
+    // the whole screen advances whether or not anything holds focus. A local
+    // handler as well would fire `handleTap` twice per keypress and skip a
+    // line. The rule is satisfied by that listener; it just can't see it.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <div
       role="button"
       tabIndex={0}
       onClick={handleTap}
-      className="relative flex h-full w-full flex-1 cursor-pointer flex-col justify-center overflow-hidden text-left"
       aria-label="Advance story"
+      className="relative flex h-full w-full flex-1 cursor-pointer flex-col justify-center overflow-hidden text-left"
     >
       {/* Where this scene happens. A scene's own slug wins; `fallbackBackgroundId`
           is the chapter's locale, so an author only names a background when the
@@ -438,7 +444,6 @@ function HistoryOverlay({
   return (
     <div
       className="absolute inset-0 z-40 flex flex-col bg-black/90 backdrop-blur-sm"
-      onClick={(event) => event.stopPropagation()}
     >
       <div className="flex items-center justify-between border-b border-hairline bg-inset px-5 py-3">
         <p className="font-heading text-lg tracking-[0.14em] text-readout-strong">
@@ -478,7 +483,6 @@ function SkipPrompt({
   return (
     <div
       className="absolute inset-0 z-40 flex items-center justify-center bg-black/85 px-4 backdrop-blur-sm"
-      onClick={(event) => event.stopPropagation()}
     >
       <div className="chamfer-lg w-full max-w-sm border border-signal bg-panel p-5">
         <p className="font-heading text-xl tracking-[0.12em] text-signal">

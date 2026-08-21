@@ -15,12 +15,9 @@ import {
   Zap,
 } from "lucide-react";
 import AudioControl from "@/components/ui/AudioControl";
+import ItemIcon from "@/components/game/ItemIcon";
 import OrdersButton from "@/components/game/OrdersButton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import Hint from "@/components/ui/Hint";
 import DuelToggle from "@/components/ui/DuelToggle";
 import { GAME_ROUTES, isRouteActive } from "@/lib/nav/routes";
 import { useAuth } from "@/hooks/AuthProvider";
@@ -75,37 +72,45 @@ const ARCHIVE_ICON = Coins;
  */
 function Resource({
   icon: Icon,
+  iconId,
   value,
   suffix,
   title,
 }: {
   icon: React.ElementType;
+  /** Material/currency id whose icon replaces the lucide glyph once its art
+   *  exists. Falls back to `icon` on its own, so a counter with no art yet
+   *  looks exactly as it did before. */
+  iconId?: string;
   value: string;
   suffix?: string;
   title: string;
 }): React.JSX.Element {
+  const glyph = (
+    <Icon className="h-3 w-3 shrink-0 text-readout-muted" strokeWidth={2.4} />
+  );
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          aria-label={title}
-          className="flex shrink-0 cursor-help items-center gap-1.5 border border-hairline bg-void px-2 py-0.5 transition-colors hover:border-edge-strong"
-        >
-          <Icon
-            className="h-3 w-3 shrink-0 text-readout-muted"
-            strokeWidth={2.4}
-          />
-          <span className="font-body text-[11px] font-bold tabular-nums text-readout-strong">
-            {value}
-            {suffix ? (
-              <span className="font-semibold text-readout-muted">{suffix}</span>
-            ) : null}
-          </span>
-        </button>
-      </TooltipTrigger>
-      <TooltipContent>{title}</TooltipContent>
-    </Tooltip>
+    <Hint
+      ariaLabel={title}
+      content={title}
+      // A counter shows a number and hides its meaning behind the hint, so the
+      // hint is the only thing that says what the number *is* — which made a
+      // hover-only tooltip the wrong container for it on a phone. `min-h-11`
+      // because this row is a row of controls, not a readout.
+      className="flex min-h-11 shrink-0 cursor-help items-center gap-1.5 border border-hairline bg-void px-2 transition-colors hover:border-edge-strong"
+    >
+      {iconId ? (
+        <ItemIcon id={iconId} size={16} alt="" fallback={glyph} />
+      ) : (
+        glyph
+      )}
+      <span className="font-body text-[11px] font-bold tabular-nums text-readout-strong">
+        {value}
+        {suffix ? (
+          <span className="font-semibold text-readout-muted">{suffix}</span>
+        ) : null}
+      </span>
+    </Hint>
   );
 }
 
@@ -229,7 +234,12 @@ export default function TopNav() {
                 href={route.href}
                 // Inline icon + label, not stacked: a two-line link would
                 // dictate the row height, and this row is load-bearing.
-                className={`flex shrink-0 items-center gap-1.5 border px-2 py-1 font-body text-[11px] font-bold uppercase tracking-[0.14em] transition-colors ${
+                // Below `sm` this is an icon and nothing else, so it needs a
+                // name of its own — and a box a thumb can land on. It used to
+                // be a 14px icon in `py-1`: a ~22px target, the smallest in
+                // the app, on the app's primary navigation.
+                aria-label={route.label}
+                className={`flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 border px-2 font-body text-[11px] font-bold uppercase tracking-[0.14em] transition-colors ${
                   active
                     ? "border-edge-strong bg-signal/10 text-signal"
                     : "border-transparent text-readout-dim hover:border-edge hover:text-readout"
@@ -251,73 +261,70 @@ export default function TopNav() {
       {/* Row 2 — what you have. Lived only on the home screen before, which
           meant no gem count on the gacha page and no stamina on the boss page. */}
       {rows === 2 ? (
-        <div className="mx-auto flex h-8 w-full max-w-6xl items-center gap-1.5 border-t border-hairline px-4 md:px-8">
-          <Resource
-            icon={Zap}
-            title="Stamina — spent entering World Boss runs"
-            value={ready ? `${currentStamina}` : dash}
-            suffix={`/${STAMINA_CAP}`}
-          />
-          <Resource
-            icon={Gem}
-            title="Gems — premium summon currency"
-            value={ready ? currencies.gems.toLocaleString() : dash}
-          />
-          <Resource
-            icon={Coins}
-            title="Coin — spent on levelling and ascension"
-            value={ready ? currencies.coin.toLocaleString() : dash}
-          />
-          {/* Orders sits with the counters, not with the account chrome — it
-              is something you have progress on, not a setting. */}
-          <OrdersButton />
-          <span className="flex-1" />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="/profile"
-                aria-label="Account rank"
-                className="flex shrink-0 items-center gap-2 border border-hairline bg-void px-2 py-0.5 transition-colors hover:border-edge-strong"
-              >
-                <span
-                  className={`font-body text-[11px] font-bold tracking-[0.06em] ${ready && !progress ? "text-el-light" : "text-signal"}`}
-                >
-                  {ready ? `R${account.rank}` : "R—"}
-                </span>
-                <span className="hidden h-1 w-14 overflow-hidden border border-hairline bg-void sm:block">
-                  <span
-                    className={`block h-full transition-[width] duration-500 ${ready && !progress ? "bg-el-light" : "bg-signal"}`}
-                    style={{ width: ready ? `${rankPercent}%` : "0%" }}
-                  />
-                </span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent>
-              {!ready
-                ? "Account rank"
-                : progress
-                  ? `Account rank ${account.rank} — ${progress.current} / ${progress.required} xp`
-                  : `Account rank ${account.rank} — clear the ascension trial to rank up`}
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                aria-label="World level"
-                className="hidden shrink-0 cursor-help border border-hairline bg-void px-2 py-0.5 font-body text-[10px] font-bold uppercase tracking-[0.12em] text-readout-dim transition-colors hover:border-edge-strong sm:block"
-              >
-                World {ready ? worldLevel : dash}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              World level — the difficulty everything scales to
-            </TooltipContent>
-          </Tooltip>
+        <div className="mx-auto flex h-12 w-full max-w-6xl items-center gap-1.5 border-t border-hairline px-4 md:px-8">
+          {/* The counters scroll and the account chrome does not — the same
+              split `Deck.tsx` makes with End Turn. Four 44px counters plus a
+              rank chip and an avatar do not fit in 390px, and the half you
+              must be able to reach is the account half: letting the whole row
+              scroll would push the profile link off the edge. */}
+          <div className="hud-scroll flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
+            <Resource
+              icon={Zap}
+              iconId="stamina"
+              title="Stamina — spent entering World Boss runs"
+              value={ready ? `${currentStamina}` : dash}
+              suffix={`/${STAMINA_CAP}`}
+            />
+            <Resource
+              icon={Gem}
+              iconId="gems"
+              title="Gems — premium summon currency"
+              value={ready ? currencies.gems.toLocaleString() : dash}
+            />
+            <Resource
+              icon={Coins}
+              iconId="coin"
+              title="Coin — spent on levelling and ascension"
+              value={ready ? currencies.coin.toLocaleString() : dash}
+            />
+            {/* Orders sits with the counters, not with the account chrome — it
+                is something you have progress on, not a setting. */}
+            <OrdersButton />
+          </div>
+
+          {/* Rank lost its tooltip rather than gaining a hint: it is a link,
+              and a link cannot live inside a hint's button. The tooltip only
+              ever restated the bar — so the bar shows at every width now
+              instead of hiding below `sm`, and the exact xp lives one tap away
+              on the page this already goes to. */}
+          <Link
+            href="/profile"
+            aria-label="Account rank"
+            className="flex min-h-11 shrink-0 items-center gap-2 border border-hairline bg-void px-2 transition-colors hover:border-edge-strong"
+          >
+            <span
+              className={`font-body text-[11px] font-bold tracking-[0.06em] ${ready && !progress ? "text-el-light" : "text-signal"}`}
+            >
+              {ready ? `R${account.rank}` : "R—"}
+            </span>
+            <span className="block h-1 w-10 overflow-hidden border border-hairline bg-void sm:w-14">
+              <span
+                className={`block h-full transition-[width] duration-500 ${ready && !progress ? "bg-el-light" : "bg-signal"}`}
+                style={{ width: ready ? `${rankPercent}%` : "0%" }}
+              />
+            </span>
+          </Link>
+          <Hint
+            ariaLabel="World level"
+            content="World level — the difficulty everything scales to"
+            className="hidden min-h-11 shrink-0 cursor-help items-center border border-hairline bg-void px-2 font-body text-[10px] font-bold uppercase tracking-[0.12em] text-readout-dim transition-colors hover:border-edge-strong sm:flex"
+          >
+            World {ready ? worldLevel : dash}
+          </Hint>
           <Link
             href={user ? "/profile" : "/login"}
-            title={user ? "Profile" : "Sign in"}
-            className="flex h-6 w-6 shrink-0 items-center justify-center border border-edge-strong bg-panel font-heading text-sm text-readout-strong transition-colors hover:border-signal hover:text-signal"
+            aria-label={user ? "Profile" : "Sign in"}
+            className="flex h-11 w-11 shrink-0 items-center justify-center border border-edge-strong bg-panel font-heading text-sm text-readout-strong transition-colors hover:border-signal hover:text-signal"
           >
             {(user?.displayName || user?.email || "G").charAt(0).toUpperCase()}
           </Link>

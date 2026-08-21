@@ -3,7 +3,9 @@
 import React from "react";
 import { ArrowRight } from "lucide-react";
 import DetailOverlay from "@/components/game/DetailOverlay";
+import ItemIcon from "@/components/game/ItemIcon";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 
 /**
  * Auto Clear confirmation (Tanveer, 2026-08-13).
@@ -25,11 +27,14 @@ import { Button } from "@/components/ui/button";
 
 function ShiftRow({
   label,
+  iconId,
   before,
   after,
   unit,
 }: {
   label: string;
+  /** The resource being spent, for its icon. */
+  iconId: string;
   before: number;
   after: number;
   unit: string;
@@ -37,6 +42,7 @@ function ShiftRow({
   const delta = after - before;
   return (
     <div className="flex items-center gap-2 border border-hairline bg-panel px-3 py-2">
+      <ItemIcon id={iconId} size={20} alt="" />
       <span className="min-w-0 flex-1 truncate font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-muted">
         {label}
       </span>
@@ -79,8 +85,9 @@ export default function AutoClearConfirm({
   staminaCost: number;
   stamina: number;
   tickets: number;
-  /** What this difficulty's farmable table can pay, as label/chance pairs. */
-  dropRows: [string, string][];
+  /** What this difficulty's farmable table can pay, as
+   *  `[iconId, label, chance]`. The id is empty for a payout with no icon. */
+  dropRows: [string, string, string][];
   onConfirm: (runs: number) => void;
   onCancel: () => void;
 }): React.JSX.Element {
@@ -113,28 +120,33 @@ export default function AutoClearConfirm({
             </span>
           </span>
         </div>
-        <input
-          type="range"
+        {/* Was a bare `<input type="range">` at `h-1.5` — a 6px band to land a
+            thumb in. The `Slider` primitive carries a 44px grab area over a
+            hairline track (ruling #107), so the control looks the same and can
+            actually be dragged on a phone. */}
+        <Slider
+          className="mt-3"
           min={1}
           max={Math.max(maxRuns, 1)}
           step={1}
-          value={safeRuns}
+          value={[safeRuns]}
           disabled={maxRuns <= 1}
-          onChange={(event) => setRuns(Number(event.target.value))}
+          onValueChange={([next]) => setRuns(next)}
           aria-label="Runs to skip"
-          className="mt-3 h-1.5 w-full cursor-pointer appearance-none bg-inset accent-signal disabled:cursor-default disabled:opacity-40"
         />
       </div>
 
       <div className="mt-2 flex flex-col gap-1.5">
         <ShiftRow
           label="Stamina"
+          iconId="stamina"
           before={stamina}
           after={stamina - staminaSpent}
           unit="stamina"
         />
         <ShiftRow
           label="Tickets"
+          iconId="auto_clear_ticket"
           before={tickets}
           after={tickets - safeRuns}
           unit="tickets"
@@ -152,12 +164,15 @@ export default function AutoClearConfirm({
             Each run rolls from
           </p>
           <div className="flex flex-col gap-1">
-            {dropRows.map(([label, chance]) => (
+            {dropRows.map(([id, label, chance]) => (
               <div
                 key={label}
-                className="flex items-baseline justify-between gap-3 font-body text-[11px]"
+                className="flex items-center justify-between gap-3 font-body text-[11px]"
               >
-                <span className="min-w-0 truncate text-readout">{label}</span>
+                <span className="flex min-w-0 items-center gap-1.5 truncate text-readout">
+                  <ItemIcon id={id} size={20} alt="" />
+                  {label}
+                </span>
                 <span className="shrink-0 tabular-nums text-readout-muted">
                   {chance}
                 </span>

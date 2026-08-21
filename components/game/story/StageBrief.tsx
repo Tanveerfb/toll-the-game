@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import ItemIcon from "@/components/game/ItemIcon";
 import { Button } from "@/components/ui/button";
 import TeamPicker from "@/components/game/TeamPicker";
 import { getCharacterArt } from "@/lib/game/characterArt";
@@ -9,7 +10,7 @@ import { getCharacterById, type CharacterData } from "@/lib/game/characterCatalo
 import { BASE_PROGRESSION } from "@/lib/game/progression";
 import { describeStageEffect } from "@/lib/game/stageEffects";
 import { missionKey } from "@/lib/game/stageMissions";
-import { describeFarm, describeFirstClear } from "@/lib/game/storyRewards";
+import { farmItems, firstClearItems, type RewardItem } from "@/lib/game/storyRewards";
 import {
   defaultTrialSelection,
   storyAnchors,
@@ -30,6 +31,47 @@ import type { StoryChapter, StoryStage } from "@/types/story";
  * Missions state what they pay *before* the run, since a mission the player learns
  * about afterwards is a mission they didn't get to play toward.
  */
+/**
+ * A reward column, one row per item.
+ *
+ * Was a single dot-separated sentence, which at 390px wrapped into a paragraph
+ * the player had to read to answer "is there a manual in this". An icon per row
+ * answers it without reading. Account XP has no icon and keeps its name, which
+ * is why `iconId` is nullable rather than pointing at a placeholder.
+ */
+function RewardRows({
+  items,
+  banked = false,
+}: {
+  items: RewardItem[];
+  /** First-clear loot already taken — struck through, same as before. */
+  banked?: boolean;
+}): React.JSX.Element {
+  if (items.length === 0) {
+    return <p className="pt-1 text-[13px] text-readout">—</p>;
+  }
+  return (
+    <ul className={`pt-1 ${banked ? "text-readout-muted" : "text-readout"}`}>
+      {items.map((item) => (
+        <li
+          key={item.key}
+          className={`flex items-center gap-1.5 py-0.5 text-[13px] ${
+            banked ? "line-through" : ""
+          }`}
+        >
+          {item.iconId ? (
+            <ItemIcon id={item.iconId} size={22} alt="" />
+          ) : null}
+          <span className="font-semibold tabular-nums">{item.amount}</span>
+          <span className="min-w-0 truncate text-[12px] text-readout-dim">
+            {item.label}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function StageBrief({
   chapter,
   stage,
@@ -110,8 +152,8 @@ export default function StageBrief({
     [stage, ownedIds],
   );
 
-  const firstClear = describeFirstClear(stage.rewards);
-  const farm = describeFarm(stage.rewards);
+  const firstClear = firstClearItems(stage.rewards);
+  const farm = farmItems(stage.rewards);
   const affordable = stamina >= stage.stamina;
 
   return (
@@ -203,13 +245,33 @@ export default function StageBrief({
                   />
                   <span className="min-w-0">{mission.label}</span>
                   <span
-                    className={`ml-auto shrink-0 text-xs tracking-[0.06em] ${
+                    className={`ml-auto flex shrink-0 items-center gap-2 text-xs tracking-[0.06em] ${
                       done ? "text-readout-muted" : "text-el-blue"
                     }`}
                   >
                     {done
                       ? "Claimed"
-                      : describeFirstClear({ firstClear: mission.reward }).join(" · ")}
+                      : firstClearItems({ firstClear: mission.reward }).map(
+                          (item) => (
+                            <span
+                              key={item.key}
+                              className="flex items-center gap-1"
+                            >
+                              {/* The mission row is the tightest line on this
+                                  screen, so the reward keeps its icon and its
+                                  number and drops the name. The name rides the
+                                  icon's alt rather than a `title`, which never
+                                  appears on touch at all (ruling #107). */}
+                              {item.iconId ? (
+                                <ItemIcon id={item.iconId} size={18} alt={item.label} />
+                              ) : null}
+                              <span className="tabular-nums">
+                                {item.amount}
+                                {item.iconId ? "" : ` ${item.label}`}
+                              </span>
+                            </span>
+                          ),
+                        )}
                   </span>
                 </li>
               );
@@ -223,21 +285,13 @@ export default function StageBrief({
           <p className="text-[9.5px] tracking-[0.18em] text-readout-muted uppercase">
             First clear {cleared ? "· banked" : ""}
           </p>
-          <p
-            className={`pt-1 text-[13px] ${
-              cleared ? "text-readout-muted line-through" : "text-readout"
-            }`}
-          >
-            {firstClear.length > 0 ? firstClear.join(" · ") : "—"}
-          </p>
+          <RewardRows items={firstClear} banked={cleared} />
         </div>
         <div>
           <p className="text-[9.5px] tracking-[0.18em] text-readout-muted uppercase">
             Farmable
           </p>
-          <p className="pt-1 text-[13px] text-readout">
-            {farm.length > 0 ? farm.join(" · ") : "—"}
-          </p>
+          <RewardRows items={farm} />
         </div>
       </section>
 

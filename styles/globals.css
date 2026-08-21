@@ -201,10 +201,59 @@ h6 {
   --nav-h: 2.875rem;
 }
 :root:has([data-nav-rows="2"]) {
-  --nav-h: 4.875rem;
+  /* Row 1 (2.875rem) plus row 2. Row 2 grew from `h-8` to `h-12` on
+     2026-08-21 so its counters could carry a 44px touch target. */
+  --nav-h: 5.875rem;
 }
 .screen-below-nav {
   height: calc(100dvh - var(--nav-h));
+}
+
+/* ── Safe area ─────────────────────────────────────────────────────────────
+   `viewportFit: "cover"` (app/layout.tsx) lets the page reach the physical
+   edges of the screen, which is what `dvh` is measuring. The trade is that a
+   bar pinned to the bottom now sits under the iOS home indicator — so the one
+   thing the player must press ends up beneath the one gesture that leaves the
+   app. Anything anchored to the bottom edge takes `.pb-safe`.
+
+   `max()` rather than the raw inset: on a device with no inset (every Android
+   phone, every desktop) `env()` is 0 and the bar would lose the padding it
+   was designed with. */
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* ── Hold-to-open ring ─────────────────────────────────────────────────────
+   Press-and-hold a hand card to read its skill (ruling #118). The ring is the
+   contract made visible: it fills for as long as the press has to last, so a
+   player who lets go early can see they let go early rather than wondering why
+   nothing happened.
+
+   The sweep is a CSS animation rather than a state-driven value on purpose —
+   a multi-second fill driven from React would re-render the whole hand on
+   every frame of a gesture that resolves to one modal.
+
+   Deliberately NOT disabled under `prefers-reduced-motion`: this is not
+   decoration, it is the only feedback that a timed gesture is in progress.
+   Removing it would leave a timed press with no indication it was working. */
+@keyframes hold-ring-sweep {
+  from {
+    stroke-dashoffset: var(--hold-circumference);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.hold-ring-sweep {
+  animation: hold-ring-sweep var(--hold-duration, 1.5s) linear forwards;
+}
+
+/* iOS pops its own callout — copy/share/save — on a long press, and it fires
+   well inside the hold window. `user-select: none` suppresses it for text
+   but not for images, and a hand card is mostly image. Without this the OS
+   menu covers the ring the player is being asked to watch. */
+.no-callout {
+  -webkit-touch-callout: none;
 }
 
 /* The faint 44px ground the terminal reads on. */

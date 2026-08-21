@@ -39,6 +39,40 @@ export function getStoryStage(
 }
 
 /** Progress key for one stage — the shape stored in cleared maps. */
+/**
+ * The plate a stage happens on.
+ *
+ * Backgrounds are authored per **scene**, which is right for the scene reader
+ * and leaves every other story screen — the brief, the title card, the versus
+ * splash, the wave break, the result — sitting on the bare terminal grid, even
+ * though each of them is about a stage that happens somewhere specific.
+ *
+ * Derived rather than authored a second time: the stage's **first intro scene**
+ * establishes where the stage opens, which is what the brief is asking about
+ * ("where am I going"). Falling back through the outro covers a stage with no
+ * intro at all, and the chapter's locale covers a stage with no scenes.
+ */
+export function stageBackgroundId(
+  stage: StoryStage,
+  chapter?: StoryChapter,
+  /** `"start"` is where the stage opens — what the brief and the fight are
+   *  about. `"end"` is where it leaves you, which is the result screen's
+   *  subject and is often somewhere else entirely: chapter 1 stage 1 opens in
+   *  a Bureau office and ends in the burned village. */
+  at: "start" | "end" = "start",
+): string | undefined {
+  const first = (scenes: StoryStage["intro"]) =>
+    scenes.find((scene) => scene.backgroundId)?.backgroundId;
+  const last = (scenes: StoryStage["intro"]) =>
+    [...scenes].reverse().find((scene) => scene.backgroundId)?.backgroundId;
+
+  const fromScenes =
+    at === "start"
+      ? (first(stage.intro) ?? first(stage.outro))
+      : (last(stage.outro) ?? last(stage.intro));
+  return fromScenes ?? chapter?.localeId;
+}
+
 export function stageKey(chapterId: string, stageId: string): string {
   return `${chapterId}:${stageId}`;
 }
@@ -127,6 +161,9 @@ export interface StoryIndexChapter {
   title: string;
   tagline: string;
   coverCharacterId: string;
+  /** Where the chapter is set — the slug its card is tinted from, and the plate
+   *  behind its stage list. */
+  localeId?: string;
   /** Withheld from the list entirely when true — see `visibleChapters`. */
   sealed: boolean;
   clearedStages: number;
@@ -170,6 +207,7 @@ export function buildStoryIndex(
       title: chapter.title,
       tagline: chapter.tagline,
       coverCharacterId: chapter.coverCharacterId,
+      localeId: chapter.localeId,
       sealed: !isChapterUnlocked(cleared, chapter.id),
       clearedStages: stages.filter((stage) => stage.state === "cleared").length,
       totalStages: stages.length,

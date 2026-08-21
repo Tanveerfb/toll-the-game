@@ -54,3 +54,7 @@ next-env.d.ts
 .superpowers/
 # reference screenshots (kept locally, INDEX.md stays tracked)
 docs/design/references/**/*.jpg
+
+# Vitest browser-mode artefacts — failure screenshots and attachments.
+.vitest-attachments/
+tests/__screenshots__/

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
+import { scrimProps } from "@/hooks/useEscapeKey";
 import { X } from "lucide-react";
 
 /**
@@ -65,14 +66,15 @@ export default function DetailOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={title}
+      // Escape (above) and the 44px close button are the accessible paths out;
+      // the scrim's click is a pointer convenience on top of them.
       className="fixed inset-0 z-[60] flex items-center justify-center bg-void/85 px-4 py-6 backdrop-blur-sm"
-      onClick={onClose}
+      {...scrimProps(onClose)}
     >
       <div
-        className={`chamfer-lg flex max-h-[85vh] w-full flex-col border border-edge-strong bg-panel shadow-[0_20px_60px_rgba(0,0,0,0.6)] ${
+        className={`chamfer-lg flex max-h-[85dvh] w-full flex-col border border-edge-strong bg-panel shadow-[0_20px_60px_rgba(0,0,0,0.6)] ${
           size === "wide" ? "max-w-2xl" : "max-w-lg"
         }`}
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3 border-b border-hairline bg-inset px-4 py-3">
           <div className="min-w-0">

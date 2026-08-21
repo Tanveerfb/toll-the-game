@@ -100,7 +100,7 @@ export default function MilestonePicker({
           type="button"
           disabled={!selected}
           onClick={() => selected && onPick(selected)}
-          className="shrink-0 border border-el-light bg-el-light/12 px-5 py-2.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-el-light transition-colors hover:bg-el-light/20 disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted"
+          className="flex min-h-11 shrink-0 items-center border border-el-light bg-el-light/12 px-5 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-el-light transition-colors hover:bg-el-light/20 disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted"
         >
           {chosen ? `Claim ${chosen.name}` : "Pick a unit"}
         </button>

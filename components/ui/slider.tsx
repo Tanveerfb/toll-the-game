@@ -36,7 +36,10 @@ function Slider({
       min={min}
       max={max}
       className={cn(
-        "relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col",
+        // The root is what radix listens on, so it — not the 4px track — is
+        // the band a thumb can land in. `min-h-11` gives the whole control a
+        // 44px grab area while the track stays a hairline.
+        "relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-horizontal:min-h-11 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col",
         className
       )}
       {...props}
@@ -54,7 +57,13 @@ function Slider({
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
-          className="relative block size-3 shrink-0 rounded-none border border-signal bg-signal ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-2 hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden active:ring-3 disabled:pointer-events-none disabled:opacity-50"
+          // The thumb reads as a 12px marker and *hits* as a 44px one: the
+          // `after` pseudo-element is the touch target, invisible and centred
+          // on the thumb. It was `-inset-2` (28px effective) — enough for a
+          // mouse, not for a thumb on a phone (ruling #107). Keeping the two
+          // sizes separate is the point; a 44px visible block would swamp a
+          // 4px track.
+          className="relative block size-3 shrink-0 rounded-none border border-signal bg-signal ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-4 hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden active:ring-3 disabled:pointer-events-none disabled:opacity-50"
         />
       ))}
     </SliderPrimitive.Root>

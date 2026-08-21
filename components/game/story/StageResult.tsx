@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import ItemIcon from "@/components/game/ItemIcon";
 import { Button } from "@/components/ui/button";
 import { rankProgress } from "@/lib/game/accountRank";
 import { materialLabel } from "@/lib/game/materials";
@@ -27,6 +28,9 @@ interface ItemRow {
   key: string;
   label: string;
   qty: number;
+  /** Material/currency id the icon resolves from — the reward tile falls back
+   *  to `glyph` for anything without art yet. */
+  iconId: string;
   glyph: string;
   /** From a one-time source (first clear or a mission) rather than the farm roll
    *  — badged BONUS. */
@@ -44,6 +48,7 @@ function buildRows(result: StageClearResult): ItemRow[] {
   if (total.gems)
     rows.push({
       key: "gems",
+      iconId: "gems",
       label: "Gems",
       qty: total.gems,
       glyph: "◈",
@@ -52,6 +57,7 @@ function buildRows(result: StageClearResult): ItemRow[] {
   if (total.coin)
     rows.push({
       key: "coin",
+      iconId: "coin",
       label: "Coin",
       qty: total.coin,
       glyph: "◇",
@@ -60,6 +66,7 @@ function buildRows(result: StageClearResult): ItemRow[] {
   if (total.permanentTicket)
     rows.push({
       key: "ticket",
+      iconId: "permanent_ticket",
       label: "Permanent Ticket",
       qty: total.permanentTicket,
       glyph: "▤",
@@ -70,6 +77,7 @@ function buildRows(result: StageClearResult): ItemRow[] {
     rows.push({
       key: id,
       label: materialLabel(id),
+      iconId: id,
       qty,
       glyph: "✦",
       bonus: Boolean(once?.materials?.[id] ?? missions.materials[id]),
@@ -89,7 +97,12 @@ function Item({ row }: { row: ItemRow }): React.JSX.Element {
       <span
         className={`flex h-13 items-center justify-center border bg-inset font-heading text-2xl ${row.bonus ? "border-el-light text-el-light" : "border-edge-strong text-readout-dim"}`}
       >
-        {row.glyph}
+        <ItemIcon
+          id={row.iconId}
+          size={40}
+          alt=""
+          fallback={<>{row.glyph}</>}
+        />
       </span>
       <span className="mt-1 block truncate font-body text-[10px] font-bold text-readout tabular-nums">
         ×{row.qty}

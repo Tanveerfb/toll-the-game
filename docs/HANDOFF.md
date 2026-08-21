@@ -383,7 +383,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
     - **Old story progress is dropped**, his call — *"yeah drop the old story progress. no issues."* The old keys named beats of a structure that no longer exists, so mapping them forward would be inventing a correspondence. Cost, flagged before he agreed: first-clear bundles become claimable again on an existing save.
     - **`challenge` stages: not built.** *"don't build yet. we will think about it later."* Deliberately absent from the union rather than present and unused (ruling #83).
     - **The existing team and preset picker are reused as-is**, his instruction — `TeamPicker` + `teamPresets` are untouched by the rebuild.
-    - **Battle UI's own mobile pass is a separate dedicated session**, his call, and is not part of story work (`docs/ROADMAP.md`).
+    - ~~**Battle UI's own mobile pass is a separate dedicated session**, his call, and is not part of story work (`docs/ROADMAP.md`).~~ **Superseded by #118 (2026-08-21)** — he folded battle into the general mobile-first pass. This bullet only; the rest of #108 stands.
 
     **What survived from v1, because it was generic rather than story-shaped:** `storyTeam.ts`'s trial-vs-owned rules (#93), `storyRewards`'s payout roller, the VN reader internals, `VersusSplash`, `ChapterTitleCard`, `StoryStage`, `stageEffects`, `victoryAtEnemyHpPercent`. **`SnapCarousel` did not** — a list heading toward 24 chapters is scanned, and centring one item hides its neighbours behind a fling. That reverses part of #98 and is flagged for him.
 
@@ -503,6 +503,84 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
     **The cancellation rule holds in every combination** — 1.0 whenever both are present, including where the attacker was already disadvantaged. Confirmed, but *lightly*: his answer was "uh yes. i guess." Treat it as settled enough to build and worth re-asking if it ever feels wrong in play, rather than as a conviction like #109.
 
     Full spec: `Plans/2026-08-20-guard-and-effective.md`.
+
+118. **The battle screen's mobile pass is part of the general one** (2026-08-21, supersedes the last bullet of #108). Shown the 390px audit — End Turn at 28px, hand cards squeezed to 43px, the control rail taking 14% of the screen width — and offered three scopes: report only and touch nothing, cheap target fixes only, or fold it in. He chose **fold it in**: *"treat battle as just another screen in this pass and rework it now."*
+
+    **That phrasing is an option label he selected, not prose he wrote** — recorded as a selection so a later session doesn't read it as a quotation. The decision itself is his and unambiguous.
+
+    What it retires is #108's closing bullet, *"Battle UI's own mobile pass is a separate dedicated session, his call, and is not part of story work"*, and the matching `docs/ROADMAP.md` Phase 2 line. Everything else in #108 stands.
+
+    **The mechanical half shipped the same day** — every control in `BattleArena`, `Deck`, `UnitDetailPanel`, `BattleCoach` and `EffectsList` is at 44px, and the status strip stopped hiding its progress bar below `sm`. The **layout** half went to him as an HTML file first, per **#106**: `docs/design/mockups/battle-mobile.html`, three renderings at true 390×844 size. **He answered the same day and it is all built** — so the mockup is now a record of the decision, not an open question.
+
+    **His four calls, and what each became:**
+
+    - **Controls → a sheet.** The 56px rail is gone and the field is the full width. Only the two time-critical controls stay in the open — **Skip**, which exists for the seconds an animation is playing, and **Speed**. Log, Foe, Team and Exit sit behind **Controls**, which opens a bottom-anchored sheet rather than a centred modal, because everything in it is something a thumb has to reach. He asked for exactly this: *"i want the options to hide in a modal behind a button click."* `RailButton` became `ControlButton` in the same pass — a component named after a thing that no longer exists is the same failure as a skill outliving its subject.
+    - **Cards floor at 56px** (`min-w-14`) and the row finally scrolls. It was always `overflow-x-auto`; with `flex-1 min-w-0` nothing ever overflowed, so eight cards divided 390px into 43px slivers instead. Centring is now done with auto margins on the end children — plain `justify-center` makes the *first* card unreachable once the content overflows, which it now does.
+    - **Merge arms from the card's own button**, then you tap the partner. With **one** partner it commits immediately, because there is nothing to choose and `mergeDeckCard` would pick the same card anyway; arming only earns its second tap when there are two, and then it matters — a merge grants +1 ult gauge to the **eaten** card's owner. Drag still works and is still the faster desktop path.
+    - **The tile keeps focus-fire and loses the effect strip's tap.** The strip was a 16px button nested inside the tile, which is itself a button to the same detail panel — two targets, one unhittable, one destination. It is a readout now. Focus-fire moved off the readout row onto the portrait's top-right corner at a real 44px.
+
+    **Also cut, his call: the event ticker.** *"if someone needs to know what happened then they can just check the log."* It was one line restating the last action, holding a 44px band in the tightest vertical space on the screen; the log drawer has the full history. Its slot is where the control bar sits now.
+
+    **And a gap he found that the audit had not:** *"on mobile, there is usually no way to see what skills or ults do when they are in deck."* True and worse than it sounds — the card preview was hover-only, so **on a phone there was no way to read a skill in battle at all**, and you played cards from memory. Press-and-hold now opens the card's full description in a modal (`CardDetail`, shared with the desktop preview so the two cannot disagree). That freed the hold gesture from its old job of lighting merge partners, which is what made the arming flow above possible — the two changes are one decision, not two.
+
+    **The hold is a timed commitment, not a threshold** (his follow-up, same day): *"it has to play a 3 sec commitment type progression circle that fills before the modal opens."* A ring appears once the press outlasts a tap and fills over the remaining time; the modal opens when it completes. `HOLD_DETAIL_MS` in `Hand.tsx` is the single source for both — the ring's CSS duration is derived from it, so the animation cannot promise a different length than the timer enforces.
+
+    **The duration is 1500ms, not the 3000 first asked for.** Built at 3s, flagged in the same breath as confirmation-length — the pacing of "delete this permanently", not of "what does this card do" — and he cut it within the hour: *"3s sure is long. maybe try 1.5sec?"* The ring only has to prove the press was deliberate, and 1.5s does that. **The number is one constant** and moving it moves the animation with it, so this is a tuning knob, not a rebuild.
+
+    **The middle outcome is the one that mattered to get right.** One gesture now has three endings: a release under `TAP_MAX_MS` plays the card, a completed hold opens the details, and **an abandoned hold does nothing at all**. That last case is deliberate — falling through to "play the card" would spend an action at the exact moment the player decided against something, which is the worst available reading of letting go.
+
+    Two things the timed hold forced, neither of them cosmetic. The card takes `-webkit-touch-callout: none` — iOS raises its own long-press menu well inside the hold window, on top of the ring the player is being asked to watch. And the hand row went from `touch-none` to `touch-pan-x`: `touch-none` was harmless while cards squeezed and the row never overflowed, and became a trap the moment they stopped, leaving the off-screen cards unreachable by any input a phone has. The cost, accepted: **drag-to-reorder no longer works by touch**, since the same swipe now scrolls the row. Mouse drag is unaffected and merging by touch goes through the button.
+
+    **Unit tiles deliberately did not get the ring.** On a card the hold competes with a tap that costs you an action, so it has to be deliberate. On a tile, tapping already opens the details and nothing else claims the gesture — a timed hold there would only make inspecting an enemy slower.
+
+    **One control stayed deliberately under 44px:** the on-card **Merge** button, opted out with `min-h-0` and a comment. It sits *on* a 56px card; a 44px control would cover the name and cost underneath it. #119 permits the opt-out with a stated reason, and this is the reason.
+
+119. **The 44px floor lives in the primitives, not in the screens** (2026-08-21, sharpens #107). Asked whether to fix `Button`'s 28px `sm` size in the primitive or at the call sites, he chose the primitive: *"give sm a min-h-11 floor so every current and future caller is touch-safe."* Again an option label he picked, not his own sentence.
+
+    **The audit that prompted it:** `components/ui/button.tsx` shipped nine sizes and **five sat under 44px** — `xs` 24, `sm` 28, `default` **36**, `icon` 36, `icon-sm` 28. 20 of the 51 `<Button>` call sites take `default` without naming a size at all. Which is why per-screen fixes never held: `components/game/story/`, built mobile-first as this rule's own calibration set, still shipped two 36px buttons, because it asked for the default and the default was wrong.
+
+    So the floor is enforced where it can't be forgotten. `button`, `input`, `select` and `slider` all carry it; `slider` keeps a 12px *visible* thumb over a 44px hit area, because a 44px block on a 4px track is not the same request. The four `icon-*` sizes collapsed to one — with a floor, `icon-xs` and `icon-sm` were `icon` under another name, and a scale that offers sizes it can't deliver lies to its callers.
+
+    **Pinned** by `tests/touchTargets.test.ts`, which also fails on a size added later that never gets listed. An individual control may still opt out with `min-h-0`, and must say why in a comment; there is exactly one today.
+
+120. **Nothing explanatory may be reachable only by hover** (2026-08-21, sharpens #107). The audit found every mechanic keyword in the game was a radix `Tooltip` wrapped around a bare `<span>` — hover and focus only, and a `<span>` offers a phone neither. So the entire mechanic glossary, the nav's resource labels and the progression panel's "why is this button dead" message were **invisible on the device most players use**, while looking exactly like text that meant something. Offered three fixes, he chose tap-to-open: *"swap the trigger to a real focusable button and back it with a Popover."*
+
+    `components/ui/Hint.tsx` is that component: a `Popover`, which is click-driven and therefore works on touch by construction, with hover layered back on for `pointerType === "mouse"` so the desktop feel is unchanged. **The trigger is always a real `<button>`** — that is the load-bearing half, not the popover.
+
+    Two consequences worth knowing. A `Hint` trigger **cannot contain a link or another button**, which is why the nav's rank chip lost its tooltip entirely and shows its progress bar at every width instead — the tooltip only restated the bar. And an **inline** keyword inside a sentence is the one control that cannot be 44px without wrecking its paragraph; those take `py-1 -my-1`, which buys 8px from the line box, and that is as far as it goes.
+
+    **Pinned** by `tests/touchTargets.test.ts`: no file outside the primitive may mention `TooltipTrigger`.
+
+121. **An SFX system exists** (2026-08-21, reverses the SFX half of the 2026-08-09 audio decision). Asked to survey tooling that could improve the game and then told to install all six findings: *"okay then, install and wire in - 1, 2, 3, 4, 5, 6."* Item 4 was the sound-effect bus.
+
+    What it reverses is a standing note, not a numbered ruling: `docs/AUDIO.md` and `lib/audio/tracks.ts` both said *"there is no SFX system and none is planned"* (his call, 2026-08-09). Both now say otherwise, and `tracks.ts`'s instruction that a future bus *"belongs beside this module, not inside it"* was followed exactly.
+
+    **The bus is silent and that is the shipped state.** `public/audio/sfx/` is empty like `public/audio/` before it; a cue with no file resolves to silence, recorded once and never retried. `lib/audio/cues.ts` names ten **moments** — card play, merge, hit, critical, evade, ultimate, defeat, turn end, victory, defeat screen — because naming the moments is engineering. **What each one sounds like is his**, along with whether ten is the right ten.
+
+    Two things worth knowing before the files arrive. Cues fire on the **animated** beat inside `useBattleSequencer`, not at engine resolve — playback runs up to a second behind, and a hit you hear before you see it reads as a bug. And each cue carries a `throttleMs`, because one AoE can request `hit` eight times inside a frame, which without it is one loud click rather than eight hits.
+
+    **Howler for effects, hand-rolled `HTMLAudioElement` for music**, deliberately. An `HTMLAudioElement` restarts rather than layers when asked to play something already playing, which is fatal for overlapping effects and irrelevant for one long looping track.
+
+122. **The tooling batch — what was installed, and the two things it immediately caught** (2026-08-21). Six items, all his call, all wired the same day.
+
+    | # | What | Where it lives |
+    |---|---|---|
+    | 1 | Full `jsx-a11y` ruleset | `eslint.config.mjs`, `lib/a11y.ts`, `hooks/useEscapeKey.ts` |
+    | 2 | Balance simulator | `lib/game/simulate.ts`, `scripts/sim.ts`, `npm run sim` |
+    | 3 | Component tests in real Chromium | `vitest.config.ts` projects, `npm run test:browser` |
+    | 4 | SFX bus (ruling #121) | `lib/audio/cues.ts`, `lib/audio/sfx.ts` |
+    | 5 | PWA | `app/manifest.ts`, `app/icon.tsx`, `public/sw.js` |
+    | 6 | Telemetry | `@vercel/analytics`, `@vercel/speed-insights`, `lib/sentry.ts` |
+
+    **The a11y ruleset found 23 real problems on its first run**, in nine files — and the three rules that found most of them (`no-static-element-interactions`, `click-events-have-key-events`, `interactive-supports-focus`) were the ones `eslint-config-next` leaves off. It ships six of roughly thirty-five, all about malformed ARIA and none about behaviour. Everything was fixed rather than suppressed; **zero suppressions were added**, and the three I wrote defensively turned out unnecessary and were deleted. The sharpest find: the story reader, the chapter title card and the versus splash all carried `role="button"`, `tabIndex={0}` and an `aria-label` with **no key handler** — focusable, announced as buttons, and inert when pressed.
+
+    **The first browser test found a bug in code written the same morning.** `Hint` opened on focus *and* toggled on click; a mouse fires focus first, so clicking a keyword opened the popover and then immediately closed it. Whether it broke depended on where the pointer had been, so it was not even consistently broken. Nothing in the markup was wrong, which is the entire argument for testing in a browser rather than a simulated DOM. Fixed by dropping hover-to-open: **one interaction everywhere — click, tap or keyboard** — at the cost of a small desktop regression, recorded in the component.
+
+    **Two corrections to what the survey claimed.** `@serwist/next` does *not* support Turbopack, despite what its own docs imply — it printed a warning and silently produced no service worker. Its configurator mode does, at the price of three more dependencies and rewriting both `build` and `dev`; `build` is what Vercel runs on every push and `dev` is his server, so neither was worth touching to cache an app shell. `public/sw.js` is hand-written instead: no build step, no dependency, and everything it does is visible in one file. Separately, Vitest 4.1 takes a provider *factory* from `@vitest/browser-playwright`, not the `"playwright"` string every current guide still shows.
+
+    **What is deliberately not finished:** Sentry is wired but **inert without `NEXT_PUBLIC_SENTRY_DSN`**, matching how `lib/firebase.ts` treats its own env — and `withSentryConfig` is *not* applied, so stack traces will be minified until someone with the account adds an auth token. `tracesSampleRate` is 0 on purpose: performance tracing burns a free tier fastest and Speed Insights already reports Core Web Vitals.
+
+    **The eleven npm advisories are pre-existing and untouched.** All transitive under the `shadcn` CLI — a dev tool that never ships — and `npm audit fix` on its dependency chain risks breaking the CLI for no runtime gain.
 
 ## Working Style He Expects
 

@@ -21,6 +21,7 @@ import {
   type OrderProgress,
   type OrderReward,
 } from "@/lib/game/orders";
+import ItemIcon from "@/components/game/ItemIcon";
 import { materialLabel } from "@/lib/game/materials";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 
@@ -35,24 +36,30 @@ import { getCharacterById } from "@/lib/game/characterCatalog";
  * re-checks in the store. This decides only what a row looks like.
  */
 
-/** One reward, written the way the rest of the game writes rewards. */
-function rewardLine(reward: OrderReward): string {
-  const parts: string[] = [];
+/** One reward, split so the row can draw it. `iconId` is empty for the parts
+ *  that aren't an item — a character prize is a name, not a thing you hold. */
+function rewardParts(reward: OrderReward): Array<{ iconId: string; text: string }> {
+  const parts: Array<{ iconId: string; text: string }> = [];
   // A character leads: it's the only reward worth changing your plans for.
   if (reward.character) {
-    parts.push(getCharacterById(reward.character)?.name ?? reward.character);
+    parts.push({
+      iconId: "",
+      text: getCharacterById(reward.character)?.name ?? reward.character,
+    });
   }
-  if (reward.gems) parts.push(`${reward.gems} gems`);
-  if (reward.coin) parts.push(`${reward.coin.toLocaleString()} coin`);
+  if (reward.gems) parts.push({ iconId: "gems", text: `${reward.gems} gems` });
+  if (reward.coin)
+    parts.push({ iconId: "coin", text: `${reward.coin.toLocaleString()} coin` });
   if (reward.permanentTicket) {
-    parts.push(
-      `${reward.permanentTicket} ticket${reward.permanentTicket > 1 ? "s" : ""}`,
-    );
+    parts.push({
+      iconId: "permanent_ticket",
+      text: `${reward.permanentTicket} ticket${reward.permanentTicket > 1 ? "s" : ""}`,
+    });
   }
   for (const [id, count] of Object.entries(reward.materials ?? {})) {
-    parts.push(`${count}× ${materialLabel(id)}`);
+    parts.push({ iconId: id, text: `${count}\u00d7 ${materialLabel(id)}` });
   }
-  return parts.join(" · ");
+  return parts;
 }
 
 function OrderRow({
@@ -76,7 +83,7 @@ function OrderRow({
   const showBar = required > 1 && !claimed;
 
   return (
-    <div className="flex items-center gap-2.5 border-b border-hairline px-3 py-2 last:border-b-0">
+    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 border-b border-hairline px-3 py-2 last:border-b-0">
       <span
         className={`flex h-4 w-4 shrink-0 items-center justify-center border ${
           claimed
@@ -124,9 +131,19 @@ function OrderRow({
         ) : null}
       </span>
 
+      {/* What the order pays was `hidden sm:flex` — so on a phone a row said
+          what to do and never what for. It wraps to its own line instead now;
+          the row is `flex-wrap` for exactly this. */}
       {!claimed ? (
-        <span className="hidden shrink-0 font-body text-xs tabular-nums text-el-light sm:block">
-          {rewardLine(order.reward)}
+        <span className="order-last flex w-full shrink-0 items-center gap-2.5 pl-6 font-body text-xs tabular-nums text-el-light sm:order-none sm:w-auto sm:pl-0">
+          {rewardParts(order.reward).map((part) => (
+            <span key={part.text} className="flex items-center gap-1.5">
+              {part.iconId ? (
+                <ItemIcon id={part.iconId} size={20} alt="" />
+              ) : null}
+              {part.text}
+            </span>
+          ))}
         </span>
       ) : null}
 
@@ -134,7 +151,7 @@ function OrderRow({
         <button
           type="button"
           onClick={onClaim}
-          className="shrink-0 border border-el-light bg-el-light/12 px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-el-light transition-colors hover:bg-el-light/25"
+          className="flex min-h-11 shrink-0 items-center border border-el-light bg-el-light/12 px-3 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-el-light transition-colors hover:bg-el-light/25"
         >
           Claim
         </button>
@@ -143,7 +160,7 @@ function OrderRow({
           type="button"
           onClick={onGo}
           title={`Go to ${order.routeLabel}`}
-          className="flex shrink-0 items-center gap-0.5 border border-hairline px-2.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+          className="flex min-h-11 shrink-0 items-center gap-0.5 border border-hairline px-2.5 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
         >
           {order.routeLabel}
           <ChevronRight className="h-3 w-3" strokeWidth={2.6} />
@@ -192,7 +209,7 @@ function LockedOrders({ onSignIn }: { onSignIn: () => void }): React.JSX.Element
       <button
         type="button"
         onClick={onSignIn}
-        className="shrink-0 border border-signal bg-signal/12 px-4 py-2 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-signal transition-colors hover:bg-signal/25"
+        className="flex min-h-11 shrink-0 items-center border border-signal bg-signal/12 px-4 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-signal transition-colors hover:bg-signal/25"
       >
         Sign in
       </button>

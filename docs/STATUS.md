@@ -1,4 +1,4 @@
-# Status — 2026-08-21
+# Status — 2026-08-22
 
 Living snapshot. Session history is folded to
 [`docs/archive/STATUS-2026-08.md`](archive/STATUS-2026-08.md); the resurrection
@@ -6,27 +6,29 @@ audit is in git (`docs/STATUS.md` @ `c3040f7`).
 
 ## Start here
 
-**State:** Chapter 1 is content-complete, committed as `afd66a4`. Four new enemy kits (the road
-checkpoint), 37 art assets, four engine capabilities, plus the five `Plans/`
-specs from 2026-08-20. Suite **1,286 tests / 102 files** green, build clean.
+**State:** The game is mobile-first everywhere, battle included, and has an app
+icon and a PWA. Six pieces of tooling landed in one batch — a11y linting, a
+balance simulator, browser component tests, an SFX bus, the PWA, telemetry.
+Suite **1,327 unit tests / 105 files** plus **12 browser tests**, build clean.
+Rulings **#118–#122**.
 
-**Next:** His visual pass — 37 assets and a rebuilt stage 1-5, none of it seen in
-a browser. Then chapters 4-6 art, starting with `admin_room` (four chapters play
-in that one room) and the lake set.
+**Next:** His visual pass. Nothing from 2026-08-21/22 has been seen in a
+browser — the whole mobile sweep, the rebuilt battle screen, the hold gesture
+and the new icon are all static-analysis-verified only.
 
-**Blocked on:** Nothing. The two open kit questions from 2026-08-20 ([Guard]
-stacking, whether any kit carries [Guard]/[Effective]) are still unanswered but
-block nothing - no kit uses either.
+**Blocked on:** Nothing. Two things wait on *him*, not on work: the OST and SFX
+files (`docs/AUDIO.md` lists them; both buses are silent by design until they
+exist), and a Sentry DSN.
 
-**Don't trust:** Nothing from 2026-08-20/21 is browser-verified. The riskiest
-code is `lib/game/combat.ts` targeting and the new `onDefeat` post-pass; the
-riskiest art call is whether the plates read correctly behind the dialogue box at
-390px. Chapter 1's filler stages are approved in `Filler/Drafts.md`, but that
-approval came in chat and has never been seen running.
+**Don't trust:** Any claim about how something *looks* or *feels*. Specifically
+untested by anything: the service worker (dev-disabled, needs a production
+origin), the PWA install flow, and Sentry (inert without a DSN, and
+`withSentryConfig` deliberately not applied, so traces stay minified). The 1.5s
+hold could still read as sluggish in a real fight.
 
 ## Working (implemented, tested, browser-verified)
 
-- **All five `Plans/` specs built (2026-08-20)** — one session, no new features, five engine capabilities. Verified after the doc edits: `npm run check` green (**1,270 tests / 101 files**, same 3 pre-existing eslint warnings in `tests/duel.test.ts`), clean `NEXT_DIST_DIR=.next-verify next build`, `.next-verify` removed. **Not browser-verified.** Rulings **#112–#114** added; **#111** amended from "designed, not built" to built.
+- **All five `Plans/` specs built (2026-08-20)** — one session, no new features, five engine capabilities. Verified after the doc edits: `npm run check` green at the time (**1,270 tests / 101 files**; 1,327 / 105 as of 2026-08-22, same 3 pre-existing eslint warnings in `tests/duel.test.ts`), clean `NEXT_DIST_DIR=.next-verify next build`, `.next-verify` removed. **Not browser-verified.** Rulings **#112–#114** added; **#111** amended from "designed, not built" to built.
 
   ### Substat readers that missed `stats` arrays — closed
   `entryTouchesStat(entry, stat, { allCounts })` in `lib/game/stats.ts` replaces three near-copies of the same match. The `allCounts` flag is deliberately explicit: ruling #55 puts **damage reduction and evade chance outside "all stats"** and #36 makes `damageDealt` a damage modifier, so those three must be reachable by exact name and by a `stats` array but never by `"all"` — a reader added later has to state which side of #55 its stat sits on instead of inheriting an answer it never considered. `getDamageDealtMultiplier` and `getDamageReductionMultiplier` now read arrays; **evade and damage reduction now read debuffs**, which they never did (*"we do have to fix evade and DR parts too"*). A DR debuff can strip reduction to zero and no further — making a target take *extra* damage is the attacker's `damageDealt` job, not a negative DR.
@@ -339,7 +341,7 @@ approval came in chat and has never been seen running.
 - **Single-ally targeting** — single-target ally buffs/heals (Leorio's rank-1 Member of the Zodiac) require marking an ally on the arena (emerald Target badge); rank-gated aoe needs no selection.
 - **Pierce** — flat 50% DEF ignore for every card; per-card pierce values removed.
 - **Lethal survival (ruling #29)** — Nine Lives catches direct hits AND lethal DoT procs (`lib/game/lethal.ts`, shared by combat + ticks); any revival strips all buffs and debuffs, uncancellable included.
-- **Battle QoL** — 1×/2× speed toggle (scales phase auto-advance + enemy resolve delays), battle-log filter (Actions only / All events incl. DoT ticks + passive procs), hover tooltips on unit ▲/▼ effect counters.
+- **Battle QoL** — 1×/2× speed toggle (scales phase auto-advance + enemy resolve delays), battle-log filter (Actions only / All events incl. DoT ticks + passive procs), hover tooltips on unit ▲/▼ effect counters. **Superseded 2026-08-21:** the effect strip is a readout now, not a control, and no tooltip in the game opens on hover any more (rulings #118, #120).
 - **Kit validation** — Zod schema (`lib/game/characterSchema.ts`) parses every character JSON at load; malformed kits fail with the character id and field named. `npm run check` = tsc + eslint + vitest.
 - **Effects vs buffs/debuffs (ruling #30)** — uncancellable entries (synergy bonuses, ramps) are grey "effects": excluded from Rupture/Amplify/Weakpoint counting, cleanse, AI cleanse decisions, and the ▲/▼ counters (grey ◆ counter + "Effects" section instead). Their stat modifiers still apply.
 - **Taunt-stance link (ruling #31)** — cancelling a unit's stances/buffs also breaks the taunts it authored; Yalina's Attention Drawer is a real stance now.
@@ -360,7 +362,7 @@ approval came in chat and has never been seen running.
 - **Confirmed by Tanveer 2026-07-11** — identical tag synergies stack per carrier (ruling #40); cancel-then-hit order (ruling #41); DoT ticks unaffected by damage modifiers (ruling #42).
 - **Battle log dump** — SAVE BATTLE LOG on the victory/defeat overlay writes teams + the full event log to `<project>/battle-log/` via `app/api/battle-log` (gitignored, playtest debugging).
 - **Type-safe mechanics (STATUS #7 closed)** — `Mechanic` is a discriminated union of **53** per-type interfaces (`types/mechanic.ts`, canonical list = `MECHANIC_TYPES`); narrowing on `type` exposes exactly that mechanic's fields. `Character.passive` is a typed `Passive` with a `PassiveTrigger` union (`types/passive.ts`); runtime buff/debuff entries are `StatusEffect`. Zero `any` left in lib/hooks/store/components/app. The Zod schema now rejects unknown mechanic types AND unknown passive triggers at load — a typo'd kit fails with the character id and path before a battle ever starts. One documented boundary cast where validated kit JSON becomes typed data (BattleProvider).
-- **Battle HUD redesign (STATUS #20, first pass — Tanveer's picks 2026-07-12)** — single-viewport layout, no page scroll: slim status strip (turn/phase/progress/speed/log), enemy row + player row of portrait-first unit tiles (art fills tile; overlaid HP bar, 5-segment ULT pips, ▲/▼/◆ counters with tooltip, Sub/Target/×N badges, DOWN stamp), event ticker above an always-visible deck dock (collapse toggle removed), queue rendered as compact chips beside Reset Hand, full log in a slide-over drawer (Actions only / All events filter). TopNav pinned to h-11 so the battle shell sizes to `100dvh - 2.875rem`; BattleArena root must NOT set a z-index (it would trap the fixed drawer/modals under the sticky TopNav's z-50).
+- **Battle HUD redesign (STATUS #20, first pass — Tanveer's picks 2026-07-12)** — single-viewport layout, no page scroll: slim status strip (turn/phase/progress/speed/log), enemy row + player row of portrait-first unit tiles (art fills tile; overlaid HP bar, 5-segment ULT pips, ▲/▼/◆ counters with tooltip, Sub/Target/×N badges, DOWN stamp), event ticker above an always-visible deck dock (collapse toggle removed) — **the ticker was cut 2026-08-21** (#118), and the strip's speed/log controls moved into a bottom sheet in the same pass, queue rendered as compact chips beside Reset Hand, full log in a slide-over drawer (Actions only / All events filter). TopNav pinned to h-11 so the battle shell sizes to `100dvh - 2.875rem`; BattleArena root must NOT set a z-index (it would trap the fixed drawer/modals under the sticky TopNav's z-50).
 - **Battle cinematics (STATUS #20, Tanveer's Tier-3 pick 2026-07-12)** — engine emits structured `BattleActionEvent`s (`types/battleEvent.ts`; per-target damage/heal/evade/crit/kill + exact hpBefore/hpAfter, counters) via an optional `emit` param on `executeSkill`; UI never parses log strings. `useBattleSequencer` replays them ~700ms/action (÷ battle speed): attacker ghost lunges to target, color-tinted impact flash + tile shake, damage/heal/evade/counter floaters, HP bars drain at the impact moment via display-HP overrides (store state is already final underneath). Ultimates get a full-width cut-in banner (character art + skill name, ~900ms) before the hit. Skip button jumps to final state; victory/defeat overlay is held until playback ends (covers the overkill-skip ask). Action lines removed from the toast overlay (sequencer + ticker own them); DoT/passive toasts remain. `prefers-reduced-motion` disables shake/dodge keyframes.
 - **Story mode (Dokkan-style, Parts 1–2 playable — Tanveer's picks 2026-07-12)** — `/story`: part banners (cover art, tagline, cleared count; Parts 3–6 listed as coming soon) → chapter list → VN scene reader (`components/game/StorySceneReader.tsx`: portrait left/right, name plate, tap/Enter/Space to advance, Skip) → canon-locked battle (reuses `startCustomBattle` + the practice battle shell) → outro → next chapter unlocks. Chapter flow: intro scenes → battle → outro scenes; strict sequential unlock (first chapter free, each next needs the previous, next part needs the previous part's last chapter). Data: `data/story/part1.json` (Rawspent and Ledger, 4 chapters, Duke solo vs raiders/wild beasts/road bandits) + `part2.json` (Lyra, 2-stage Duke-vs-Lyra canon fight), adapted from the Arc One beat sheets; validated at load by `lib/game/storySchema.ts` (Zod; unknown character/portrait ids fail with part+chapter id). Progress: `store/storyStore.ts`, zustand persist to localStorage + best-effort Firestore mirror (`storyProgress/{uid}`, union merge) for signed-in users. Battle result screen swaps to CONTINUE STORY / RETRY BATTLE / BACK TO CHAPTERS via BattleArena's optional `story` prop; practice overlay unchanged. Enemy-only kits (`raider`, `road_bandit`, `wild_beast`, approved by Tanveer) carry `storyOnly: true` and are hidden from team select + archive via `getPlayableCharacters()`. MAIN STORY menu button enabled; Story link added to TopNav. Gotcha: the scene reader root is a div, not a `<button>` — the Skip button nests inside (button-in-button = hydration error), and `onFinish` must not fire inside a `setIndex` updater (setState-during-render). **Playtest adjustments (2026-07-12):** scene panels vertically centered (was bottom); the three story-only enemies now have ComfyUI art (v6) and a hidden URL-only roster at `/archive/npc` (`getAllCharacters().filter(storyOnly)`, no UI link).
 - **Team select overlay (2026-07-12)** — the always-visible roster is gone; tapping any team slot (player or enemy, filled or empty) opens a fullscreen `RosterOverlay` with tap-to-toggle add/remove (✓+index badge on picked, max 4) and a DONE button to close. `components/game/TeamSelect.tsx`.
@@ -372,6 +374,189 @@ approval came in chat and has never been seen running.
 - **Enemy AI priority (ruling 2026-07-13)** — `getAIMove` picks across the whole acting pool by priority: ultimate (gauge full) → new buff (max 1/turn) or heal (ally <50%) → stance (max 1/turn, not already held) → debuff/disable (max 1/turn) → attack → other. Caps hold across the turn via a shared `AITurnContext` (`freshAITurnContext`/`noteAIAction`).
 - **Fixes (2026-07-12/13)** — Mustafa's Earth Stance: Fortress is a team-wide (aoe) DR stance, no ally pick; single-target attacks retarget to a living enemy when their marked target died mid-queue (focus-fire no longer wastes cards on a corpse).
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
+
+## Session log — 2026-08-21/22: mobile-first everywhere, six tools, and an app icon
+
+One long session in five movements. Started with 21 uncommitted files from the
+art-wiring work and ended with 93.
+
+### 1. Art wiring finished (carried in from before the compact)
+
+`components/game/ItemIcon.tsx` — one component turning a material/currency/coin
+id into a picture, with the lucide glyph as fallback. Twelve surfaces draw icons
+now. Story backdrops reached the brief, stage list, title card, versus splash,
+wave break and result via a new `stageBackgroundId()` that derives a stage's
+plate from its scenes rather than asking for a second authoring pass. Fixed
+`ChapterList` computing its tint from `getStoryBackground(undefined)` under a
+comment claiming it used the chapter's locale — the comment was right and the
+call was not.
+
+### 2. The mobile-first audit, and the sweep that followed
+
+Audited all **84** `.tsx` files. **The roadmap's debt list was wrong in both
+directions.** Gacha and archive were already close to phone-safe; the two real
+problems were not on the list at all:
+
+- `components/ui/button.tsx` had **five of nine sizes under 44px**, `default`
+  worst at 36px — taken implicitly by 20 of 51 `<Button>` call sites. This is
+  why per-screen fixes never held: `components/game/story/`, built mobile-first
+  as ruling #107's own calibration set, still shipped two 36px buttons.
+- **Every mechanic keyword in the game was a radix `Tooltip` on a bare
+  `<span>`** — hover and focus only, and a span offers a phone neither. The
+  entire glossary, the nav's resource labels and the progression panel's
+  disabled-reason message did not exist on mobile.
+
+Fixed in the primitives (**#119**) and via a new `components/ui/Hint.tsx`
+(**#120**). Then the sweep: nav, hub, gacha, archive, orders, world boss, team
+select, and battle's controls. Two hand-rolled range inputs at 4px and 6px moved
+onto `Slider`. Safe-area handling added.
+
+The widened `viewportUnits` test **found two static-`vh` shells the audit had
+missed** — `PullReveal` and `UnitDetailPanel`, both `max-h-[92vh]`. Four modal
+shells total had survived the 2026-08-19 sweep because its regex only matched
+`100vh`.
+
+### 3. The battle screen, rebuilt (#118)
+
+He folded battle into the general pass rather than keeping it a separate
+session, then answered four layout calls from an HTML mockup
+(`docs/design/mockups/battle-mobile.html`, now a record rather than a question):
+
+- **Controls into a bottom sheet.** The `w-14` rail was 14% of a 390px screen,
+  permanently, out of thumb reach. Skip and Speed stay out; the rest sit behind
+  Controls. `RailButton` became `ControlButton` in the same pass.
+- **Hand cards floor at 56px** (`min-w-14`). They were `flex-1 min-w-0` inside
+  an `overflow-x-auto` row, so eight cards divided 390px into 43px slivers and
+  nothing ever overflowed, meaning the row never scrolled either. Centring had
+  to change with it: plain `justify-center` makes the *first* card unreachable
+  once content overflows.
+- **Merge arms from the card's own button**, committing immediately when there
+  is only one partner (nothing to choose) and asking when there are two — which
+  matters, because a merge grants +1 ult gauge to the *eaten* card's owner.
+- **The tile keeps focus-fire, loses the effect strip's tap.** The strip was a
+  16px button nested inside the tile, which is itself a button to the same
+  panel. Focus-fire moved onto the portrait at a real 44px.
+
+**The event ticker was cut**, his call — *"if someone needs to know what
+happened then they can just check the log."*
+
+**And a gap he found that the audit had not:** the card preview was hover-only,
+so **on a phone there was no way to read a skill in battle at all**.
+Press-and-hold now opens it (`CardDetail`, shared with the desktop preview). He
+then asked for a hold *ring* — built at 3000ms, flagged as confirmation-length,
+cut to **1500ms** within the hour. One gesture, three endings, and the middle one
+matters most: an **abandoned** hold does nothing, because falling through to
+"play the card" would spend an action at the exact moment the player decided
+against it.
+
+### 4. Six tools, installed and wired (#121, #122)
+
+He asked what tooling could help, then took all six findings.
+
+| # | What | Where |
+|---|---|---|
+| 1 | Full `jsx-a11y` ruleset | `eslint.config.mjs`, `lib/a11y.ts`, `hooks/useEscapeKey.ts` |
+| 2 | Balance simulator | `lib/game/simulate.ts`, `scripts/sim.ts`, `npm run sim` |
+| 3 | Browser component tests | `vitest.config.ts` projects, `npm run test:browser` |
+| 4 | SFX bus | `lib/audio/cues.ts`, `lib/audio/sfx.ts`, `hooks/useSfx.ts` |
+| 5 | PWA | `app/manifest.ts`, `app/icon.png`, `public/sw.js` |
+| 6 | Telemetry | `@vercel/analytics`, `@vercel/speed-insights`, `lib/sentry.ts` |
+
+**Two of them found real bugs immediately, which is the whole argument for
+them.** The a11y ruleset found **23 problems across 9 files** on first run — and
+the three rules that caught most of them are exactly the ones
+`eslint-config-next` leaves off (it ships 6 of ~35, all about malformed ARIA,
+none about behaviour). Everything was fixed rather than suppressed; **zero
+suppressions were added**, and three written defensively turned out unnecessary
+and were deleted. Sharpest find: the story reader, chapter title card and versus
+splash all carried `role="button"`, `tabIndex={0}` and an `aria-label` with **no
+key handler** — focusable, announced as buttons, inert when pressed.
+
+The **first browser test found a bug in code written that morning**: `Hint`
+opened on focus *and* toggled on click, and a mouse focuses before it clicks, so
+clicking a keyword opened the popover then closed it again. Whether it broke
+depended on where the pointer had been. Nothing in the markup was wrong.
+
+The simulator needed the passive queue, which lived inside a React context —
+extracted to `lib/game/mechanicQueue.ts`, because a simulator that skipped
+passives would report win rates for a game nobody plays. Side benefit:
+`lib/game/passive.ts` was importing types *from a hook*, and that arrow now
+points the right way.
+
+### 5. The app icon
+
+Drawn, not generated, and the reasoning is in `ART_PIPELINE.md` under "Logos and
+marks". Animagine returns an **item sheet** for "emblem", "badge", "medallion"
+and "crest" — eight images, every one a scatter of ~20 objects. Flux and all
+five vector LoRAs turned out **unusable on this install**: the checkpoint is
+UNet-only and there are no Flux text encoders or VAE.
+
+Two things did fix Animagine and are worth reusing for any object render:
+**`no humans` as a positive booru tag**, and **never a colour list** (a list of
+five colours draws five separate objects). The resulting arch was good art and
+still lost — an illustration dies at 48px.
+
+So five candidates were drawn in `scripts/logo_candidates.py`, he picked the
+coin, and it took two revisions that are only visible small: two concentric
+rings moiréd at 48px, and the gate was originally cut *out* of a cyan face,
+making the dark shape the figure so the whole mark read as a **padlock**.
+
+### What was tried and abandoned
+
+- **`@serwist/next` for the PWA.** It does not support Turbopack despite what
+  its docs imply — it printed a warning and **silently produced no service
+  worker**. Its configurator mode does, at the cost of three more dependencies
+  and rewriting both `build` and `dev`; `build` is what Vercel runs on every
+  push and `dev` is his server. Backed out entirely; `public/sw.js` is
+  hand-written.
+- **Hover-to-open on `Hint`.** Built, then removed the same day — see above.
+  Cost: a small desktop regression, recorded in the component.
+- **`settings.controlComponents` for jsx-a11y.** Did not apply; the rule needed
+  it as an option, not a setting.
+- **Three `eslint-disable` directives** on modal scrims. Unnecessary once the
+  scrims carried `role="dialog"` and the inner `stopPropagation` was replaced by
+  a target check — deleted rather than left as stale suppressions.
+- **Two malformed tool calls** leaked the literal word "PARAMETER" into a
+  ComfyUI prompt. Those images are in the output folder.
+
+### What is deliberately unfinished
+
+- **Sentry is inert** without `NEXT_PUBLIC_SENTRY_DSN`, and `withSentryConfig`
+  is **not** applied, so stack traces stay minified until someone with the
+  account adds an auth token. `tracesSampleRate` is 0 on purpose.
+- **Both audio buses are silent.** `public/audio/` and `public/audio/sfx/` are
+  empty; `docs/AUDIO.md` lists what to drop in. Which sounds these are is his.
+- **The on-card Merge button stays under 44px**, opted out with `min-h-0` and a
+  comment. It sits on a 56px card; sizing it would cover the name underneath.
+- **Unit tiles did not get the hold ring.** On a card the hold competes with a
+  tap that costs an action; on a tile, tapping already opens details.
+- **The 11 npm advisories are pre-existing**, all transitive under the `shadcn`
+  CLI, which never ships.
+
+### Confidence and gaps
+
+**Verified this session, by running it:** `npm run check` gives 105 files /
+1,327 tests, 3 pre-existing `duel.test.ts` warnings, 0 errors.
+`npm run test:browser` gives 2 files / 12 tests in real Chromium.
+`NEXT_DIST_DIR=.next-verify next build` compiled successfully. `npm run sim`
+produces a ladder.
+
+**Assumed, not verified:** every visual claim. The 44px floor changes vertical
+density on ~7 screens and nobody has looked at them. The controls sheet, the
+56px cards, the reticle's placement over "Ult Ready", and whether 1.5s reads as
+deliberate or broken are all unseen.
+
+**Never exercised at all:** the service worker (disabled in dev by design, needs
+a production origin), the PWA install prompt, Sentry, and every SFX cue.
+
+**What I would check first coming back cold:** open `/practice` on a phone. The
+battle screen changed more than anything else and is the only one whose layout
+was rebuilt rather than adjusted.
+
+### Operational note
+
+**ComfyUI was started by this session** (the portable install on `E:`, port
+8188) and left running. It is not started automatically.
 
 ## Session log - 2026-08-21: the road checkpoint, and 37 art assets
 
@@ -504,85 +689,6 @@ playtest, and `teamMode: "anchored"` on 1-5 changes who the player can field.
 **What I would check first coming back cold:** whether stage 1-5 is winnable, and
 whether the Collector's aura visibly drops when his escort dies.
 
-## Session log — 2026-08-20: skills, an engine bug family, and six Dokkan kits
-
-Commit `6f077d5`.
-
-A talk-and-specs session. He asked twice for no builds, so after the morning's
-fixes nothing was implemented — the output is skills, rulings and `Plans/`.
-
-### What he corrected me on
-
-- **#54 overstated him.** I wrote "a story kit shares nothing with its playable
-  twin except the artwork"; his words had been *"could be completely different"*.
-  He clarified: *"it can share some. i would have tags shared at the very
-  least."* Permission, not mandate.
-- **The #58 test encoded the wrong rule twice** — first as thresholds, then
-  scoped to basic stats. Both wrong: a tier word is a function of the number
-  alone, and it is exact.
-- **My #27 pill-overlap check was a false-positive generator.** It flagged Gon's
-  "raises" inside "greatly raises" as a duplicate; they are two effects at two
-  positions, and `extractKeywordFootnotes` matches longest-first without
-  overlapping. Narrowed, with the reasoning written into the test.
-- **I called 14 rulings dead; six governed live code.** That list came from
-  reading the ledger instead of the repo — the exact mistake the ledger exists to
-  prevent. Eight were tombstoned; #82, #95, #97 and #104 stayed.
-- **#108 claimed to supersede "#98–#105 wholesale"** and the range was too wide:
-  #99, #100, #103 and #104 all govern live code, and #103 is the wave rule *that
-  rebuild implemented*. Corrected in place.
-- **Action-order conditions do exist** — `onFirstAction`, used by Lyra. I had
-  read the trigger union an hour earlier and failed to connect it.
-- **The passive constraint is one *trigger*, not one block.** Leorio's passive
-  carries three `#` blocks and two mechanics under one `onBattleStart`.
-
-### What he ruled out
-
-- **Additional attacks** — *"which wouldn't be a thing."* Every Dokkan clause
-  about launching an extra attack is dropped on sight, not translated.
-- **`tier: "elite"` as a tag condition** — *"'tier' or 'elite' is not a tag. its
-  an enemy type."*
-- **Both of my passive-structure options.** He chose a third: *"Keep it the
-  dokkan way. it basically is a single but possibly long passive. this means
-  molvarr passives can be combined into one per phase too."* That **removes** the
-  playable/boss split rather than adding to it.
-- **Balance commentary** — *"enemy and playable chars kits are in my hand and i
-  will think of balance when working through them. not your worry."*
-
-### What was deferred, and to what
-
-Five specs in [`Plans/`](../Plans/README.md), none started, built in dedicated
-sessions. Four need no decisions. The one open question is whether two sources of
-Guard stack.
-
-Highest-value thing **not** specced: a mechanic that counts the character's **own
-attacks**. Three Dokkan blocks collapse into it and he rewrote a fourth around
-it. Every existing counter has the wrong subject — `statShiftAfterAttacks` and
-`chargedStacks` count attacks *received*, `momentumStacks` counts cards the
-*team* plays.
-
-### Global checkpoint skill rewritten
-
-Its own instruction — *"if the doc is getting long and unwieldy, that's fine"* —
-is why this file reached 2,733 lines. Replaced with a fold protocol; the
-`.remember` layer was dropped after being found writing 0-byte files, replaced by
-the `Start here` block above. **This checkpoint is the first to run it**, and
-folded 2,398 lines to `docs/archive/STATUS-2026-08.md`.
-
-### Confidence and gaps
-
-- **Verified:** every engine fix has a test; the fold was checked line-by-line
-  against `HEAD` for verbatim match and complete heading coverage; the Tailwind
-  `100vh` claim was checked by compiling a probe, not from memory; every rendered
-  description in this session came from `buildDescriptionForRank`, not from
-  reading source strings.
-- **Assumed:** that the five `Plans/` specs describe the code accurately *today* —
-  they were written against it this session, so they are as fresh as they will
-  ever be, and each names its file:line.
-- **Untested:** all eleven `min-h-dvh` screens, and the two changed cards. Nothing
-  was browser-verified — he does the visual pass.
-- **Where I would look first coming back cold:** `Plans/README.md`, then the
-  `Don't trust` line in `Start here`.
-
 ## Session history — folded to the archive
 
 Moved verbatim to [`docs/archive/STATUS-2026-08.md`](archive/STATUS-2026-08.md)
@@ -605,6 +711,7 @@ on 2026-08-20. Each line below is one section in that file.
 - Playtest — 2026-08-13 evening: five runs against Molvarr
 - Session log — 2026-08-13 (auto session): Open Issues #24–27, and what was under them
 - Session log — 2026-08-13 (part 2): shadcn built, four features, two bugs, the economy audited
+- Session log — 2026-08-20: skills, an engine bug family, and six Dokkan kits
 
 ## Open Issues
 

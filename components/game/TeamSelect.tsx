@@ -55,7 +55,7 @@ function phaseCount(character: CharacterData): number {
 }
 
 const TOGGLE =
-  "chamfer px-4 py-2 font-heading text-sm tracking-[0.12em] transition-colors";
+  "chamfer min-h-11 px-4 py-2 font-heading text-sm tracking-[0.12em] transition-colors";
 
 function BossPicker({
   bosses,
@@ -302,7 +302,10 @@ export default function TeamSelect({
           starts and directly beside Clear, which is the one control you never
           want next to it. */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-edge bg-void/95 backdrop-blur-sm">
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 md:px-8">
+        {/* `pb-safe` replaces the bottom half of `py-3`: this bar is pinned to
+            the screen edge, and START would otherwise sit under the iOS home
+            indicator. */}
+        <div className="pb-safe mx-auto flex w-full max-w-6xl items-center gap-3 px-4 pt-3 md:px-8">
           <span className="min-w-0 font-body text-[11px] leading-snug text-readout-muted">
             {canStart ? (
               <>
@@ -383,7 +386,7 @@ function QuickAction({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="chamfer min-h-9 border border-edge bg-void/60 px-2.5 py-1 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:pointer-events-none disabled:opacity-35"
+      className="chamfer min-h-11 border border-edge bg-void/60 px-2.5 py-1 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:pointer-events-none disabled:opacity-35"
     >
       {children}
     </button>

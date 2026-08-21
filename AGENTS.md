@@ -42,11 +42,18 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 | Zod                 | Runtime schema validation                        |
 | Framer Motion       | UI animations                                    |
 | Zustand             | Global game state management                     |
-| Vitest              | Unit tests (`tests/`)                            |
+| Vitest              | Unit tests (`tests/*.test.ts`) + component tests in real Chromium (`tests/*.browser.test.tsx`) |
 
 UI primitives live in `components/ui/` (shadcn) and already default to the Combat Terminal look — add new ones with `npx shadcn@latest add <component>`, and don't restate the theme at the usage (ruling #84).
 
-**Mobile first, desktop second (Tanveer, 2026-08-18).** Most players willing to try the game arrive on a phone, so a phone is the primary target and desktop is the secondary one — not the other way round. Concretely: design canvas **390×844** (9:16 portrait); desktop renders the same column centred at a capped width, never a re-laid-out wide variant; **`dvh`, never `vh`** (Tailwind 4 compiles `screen` to `100vh`, the largest viewport); touch targets **≥44px** with primaries in the thumb-reachable lower third; no affordance that exists only on hover; one vertical scroll per screen, with wide content scrolling inside its own container. **Verify phone width before desktop** — a break at 390px is a blocker, a break at 1440px is a bug. Ruling #107 in `docs/HANDOFF.md`. Battle, gacha, archive and the hub predate this rule and are known debt (`docs/ROADMAP.md`).
+**Mobile first, desktop second (Tanveer, 2026-08-18).** Most players willing to try the game arrive on a phone, so a phone is the primary target and desktop is the secondary one — not the other way round. Concretely: design canvas **390×844** (9:16 portrait); desktop renders the same column centred at a capped width, never a re-laid-out wide variant; **`dvh`, never `vh`** (Tailwind 4 compiles `screen` to `100vh`, the largest viewport); touch targets **≥44px** with primaries in the thumb-reachable lower third; no affordance that exists only on hover; one vertical scroll per screen, with wide content scrolling inside its own container. **Verify phone width before desktop** — a break at 390px is a blocker, a break at 1440px is a bug. Ruling #107 in `docs/HANDOFF.md`.
+
+Two of those rules are **enforced in code, so don't re-implement them per screen** (rulings #119–120, 2026-08-21):
+
+- **The 44px floor lives in `components/ui/`.** `button`, `input`, `select` and `slider` all carry it, so a control built from a primitive is already touch-safe and a screen adding `h-9` to one is fighting the scale. Opting out needs `min-h-0` **and** a comment saying why. Pinned by `tests/touchTargets.test.ts`.
+- **Anything explanatory uses `components/ui/Hint.tsx`, never a `Tooltip`.** A radix `Tooltip` on a `<span>` fires on neither tap nor focus, which is how the whole mechanic glossary came to be invisible on a phone. `Hint` is a `Popover` with a real button trigger and **one interaction on every device: click, tap or keyboard**. It does *not* open on hover — that was built first and removed the same day, because a mouse fires `pointerenter` before `click`, so hovering opened it and the click closed it again (`tests/hint.browser.test.tsx`). `tests/touchTargets.test.ts` forbids `TooltipTrigger` outside the primitive.
+
+**No mobile debt is outstanding.** The 2026-08-21 sweep took every screen, battle included: its controls moved off a side rail into a sheet, hand cards floor at 56px, merge arms from a button, and press-and-hold opens a card's or a unit's details — the gesture set is **tap = act, hold = explain** (#118). `docs/design/mockups/battle-mobile.html` records those decisions. None of it is browser-verified; the visual pass is his.
 
 ## Folder Structure
 
@@ -80,12 +87,16 @@ content/news/         MDX patch notes (updates/ + notices/)
 data/characters/      Character kit JSON (source of truth for kits)
 data/story/           Story chapters (chapter-N.json); data/banners/ gacha banners
 types/                Shared TypeScript contracts
-tests/                Vitest unit tests (engine, stores, gacha, previews)
+tests/                Unit tests (engine, stores, gacha, previews), plus
+                      *.browser.test.tsx — component tests in real Chromium
+scripts/sim.ts        Headless balance simulator (npm run sim), ruling #57
 ```
 
 ## Commands
 
-- `npm run dev` / `npm run build` / `npm run lint` / `npm run test`
+- `npm run dev` / `npm run build` / `npm run lint` / `npm run test` / `npm run check`
+- `npm run test:browser` — component tests in real Chromium. **Separate from `test` on purpose**: a browser launch is not what you want in a tight loop, and `check` runs the unit suite only. Run it before shipping anything whose behaviour is timing- or pointer-dependent, because that is the half a simulated DOM cannot judge.
+- `npm run sim -- <left> <right>` — headless balance simulation across all four formats (ruling #57). `npm run sim -- --roster <id>` sweeps one kit against the whole roster. **Read the limits at the top of `lib/game/simulate.ts` before quoting a number**: no card draw, AI plays both sides, base stats only.
 
 ## Engine Rules (see docs/ARCHITECTURE.md for detail)
 

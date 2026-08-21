@@ -39,6 +39,19 @@ N. **<Short claim, stated as a fact>** (YYYY-MM-DD). *"<his words, verbatim>"*
 - **Quote him.** The reason the ledger can't be re-litigated is that it carries
   his phrasing, not a paraphrase of it. If the decision came out over several
   messages, quote the sentence that actually settles it.
+- **A picked option is NOT a quote** (learned 2026-08-21, twice, on #118 and
+  #119). When the decision came from `AskUserQuestion`, the words in the option
+  are *yours* — you wrote them. Dropping them between quote marks manufactures a
+  sentence he never said, in the one document whose whole value is that it
+  can't be re-litigated. Write it as a selection instead:
+
+  > Offered three scopes — report only, cheap fixes, or fold it in — he chose
+  > **fold it in**: *"treat battle as just another screen in this pass."*
+  > **That phrasing is an option label he selected, not prose he wrote.**
+
+  The decision is just as binding either way. What changes is that a later
+  session can tell which words are his, which matters the moment one of them
+  looks wrong.
 - **Bold claim first.** A reader scanning 108 entries reads bold text only.
 - **Say what it changes.** An entry that records a decision without naming the
   file, mechanic or screen it governs makes the next session guess.

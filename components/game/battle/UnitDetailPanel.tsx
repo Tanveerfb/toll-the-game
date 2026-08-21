@@ -416,7 +416,7 @@ export default function UnitDetailPanel({
       aria-label={`${selected.name} details`}
       className="fixed inset-0 z-50 flex items-center justify-center bg-void/85 px-3 py-4 backdrop-blur-sm"
     >
-      <div className="chamfer-lg flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden border border-edge-strong bg-panel">
+      <div className="chamfer-lg flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden border border-edge-strong bg-panel">
         {/* Header — two rows, so identity never fights the controls for space.
             The old single row put the name between two button clusters. */}
         <div className="grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-px border-b border-hairline bg-inset px-3 py-2">
@@ -424,7 +424,7 @@ export default function UnitDetailPanel({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="row-span-2 flex h-9 w-9 items-center justify-center border border-edge text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+            className="row-span-2 flex h-11 w-11 items-center justify-center border border-edge text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
           >
             <X className="h-4 w-4" />
           </button>
@@ -452,7 +452,7 @@ export default function UnitDetailPanel({
               type="button"
               onClick={() => step(-1)}
               disabled={teamOnField.length < 2}
-              className="flex h-9 w-9 items-center justify-center border border-edge text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:opacity-30"
+              className="flex h-11 w-11 items-center justify-center border border-edge text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:opacity-30"
               aria-label="Previous unit on this side"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -466,7 +466,7 @@ export default function UnitDetailPanel({
               type="button"
               onClick={() => step(1)}
               disabled={teamOnField.length < 2}
-              className="flex h-9 w-9 items-center justify-center border border-edge text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:opacity-30"
+              className="flex h-11 w-11 items-center justify-center border border-edge text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:opacity-30"
               aria-label="Next unit on this side"
             >
               <ChevronRight className="h-4 w-4" />
@@ -482,7 +482,10 @@ export default function UnitDetailPanel({
                 <button
                   type="button"
                   onClick={() => setTagOverlayTag(tag)}
-                  className="cursor-pointer underline decoration-dotted underline-offset-2 transition-colors hover:text-signal"
+                  // Inline in a metadata run, so it grows its hit area with
+                  // padding the line box gives back — the same compromise the
+                  // keyword triggers make in `Hint`.
+                  className="cursor-pointer py-1 -my-1 underline decoration-dotted underline-offset-2 transition-colors hover:text-signal"
                 >
                   {tag}
                 </button>
@@ -584,7 +587,7 @@ export default function UnitDetailPanel({
               type="button"
               onClick={() => setEffectsOpen(true)}
               aria-haspopup="dialog"
-              className="flex h-7 shrink-0 items-center gap-1 border border-edge px-2 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
+              className="flex min-h-11 shrink-0 items-center gap-1 border border-edge px-3 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
             >
               Detail
             </button>

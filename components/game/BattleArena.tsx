@@ -11,7 +11,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AnimatePresence, m } from "framer-motion";
-import { FastForward, Gauge, LogOut, ScrollText } from "lucide-react";
+import {
+  FastForward,
+  Gauge,
+  LogOut,
+  MoreHorizontal,
+  ScrollText,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { useBattleContext } from "@/hooks/BattleProvider";
@@ -37,19 +43,27 @@ import { useBattleSequencer } from "@/hooks/useBattleSequencer";
 import DuelWaitingOverlay from "@/components/game/battle/DuelWaitingOverlay";
 import { publishDuelResult } from "@/lib/duel/client";
 import { useSettingsStore } from "@/store/settingsStore";
+import { scrimProps, useEscapeKey } from "@/hooks/useEscapeKey";
 
 /** Stable no-op so the memoized player tiles don't re-render every frame on a
  *  fresh inline closure. Player tiles never focus-fire. */
 const noop = (): void => {};
 
-/** One control on the side rail — icon or portrait stack, plus a micro-label. */
-function RailButton({
+/**
+ * One battle control — icon or portrait stack, plus a micro-label.
+ *
+ * Called `RailButton` until 2026-08-21, when the side rail it was named after
+ * stopped existing (ruling #118). These now sit in a row under the field and
+ * in the controls sheet, so the caller passes the box and this owns the look.
+ */
+function ControlButton({
   label,
   title,
   tone = "default",
   active,
   onClick,
   tutorialAnchor,
+  className,
   children,
 }: {
   label: string;
@@ -60,6 +74,8 @@ function RailButton({
   /** Marks this control as something a coach mark can point at
    *  (lib/tutorial/steps.ts). */
   tutorialAnchor?: string;
+  /** Sizing only — the row and the sheet want different widths. */
+  className?: string;
   children: React.ReactNode;
 }): React.JSX.Element {
   const toneCls =
@@ -73,11 +89,11 @@ function RailButton({
       title={title ?? label}
       aria-label={title ?? label}
       data-tutorial={tutorialAnchor}
-      className={`flex w-full cursor-pointer flex-col items-center gap-1 border px-1 py-1.5 transition-colors ${
+      className={`flex min-h-11 cursor-pointer flex-col items-center justify-center gap-1 border px-1 py-1 transition-colors ${
         active
           ? "border-signal bg-signal/10 text-signal"
           : `border-edge text-readout-dim ${toneCls}`
-      }`}
+      } ${className ?? ""}`}
     >
       {children}
       <span className="font-body text-[8px] font-bold uppercase leading-none tracking-[0.1em]">
@@ -301,6 +317,9 @@ export default function BattleArena({
   );
   const [isLogOpen, setIsLogOpen] = React.useState(false);
   const [isExitConfirmOpen, setIsExitConfirmOpen] = React.useState(false);
+  // The controls sheet — what the side rail became (ruling #118).
+  const [isControlsOpen, setIsControlsOpen] = React.useState(false);
+  useEscapeKey(() => setIsControlsOpen(false), isControlsOpen);
 
   const phaseOrder = [
     "OnBattleStart",
@@ -331,20 +350,15 @@ export default function BattleArena({
     return counts;
   }, [actionQueue]);
 
-  const actionLog = React.useMemo(
-    () => battleLog.filter((entry) => entry.startsWith("[Action] ")),
-    [battleLog],
-  );
-  // Action lines are visualized by the sequencer + ticker; keep the toast
-  // overlay for DoT ticks, passive procs and phase pulses only
+  // Action lines are visualized by the sequencer; keep the toast overlay for
+  // DoT ticks, passive procs and phase pulses only. The `[Action]` half used to
+  // also feed a one-line ticker under the field — cut 2026-08-21, so the filter
+  // that fed it went with it and the log drawer is the only place the full
+  // history lives.
   const overlayLog = React.useMemo(
     () => battleLog.filter((entry) => !entry.startsWith("[Action] ")),
     [battleLog],
   );
-  const latestAction =
-    actionLog.length > 0
-      ? actionLog[actionLog.length - 1].replace(/^\[Action\]\s*/, "")
-      : "No battle events yet.";
 
   // Playtest request: dump the full match (teams + every event) to
   // <project>/battle-log/ for post-battle debugging
@@ -769,8 +783,18 @@ export default function BattleArena({
             Duel
           </span>
         ) : null}
+        {/* Breakpoints on a readout row, deliberately (2026-08-21). This strip
+            is one line and everything in it competes for the same ~390px, so
+            the question isn't "does it fit" but "what gets truncated to make
+            room". Ranked: the phase label (whose turn it is) always wins, then
+            the progress bar, then where you are, then the counts.
+
+            Which is why the bar now shows at every width — narrow on a phone —
+            while the counts stay a wide-screen extra. The chapter context drops
+            from `lg` to `sm`: it was invisible on tablets for no reason, and on
+            a phone the title card and VS splash have just said the same thing. */}
         {contextLabel ? (
-          <span className="hidden min-w-0 shrink items-center gap-2 lg:flex">
+          <span className="hidden min-w-0 shrink items-center gap-2 sm:flex">
             <span className="h-3 w-px shrink-0 bg-edge" />
             <span className="truncate font-body text-[11px] uppercase tracking-[0.16em] text-readout-muted">
               {contextLabel}
@@ -781,7 +805,7 @@ export default function BattleArena({
         <span className="hidden shrink-0 font-body text-[10px] uppercase tracking-[0.12em] text-readout-muted md:inline">
           Player {playerTurns} • Enemy {enemyTurns}
         </span>
-        <div className="hidden h-1.5 w-24 shrink-0 overflow-hidden border border-edge bg-void sm:block">
+        <div className="h-1.5 w-10 shrink-0 overflow-hidden border border-edge bg-void sm:w-24">
           <m.div
             className="h-full bg-signal"
             initial={{ width: 0 }}
@@ -848,7 +872,6 @@ export default function BattleArena({
                     fx={tileFx(unit.instanceId)}
                     onInspect={openDetail}
                     onMark={setEnemyMarker}
-                    onOpenEffects={openDetail}
                   />
                 </div>
               ))}
@@ -892,7 +915,6 @@ export default function BattleArena({
                     fx={tileFx(unit.instanceId)}
                     onInspect={openDetail}
                     onMark={noop}
-                    onOpenEffects={openDetail}
                   />
                 </div>
               ))}
@@ -900,89 +922,142 @@ export default function BattleArena({
           </div>
         </section>
 
-        <aside className="flex w-14 shrink-0 flex-col items-center gap-1 border-l border-hairline bg-inset px-1.5 py-1.5">
-          {/* Skip takes the top slot only while something is playing — it's the
-              most urgent control on the screen for those few seconds. */}
-          {seq.active ? (
-            <RailButton label="Skip" title="Skip playback" active onClick={skipPlayback}>
-              <FastForward className="h-4 w-4" strokeWidth={2.2} />
-            </RailButton>
-          ) : null}
-          <RailButton
-            label={`${battleSpeed}×`}
-            title="Battle speed"
-            active={battleSpeed === 2}
-            onClick={() => setBattleSpeed(battleSpeed === 1 ? 2 : 1)}
-          >
-            <Gauge className="h-4 w-4" strokeWidth={2.2} />
-          </RailButton>
-          <RailButton label="Log" title="Battle log" onClick={() => setIsLogOpen(true)}>
-            <ScrollText className="h-4 w-4" strokeWidth={2.2} />
-          </RailButton>
-
-          <span className="my-0.5 h-px w-6 bg-edge" />
-
-          {/* Enemies had no route into the detail panel from anywhere on this
-              screen before their stack was added. */}
-          <RailButton
-            label="Foe"
-            title="Enemy details"
-            onClick={() => setRosterSide("enemy")}
-          >
-            <RailStack team={enemyOnField} presentedHp={presentedHp} />
-          </RailButton>
-          {/* Full team, not just the field — the bench is only reachable here. */}
-          <RailButton
-            label="Team"
-            title="Team details"
-            tutorialAnchor="team"
-            onClick={() => setRosterSide("player")}
-          >
-            <RailStack team={playerTeam} presentedHp={presentedHp} />
-          </RailButton>
-
-          {!isBattleOver ? (
-            <>
-              <span className="my-0.5 h-px w-6 bg-edge" />
-              <RailButton
-                label="Exit"
-                title="Exit battle"
-                tone="danger"
-                onClick={() => setIsExitConfirmOpen(true)}
-              >
-                <LogOut className="h-4 w-4" strokeWidth={2.2} />
-              </RailButton>
-            </>
-          ) : null}
-        </aside>
       </div>
 
-      {/* Event ticker (click for full log) */}
-      <div className="shrink-0 border-t border-hairline bg-void/70 px-3 py-1 backdrop-blur-sm">
+      {/* ── Control bar ──────────────────────────────────────────────────
+          This slot used to hold a one-line event ticker — the last thing that
+          happened, tappable for the full log. Tanveer cut it 2026-08-21:
+          *"if someone needs to know what happened then they can just check
+          the log."* It was a readout competing for the tightest vertical space
+          on the screen, restating something the log already holds in full.
+
+          What lives here instead is what the 56px side rail used to hold. The
+          rail was a desktop shape: at 390px it was 14% of the screen width,
+          permanently, taken from the play area, and it sat up under the top
+          half of the screen where a thumb doesn't reach. Only the two
+          time-critical controls stay out — Skip, which exists for the few
+          seconds an animation is playing, and Speed. The rest moved behind
+          Controls (ruling #118). */}
+      <div className="shrink-0 border-t border-hairline bg-inset px-2 py-1.5 backdrop-blur-sm">
         {interactionNotice ? (
-          <div className="flex items-center justify-between gap-2">
-            <p className="truncate font-body text-xs uppercase tracking-[0.1em] text-el-red">
+          <div className="flex min-h-11 items-center justify-between gap-2">
+            <p className="min-w-0 truncate font-body text-xs uppercase tracking-[0.1em] text-el-red">
               {interactionNotice}
             </p>
             <button
               type="button"
               onClick={clearInteractionNotice}
-              className="shrink-0 cursor-pointer border border-el-red/70 px-2 py-0.5 font-body text-[10px] uppercase tracking-widest text-el-red"
+              className="flex min-h-11 shrink-0 cursor-pointer items-center border border-el-red/70 px-3 font-body text-[10px] uppercase tracking-widest text-el-red"
             >
               Dismiss
             </button>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setIsLogOpen(true)}
-            className="block w-full cursor-pointer truncate text-left font-body text-xs text-readout transition-colors hover:text-readout-strong"
-          >
-            <span className="mr-1.5 text-signal">►</span>
-            {latestAction}
-          </button>
+          <div className="flex items-stretch gap-1.5">
+            {seq.active ? (
+              <ControlButton
+                label="Skip"
+                title="Skip playback"
+                active
+                onClick={skipPlayback}
+                className="w-16"
+              >
+                <FastForward className="h-4 w-4" strokeWidth={2.2} />
+              </ControlButton>
+            ) : null}
+            <ControlButton
+              label={`${battleSpeed}×`}
+              title="Battle speed"
+              active={battleSpeed === 2}
+              onClick={() => setBattleSpeed(battleSpeed === 1 ? 2 : 1)}
+              className="w-16"
+            >
+              <Gauge className="h-4 w-4" strokeWidth={2.2} />
+            </ControlButton>
+            <ControlButton
+              label="Controls"
+              title="Battle controls"
+              tutorialAnchor="team"
+              active={isControlsOpen}
+              onClick={() => setIsControlsOpen(true)}
+              className="flex-1"
+            >
+              <MoreHorizontal className="h-4 w-4" strokeWidth={2.2} />
+            </ControlButton>
+          </div>
         )}
       </div>
+
+      {/* The sheet itself — bottom-anchored rather than centred, because every
+          control in it is one a thumb has to reach. */}
+      {isControlsOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Battle controls"
+          // Escape closes it (see `useEscapeKey` above); the scrim's click is
+          // a pointer convenience on top of that.
+          className="fixed inset-0 z-50 flex flex-col justify-end bg-void/70 backdrop-blur-sm"
+          {...scrimProps(() => setIsControlsOpen(false))}
+        >
+          <div className="pb-safe border-t border-edge-strong bg-panel px-3 pt-3 shadow-[0_-18px_50px_rgba(0,0,0,0.7)]">
+            <span className="mx-auto mb-3 block h-1 w-11 bg-edge-strong" />
+            <div className="grid grid-cols-3 gap-2">
+              <ControlButton
+                label="Log"
+                title="Battle log"
+                onClick={() => {
+                  setIsControlsOpen(false);
+                  setIsLogOpen(true);
+                }}
+                className="min-h-14"
+              >
+                <ScrollText className="h-5 w-5" strokeWidth={2.2} />
+              </ControlButton>
+              {/* Enemies had no route into the detail panel from anywhere on
+                  this screen before their stack was added. */}
+              <ControlButton
+                label="Foe"
+                title="Enemy details"
+                onClick={() => {
+                  setIsControlsOpen(false);
+                  setRosterSide("enemy");
+                }}
+                className="min-h-14"
+              >
+                <RailStack team={enemyOnField} presentedHp={presentedHp} />
+              </ControlButton>
+              {/* Full team, not just the field — the bench is only reachable
+                  here. */}
+              <ControlButton
+                label="Team"
+                title="Team details"
+                onClick={() => {
+                  setIsControlsOpen(false);
+                  setRosterSide("player");
+                }}
+                className="min-h-14"
+              >
+                <RailStack team={playerTeam} presentedHp={presentedHp} />
+              </ControlButton>
+              {!isBattleOver ? (
+                <ControlButton
+                  label="Exit battle"
+                  title="Exit battle"
+                  tone="danger"
+                  onClick={() => {
+                    setIsControlsOpen(false);
+                    setIsExitConfirmOpen(true);
+                  }}
+                  className="col-span-3 min-h-11"
+                >
+                  <LogOut className="h-4 w-4" strokeWidth={2.2} />
+                </ControlButton>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <BattleLogDrawer
         open={isLogOpen}

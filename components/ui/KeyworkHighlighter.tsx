@@ -2,11 +2,7 @@
 
 import React from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import Hint from "@/components/ui/Hint";
 import {
   mechanicGlossary,
   keywordCategories,
@@ -148,31 +144,40 @@ export default function KeyworkHighlighter({
       // words like raises/lowers"). The word still drives the tooltip (hover
       // the icon for the mechanic meaning) but is no longer shown as text.
       nodes.push(
-        <Tooltip key={`k-${i}`}>
-          <TooltipTrigger asChild>
-            {arrow === "up" ? (
-              <ArrowUp
-                className="inline h-3.5 w-3.5 cursor-help text-role-heal"
-                strokeWidth={3}
-              />
-            ) : arrow === "down" ? (
-              <ArrowDown
-                className="inline h-3.5 w-3.5 cursor-help text-role-attack"
-                strokeWidth={3}
-              />
-            ) : (
-              <span className={keywordClassName ?? KEYWORD_CLASS}>{kwMatch}</span>
-            )}
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs">
+        <Hint
+          key={`k-${i}`}
+          ariaLabel={`${tooltipLabel} — what it means`}
+          // `align-baseline` keeps the button sitting on the text's baseline
+          // instead of the inline-block default, and `py-1 -my-1` grows the
+          // tap area 8px without opening the line up. An inline word inside a
+          // sentence is the one control that can't be 44px tall without
+          // wrecking the paragraph it lives in — this is as far as it goes.
+          className={`align-baseline py-1 -my-1 ${
+            arrow ? "inline-flex items-center" : keywordClassName ?? KEYWORD_CLASS
+          }`}
+          content={
             <span className="block">
               <span className="block font-body text-[10px] uppercase tracking-[0.14em] opacity-70">
                 {tooltipLabel}
               </span>
               <span className="mt-1 block font-body text-xs">{desc}</span>
             </span>
-          </TooltipContent>
-        </Tooltip>,
+          }
+        >
+          {arrow === "up" ? (
+            <ArrowUp
+              className="inline h-3.5 w-3.5 text-role-heal"
+              strokeWidth={3}
+            />
+          ) : arrow === "down" ? (
+            <ArrowDown
+              className="inline h-3.5 w-3.5 text-role-attack"
+              strokeWidth={3}
+            />
+          ) : (
+            kwMatch
+          )}
+        </Hint>,
       );
     } else if (numMatch) {
       nodes.push(

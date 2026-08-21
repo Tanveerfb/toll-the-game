@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Newspaper, Skull, Sparkles } from "lucide-react";
+import ItemIcon from "@/components/game/ItemIcon";
 import { useAuth } from "@/hooks/AuthProvider";
 import { useScreenMusic } from "@/hooks/useScreenMusic";
 import { useGameStore } from "@/store/gameStore";
@@ -82,12 +83,16 @@ function findNextStage(cleared: Record<string, boolean>) {
  */
 function Alert({
   icon: Icon,
+  iconId,
   title,
   detail,
   tone = "quiet",
   onClick,
 }: {
   icon: React.ElementType;
+  /** Resource this alert is about — its icon replaces the lucide glyph where
+   *  the alert is about something the player holds. */
+  iconId?: string;
   title: string;
   detail: string;
   tone?: "quiet" | "ready" | "new";
@@ -104,10 +109,26 @@ function Alert({
       {tone === "new" ? (
         <span className="absolute inset-y-0 left-0 w-0.5 bg-signal" />
       ) : null}
-      <Icon
-        className={`absolute right-2.5 top-2.5 h-3.5 w-3.5 ${tone === "quiet" ? "text-readout-muted" : "text-signal"}`}
-        strokeWidth={2.2}
-      />
+      {iconId ? (
+        <span className="absolute right-2 top-2">
+          <ItemIcon
+            id={iconId}
+            size={22}
+            alt=""
+            fallback={
+              <Icon
+                className={`h-3.5 w-3.5 ${tone === "quiet" ? "text-readout-muted" : "text-signal"}`}
+                strokeWidth={2.2}
+              />
+            }
+          />
+        </span>
+      ) : (
+        <Icon
+          className={`absolute right-2.5 top-2.5 h-3.5 w-3.5 ${tone === "quiet" ? "text-readout-muted" : "text-signal"}`}
+          strokeWidth={2.2}
+        />
+      )}
       <span className="pr-6 font-body text-sm font-semibold text-readout-strong">
         {title}
       </span>
@@ -284,6 +305,7 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
             {affordableRuns > 0 ? (
               <Alert
                 icon={Skull}
+                iconId="stamina"
                 tone="ready"
                 title="World Boss ready"
                 detail={`${affordableRuns} run${affordableRuns > 1 ? "s" : ""} affordable · ${BOSS_STAMINA_COST} stamina each`}
@@ -293,6 +315,7 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
             {milestoneInReach ? (
               <Alert
                 icon={Sparkles}
+                iconId="gems"
                 tone={gemsToMilestone === 0 ? "ready" : "quiet"}
                 title={GEM_BANNER.name}
                 detail={

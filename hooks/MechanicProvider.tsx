@@ -1,28 +1,33 @@
 "use client";
 
-import React, { createContext, useContext, useRef } from "react";
+import React, { createContext, useContext, useState } from "react";
 import { BattlePhase } from "@/types/mechanic";
 import { BattleCharacter } from "@/types/character";
+import {
+  createMechanicQueue,
+  type MechanicQueue,
+  type QueueAction,
+  type QueueItem,
+} from "@/lib/game/mechanicQueue";
 
-export type QueueAction = (
-  sourceCharacter: BattleCharacter,
-  teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
-  log: (entry: string) => void
-) => Promise<{ playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] }>;
+/**
+ * React access to the passive queue.
+ *
+ * The queue itself is `lib/game/mechanicQueue.ts` — a plain object, so the
+ * headless balance simulator can run the same passives the battle screen does
+ * without rendering anything. This file is the wrapper that gives the battle
+ * screen a context to reach it through, plus the animation pause the screen
+ * wants and a simulator must not have.
+ *
+ * `QueueItem` and `QueueAction` are re-exported because `lib/game/passive.ts`
+ * and a handful of components import them from here. Their real home is the lib
+ * module now; this keeps the existing import sites working.
+ */
+export type { QueueAction, QueueItem };
 
-export interface QueueItem {
-  id: string; // unique ID for the queue item
-  phase: BattlePhase;
-  sourceInstanceId: string;
-  mechanicId: string;
-  action: QueueAction;
-  /**
-   * Run even when the source character is dead. Needed by cleanup-style
-   * rechecks (e.g. Kind Hearted Friend's extra bonus must FADE from the
-   * team after the required characters die — ruling #24).
-   */
-  runWhenDead?: boolean;
-}
+/** How long the battle screen dwells between passives, so each one's animation
+ *  has a moment to land. The simulator passes nothing and gets zero. */
+const ANIMATION_STEP_MS = 800;
 
 interface MechanicState {
   registerToQueue: (item: QueueItem) => void;
@@ -31,7 +36,7 @@ interface MechanicState {
   processQueue: (
     phase: BattlePhase,
     teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
-    log: (entry: string) => void
+    log: (entry: string) => void,
   ) => Promise<{ playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] }>;
 }
 
@@ -50,62 +55,20 @@ export default function MechanicProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const queueRef = useRef<QueueItem[]>([]);
-
-  const registerToQueue = (item: QueueItem) => {
-    // Avoid duplicate IDs
-    if (!queueRef.current.find(q => q.id === item.id)) {
-      queueRef.current.push(item);
-    }
-  };
-
-  const removeFromQueue = (id: string) => {
-    queueRef.current = queueRef.current.filter((q) => q.id !== id);
-  };
-
-  const clearQueue = () => {
-    queueRef.current = [];
-  };
-
-  const processQueue = async (
-    phase: BattlePhase,
-    teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
-    log: (entry: string) => void
-  ) => {
-    const items = queueRef.current.filter((q) => q.phase === phase);
-    let currentTeams = { ...teams };
-
-    for (const item of items) {
-      const sourceCharacter = 
-        currentTeams.playerTeam.find(c => c.instanceId === item.sourceInstanceId) ||
-        currentTeams.enemyTeam.find(c => c.instanceId === item.sourceInstanceId);
-
-      // Only execute if character is still alive or present — unless the
-      // item is a cleanup-style recheck that must also run after death
-      if (
-        sourceCharacter &&
-        (sourceCharacter.currentHP > 0 || item.runWhenDead)
-      ) {
-        log(`Evaluating mechanics for ${sourceCharacter.name} [${item.mechanicId}]`);
-        
-        // Compute mutated team snapshot
-        currentTeams = await item.action(sourceCharacter, currentTeams, log);
-        
-        // Artificial delay for animations block duration testing
-        await new Promise(resolve => setTimeout(resolve, 800));
-      }
-    }
-
-    return currentTeams;
-  };
+  // Lazy `useState` rather than a ref assigned during render: the queue must be
+  // created exactly once and survive every re-render, and writing a ref while
+  // rendering is the thing `react-hooks/refs` exists to stop.
+  const [queue] = useState<MechanicQueue>(() =>
+    createMechanicQueue({ stepDelayMs: ANIMATION_STEP_MS }),
+  );
 
   return (
     <MechanicContext.Provider
       value={{
-        registerToQueue,
-        removeFromQueue,
-        clearQueue,
-        processQueue,
+        registerToQueue: queue.register,
+        removeFromQueue: queue.remove,
+        clearQueue: queue.clear,
+        processQueue: queue.process,
       }}
     >
       {children}
