@@ -10,7 +10,7 @@ audit is in git (`docs/STATUS.md` @ `c3040f7`).
 icon and a PWA. Six pieces of tooling landed in one batch — a11y linting, a
 balance simulator, browser component tests, an SFX bus, the PWA, telemetry.
 Suite **1,327 unit tests / 105 files** plus **12 browser tests**, build clean.
-Rulings **#118–#122**.
+Rulings **#118–#122**. Committed as `91a75c0`.
 
 **Next:** His visual pass. Nothing from 2026-08-21/22 has been seen in a
 browser — the whole mobile sweep, the rebuilt battle screen, the hold gesture
@@ -376,6 +376,8 @@ hold could still read as sluggish in a real fight.
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
 
 ## Session log — 2026-08-21/22: mobile-first everywhere, six tools, and an app icon
+
+**Committed as `91a75c0`.**
 
 One long session in five movements. Started with 21 uncommitted files from the
 art-wiring work and ended with 93.
