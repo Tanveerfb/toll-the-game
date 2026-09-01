@@ -11,7 +11,8 @@ been checked **in a browser** rather than argued from source — navigation is a
 bottom tab bar, the archive's filters are a sheet, and the battle log finally
 records which buffs and debuffs an action applied (Open Issue #22, closed).
 Rulings **#123–#126**. Suite **1,343 tests / 106 files** plus **17 browser
-tests**, build clean. Details in the 2026-09-01 session log.
+tests**, build clean. Committed as `5ef2825`. Details in the 2026-09-01
+session log.
 
 **Next:** His look at the two screens that changed shape — the tab bar and the
 archive sheet. Geometry and behaviour are verified at 390×844 against a
