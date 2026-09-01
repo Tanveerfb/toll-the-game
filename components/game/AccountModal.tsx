@@ -117,7 +117,7 @@ export default function AccountModal({
               type="button"
               onClick={() => setAvatarId(null)}
               aria-pressed={avatarId === null}
-              title="Use the initial instead"
+              aria-label="Use the initial instead"
               className={`flex h-12 w-12 items-center justify-center border font-heading text-lg transition-colors ${
                 avatarId === null
                   ? "border-signal bg-signal/10 text-signal"
@@ -136,7 +136,7 @@ export default function AccountModal({
                   type="button"
                   onClick={() => setAvatarId(id)}
                   aria-pressed={active}
-                  title={name}
+                  aria-label={name}
                   className={`relative h-12 w-12 overflow-hidden border transition-colors ${
                     active
                       ? "border-signal"

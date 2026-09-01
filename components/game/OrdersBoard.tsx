@@ -159,7 +159,6 @@ function OrderRow({
         <button
           type="button"
           onClick={onGo}
-          title={`Go to ${order.routeLabel}`}
           className="flex min-h-11 shrink-0 items-center gap-0.5 border border-hairline px-2.5 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
         >
           {order.routeLabel}

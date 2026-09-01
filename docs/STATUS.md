@@ -1,4 +1,4 @@
-# Status — 2026-08-22
+# Status — 2026-09-01
 
 Living snapshot. Session history is folded to
 [`docs/archive/STATUS-2026-08.md`](archive/STATUS-2026-08.md); the resurrection
@@ -6,25 +6,32 @@ audit is in git (`docs/STATUS.md` @ `c3040f7`).
 
 ## Start here
 
-**State:** The game is mobile-first everywhere, battle included, and has an app
-icon and a PWA. Six pieces of tooling landed in one batch — a11y linting, a
-balance simulator, browser component tests, an SFX bus, the PWA, telemetry.
-Suite **1,327 unit tests / 105 files** plus **12 browser tests**, build clean.
-Rulings **#118–#122**. Committed as `91a75c0`.
+**State:** The game is mobile-first everywhere and, since 2026-09-01, that has
+been checked **in a browser** rather than argued from source — navigation is a
+bottom tab bar, the archive's filters are a sheet, and the battle log finally
+records which buffs and debuffs an action applied (Open Issue #22, closed).
+Rulings **#123–#126**. Suite **1,343 tests / 106 files** plus **17 browser
+tests**, build clean. Details in the 2026-09-01 session log.
 
-**Next:** His visual pass. Nothing from 2026-08-21/22 has been seen in a
-browser — the whole mobile sweep, the rebuilt battle screen, the hold gesture
-and the new icon are all static-analysis-verified only.
+**Next:** His look at the two screens that changed shape — the tab bar and the
+archive sheet. Geometry and behaviour are verified at 390×844 against a
+production build; only taste is open. `/profile` is the one thing nobody has
+seen at all (see Don't trust).
 
-**Blocked on:** Nothing. Two things wait on *him*, not on work: the OST and SFX
-files (`docs/AUDIO.md` lists them; both buses are silent by design until they
-exist), and a Sentry DSN.
+**Blocked on:** Nothing. Three things wait on *him*, not on work: the OST and
+SFX files (`docs/AUDIO.md`; both buses are silent by design until they exist),
+a Sentry DSN, and the `/story` empty-state wording, which ships as a draft
+marked in the component.
 
-**Don't trust:** Any claim about how something *looks* or *feels*. Specifically
-untested by anything: the service worker (dev-disabled, needs a production
-origin), the PWA install flow, and Sentry (inert without a DSN, and
-`withSentryConfig` deliberately not applied, so traces stay minified). The 1.5s
-hold could still read as sluggish in a real fight.
+**Don't trust:** Any claim about how something *looks*. Named specifically:
+**`/profile` has never been rendered** — it redirects signed-out visitors, and
+this session did not sign in, so the new `Sound` panel and the relocated Claude
+toggle are typechecked and built but unseen. Still never exercised by anything:
+the service worker (needs a production origin), the PWA install flow, Sentry
+(inert without a DSN, `withSentryConfig` deliberately not applied). And a
+warning this session earned twice: **a green guard is not a working guard** —
+`tests/touchTargets.test.ts` passed while scanning 83 files and finding none of
+nine real offenders.
 
 ## Working (implemented, tested, browser-verified)
 
@@ -37,7 +44,7 @@ hold could still read as sluggish in a real fight.
   `[x-ranked.duration]` — `resolveByMechanicIndex` forwards a field to `resolveMechanicField`, which already accepted one. That makes **two mechanics of the same type** both addressable; before, `[buff.duration]` resolved the first buff and bare `[x-ranked]` printed the stat percentage where a duration belonged, silently. `dropZeroValueClauses` learned the same form, so a zero-duration clause authored positionally still hides (#44). `kitwords` no longer tells the author to write those durations literally.
 
   ### [Guard] and [Effective] (#111) — built, unused
-  `resolveTypeModifier` in `lib/game/typeAdvantage.ts`; `getTypeModifier` stays the raw chart lookup because #11 quotes it as the plain matchup. Both live inside `damage.ts`'s `!criticalMechanic` branch, which is what makes **"critical bypasses both"** fall out with no code of its own. **Guard is no protection against a crit** — deliberate, and it needs saying in UI copy or it reads as a bug. **Guard stacking was built as a fixed floor** (a second source changes nothing); that was the one open detail in the spec and is still unconfirmed. **No kit authors either word** — putting them on a card is his call.
+  `resolveTypeModifier` in `lib/game/typeAdvantage.ts`; `getTypeModifier` stays the raw chart lookup because #11 quotes it as the plain matchup. Both live inside `damage.ts`'s `!criticalMechanic` branch, which is what makes **"critical bypasses both"** fall out with no code of its own. **Guard is no protection against a crit** — deliberate, and it needed saying in UI copy or it reads as a bug. **Said, 2026-09-01:** `guard`/`guards`/`effective` are in `lib/game/mechanicGlossary.ts`, crit clause included, and dormant until a kit uses the word. **Guard stacking was built as a fixed floor** (a second source changes nothing); that was the one open detail in the spec and is still unconfirmed. **No kit authors either word** — putting them on a card is his call.
 
   ### Mechanic audiences (#112) — the riskiest change here
   A mechanic declares `applyTo` (`self` / `oneAlly` / `allies` / `alliesExceptSelf` / `enemies`) or `applyToRanked`. **Absent means self**, which *inverts* the old fallback where a friendly mechanic without `targetSelf` inherited whoever the skill targeted. Six kits leaned on that inference and now declare it: `isolde` (cleanse + healOverTime + ult buff + ult debuffImmunity), `leorio` (`applyToRanked: ["oneAlly","allies","allies"]`), `mustafa`, `prism`, `siddiq`. `iron`'s Iron Wall becomes the self stance it was always meant to be, with nothing to author.
@@ -290,7 +297,7 @@ hold could still read as sluggish in a real fight.
 - **Story presentation overhaul + music layer (2026-08-09, Tanveer's verdict was "it's not good right now")** — he confirmed three of four candidate problems: *scenes look cheap*, *no pacing or weight*, *battle handoff is flat*. He dismissed the fourth (too many list screens), so navigation is unchanged. Two rulings gate the work: **backgrounds are deferred** (environment art is an art-direction commitment he isn't making yet — so "cheap" had to be fixed through framing, typography and motion alone), and **audio is music only, supplied by him** (no SFX of any kind). Spec: `docs/superpowers/specs/2026-08-09-story-presentation-and-music-design.md`.
   - **Scene reader.** Text reveals **per word over final layout** with the standard VN contract — tap settles the line, tap again advances (`lib/game/storyScene.ts`, pure). This replaced a character-by-character typewriter within the same day: Tanveer played it and reported *"I have to wait for it to complete to start reading"*, which is structural rather than a speed problem — slicing the string reflows the paragraph on every wrap and leaves the eye on half-words, so no ms/char value fixes it. Now the full line is laid out from the first frame and only opacity animates, word by word, so it can be read *ahead of* the animation; the stagger is capped at 650ms so a ~300-char narration block reveals no slower than a one-line reply (it took 4.2s at 14ms/char, 8s at the first-guess 28ms). The stagger is CSS (`.story-word` + inline `animation-delay`), so a 60-word paragraph costs one React render rather than sixty, and a single timer marks completion instead of a per-character ticker. Reduced motion renders every line complete. Added AUTO (dwell scales with length), HISTORY (a mis-tap used to lose a line permanently) and a skip **confirmation** for chapters never cleared (one stray tap on a top-right control destroyed unseen intros). **Narration is now visually distinct from dialogue** — centred, letterboxed, no name plate — and `isNarration` deliberately treats an explicit `"speaker": "Narrator"` as narration, because Part 1 authors most of its prose that way and rendering it in a character box with a NARRATOR plate treats the camera as a cast member. Portraits reframed 3:4, larger, hard border replaced by a bottom fade, **and the previous speaker is retained on the opposite side, dimmed** — only the active side used to be mounted, so a two-hander was one portrait popping between two empty slots. The two-independent-slots structure is kept verbatim (it exists because a shared container flashed the wrong character mid-exit — Tanveer 2026-07-20). 
   - **Battle handoff.** `ChapterTitleCard` opens a chapter; `VersusSplash` stands the resolved player team against the enemy team before the arena (the missing stakes moment — fights used to simply materialise); `BattleArena` gained an optional `contextLabel` rendered in the status strip so a canon fight doesn't look byte-identical to practice; `ChapterCompleteCard` marks a **first clear only** — a fanfare on the fortieth farm run is noise. Flow is now `chapters → brief → title → intro → versus → battle → outro → complete → rewards`, with the skip path bypassing title/intro/outro/complete but **keeping versus**, which is short and covers the battle's start-up.
-  - **Music layer.** `lib/audio/` — a role-keyed manifest (`menu`/`story`/`storyScene`/`battle`/`victory`) plus a two-deck crossfading controller; screens ask via `useScreenMusic(role)`. Two `HTMLAudioElement`s rather than a Web Audio graph (no AudioContext lifecycle, gapless looping stays the browser's problem). Three states are normal rather than errors and each is tested: **no user gesture yet** (the role is held and starts on the first tap — browsers block autoplay), **the file doesn't exist** (resolves to silence, recorded once so it can't be retried on every screen change), and **the same role requested again** (a no-op, so parts → chapters → brief is one continuous track). Volume/mute persist in `settingsStore` and are exposed through a ♪ popover in `TopNav` — not `/profile`, which redirects guests to `/login`, and guest mode is supported. `public/audio/` ships empty on purpose; `docs/AUDIO.md` lists the exact filenames. **The game is silent until Tanveer adds the OST**, by design.
+  - **Music layer.** `lib/audio/` — a role-keyed manifest (`menu`/`story`/`storyScene`/`battle`/`victory`) plus a two-deck crossfading controller; screens ask via `useScreenMusic(role)`. Two `HTMLAudioElement`s rather than a Web Audio graph (no AudioContext lifecycle, gapless looping stays the browser's problem). Three states are normal rather than errors and each is tested: **no user gesture yet** (the role is held and starts on the first tap — browsers block autoplay), **the file doesn't exist** (resolves to silence, recorded once so it can't be retried on every screen change), and **the same role requested again** (a no-op, so parts → chapters → brief is one continuous track). Volume/mute persist in `settingsStore`. *(This said they were "exposed through a ♪ popover in `TopNav` — not `/profile`, which redirects guests to `/login`". **Half of that was reversed 2026-09-01, ruling #126:** volume moved to a `Sound` section on `/profile` and the popover is gone; the nav keeps a single 44px mute button. The guest reasoning still stands and is exactly why **mute** did not move.)* `public/audio/` ships empty on purpose; `docs/AUDIO.md` lists the exact filenames. **The game is silent until Tanveer adds the OST**, by design.
   - Browser-verified end to end on the running dev server: typewriter, narration treatment, skip confirmation, VS splash, chapter label in the battle strip, CHAPTER COMPLETE on first clear and its absence on a replay, the ♪ popover, `TopNav` still exactly 44px at 375px (the battle shell measures `100dvh - 2.875rem` against it), no horizontal overflow, and a clean console **despite zero audio files present**.
   - **Deliberately NOT done:** environment backgrounds (Tanveer's call), any SFX, and a per-chapter music override — roles cover every screen this batch touches, and an override is one optional schema field whenever he wants a specific track for a specific fight.
 
@@ -314,13 +321,13 @@ hold could still read as sluggish in a real fight.
 
 - **Per-character VFX across the roster (UX Batch 4, 2026-08-04)** — `characterVfx.ts` covered **5 of 27** characters; the other 22 fell back to a generic element-colored ring. Now **all 27** (playable + story-only + boss) carry a tint and shape. Five new shapes joined ring/ripple/shard/flicker/blot: `bolt` (Killua/Seras), `slash` (Gon/Leorio/Yalina), `bloom` (Siddiq/Chiara/Isolde), `paw` (Sara/wild_beast), `quake` (Diane/Mustafa/iron) — each a `clip-path` + accent pair, same cost as the existing ones. Power themes follow `docs/design/SKILL_ART_PLAN.md`'s per-character table, so a character's VFX and their generated skill art describe the same power. The arena's burst renderer had `shape === "ripple"` / `shape === "flicker"` branches inline; accents are now resolved from the registry via `getVfxAccent` (`second-ring` / `inner-pop` / `core` / `wave`), so **a new flavor is a data edit, not a JSX edit**. **Ult cut-ins switched to skill art** — `getSkillArt(characterId, skillName) ?? getCharacterArt(...)`; all 48 playable/boss ultimates already have their own art, so every ultimate's cut-in now reads distinctly at zero asset cost (they previously all showed the same portrait). Rank escalation was **already** implemented (`lib/game/revealTier.ts`: basic/R1/R2/R3/ultimate driving projectile size, burst strength, shake, flash, wind-up, beam sweep, cutscene) — nothing to add. 5 new tests (`tests/characterVfx.test.ts`) lock the invariants that actually matter: full catalog coverage, and **every tint at least 60 channel-units away from its own element tint** (a flavor landing on its own hue renders as no flavor at all). Arena layout deliberately unchanged — the open spacing between team rows is Tanveer's intentional fix for v1's congestion.
 
-- **Structured battle log (UX Batch 3, 2026-08-04)** — the log was `string[]`, filtered with `entry.startsWith("[Action] ")` and printed one flat `<p>` per line, while the identical actions were *already* available as typed `battleEvents` (per-target damage, crit, evade, kill, exact `hpBefore`/`hpAfter`) driving the cinematics. `components/game/battle/BattleLogDrawer.tsx` (new) renders that stream instead: grouped by turn (newest turn first, events inside a turn kept in resolution order so cause precedes effect), collapsible per turn, with portrait chips, ally/enemy color coding, rank/ULT tags, and per-target damage/heal/CRIT/DODGED/SURVIVED/DOWN markers; `tick` events (DoT, Corrosion, Regeneration, Decay) render with their label and HP delta. **No engine change** — `turn` and `phase` are stamped onto events in `gameStore.addBattleEvent`, since both are presentation context the engine has no reason to know. The raw string log stays behind a **Raw** toggle: it is still the only record of *which buffs/debuffs an action applied*, which the event stream doesn't model — emitting those from `combat.ts` is the natural follow-up. SAVE BATTLE LOG now writes **markdown** (`formatBattleLogMarkdown` in `lib/game/battleLogMarkdown.ts`, pure and unit-tested; endpoint writes `.md`): heading, final-state tables per team, a per-turn timeline, and the raw engine log verbatim as an appendix. 8 new tests (`tests/battleLogView.test.ts`) cover turn grouping order and every markdown branch (see the Tests entry for the running total). `BattleArena.tsx` 1081 → 1021 lines.
+- **Structured battle log (UX Batch 3, 2026-08-04)** — the log was `string[]`, filtered with `entry.startsWith("[Action] ")` and printed one flat `<p>` per line, while the identical actions were *already* available as typed `battleEvents` (per-target damage, crit, evade, kill, exact `hpBefore`/`hpAfter`) driving the cinematics. `components/game/battle/BattleLogDrawer.tsx` (new) renders that stream instead: grouped by turn (newest turn first, events inside a turn kept in resolution order so cause precedes effect), collapsible per turn, with portrait chips, ally/enemy color coding, rank/ULT tags, and per-target damage/heal/CRIT/DODGED/SURVIVED/DOWN markers; `tick` events (DoT, Corrosion, Regeneration, Decay) render with their label and HP delta. **No engine change** — `turn` and `phase` are stamped onto events in `gameStore.addBattleEvent`, since both are presentation context the engine has no reason to know. The raw string log stays behind a **Raw** toggle. *(Two claims in this entry are now retired. It said the raw log was "the only record of which buffs/debuffs an action applied" — true until **2026-09-01**, when Open Issue #22 closed and the stream carries them; the raw log's remaining job is the engine's prose narration, which has no structured shape. And `formatBattleLogMarkdown` / `lib/game/battleLogMarkdown.ts` **no longer exist** — the export was rebuilt as `buildBattleReport` in `lib/game/battleReport.ts`, and `tests/battleLogView.test.ts` became `tests/battleReport.test.ts`. `AGENTS.md` named the deleted file until 2026-09-01 too.)* SAVE BATTLE LOG writes **markdown** (built at the time by `formatBattleLogMarkdown`, since replaced): heading, final-state tables per team, a per-turn timeline, and the raw engine log verbatim as an appendix. 8 new tests (`tests/battleLogView.test.ts`) cover turn grouping order and every markdown branch (see the Tests entry for the running total). `BattleArena.tsx` 1081 → 1021 lines.
 
 - **Growth gating + practice-dummy HP (Tanveer's playtest, 2026-08-04)** — `CharacterProgressionPanel` was an always-expanded card eating most of the archive sidebar, rendered for **every** character including unowned ones and story-only NPC/boss kits, offering to level things the player has no claim to. Now a single **Growth** button opening the controls in the shared `DetailOverlay` modal, gated three ways: `storyOnly` kits render nothing, unowned playables get a one-line "Not owned — summon to level up", owned characters get the button. Ownership reads `playerStore.roster` behind `hasHydrated` (same pattern `CharacterBrowser` already uses) so server and first client render agree. The practice dummy went **400 HP → 100,000** (`PRACTICE_DUMMY_HP`): 400 was chosen so a Preview battle "resolved quickly", which is backwards — Preview exists to try a kit's whole rank ladder and ultimate, and a dying dummy cuts that short. Nothing in the roster can drop it (biggest ultimate is well under 10k/hit). `.remember/**` added to the eslint ignore list — plugin scratch files were the only warning left in `npm run check`.
 
 - **Enemy inspection + info-panel relayout (UX Batch 2, 2026-08-04)** — **enemies can finally be inspected.** `UnitDetailPanel` always handled enemy units correctly (`unit.team === "player" ? playerTeam : enemyTeam`), but nothing on the battle screen could open it for them: the only route in was the bottom-right TEAM button, whose list was hardcoded to `playerTeam`. Fixed by unifying tile interaction — **tap = inspect on both rows**, with focus-fire moved to its own ◎ reticle button on the enemy tile (previously one gesture meant "mark a target" on enemies and nothing at all on allies). `TeamDetailsList` now takes `team` + `title`, and a matching ENEMY roster button sits top-right (at `top-14`, clearing the status strip's Speed/Log/Exit cluster). The panel's ◀ ▶ nav then walks whichever side it was opened on, free — it was already keyed off `unit.team`. **Relayout:** stats moved from flanking a 40×56 thumbnail to overlaid on a full-bleed portrait band (two scrims: sideways for the stat columns, upward for the HP/ult block); reordered to decision priority (threat state → live stats → kit); the kit became a **tab strip** (S1 / S2 / ULT / Passive) using the 48 existing skill arts as thumbnails, so a 2-skill kit and an 8-skill boss phase cost the same height. Measured: **531/531px, no scroll at 900px** (was ~35% visible). `EffectsQuickPanel` deleted — it was a second overlay answering the same question as the panel's effects section; its `EffectsList`/`categorizeEffects` helpers moved to `components/game/battle/EffectsList.tsx`. Detail state is now id-based and resolves the live unit each render (the panel leads with HP and effects, so a captured snapshot would freeze mid-battle). **`BattleArena.tsx` 1964 → 1081 lines**, with `TeamUnitTile`/`TeamDetailsList`/`UnitDetailPanel`/`EffectsList` extracted to `components/game/battle/`; `FLASH_TINTS` + `getUnitBorderClass` moved to `lib/game/elementSwatch.ts`. HP numerals now render on the tile itself. Browser-verified in a live 3v2 practice fight: ally panel, enemy panel, cross-row nav, focus-fire toggle, clean console.
 
-- **Home hub + unified navigation (UX Batch 1, 2026-08-04)** — the main menu was 7 identically-shaped outline buttons with no state; it's now a game hub. `components/game/PlayerHud.tsx` (new) shows identity + the three gating resources (stamina with a fill bar, gems, coin), read from `playerStore` and gated on `hasHydrated` plus a `useSyncExternalStore` wall clock (snapshot floored to a 30s bucket so repeated reads are stable — a raw `Date.now()` snapshot re-renders forever). `HomeMenu.tsx` rewritten into three visual tiers — primary MAIN STORY (art-backed, subtitled with the first unlocked-but-uncleared chapter via `findNextChapter`), secondary WORLD BOSS / GACHA (live boss + active banner name), tertiary ARCHIVE / PRACTICE / NEWS / LOGIN. Card art is `object-cover` on wide short cards, so `artPosition` is tuned per card rather than globally guessed; the primary card carries `priority` (it's the LCP element everywhere). **`lib/nav/routes.ts` (new) is now the single source of truth for what modes exist** — `TopNav` and `HomeMenu` both render from `GAME_ROUTES`, closing a real bug where World Boss, Gacha and News were unreachable from every page except home. The nav row scrolls horizontally rather than wrapping, preserving the fixed `h-11` the battle shell measures `100dvh` against. Browser-verified at 1440×900 and 390×844: no horizontal overflow, no hydration mismatch, clean console.
+- **Home hub + unified navigation (UX Batch 1, 2026-08-04)** — the main menu was 7 identically-shaped outline buttons with no state; it's now a game hub. `components/game/PlayerHud.tsx` (new) shows identity + the three gating resources (stamina with a fill bar, gems, coin), read from `playerStore` and gated on `hasHydrated` plus a `useSyncExternalStore` wall clock (snapshot floored to a 30s bucket so repeated reads are stable — a raw `Date.now()` snapshot re-renders forever). `HomeMenu.tsx` rewritten into three visual tiers — primary MAIN STORY (art-backed, subtitled with the first unlocked-but-uncleared chapter via `findNextChapter`), secondary WORLD BOSS / GACHA (live boss + active banner name), tertiary ARCHIVE / PRACTICE / NEWS / LOGIN. Card art is `object-cover` on wide short cards, so `artPosition` is tuned per card rather than globally guessed; the primary card carries `priority` (it's the LCP element everywhere). **`lib/nav/routes.ts` (new) is now the single source of truth for what modes exist** — `TopNav` and `HomeMenu` both render from `GAME_ROUTES`, closing a real bug where World Boss, Gacha and News were unreachable from every page except home. The nav row scrolls horizontally rather than wrapping, preserving the fixed `h-11` the battle shell measures `100dvh` against. *(**Below `sm` that row no longer holds routes at all** since 2026-09-01, ruling #123 — the scroller was 234px holding 332px, so two routes never rendered. Five destinations moved to a bottom tab bar; `GAME_ROUTES` is still the single source of truth and desktop is unchanged.)* Browser-verified at 1440×900 and 390×844: no horizontal overflow, no hydration mismatch, clean console.
 
 - **Battle engine** — full phase state machine, 3-actions-per-turn enemy AI (random living field enemy each action, decisions from live state), win/loss detection.
 - **Rank system** — card rank drives damage multiplier, `*Ranked` mechanic values, and `aoeRanked` activation; flat mechanic values stay flat; ultimates rank-immune.
@@ -374,6 +381,168 @@ hold could still read as sluggish in a real fight.
 - **Enemy AI priority (ruling 2026-07-13)** — `getAIMove` picks across the whole acting pool by priority: ultimate (gauge full) → new buff (max 1/turn) or heal (ally <50%) → stance (max 1/turn, not already held) → debuff/disable (max 1/turn) → attack → other. Caps hold across the turn via a shared `AITurnContext` (`freshAITurnContext`/`noteAIAction`).
 - **Fixes (2026-07-12/13)** — Mustafa's Earth Stance: Fortress is a team-wide (aoe) DR stance, no ally pick; single-target attacks retarget to a living enemy when their marked target died mid-queue (focus-fire no longer wastes cards on a corpse).
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
+
+## Session log — 2026-09-01: the log shows effects, and the first browser audit
+
+Asked to work autonomously and find what was worth doing. Two halves: closing
+the oldest open engine issue, then — after he lifted the no-browser rule **for
+this session only** — the first audit of this game ever done by loading it.
+
+### 1. Open Issue #22 — statuses on the battle event stream
+
+The log could say who was hit for how much and never *what an action did*. Now
+`BattleActionEvent.effects` and `BattleTickEvent.effects` carry it.
+
+**Captured as a before/after diff, not emitted per site** (`lib/game/effectDiff.ts`).
+`executeSkill` pushes onto `buffs`/`debuffs` from ~24 places, and passives,
+defeat handlers and `syncExtortLinks` add more outside it; hand-emitting at each
+guarantees the next site added forgets to, silently. A diff cannot miss a site,
+including ones that do not exist yet. The snapshot converts entries to plain
+data **eagerly**, because `executeSkill` shallow-copies the status arrays and a
+before-state holding live references would agree with any in-place mutation.
+
+**Keyed by character, not nested under `targets`.** A skill routinely moves
+statuses on units it never targeted — a self buff, an `applyTo: "allies"` grant,
+an Extort link dying on a bystander (#32). Nesting under `targets` would have
+dropped exactly those, which is the omission #22 describes.
+
+Ticks compare at **identity** rather than full equality (`diffEffectIdentities`):
+a tick decrements every surviving duration, so the action-grade diff would
+redraw the whole board once a turn. The cost is deliberate — a Corrosion gaining
+a stack is invisible on a tick and caught on the action.
+
+Two bugs fell out:
+
+- **`emitHpTicks` gated on `targets.length > 0`.** A stun running out moves no
+  HP, so the single most consequential expiry in the game emitted nothing.
+- The sequencer then held `TICK_HOLD_MS` on an empty screen for an
+  expiry-only tick. Skipped when there is no HP to animate.
+
+And an engine asymmetry: the generic stat-debuff push dropped `mech.name` while
+the buff path kept it. **No kit authors one today** (all 27 checked), so nothing
+was broken — but the first one to try would have lost it with no error.
+
+`tests/effectDiff.test.ts` (15) plus `tests/battleLogDrawer.browser.test.tsx`
+(5, at 390×844). Ruling copy for #111's Guard/Effective also landed in
+`mechanicGlossary` — dormant until a kit uses the word, crit-bypass clause
+included, which STATUS had said needed saying "or it reads as a bug".
+
+### 2. The browser audit (his call, this session only)
+
+Audited nine routes plus a live battle at 390×844 against the deployed build,
+then against a production build served on **port 3210** (:3000 is his and was
+never touched; it came up mid-session and stayed up).
+
+Findings, all measured rather than read: the route strip was **234px holding
+332px** — News and Profile never rendered at rest — beside a second scroller
+where Bureau Orders was clipped; the guest link on `/login` was **106×17**; the
+archive first card started at **y=553 on an 844px screen**; and **ten**
+hover-only `title=` attributes, including the summon banner twelve featured
+tiles whose character *names* lived nowhere else, so a phone was being sold
+twelve anonymous squares.
+
+Rulings **#123** (bottom tab bar), **#124** (archive filter sheet), **#125**
+(no `title=` on a lowercase tag), **#126** (Claude toggle and music volume off
+the nav). Layout proposals went to `docs/design/mockups/shell-mobile.html`
+first, per #106.
+
+### 3. What only a browser could find
+
+Three bugs with no failing test and nothing wrong in the source:
+
+- **The tab bar rendered at the top of the screen.** `fixed` resolves against
+  the nearest ancestor establishing a containing block, and the nav carries
+  `backdrop-blur-sm` — a `backdrop-filter` does exactly that. `bottom-0` pinned
+  it over the nav it replaced. Portalled to `<body>`. (My own code comment had
+  blamed `sticky`, which creates a stacking context, not a containing block.)
+- **Gating it on the nav row count deleted navigation entirely** from any
+  screen reached by walking away from a battle without exiting. `battlePhase`
+  outlives the screen by design, so "the store knows about a battle" and "a
+  battle is in front of the player" are different questions. The arena
+  publishes `data-battle-active` now.
+- **`/` resumed a battle with no hand and no End Turn.** `HomeMenu` rendered
+  `<BattleArena />` alone where `/practice` renders it with `<Deck />`. A
+  pre-existing bug, reachable through the TOLL wordmark; the Menu tab from #123
+  made it one tap, which is how it surfaced.
+
+### 4. A guard that shipped green and wrong, twice
+
+`tests/touchTargets.test.ts` gained a scan for `title=` on lowercase JSX tags.
+It passed on the first run **having scanned 83 files and found none of the nine
+offenders** — a literal `0x08` byte had landed where the `\b` belonged. Caught
+only by running the same logic standalone.
+
+Fixed, it then missed a second class: the walk-back bailed on any `>` between
+the tag and the attribute, and an arrow function in a prop contains one, so it
+skipped **every element with an `onClick` before its title** — which is most of
+them. That is how the `DuelToggle` title survived the sweep written to catch it.
+Stripping the arrows first surfaced three more.
+
+Both failures are the same shape as the one `tests/stubs/browser-setup.ts`
+warns about: a test that passes for the wrong reason also stops anyone looking.
+
+### 5. Three false findings, all from believing a screenshot
+
+Worth recording because the fix is a habit, not a patch:
+
+- "The banner shows twelve blank squares" and "the arena tiles are empty" —
+  portraits are `loading="lazy"` and the capture beat the decode. JS said they
+  were fine.
+- "Battle notices are clipped 4px" — measured `35..394`; the row actually sits
+  at `15..374`. The offset was an entering `x: 20` caught mid-animation,
+  clipped by the `overflow-hidden` that exists for exactly that.
+
+Also two rounds lost to a stale server: `pkill -f "next start"` does not match
+the npx-spawned process, the replacement died on `EADDRINUSE`, and the old one
+kept serving. Kill by PID from `netstat`. All of this is now in `mobilecheck`.
+
+### What was tried and rejected
+
+- **Un-hiding `navLabel` alone** (mockup Option A). Offered and not chosen; it
+  fixes legibility and makes the scroll *worse* — four routes visible instead
+  of five — and does nothing about reach, which is what #107 actually asks for.
+- **Moving the whole music control to `/profile`.** Offered; he chose
+  mute-stays. `/profile` redirects guests and guest mode is supported, so the
+  whole control there is a control a guest does not have.
+- **An allowlist for the `title=` guard** instead of fixing the heuristic. An
+  allowlist of false positives teaches the next reader nothing.
+
+### Deliberately not done
+
+- **The four-status log row wraps to one chip per line at 390.** It fits and it
+  wraps; it is dense. Capping visible chips or dropping the right-alignment is
+  a layout call, so it is his.
+- **The archive NPC Index stayed in the page header** rather than moving into
+  the count row as the mockup drew it. Lower risk; the button is 44px either way.
+- **The `/story` empty-state copy is a draft**, marked as such in the component.
+  Wording is his.
+
+### Confidence and gaps
+
+**Verified by running it, this session:** `npm run check` gives 106 files /
+1,343 tests, 0 errors, the same 3 pre-existing `duel.test.ts` warnings.
+`npm run test:browser` gives 3 files / 17 tests. `NEXT_DIST_DIR=.next-verify
+next build` compiled, 56 static pages. `npm run sim -- duke seras` produced a
+ladder.
+
+**Verified in a real browser at 390×844**, against a production build: the tab
+bar position and its five 78×52 targets, its absence during battle and its
+return after leaving one, the archive sheet, the first card at 218px, the nav
+reduced to four items with nothing under 44px, and a resumed battle having its
+hand back.
+
+**Assumed, not verified:** every aesthetic judgement. Whether five tabs are the
+right five, whether the sheet grouping reads well, whether the archive header
+still feels like a header at `text-2xl`.
+
+**Unverified because I could not reach it:** the `Sound` section on `/profile`
+renders only for a signed-in user, and I did not sign in. Its code path is the
+same store the nav mute uses, and it typechecks and builds — but nobody has
+looked at it.
+
+**What I would check first coming back cold:** `/profile` on a phone, for the
+Sound panel and the dev toggle; then whether the five tab choices survive five
+minutes of actually playing.
 
 ## Session log — 2026-08-21/22: mobile-first everywhere, six tools, and an app icon
 
@@ -539,7 +708,8 @@ making the dark shape the figure so the whole mark read as a **padlock**.
 
 **Verified this session, by running it:** `npm run check` gives 105 files /
 1,327 tests, 3 pre-existing `duel.test.ts` warnings, 0 errors.
-`npm run test:browser` gives 2 files / 12 tests in real Chromium.
+`npm run test:browser` gives 2 files / 12 tests in real Chromium. *(2026-09-01:
+106 files / 1,342 tests and 3 files / 17 browser tests, same 3 warnings.)*
 `NEXT_DIST_DIR=.next-verify next build` compiled successfully. `npm run sim`
 produces a ladder.
 
@@ -559,137 +729,6 @@ was rebuilt rather than adjusted.
 
 **ComfyUI was started by this session** (the portable install on `E:`, port
 8188) and left running. It is not started automatically.
-
-## Session log - 2026-08-21: the road checkpoint, and 37 art assets
-
-Landed as `afd66a4`.
-
-**Verified at close:** `npm run check` green - **1,286 tests / 102 files**, the
-same 3 pre-existing `no-unused-vars` warnings in `tests/duel.test.ts` and no
-errors. `NEXT_DIST_DIR=.next-verify next build` compiled successfully;
-`.next-verify` removed and `tsconfig.json` churn reverted.
-
-### Art: 37 assets, and a map of what this checkpoint can compose
-
-19 inventory icons (`public/items/`, 612KB) and 18 scene backgrounds
-(`public/backgrounds/`, 1.8MB), all **WebP** - 18.4MB of PNG became 2.2MB at
-lossy q90, with `alpha_quality=100` on the icons so cutout edges stay lossless at
-the 24px they render down to. Registries: `lib/game/materialArt.ts` (new) and
-`lib/game/storyBackgrounds.ts`.
-
-The durable output is not the assets, it is `ART_PIPELINE.md`'s new section on
-what Animagine will and will not compose. **It renders streets,
-interiors-with-furniture, and landscapes-with-a-subject; it fails at aerial
-cityscapes, empty courtyards, clearings, and rows of benches** - and no amount of
-rewording fixes the second list. Re-framing does, first or second try: the city
-became an avenue seen down its length, the exam compound became an avenue between
-two halls. Three techniques were established and written up:
-
-- **img2img from a sibling plate** for any before/after or same-place variant.
-  `village_ruins` failed **five** txt2img attempts and landed first batch at
-  denoise 0.84. The denoise ladder is in the doc and it is narrow.
-- **Composite-and-blend** when the model renders a subject but will not place it
-  in an environment (`bureau_exterior`, 8 attempts): generate the subject alone,
-  `remove_background`, block the composition in with PIL, blend at 0.42-0.60.
-- **Grade every plate down** before shipping, with a bottom-weighted vignette -
-  Category A wants these darker than a character card, and the dialogue box sits
-  in the lower third.
-
-`jungle_clearing` took eight attempts and its own recipe (PIL-blocked ground,
-img2img at 0.80 - below ~0.7 dense foliage shreds into stripe noise, above ~0.85
-the composition goes).
-
-**Three registry slugs were retired as non-canon** after reading all twelve beat
-sheets: `gamblers_table` to `admin_room`, `the_bridge` to `lake_shore`,
-`overseer_dining` to `common_space_night`. Each replacement carries a comment
-naming what it replaced and why.
-
-### The road checkpoint: four kits, four engine capabilities
-
-`ford_bandit`, `checkpoint_bruiser`, `checkpoint_enforcer`, `toll_collector` -
-his kit designs, my stats and derived ranks. Stage 1-5 rebuilt from three waves
-of one recoloured mook into Ford Bandits, then three muscle, then Enforcer +
-Collector + Bruiser - the game's first **three-enemy** waves. Chapter economy
-still lands on exactly **70 gems**.
-
-Four capabilities they needed, none of which existed:
-
-- **`onDefeat` passive trigger** (`lib/game/onDefeat.ts`) - a dying unit pays its
-  own team. Post-pass over both teams from `executeSkill` *and* the DoT tick,
-  because a unit can die in more than one place; fires once, guarded by
-  `passiveState`, since a corpse stays on the field until turn-start cleanup.
-- **`conditionStatuses` on `targetTagBonus`** - "damage up against enemies
-  affected by Bleed".
-- **`conditionMinLivingAllies` on `aura`** - a team buff **rechecked at the
-  owner's turn start and dropped when the condition fails**. Plain `aura` applies
-  once at battle start and is never revisited, so the Collector's protection
-  would never have fallen off; this follows `characterSynergy`'s existing dynamic
-  pattern.
-- **`useSkillRank` mission goal** - his ask. The action battle event already
-  carried `rank`, so it was one union member, one case, one accumulator field.
-
-### What he corrected me on
-
-- **I rank-scaled a tier word, then hallucinated his spec while fixing it.** His
-  draft read *"Raises DEF for 1 turn and does [350]% damage"* - only `[350]` is
-  bracketed. I invented a ranked `[25, 40, 50]` DEF buff, which made the tier
-  word wrong at both ends, then "fixed" it by deleting *his* word instead of *my*
-  invention. **The brackets are the whole notation**; unbracketed means flat,
-  tier words included. Banked in `kitcheck` and in session memory, with the step
-  that would actually have prevented it: **re-read the draft, do not repair the
-  JSON from memory.**
-- **I costed the kits at R3, which the enemy can never play.**
-  `initializeEnemyDeck` builds one R1 card per skill and the AI never merges, so
-  a balance read off the top row is a read of a card that cannot be dealt. He
-  also pointed out three enemies share three actions, not three each. Ruling
-  #116.
-- **Light and dark are premium.** The Collector was proposed as light to close a
-  type-chart hole; rebuilt red. Ruling #115.
-- **Bleed is 1 turn on this kit.** I had set 2, citing a test asserting
-  roster-wide 2. The test was stricter than the rule it enforced -
-  `dotDurations.ts` has always said "unless the kit says otherwise". Ruling #52
-  amended: 2 is the **default**, not a mandate.
-
-### Two bugs the guards caught before they shipped
-
-- **`characterSchema.ts` kept its own copy of the passive-trigger list.** Adding
-  `onDefeat` to the type left the schema unaware, and the catalog *silently
-  drops* kits that fail validation - so all four vanished with no error at all.
-  `PASSIVE_TRIGGERS` is now one exported const both sides derive from.
-- **The bleed condition would never have fired.** A TS error revealed `bleed` is
-  not a `StatusEffectType`; combat stores it as
-  `{ type: "damageOverTime", name: "Bleed" }`. The matcher now checks name, type
-  and stat, because which field a status lands in depends on the status.
-
-### What was deferred, and to what
-
-- **Ch1-3 props (11 assets)** - queued in the manifest, not started. Cheap and
-  reliable; the icon batch went 14/14.
-- **Chapters 4-12 art** - `admin_room` first by reach. The full 94-asset manifest
-  is the artifact published 2026-08-20.
-- **`public/characters` + `public/npc` are still 99MB of PNG.** The same WebP
-  conversion would take them to roughly 12MB. Not done because they are already
-  in git history and that is his call.
-- **Icons render nowhere.** `getMaterialArt` has zero callers; every inventory
-  surface still shows the text label, which is the designed fallback.
-
-### Confidence and gaps
-
-**Verified:** every count in this entry was read off disk at close, not recalled.
-Suite and build output above are from the final run. Kit values were re-read from
-the JSON and checked field by field against his original message.
-
-**Assumed:** the four enemy statlines are mine - `storyOnly` bands are still
-unassigned at `KIT_DESIGN.md:83`, so there is no spec to check them against. The
-de-facto roadside band (HP 3000-3600 / ATK 245-285 / DEF 65-90) is an observation
-from three existing kits, not a rule.
-
-**Untested:** the checkpoint fight has never been played. Three-enemy waves are
-new to the game, the `onDefeat` heal and the fading aura have unit tests but no
-playtest, and `teamMode: "anchored"` on 1-5 changes who the player can field.
-
-**What I would check first coming back cold:** whether stage 1-5 is winnable, and
-whether the Collector's aura visibly drops when his escort dies.
 
 ## Session history — folded to the archive
 
@@ -714,6 +753,7 @@ on 2026-08-20. Each line below is one section in that file.
 - Session log — 2026-08-13 (auto session): Open Issues #24–27, and what was under them
 - Session log — 2026-08-13 (part 2): shadcn built, four features, two bugs, the economy audited
 - Session log — 2026-08-20: skills, an engine bug family, and six Dokkan kits
+- Session log — 2026-08-21: the road checkpoint, and 37 art assets
 
 ## Open Issues
 
@@ -725,7 +765,7 @@ on 2026-08-20. Each line below is one section in that file.
 | 20 | Battle screen overhaul: cinematics shipped 2026-07-12; the 2026-08-04 UX batches did the layout, enemy inspection, info panel, structured log and per-character VFX. **Remaining: mobile pass + sound hooks only** | `components/game/*` | Mostly done |
 | 21 | Enemy AI: skill-selection priority rewritten 2026-07-13 (team-wide tiers + per-turn caps). Target-choice heuristics (currently lowest-HP/taunt) may still want tuning per playtest | `lib/game/ai.ts` | Mostly done |
 | 23 | Stamina is effectively unlimited below ~account rank 13: a boss clear pays 100 XP, nearly every early clear ranks up, and a rank-up refills the bar to 120 (three runs). Raised 2026-08-12 with three fixes; Tanveer declined all three — **accepted, not a bug** | `store/playerStore.ts:463`, `lib/game/worldBossRewards.ts` | Design note (accepted) |
-| 22 | Battle log can't show **which buffs/debuffs an action applied** — `battleEvents` doesn't model effect application, so the raw string log remains the only record. Needs an `emit` change in `combat.ts` | `lib/game/combat.ts`, `types/battleEvent.ts` | Open |
+| 22 | ~~Battle log can't show **which buffs/debuffs an action applied**~~ **FIXED 2026-09-01.** `BattleActionEvent.effects` carries them, captured as a before/after **diff** over every character on the field (`lib/game/effectDiff.ts`) rather than emitted at each of the ~24 push sites — a site added later cannot forget to emit, and self buffs, `applyTo: "allies"` grants and Extort links dying on a bystander are all caught, none of which are targets. `BattleLogDrawer` renders them as chips. **Ticks carry expiry too** (`BattleTickEvent.effects`), compared at *identity* rather than full equality — a tick decrements every surviving duration, so the action-grade diff would have redrawn the whole board once a turn. Two things fell out: `emitHpTicks` gated on `targets.length > 0`, so a stun running out — no HP movement — emitted nothing at all; and the sequencer now skips its hold for a tick with no HP to animate, or an expiry-only tick would stall the turn on an empty screen. **Browser-verified for behaviour and geometry** (`tests/battleLogDrawer.browser.test.tsx`, 5 tests at 390x844): an expiry-only tick renders, a non-target is named, a loss computes `line-through`, and a four-chip row wraps inside the panel. The *look* is still his call | `lib/game/effectDiff.ts`, `lib/game/combat.ts`, `types/battleEvent.ts` | Fixed, unverified in play |
 | 24 | ~~String log double-prints actions~~ **FIXED 2026-08-13 (ruling #76)** — the resolution guard was a per-instance React ref on a provider built to survive remounts, so two loops resolved one queue. Claim moved into the store, keyed by turn. **Not reproduced live**; `dedupeConsecutive` kept as a regression detector whose anomaly must now read zero | `hooks/BattleProvider.tsx`, `store/gameStore.ts` | Fixed, unverified in play |
 | 25 | ~~A nulled hit must read "Tanked"~~ **BUILT 2026-08-13 (rulings #71, #75)** — gate is clause position relative to the damage step. Scoped to DoTs + `lowerUltGauge`; **stun/freeze deferred by Tanveer** and pinned by a test | `lib/game/combat.ts`, `types/battleEvent.ts` | Done (partial scope, by instruction) |
 | 26 | ~~`gained 5% undefined`~~ **FIXED 2026-08-13 — and it was not cosmetic.** The synergy buff never carried `mech.stats`, so six kits' tribe synergies granted **nothing**. This table previously said "the buff itself works"; it did not. Balance knock-on awaiting Tanveer | `lib/game/passive.ts`, `lib/game/stats.ts` | Fixed, his call to keep |
@@ -742,7 +782,7 @@ Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier sta
 - **Audio assets** — the music *system* shipped 2026-08-09; `public/audio/` is empty until Tanveer supplies the OST (`docs/AUDIO.md`). No SFX system exists and none is planned.
 - ~~FTUE / onboarding~~ **built 2026-08-13** (Bureau Orders + four battle coach marks). Daily loop and analytics remain — the orders evaluator was built general so daily missions are mostly a data change (see `docs/PRODUCT_AUDIT.md`)
 - ~~Deployment~~ — **already live at https://toll-the-game.vercel.app/**, and has been. The Vercel project is linked and every push to `master` auto-builds. These docs said "not started" and I repeated it to Tanveer on 2026-08-13; he corrected it. **A push is a deploy — treat `master` as production.**
-- Effect application in the battle-event stream (Open Issue #22)
+- ~~Effect application in the battle-event stream (Open Issue #22)~~ — **built 2026-09-01**, see the Open Issues table
 - ~~Story chapter **mission objectives**, the **node-path stage map**, **multi-wave stages with persistent HP**~~ — **all three shipped 2026-08-18** in story mode v2, in a different shape than this line imagined: missions are per *stage* (up to 3, seven goal types) rather than three per chapter, the node board was built on 2026-08-17 and then deliberately deleted (ruling #108), and multi-wave persistent HP is the wave loop. Story **difficulty tiers** remain unbuilt and unwanted — story is authored difficulty at base 1x (ruling #87)
 
 Note: "playerStore is a stub" is no longer true — it carries roster, currencies, inventory, per-character progress, stamina, gacha pity, lifetime stats, claimed orders, Auto Clear Tickets and per-difficulty clear records, with migrations at **v9** (`CURRENT_PLAYER_STATE_VERSION`, verified 2026-08-18). *(This line read "v7" until 2026-08-13 and "v8" until 2026-08-18; v8 shipped with Auto Clear in `018e9d0` and v9 with ult levels in `54ef93b`, and the note lagged both times. `storyStore` is separately at **v3** since the story rebuild.)*

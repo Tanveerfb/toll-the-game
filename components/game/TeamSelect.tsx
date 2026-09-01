@@ -328,7 +328,7 @@ export default function TeamSelect({
               playerTeam.length === 0 && enemyTeam.length === 0 && boss === null
             }
             onClick={clearAll}
-            className="font-body text-[11px] font-bold uppercase tracking-[0.16em] text-readout-muted transition-colors hover:text-el-red disabled:pointer-events-none disabled:opacity-40"
+            className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap px-3 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-readout-muted transition-colors hover:text-el-red disabled:pointer-events-none disabled:opacity-40"
           >
             Clear all
           </button>

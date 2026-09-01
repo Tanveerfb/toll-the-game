@@ -8,6 +8,7 @@ import { getCharacterById } from "@/lib/game/characterCatalog";
 import { describeFarm, describeFirstClear } from "@/lib/game/storyRewards";
 import type { StoryIndexChapter, StoryIndexStage } from "@/lib/game/storyCatalog";
 import type { StoryChapter } from "@/types/story";
+import Hint from "@/components/ui/Hint";
 
 /**
  * Stage list — story mode's farming surface.
@@ -231,14 +232,15 @@ function WaveRail({
                 ›
               </span>
             ) : null}
-            <span
-              title={names}
+            <Hint
+              content={names}
+              ariaLabel={`Wave ${i + 1}: ${names}`}
               className={`grid h-[15px] w-[15px] place-items-center border text-[9.5px] ${
                 boss && last ? "border-el-red text-el-red" : "border-edge-strong"
               }`}
             >
               {enemies.length}
-            </span>
+            </Hint>
           </React.Fragment>
         );
       })}

@@ -2,9 +2,11 @@
 
 import React from "react";
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  Home,
   Coins,
   Gem,
   Newspaper,
@@ -18,7 +20,6 @@ import AudioControl from "@/components/ui/AudioControl";
 import ItemIcon from "@/components/game/ItemIcon";
 import OrdersButton from "@/components/game/OrdersButton";
 import Hint from "@/components/ui/Hint";
-import DuelToggle from "@/components/ui/DuelToggle";
 import { GAME_ROUTES, isRouteActive } from "@/lib/nav/routes";
 import { useAuth } from "@/hooks/AuthProvider";
 import { useGameStore } from "@/store/gameStore";
@@ -190,7 +191,7 @@ export default function TopNav() {
     ? Math.min(100, (progress.current / progress.required) * 100)
     : 100;
 
-  return (
+  const nav = (
     <nav
       // `--nav-h` is derived from this attribute (styles/globals.css), and
       // `.screen-below-nav` is what every full-height screen measures against.
@@ -209,7 +210,7 @@ export default function TopNav() {
               ? `${readyOrders} Bureau order${readyOrders > 1 ? "s" : ""} ready to claim`
               : "Home"
           }
-          className="relative shrink-0 font-heading text-xl tracking-[0.2em] text-signal"
+          className="relative inline-flex min-h-11 shrink-0 items-center font-heading text-xl tracking-[0.2em] text-signal"
         >
           TOLL
           {/* Orders live on the home screen, so the count rides the one link
@@ -221,7 +222,10 @@ export default function TopNav() {
             </span>
           ) : null}
         </Link>
-        <div className="hud-scroll flex min-w-0 items-center gap-1 overflow-x-auto">
+        {/* Desktop only. Below `sm` these five live in the bottom tab bar —
+            the strip was 234px holding 332px, so two of the seven routes never
+            rendered at rest and nothing said the row scrolled. */}
+        <div className="hud-scroll hidden min-w-0 items-center gap-1 overflow-x-auto sm:flex">
           {GAME_ROUTES.filter((route) => route.href !== "/").map((route) => {
             const active = isRouteActive(route.href, pathname);
             const Icon =
@@ -254,14 +258,31 @@ export default function TopNav() {
           })}
         </div>
         <span className="flex-1" />
-        <DuelToggle />
+        {/* The two numbers that move while you play. Coin does not — it is a
+            spend-screen figure — and Orders keeps the badge on the wordmark
+            above, which is the link that goes to the screen holding them. */}
+        <div className="flex items-center gap-1.5 sm:hidden">
+          <Resource
+            icon={Zap}
+            iconId="stamina"
+            title="Stamina — spent entering World Boss runs"
+            value={ready ? `${currentStamina}` : dash}
+            suffix={`/${STAMINA_CAP}`}
+          />
+          <Resource
+            icon={Gem}
+            iconId="gems"
+            title="Gems — premium summon currency"
+            value={ready ? currencies.gems.toLocaleString() : dash}
+          />
+        </div>
         <AudioControl />
       </div>
 
       {/* Row 2 — what you have. Lived only on the home screen before, which
           meant no gem count on the gacha page and no stamina on the boss page. */}
       {rows === 2 ? (
-        <div className="mx-auto flex h-12 w-full max-w-6xl items-center gap-1.5 border-t border-hairline px-4 md:px-8">
+        <div className="mx-auto hidden h-12 w-full max-w-6xl items-center gap-1.5 border-t border-hairline px-4 sm:flex md:px-8">
           {/* The counters scroll and the account chrome does not — the same
               split `Deck.tsx` makes with End Turn. Four 44px counters plus a
               rank chip and an avatar do not fit in 390px, and the half you
@@ -330,6 +351,92 @@ export default function TopNav() {
           </Link>
         </div>
       ) : null}
+
     </nav>
+  );
+
+  return (
+    <>
+      {nav}
+      {/* Portalled to <body>, and that is load-bearing rather than tidiness.
+          Rendered inside the nav it lands at the *top* of the screen: the nav
+          carries `backdrop-blur-sm`, a `backdrop-filter` establishes a
+          containing block, and `position: fixed` then resolves against the
+          44px nav instead of the viewport. `bottom-0` put the tab bar over the
+          nav it was supposed to replace. (Sticky alone would not have done
+          this — it creates a stacking context, not a containing block. The
+          blur is the culprit, which is the same family of bug
+          `tests/overlayStacking.test.ts` was written for.) */}
+      {mounted
+        ? createPortal(
+            <BottomTabs pathname={pathname} signedIn={!!user} />,
+            document.body,
+          )
+        : null}
+    </>
+  );
+}
+
+/**
+ * Primary navigation on a phone.
+ *
+ * Five destinations, every one visible, every one in the thumb third — which
+ * is the half of ruling #107 a horizontal scroller can never satisfy however
+ * big its targets are. Measured on the live build 2026-09-01: the strip this
+ * replaces was 234px wide holding 332px of routes, so News and Profile were
+ * off-screen at rest behind a swipe with no affordance, and the short labels
+ * written in `routes.ts` for exactly this width were `hidden sm:inline` and
+ * had never rendered on a phone at all.
+ *
+ * **Archive, Practice and News do not get a slot.** Five is the number that
+ * fits at 390 without the labels shrinking below legibility, and those three
+ * are already tiles on the hub — which is what `Menu` opens.
+ */
+function BottomTabs({
+  pathname,
+  signedIn,
+}: {
+  pathname: string;
+  signedIn: boolean;
+}): React.JSX.Element {
+  const tabs = [
+    { href: "/", label: "Menu", icon: Home },
+    { href: "/story", label: "Story", icon: BookOpen },
+    { href: "/events", label: "Events", icon: Skull },
+    { href: "/gacha", label: "Gacha", icon: Sparkles },
+    {
+      href: signedIn ? "/profile" : "/login",
+      label: "You",
+      icon: UserIcon,
+    },
+  ];
+
+  return (
+    <div
+      // `fixed`, not `sticky`: the nav it lives in is itself sticky at the top,
+      // and a sticky child cannot escape to the other edge of the viewport.
+      // `body` reserves the space through `--tabbar-h` (styles/globals.css).
+      className="app-tabbar pb-safe fixed inset-x-0 bottom-0 z-50 flex border-t border-edge bg-void/95 backdrop-blur-sm sm:hidden"
+    >
+      {tabs.map((tab) => {
+        const active = isRouteActive(tab.href, pathname);
+        const Icon = tab.icon;
+        return (
+          <Link
+            key={tab.label}
+            href={tab.href}
+            aria-current={active ? "page" : undefined}
+            className={`flex min-h-13 flex-1 flex-col items-center justify-center gap-0.5 pt-1.5 transition-colors ${
+              active ? "text-signal" : "text-readout-muted"
+            }`}
+          >
+            <Icon className="h-4 w-4" strokeWidth={2.2} />
+            <span className="font-body text-[9px] font-bold uppercase tracking-[0.14em]">
+              {tab.label}
+            </span>
+          </Link>
+        );
+      })}
+    </div>
   );
 }

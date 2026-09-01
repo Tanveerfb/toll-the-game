@@ -639,8 +639,40 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 5. Archive pages re-rendered as documents sharing `/news` typography.
    Plus: Growth gated to owned characters + moved to a modal, practice dummy 400 → 100k HP, and Damage Preview rebuilt as **Kit Preview** (support skills, passives, and multi-phase kits were all missing or wrong).
 
+123. **Navigation moves to a bottom tab bar on a phone** (2026-09-01, sharpens #107). Shown a browser audit of the live build at 390×844 — the route strip was a **234px scroller holding 332px**, so News and Profile never rendered at rest, beside a second scroller holding the resource chips with Bureau Orders clipped — and offered two fixes in `docs/design/mockups/shell-mobile.html`: un-hide the short labels, or move navigation to a bottom tab bar. He chose the tab bar: *"Option B — bottom tabs (recommended)."* **That phrasing is an option label he selected, not prose he wrote.**
+
+    Five destinations below `sm` — Menu · Story · Events · Gacha · You. Archive, Practice and News keep their hub tiles instead of a slot; Coin leaves the bar (it is a spend-screen figure, not a live one) and the resource chips that remain fold into row 1. Desktop is untouched: above `sm` the route strip and the two-row nav render exactly as before.
+
+    Two things this cost, both found in a browser and neither visible to any test:
+
+    - The bar rendered **at the top of the screen**. `position: fixed` resolves against the nearest ancestor that establishes a containing block, and the nav carries `backdrop-blur-sm` — a `backdrop-filter` does exactly that. `bottom-0` put the tab bar over the nav it replaced. It is portalled to `<body>` now. (Sticky positioning alone would not have done this; it creates a stacking context, not a containing block.)
+    - Gating it on the nav's row count **removed navigation entirely** from any screen reached by walking away from a battle without exiting. `battlePhase` outlives the screen by design — a battle survives a reload — so "the store knows about a battle" and "a battle is in front of the player" are different questions. The arena publishes `data-battle-active` now and the bar reads that.
+
+    Heights compose through `--tabbar-h` in `styles/globals.css`, 0 wherever the bar does not render, so `.screen-below-nav` is one expression at every width. Pinned by `tests/navHeight.test.ts`.
+
+124. **The archive's filters live in a sheet** (2026-09-01, sharpens #107). Measured on the live build: the first character card started at **y = 553 on an 844px screen** — 65% of the phone was filter furniture, nine controls in the open with three of them wrapping to a row of their own. Offered a sheet or a collapsing toolbar, he chose the sheet: *"Option A — one Filters sheet (recommended)."* **Also an option label, not his sentence.**
+
+    Search plus one Filters button; element, sort, show-locked, tags and mechanics all move into a bottom sheet — the same pattern battle's controls became under #118, so this is reuse. The button's badge counts everything the sheet hides, element and sort included, or the grid filters with the button reading zero. First card now starts at **218px**. The page's descriptive blurb went with it (it explained a rule the sheet's own *Show locked* row states better) and the heading steps down at 390 so NPC Index sits beside it rather than wrapping.
+
+    The sheet is portalled, which `tests/overlayStacking.test.ts` required and was right to: that guard exists because the Growth modal once rendered *behind* the kit document, trapped by an `lg:sticky` ancestor.
+
+125. **Nothing explanatory may sit in a `title` attribute either** (2026-09-01, extends #120). #120 killed the hover-only `Tooltip`; the browser audit found the same failure arriving through the other door. A `title=` on a plain HTML element is a browser tooltip — hover only, no tap, no focus. **Ten sites**, including the summon banner's twelve featured tiles, whose character *names* lived nowhere else on the page: on a phone the monetisation screen was selling twelve anonymous squares.
+
+    The 2026-08-21 sweep's own grep listed `title=` and still missed them, because `title` is also a prop name on half the modals here, so the greps drowned. `tests/touchTargets.test.ts` now scans for `title=` on **lowercase** JSX tags only, which is the discriminator that separates a DOM attribute from a component prop.
+
+    A caution worth keeping: that guard shipped green and wrong first. A literal `0x08` byte had landed where `` belonged, so the regex matched nothing and the test passed having scanned 83 files and found none of the nine offenders. Only running the same logic standalone caught it — the exact vacuous-pass failure `tests/stubs/browser-setup.ts` warns about.
+
+
+126. **The nav carries only what a player needs mid-screen** (2026-09-01, follows #123). With navigation gone to the bottom bar, he cleared the top row of two more things: *"the 'claude' button can also be moved to dev only area on profile page. the music slider can also be moved to profile page."*
+
+    - **`DuelToggle`** — the dev-only "Claude" switch that let Claude play the enemy side — moved into `DevGrantPanel` on `/profile`. It is developer tooling and it was holding permanent width in a 390px bar. The setting stays global, so one placement still covers practice, story and the world boss; only the control moved. It renders `null` outside development as before, and `/profile` redirects a signed-out visitor, so in dev it is reachable only while signed in.
+    - **Music volume** moved to a `Sound` section on `/profile` (`components/game/SoundSettings.tsx`). **Mute did not.** Offered three shapes, he chose mute-stays: *"Mute stays, slider moves."* **An option label he selected, not his sentence.** The reason it was offered at all is written into `AudioControl`'s own header — `/profile` redirects guests to `/login` and guest mode is supported, so a control living only there is a control a guest does not have. Silencing the game is the urgent audio action (a quiet room, or a track starting on the autoplay gate's first interaction); volume is a set-once preference. So the nav keeps a single 44px mute button and the popover is gone.
+
+    **A pre-existing bug surfaced doing this, and was fixed.** `HomeMenu` renders the arena inline when a battle is in progress, but rendered `<BattleArena />` *alone* — no `Deck`, which is the hand and End Turn. A battle resumed from `/` could be read and exited and not **played**. Reachable before through the TOLL wordmark on every screen; #123's Menu tab turned it into a one tap route, which is how it was found. `HomeMenu` now uses the same `main` + `BattleArena` + `Deck` composition as `/practice`.
+
+
 **Kit data stays JSON** — settled 2026-08-04. It's runtime data `combat.ts`, `descriptionTranslator`, `damagePreview`, the Zod schema, Kit Lab and ~20 test files all depend on. MDX is for prose (`content/news/`), not for kits.
 
 **Known follow-ups, deliberately not done:**
-- The battle log can't show *which buffs/debuffs an action applied* — the event stream doesn't model effect application. Needs an emit change in `combat.ts`, the most ruling-dense file in the repo.
+- ~~The battle log can't show *which buffs/debuffs an action applied*~~ — **done 2026-09-01.** `BattleActionEvent.effects` and `BattleTickEvent.effects`, captured as a before/after diff (`lib/game/effectDiff.ts`) rather than emitted at each of `combat.ts`'s ~24 push sites. See Open Issue #22 in `docs/STATUS.md`.
 - No shared `CharacterGrid` across `CharacterBrowser` / TeamSelect's roster overlay / the gacha pool. They differ in *interaction* (browse vs multi-select-with-order vs read-only rates), so one grid would need a prop per difference. The genuinely shared unit is the character tile.

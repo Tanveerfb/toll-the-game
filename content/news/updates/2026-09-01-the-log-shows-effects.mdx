@@ -1,0 +1,84 @@
+export const metadata = {
+  title: "The Log Shows Effects",
+  date: "2026-09-01",
+  summary:
+    "The battle log now records every buff and debuff an action applied — and navigation moved to the bottom of the screen on phones.",
+};
+
+The battle log has always told you what an action *hit*: who took damage, how
+much, what dodged, what died. It never told you what an action **did** beyond
+that. A skill that lowered DEF by 30% for two turns showed up as a damage
+number and nothing else, and the only way to find the rest was the raw text log
+behind the Raw toggle.
+
+No combat rules changed here. The log just stopped leaving things out.
+
+## Every Status, On the Action That Caused It
+
+Each action now lists the statuses it moved, under the targets it hit:
+
+- **Green chips** are gains — a buff landing, a regeneration ticking on.
+- **Red chips** are debuffs — a stat down, a seal, a damage-over-time with its
+  per-turn number.
+- **Struck-through chips** are losses — something cleansed, or an effect that
+  stopped applying because the action ended it.
+
+Durations come along too, so `DEF −30% · 2t` says the whole thing in one chip.
+
+## Including the Ones That Were Never Targeted
+
+This is the part the old log could never have shown. A lot of what happens in a
+fight lands on somebody who was not the target of anything:
+
+- a skill that buffs **its own user** after it swings
+- a skill that buffs the **whole team** while striking one enemy
+- an **Extort** link breaking on a third character because the enemy holding it
+  died
+
+All of those now appear in the log, named by whoever they happened to, instead
+of quietly not being mentioned. If a fight swung and you could not tell why,
+the reason is now written down.
+
+## And When They Run Out
+
+Effects ending is the other half. A stun wearing off changes no HP, so nothing
+about it reached the log at all — the enemy simply acted again and you were
+left to work out why. Expiries are now recorded on the turn they happen, struck
+through, on whoever lost them.
+
+Effects still counting down stay quiet. Only the turn something actually ends
+gets a line.
+
+## Refreshes Read as Refreshes
+
+Recasting an effect that is already running does not read as "lost it, then got
+it again" — it reads as the new duration, once. The log says what happened, not
+what the bookkeeping looked like.
+
+---
+
+The Raw toggle is still there. It carries the engine's own commentary — resisted
+and immune lines, passive narration, HP drains — which is prose rather than
+state, and stays the fullest read of a fight.
+
+## Elsewhere: Navigation Moved Down
+
+On a phone the row of route icons at the top was 234px wide holding 332px of
+routes, which meant two of them — News and Profile — were simply off the edge
+of the screen, behind a sideways swipe nothing told you about.
+
+Navigation is now **five tabs along the bottom**: Menu, Story, Events, Gacha
+and You. All five are visible, all five are where your thumb already is, and
+they get out of the way during a fight. Archive, Practice and News moved to the
+main menu, which is what Menu opens.
+
+The character archive got the same treatment from the other direction: search
+and one **Filters** button, with elements, sorting, tags and mechanics behind
+it. Characters used to start two thirds of the way down the screen. They start
+near the top now.
+
+Music volume moved to your profile, under **Sound**. The mute button stays in
+the top bar on every screen — that is the one you want in a hurry, and it works
+whether or not you are signed in.
+
+On a desktop nothing has changed.

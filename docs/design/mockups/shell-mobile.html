@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The shell at 390 — nav and archive density</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* Combat Terminal tokens, copied from styles/globals.css @theme so this file
+     stands alone and still reads as the game. */
+  :root {
+    --void: #06090c;
+    --panel: #0d141b;
+    --panel-raised: #111a23;
+    --inset: #080d12;
+    --gridline: #0e1720;
+    --hairline: #16212b;
+    --edge: #1c2a36;
+    --edge-strong: #31596b;
+    --readout-strong: #eaf2f8;
+    --readout: #cbd8e2;
+    --readout-dim: #8ea6b8;
+    --readout-muted: #5d7285;
+    --signal: #4fd3e8;
+    --el-light: #e8d174;
+    --el-red: #ff5a4e;
+    --el-blue: #37a6ff;
+    --el-green: #35d48b;
+    --heading: "Bangers", "Impact", cursive;
+    --body: "Rajdhani", "Segoe UI", sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--void);
+    color: var(--readout);
+    font-family: var(--body);
+    padding: 28px 20px 80px;
+    line-height: 1.5;
+  }
+
+  .page { max-width: 1180px; margin: 0 auto; }
+
+  h1 {
+    font-family: var(--heading);
+    font-size: 30px;
+    letter-spacing: 0.05em;
+    color: var(--readout-strong);
+  }
+  .sub { color: var(--readout-dim); max-width: 66ch; margin-top: 8px; font-size: 15px; }
+
+  h2 {
+    font-family: var(--heading);
+    font-size: 22px;
+    letter-spacing: 0.05em;
+    color: var(--signal);
+    margin: 40px 0 4px;
+    border-left: 2px solid var(--signal);
+    padding-left: 10px;
+  }
+  h3 { font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--readout-muted); font-weight: 700; }
+
+  p.note { color: var(--readout-dim); font-size: 14px; margin-top: 6px; max-width: 70ch; }
+  .measured { color: var(--el-red); font-weight: 600; }
+  .rec { color: var(--el-green); font-weight: 600; }
+
+  /* ---- phone frames -------------------------------------------------- */
+  .rail { display: flex; gap: 26px; flex-wrap: wrap; margin-top: 18px; align-items: flex-start; }
+  .opt { width: 390px; }
+  .opt > h3 { margin-bottom: 8px; }
+  .phone {
+    width: 390px;
+    border: 1px solid var(--edge);
+    background:
+      linear-gradient(var(--gridline) 1px, transparent 1px) 0 0 / 100% 26px,
+      linear-gradient(90deg, var(--gridline) 1px, transparent 1px) 0 0 / 26px 100%,
+      var(--void);
+    position: relative;
+    overflow: hidden;
+  }
+  .caption { font-size: 13px; color: var(--readout-dim); margin-top: 8px; }
+  .caption b { color: var(--readout); font-weight: 600; }
+
+  /* ---- shared chrome pieces ------------------------------------------ */
+  .bar { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-bottom: 1px solid var(--hairline); }
+  .wordmark { font-family: var(--heading); font-size: 20px; letter-spacing: 0.2em; color: var(--signal); }
+  .icons { display: flex; gap: 4px; flex: 1; min-width: 0; overflow: hidden; }
+  .ico { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid transparent; color: var(--readout-muted); font-size: 15px; flex: none; }
+  .ico.on { border-color: var(--edge-strong); color: var(--signal); background: rgba(79,211,232,0.08); }
+  .clip { position: relative; }
+  .clip::after {
+    content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 34px;
+    background: linear-gradient(90deg, transparent, var(--void));
+  }
+
+  .chips { display: flex; align-items: center; gap: 6px; height: 46px; padding: 0 12px; border-bottom: 1px solid var(--hairline); }
+  .chip { display: flex; align-items: center; gap: 5px; border: 1px solid var(--edge); padding: 5px 8px; font-size: 12px; font-weight: 600; color: var(--readout); flex: none; }
+  .chip .dot { width: 12px; height: 12px; border-radius: 50%; }
+
+  .labelled { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 60px; flex: none; padding: 4px 0; }
+  .labelled span:last-child { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--readout-muted); }
+  .labelled.on span:last-child { color: var(--signal); }
+
+  .body-area { padding: 14px 12px; }
+  .cardline { border: 1px solid var(--edge); background: var(--panel); padding: 10px; margin-bottom: 8px; }
+  .cardline .t { font-family: var(--heading); font-size: 17px; letter-spacing: 0.04em; color: var(--readout-strong); }
+  .cardline .d { font-size: 12px; color: var(--readout-muted); text-transform: uppercase; letter-spacing: 0.12em; }
+
+  .tabbar { display: flex; border-top: 1px solid var(--edge); background: var(--panel); }
+  .tabbar .labelled { flex: 1; width: auto; height: 52px; justify-content: center; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tile { border: 1px solid var(--edge); background: var(--panel); height: 96px; position: relative; }
+  .tile b { position: absolute; left: 6px; bottom: 6px; font-family: var(--heading); font-size: 14px; letter-spacing: 0.04em; color: var(--readout-strong); font-weight: 400; }
+
+  .searchrow { display: flex; gap: 6px; align-items: center; }
+  .field { flex: 1; height: 44px; border: 1px solid var(--edge); background: var(--inset); color: var(--readout-muted); font-size: 13px; display: flex; align-items: center; padding: 0 10px; }
+  .btn { height: 44px; border: 1px solid var(--edge); padding: 0 12px; display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--readout-dim); flex: none; }
+  .btn.on { border-color: var(--signal); color: var(--signal); }
+  .btn .badge { background: var(--signal); color: var(--void); border-radius: 2px; padding: 0 4px; font-size: 10px; }
+
+  .furniture { border: 1px dashed var(--el-red); padding: 8px; margin-bottom: 8px; }
+  .furniture .tag { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--el-red); font-weight: 700; }
+  .stack { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .pill { border: 1px solid var(--edge); padding: 8px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--readout-dim); }
+  .pill.on { background: var(--signal); border-color: var(--signal); color: var(--void); }
+
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--panel-raised); border-top: 1px solid var(--edge-strong); padding: 12px; }
+  .scrim { position: absolute; inset: 0; background: rgba(6,9,12,0.72); }
+
+  .ruler { position: relative; margin-top: 6px; height: 20px; }
+  .ruler .span { position: absolute; top: 6px; height: 2px; background: var(--el-red); }
+  .ruler .lbl { position: absolute; top: -2px; font-size: 10px; color: var(--el-red); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+
+  table { border-collapse: collapse; margin-top: 14px; font-size: 14px; width: 100%; max-width: 900px; }
+  th, td { border: 1px solid var(--hairline); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { color: var(--readout-muted); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--signal); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>The shell at 390</h1>
+  <p class="sub">
+    Two layout questions the 2026-09-01 browser audit turned up, neither of which
+    is a size fix. Everything marked <span class="measured">measured</span> came
+    off the live deploy at 390&times;844, not off reading the source.
+    Per ruling #106 these are proposals, not edits — nothing here is built.
+  </p>
+
+  <!-- =============================================================== -->
+  <h2>1 · The top bar</h2>
+  <p class="note">
+    <span class="measured">Measured:</span> the route strip is <b>234px holding
+    332px</b> — <b>News</b> and <b>Profile</b> never render at rest. The resource
+    row is <b>226px holding 293px</b>; <b>Bureau Orders</b> is the clipped one and
+    the avatar's right edge lands at <b>405px</b>. Two independent horizontal
+    scrollers, side by side, inside one 390px bar, neither with a scroll
+    affordance. And <code>navLabel</code> — short labels written in
+    <code>routes.ts</code> for exactly this case — is <code>hidden sm:inline</code>,
+    so <b>it has never rendered on a phone</b>.
+  </p>
+
+  <div class="rail">
+
+    <div class="opt">
+      <h3>Today</h3>
+      <div class="phone">
+        <div class="bar">
+          <span class="wordmark">TOLL</span>
+          <span class="icons clip">
+            <span class="ico">▤</span><span class="ico">☠</span><span class="ico on">✦</span>
+            <span class="ico">◎</span><span class="ico">⚔</span><span class="ico">▦</span><span class="ico">◍</span>
+          </span>
+          <span class="ico" style="border-color:var(--edge-strong)">♪</span>
+        </div>
+        <div class="chips">
+          <span class="chip"><span class="dot" style="background:var(--el-red)"></span>119/120</span>
+          <span class="chip"><span class="dot" style="background:var(--el-dark, #a874ff)"></span>1,000</span>
+          <span class="chip"><span class="dot" style="background:var(--el-light)"></span>0</span>
+          <span class="chip" style="border-color:var(--el-light);color:var(--el-light)">▤</span>
+        </div>
+        <div class="ruler">
+          <span class="span" style="left:60px;width:330px"></span>
+          <span class="lbl" style="left:60px">98px hidden · 67px hidden</span>
+        </div>
+        <div class="body-area" style="padding-top:6px">
+          <div class="cardline"><span class="d">Continue</span><div class="t">1-1 · The World That Toll Built</div></div>
+          <div class="grid2"><div class="tile"><b>WORLD BOSS</b></div><div class="tile"><b>GACHA</b></div></div>
+        </div>
+      </div>
+      <p class="caption">
+        <b>90px of vertical chrome</b> before any content, and the two things it
+        pushes off-screen are a whole route each.
+      </p>
+    </div>
+
+    <div class="opt">
+      <h3>Option A — labels on, one row</h3>
+      <div class="phone">
+        <div class="bar" style="height:auto;padding:4px 12px">
+          <span class="wordmark">TOLL</span>
+          <span class="icons clip">
+            <span class="labelled"><span>▤</span><span>Story</span></span>
+            <span class="labelled"><span>☠</span><span>Events</span></span>
+            <span class="labelled on"><span>✦</span><span>Gacha</span></span>
+            <span class="labelled"><span>◎</span><span>Archive</span></span>
+          </span>
+          <span class="ico" style="border-color:var(--edge-strong)">♪</span>
+        </div>
+        <div class="chips">
+          <span class="chip"><span class="dot" style="background:var(--el-red)"></span>119/120</span>
+          <span class="chip"><span class="dot" style="background:#a874ff"></span>1,000</span>
+          <span class="chip"><span class="dot" style="background:var(--el-light)"></span>0</span>
+          <span class="chip" style="border-color:var(--el-light);color:var(--el-light)">▤</span>
+        </div>
+        <div class="body-area" style="padding-top:10px">
+          <div class="cardline"><span class="d">Continue</span><div class="t">1-1 · The World That Toll Built</div></div>
+          <div class="grid2"><div class="tile"><b>WORLD BOSS</b></div><div class="tile"><b>GACHA</b></div></div>
+        </div>
+      </div>
+      <p class="caption">
+        The one-line change: drop <code>hidden sm:</code>. <b>Honest cost —
+        it makes the scroll worse</b>, four routes visible instead of five. It
+        fixes legibility, not reach.
+      </p>
+    </div>
+
+    <div class="opt">
+      <h3>Option B — bottom tabs <span class="rec">(recommended)</span></h3>
+      <div class="phone">
+        <div class="bar">
+          <span class="wordmark">TOLL</span>
+          <span style="flex:1"></span>
+          <span class="chip"><span class="dot" style="background:var(--el-red)"></span>119/120</span>
+          <span class="chip"><span class="dot" style="background:#a874ff"></span>1,000</span>
+          <span class="ico" style="border-color:var(--edge-strong)">♪</span>
+        </div>
+        <div class="body-area">
+          <div class="cardline"><span class="d">Continue</span><div class="t">1-1 · The World That Toll Built</div></div>
+          <div class="cardline"><span class="d">2 runs affordable</span><div class="t">World Boss ready</div></div>
+          <div class="grid2">
+            <div class="tile"><b>ARCHIVE</b></div><div class="tile"><b>PRACTICE</b></div>
+            <div class="tile"><b>NEWS</b></div><div class="tile"><b>SIGN IN</b></div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <span class="labelled"><span>⌂</span><span>Menu</span></span>
+          <span class="labelled"><span>▤</span><span>Story</span></span>
+          <span class="labelled"><span>☠</span><span>Events</span></span>
+          <span class="labelled on"><span>✦</span><span>Gacha</span></span>
+          <span class="labelled"><span>◍</span><span>You</span></span>
+        </div>
+      </div>
+      <p class="caption">
+        Five destinations, all visible, all &ge;44px, <b>in the thumb third</b> —
+        which is what #107 asks for and no scroller can give. The top bar keeps
+        the wordmark, the two currencies that change during play, and music.
+        Archive / Practice / News stay hub cards, where they already are.
+      </p>
+    </div>
+
+  </div>
+
+  <table>
+    <tr><th>Question</th><th>Needs your call</th></tr>
+    <tr><td>Which five get tab slots?</td><td>Drawn here as Menu · Story · Events · Gacha · You. Archive and Practice lose their nav slot and live on the hub.</td></tr>
+    <tr><td>Where do Coin and Orders go?</td><td>Drawn as: Coin off the bar entirely (it is a spend-screen number, not a live one), Orders as the hub card it already is.</td></tr>
+    <tr><td>Rank bar and avatar</td><td>Folded into the <b>You</b> tab.</td></tr>
+    <tr><td>Desktop</td><td>Same column centred; the tab bar becomes the existing top strip above <code>sm</code>, so nothing about desktop changes.</td></tr>
+  </table>
+
+  <!-- =============================================================== -->
+  <h2>2 · Archive density</h2>
+  <p class="note">
+    <span class="measured">Measured:</span> the first character card starts at
+    <b>y = 553</b> on an 844px screen — <b>65% of the phone is filter furniture</b>
+    before a single unit appears. With one owned unit that is most of the page;
+    with eighteen it is still a full screen of chrome to scroll past every visit.
+  </p>
+
+  <div class="rail">
+
+    <div class="opt">
+      <h3>Today</h3>
+      <div class="phone">
+        <div class="body-area">
+          <div class="furniture">
+            <span class="tag">553px before content</span>
+            <div style="font-family:var(--heading);font-size:22px;color:var(--readout-strong);margin-top:6px">CHARACTER ARCHIVE</div>
+            <div style="font-size:12px;color:var(--readout-muted)">Your characters and their progression. Locked units are hidden until you ask for them.</div>
+            <div class="stack" style="justify-content:flex-end"><span class="pill">NPC Index</span></div>
+            <div class="field" style="margin-top:8px">Query name, id, tag</div>
+            <div class="stack">
+              <span class="pill on">All</span><span class="pill">Light</span><span class="pill">Red</span>
+              <span class="pill">Blue</span><span class="pill">Green</span><span class="pill">Dark</span>
+            </div>
+            <div style="text-align:right;font-size:11px;letter-spacing:0.16em;color:var(--signal);margin-top:6px">1 / 1 UNITS</div>
+            <div class="stack">
+              <span class="pill" style="border-color:transparent">Sort</span>
+              <span class="pill">ATK</span><span class="pill">DEF</span><span class="pill">HP</span><span class="pill">Filters</span>
+            </div>
+            <div class="stack"><span class="pill">Show locked (17)</span></div>
+          </div>
+          <div class="grid2"><div class="tile" style="height:120px"><b>DUKE</b></div></div>
+        </div>
+      </div>
+      <p class="caption">Nine controls, three of which wrap to a row of their own.</p>
+    </div>
+
+    <div class="opt">
+      <h3>Option A — one Filters sheet <span class="rec">(recommended)</span></h3>
+      <div class="phone">
+        <div class="body-area">
+          <div style="font-family:var(--heading);font-size:22px;color:var(--readout-strong)">CHARACTER ARCHIVE</div>
+          <div class="searchrow" style="margin-top:8px">
+            <span class="field">Query name, id, tag</span>
+            <span class="btn on">Filters <span class="badge">2</span></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;letter-spacing:0.16em;color:var(--readout-muted);margin:8px 0">
+            <span>18 UNITS · ATK ↓</span><span style="color:var(--signal)">NPC INDEX</span>
+          </div>
+          <div class="grid2">
+            <div class="tile" style="height:120px"><b>DUKE</b></div><div class="tile" style="height:120px"><b>LYRA</b></div>
+            <div class="tile" style="height:120px"><b>SARA</b></div><div class="tile" style="height:120px"><b>BATRA</b></div>
+            <div class="tile" style="height:120px"><b>SERAS</b></div><div class="tile" style="height:120px"><b>ISOLDE</b></div>
+          </div>
+        </div>
+      </div>
+      <p class="caption">
+        <b>~150px of chrome</b>, six units above the fold instead of one. The
+        blurb goes (it explains a rule the Filters sheet states better), and the
+        active filter count rides the button so nothing is hidden silently.
+      </p>
+    </div>
+
+    <div class="opt">
+      <h3>Option A — the sheet, open</h3>
+      <div class="phone" style="height:420px">
+        <div class="body-area">
+          <div style="font-family:var(--heading);font-size:22px;color:var(--readout-strong)">CHARACTER ARCHIVE</div>
+          <div class="searchrow" style="margin-top:8px">
+            <span class="field">Query name, id, tag</span><span class="btn on">Filters <span class="badge">2</span></span>
+          </div>
+        </div>
+        <span class="scrim"></span>
+        <div class="sheet">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h3>Filter &amp; sort</h3><span class="btn" style="border:none">Done</span>
+          </div>
+          <h3 style="margin-top:10px">Element</h3>
+          <div class="stack">
+            <span class="pill on">All</span><span class="pill">Light</span><span class="pill">Red</span>
+            <span class="pill">Blue</span><span class="pill">Green</span><span class="pill">Dark</span>
+          </div>
+          <h3 style="margin-top:12px">Sort</h3>
+          <div class="stack"><span class="pill on">ATK ↓</span><span class="pill">DEF</span><span class="pill">HP</span></div>
+          <h3 style="margin-top:12px">Show</h3>
+          <div class="stack"><span class="pill">Locked units (17)</span><span class="pill">Tags &amp; mechanics</span></div>
+        </div>
+      </div>
+      <p class="caption">
+        The pattern is already in the game — it is what battle's controls became
+        on 2026-08-21 (ruling #118), so this is reuse, not a new idea.
+      </p>
+    </div>
+
+  </div>
+
+  <table>
+    <tr><th>Question</th><th>Needs your call</th></tr>
+    <tr><td>Does the blurb go?</td><td>Drawn as: yes. "Locked units are hidden until you ask for them" is a rule the sheet's own <b>Show locked</b> row states more usefully.</td></tr>
+    <tr><td>NPC Index placement</td><td>Drawn as a text link in the count row rather than a button competing with Filters.</td></tr>
+    <tr><td>Sort direction</td><td>Kept as tap-to-toggle on the active field, as today.</td></tr>
+  </table>
+
+  <h2>What was already fixed, so it is not here</h2>
+  <p class="note">
+    The audit's size findings were mechanical and are done:
+    <code>/login</code>'s 106&times;17 guest link, the archive's 93&times;34 NPC
+    Index, Team Select's 43&times;33 Clear All, the 45&times;28 <code>TOLL</code>
+    wordmark, a 41px sort chip, and <b>ten</b> hover-only <code>title=</code>
+    attributes — including the twelve summon tiles whose character names lived
+    nowhere else, so a phone was being sold twelve anonymous squares.
+    <code>tests/touchTargets.test.ts</code> now fails on a new one.
+  </p>
+
+</div>
+</body>
+</html>

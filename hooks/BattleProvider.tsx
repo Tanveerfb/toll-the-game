@@ -38,6 +38,10 @@ import {
 } from "@/lib/game/stageEffects";
 import type { StageEffect } from "@/types/stageEffects";
 import type { AnyBattleEvent } from "@/types/battleEvent";
+import {
+  snapshotEffects,
+  diffEffectIdentities,
+} from "@/lib/game/effectDiff";
 import { resetPlayback, waitForPlayback } from "@/lib/game/playback";
 import {
   evaluateBattleOutcome,
@@ -55,6 +59,10 @@ import {
  * this, the store would jump straight to the post-tick HP the instant it
  * commits, with no sequencer animation ahead of it (the original "snapshot"
  * bug, still present for anything that isn't a player/enemy card action).
+ *
+ * Also carries what **expired** on the tick (Open Issue #22's other half).
+ * `tickTeamBuffs`/`tickTeamDebuffs` rebuild the status arrays rather than
+ * mutating them, so `before` is a genuine pre-tick state to compare against.
  */
 function emitHpTicks(
   before: BattleCharacter[],
@@ -70,7 +78,15 @@ function emitHpTicks(
       return { instanceId: c.instanceId, name: c.name, hpBefore, hpAfter: c.currentHP };
     })
     .filter((t): t is NonNullable<typeof t> => t !== null);
-  if (targets.length > 0) emit({ kind: "tick", label, targets });
+
+  const effects = diffEffectIdentities(snapshotEffects(before), after);
+
+  // A stun running out moves no HP at all. Gating on `targets` alone — which
+  // is what this did — meant the single most consequential expiry in the game
+  // produced no event.
+  if (targets.length > 0 || effects.length > 0) {
+    emit({ kind: "tick", label, targets, effects });
+  }
 }
 
 export interface TeamPick {

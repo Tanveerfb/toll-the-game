@@ -199,14 +199,60 @@ h6 {
    row (as battle does) and every screen reclaims the space in the same frame. */
 :root {
   --nav-h: 2.875rem;
+  /* Reserved by the bottom tab bar. Zero everywhere it does not render, so
+     the arithmetic below is the same expression at every breakpoint. */
+  --tabbar-h: 0rem;
 }
 :root:has([data-nav-rows="2"]) {
   /* Row 1 (2.875rem) plus row 2. Row 2 grew from `h-8` to `h-12` on
      2026-08-21 so its counters could carry a 44px touch target. */
   --nav-h: 5.875rem;
 }
+
+/* Below `sm`, navigation moves off the top bar and into a bottom tab bar
+   (2026-09-01). The route strip there was a 234px scroller holding 332px of
+   routes — News and Profile never rendered at rest — competing for the same
+   390px as a second scroller holding the resource chips. Tabs put five
+   destinations in the thumb third instead, which is what ruling #107 asks for
+   and no horizontal scroller can give.
+
+   The resource row folds into row 1 at this width, so the nav is one row and
+   the tab bar is the second. Both gated on `data-nav-rows="2"`: battle drops
+   to one row and takes the tab bar with it, because a fight needs the pixels
+   and a stray tap on "Gacha" mid-turn is not a navigation the player meant. */
+@media (max-width: 639px) {
+  :root {
+    --tabbar-h: calc(3.25rem + env(safe-area-inset-bottom));
+  }
+  :root:has([data-nav-rows="2"]) {
+    --nav-h: 2.875rem;
+  }
+
+  /* The arena publishes this while it is on screen, and it is the *arena* that
+     has to say so rather than the nav's row count. `battlePhase` outlives the
+     screen on purpose — a battle survives a reload — so "a battle exists in
+     the store" and "a battle is being played right now" are different
+     questions. Reading the first one hid the tab bar on the chapter list after
+     walking away from a fight, which left that screen with no navigation at
+     all. Found in a browser 2026-09-01. */
+  :root:has([data-battle-active]) {
+    --tabbar-h: 0rem;
+  }
+  :root:has([data-battle-active]) .app-tabbar {
+    display: none;
+  }
+}
+
+/* Ordinary scrolling pages clear the fixed bar this way, so no screen has to
+   remember to. It composes with `.screen-below-nav` rather than
+   double-counting: that height already excludes the bar, and this padding is
+   what the bar then occupies. */
+body {
+  padding-bottom: var(--tabbar-h);
+}
+
 .screen-below-nav {
-  height: calc(100dvh - var(--nav-h));
+  height: calc(100dvh - var(--nav-h) - var(--tabbar-h));
 }
 
 /* ── Safe area ─────────────────────────────────────────────────────────────

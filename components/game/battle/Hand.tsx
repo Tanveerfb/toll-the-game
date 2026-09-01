@@ -753,7 +753,7 @@ export default function Hand({
                 const BadgeIcon = SKILL_TYPE_ICON[skillTypeCategory(card.skill)];
                 return (
                   <span
-                    title={skillTypeCategory(card.skill)}
+                    aria-label={skillTypeCategory(card.skill)}
                     className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center bg-void/80 text-readout-dim"
                   >
                     <BadgeIcon className="h-2.5 w-2.5" strokeWidth={2.6} />

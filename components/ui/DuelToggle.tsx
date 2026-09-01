@@ -4,12 +4,17 @@ import React from "react";
 import { useSettingsStore } from "@/store/settingsStore";
 
 /**
- * Dev-only "Use Claude" switch, sat in TopNav beside the audio control.
+ * Dev-only "Use Claude" switch.
  *
- * One placement covers practice, story and the world boss, because every
- * battle runs through the same enemy-turn resolution — there's nothing to add
- * to the three start screens. Renders nothing outside development, so it can
- * never reach a player.
+ * Moved out of TopNav onto `/profile` 2026-09-01 (Tanveer): it is developer
+ * tooling and it was taking permanent width in a 390px bar that had none to
+ * spare. One placement still covers practice, story and the world boss,
+ * because every battle runs through the same enemy-turn resolution — the
+ * setting is global, only its control moved. Renders nothing outside
+ * development, so it can never reach a player.
+ *
+ * Caveat worth knowing: `/profile` redirects a signed-out visitor to
+ * `/login`, so in dev this is reachable only while signed in.
  */
 export default function DuelToggle(): React.JSX.Element | null {
   const setDuelMode = useSettingsStore((s) => s.setDuelMode);
@@ -30,10 +35,10 @@ export default function DuelToggle(): React.JSX.Element | null {
     <button
       type="button"
       onClick={() => setDuelMode(!duelMode)}
-      title={
+      aria-label={
         duelMode
-          ? "Claude is playing the enemy side — click to go back to the scripted AI"
-          : "Dev: let Claude play the enemy side of the next battle"
+          ? "Claude is playing the enemy side — switch back to the scripted AI"
+          : "Let Claude play the enemy side of the next battle"
       }
       aria-pressed={duelMode}
       className={`flex min-h-11 shrink-0 items-center border px-2 font-body text-[10px] uppercase tracking-[0.14em] transition-colors ${

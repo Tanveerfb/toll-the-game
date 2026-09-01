@@ -199,7 +199,7 @@ export default function LoginPage(): React.JSX.Element {
           <button
             type="button"
             onClick={() => router.push("/")}
-            className="font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout-muted transition-colors hover:text-signal"
+            className="inline-flex min-h-11 items-center px-3 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout-muted transition-colors hover:text-signal"
           >
             {firebaseEnabled ? "Play as a guest" : "Back to the menu"}
           </button>

@@ -8,6 +8,20 @@ export const mechanicGlossary = {
   ignite: "Each stack increases damage taken by 10%",
   decay: " Decay deals 10% of inflicted skill damage as a DoT",
   pierce: "Ignores 50% of the enemy's DEF",
+  // Ruling #111. Dormant on purpose: the engine resolves both
+  // (`resolveTypeModifier`) but no kit authors either word yet — putting one
+  // on a card is Tanveer's call. The copy is here so the first kit that does
+  // ships with an explanation instead of needing one written under deadline.
+  //
+  // The crit clause is the load-bearing half: `critical` discards the type
+  // matchup before either mechanic is consulted, so Guard is no protection
+  // against a crit at all. Unstated, that reads as a bug.
+  guard:
+    "Takes damage as if type-advantaged against every attacker, whatever the colours; a critical hit ignores it",
+  guards:
+    "Takes damage as if type-advantaged against every attacker, whatever the colours; a critical hit ignores it",
+  effective:
+    "Never suffers a type disadvantage — neutral at worst, while a real type advantage still pays; against Guard both cancel to neutral, and a critical hit ignores it",
   taunt: "Direct all single target enemy attacks to self",
   taunts: "Direct all single target enemy attacks to self",
   cleanse: "Removes debuffs from the ally target(s).",
@@ -151,6 +165,12 @@ export const keywordCategories: Record<MechanicKeyword, KeywordCategory> = {
   bleed: "effect",
   taunt: "effect",
   taunts: "effect",
+  // "effect", not "offense"/"stance": both are named nouns rather than tier-word
+  // verbs, and the doc above says a named effect that isn't itself a verb goes
+  // here however offensive or defensive it reads.
+  guard: "effect",
+  guards: "effect",
+  effective: "effect",
   extort: "effect",
   extorts: "effect",
   seal: "effect",

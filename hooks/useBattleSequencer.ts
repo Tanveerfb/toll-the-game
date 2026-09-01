@@ -405,8 +405,14 @@ export function useBattleSequencer(
             );
           }
         }
-        await sleep(TICK_HOLD_MS);
-        if (!alive()) return;
+        // A tick can now carry status expiry with no HP movement behind it
+        // (a stun running out). There is nothing to look at, so holding for
+        // TICK_HOLD_MS would just stall the turn — the event still reaches
+        // the log, which is where an expiry is read.
+        if (ev.targets.length > 0) {
+          await sleep(TICK_HOLD_MS);
+          if (!alive()) return;
+        }
         await sleep(EVENT_GAP_MS);
         return;
       }

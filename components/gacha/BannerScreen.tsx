@@ -10,6 +10,7 @@ import { getCharacterById } from "@/lib/game/characterCatalog";
 import ConfirmPullModal from "@/components/gacha/ConfirmPullModal";
 import RatesModal from "@/components/gacha/RatesModal";
 import ClaimSection from "@/components/gacha/ClaimSection";
+import Hint from "@/components/ui/Hint";
 import PullReveal from "@/components/gacha/PullReveal";
 import {
   canClaimLimitedFinal,
@@ -206,14 +207,20 @@ export default function BannerScreen(): React.JSX.Element {
                 const character = getCharacterById(id);
                 const owned = hasHydrated && roster.includes(id);
                 const ultLevel = characters[id]?.ultLevel ?? 1;
+                const label = owned
+                  ? `${character?.name ?? id} — owned, ult ${ultLevel}`
+                  : `${character?.name ?? id} — not owned`;
                 return (
-                  <span
+                  // Was a `<span title={…}>`, which is ruling #120's exact
+                  // failure and worse here than anywhere else: these twelve
+                  // tiles are the only place the banner says who is in it, so
+                  // on a phone the summon screen sold twelve anonymous
+                  // squares. Ownership reads from the border and the dimming;
+                  // the name and ult level needed a tap.
+                  <Hint
                     key={id}
-                    title={
-                      owned
-                        ? `${character?.name ?? id} — owned, ult ${ultLevel}`
-                        : `${character?.name ?? id} — not owned`
-                    }
+                    content={label}
+                    ariaLabel={label}
                     className={`relative h-11 w-11 overflow-hidden border ${
                       owned ? "border-edge-strong" : "border-hairline opacity-45"
                     }`}
@@ -232,7 +239,7 @@ export default function BannerScreen(): React.JSX.Element {
                         U{ultLevel}
                       </span>
                     ) : null}
-                  </span>
+                  </Hint>
                 );
               })}
             </div>

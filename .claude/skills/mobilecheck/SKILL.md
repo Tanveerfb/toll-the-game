@@ -83,8 +83,17 @@ both forms, so a hit here means someone wrote one this session.
 ### 2. Hover-only affordances — blocker
 
 ```bash
-grep -rn "TooltipTrigger\|hover:\|onMouseEnter\|title=" <paths>
+grep -rn "TooltipTrigger\|hover:\|onMouseEnter" <paths>
+npm run test -- touchTargets   # the `title=` half is a test now, not a grep
 ```
+
+**Do not grep for `title=` by hand — it drowns.** `title` is a prop name on
+half the modals in this codebase, so the 2026-08-21 sweep ran that grep, got a
+wall of `<ModalShell title=…>` hits, and missed **ten real ones** including the
+summon banner's twelve featured tiles. `tests/touchTargets.test.ts` scans for
+`title=` on *lowercase* JSX tags only — that is the discriminator between a DOM
+attribute and a component prop, and it is why this is a test rather than a
+check you run by eye (ruling #125).
 
 A phone has no hover. The finding is only real when the hover **carries
 information or is the only way to reach an action** — a `hover:bg-*` polish state
@@ -163,6 +172,44 @@ Primary action in the lower third. A confirm button at the top of a long scroll
 is reachable only by re-gripping the phone. Read the JSX order and say where the
 primary lands.
 
+## If you are given a browser: measure, do not look
+
+Tanveer lifted the no-browser rule for one session on 2026-09-01. It found
+seven real bugs — and it also produced **three false findings in a row**, every
+one of them from believing a screenshot. Bank both halves.
+
+**A screenshot is a race, not a record.**
+
+- **Portraits are `loading="lazy"`.** A shot taken right after `navigate`
+  catches empty boxes. "The banner shows twelve blank squares" and "the arena
+  tiles are empty" were both wrong; the images were loading fine and a JS check
+  said so. A `wait` before the shot helps and does not fix it.
+- **Entering elements are mid-animation.** Battle notices measured at
+  `35..394` — "4px clipped" — and their row is actually at `15..374`, well
+  inside. The 20px offset was `initial={{ x: 20 }}` caught in flight.
+- So: **`javascript_tool` with `getBoundingClientRect` is the finding;
+  the screenshot is orientation.** Every number in a report should come from
+  the DOM, not from counting pixels in an image.
+
+**A stale server lies with total confidence.** `pkill -f "next start"` does not
+match the npx-spawned process on Windows. The replacement then dies on
+`EADDRINUSE`, the old one keeps serving, and two rounds of "the fix didn't
+work" follow. Kill by PID from `netstat -ano | grep LISTENING | grep :<port>`,
+and check the log says `Ready` rather than assuming a 200 means your build.
+
+**Verify against a build you started.** `:3000` is his — never start or kill
+one. `NEXT_DIST_DIR=.next-verify next build` then
+`NEXT_DIST_DIR=.next-verify next start -p 3210` gives a production build on a
+spare port; stop it by PID and delete `.next-verify` when done. The live
+deploy is the *previous* commit and will not contain the work under test.
+
+**What a browser is uniquely for.** Three bugs this session were invisible to
+every test and to reading the source: a `fixed` bar rendering at the top
+because an ancestor's `backdrop-filter` established a containing block; a
+tab bar keyed to the wrong state removing navigation entirely from one screen;
+and a battle screen resuming without its hand. None had a failing test. All
+three took one page load.
+
 ## What this skill does not do
 
 - **It does not browser-verify the LOOK.** Tanveer does the visual pass on his
@@ -178,6 +225,26 @@ primary lands.
   it clicks) opened the popover and then closed it again. Nothing in the markup
   was wrong. A grep proves a class is present; only a browser proves a gesture
   works.
+
+  **Three traps in that harness, all found 2026-09-01 writing
+  `tests/battleLogDrawer.browser.test.tsx`, all of which produce a test that
+  fails — or worse, passes — for a reason unrelated to the thing under test:**
+
+  - **A component that animates needs `MotionProvider` around it.** `m.*`
+    without `LazyMotion` renders the element, applies its `initial` style and
+    then never animates it away. The log drawer enters from `x: "100%"`, so it
+    sat ~380px off the right edge of a 390px viewport and every geometry
+    assertion measured a panel the player would never see. Mount it the way
+    the app does, and wait out the enter animation before measuring.
+  - **A portalled component needs explicit `cleanup()` plus
+    `document.body.replaceChildren()`.** `render`'s own teardown does not
+    reach a portal, so the second test in a file measures the first test's
+    leftovers too, and `getByText` goes ambiguous on anything that appears
+    once per render.
+  - **`resolve.dedupe: ["react", "react-dom"]`** is already in
+    `vitest.config.ts` and must stay. Without it framer-motion and
+    vitest-browser-react are pre-bundled with a React each, and
+    `AnimatePresence` dies on `useContext` of null before the first assertion.
 - **It does not mass-fix screens.** Report, propose, and apply on his word —
   per-screen. The exception, learned 2026-08-21: **a fix that belongs in a
   primitive is one edit, not a sweep**, and holding it back per-screen is how

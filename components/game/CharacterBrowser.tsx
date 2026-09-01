@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { getCharacterArt } from "@/lib/game/characterArt";
 import { usePlayerStore } from "@/store/playerStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { progressedStats } from "@/lib/game/progression";
+import { useEscapeKey, scrimProps } from "@/hooks/useEscapeKey";
 
 type CharacterColor = "light" | "red" | "blue" | "green" | "dark";
 
@@ -78,10 +80,32 @@ function toTitleCase(value: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/** Never resubscribes — it exists only so the server snapshot and the client
+ *  snapshot differ, which is how a client-only branch stays hydration-safe. */
+const NO_SUBSCRIBE = () => () => {};
+
 const CHIP_BASE =
-  "chamfer min-h-11 border px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] transition-colors";
+  "chamfer min-h-11 min-w-11 border px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] transition-colors";
 const CHIP_OFF =
   "border-edge bg-void/60 text-readout-dim hover:border-edge-strong hover:text-readout";
+
+/** One labelled row of chips inside the filter sheet. */
+function FilterGroup({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <div className="space-y-1.5">
+      <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+        {label}
+      </p>
+      <div className="flex flex-wrap gap-1.5">{children}</div>
+    </div>
+  );
+}
 
 function Toggle({
   active,
@@ -165,6 +189,16 @@ export default function CharacterBrowser({
     new Set(),
   );
   const [showFilters, setShowFilters] = React.useState(false);
+  // Portalled to <body> rather than rendered in place: `tests/overlayStacking`
+  // exists because the Growth modal once rendered *behind* the kit document,
+  // trapped by an `lg:sticky` ancestor that established a containing block.
+  // Nothing failed then either — it just looked broken.
+  const mountedInDom = React.useSyncExternalStore(
+    NO_SUBSCRIBE,
+    () => true,
+    () => false,
+  );
+  useEscapeKey(() => setShowFilters(false), showFilters);
 
   const roster = usePlayerStore((s) => s.roster);
   const characterProgress = usePlayerStore((s) => s.characters);
@@ -223,6 +257,15 @@ export default function CharacterBrowser({
   };
 
   const activeFilterCount = selectedTags.size + selectedMechs.size;
+  // What the Filters button reports. Wider than `activeFilterCount` on
+  // purpose: element, sort and show-locked are inside the sheet now, so a
+  // count that ignored them would leave the grid visibly filtered with the
+  // button reading zero.
+  const sheetCount =
+    activeFilterCount +
+    (selectedColor !== "all" ? 1 : 0) +
+    (sortField !== "none" ? 1 : 0) +
+    (ownership && showUnowned ? 1 : 0);
 
   const filtered = React.useMemo(() => {
     const normalized = searchValue.trim().toLowerCase();
@@ -299,8 +342,14 @@ export default function CharacterBrowser({
 
   return (
     <section className="space-y-3">
-      {/* Query + element */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Toolbar — search, and everything else behind one button.
+          Measured on the live build 2026-09-01: the furniture above the first
+          character card ran to **553px on an 844px screen**, 65% of the phone,
+          because nine controls sat in the open and three of them wrapped to a
+          row of their own. The sheet is the pattern battle already uses for
+          exactly this reason (ruling #118), so this is reuse rather than a new
+          idea. */}
+      <div className="flex items-center gap-2">
         {/* `dark:bg-input/30` ships inside the shadcn Input and the app is
             permanently in dark mode, so the panel fill has to be restated as a
             dark: variant or the plain utility loses the merge. */}
@@ -309,116 +358,139 @@ export default function CharacterBrowser({
           onChange={(event) => setSearchValue(event.target.value)}
           placeholder="Query name, id, tag"
           aria-label="Search characters"
-          className="chamfer h-11 w-full max-w-52 rounded-none border border-edge bg-panel font-body text-readout placeholder:text-readout-muted focus-visible:border-signal focus-visible:ring-0 dark:bg-panel"
+          className="chamfer h-11 min-w-0 flex-1 rounded-none border border-edge bg-panel font-body text-readout placeholder:text-readout-muted focus-visible:border-signal focus-visible:ring-0 dark:bg-panel"
         />
-        <div className="flex flex-wrap gap-1.5">
-          {COLOR_OPTIONS.map((option) => (
-            <Toggle
-              key={option.id}
-              active={selectedColor === option.id}
-              hue={option.id === "all" ? undefined : EL_HUE[option.id]}
-              onClick={() => setSelectedColor(option.id)}
-            >
-              {option.label}
-            </Toggle>
-          ))}
-        </div>
-        <span className="ml-auto font-body text-[11px] font-bold uppercase tracking-[0.2em] tabular-nums text-readout-muted">
+        <Toggle
+          active={sheetCount > 0}
+          onClick={() => setShowFilters(true)}
+        >
+          Filters{sheetCount > 0 ? ` (${sheetCount})` : ""}
+        </Toggle>
+      </div>
+
+      {/* What the toolbar used to say by showing every control at once. */}
+      <div className="flex items-baseline justify-between gap-2 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+        <span className="tabular-nums">
           <b className="font-bold text-signal">{filtered.length}</b> /{" "}
           {hasHydrated && !showUnowned ? ownedIds.size : characters.length}{" "}
           units
+          {sortField !== "none"
+            ? ` · ${sortField.toUpperCase()} ${sortDir === "asc" ? "↑" : "↓"}`
+            : ""}
         </span>
-      </div>
-
-      {/* Sort + filter controls */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
-          Sort
-        </span>
-        {SORT_FIELDS.map((f) => (
-          <Toggle
-            key={f.id}
-            active={sortField === f.id}
-            onClick={() => onSort(f.id)}
+        {sheetCount > 0 || searchValue ? (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="min-h-11 px-1 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout-dim transition-colors hover:text-signal"
           >
-            {f.label}
-            {sortField === f.id ? (sortDir === "asc" ? " ↑" : " ↓") : ""}
-          </Toggle>
-        ))}
-        <Toggle
-          active={showFilters || activeFilterCount > 0}
-          onClick={() => setShowFilters((v) => !v)}
-        >
-          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-        </Toggle>
-        {/* Owned-only is the default view, so the control that changes it says
-            what it would reveal rather than what it currently is. Absent
-            entirely where nothing can be owned. */}
-        {ownership ? (
-          <Toggle
-            active={showUnowned}
-            onClick={() => setShowUnowned(!showUnowned)}
-          >
-            {showUnowned
-              ? "Owned only"
-              : `Show locked${hiddenByOwnership > 0 ? ` (${hiddenByOwnership})` : ""}`}
-          </Toggle>
-        ) : null}
-        {(activeFilterCount > 0 ||
-          selectedColor !== "all" ||
-          sortField !== "none" ||
-          searchValue) && (
-          <Toggle active={false} onClick={clearAll}>
             Clear
-          </Toggle>
-        )}
+          </button>
+        ) : null}
       </div>
 
-      {/* Expandable tag + mechanic filters */}
-      {showFilters ? (
-        <div className="chamfer-lg space-y-3 border border-edge bg-panel p-3">
-          {allTags.length > 0 ? (
-            <div className="space-y-1.5">
+      {/* The sheet. Bottom-anchored for the same reason battle's is: every
+          control in it is one a thumb has to reach. */}
+      {showFilters && mountedInDom
+        ? createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Filter and sort"
+          className="fixed inset-0 z-50 flex flex-col justify-end bg-void/70 backdrop-blur-sm"
+          {...scrimProps(() => setShowFilters(false))}
+        >
+          <div className="pb-safe max-h-[85dvh] overflow-y-auto border-t border-edge-strong bg-panel px-3 pt-3 shadow-[0_-18px_50px_rgba(0,0,0,0.7)]">
+            <span className="mx-auto mb-3 block h-1 w-11 bg-edge-strong" />
+            <div className="mb-3 flex items-center justify-between">
               <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
-                Tags
+                Filter &amp; sort
               </p>
-              <div className="flex flex-wrap gap-1.5">
-                {allTags.map((tag) => (
+              <button
+                type="button"
+                onClick={() => setShowFilters(false)}
+                className="min-h-11 px-2 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-signal"
+              >
+                Done
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <FilterGroup label="Element">
+                {COLOR_OPTIONS.map((option) => (
                   <Toggle
-                    key={tag}
-                    active={selectedTags.has(tag)}
-                    onClick={() =>
-                      toggleIn(selectedTags, setSelectedTags, tag)
-                    }
+                    key={option.id}
+                    active={selectedColor === option.id}
+                    hue={option.id === "all" ? undefined : EL_HUE[option.id]}
+                    onClick={() => setSelectedColor(option.id)}
                   >
-                    {tag}
+                    {option.label}
                   </Toggle>
                 ))}
-              </div>
-            </div>
-          ) : null}
-          {allMechs.length > 0 ? (
-            <div className="space-y-1.5">
-              <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
-                Mechanics
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {allMechs.map((mech) => (
+              </FilterGroup>
+
+              <FilterGroup label="Sort">
+                {SORT_FIELDS.map((f) => (
                   <Toggle
-                    key={mech}
-                    active={selectedMechs.has(mech)}
-                    onClick={() =>
-                      toggleIn(selectedMechs, setSelectedMechs, mech)
-                    }
+                    key={f.id}
+                    active={sortField === f.id}
+                    onClick={() => onSort(f.id)}
                   >
-                    {toTitleCase(mech)}
+                    {f.label}
+                    {sortField === f.id ? (sortDir === "asc" ? " ↑" : " ↓") : ""}
                   </Toggle>
                 ))}
-              </div>
+              </FilterGroup>
+
+              {/* Owned-only is the default view, so the control that changes it
+                  says what it would reveal rather than what it currently is.
+                  Absent entirely where nothing can be owned. */}
+              {ownership ? (
+                <FilterGroup label="Show">
+                  <Toggle
+                    active={showUnowned}
+                    onClick={() => setShowUnowned(!showUnowned)}
+                  >
+                    {showUnowned
+                      ? "Owned only"
+                      : `Locked units${hiddenByOwnership > 0 ? ` (${hiddenByOwnership})` : ""}`}
+                  </Toggle>
+                </FilterGroup>
+              ) : null}
+
+              {allTags.length > 0 ? (
+                <FilterGroup label="Tags">
+                  {allTags.map((tag) => (
+                    <Toggle
+                      key={tag}
+                      active={selectedTags.has(tag)}
+                      onClick={() => toggleIn(selectedTags, setSelectedTags, tag)}
+                    >
+                      {tag}
+                    </Toggle>
+                  ))}
+                </FilterGroup>
+              ) : null}
+
+              {allMechs.length > 0 ? (
+                <FilterGroup label="Mechanics">
+                  {allMechs.map((mech) => (
+                    <Toggle
+                      key={mech}
+                      active={selectedMechs.has(mech)}
+                      onClick={() => toggleIn(selectedMechs, setSelectedMechs, mech)}
+                    >
+                      {toTitleCase(mech)}
+                    </Toggle>
+                  ))}
+                </FilterGroup>
+              ) : null}
             </div>
-          ) : null}
-        </div>
-      ) : null}
+          </div>
+        </div>,
+            document.body,
+          )
+        : null}
 
       {/* Unit grid */}
       {filtered.length === 0 ? (
@@ -495,7 +567,7 @@ export default function CharacterBrowser({
                       investment: level, ascension band, ult rank. */}
                   {hasHydrated ? (
                     <span
-                      title={
+                      aria-label={
                         owned
                           ? `Level ${level}${ascension > 0 ? `, ascension ${ascension}` : ""}${ultLevel > 1 ? `, ultimate ${ultLevel}` : ""}`
                           : "Not yet recruited"

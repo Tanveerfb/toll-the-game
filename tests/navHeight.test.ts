@@ -50,7 +50,11 @@ describe("nav height is declared once, not repeated", () => {
     const css = fs.readFileSync("styles/globals.css", "utf8");
     expect(css).toContain("--nav-h");
     expect(css).toContain(".screen-below-nav");
-    expect(css).toContain("calc(100dvh - var(--nav-h))");
+    // Both bars, in one expression. `--tabbar-h` joined it on 2026-09-01 when
+    // navigation moved to a bottom tab bar below `sm`; it is 0rem wherever
+    // that bar does not render, so this is the same sum at every width.
+    expect(css).toContain("calc(100dvh - var(--nav-h) - var(--tabbar-h))");
+    expect(css).toContain("--tabbar-h");
     // The two-row value has to be keyed off what the nav actually rendered,
     // or the variable and the markup drift apart.
     expect(css).toMatch(/:has\(\[data-nav-rows="2"\]\)/);

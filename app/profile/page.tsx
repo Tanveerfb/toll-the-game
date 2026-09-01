@@ -17,6 +17,7 @@ import PlayerAvatar from "@/components/game/PlayerAvatar";
 import InventoryModal from "@/components/game/InventoryModal";
 import AccountModal from "@/components/game/AccountModal";
 import DevGrantPanel from "@/components/game/DevGrantPanel";
+import SoundSettings from "@/components/game/SoundSettings";
 
 const PLAYABLE_COUNT = getPlayableCharacters().length;
 
@@ -265,6 +266,10 @@ export default function ProfilePage() {
           </span>
           <ChevronRight className="h-4 w-4 shrink-0 text-readout-muted" />
         </Link>
+
+        <div className="mt-4">
+          <SoundSettings />
+        </div>
 
         <div className="mt-4">
           <DevGrantPanel />

@@ -37,6 +37,11 @@ export default defineConfig({
       },
       {
         resolve: {
+          // framer-motion and vitest-browser-react are pre-bundled separately,
+          // and without this each gets its own React — `AnimatePresence` then
+          // calls `useContext` on a null renderer and every test that mounts
+          // an animated component dies before its first assertion.
+          dedupe: ["react", "react-dom"],
           alias: {
             ...alias,
             // `next/image` needs the Next build pipeline for its loader and

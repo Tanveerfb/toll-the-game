@@ -20,6 +20,7 @@ import {
 } from "@/lib/game/storyTeam";
 import { usePlayerStore } from "@/store/playerStore";
 import type { StoryChapter, StoryStage } from "@/types/story";
+import Hint from "@/components/ui/Hint";
 
 /**
  * Stage brief — the last screen before a stage is entered.
@@ -353,8 +354,13 @@ function EnemyFace({ id, level }: { id: string; level?: number }): React.JSX.Ele
   const character = getCharacterById(id);
   const art = getCharacterArt(id);
   return (
-    <span
-      title={`${character?.name ?? id}${level ? ` · Lv${level}` : ""}`}
+    // 32px, below the touch floor, and deliberately so: it sits in a row of
+    // faces where 44px would not fit, and the *name* is supplementary to the
+    // portrait rather than the only way to act. Ruling #120 still applies —
+    // a phone had no way to read it at all before this.
+    <Hint
+      content={`${character?.name ?? id}${level ? ` · Lv${level}` : ""}`}
+      ariaLabel={`${character?.name ?? id}${level ? ` · Lv${level}` : ""}`}
       className="relative grid h-8 w-8 place-items-center overflow-hidden border border-edge-strong bg-inset text-[10px] text-readout-dim"
     >
       {art ? (
@@ -362,10 +368,6 @@ function EnemyFace({ id, level }: { id: string; level?: number }): React.JSX.Ele
       ) : (
         (character?.name ?? id).slice(0, 3).toUpperCase()
       )}
-      <span className="sr-only">
-        {character?.name ?? id}
-        {level ? `, level ${level}` : ""}
-      </span>
-    </span>
+    </Hint>
   );
 }

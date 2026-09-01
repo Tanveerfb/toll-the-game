@@ -7,6 +7,8 @@ import { AnimatePresence, m } from "framer-motion";
 import { ChevronDown, Shield, Skull, Sparkles, Wind, Zap } from "lucide-react";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import type { SequencedBattleEvent } from "@/store/gameStore";
+import type { BattleEventEffectChange } from "@/types/battleEvent";
+import { describeEventEffect } from "@/lib/game/effectDiff";
 
 // Never resubscribes — it exists only so the server snapshot and the client
 // snapshot differ (same pattern as DetailOverlay/UnitDetailPanel, and the
@@ -88,7 +90,6 @@ function TargetRow({
       ) : null}
       {crit ? (
         <span
-          title="Critical"
           className="flex shrink-0 items-center gap-0.5 border border-edge-strong bg-readout-strong/10 px-1 font-bold uppercase tracking-widest text-readout-strong"
         >
           <Zap className="h-2.5 w-2.5" strokeWidth={3} />
@@ -106,6 +107,52 @@ function TargetRow({
           Down
         </span>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * The statuses one action moved on one character.
+ *
+ * Its own row rather than a field on `TargetRow`, because the character is
+ * routinely not a target — a self buff, a team-wide grant, an Extort link
+ * dying on a bystander. Keyed rendering by instance keeps those visible
+ * instead of dropping them, which was the whole of Open Issue #22.
+ */
+function EffectRow({
+  change,
+}: {
+  change: BattleEventEffectChange;
+}): React.JSX.Element {
+  return (
+    <div className="flex items-baseline gap-1.5 pl-4 font-body text-xs">
+      <span className="shrink-0 text-readout-muted">✦</span>
+      <span className="shrink-0 truncate text-readout-dim">{change.name}</span>
+      <span className="flex min-w-0 flex-1 flex-wrap justify-end gap-1">
+        {change.applied.map((effect, i) => (
+          <span
+            key={`a-${i}`}
+            className={`shrink-0 border px-1 font-semibold ${
+              effect.slot === "debuff"
+                ? "border-role-attack/50 bg-role-attack/10 text-role-attack"
+                : "border-role-heal/50 bg-role-heal/10 text-role-heal"
+            }`}
+          >
+            {describeEventEffect(effect)}
+          </span>
+        ))}
+        {change.removed.map((effect, i) => (
+          // Losing a debuff and losing a buff read very differently to a
+          // player, so the chip keeps its slot colour and only the border
+          // says it went away.
+          <span
+            key={`r-${i}`}
+            className="shrink-0 border border-dashed border-edge-strong px-1 text-readout-muted line-through"
+          >
+            {describeEventEffect(effect)}
+          </span>
+        ))}
+      </span>
     </div>
   );
 }
@@ -154,6 +201,10 @@ function ActionEntry({
 
       {event.targets.map((target, i) => (
         <TargetRow key={`${target.instanceId}-${i}`} {...target} />
+      ))}
+
+      {(event.effects ?? []).map((change) => (
+        <EffectRow key={`fx-${change.instanceId}`} change={change} />
       ))}
 
       {event.counters.map((counter, i) => (
@@ -221,6 +272,9 @@ function TickEntry({
           </div>
         );
       })}
+      {(event.effects ?? []).map((change) => (
+        <EffectRow key={`fx-${change.instanceId}`} change={change} />
+      ))}
     </div>
   );
 }
@@ -234,9 +288,13 @@ function TickEntry({
  * kill, hpBefore/hpAfter) driving the cinematics. This reads that stream
  * instead: grouped by turn, newest first, collapsible.
  *
- * The raw string log stays available behind a toggle. It still carries things
- * the event stream does not model yet — notably which buffs/debuffs an action
- * applied — so it remains the source of truth for a full playtest read.
+ * Status changes are on the stream too since 2026-09-01 (Open Issue #22),
+ * captured as a before/after diff in `lib/game/effectDiff.ts` rather than
+ * emitted per push site.
+ *
+ * The raw string log stays available behind a toggle: it still carries the
+ * engine's own narration — resisted/immune lines, passive commentary, drains —
+ * which is prose, not state, and has no structured shape to render.
  */
 export default function BattleLogDrawer({
   open,

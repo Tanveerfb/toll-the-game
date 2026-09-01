@@ -52,6 +52,14 @@ N. **<Short claim, stated as a fact>** (YYYY-MM-DD). *"<his words, verbatim>"*
   The decision is just as binding either way. What changes is that a later
   session can tell which words are his, which matters the moment one of them
   looks wrong.
+
+  **This holds even when he types the option back at you** (2026-09-01). He
+  answered a mockup by sending two lines — `* Option B — bottom tabs
+  (recommended)` and `* Option A — one Filters sheet (recommended)`. That
+  arrives as a user message, in his voice, and it is still **your** text
+  echoed: you wrote those labels. #123 and #124 record them as selections.
+  The tell is the word *(recommended)* — he does not recommend things to
+  himself.
 - **Bold claim first.** A reader scanning 108 entries reads bold text only.
 - **Say what it changes.** An entry that records a decision without naming the
   file, mechanic or screen it governs makes the next session guess.

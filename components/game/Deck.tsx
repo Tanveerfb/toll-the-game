@@ -84,7 +84,7 @@ function TeamBarDots({
           return (
             <span
               key={unit.instanceId}
-              title={`${unit.name} — ${Math.max(0, shownHp)}/${unit.hp} HP`}
+              aria-label={`${unit.name} — ${Math.max(0, shownHp)}/${unit.hp} HP`}
               className={`h-2 w-2 rounded-full ${ELEMENT_SWATCH[unit.color]} ${
                 shownHp <= 0 ? "opacity-25 grayscale" : "opacity-100"
               }`}
@@ -270,7 +270,7 @@ export default function Deck() {
         <div
           data-tutorial="actions"
           className="flex shrink-0 items-center gap-1 border border-hairline bg-inset px-1.5 py-1"
-          title={`${actionCap} action${actionCap > 1 ? "s" : ""} this turn`}
+          aria-label={`${actionCap} action${actionCap > 1 ? "s" : ""} this turn`}
         >
           <span className="mr-0.5 font-body text-[8px] font-bold uppercase tracking-[0.16em] text-readout-muted">
             Actions
@@ -348,7 +348,7 @@ export default function Deck() {
               type="button"
               onClick={() => isPlayerActionPhase && addNullAction()}
               disabled={!isPlayerActionPhase}
-              title="Tap to pass this action"
+              aria-label="Pass this action"
               className="flex min-h-11 w-14 shrink-0 items-center justify-center border border-dashed border-edge font-body text-[10px] text-readout-muted transition-colors enabled:hover:border-edge-strong enabled:hover:text-readout-dim disabled:cursor-not-allowed"
             >
               {slotsUsed + i + 1}

@@ -10,6 +10,7 @@ import { calculateDamage } from "./damage";
 import { getEvadeChance } from "./evade";
 import { trySurviveLethal } from "./lethal";
 import { syncExtortLinks } from "./effects";
+import { snapshotEffects, diffEffects } from "./effectDiff";
 import { applyDefeatPassives } from "./onDefeat";
 import { getEffectiveAttack, getEffectiveDefense, statPhrase } from "./stats";
 import { ultGaugeMax } from "./ultGauge";
@@ -317,6 +318,14 @@ export function executeSkill(
     updatedTeams.enemyTeam.find((c) => c.instanceId === id);
 
   const updatedSource = getUpdatedChar(source.instanceId)!;
+
+  // Open Issue #22: which statuses an action moved, captured as a before/after
+  // diff rather than emitted at each of the ~24 push sites below (see
+  // effectDiff.ts for why). Skipped entirely without an emitter, so the
+  // simulator and the tests pay nothing for it.
+  const effectsBefore = emit
+    ? snapshotEffects([...updatedTeams.playerTeam, ...updatedTeams.enemyTeam])
+    : undefined;
 
   // -- STUN CHECK
   if (updatedSource.debuffs.some((d) => d.type === "stun")) {
@@ -1287,6 +1296,11 @@ export function executeSkill(
             stats: mech.stats,
             valuePercent: downPercent,
             debuffDuration: mech.duration,
+            // Carried through like the buff path already does. No kit authors
+            // a name on a plain debuff today, so nothing changes yet — but the
+            // asymmetry meant the first one to try would have lost it with no
+            // error, in the pill and now in the log too (Open Issue #22).
+            name: mech.name,
             sourceId: updatedSource.instanceId,
             hpScalePercent: shrinksHp ? -downPercent : undefined,
           });
@@ -1665,6 +1679,12 @@ export function executeSkill(
     rank: action.rank,
     targets: eventTargets,
     counters: eventCounters,
+    effects: effectsBefore
+      ? diffEffects(effectsBefore, [
+          ...updatedTeams.playerTeam,
+          ...updatedTeams.enemyTeam,
+        ])
+      : undefined,
   });
 
   return updatedTeams;

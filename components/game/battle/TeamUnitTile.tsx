@@ -190,7 +190,7 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
         <div className="shrink-0 space-y-1 border-t border-hairline bg-inset px-1.5 py-1">
           <div className="flex items-center gap-1">
             <span
-              title={unit.color}
+              aria-label={`Element: ${unit.color}`}
               className={`h-2 w-2 shrink-0 rotate-45 ${ELEMENT_SWATCH[unit.color]}`}
             />
             <span className="min-w-0 flex-1 truncate font-heading text-xs tracking-[0.04em] text-readout-strong">

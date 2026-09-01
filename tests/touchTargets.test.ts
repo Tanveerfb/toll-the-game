@@ -199,4 +199,53 @@ describe("explanations are reachable without a pointer", () => {
     );
     expect(offenders).toEqual([]);
   });
+
+  /**
+   * The same rule, arriving from the side the tooltip check never covered.
+   *
+   * A `title=` attribute on a plain HTML element is a browser tooltip: hover
+   * only, no tap, no focus, no way in on a phone. The 2026-08-21 sweep's grep
+   * listed `title=` and it was still missed, because `title` is *also* a prop
+   * name on half the modals in this codebase — so the greps drowned and the
+   * real ones survived. Found in a live browser on 2026-09-01: nineteen in a
+   * running battle (every unit's element, every card's skill type) and
+   * thirteen on the summon screen, where the twelve featured tiles kept their
+   * character's **name** there and nothing else on the page named them. On a
+   * phone the banner sold twelve anonymous squares.
+   *
+   * A React component taking a `title` prop is fine and common. This looks
+   * only at lowercase JSX tags, which are real DOM elements.
+   */
+  it("no lowercase element carries content in a title attribute", () => {
+    // A scan that finds no files passes for the wrong reason — the exact
+    // failure `tests/stubs/browser-setup.ts` warns about, arriving here.
+    expect(files.length).toBeGreaterThan(40);
+    const offenders: string[] = [];
+
+    for (const rel of files) {
+      const source = stripComments(fs.readFileSync(rel, "utf8"));
+      for (const match of source.matchAll(/\btitle=/g)) {
+        // Walk back to the `<` that opened this attribute's tag.
+        const before = source.slice(0, match.index);
+        const open = before.lastIndexOf("<");
+        if (open === -1) continue;
+        // Everything between that `<` and the attribute. A `>` in here would
+        // normally mean the tag already closed and we are in element content
+        // — except JSX props are full of arrow functions, and `=>` carries a
+        // `>`. Testing for it naively made this check skip **every element
+        // with an `onClick` before its `title`**, which is most of them: it is
+        // how `DuelToggle`'s title survived the 2026-09-01 sweep that was
+        // written to catch exactly that. Strip the arrows first.
+        const between = before.slice(open).replace(/=>/g, "");
+        if (between.includes(">")) continue;
+        const tag = /^<([A-Za-z][\w.-]*)/.exec(source.slice(open))?.[1];
+        // Uppercase initial = a React component, whose `title` is a prop.
+        if (!tag || tag[0] !== tag[0].toLowerCase()) continue;
+        const line = before.split("\n").length;
+        offenders.push(`${rel}:${line} <${tag} title=…>`);
+      }
+    }
+
+    expect(offenders).toEqual([]);
+  });
 });

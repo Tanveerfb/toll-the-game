@@ -11,6 +11,7 @@ import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
 import { useStoryStore } from "@/store/storyStore";
 import BattleArena from "@/components/game/BattleArena";
+import Deck from "@/components/game/Deck";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { getPlayableCharacters } from "@/lib/game/characterCatalog";
 import { getGemBanner } from "@/lib/gacha/banners";
@@ -228,7 +229,18 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
     ready && gemsToMilestone !== null && !pity.limited.claimedFirst;
 
   if (battlePhase !== "initializing") {
-    return <BattleArena />;
+    // The same composition `/practice` uses, and it has to be: `BattleArena`
+    // is the board, `Deck` is the hand and End Turn. Rendering the arena
+    // alone gave a battle resumed from here no way to *play* it — you could
+    // read the field and reach Exit through the controls sheet, and nothing
+    // else. Reachable before through the TOLL wordmark; the bottom tab bar
+    // (ruling #123) turned it into a one-tap route, which is how it surfaced.
+    return (
+      <main className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout">
+        <BattleArena />
+        <Deck />
+      </main>
+    );
   }
 
   return (

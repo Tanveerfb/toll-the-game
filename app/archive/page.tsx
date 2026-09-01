@@ -29,19 +29,18 @@ export default function ArchivePage() {
             <span className="block font-body text-[10px] font-bold uppercase tracking-[0.34em] text-signal">
               Bureau roster index
             </span>
-            <h1 className="font-heading text-3xl leading-none tracking-[0.1em] text-readout md:text-4xl">
+            {/* Steps down at 390 so NPC index fits beside it instead of
+                wrapping to a row of its own — that wrap was ~60px of the 274
+                standing between the top of this screen and the first unit. */}
+            <h1 className="font-heading text-2xl leading-none tracking-[0.08em] text-readout sm:text-3xl sm:tracking-[0.1em] md:text-4xl">
               Character Archive
             </h1>
             {/* This page took the roster listing over from `/profile` on
                 2026-08-11, which is why it opens on what you own. */}
-            <p className="mt-1 font-body text-[11px] text-readout-muted">
-              Your characters and their progression. Locked units are hidden
-              until you ask for them.
-            </p>
           </div>
           <Link
             href="/archive/npc"
-            className="chamfer ml-auto border border-edge px-3 py-2 font-body text-[11px] font-bold uppercase tracking-[0.2em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+            className="chamfer ml-auto inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border border-edge px-2.5 py-2 font-body text-[11px] font-bold uppercase tracking-[0.12em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal sm:px-3 sm:tracking-[0.2em]"
           >
             NPC index
           </Link>

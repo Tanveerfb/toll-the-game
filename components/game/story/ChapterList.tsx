@@ -43,6 +43,22 @@ export default function ChapterList({
           </li>
         ))}
       </ul>
+
+      {/* Closes the list rather than leaving it to stop.
+          At 390x844 one live chapter fills a third of the screen and the rest
+          is empty grid, which reads as a screen that failed to load — the
+          eyebrow above does say "1 of 12", but it is a 10px label at the top,
+          not an answer to the space below it. Withheld chapters cannot be
+          previewed (ruling #99: title, tagline and cover are all spoilers), so
+          this says how many and nothing else.
+          COPY IS A DRAFT — Tanveer's to word. */}
+      {adapted < SOURCE_CHAPTERS_WRITTEN ? (
+        <p className="mt-3 border border-dashed border-edge px-4 py-5 text-center font-body text-xs leading-relaxed text-readout-muted">
+          {SOURCE_CHAPTERS_WRITTEN - adapted} more chapter
+          {SOURCE_CHAPTERS_WRITTEN - adapted === 1 ? " is" : "s are"} written and
+          being adapted. They unlock here as they land.
+        </p>
+      ) : null}
     </div>
   );
 }

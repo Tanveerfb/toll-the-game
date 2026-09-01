@@ -66,7 +66,7 @@ export default function TeamDetailsList({
                 )}
               </div>
               <span
-                title={unit.color}
+                aria-label={`Element: ${unit.color}`}
                 className={`h-2.5 w-2.5 shrink-0 rotate-45 ${ELEMENT_SWATCH[unit.color]}`}
               />
               <div className="min-w-0 flex-1">

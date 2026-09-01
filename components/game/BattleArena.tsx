@@ -86,7 +86,6 @@ function ControlButton({
     <button
       type="button"
       onClick={onClick}
-      title={title ?? label}
       aria-label={title ?? label}
       data-tutorial={tutorialAnchor}
       className={`flex min-h-11 cursor-pointer flex-col items-center justify-center gap-1 border px-1 py-1 transition-colors ${
@@ -421,6 +420,13 @@ export default function BattleArena({
     // stacking context below the sticky TopNav (z-50)
     <div
       ref={arenaRef}
+      // Read by `styles/globals.css` to stand the bottom tab bar down while a
+      // fight is on screen — a stray tap on "Gacha" mid-turn is not a
+      // navigation anyone meant, and the arena wants the pixels. It lives here
+      // rather than on the nav's row count because `battlePhase` outlives the
+      // screen (a battle survives a reload), so the store knowing about a
+      // battle is not the same as one being in front of the player.
+      data-battle-active=""
       className={`relative flex min-h-0 flex-1 flex-col ${screenShakeClass}`}
     >
       <DuelWaitingOverlay />
@@ -840,7 +846,7 @@ export default function BattleArena({
               {enemyDeck.length > 0 ? (
                 <div
                   className="flex shrink-0 items-center gap-1"
-                  title={`Enemy hand: ${enemyDeck.length} card${enemyDeck.length > 1 ? "s" : ""}`}
+                  aria-label={`Enemy hand: ${enemyDeck.length} card${enemyDeck.length > 1 ? "s" : ""}`}
                 >
                   <span className="font-body text-[9px] font-bold uppercase tracking-[0.16em] text-readout-muted">
                     Hand {enemyDeck.length}
