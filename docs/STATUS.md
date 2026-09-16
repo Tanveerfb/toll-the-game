@@ -383,6 +383,8 @@ a working guard** — prove a new guard fails before trusting that it passes.
 
 ## Session log — 2026-09-01/16: the second browser pass, and the battle screen's bottom
 
+**Committed as `fc85527`.**
+
 The first browser audit (entry below) covered nine routes and stopped at the
 battle screen. This one finished the sweep, then he drove three rounds of battle
 UI off what he could see. Committed 2026-09-16; the work is dated 2026-09-01.
