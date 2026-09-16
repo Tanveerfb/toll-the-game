@@ -382,6 +382,9 @@ since the day they were written. Prove a guard fails before trusting it passes.
 
 ## Session log — 2026-09-16: what a stance is, and what a colour means
 
+**Checkpoint commit `0476008`** — "Make a stance a real thing, and give colour a
+meaning", 55 files.
+
 Started as a wording request — *"raises attack by 33%"* should be a recognised
 form — and ended six rulings later having rewritten how a stance exists in the
 engine. Each answer he gave exposed the next thing that was wrong.
