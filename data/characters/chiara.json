@@ -14,7 +14,7 @@
   "skills": [
     {
       "skillName": "Marked Card",
-      "description": "Does damage equal to ATK-scaled to one enemy; [debuff? greatly lowers : lowers] DEF for [debuff.duration] turns.",
+      "description": "Does damage equal to ATK-scaled to one enemy; lowers DEF by [debuff.value]% for [debuff.duration] turns.",
       "characterId": "chiara",
       "type": "attack",
       "statMultiplier": "atk",
@@ -36,11 +36,6 @@
             1,
             1,
             2
-          ],
-          "ranks": [
-            false,
-            true,
-            true
           ]
         }
       ]
@@ -80,7 +75,7 @@
   ],
   "ultimate": {
     "skillName": "All In",
-    "description": "Increases ATK and evade chance by [buff.value]% for [buff.duration] turns; then does damage equal to ATK-scaled to all enemies.",
+    "description": "Raises ATK and evade chance by [buff.value]% for [buff.duration] turns; then does damage equal to ATK-scaled to all enemies.",
     "characterId": "chiara",
     "type": "ultimate",
     "statMultiplier": "atk",

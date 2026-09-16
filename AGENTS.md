@@ -106,6 +106,10 @@ scripts/sim.ts        Headless balance simulator (npm run sim), ruling #57
 - `npm run test:browser` — component tests in real Chromium. **Separate from `test` on purpose**: a browser launch is not what you want in a tight loop, and `check` runs the unit suite only. Run it before shipping anything whose behaviour is timing- or pointer-dependent, because that is the half a simulated DOM cannot judge.
 - `npm run sim -- <left> <right>` — headless balance simulation across all four formats (ruling #57). `npm run sim -- --roster <id>` sweeps one kit against the whole roster. **Read the limits at the top of `lib/game/simulate.ts` before quoting a number**: no card draw, AI plays both sides, base stats only.
 
+**A green guard is not a working guard — prove a new one fails before trusting that it passes.** Reintroduce the bug it exists to catch and watch it go red. On 2026-09-16 this found that **three of the four checks in `tests/kitDescriptionRules.test.ts` had never run**, green since the day they were written: `/\braises\b/` had been authored through a heredoc that turned each `\b` into a literal `0x08` byte, and two more used `` new RegExp(`\b${word}\b`) ``, where a **template literal** turns `\b` into a backspace at runtime. Both spellings match nothing and throw nothing. Write a regex with a `\b` into a file with the Write tool, not a heredoc, and use `\\b` inside a template literal.
+
+**`test:browser` is outside `check`, so a shipped number can go stale there unseen.** `hand.browser.test.tsx` asserted the retired 56px hand-card floor and was red on `master` from the commit that changed it to 44 until 2026-09-16, because the checkpoint ran `check` alone. **Run `npm run test:browser` at the point a number it pins actually moves**, not only before shipping pointer-dependent work.
+
 ## Engine Rules (see docs/ARCHITECTURE.md for detail)
 
 - `executeSkill` (lib/game/combat.ts) is pure: takes teams, returns new teams.

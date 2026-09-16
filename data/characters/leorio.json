@@ -15,7 +15,7 @@
   "skills": [
     {
       "skillName": "Member of the Zodiac",
-      "description": "[aoeRanked? Targets all allies and increases their : Targets one chosen ally and increases that ally's] ATK and DEF by [buff.value]% for [buff.duration] turns.",
+      "description": "[aoeRanked? Targets all allies and raises their : Targets one chosen ally and raises that ally's] ATK and DEF by [buff.value]% for [buff.duration] turns.",
       "characterId": "leorio",
       "type": "buff",
       "statMultiplier": "atk",
@@ -98,6 +98,9 @@
     "mechanics": [
       {
         "type": "cancelBuffs"
+      },
+      {
+        "type": "cancelStances"
       },
       {
         "type": "stun",

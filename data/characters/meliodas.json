@@ -31,7 +31,7 @@
     },
     {
       "skillName": "Full Counter",
-      "description": "Takes a stance. While in this stance, when attacked, Meliodas counters with damage equal to [stance.counterDamagePercent]% of his ATK. Stance lasts [stance.duration] turns.",
+      "description": "Assumes a stance for [stance.duration] turns: counters attackers for damage equal to [stance.counterDamagePercent]% ATK.",
       "characterId": "meliodas",
       "type": "stance",
       "statMultiplier": "atk",
@@ -77,6 +77,9 @@
     "mechanics": [
       {
         "type": "cancelBuffs"
+      },
+      {
+        "type": "cancelStances"
       },
       {
         "type": "stun",

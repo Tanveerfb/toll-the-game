@@ -212,8 +212,24 @@ describe("the hand's press-and-hold", () => {
     const cards = [...document.querySelectorAll("[data-card-id]")];
     expect(cards).toHaveLength(8);
     for (const card of cards) {
-      expect(card.getBoundingClientRect().width).toBeGreaterThanOrEqual(56);
+      // 44, not 56. The 56px floor this test shipped with was #118's fix for
+      // cards shrinking to 43px slivers, and measuring it in a browser on
+      // 2026-09-01 showed the cure was worse: eight cards at 56px is 492px of
+      // content in a 370px scroller, so two of a full 4v4 hand sat off the
+      // edge where nothing on screen said they existed. The rail full-bleeds
+      // now and the arithmetic is fixed — 390px, 2px gaps, ~47px a card.
+      //
+      // This assertion went stale that day and nobody saw it, because
+      // `test:browser` is deliberately separate from `check` and the
+      // checkpoint ran `check` alone. Worth one line: a suite that is not in
+      // the default loop needs running explicitly at the point a shipped
+      // number moves.
+      expect(card.getBoundingClientRect().width).toBeGreaterThanOrEqual(44);
     }
+    // The floor is not the whole claim — all eight have to FIT, which is what
+    // the 56px version silently broke.
+    const rail = cards[0].parentElement as HTMLElement;
+    expect(rail.scrollWidth).toBeLessThanOrEqual(rail.clientWidth + 1);
   });
 
   it("lets the row be swiped rather than blocking touch outright", async () => {

@@ -11,15 +11,28 @@ import type { CharacterSkillData } from "@/lib/game/characterCatalog";
 
 describe("description placeholders", () => {
   it("resolves arbitrary ranked mechanic fields like counterDamagePercent", () => {
+    // The assertion used to read "250% of his ATK". The possessive went with
+    // #134's rewrite — #26 forbids naming the caster in its own card text, and
+    // Full Counter was the only description in the game that did.
     const fullCounter = meliodasData.skills[1] as CharacterSkillData;
-    expect(buildDescriptionForRank(fullCounter, 0)).toContain("250% of his ATK");
-    expect(buildDescriptionForRank(fullCounter, 2)).toContain("400% of his ATK");
+    expect(buildDescriptionForRank(fullCounter, 0)).toContain(
+      "damage equal to 250% ATK",
+    );
+    expect(buildDescriptionForRank(fullCounter, 2)).toContain(
+      "damage equal to 400% ATK",
+    );
   });
 
   it("resolves [type.duration] per rank", () => {
+    // Was "lasts 1 turn" in a trailing third sentence. #134 moved the duration
+    // to the front, onto the stance, where its parts inherit it.
     const fullCounter = meliodasData.skills[1] as CharacterSkillData;
-    expect(buildDescriptionForRank(fullCounter, 0)).toContain("lasts 1 turn");
-    expect(buildDescriptionForRank(fullCounter, 2)).toContain("lasts 2 turn");
+    expect(buildDescriptionForRank(fullCounter, 0)).toContain(
+      "stance for 1 turn:",
+    );
+    expect(buildDescriptionForRank(fullCounter, 2)).toContain(
+      "stance for 2 turns:",
+    );
   });
 
   it("builds tiered-wording glossary entries with the skill's real numbers", () => {
@@ -56,10 +69,16 @@ describe("description placeholders", () => {
     // The scale is 30/50/100 raising and 30/50/80 lowering — asymmetric at the
     // top because a stat can never be reduced to zero in battle.
     //
-    // An off-scale value is written "Increases/Decreases X by N%" with the
-    // number in the text, so there is nothing for a pill to reveal and none is
-    // built. This test previously asserted 85% up rendered "greatly raises",
-    // which is exactly the drift the ruling exists to stop.
+    // An off-scale value keeps the verb and states its number — "raises ATK
+    // by 33%" (#130, 2026-09-16; before that it swapped to "Increases … by
+    // N%"). Either way the number is in the text, so there is nothing for a
+    // pill to reveal and none is built. This test previously asserted 85% up
+    // rendered "greatly raises", which is exactly the drift the ruling exists
+    // to stop.
+    //
+    // The glossary MEANINGS below still read "Increases ATK by 50%" — that is
+    // the pill's own copy under #26 and is unrelated to #130, which governs
+    // the description prose.
     const glossaryFor = (mechanics: unknown[]) =>
       buildSkillKeywordGlossary(
         {

@@ -39,14 +39,26 @@ describe("getCardFrameStyle", () => {
     expect(new Set(ladder).size).toBe(3);
   });
 
-  it("ultimate gets the gold frame, distinct from R3, regardless of rank", () => {
+  it("ultimate gets the rainbow frame, distinct from R3, regardless of rank", () => {
+    /**
+     * SUPERSEDED by ruling #133 (2026-09-16). This used to assert a GOLD
+     * frame (`el-light`). Gold is the stance colour now, and two different
+     * things cannot read as the same hue — so the ultimate took a ramp across
+     * all five element hues instead, which is a tier of its own rather than a
+     * sixth colour competing with the five that mean something.
+     */
     const ultAtRank1 = getCardFrameStyle(1, true);
     const ultAtRank3 = getCardFrameStyle(3, true);
     expect(ultAtRank1.tier).toBe("ultimate");
     expect(ultAtRank3.tier).toBe("ultimate");
-    expect(ultAtRank1.borderClass).toContain("el-light");
+    expect(ultAtRank1.borderClass).toContain("frame-ultimate");
     expect(ultAtRank1.accentBarClass).toBeDefined();
-    expect(ultAtRank1.accentBarClass).toContain("el-light");
+    expect(ultAtRank1.accentBarClass).toContain("accent-ultimate");
+
+    // It must NOT wear the stance colour any more — that is the whole reason
+    // it changed.
+    expect(ultAtRank1.borderClass).not.toContain("el-light");
+    expect(ultAtRank1.accentBarClass).not.toContain("el-light");
 
     // Never signal cyan: that is system chrome (the rail, End Turn, active
     // state), and the ultimate frame used to wear it.

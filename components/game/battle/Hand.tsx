@@ -2,10 +2,15 @@
 
 import React from "react";
 import Image from "next/image";
-import { ArrowBigDown, ArrowBigUp, Heart, Sword, Swords } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getCharacterArt, getSkillArt } from "@/lib/game/characterArt";
 import { getCardFrameStyle } from "@/lib/game/cardFrameStyle";
+import {
+  SKILL_TYPE_ICON,
+  SKILL_TYPE_LABEL,
+  SKILL_TYPE_TEXT,
+  skillTypeCategory,
+} from "@/lib/game/skillTypeStyle";
 import { moveCardById } from "@/lib/game/deck";
 import {
   classifyExit,
@@ -80,52 +85,18 @@ if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
 
 /* ── card face ──────────────────────────────────────────────────────────── */
 
-type SkillTypeCategory = "attack" | "attackDebuff" | "buff" | "debuff" | "heal";
-
-const DEBUFF_MECHANICS = new Set([
-  "debuff",
-  "seal",
-  "stun",
-  "shock",
-  "bleed",
-  "corrosion",
-  "decay",
-  "weaken",
-  "extort",
-  "rupture",
-  "disable",
-  "ignite",
-]);
-
-function skillTypeCategory(skill: ActionCard["skill"]): SkillTypeCategory {
-  switch (skill.type) {
-    case "heal":
-    case "cleanse":
-      return "heal";
-    case "buff":
-    case "stance":
-      return "buff";
-    case "debuff":
-    case "disable":
-      return "debuff";
-    default: {
-      const hasDebuff = (skill.mechanics ?? []).some((m) =>
-        DEBUFF_MECHANICS.has(m.type),
-      );
-      return hasDebuff ? "attackDebuff" : "attack";
-    }
-  }
-}
-
-/** Skill type is a glyph, not a colour — the screen already carries five
- *  element hues. */
-const SKILL_TYPE_ICON: Record<SkillTypeCategory, React.ElementType> = {
-  attack: Sword,
-  attackDebuff: Swords,
-  buff: ArrowBigUp,
-  debuff: ArrowBigDown,
-  heal: Heart,
-};
+/**
+ * Skill type is a glyph AND a colour since ruling #133 (2026-09-16).
+ *
+ * It was a glyph alone, on the reasoning that "the screen already carries five
+ * element hues". Tanveer overrode that: what a card does is the thing you read
+ * a hand for, and it now reads as a hue on the glyph — which is where it fits
+ * without taking the border, since the border is the merge-rank ladder and
+ * rank is what you scan while merging.
+ *
+ * The taxonomy itself moved to `lib/game/skillTypeStyle.ts`, shared with the
+ * archive and the kit document, which each used to carry a different one.
+ */
 
 /** Merge tier. Deliberately not stars — a star row reads as rarity, which is
  *  a different axis and one this game also has. */
@@ -767,11 +738,12 @@ export default function Hand({
               </span>
 
               {(() => {
-                const BadgeIcon = SKILL_TYPE_ICON[skillTypeCategory(card.skill)];
+                const category = skillTypeCategory(card.skill);
+                const BadgeIcon = SKILL_TYPE_ICON[category];
                 return (
                   <span
-                    aria-label={skillTypeCategory(card.skill)}
-                    className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center bg-void/80 text-readout-dim"
+                    aria-label={SKILL_TYPE_LABEL[category]}
+                    className={`absolute right-0 top-0 flex h-4 w-4 items-center justify-center bg-void/80 ${SKILL_TYPE_TEXT[category]}`}
                   >
                     <BadgeIcon className="h-2.5 w-2.5" strokeWidth={2.6} />
                   </span>

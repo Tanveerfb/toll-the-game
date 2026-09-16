@@ -140,14 +140,28 @@ export function getAIMove(
       : undefined;
   };
 
-  // A taunted enemy must strike its taunter; otherwise the lowest-HP player.
-  const attackTargetFor = (e: BattleCharacter): BattleCharacter => {
-    const tauntedBy = e.debuffs.find((d) => d.type === "taunt" && d.sourceId);
-    if (tauntedBy) {
-      const tauntTarget = alivePlayers.find(
-        (p) => p.instanceId === tauntedBy.sourceId,
+  /** Highest stamp among a unit's taunt entries; 0 if it carries none. */
+  const tauntSeq = (u: BattleCharacter): number =>
+    u.buffs.reduce(
+      (max, b) => (b.type === "taunt" ? Math.max(max, b.appliedSeq ?? 0) : max),
+      0,
+    );
+
+  // A taunt pulls every enemy's single-target attack to the taunter;
+  // otherwise the lowest-HP player.
+  //
+  // #131 inverted where the marker lives: it sits on the TAUNTER as part of
+  // its stance, not as a debuff on each enemy, so this reads the player team
+  // rather than the acting enemy. Most recently applied taunter wins, and a
+  // dead one is simply not in `alivePlayers` to be found.
+  const attackTargetFor = (): BattleCharacter => {
+    const taunters = alivePlayers.filter((p) =>
+      p.buffs.some((b) => b.type === "taunt"),
+    );
+    if (taunters.length > 0) {
+      return taunters.reduce((best, p) =>
+        tauntSeq(p) >= tauntSeq(best) ? p : best,
       );
-      if (tauntTarget) return tauntTarget;
     }
     return lowestPlayer;
   };
@@ -170,7 +184,7 @@ export function getAIMove(
   const ultReady = actingPool.filter((e) => ultPlayFor(e));
   if (ultReady.length > 0) {
     const e = pick(ultReady);
-    return action(e, ultPlayFor(e)!, attackTargetFor(e));
+    return action(e, ultPlayFor(e)!, attackTargetFor());
   }
 
   // Tier 2a — a buff that actually adds something (max 1/turn).
@@ -217,7 +231,7 @@ export function getAIMove(
     if (debuffers.length > 0) {
       const e = pick(debuffers);
       const p = (playOfType(e, "debuff") || playOfType(e, "disable"))!;
-      return action(e, p, attackTargetFor(e));
+      return action(e, p, attackTargetFor());
     }
   }
 
@@ -225,7 +239,7 @@ export function getAIMove(
   const attackers = actingPool.filter((e) => playOfType(e, "attack"));
   if (attackers.length > 0) {
     const e = pick(attackers);
-    return action(e, playOfType(e, "attack")!, attackTargetFor(e));
+    return action(e, playOfType(e, "attack")!, attackTargetFor());
   }
 
   // Tier 6 — any remaining usable play (executeSkill safely fizzles a sealed
@@ -243,5 +257,5 @@ export function getAIMove(
   const play =
     plays.find((p) => !(attackSealed(e) && p.skill.type === "attack")) ??
     plays[0];
-  return action(e, play, attackTargetFor(e));
+  return action(e, play, attackTargetFor());
 }

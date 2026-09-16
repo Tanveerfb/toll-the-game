@@ -106,21 +106,45 @@ threshold reading (ruling #109):
 > *"'raises' MUST be 30%. it can't fluctuate, even by 1%. If i allow it, next
 > time you would propose 'greatly raises' to accept even 55%. Nope."*
 
-**Never spend a tier word and state the number.** "Raises DEF by 30%" says it
-twice — the tier word already *is* 30, and the hover pill reveals it (#26), so
-the card ends up with a pill reading "Increases DEF by 30%" beside text that
-already said so. Pick one form.
+**An off-scale value keeps the same verb and states its number** (ruling #130,
+2026-09-16). It does **not** get a different verb — that was the rule until
+2026-09-16 and "Increases / Decreases X by N%" is now legacy wording:
 
-**An off-scale value is not forbidden — it is written differently.** Use
-**"Increases / Decreases X by `[buff.value]`%"** and let the number show:
+> raises ATK and evade chance by `[buff.value]`% for `[buff.duration]` turns
 
-> Increases ATK and evade chance by `[buff.value]`% for `[buff.duration]` turns
+**The adverb and the number are alternatives, never both.** "greatly raises DEF
+by 59%" pairs a word meaning 50 with a 59. He settled it mid-example, correcting
+himself as he spoke:
+
+> *"greatly raises defense by, yeah, actually, uh, not greatly, just raises
+> defense by 59%."*
+
+So there are exactly two shapes, and which one you write is decided by the data,
+not by taste:
+
+| the mechanic is | write |
+|---|---|
+| flat, and exactly on the scale | the bare tier word — `greatly raises DEF` |
+| anything else — off-scale, or a `valueRanked` ladder | `raises DEF by [buff.value]%` |
+
+**A rank-scaled value never wears a tier word, and vice versa.** His words:
+*"The rank sclaed numbers don't follow tier based words. And vice versa."* This
+**retires** #58's old carve-out, which let a ladder step *between* words —
+Chiara's Marked Card `[30,50,50]` reading "lowers" then "greatly lowers" was the
+reference case and the only kit still doing it. A ladder that changes its
+sentence shape as it ranks up reads like two different skills, and the
+conditional needed to drive it (`[debuff? greatly lowers : lowers]`) has to
+hand-maintain a `ranks` array mirroring the ladder — which is exactly how
+`damagePreview` came to hide a debuff the engine was applying.
 
 Two consequences worth knowing:
 
 - **The explicit form gets no hover pill**, and that is correct. A pill exists to
-  reveal a number the tier word hides (#26); nothing is hidden here. `tierWord`
-  returns undefined off-scale and `buildSkillKeywordGlossary` skips the entry.
+  reveal a number the tier word hides (#26); nothing is hidden here. This is
+  enforced in the matcher now, not just by omission: `keywordStatesItsOwnValue`
+  suppresses any tier verb followed **inside its own clause** by a `by N%`,
+  because `mechanicGlossary` carries a global `raises: "Raises the stat by 30%"`
+  that would otherwise contradict the sentence it sits on.
 - **Explicit percentages are self-checking; tier words are not.** Chiara's
   ultimate stated both its numbers for months and the mismatch between them was
   visible to anyone reading the card. The day it was converted to a tier word,
@@ -128,9 +152,97 @@ Two consequences worth knowing:
   When in doubt between the two forms, the one that shows its numbers is the one
   that will catch a data error.
 
-This subsumes the old ladder rule: a ladder cannot step *inside* one tier word if
-every tier-worded value has to be exact. Chiara's Marked Card `[30,50,50]` steps
-*between* words — lowers → greatly lowers — then extends the duration instead.
+### A stance leads with itself
+
+Ruling **#134** (2026-09-16), from the 7DS cards Tanveer gave as the reference:
+
+> Assumes a stance for `[stance.duration]` turns: taunts all enemies; gains
+> `[stance.value]`% damage reduction.
+
+The stance and its duration come **first**; the parts follow and inherit it. A
+trailing duration — *"…gains 25% damage reduction for 1 turn"* — reads as though
+it governed only the last clause, when it governs the whole stance. Every stance
+card in the game opens this way, and a test enforces it.
+
+Two things that fall out of it:
+
+- **Say how far a taunt reaches.** Since #131 a taunt always pulls every enemy,
+  so write "taunts all enemies". A bare "Taunts" was accurate under the old
+  engine and is now an understatement.
+- **Never name the caster.** Full Counter said *"Meliodas counters with … his
+  ATK"* and was the only card that did (#26).
+
+#### The reference set — nine 7DS stance cards, transcribed
+
+Tanveer supplied these as the model to learn from (2026-09-16). Read them
+before writing a stance, not because the game copies 7DS, but because they are
+nine worked examples of a problem this game has only five of.
+
+**Cards marked *legacy* predate 7DS's current wording standard** — see the
+first bullet below before treating the set as one sample.
+
+| card | text |
+|---|---|
+| Full Counter | Assumes a Stance for 1 turn(s) which decreases damage taken by 50% when attacked and inflicts damage equal to 300% of Attack via counter. |
+| Reflection Halo | Assumes a Stance for 1 turn(s), which deals Sever damage equal to 200% of Defense via counter **when any ally is attacked**. |
+| Spinning Hammer | Assumes a Stance for 3 turn(s) which **increases HP-related stats by 25%** and Taunts enemies. |
+| Slashing Wind | Assumes a Stance for 2 turn(s) which Taunts enemies, reduces incoming damage by 40%, **then** inflicts damage equal to 350% of Attack when taking attacks. |
+| Nameless Dance *(legacy shape)* | Assumes a Stance which Taunts enemies and decreases damage taken by 45% when attacked for 2 turn(s). **Depletes the Ultimate Move Gauge of the enemy who used the skill by 1 orb(s).** |
+| Lightning King's Heavy Armor *(legacy — very old unit)* | Assumes a Stance which Taunts enemies and decreases damage taken by 45% when attacked for 1 turn(s). |
+| Ah! Emergency! *(legacy — very old unit)* | Assumes a Stance which Taunts enemies and decreases damage taken by 45% when attacked for 1 turn(s). |
+| Ark Shield | Assumes a Stance for 2 turn(s) which reduces the final damage taken by 50% **when an ally is attacked**. The hero takes 35% of the reduced damage. |
+| Diamond Shield *(legacy shape)* | Assumes a Stance which Taunts enemies and decreases damage taken by 50% when attacked for 2 turn(s). Depletes the Ultimate Move Gauge of the enemy who used the skill by 1 orb(s). |
+
+**What to take from them, and what not to.**
+
+- **Lead with the duration** — and note *why* the set looks split. Five of the
+  nine lead, four trail. That is not inconsistency to average out: the leading
+  form is 7DS's **current** standard and the four trailing cards are older
+  units whose text predates it. Tanveer, 2026-09-16: *"7ds is a old game now.
+  The newer units have a better record of being consistent with description as
+  compared to earlier units… gilthunder and allioni are very old units, hence
+  their issue."* He named those two; the other two trailing cards are marked
+  *legacy shape* above on the same reasoning, which is inference rather than
+  his word.
+
+  **The method, not just the answer:** when a reference contradicts itself,
+  check whether the contradiction is **chronological** before deciding there is
+  no rule. Reading one card gave a rule that was too strong; averaging nine
+  gave "no rule", which was worse — it discarded a real convention because the
+  sample mixed two eras of the same game. Date the sample before trusting the
+  spread.
+- **A trigger is written inline, on the part it governs**, in plain words:
+  *"when attacked"*, *"when an ally is attacked"*, *"via counter"*, *"when
+  taking attacks"*. A stance part without a trigger is simply on for the
+  duration. Ours reads *"counters attackers for 400% of ATK when taking
+  damage"* — same shape.
+- **`then` orders parts that resolve in sequence** (Slashing Wind: taunts,
+  reduces, *then* counters). Matches #22's "buff first, hit boosted" ordering
+  and our own use of "then".
+- **A `※` footnote is for a NAMED mechanic only** — Taunt, Sever, Quell. Never
+  for a plain verb like "decreases damage taken". Ours agrees: "stance" is
+  deliberately not a glossary key (#27).
+- **A stance can carry a part with no duration of its own**, written as a
+  second sentence (Nameless Dance / Diamond Shield: the gauge drain). Do not
+  fold such a part into the "for N turns" clause — it is not on a timer.
+- **A stance can raise stats** (Spinning Hammer). This is the case Tanveer
+  described from the start — *"applies taunt that raises defense for two
+  turns"* — and #132 is what makes it behave: the raise belongs to the stance,
+  so `cancelStances` takes it and `cancelBuffs` does not.
+
+**Things in the reference this game has no mechanic for.** Named so a future
+kit does not get drafted around one by accident — they are observations, and
+inventing any of them is Tanveer's call, not this skill's (`AGENTS.md`):
+
+1. **Ally-triggered stances** — a counter that fires when an *ally* is attacked
+   (Reflection Halo, Ark Shield). Ours only fire on the holder being hit.
+2. **Damage sharing** — Ark Shield reduces an ally's damage and puts 35% of what
+   it saved onto the holder.
+3. **Reactive gauge drain** — depleting the attacker's ult gauge as a
+   consequence of being hit, rather than as an action.
+4. **Stat-family labels** — "HP-related stats". We have "basic stats" (ATK/DEF/
+   HP) and `stat: "all"`; a family scoped to one stat and its derivatives has no
+   equivalent.
 
 ### One effect, one entry, one clause, one pill
 
@@ -166,6 +278,9 @@ His rule verbatim: *"if it targets allies including the caster then only
 **A self buff goes before the damage clause.** His example:
 
 > Greatly raises ATK, increases DEF by 60% for 1 turn and …
+
+(His example predates #130; the second verb is written `raises DEF by 60%` now.
+The word order it is demonstrating is unaffected.)
 
 That is #22 (a self-buff applies before the damage calc, so the same strike
 benefits) showing up in the word order — and note the comma doing #110's work in

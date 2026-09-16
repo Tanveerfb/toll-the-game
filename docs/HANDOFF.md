@@ -84,7 +84,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 28. **Explicit permanence + semicolon clauses** (2026-07-11, amends #26; **the permanence half is reversed by #110**): permanent stat changes say it — "Permanently raises ATK" — instead of implying it by omitting a duration; the permanence prefix joins the pill ("Permanently raises ATK and DEF" is one pill). Semicolons separate the distinct parts of a skill description ("Permanently raises ATK; greatly raises DEF for 1 turn; then does 500% ATK damage to one enemy."). Applied roster-wide.
 29. **Lethal survival catches DoT deaths; revivals cleanse everything** (2026-07-11): Nine Lives triggers on lethal DoT procs too (`trySurviveLethal` in `lib/game/lethal.ts`, shared by combat.ts and tick.ts). On ANY revival/survival trigger the unit loses ALL buffs and debuffs, uncancellable included — the rule applies to every future revival mechanic.
 30. **Uncancellable entries are "effects", not buffs/debuffs** (2026-07-11, playtest): synergy bonuses, ramp stacks, and every other uncancellable entry don't count for buff/debuff-counting mechanics (Rupture, Amplify, Weakpoint), can't be cleansed, and don't trigger AI cleanse decisions. They still modify stats. UI shows them grey (◆ counter, "Effects" section) — helpers in `lib/game/effects.ts`.
-31. **Cancelling stances breaks the target's taunts** (2026-07-11, playtest): cancelStances/cancelBuffs on a unit also removes every taunt redirect marker that unit authored (taunt debuffs on the opposing team with its sourceId). Yalina's Attention Drawer is a real stance now.
+31. **Cancelling stances breaks the target's taunts** (2026-07-11, playtest; **structural since #131 and narrowed by #132, both 2026-09-16** — the taunt lives on the taunter now, so the cross-team sweep this entry describes is gone, and **`cancelBuffs` no longer breaks a taunt at all**; only `cancelStances` does): cancelStances/cancelBuffs on a unit also removes every taunt redirect marker that unit authored (taunt debuffs on the opposing team with its sourceId). Yalina's Attention Drawer is a real stance now.
 32. **Extort is a linked pair** (2026-07-11, playtest): the thief's self-buff lives only while at least one LIVING enemy still carries a matching Extort debuff (tagged with the thief's sourceId). Death, cleanse, or expiry of the last debuff drops the buff — `syncExtortLinks`, run after every action and every debuff tick.
 33. **Deck QoL** (2026-07-11, playtest): Reset Hand button rewinds the hand to the turn start — queued actions return, selection-time merges are reversed, merge-granted ult gauge is refunded (`snapshotHand`/`resetHand`, snapshot taken as PlayerAction opens). Leftover cards auto-merge whenever queuing/unqueuing makes identical neighbors adjacent (same rule as draws). Battle screen page gets a user-friendliness overhaul in a future batch, once all mechanics work as expected.
 34. **Momentum is field-only, fed by every card** (2026-07-11, playtest 2): Yalina gains a Momentum stack from EVERY card her team plays — including her own — but only while she is on the field (not benched) and alive.
@@ -156,14 +156,14 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
     Hand capacity is `[0,4,5,7,8]` by living field count with uniform draws, so **a character's card frequency swings 4× between 1v1 and 4v4** — and with it the uptime of anything that charges off its own cards. Each format also tests a different axis: 1v1 isolates the raw kit, 3v1 makes AoE dead weight and boss mechanics dominant, 3v3 rewards AoE and tests the sub rule, 4v4 dilutes every individual kit the most.
 
     A conclusion from one format is not a conclusion. Duke read as overtuned from a 1v1 duel and is mid-pack in a team — see the "1v1 distortion" section of `docs/superpowers/specs/2026-08-09-claude-duel-mode-design.md` for which archetypes each format over- and under-rates.
-58. **What is and isn't rank-scaled — read the notation, not the kit** (2026-08-09; tier-word half amended by **#109**). Two rules, and they settle every case:
+58. **What is and isn't rank-scaled — read the notation, not the kit** (2026-08-09; tier-word half amended by **#109**, and the ladder carve-out below **retired by #130 (2026-09-16)**). Two rules, and they settle every case:
     1. **A tier word names a fixed value; the value never moves.** "raises" *is* 30%, "greatly raises" *is* 50% (roster-verified 2026-08-09 — every kit obeys this, no exceptions). You cannot write "lowers DEF" and have it mean 50; if you want 50 you write "greatly lowers".
 
        The vocabulary is **"raises/lowers" (30)**, **"greatly" (50)** and **"massively" (100 raising / 80 lowering, per #56 above)**. No other intensifier exists; don't coin one.
 
        **Correction (2026-08-10):** this ruling previously said "massively" was reserved with no value. That was wrong — #56 assigned it the day before, `tierWord` in `descriptionTranslator.ts` has always implemented it, and `mechanicGlossary.ts` spells it out ("Raises the stat by 100%"). No kit uses it yet, which is what made the mistake survive three documents. **Read #56 before quoting the tier scale.**
 
-       **Carve-out (Tanveer, 2026-08-09):** a rank ladder MAY step *between* tier words, because the tiers themselves stay fixed. Chiara's Marked Card is the reference case — `valueRanked [30,50,50]` with `ranks:[false,true,true]`, so R1 reads "lowers DEF" (30%, 1 turn), R2 reads "greatly lowers DEF" (50%, 1 turn), R3 keeps "greatly" but extends to 2 turns via `durationRanked`. His alternative for R3 would have been "massively lowers DEF for 1 turn" — a further tier step rather than a duration step. What remains forbidden is a ladder *inside* one tier word (e.g. "lowers" meaning 30/40/50).
+       **Carve-out (Tanveer, 2026-08-09) — RETIRED by #130 (2026-09-16), which rules that a rank-scaled value carries no tier word at all. Kept because it explains why Chiara's Marked Card looked the way it did for five weeks.** a rank ladder MAY step *between* tier words, because the tiers themselves stay fixed. Chiara's Marked Card is the reference case — `valueRanked [30,50,50]` with `ranks:[false,true,true]`, so R1 reads "lowers DEF" (30%, 1 turn), R2 reads "greatly lowers DEF" (50%, 1 turn), R3 keeps "greatly" but extends to 2 turns via `durationRanked`. His alternative for R3 would have been "massively lowers DEF for 1 turn" — a further tier step rather than a duration step. What remains forbidden is a ladder *inside* one tier word (e.g. "lowers" meaning 30/40/50).
     2. **In Tanveer's kit drafts, only values written `x/y/z` are rank-scaled.** Everything else is flat *unless he writes a note saying otherwise.* Don't infer scaling from a skill's type, from what a similar character does, or from it "feeling like" it should ramp — author `valuePercent`, not `valueRanked`, unless the draft used slashes.
 
     Consequence, not a separate rule: attack skills carry tier-worded self-buffs (flat, applied before the hit per #22 — Duke's Surge +30% ATK and DEF, Gon's Rock +50% ATK, both HxH ultimates), while support skills state explicit `x/y/z` numbers so a rarer card buffs allies harder (Leorio's Member of the Zodiac, 20/30/50% for 1/1/2 turns).
@@ -389,15 +389,15 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
     **Filler is now allowed, under approval.** He lifted the no-invented-content rule recorded at `lib/game/storyCatalog.ts:36` (ruling #105's first blocker): Claude may draft filler stages, scenes and NPCs, but **nothing enters the game unapproved**, and **NPC kit numbers stay his** — the draft states role, personality and combat concept and asks. The record lives in `Filler/Drafts.md` and `Filler/Approved_chapter_N.md`, and a **`FillerAssist` skill** will carry the workflow; it must be able to write `data/story/chapter-N.json` itself, not just the docs. Chapter 1's three fights are drafted and awaiting that pass. One canon call already made and worth keeping: **the village raid is not a playable fight** — canon says Duke was away when it happened, so `1-2` is a wilderness fight instead.
 
-109. **A tier word names one exact value — it is never a threshold** (2026-08-19, amends #26, #56 and #58). Shown that Chiara's ultimate raised evade by 33% under the word "Raises", Tanveer: *"that's the problem. 'raises' MUST be 30%. it can't fluctuate, even by 1%. If i allow it, next time you would propose 'greatly raises' to accept even 55%. Nope."*
+109. **A tier word names one exact value — it is never a threshold** (2026-08-19, amends #26, #56 and #58; **the wording of the off-scale form is superseded by #130 (2026-09-16)** — the verb no longer changes, only the number is added). Shown that Chiara's ultimate raised evade by 33% under the word "Raises", Tanveer: *"that's the problem. 'raises' MUST be 30%. it can't fluctuate, even by 1%. If i allow it, next time you would propose 'greatly raises' to accept even 55%. Nope."*
 
     **The scale, as exact values:** raising **30 / 50 / 100**, lowering **30 / 50 / 80**. Nothing in between wears the word.
 
-    **Off-scale values are not forbidden — they are written differently.** His wording: *"we can use the wording 'increases/decreases by' when dealing with non tier worded numbers."* So "Increases ATK and evade chance by 33% for 3 turns" states the number in the text. This is the form Leorio's support ladder already used (20/30/50, "increases their ATK and DEF by `[buff.value]`%"), now the general rule rather than one skill's exception.
+    **Off-scale values are not forbidden — they are written differently.** **Superseded by #130:** they keep the same verb and state the number — "raises ATK by 33%". What this paragraph describes was the rule until 2026-09-16. His wording at the time: *"we can use the wording 'increases/decreases by' when dealing with non tier worded numbers."* So "Increases ATK and evade chance by 33% for 3 turns" states the number in the text. This is the form Leorio's support ladder already used (20/30/50, "increases their ATK and DEF by `[buff.value]`%"), now the general rule rather than one skill's exception.
 
     **A consequence worth knowing: the explicit form gets no hover pill.** A pill exists to reveal a number the tier word hides (#26). Nothing is hidden, so `tierWord` returns undefined off-scale and `buildSkillKeywordGlossary` skips the entry.
 
-    **This subsumes #58's ladder rule.** A ladder cannot step inside one tier word if every tier-worded value must be exact.
+    **This subsumes #58's ladder rule.** A ladder cannot step inside one tier word if every tier-worded value must be exact. **#130 goes further and retires the carve-out entirely:** a ladder carries no tier word at all.
 
     **Roster audit at the time of the ruling:** 27 kits, and **Chiara's evade 33 was the only off-scale value in the game** — every other buff and debuff already sat exactly on 30/50/100/80. The rule codified what the roster already did.
 
@@ -660,7 +660,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 
     The 2026-08-21 sweep's own grep listed `title=` and still missed them, because `title` is also a prop name on half the modals here, so the greps drowned. `tests/touchTargets.test.ts` now scans for `title=` on **lowercase** JSX tags only, which is the discriminator that separates a DOM attribute from a component prop.
 
-    A caution worth keeping: that guard shipped green and wrong first. A literal `0x08` byte had landed where `` belonged, so the regex matched nothing and the test passed having scanned 83 files and found none of the nine offenders. Only running the same logic standalone caught it — the exact vacuous-pass failure `tests/stubs/browser-setup.ts` warns about.
+    A caution worth keeping: that guard shipped green and wrong first. A literal `0x08` byte had landed where `\b` belonged, so the regex matched nothing and the test passed having scanned 83 files and found none of the nine offenders. Only running the same logic standalone caught it — the exact vacuous-pass failure `tests/stubs/browser-setup.ts` warns about.
 
 
 126. **The nav carries only what a player needs mid-screen** (2026-09-01, follows #123). With navigation gone to the bottom bar, he cleared the top row of two more things: *"the 'claude' button can also be moved to dev only area on profile page. the music slider can also be moved to profile page."*
@@ -701,6 +701,132 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
     What fills it is deliberately not invented: it is what the status strip shows on a wide screen and **hides on a phone**, plus the two things never on it at all. The strip is one line competing for ~390px and ranks what it keeps, so the fight's context (`hidden sm:`) and the resolved counts (`hidden md:`) never render on the device the game is built for. The sheet now carries turn and phase, the fight's context label, duel mode, **actions available this turn**, resolved counts, **field and bench occupancy** (the sub rule turns on the bench, and nothing said how many were on it), and **stage effects** — which `StageBrief` shows before a fight and nothing showed during one, despite them modifying the battle in front of you. Sheet is 286px / 34% of the screen and scrolls past `85dvh`.
 
     Conditional rows render only when they apply, so an ordinary practice fight does not get empty boxes — which also means the context, duel and stage-effect rows are **built and typechecked but not seen**: reaching them needs a story battle with authored stage effects.
+
+130. **The explicit percentage is a first-class form of the same verb** (2026-09-16, amends #109, retires #58's ladder carve-out). #109 settled that an off-scale value is written differently; it chose a different **verb** for it ("Increases ATK by 33%"). Tanveer collapsed the two vocabularies into one: the verb is always *raises*/*lowers*, and the adverb is shorthand for a number that may instead be stated outright.
+
+    *"if raises there is no by x percent after raises, then it just means the normal 30%. Obviously, greatly would mean 50%, massively would mean 100%. That's gonna be the same thing, but it should also support custom values."*
+
+    | written | means |
+    |---|---|
+    | `raises ATK` | 30% |
+    | `greatly raises ATK` | 50% |
+    | `massively raises ATK` | 100% |
+    | `raises ATK by 33%` | 33% |
+
+    **The adverb and the number are alternatives, never both.** He settled this mid-sentence, correcting himself while giving an example: *"greatly raises defense by, yeah, actually, uh, not greatly, just raises defense by 59%."* A word meaning 50 cannot stand in front of a 59. Pinned by a test; lowering values keep their own ceiling of 80 (#56).
+
+    **Rank ladders and tier words are disjoint.** His words: *"The rank sclaed numbers don't follow tier based words. And vice versa."* A `valueRanked` ladder spells its number at every rank; a tier word means one flat value. **This retires #58's carve-out** permitting a ladder to step *between* words — and its reference case, Chiara's Marked Card, was the only skill in the game still doing it. Its description was a `[debuff? greatly lowers : lowers]` conditional driven by a hand-maintained `ranks:[false,true,true]` mirror of the ladder. Both are gone. That closed a bug nobody had reported: the engine gates on `ranks` for `aoeRanked` alone (`combat.ts`), so R1 applied its DEF debuff, while `damagePreview.ts` read the same array as *"inactive at this rank"* and showed the player nothing.
+
+    **The author writes the number; the translator does not derive it.** Offered a derived form (kit JSON keeps writing a bare `raises`, the translator appends `by 33%` when the value is off-scale) against an authored one, he chose **author types it** — the kit JSON writes `raises ATK by [buff.value]%`. **That phrasing is an option label he selected, not prose he wrote.** So the placeholder machinery is the contract: `[buff.value]` reaches the first mechanic of a type, and two buffs on one skill need the positional `[x-ranked.value]` / `[y-ranked.value]` refs.
+
+    **#109's no-pill consequence survives and is now enforced in the matcher.** `mechanicGlossary` carries a **global** `raises: "Raises the stat by 30%"`, merged beneath every per-skill glossary, and both `KeyworkHighlighter` and `extractKeywordFootnotes` match it as a bare word — so without a guard, "raises DEF by 59%" renders a pill asserting 30% directly above a sentence saying 59. `keywordStatesItsOwnValue` suppresses a tier verb followed, **inside its own clause**, by a `by N%`. The clause bound matters: in "raises ATK for 2 turns; lowers DEF by 30%" the first verb keeps its pill.
+
+    **Six kits migrated** off the older `Increases/Decreases … by X%` wording, on his call: *"migrate them to the new form"* — **also an option label, not his sentence.** Chiara (All In, Marked Card), Leorio, Isolde, and the two checkpoint NPCs. Deliberately **not** migrated: `toll_collector`'s *"reduces damage taken by 35%"*, which is a stance on damage taken rather than a raise or lower of a stat, so no tier verb applies to it.
+
+    **A caution this ruling earned.** Its own migration was caught by `tests/kitDescriptionRules.test.ts` — but only after discovering that **three of that file's four guards had never run**. `/\braises\b|\blowers\b/` had been authored through a heredoc that turned each `\b` into a literal `0x08`, and #65's two checks used `` new RegExp(`\b${word}\b`) ``, where a template literal turns `\b` into a backspace at runtime. All three matched nothing and passed green from the day they were written. Repaired here; the roster was clean apart from this ruling's own four hits.
+
+131. **A stance is a named group of effects, and a taunt belongs to the taunter** (2026-09-16, absorbs #31, supersedes the taunt model of #31/#32's era). Two halves, both his, from one conversation about stances not doing the idea justice.
+
+    **Display.** A stance is one thing the player put up, and its parts are listed apart under its name rather than collapsed into a row reading "Stance": *"these would be displayed separately on the character. Like it won't say one stance effect. It will say three separate effects."* His examples were Meliodas — the stance itself, plus the counter — and Yalina — the taunt, plus the damage reduction. Offered a flat list, a named group, or grouping only at two-or-more, he chose the **named group**. *That phrasing is an option label he selected, not prose he wrote.* Carried by `StatusEffect.groupId` / `groupName`; `blocksFor` in `EffectsList.tsx` renders it. **Scoped to stances** — a plain self-buff stays one ungrouped row, because heading every buff with its skill name restyles the whole panel for nothing.
+
+    **Engine.** Taunt changes sides: *"Taunt shouldn't be a debuff on enemies in the first place. It could be either a buff on self or a stance effect — enemies will just be forced to attack the character with a taunt effect or buff."* So the marker now lives in the taunter's own `buffs`, and the redirect reads the defending team instead of the attacker's debuffs.
+
+    Four consequences, none of them cosmetic:
+
+    - **Ruling #31 becomes structural.** "Cancelling stances breaks the target's taunts" needed `clearTauntsAuthoredByTarget` to walk both teams hunting markers tagged with the cancelled unit's id. The taunt is simply *there* now, so the existing cancel filters take it and that sweep is deleted. `cancelStances` had to learn one word: it strips `taunt` alongside `stance`.
+    - **A taunt reaches every enemy.** It used to be applied per target, so `toll_collector`'s State Your Business — which has no `aoe` — pulled only the one enemy it struck. Asked whether to keep single-target taunts possible, he chose **all enemies**, which is what `mechanicGlossary` has claimed since it was written: *"Direct all single target enemy attacks to self."* The code and the glossary disagreed; this picks the glossary. *Option label, not his sentence.* It is a buff to a `storyOnly` NPC and touches no playable kit.
+    - **Debuff Immunity no longer blocks a taunt.** The old marker was a debuff, so an immune enemy was untauntable. It is not a debuff any more, so there is nothing to resist. Follows from his own framing and is pinned by a test rather than left to be rediscovered.
+    - **Precedence needed a new field.** Most-recently-applied still wins (his pick, preserving the old behaviour), but that used to fall out of array position on the victim, and there is no shared array once each taunter holds its own entry. `StatusEffect.appliedSeq` carries it, derived from the current maximum on the field so `executeSkill` stays pure.
+
+    **Two display defects found while doing it, both shipped and neither reported.** Meliodas's Full Counter rendered a **blank** row for its whole duration — `effectDescription` had no branch for `counterDamagePercent`, which is where a counter stance keeps its number, so the 250/300/400% counter was never stated while it was up. And a damage-reduction stance printed **"+25% damage taken"**, the exact opposite of what it does: `damageReduction` reads as "damage taken" in his battle-log vocabulary (2026-08-13), which inverts the sign. The word stays his; the sign is corrected to "−25%".
+
+    **Not done, deliberately.** He floated damage reduction as a possible third effect on Full Counter and then ruled it out for now — *"don't touch it — display only"* (*option label*). Full Counter keeps exactly the mechanics it had.
+
+132. **A stance and a buff are different things, and each cancel reaches exactly one** (2026-09-16, follows #131, narrows #31). Tanveer, giving the interaction matrix unprompted:
+
+    | on the target | `cancelBuffs` | `cancelStances` |
+    |---|---|---|
+    | a stance, and everything it carries | survives | **removed** |
+    | a free-standing buff | **removed** | survives |
+
+    His example is a skill that *"applies taunt that … raises defense for two turns"*: cancelling the stance takes the DEF raise too, *"but cancelled buffs will not affect it"* — while *"if there is a skill which just says raises defense by 30% then this would be affected by cancel buffs but it will not be affected by cancel stances. So there is a difference between a stance effect and a buff."*
+
+    **Before this the engine drew no such line.** `cancelBuffs` filtered on `uncancellable` alone, so it swept stances as well and a stance had no defence against either mechanic. The two names existed; only one behaviour did.
+
+    **Membership is by GROUP, not by entry type.** A stance's DEF raise is its own entry, and what marks it as part of the stance is #131's `groupId`. Grouping is therefore decided per *skill*: every self entry a stance skill applies joins its group whatever its own `type`, so a raise authored as a plain `buff` mechanic cannot survive a cancel that killed the rest of its own stance.
+
+    **Three shipped skills would have been silently nerfed.** Leorio's Remote Punch, Meliodas's Evil Spirit and Siddiq's Wrath of the Wild all read **"Cancels buffs and stances"** while authoring only `cancelBuffs` — correct only because `cancelBuffs` used to sweep everything. `cancelStances` was added to all three, which preserves exactly what they did before; the alternative was three cards quietly ceasing to do what they say. `tests/cancelMatrix.test.ts` now checks both directions of that promise across the roster, so the next one is caught at the source.
+
+    **And a dead mechanic came to light.** The two cancels were `if` / `else if`, so `cancelStances` never ran on a skill that also carried `cancelBuffs` — which is `toll_collector`'s Settle the Account, the one skill in the game authoring both. Invisible while `cancelBuffs` removed stances anyway, and a silent no-op the moment it stopped. They are independent now.
+
+    **Ruling #31 narrows.** "cancelStances/cancelBuffs on a unit also removes every taunt redirect marker" is now **cancelStances only** — a taunt is part of a stance (#131), so `cancelBuffs` leaves it alone by the same rule that leaves the rest of the stance alone.
+
+    The glossary pills were rewritten to match: "cancels buffs" had promised *"stances included"*.
+
+133. **Colour classifies — one taxonomy for effects, and one for skills** (2026-09-16, follows #131/#132, supersedes the per-screen colour maps). Two tables, both his, given in one message.
+
+    **What is active on a unit.** The colour is #132's cancel rule made visible:
+
+    | class | colour | what it means |
+    |---|---|---|
+    | buff | blue | a free-standing raise — `cancelBuffs` takes it |
+    | **stance** | **yellow** | a stance and every part of it — `cancelStances` takes it |
+    | debuff | red | hostile |
+    | effect | grey | uncancellable, *"not affected by any cancel buffs or any cleanses … they are just effects"* (#30) |
+
+    A stance rendered **blue, beside ordinary buffs**, until this — the exact distinction #132 had just spent an engine change drawing. It is its own coloured section and its own token in the count strip, because it answers a different question from a buff and is the one a turn gets decided on. Classification reuses `isStanceEntry`, the same predicate the cancel step uses, so the colour can never promise a removal that would not happen.
+
+    **What a skill does.** Red attack, **purple attack-debuff**, green heal/cleanse, blue buff, yellow stance. His line for the split: Chiara's skill that lowers DEF after damage is an attack-debuff, while one that only cancels is *"just a normal attack skill … as long as they don't apply debuff on the enemy from their skill."* So `cancelBuffs`/`cancelStances` are **not** debuff mechanics here — removing something the target had is not afflicting it with something new.
+
+    **Where the colour goes on a card.** Not the border: that is the merge-rank ladder, and rank is what you scan while merging. Offered the glyph, an edge stripe, or taking the border outright, he chose the **glyph** — the card already carried a skill-type icon with this exact taxonomy, uncoloured on the old reasoning that *"the screen already carries five element hues"*. *Option label, not his sentence.* Shape and colour now say the same thing, so a class survives greyscale.
+
+    **The ultimate gave up gold.** It was a solid `el-light` border — the hue stances now take — and two things cannot read the same. Offered a ramp, a sixth colour, or sharing the hue, he chose the **rainbow gradient** across all five element hues, which is a tier of its own rather than a sixth colour competing with the five that mean something. *Option label.* He believed this already existed; it did not. `.frame-ultimate` in `globals.css`, since a gradient border needs two backgrounds and two clip boxes.
+
+    **Three maps became one.** `Hand.tsx` had the categories but used glyphs only, while `KitDetails.tsx` and `SkillDocument.tsx` each carried their own colour map in which **a buff was GREEN and a debuff PURPLE** — so one skill read as two different colours depending on the screen. Asked whether the archive should follow, he chose **one taxonomy everywhere**. *Option label.* It lives in `lib/game/skillTypeStyle.ts`, and a test fails if a screen grows its own again.
+
+    **Two classification bugs found on the way, both shipped.** A **stance mechanic now beats a disagreeing `skill.type`** — Mustafa's *Earth Stance: Fortress* is typed `buff` and Yalina's *Attention Drawer* is typed `debuff`, so both read as something other than the stance they put up. And an **ultimate is classified by what it does**, not by being an ultimate: the old branch fell through to damage unconditionally, so Isolde's Starbound Ward, a pure team buff, carried a sword.
+
+    **Not done:** the SP skill has no class. He ruled it out — it is Molvarr-only and no playable character has one.
+
+134. **A stance card leads with the stance and its duration** (2026-09-16, follows #131–#133; wording rule, so it also lands in `kitwords`). Tanveer gave two 7DS screenshots as the reference and approved the shape read off them.
+
+    **Theirs:** *"Assumes a Stance for 1 turn(s) which Taunts enemies and inflicts Quell damage equal to 360% of Attack when taking damage."* The stance and its duration lead; the parts follow and inherit it.
+
+    **How that was arrived at, since it took two passes.** It was first read off ONE screenshot and stated as their rule. Nine more showed **five leading with the duration and four trailing it**, and the obvious conclusion — that the reference is simply inconsistent — was wrong too. Tanveer supplied what actually separates them: *"7ds is a old game now. The newer units have a better record of being consistent with description as compared to earlier units. Like you mentioned, gilthunder and allioni are very old units, hence their issue."* The leading form is their **current** standard; the trailing cards are legacy text that predates it and was never rewritten.
+
+    So the form is right twice over: it matches the reference's current practice, and it stands on its own merit, since a trailing duration reads as governing only the last clause.
+
+    **The transferable lesson, which is why this is written down at all:** when a reference contradicts itself, check whether the contradiction is **chronological** before concluding there is no rule. A live game's older content is its own archaeology. Sampling one card gave a rule that was too strong; sampling nine and averaging gave "no rule", which was worse — it threw away a real convention because the sample mixed two eras. Recorded in the `kitwords` skill beside the cards themselves.
+
+    **Ours trailed the duration** — *"Takes a stance: taunts all enemies and gains 25% damage reduction **for 1 turn**"* — which reads as though the turn count governed only the last clause rather than the whole stance. All five stance skills now open `Assumes a stance for [stance.duration] turns: …`.
+
+    | kit | now reads |
+    |---|---|
+    | Yalina, Attention Drawer | Assumes a stance for 2 turns: taunts all enemies and gains 60% damage reduction. |
+    | Mustafa, Earth Stance: Fortress | Assumes a stance for 2 turns: grants allies 60% damage reduction. |
+    | Iron, Iron Wall | Assumes a **defensive** stance for 2 turns: reduces damage taken by 40%. |
+    | Meliodas, Full Counter | Assumes a stance for 2 turns: counters attackers for 400% of ATK when taking damage. |
+    | Toll Collector, State Your Business | Assumes a stance for 1 turn: taunts **all enemies** and reduces damage taken by 60%. |
+
+    **The same pass fixed two older defects.** Full Counter was three sentences and **named its own caster** — *"Meliodas counters with damage equal to … of **his** ATK"* — the only card in the game that did, against #26's "no 'own'". And State Your Business said a bare *"Taunts"*, which was one enemy under the old engine and became **all** of them under #131: its own text was the one description that ruling actually invalidated.
+
+    **The panel follows the same rule.** A stance states its duration once, on the group, and its parts show none — `memberDurationToShow`. Repeating the number on every row read as several independent timers on one thing. A part whose duration genuinely differs still shows its own.
+
+    **The unit tile keeps counts, not icons.** 7DS shows one icon per effect; Tanveer confirmed counts and said why: *"all icons being visible … looks very congested on small screens such as phone. Unless we decrease the size which wouldn't work in our case as we have cards, not 3d models."* This upholds his 2026-08-13 call and settles it against the reference rather than despite it. Stances are their own token in that strip (#133), so the class is still visible: `↑2 ◆2 ↓1`.
+
+    **Still open, offered and not taken:** `skill.type` is wrong on two of these — Fortress is typed `buff` and Attention Drawer `debuff`, though both put up stances. Measured: changing either to `"stance"` is **behaviourally inert**, and Yalina's now-redundant `aoe` mechanic is inert too (the taunt needed it before #131). Mustafa's `aoe` is **not** — removing it stops the stance reaching anyone.
+
+135. **One vocabulary per mechanic** (2026-09-16, follows #134). Shown three wording splits the stance pass had exposed and asked to pick; he took all three: *"Go with all 3. I like all the options."*
+
+    **Damage reduction reads "reduces … damage taken by N%".** Two kits said *"gains/grants N% damage reduction"* and two said *"reduces damage taken by N%"*. Both phrases are glossary keys and they mean **different things** — "damage reduction" is the effect, "damage taken" is the stat — and three rules independently pick the second: the audience rule says a self effect **names no audience**, so "gains" is a word that should not be there; the effects panel prints "−25% damage taken", so card and panel now share one vocabulary; and "reduces" is a verb, matching `lifesteals` / `extorts` / `seals`. Ally-facing keeps its audience because it must — *"reduces allies' damage taken by N%"*.
+
+    **Counter damage uses the corpus's damage shape** — *"counters attackers for damage equal to N% ATK"*. Every other skill in the game states damage as "damage equal to N% ATK"; Full Counter was the only one phrasing it otherwise. Its trailing *"when taking damage"* went because **"counters" already says when**; a trigger is written inline only when it adds something, the way *"when an ally is attacked"* would.
+
+    **A cancel clause ends in a semicolon, not "and".** Two kits wrote *"Cancels buffs and does damage…"* against seven writing *"Cancels buffs; does damage…"*. **Both render identically** — `joinClausesAsProse` prints the "and" either way — which is exactly why it survived. The semicolon is the *authored* unit and it is what `dropZeroValueClauses` hides (#44); neither skill had a droppable clause, so nothing was broken, but adding one later would have taken the damage text down with it.
+
+    **A caution the guard itself earned.** Its first version flagged **four innocent skills**: the "and" in *"cancels buffs **and** stances"* joins two objects inside one clause and is correct. The check now requires the "and" to follow the object list and be followed by something that is not another object, and the false-positive case is pinned deliberately so a later tightening cannot quietly reintroduce it.
+
+    Confirmed lines and their rejected alternatives are in `.claude/skills/kitwords/EXAMPLES.md`; the roster guards are in `tests/kitDescriptionRules.test.ts`. One consequence: **`"damage reduction"` is now dead glossary vocabulary**, matched by nothing. Left in place for a future kit that wants the noun form.
 
 **Kit data stays JSON** — settled 2026-08-04. It's runtime data `combat.ts`, `descriptionTranslator`, `damagePreview`, the Zod schema, Kit Lab and ~20 test files all depend on. MDX is for prose (`content/news/`), not for kits.
 

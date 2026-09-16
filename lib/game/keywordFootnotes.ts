@@ -1,4 +1,7 @@
-import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
+import {
+  keywordStatesItsOwnValue,
+  mechanicGlossary,
+} from "@/lib/game/mechanicGlossary";
 
 /**
  * Keyword highlight + glossary footnotes (2026-07-24 battle UI overhaul,
@@ -51,6 +54,18 @@ export function extractKeywordFootnotes(
   const seen = new Set<string>();
   for (const match of matches) {
     const normalized = match[1].toLowerCase();
+    // #130: a tier verb that states its own percentage gets no footnote —
+    // the global `raises` entry would otherwise assert 30% under a sentence
+    // that says 59.
+    if (
+      keywordStatesItsOwnValue(
+        description,
+        match[1],
+        (match.index ?? 0) + match[0].length,
+      )
+    ) {
+      continue;
+    }
     if (seen.has(normalized)) continue;
     seen.add(normalized);
     deduped.push({ keyword: normalized, meaning: glossary[normalized] });

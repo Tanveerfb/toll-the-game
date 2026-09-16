@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { getAllCharacters } from "@/lib/game/characterCatalog";
-import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
+import {
+  keywordStatesItsOwnValue,
+  mechanicGlossary,
+} from "@/lib/game/mechanicGlossary";
 import { extractKeywordFootnotes } from "@/lib/game/keywordFootnotes";
 import { buildDescriptionForRank } from "@/lib/game/descriptionTranslator";
 
@@ -54,7 +57,7 @@ describe("#65 — descriptions only name mechanics the engine has", () => {
       for (const a of actionsOf(c as unknown as Record<string, unknown>)) {
         const text = (a.description ?? "").toLowerCase();
         for (const word of NOT_BUILT) {
-          if (new RegExp(`\b${word}\b`).test(text)) {
+          if (new RegExp(`\\b${word}\\b`).test(text)) {
             offenders.push(`${c.id} / ${a.skillName}: "${word}"`);
           }
         }
@@ -68,13 +71,13 @@ describe("#65 — descriptions only name mechanics the engine has", () => {
   it("the glossary doesn't advertise an unbuilt mechanic either", () => {
     const keys = Object.keys(mechanicGlossary).map((k) => k.toLowerCase());
     const offenders = keys.filter((k) =>
-      NOT_BUILT.some((w) => new RegExp(`\b${w}\b`).test(k)),
+      NOT_BUILT.some((w) => new RegExp(`\\b${w}\\b`).test(k)),
     );
     expect(offenders).toEqual([]);
   });
 });
 
-describe("#58/#109 — a tier word names one exact value", () => {
+describe("#58/#109/#130 — a tier word names one exact value", () => {
   /**
    * Tanveer, 2026-08-19, overturning the threshold reading: *"'raises' MUST be
    * 30%. It can't fluctuate, even by 1%. If I allow it, next time you would
@@ -85,50 +88,187 @@ describe("#58/#109 — a tier word names one exact value", () => {
    * The downward ceiling is lower on purpose — a stat can never be reduced to
    * zero in battle.
    *
-   * A value off that scale is not forbidden; it is written differently.
-   * "Increases ATK and evade chance by 33%" states the number in the text, so
-   * nothing is hidden and the effect gets no hover pill. `tierWord` returns
-   * undefined for those, and `buildSkillKeywordGlossary` skips them.
+   * Ruling **#130** (2026-09-16) makes the other half first-class. A value off
+   * that scale is written with the SAME verb and its number stated —
+   * "raises ATK by 33%" — rather than swapped for a different verb. The adverb
+   * and the number are alternatives and never both, since "greatly raises DEF
+   * by 59%" pairs a word meaning 50 with a 59. A bare verb still means the
+   * canonical 30%.
    *
-   * This also subsumes the older ladder rule: a ladder cannot step inside one
-   * tier word if every tier-worded value has to be exact.
-   *
-   * Audited across the roster the day this was written: 27 kits, and the only
-   * off-scale value in the game was Chiara's evade 33 — which had been written
-   * under a tier word since 2026-08-09 and is what prompted the ruling.
+   * These tests were dead when #130 was written, and every claim below about
+   * what they had verified was false. `/\braises\b/` had been authored through
+   * a heredoc that turned each `\b` into a literal `0x08`, so the filter
+   * matched nothing and the loop never ran. Repaired the same day; it
+   * immediately found four real hits, all of them created minutes earlier by
+   * #130's own migration.
    */
   const RAISE = new Set([30, 50, 100]);
   const LOWER = new Set([30, 50, 80]);
 
-  it("every value under a tier word sits exactly on the scale", () => {
+  /** Every tier verb in `text`, minus the ones that state their own number. */
+  const TIER_VERB_IN_TEXT =
+    /\b(?:permanently\s+)?(?:greatly\s+|massively\s+)?(?:raises|lowers)\b/gi;
+
+  function bareTierVerbs(text: string): string[] {
+    return [...text.matchAll(TIER_VERB_IN_TEXT)]
+      .filter(
+        (m) =>
+          !keywordStatesItsOwnValue(
+            text,
+            m[0],
+            (m.index ?? 0) + m[0].length,
+          ),
+      )
+      .map((m) => m[0].toLowerCase());
+  }
+
+  /**
+   * Rendered at every index the action can take. Six, not three: an ultimate
+   * has no rank, so the index means ult level and the ladders run to 6.
+   */
+  function renderedAtEveryRank(a: Action): string[] {
+    return [0, 1, 2, 3, 4, 5].map((r) =>
+      buildDescriptionForRank(a as never, r).toLowerCase(),
+    );
+  }
+
+  function buffDebuffValues(m: Record<string, unknown>): number[] {
+    const ladder = m.valueRanked as number[] | undefined;
+    const flat = m.valuePercent as number | undefined;
+    if (Array.isArray(ladder)) return ladder;
+    return typeof flat === "number" ? [flat] : [];
+  }
+
+  it("every value under a bare tier word sits exactly on the scale", () => {
     const offenders: string[] = [];
     for (const c of characters) {
       for (const a of actionsOf(c as unknown as Record<string, unknown>)) {
-        const text = (a.description ?? "").toLowerCase();
-        // Skills that state their numbers spend no tier word and are exempt —
-        // Leorio's 20/30/50 says "increases their ATK and DEF by [buff.value]%".
-        if (!/raises|lowers/.test(text)) continue;
+        const texts = renderedAtEveryRank(a);
+        if (!texts.some((t) => bareTierVerbs(t).length > 0)) continue;
 
         for (const m of a.mechanics ?? []) {
           const kind = m.type;
           if (kind !== "buff" && kind !== "debuff") continue;
           const allowed = kind === "buff" ? RAISE : LOWER;
-          const ladder = m.valueRanked as number[] | undefined;
-          const flat = m.valuePercent as number | undefined;
-          const values = Array.isArray(ladder)
-            ? ladder
-            : typeof flat === "number"
-              ? [flat]
-              : [];
-          for (const v of values) {
+          for (const v of buffDebuffValues(m)) {
             // A zero rank drops its clause entirely (#44), so it carries no word.
             if (v <= 0) continue;
+            // #130: exempt when the prose states this number itself. Checked
+            // against the RENDERED text, because the number only exists after
+            // `[buff.value]` resolves.
+            if (texts.some((t) => t.includes(`by ${v}%`))) continue;
             if (!allowed.has(v)) {
               offenders.push(
-                `${c.id} / ${a.skillName}: ${kind} ${v}% under a tier word — use "Increases/Decreases … by ${v}%"`,
+                `${c.id} / ${a.skillName}: ${kind} ${v}% under a bare tier word — write "${kind === "buff" ? "raises" : "lowers"} … by ${v}%"`,
               );
             }
           }
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("#130 — a rank-scaled value never hides behind a tier word", () => {
+    /**
+     * Tanveer, 2026-09-16: *"The rank scaled numbers don't follow tier based
+     * words. And vice versa."* A ladder spells its numbers at every rank; a
+     * tier word means one flat value.
+     *
+     * This retires #58's allowance for a ladder that STEPS between words. The
+     * cited example was Chiara's Marked Card, `[30,50,50]` rendering "lowers"
+     * then "greatly lowers" through a `[debuff? … : …]` conditional — the only
+     * skill in the game the new rule touched. Its `ranks:[false,true,true]`
+     * went with the conditional, and that closed a second bug: the engine
+     * gates on `ranks` for `aoeRanked` alone (combat.ts), so R1 applied the
+     * DEF debuff, while damagePreview.ts read the same array as "inactive at
+     * this rank" and showed the player nothing.
+     */
+    const offenders: string[] = [];
+    for (const c of characters) {
+      for (const a of actionsOf(c as unknown as Record<string, unknown>)) {
+        const laddered = (a.mechanics ?? []).some((m) => {
+          if (m.type !== "buff" && m.type !== "debuff") return false;
+          const ladder = m.valueRanked as number[] | undefined;
+          if (!Array.isArray(ladder)) return false;
+          return new Set(ladder.filter((v) => v > 0)).size > 1;
+        });
+        if (!laddered) continue;
+
+        for (const text of renderedAtEveryRank(a)) {
+          for (const verb of bareTierVerbs(text)) {
+            offenders.push(
+              `${c.id} / ${a.skillName}: rank-scaled value under "${verb}" — state the number`,
+            );
+          }
+        }
+      }
+    }
+    expect([...new Set(offenders)]).toEqual([]);
+  });
+
+  it("the adverb and the explicit number are never both used", () => {
+    const offenders: string[] = [];
+    for (const c of characters) {
+      for (const a of actionsOf(c as unknown as Record<string, unknown>)) {
+        for (const text of renderedAtEveryRank(a)) {
+          if (
+            /\b(?:greatly|massively)\s+(?:raises|lowers)\b[^.;]{0,60}?\bby\s+\d+%/i.test(
+              text,
+            )
+          ) {
+            offenders.push(`${c.id} / ${a.skillName}: ${text}`);
+          }
+        }
+      }
+    }
+    expect([...new Set(offenders)]).toEqual([]);
+  });
+});
+
+describe("#135 — one vocabulary per mechanic", () => {
+  /**
+   * Tanveer, 2026-09-16, approving a proposal after the stance pass found the
+   * roster saying one thing two ways.
+   *
+   * **Damage reduction reads as "reduces … damage taken by N%".** Both phrases
+   * were glossary keys meaning different things — "damage reduction" is the
+   * effect, "damage taken" is the stat — and three rules pick the second: the
+   * audience rule says a self effect names no audience (so "gains" is wrong),
+   * the effects panel prints "-25% damage taken", and mechanics are verbs.
+   *
+   * **A cancel clause ends in a semicolon, not "and".** The renderer prints
+   * "and"; the semicolon is what the AUTHOR writes, because it is the unit
+   * `dropZeroValueClauses` can hide (#44). Two skills wrote "and" and rendered
+   * identically, so nothing caught it — and a droppable clause added to either
+   * would have taken the damage text down with it.
+   */
+  it("no description uses the noun form 'damage reduction'", () => {
+    const offenders: string[] = [];
+    for (const c of characters) {
+      for (const a of actionsOf(c as unknown as Record<string, unknown>)) {
+        if (/damage reduction/i.test(a.description ?? "")) {
+          offenders.push(
+            `${c.id} / ${a.skillName}: write "reduces … damage taken by N%"`,
+          );
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("a cancel clause is separated by a semicolon, not 'and'", () => {
+    const offenders: string[] = [];
+    for (const c of characters) {
+      for (const a of actionsOf(c as unknown as Record<string, unknown>)) {
+        // The "and" in "cancels buffs AND stances" joins two objects inside
+        // one clause and is correct — the first version of this check flagged
+        // all four skills that write it. What is wrong is an "and" AFTER the
+        // object list, joining the cancel to a different clause.
+        const joinsAnotherClause =
+          /\bcancels\s+(?:buffs|stances)(?:\s+and\s+(?:buffs|stances))*\s+and\s+(?!buffs\b|stances\b)/i;
+        if (joinsAnotherClause.test(a.description ?? "")) {
+          offenders.push(`${c.id} / ${a.skillName}: use ";" between clauses`);
         }
       }
     }

@@ -75,10 +75,17 @@ Order of operations per action:
 2. Pre-skill passives (`beforeSkill`, e.g. HP consumption).
 3. `onFirstAction` passive trigger (first queued action of the turn).
 4. Ally skill-use trackers (`onAllySkill` momentum stacks).
-5. Targeting: AoE → whole opposing (or allied, for heal/buff) team; single-target attacks respect taunt redirection.
+5. Targeting: AoE → whole opposing (or allied, for heal/buff) team; single-target
+   attacks respect taunt redirection — which since ruling #131 reads the DEFENDING
+   team for a unit carrying a `taunt` entry, rather than the attacker for a taunt
+   debuff stamped on it. Most recently applied taunter wins (`appliedSeq`); a dead
+   one pulls nobody.
 6. Base damage = source stat (`atk`/`def`/max `hp` per `statMultiplier`) × skill multiplier.
 7. Dynamic multipliers: spite (missing-HP scaling), concentrate (fewer enemies = more damage), amplify (per-buff scaling), momentum consumption, consumeIgnite (stack conversion).
-8. Per-target: `calculateDamage` (see below), lethal-survival passives (`onLethalDamage`), then on-hit mechanic application (decay, ignite stacking, ult-gauge drain, stun, buff/stance cancels, stat debuffs, taunt) and friendly buffs/cleanses.
+8. Per-target: `calculateDamage` (see below), lethal-survival passives (`onLethalDamage`), then on-hit mechanic application (decay, ignite stacking, ult-gauge drain, stun, buff/stance cancels, stat debuffs) and friendly buffs/cleanses.
+   **Taunt is not in this list** — it goes up on the caster once per cast, with the
+   self-buff pass at step 6.5, because it is part of the caster's own stance (#131).
+   Applying it here would push one identical entry per enemy hit.
 9. Post-damage passives (`onDamageDealt` lifesteal) and `afterSkill` stack accumulation.
 
 Teams are deep-copied per action — `executeSkill` is pure with respect to its inputs and returns new team arrays.

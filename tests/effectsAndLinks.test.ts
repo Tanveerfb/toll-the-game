@@ -176,13 +176,10 @@ describe("ruling #31 — cancelling stances breaks the target's taunts", () => {
       valuePercent: 25,
       buffDuration: 1,
     });
-    // Her taunt markers live on the player team
-    attacker.debuffs.push({
-      type: "taunt",
-      debuffDuration: 1,
-      sourceId: "yalina",
-    });
-    ally.debuffs.push({ type: "taunt", debuffDuration: 1, sourceId: "yalina" });
+    // #131: nothing is stamped on the units being pulled any more. The taunt
+    // the stance put up lives on the taunter, alongside its damage reduction,
+    // which is the whole reason cancelling the stance now takes it.
+    taunter.buffs.push({ type: "taunt", buffDuration: 1 });
 
     const skill: SkillCard = {
       skillName: "Lightning Palm",
@@ -201,9 +198,10 @@ describe("ruling #31 — cancelling stances breaks the target's taunts", () => {
     );
     const after = result.enemyTeam[0];
     expect(after.buffs.some((b) => b.type === "stance")).toBe(false);
-    result.playerTeam.forEach((unit) => {
-      expect(unit.debuffs.some((d) => d.type === "taunt")).toBe(false);
-    });
+    // Ruling #31 still holds, and now holds structurally: the taunt went with
+    // the stance because it was part of it, not because a sweep hunted it
+    // down across both teams.
+    expect(after.buffs.some((b) => b.type === "taunt")).toBe(false);
   });
 });
 

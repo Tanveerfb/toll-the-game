@@ -3,6 +3,10 @@
 import React from "react";
 import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
 import { Badge } from "@/components/ui/badge";
+import {
+  SKILL_TYPE_CHIP,
+  skillTypeCategory,
+} from "@/lib/game/skillTypeStyle";
 import { type CharacterSkillData } from "@/lib/game/characterCatalog";
 import {
   buildRankedSkillDescriptions,
@@ -69,18 +73,11 @@ const UI = {
   textValue: "font-body text-sm text-readout",
 } as const;
 
-// The `role-*` tokens: aggression / affliction / restoration / climax. They
-// alias the element hues on purpose — see the palette note in globals.css.
-const SKILL_TYPE_CHIP: Record<string, string> = {
-  attack: "bg-role-attack text-void",
-  debuff: "bg-role-control text-void",
-  disable: "bg-role-control text-void",
-  heal: "bg-role-heal text-void",
-  cleanse: "bg-role-heal text-void",
-  buff: "bg-role-heal text-void",
-  stance: "bg-role-ultimate text-void",
-  ultimate: "bg-role-ultimate text-void",
-};
+// Colours come from `lib/game/skillTypeStyle.ts` since ruling #133 — one
+// taxonomy for the card, the archive and the kit document. The map that used
+// to sit here keyed off `skill.type` alone, so it called every buff GREEN and
+// every debuff PURPLE, and an attack that afflicted its target was
+// indistinguishable from one that did not.
 
 function toTitleCase(value: string): string {
   return value
@@ -127,7 +124,7 @@ export function SkillBlock({
     skill.type === "ultimate" || !ranked
       ? null
       : buildRankedSkillDescriptions(skill);
-  const chipClass = SKILL_TYPE_CHIP[skill.type] ?? "bg-edge text-readout-strong";
+  const chipClass = SKILL_TYPE_CHIP[skillTypeCategory(skill)];
   // Heal skills show their recovery amount in green (7DS convention).
   const numberClassName =
     skill.type === "heal" ? "font-semibold text-emerald-400" : undefined;

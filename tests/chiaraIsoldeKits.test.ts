@@ -528,16 +528,28 @@ describe("rankUpCharacterCards store action", () => {
 // rebalance while still catching one that goes out of range.
 
 describe("Archive-page description rendering (the actual bug Tanveer caught)", () => {
-  it("Chiara's Marked Card: word swaps 'lowers' -> 'greatly lowers' as the rank curve crosses tiers", async () => {
+  it("Chiara's Marked Card: a rank-scaled value states its number at every rank", async () => {
+    /**
+     * SUPERSEDED by ruling #130 (2026-09-16). This test used to assert the
+     * opposite — that the word swapped "lowers" -> "greatly lowers" as the
+     * [30,50,50] ladder crossed a tier. Tanveer: *"The rank scaled numbers
+     * don't follow tier based words. And vice versa."* Marked Card was the
+     * only skill in the game that did it, and the conditional driving it
+     * (`[debuff? greatly lowers : lowers]`) needed a hand-maintained
+     * `ranks:[false,true,true]` mirror of the ladder — which `damagePreview`
+     * separately read as "inactive at this rank" and used to hide the R1 DEF
+     * debuff the engine was applying.
+     */
     const { buildRankedSkillDescriptions } = await import(
       "@/lib/game/descriptionTranslator"
     );
     const markedCard = chiaraData.skills[0] as never;
     const lines = buildRankedSkillDescriptions(markedCard);
-    expect(lines[0]).toMatch(/\blowers DEF for 1 turns?\b/i);
-    expect(lines[0]).not.toMatch(/greatly lowers/i);
-    expect(lines[1]).toMatch(/\bgreatly lowers DEF for 1 turns?\b/i);
-    expect(lines[2]).toMatch(/\bgreatly lowers DEF for 2 turns?\b/i);
+    expect(lines[0]).toMatch(/\blowers DEF by 30% for 1 turns?\b/i);
+    expect(lines[1]).toMatch(/\blowers DEF by 50% for 1 turns?\b/i);
+    expect(lines[2]).toMatch(/\blowers DEF by 50% for 2 turns?\b/i);
+    // The adverb and the number are alternatives, never both.
+    expect(lines.join(" ")).not.toMatch(/greatly lowers/i);
   });
 
   it("Chiara's House Rules: R1 mentions neither seal, R2 only the active one, R3 both", async () => {

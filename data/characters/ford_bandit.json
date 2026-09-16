@@ -34,7 +34,7 @@
     },
     {
       "skillName": "Strip the Cart",
-      "description": "Cancels buffs and does damage equal to ATK-scaled to one enemy.",
+      "description": "Cancels buffs; does damage equal to ATK-scaled to one enemy.",
       "characterId": "ford_bandit",
       "type": "attack",
       "statMultiplier": "atk",

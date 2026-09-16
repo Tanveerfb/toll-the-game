@@ -120,9 +120,22 @@ See `docs/HANDOFF.md` rulings #55–58 for the full statements.
   are too large for a rank-1 team-wide buff. Pick whichever states the effect
   honestly. Explicit numbers are the escape hatch when the tier values are the
   wrong size for the skill.
-- A rank ladder may step **between** tier words (Chiara's Marked Card: R1
-  "lowers" 30, R2/R3 "greatly lowers" 50). A ladder **inside** one tier word is
-  forbidden.
+- **The explicit form uses the same verb** (#130, 2026-09-16): `raises ATK by
+  33%`, not "Increases ATK by 33%". The adverb and the number are alternatives
+  and never appear together — "greatly raises … by 59%" pairs a word meaning 50
+  with a 59.
+- **A rank ladder never wears a tier word, and a tier word means one flat
+  value** (#130). *"The rank sclaed numbers don't follow tier based words. And
+  vice versa."* A ladder spells its number at every rank. **This retires the
+  older carve-out** that let a ladder step *between* words — Chiara's Marked
+  Card `[30,50,50]` reading "lowers" then "greatly lowers" was the reference
+  case, and is now `lowers DEF by [debuff.value]%`.
+- **A stance is not a buff, and the two are cancelled by different things**
+  (#131/#132). Everything a stance skill applies to its caster — the taunt, the
+  damage reduction, a DEF raise — belongs to that stance: `cancelStances` takes
+  all of it, `cancelBuffs` takes none of it. A free-standing buff is the
+  mirror image. So put a stance's parts on the stance skill, and give any skill
+  whose text says "cancels stances" the `cancelStances` mechanic to match.
 - **Only values written `x/y/z` are rank-scaled.** Everything else is flat unless
   he says otherwise. Ultimates never rank.
 - **"basic stats"** = ATK, DEF, HP. **"all stats"** = basic + substats, excluding
@@ -162,7 +175,8 @@ to **25/50/75** because 60 sat too close to Leorio's 50 to read as a different
 class of effect (2026-08-10). The shape to aim for: self-R2 *equals* the
 team-buff ceiling, and self-R3 goes visibly past it. Note this ladder crosses
 tier words at R2 and stays inside "greatly" at R3 (50–79), so it must be written
-as explicit percentages — a ladder inside one tier word is forbidden (#58).
+as explicit percentages — which since #130 is true of **every** ladder, not just
+one that lands between tiers.
 
 **Price pacing at R1, not R3.** R3 is the rarest card; a mechanic evaluated on it
 will read far faster than it plays. Roster convention is **R1 ≈ 65%, R2 ≈ 80%**
@@ -201,7 +215,8 @@ mid-turn DEF changes.
    whose value has no precedent is the number that gets tuned out.
 3. 2 skills + ultimate + passive; passive carries the story.
 4. Reuse existing mechanics unless this is the batch's new-mechanic slot.
-5. Write tier words at their fixed values; mark rank ladders as `x/y/z`.
+5. Write tier words at their fixed values, and only on flat values; mark rank
+   ladders as `x/y/z` and write them as `raises X by [buff.value]%` (#130).
 6. State durations, and whether each effect is cancellable.
 7. Sanity-check R1 pacing in all four formats.
 8. List every open question **before** writing JSON — Tanveer answers fast and

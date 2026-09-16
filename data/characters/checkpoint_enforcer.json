@@ -13,7 +13,7 @@
   "skills": [
     {
       "skillName": "Raise the Price",
-      "description": "Increases all allies' ATK by [buff.value]% for [buff.duration] turns.",
+      "description": "Raises all allies' ATK by [buff.value]% for [buff.duration] turns.",
       "characterId": "checkpoint_enforcer",
       "type": "buff",
       "statMultiplier": "atk",

@@ -198,6 +198,53 @@ Sunken Verdict.
 Confirmed 2026-08-10, same for "extorts". The glossary key is what becomes the
 hover pill, so prose like "recovers HP equal to" silently loses it.
 
+### Damage reduction says "damage taken" — `confirmed 2026-09-16`
+
+> Assumes a stance for 2 turns: taunts all enemies; **reduces damage taken by**
+> `[stance.value]`%
+
+Rejected alternative, which two kits shipped with:
+
+> …**gains** `[stance.value]`% **damage reduction**
+
+Both phrases are glossary keys and they mean different things — "damage
+reduction" is the *effect*, "damage taken" is the *stat*. Three rules pick the
+second, and they agree: the audience rule says a self effect **names no
+audience**, so "gains" is a word that should not be there; the effects panel
+prints "-25% damage taken", so the card and the panel now use one vocabulary;
+and "reduces" is a verb, matching `lifesteals` / `extorts` / `seals`.
+
+Ally-facing keeps its audience because it must: **"reduces allies' damage taken
+by `[stance.value]`%"** (Mustafa). Pinned by `tests/kitDescriptionRules.test.ts`.
+
+### Counter damage uses the corpus's damage shape — `confirmed 2026-09-16`
+
+> counters attackers for **damage equal to** `[stance.counterDamagePercent]`% ATK
+
+Rejected:
+
+> counters attackers for `[stance.counterDamagePercent]`% **of ATK when taking
+> damage**
+
+"damage equal to N% ATK" is how every other skill in the game states damage;
+Full Counter was the only one phrasing it otherwise. The trailing trigger went
+because **"counters" already says when** — a trigger is written inline only when
+it adds something ("when an ally is attacked" would).
+
+### A cancel clause ends in a semicolon — `confirmed 2026-09-16`
+
+> **Cancels buffs; does** damage equal to ATK-scaled to one enemy.
+
+Rejected, and it shipped on two kits:
+
+> Cancels buffs **and does** damage equal to ATK-scaled to one enemy.
+
+**These render identically** — `joinClausesAsProse` prints the "and" either way
+— which is exactly why it went unnoticed. The semicolon is the AUTHORED unit,
+and it is what `dropZeroValueClauses` hides (#44). Neither skill had a droppable
+clause, so nothing was broken; adding one later would have taken the damage text
+down with it.
+
 ---
 
 ## Rejected

@@ -58,10 +58,13 @@ export const mechanicGlossary = {
   counters: "A unit in a counter stance strikes back when attacked (unless the hit kills it)",
   "cancels buffs and stances": "Removes all buffs and stances from the target; uncancellable effects persist",
   "cancel buffs and stances": "Removes all buffs and stances from the target; uncancellable effects persist",
-  "cancels buffs": "Removes all of the target's buffs, stances included; uncancellable effects persist",
-  "cancel buffs": "Removes all of the target's buffs, stances included; uncancellable effects persist",
-  "cancels stances": "Removes the target's stances; uncancellable stances persist",
-  "cancel stances": "Removes the target's stances; uncancellable stances persist",
+  // Ruling #132: these reach different things. "Stances included" was true
+  // until 2026-09-16, when cancelBuffs stopped sweeping them — a pill saying
+  // otherwise would now promise the player a removal that does not happen.
+  "cancels buffs": "Removes the target's buffs; stances are untouched, and uncancellable effects persist",
+  "cancel buffs": "Removes the target's buffs; stances are untouched, and uncancellable effects persist",
+  "cancels stances": "Removes the target's stances and every effect they carry; ordinary buffs are untouched, and uncancellable stances persist",
+  "cancel stances": "Removes the target's stances and every effect they carry; ordinary buffs are untouched, and uncancellable stances persist",
   lowers: "Reduces the stat by 30%",
   "greatly lowers": "Reduces the stat by 50%",
   "massively lowers": "Reduces the stat by 80%",
@@ -82,6 +85,48 @@ export const mechanicGlossary = {
 } as const;
 
 export type MechanicKeyword = keyof typeof mechanicGlossary;
+
+/**
+ * A tier verb standing alone, with the optional adverbs that pin its value.
+ *
+ * Matched whole, so "greatly raises" never also reads as "raises" here.
+ */
+const TIER_VERB =
+  /^(?:permanently\s+)?(?:greatly\s+|massively\s+)?(?:raises|lowers)$/i;
+
+/**
+ * True when a matched tier verb is followed, inside its own clause, by the
+ * percentage it applies — "raises ATK by 33%".
+ *
+ * Ruling #130 (Tanveer, 2026-09-16) makes the explicit form first-class: the
+ * adverb and the number are alternatives, never both, and a bare verb still
+ * means the canonical 30%. That creates a hazard this function exists to
+ * close. `mechanicGlossary` carries a GLOBAL `raises: "Raises the stat by
+ * 30%"`, merged in under every per-skill glossary, and both the highlighter
+ * and `extractKeywordFootnotes` match it as a bare word. Without this check,
+ * "raises DEF by 59%" gets a pill asserting 30% directly above a sentence
+ * saying 59 — the pill contradicting the text it annotates.
+ *
+ * The number is right there in the prose, so there is nothing for a pill to
+ * reveal and it gets none. Scanning stops at `.` or `;` so a verb can never
+ * borrow the percentage belonging to the next clause: in "raises ATK for 2
+ * turns; lowers DEF by 30%" the first verb keeps its pill and the second
+ * loses it.
+ *
+ * An unresolved `[buff.value]` placeholder counts too. Rendered text has none,
+ * but `KeyworkHighlighter` is also pointed at raw prose in places, and a pill
+ * claiming 30% over an unrendered ladder is the same lie.
+ */
+export function keywordStatesItsOwnValue(
+  text: string,
+  keyword: string,
+  matchEnd: number,
+): boolean {
+  if (!TIER_VERB.test(keyword.trim())) return false;
+  return /^[^.;]{0,60}?\bby\s+(?:\d+(?:\.\d+)?|\[[^\]]+\])%/i.test(
+    text.slice(matchEnd),
+  );
+}
 
 /**
  * Passive descriptions are hand-authored prose, not the tier-word system

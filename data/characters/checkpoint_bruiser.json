@@ -13,7 +13,7 @@
   "skills": [
     {
       "skillName": "Close the Gate",
-      "description": "Increases all allies' DEF by [buff.value]% for [buff.duration] turns.",
+      "description": "Raises all allies' DEF by [buff.value]% for [buff.duration] turns.",
       "characterId": "checkpoint_bruiser",
       "type": "buff",
       "statMultiplier": "def",
@@ -42,7 +42,7 @@
     },
     {
       "skillName": "Clear the Road",
-      "description": "Cancels buffs and does Pierce damage equal to ATK-scaled to all enemies.",
+      "description": "Cancels buffs; does Pierce damage equal to ATK-scaled to all enemies.",
       "characterId": "checkpoint_bruiser",
       "type": "attack",
       "statMultiplier": "atk",

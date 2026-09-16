@@ -7,6 +7,7 @@ import {
   mechanicGlossary,
   keywordCategories,
   passiveStatVerbCategories,
+  keywordStatesItsOwnValue,
 } from "@/lib/game/mechanicGlossary";
 
 const ARROW_CATEGORIES = { ...keywordCategories, ...passiveStatVerbCategories };
@@ -133,6 +134,16 @@ export default function KeyworkHighlighter({
         <span key={`p-${i}`} className={PAREN_CLASS}>
           {parenMatch}
         </span>,
+      );
+    } else if (
+      kwMatch &&
+      keywordStatesItsOwnValue(text, kwMatch, idx + match[0].length)
+    ) {
+      // #130: the clause already states the percentage, so the word is plain
+      // text. A pill here would assert the canonical 30% over a sentence
+      // naming a different number.
+      nodes.push(
+        <React.Fragment key={`k-${i}`}>{kwMatch}</React.Fragment>,
       );
     } else if (kwMatch) {
       const desc = dictionary[kwMatch.toLowerCase()];

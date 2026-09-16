@@ -89,6 +89,16 @@ The file's own format block is authoritative. It asks for:
   it. The entry is worth writing either way, but the fix was amending the recipe;
   queueing a re-render alone would have produced the same defect again
   (2026-09-01, entry D2).
+- **Ask what size it actually ships at, before anything else.** An entry is
+  worth writing only if the asset can be *seen*. The skill-class glyphs (D3)
+  render at **10px inside a 16px badge** on a 47px card — below this file's own
+  24px floor for inventory icons and far below the 32px a drawn mark can
+  promise. At that size a bespoke sword and a bespoke pair of swords are two
+  smudges, and the generic fallback already in the code is indistinguishable
+  from the commissioned version. The honest entry said so and marked itself
+  low-priority; the alternative was commissioning work that could not be
+  perceived. **Measure the render size, then decide whether to write the entry
+  at all** — "he offered" is not the same as "it is needed".
 - **Never invent game content to justify art.** Art follows an approved design and never
   leads it — Tanveer owns kits, mechanics and characters (see `AGENTS.md`). If the thing
   the art depicts doesn't exist yet, say that in the entry rather than designing it.

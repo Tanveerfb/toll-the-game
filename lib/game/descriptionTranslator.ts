@@ -620,9 +620,13 @@ function tierWord(value: number, falling: boolean): string | undefined {
   const base = falling ? "lowers" : "raises";
   // EXACT values, not thresholds (Tanveer, 2026-08-19): "'raises' MUST be 30%.
   // It can't fluctuate, even by 1%. If I allow it, next time you would propose
-  // 'greatly raises' to accept even 55%." A value that isn't on the scale is
-  // written "Increases/Decreases X by N%" instead, with the number visible —
-  // so it needs no pill, and gets none.
+  // 'greatly raises' to accept even 55%." A value that isn't on the scale
+  // keeps this same verb and states its number — "raises ATK by 33%" (#130,
+  // 2026-09-16; it used to switch to "Increases … by N%"). The number is
+  // visible either way, so it needs no pill and gets none: returning undefined
+  // here is half of that, and `keywordStatesItsOwnValue` is the other half,
+  // since the GLOBAL `raises` key in mechanicGlossary would otherwise still
+  // match the word and assert 30% over a sentence saying 33.
   if (value === (falling ? 80 : 100)) return `massively ${base}`;
   if (value === 50) return `greatly ${base}`;
   if (value === 30) return base;

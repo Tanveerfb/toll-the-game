@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowDown, ArrowUp, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowUp, ShieldHalf, Sparkles } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -10,11 +10,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { statPhrase } from "@/lib/game/stats";
+import { entryTouchesStat, statPhrase } from "@/lib/game/stats";
 import type { BattleCharacter } from "@/types/character";
 import type { StatusEffect } from "@/types/mechanic";
 
-type Category = "buff" | "debuff" | "effect";
+/**
+ * Ruling #133 (Tanveer, 2026-09-16): what an effect IS reads as a colour.
+ *
+ *   buff    blue    a free-standing raise; `cancelBuffs` takes it
+ *   stance  yellow  a stance and every part of it; `cancelStances` takes it
+ *   debuff  red     hostile
+ *   effect  grey    uncancellable — *"they are not affected by any cancel
+ *                   buffs or any cleanses … they are just effects"* (#30)
+ *
+ * The colour is the cancel rule made visible. A stance used to render blue
+ * beside ordinary buffs, which is precisely the distinction #132 had just
+ * spent an engine change drawing.
+ */
+type Category = "buff" | "stance" | "debuff" | "effect";
 
 const CATEGORY_STYLE: Record<
   Category,
@@ -30,6 +43,11 @@ const CATEGORY_STYLE: Record<
     chip: "text-role-attack",
     icon: ArrowDown,
   },
+  stance: {
+    row: "border-el-light/50 bg-el-light/8",
+    chip: "text-el-light",
+    icon: ShieldHalf,
+  },
   effect: {
     row: "border-edge bg-inset",
     chip: "text-readout-muted",
@@ -42,19 +60,40 @@ interface CategorizedEffect {
   category: Category;
 }
 
+/**
+ * Which entries are part of a stance rather than free-standing buffs.
+ *
+ * The same predicate the cancel step uses (#132) — membership is by group, so
+ * a DEF raise applied by a stance skill is part of that stance whatever its
+ * own `type` says. Keeping one rule means the colour can never disagree with
+ * what a cancel would actually remove.
+ */
+export function isStanceEntry(effect: StatusEffect): boolean {
+  return (
+    effect.type === "stance" ||
+    effect.type === "taunt" ||
+    effect.groupId !== undefined
+  );
+}
+
 /** Ruling #30: uncancellable entries are grey "effects" regardless of whether
- * they live in buffs or debuffs. Order: buffs, then debuffs, then effects. */
+ * they live in buffs or debuffs. Order: buffs, stances, debuffs, then effects
+ * — favourable things together, and #133's colours run in that order too. */
 export function categorizeEffects(unit: BattleCharacter): CategorizedEffect[] {
-  const buffs = unit.buffs
-    .filter((b) => !b.uncancellable)
+  const live = unit.buffs.filter((b) => !b.uncancellable);
+  const buffs = live
+    .filter((b) => !isStanceEntry(b))
     .map((effect) => ({ effect, category: "buff" as const }));
+  const stances = live
+    .filter(isStanceEntry)
+    .map((effect) => ({ effect, category: "stance" as const }));
   const debuffs = unit.debuffs
     .filter((d) => !d.uncancellable)
     .map((effect) => ({ effect, category: "debuff" as const }));
   const effects = [...unit.buffs, ...unit.debuffs]
     .filter((e) => e.uncancellable)
     .map((effect) => ({ effect, category: "effect" as const }));
-  return [...buffs, ...debuffs, ...effects];
+  return [...buffs, ...stances, ...debuffs, ...effects];
 }
 
 /**
@@ -69,15 +108,18 @@ export function categorizeEffects(unit: BattleCharacter): CategorizedEffect[] {
  */
 export function effectCounts(unit: BattleCharacter): {
   buffs: number;
+  stances: number;
   debuffs: number;
 } {
   let buffs = 0;
+  let stances = 0;
   let debuffs = 0;
   for (const { category } of categorizeEffects(unit)) {
     if (category === "buff") buffs += 1;
+    else if (category === "stance") stances += 1;
     else if (category === "debuff") debuffs += 1;
   }
-  return { buffs, debuffs };
+  return { buffs, stances, debuffs };
 }
 
 export function prettyName(effect: StatusEffect): string {
@@ -87,8 +129,91 @@ export function prettyName(effect: StatusEffect): string {
     .replace(/^./, (s) => s.toUpperCase());
 }
 
+/**
+ * What a row inside a stance shows in the Turns column.
+ *
+ * A stance states its duration ONCE, on the stance, and its parts inherit it —
+ * the shape 7DS uses ("Assumes a Stance for 1 turn(s) which Taunts enemies and
+ * inflicts…"), and the reference Tanveer gave. Repeating the number on every
+ * row reads as several independent timers on what is one thing.
+ *
+ * A part whose duration genuinely differs still shows its own, so a future
+ * stance whose taunt outlasts its stat raise stays readable.
+ */
+export function memberDurationToShow(
+  own: number | undefined,
+  groupDuration: number | undefined,
+  inGroup: boolean,
+): number | undefined {
+  if (!inGroup) return own;
+  return own === groupDuration ? undefined : own;
+}
+
+/**
+ * A stance and the entries it put up, or one ungrouped effect.
+ *
+ * Ruling #131: a stance is one thing the player chose, and its parts are
+ * listed separately but under its name. Without the heading, Yalina's taunt
+ * and her damage reduction read as two unrelated rows that happen to share a
+ * duration.
+ */
+type Block =
+  | { kind: "single"; row: CategorizedEffect }
+  | { kind: "group"; name: string; rows: CategorizedEffect[] };
+
+/**
+ * Groups adjacent-by-id rows without reordering anything.
+ *
+ * Order is load-bearing — `categorizeEffects` returns buffs, then debuffs,
+ * then grey effects (#30), and a group must not drag a row out of its band.
+ * A group is emitted at the position of its FIRST member and collects only
+ * members from the same category.
+ */
+export function blocksFor(rows: CategorizedEffect[]): Block[] {
+  const blocks: Block[] = [];
+  const taken = new Set<number>();
+  rows.forEach((row, i) => {
+    if (taken.has(i)) return;
+    const id = row.effect.groupId;
+    if (!id) {
+      blocks.push({ kind: "single", row });
+      return;
+    }
+    const members: CategorizedEffect[] = [];
+    rows.forEach((other, j) => {
+      if (taken.has(j)) return;
+      if (other.effect.groupId !== id) return;
+      if (other.category !== row.category) return;
+      taken.add(j);
+      members.push(other);
+    });
+    blocks.push({
+      kind: "group",
+      name: row.effect.groupName ?? prettyName(row.effect),
+      rows: members,
+    });
+  });
+  return blocks;
+}
+
+/**
+ * What a row inside a group is called.
+ *
+ * The group heading already carries the skill name, so repeating "Stance" on
+ * every member says nothing — this names the effect instead.
+ */
+function groupedLabel(effect: StatusEffect): string {
+  if (effect.type === "taunt") return "Taunt";
+  if (effect.counterDamagePercent !== undefined) return "Counter";
+  if (effect.stat || effect.stats?.length) {
+    const phrase = statPhrase(effect);
+    return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+  }
+  return prettyName(effect);
+}
+
 /** A compact, human description for the row — numbers are tinted by the caller. */
-function effectDescription(effect: StatusEffect): string {
+export function effectDescription(effect: StatusEffect): string {
   const perTurn =
     effect.capturedDamage ??
     (effect.type === "damageOverTime" || effect.type === "decay"
@@ -102,7 +227,14 @@ function effectDescription(effect: StatusEffect): string {
   if (effect.type === "seal") {
     return `${effect.sealType ?? "skill"} skills sealed`;
   }
-  if (effect.type === "taunt") return "Attacks redirect to the source";
+  if (effect.type === "taunt") return "Enemies must attack this unit";
+  // A counter stance's number is its counter damage, not a stat modifier, so
+  // it is stored on its own field and every branch here used to miss it —
+  // Meliodas's Full Counter rendered a row with a blank value, which is the
+  // entire skill going unsaid while it was active (#131, 2026-09-16).
+  if (effect.counterDamagePercent !== undefined) {
+    return `Counters attackers for ${effect.counterDamagePercent}% ATK`;
+  }
   // Via statPhrase, so an entry declaring `stats: ["atk","def","hp"]` reads
   // "basic stats" instead of losing its stat name entirely — `effect.stat` is
   // undefined on every combined entry (see lib/game/stats.ts).
@@ -112,8 +244,17 @@ function effectDescription(effect: StatusEffect): string {
     return `${sign}${effect.flatValue} ${statPhrase(effect)}`;
   }
   if (effect.valuePercent !== undefined && named) {
-    const sign = effect.valuePercent >= 0 ? "+" : "";
-    return `${sign}${effect.valuePercent}% ${statPhrase(effect)}`;
+    // `damageReduction` reads as "damage taken" (Tanveer's battle-log
+    // vocabulary, 2026-08-13), which inverts the sign: a unit with 25%
+    // reduction takes 25% LESS. Printed straight, this row said "+25% damage
+    // taken" over a stance that was protecting the unit — the opposite of
+    // what was happening. The word stays his; only the sign is corrected.
+    const inverted = entryTouchesStat(effect, "damageReduction", {
+      allCounts: false,
+    });
+    const shown = inverted ? -effect.valuePercent : effect.valuePercent;
+    const sign = shown >= 0 ? "+" : "";
+    return `${sign}${shown}% ${statPhrase(effect)}`;
   }
   if (effect.valuePercent !== undefined) return `${effect.valuePercent}%`;
   return "";
@@ -155,18 +296,28 @@ export function EffectCountStrip({
   unit: BattleCharacter;
   className?: string;
 }): React.JSX.Element | null {
-  const { buffs, debuffs } = effectCounts(unit);
-  if (buffs === 0 && debuffs === 0) return null;
+  const { buffs, stances, debuffs } = effectCounts(unit);
+  if (buffs === 0 && stances === 0 && debuffs === 0) return null;
+  // A stance gets its own token rather than being counted as a buff (#133) —
+  // it answers a different question ("can this be cancelled, and by what") and
+  // it is the one a player decides a turn on. `gap-1.5` rather than `gap-2`
+  // because three tokens have to sit in a 44px-wide tile at 390px.
   return (
     <div
-      className={`flex items-center gap-2 font-body text-xs font-bold tabular-nums ${className}`}
-      // One label for the pair: two separate ones read as unrelated numbers.
-      aria-label={`${buffs} buff${buffs === 1 ? "" : "s"}, ${debuffs} debuff${debuffs === 1 ? "" : "s"}`}
+      className={`flex items-center gap-1.5 font-body text-xs font-bold tabular-nums ${className}`}
+      // One label for the set: separate ones read as unrelated numbers.
+      aria-label={`${buffs} buff${buffs === 1 ? "" : "s"}, ${stances} stance${stances === 1 ? "" : "s"}, ${debuffs} debuff${debuffs === 1 ? "" : "s"}`}
     >
       {buffs > 0 ? (
         <span className="flex items-center gap-0.5 text-el-blue">
           <ArrowUp className="h-3 w-3" strokeWidth={3} aria-hidden />
           {buffs}
+        </span>
+      ) : null}
+      {stances > 0 ? (
+        <span className="flex items-center gap-0.5 text-el-light">
+          <ShieldHalf className="h-3 w-3" strokeWidth={3} aria-hidden />
+          {stances}
         </span>
       ) : null}
       {debuffs > 0 ? (
@@ -222,33 +373,96 @@ function EffectTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {rows.map(({ effect, category }, idx) => {
-          const style = CATEGORY_STYLE[category];
+        {blocksFor(rows).flatMap((block, bi) => {
+          const cells = (
+            { effect, category }: CategorizedEffect,
+            key: string,
+            inGroup: boolean,
+            groupDuration?: number,
+          ) => {
+            const style = CATEGORY_STYLE[category];
+            const Icon = style.icon;
+            const duration = memberDurationToShow(
+              effect.buffDuration ?? effect.debuffDuration,
+              groupDuration,
+              inGroup,
+            );
+            const stacks = effect.stacks ?? 1;
+            // Inside a group the stat is already the row's name, so the value
+            // column carries the bare number rather than saying it twice.
+            const namesItsStat =
+              inGroup && Boolean(effect.stat || effect.stats?.length);
+            const desc = namesItsStat
+              ? effect.valuePercent !== undefined
+                ? `${effect.valuePercent >= 0 ? "+" : ""}${effect.valuePercent}%`
+                : ""
+              : effectDescription(effect);
+            return (
+              <TableRow key={key}>
+                <TableCell className={CELL}>
+                  <span
+                    className={`flex items-center gap-1.5 ${inGroup ? "pl-3" : ""}`}
+                  >
+                    {inGroup ? (
+                      <span
+                        aria-hidden
+                        className="shrink-0 text-readout-muted"
+                      >
+                        ↳
+                      </span>
+                    ) : (
+                      <Icon
+                        className={`h-3 w-3 shrink-0 ${style.chip}`}
+                        strokeWidth={2.6}
+                        aria-hidden
+                      />
+                    )}
+                    <span className="font-heading tracking-[0.04em] text-readout-strong">
+                      {inGroup ? groupedLabel(effect) : prettyName(effect)}
+                    </span>
+                  </span>
+                </TableCell>
+                <TableCell className={`${CELL} text-readout-dim`}>
+                  {desc ? <DescriptionText text={desc} /> : "—"}
+                </TableCell>
+                <TableCell
+                  className={`${CELL} text-right tabular-nums text-readout-dim`}
+                >
+                  {stacks > 1 ? `×${stacks}` : "—"}
+                </TableCell>
+                <TableCell
+                  className={`${CELL} text-right tabular-nums text-readout-dim`}
+                >
+                  {duration ?? "—"}
+                </TableCell>
+                <TableCell className="truncate py-1.5 pr-0 pl-0 text-readout-muted">
+                  {sourceName(effect.sourceId)}
+                </TableCell>
+              </TableRow>
+            );
+          };
+
+          if (block.kind === "single") {
+            return [cells(block.row, `s-${bi}`, false)];
+          }
+          const head = block.rows[0];
+          const style = CATEGORY_STYLE[head.category];
           const Icon = style.icon;
-          const duration = effect.buffDuration ?? effect.debuffDuration;
-          const stacks = effect.stacks ?? 1;
-          const desc = effectDescription(effect);
-          return (
-            <TableRow key={`${effect.type}-${idx}`}>
-              <TableCell className={CELL}>
+          const duration =
+            head.effect.buffDuration ?? head.effect.debuffDuration;
+          return [
+            <TableRow key={`g-${bi}`}>
+              <TableCell className={CELL} colSpan={3}>
                 <span className="flex items-center gap-1.5">
                   <Icon
                     className={`h-3 w-3 shrink-0 ${style.chip}`}
                     strokeWidth={2.6}
                     aria-hidden
                   />
-                  <span className="font-heading tracking-[0.04em] text-readout-strong">
-                    {prettyName(effect)}
+                  <span className="font-heading uppercase tracking-[0.1em] text-readout-strong">
+                    {block.name}
                   </span>
                 </span>
-              </TableCell>
-              <TableCell className={`${CELL} text-readout-dim`}>
-                {desc ? <DescriptionText text={desc} /> : "—"}
-              </TableCell>
-              <TableCell
-                className={`${CELL} text-right tabular-nums text-readout-dim`}
-              >
-                {stacks > 1 ? `×${stacks}` : "—"}
               </TableCell>
               <TableCell
                 className={`${CELL} text-right tabular-nums text-readout-dim`}
@@ -256,10 +470,13 @@ function EffectTable({
                 {duration ?? "—"}
               </TableCell>
               <TableCell className="truncate py-1.5 pr-0 pl-0 text-readout-muted">
-                {sourceName(effect.sourceId)}
+                {sourceName(head.effect.sourceId)}
               </TableCell>
-            </TableRow>
-          );
+            </TableRow>,
+            ...block.rows.map((row, ri) =>
+              cells(row, `g-${bi}-${ri}`, true, duration),
+            ),
+          ];
         })}
       </TableBody>
     </Table>
@@ -287,6 +504,7 @@ export function EffectsTables({
 }): React.JSX.Element {
   const all = categorizeEffects(unit);
   const buffs = all.filter((r) => r.category === "buff");
+  const stances = all.filter((r) => r.category === "stance");
   const debuffs = all.filter((r) => r.category === "debuff");
   const grey = all.filter((r) => r.category === "effect");
 
@@ -298,6 +516,19 @@ export function EffectsTables({
         </h3>
         <EffectTable rows={buffs} allUnits={allUnits} emptyText="None active" />
       </section>
+
+      {stances.length > 0 ? (
+        <section className="space-y-1">
+          <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-el-light">
+            Stances
+          </h3>
+          <EffectTable
+            rows={stances}
+            allUnits={allUnits}
+            emptyText="None active"
+          />
+        </section>
+      ) : null}
 
       <section className="space-y-1">
         <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-role-attack">

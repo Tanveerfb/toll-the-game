@@ -143,15 +143,34 @@ describe("getAIMove", () => {
   });
 
   it("respects taunt over default targeting", () => {
-    const taunter = makeChar({ instanceId: "taunter", team: "player" });
-    const weak = makeChar({ instanceId: "weak", team: "player", currentHP: 1 });
-    const enemy = makeChar({
-      instanceId: "e1",
-      team: "enemy",
-      debuffs: [{ type: "taunt", sourceId: "taunter", debuffDuration: 1 }],
+    // #131: the taunt is an effect on the TAUNTER, not a debuff on the enemy
+    // that has to obey it. The AI reads the player team for anyone taunting.
+    const taunter = makeChar({
+      instanceId: "taunter",
+      team: "player",
+      buffs: [{ type: "taunt", buffDuration: 1, appliedSeq: 1 }],
     });
+    const weak = makeChar({ instanceId: "weak", team: "player", currentHP: 1 });
+    const enemy = makeChar({ instanceId: "e1", team: "enemy" });
     const action = getAIMove([enemy], [taunter, weak]);
     expect(action?.targetInstanceId).toBe("taunter");
+  });
+
+  it("prefers the most recently applied taunt when two allies taunt", () => {
+    const early = makeChar({
+      instanceId: "early",
+      team: "player",
+      buffs: [{ type: "taunt", buffDuration: 2, appliedSeq: 1 }],
+    });
+    const late = makeChar({
+      instanceId: "late",
+      team: "player",
+      buffs: [{ type: "taunt", buffDuration: 2, appliedSeq: 2 }],
+    });
+    const enemy = makeChar({ instanceId: "e1", team: "enemy" });
+    expect(getAIMove([enemy], [early, late])?.targetInstanceId).toBe("late");
+    // Order in the team array must not decide it — only the stamp.
+    expect(getAIMove([enemy], [late, early])?.targetInstanceId).toBe("late");
   });
 });
 

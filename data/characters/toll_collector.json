@@ -13,7 +13,7 @@
   "skills": [
     {
       "skillName": "State Your Business",
-      "description": "Taunts; reduces damage taken by [stance.value]% for [stance.duration] turn.",
+      "description": "Assumes a stance for [stance.duration] turns: taunts all enemies; reduces damage taken by [stance.value]%.",
       "characterId": "toll_collector",
       "type": "stance",
       "statMultiplier": "def",

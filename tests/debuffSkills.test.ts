@@ -195,10 +195,14 @@ describe("debuff-type skills", () => {
     // No damage to anyone
     expect(result.enemyTeam[0].currentHP).toBe(1000);
     expect(result.enemyTeam[1].currentHP).toBe(1000);
-    // Every enemy taunted toward Yalina
+    // #131: the taunt is on Yalina, not stamped on each enemy. One entry per
+    // cast regardless of how many enemies it pulls.
+    const tauntsOnYalina = result.playerTeam[0].buffs.filter(
+      (b) => b.type === "taunt",
+    );
+    expect(tauntsOnYalina).toHaveLength(1);
     result.enemyTeam.forEach((enemy) => {
-      const taunt = enemy.debuffs.find((d) => d.type === "taunt");
-      expect(taunt?.sourceId).toBe("yalina");
+      expect(enemy.debuffs.some((d) => d.type === "taunt")).toBe(false);
     });
     // Self damage-reduction buff on Yalina
     const selfBuff = result.playerTeam[0].buffs.find(
@@ -316,53 +320,51 @@ describe("Taunt override, priority, and dead-taunter fallback", () => {
       teams,
       noopLog,
     );
-    const taunts = teams.enemyTeam[0].debuffs.filter((d) => d.type === "taunt");
+    // #131: recast still overrides rather than stacking — now on the caster.
+    const taunts = teams.playerTeam[0].buffs.filter((d) => d.type === "taunt");
     expect(taunts).toHaveLength(1);
   });
 
   it("with two different taunters active, the enemy targets whoever cast the most-recently-applied taunt", () => {
+    // #131: each taunter carries its own entry, and `appliedSeq` is what
+    // orders them — the old model got this free from array position on the
+    // victim, which no longer exists.
     const p1 = makeChar({
       instanceId: "p1",
       team: "player",
-      debuffs: [],
+      buffs: [{ type: "taunt", buffDuration: 2, appliedSeq: 1 }],
     });
     const p2 = makeChar({
       instanceId: "p2",
       team: "player",
-      debuffs: [],
+      buffs: [{ type: "taunt", buffDuration: 2, appliedSeq: 2 }],
     });
     const bystander = makeChar({ instanceId: "bystander", team: "player" });
-    const enemy = makeChar({
-      instanceId: "enemy",
-      team: "enemy",
-      debuffs: [
-        { type: "taunt", debuffDuration: 2, sourceId: "p1" },
-        { type: "taunt", debuffDuration: 2, sourceId: "p2" },
-      ],
-    });
+    const enemy = makeChar({ instanceId: "enemy", team: "enemy" });
     const result = executeSkill(
       { sourceInstanceId: "enemy", skill: basicAttack, targetInstanceId: "bystander", rank: 1 },
       { playerTeam: [p1, p2, bystander], enemyTeam: [enemy] },
       noopLog,
     );
-    // p2's taunt was applied most recently (last in the array) — it wins
     expect(result.playerTeam.find((c) => c.instanceId === "p2")!.currentHP).toBeLessThan(1000);
     expect(result.playerTeam.find((c) => c.instanceId === "p1")!.currentHP).toBe(1000);
     expect(result.playerTeam.find((c) => c.instanceId === "bystander")!.currentHP).toBe(1000);
   });
 
   it("falls through to the next-most-recent still-alive taunter when the most recent taunter has died", () => {
-    const p1 = makeChar({ instanceId: "p1", team: "player" });
-    const p2 = makeChar({ instanceId: "p2", team: "player", currentHP: 0 });
-    const bystander = makeChar({ instanceId: "bystander", team: "player" });
-    const enemy = makeChar({
-      instanceId: "enemy",
-      team: "enemy",
-      debuffs: [
-        { type: "taunt", debuffDuration: 2, sourceId: "p1" },
-        { type: "taunt", debuffDuration: 2, sourceId: "p2" },
-      ],
+    const p1 = makeChar({
+      instanceId: "p1",
+      team: "player",
+      buffs: [{ type: "taunt", buffDuration: 2, appliedSeq: 1 }],
     });
+    const p2 = makeChar({
+      instanceId: "p2",
+      team: "player",
+      currentHP: 0,
+      buffs: [{ type: "taunt", buffDuration: 2, appliedSeq: 2 }],
+    });
+    const bystander = makeChar({ instanceId: "bystander", team: "player" });
+    const enemy = makeChar({ instanceId: "enemy", team: "enemy" });
     const result = executeSkill(
       { sourceInstanceId: "enemy", skill: basicAttack, targetInstanceId: "bystander", rank: 1 },
       { playerTeam: [p1, p2, bystander], enemyTeam: [enemy] },
@@ -371,6 +373,23 @@ describe("Taunt override, priority, and dead-taunter fallback", () => {
     // p2 (most recent) is dead — falls through to p1, not the original bystander target
     expect(result.playerTeam.find((c) => c.instanceId === "p1")!.currentHP).toBeLessThan(1000);
     expect(result.playerTeam.find((c) => c.instanceId === "bystander")!.currentHP).toBe(1000);
+  });
+
+  it("a dead taunter pulls nobody, even alone", () => {
+    const corpse = makeChar({
+      instanceId: "corpse",
+      team: "player",
+      currentHP: 0,
+      buffs: [{ type: "taunt", buffDuration: 2, appliedSeq: 1 }],
+    });
+    const bystander = makeChar({ instanceId: "bystander", team: "player" });
+    const enemy = makeChar({ instanceId: "enemy", team: "enemy" });
+    const result = executeSkill(
+      { sourceInstanceId: "enemy", skill: basicAttack, targetInstanceId: "bystander", rank: 1 },
+      { playerTeam: [corpse, bystander], enemyTeam: [enemy] },
+      noopLog,
+    );
+    expect(result.playerTeam.find((c) => c.instanceId === "bystander")!.currentHP).toBeLessThan(1000);
   });
 });
 

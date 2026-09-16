@@ -575,7 +575,7 @@ export default function UnitDetailPanel({
               The names moved to the Detail modal (Tanveer, 2026-08-13). */}
           <div className="mt-2 flex items-center gap-2">
             <div className="min-w-0 flex-1">
-              {counts.buffs === 0 && counts.debuffs === 0 ? (
+              {counts.buffs === 0 && counts.stances === 0 && counts.debuffs === 0 ? (
                 <span className="font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-muted">
                   No active effects
                 </span>

@@ -487,3 +487,42 @@ body {
 .hud-scroll::-webkit-scrollbar {
   display: none; /* Chrome/Safari */
 }
+
+/*
+ * The ultimate's frame — ruling #133.
+ *
+ * It was a solid gold border, and gold is the stance colour now. A gradient
+ * border needs two backgrounds: the card's own panel fill clipped to the
+ * padding box, and the hue ramp clipped to the border box. `border-color` is
+ * transparent so the second one shows through where the border is.
+ *
+ * The ramp runs the five element hues in palette order, so the ultimate reads
+ * as "all of them" rather than as a sixth colour competing with the five that
+ * already mean something.
+ */
+.frame-ultimate {
+  border-color: transparent;
+  background-image:
+    linear-gradient(var(--color-panel), var(--color-panel)),
+    linear-gradient(
+      90deg,
+      var(--color-el-red),
+      var(--color-el-light),
+      var(--color-el-green),
+      var(--color-el-blue),
+      var(--color-el-dark)
+    );
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+.accent-ultimate {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-el-red),
+    var(--color-el-light),
+    var(--color-el-green),
+    var(--color-el-blue),
+    var(--color-el-dark)
+  );
+}

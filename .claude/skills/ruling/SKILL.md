@@ -93,6 +93,31 @@ The single most damaging failure here is a one-directional link. #108 supersedes
 - A ruling that *partially* survives says which half. #94's team-agency modes
   survived #108; its chapter structure did not.
 
+## Evidence that is not his
+
+A ruling often rests on something outside this project — a reference game, a
+competitor's wording, a screenshot. **Say how much evidence it rests on**, in
+the entry, in a clause. "From one card" and "from nine, of two different eras"
+are different claims and a later session cannot tell them apart from a
+confident sentence.
+
+Ruling #134 is the worked example, and it went wrong twice:
+
+1. Written from **one** 7DS screenshot and stated as that game's rule.
+2. Corrected at **nine** cards — five led with the duration, four trailed it —
+   to "the reference is inconsistent". **That was worse than the first error.**
+   Averaging a mixed sample destroyed a real convention.
+3. Corrected again when Tanveer supplied what actually separated them: *"7ds is
+   a old game now. The newer units have a better record of being consistent…
+   gilthunder and allioni are very old units."* The leading form is their
+   current standard; the four outliers are legacy text.
+
+**The transferable rule: when a reference contradicts itself, check whether the
+contradiction is chronological before concluding there is no rule.** A live
+product's old content is its own archaeology. And a small sample that produces
+a confident rule is more dangerous than no sample, because it reads identical
+to a well-founded one in the ledger.
+
 ## Propagation
 
 Decide deliberately, and say which you chose:

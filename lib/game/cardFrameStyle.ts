@@ -39,10 +39,19 @@ const R3_STYLE: Omit<CardFrameStyle, "starCount"> = {
   accentBarClass: "bg-readout",
 };
 
+/**
+ * Ruling #133 (2026-09-16): the ultimate stopped owning gold, because gold is
+ * now the stance colour and two different things cannot read the same. It
+ * takes a ramp across all five element hues instead — a tier of its own
+ * rather than a sixth hue competing with the five that mean something.
+ *
+ * The classes are in `globals.css`: a gradient border needs two backgrounds
+ * and two clip boxes, which is more than a utility string can express.
+ */
 const ULTIMATE_STYLE: Omit<CardFrameStyle, "starCount"> = {
   tier: "ultimate",
-  borderClass: "border-2 border-el-light",
-  accentBarClass: "bg-el-light",
+  borderClass: "border-2 frame-ultimate",
+  accentBarClass: "accent-ultimate",
 };
 
 /**

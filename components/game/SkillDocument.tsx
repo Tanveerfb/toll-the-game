@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
 import { PROSE, ProseTable } from "@/components/ui/prose";
+import {
+  SKILL_TYPE_TEXT,
+  skillTypeCategory,
+} from "@/lib/game/skillTypeStyle";
 import type { CharacterSkillData } from "@/lib/game/characterCatalog";
 import {
   buildRankedSkillDescriptions,
@@ -24,16 +28,9 @@ function toTitleCase(value: string): string {
  *  attack = aggression, debuff/disable = affliction, heal/buff = restoration,
  *  stance and ultimate = climax. These are the `role-*` tokens, which alias
  *  the element hues rather than adding a second colour vocabulary. */
-const SKILL_TYPE_ACCENT: Record<string, string> = {
-  attack: "text-role-attack",
-  debuff: "text-role-control",
-  disable: "text-role-control",
-  heal: "text-role-heal",
-  cleanse: "text-role-heal",
-  buff: "text-role-heal",
-  stance: "text-role-ultimate",
-  ultimate: "text-role-ultimate",
-};
+// Ruling #133: shared with the hand and the archive via
+// `lib/game/skillTypeStyle.ts`. See the note there on what the three separate
+// maps used to disagree about.
 
 /**
  * One skill rendered as a document section rather than a bordered card:
@@ -79,7 +76,7 @@ export default function SkillDocument({
   const metaParts = [...new Set([skill.type, ...getMechanicTypes(skill)])]
     .filter((part) => !(isUlt && part === "ultimate"))
     .map(toTitleCase);
-  const accent = SKILL_TYPE_ACCENT[skill.type] ?? "text-readout-dim";
+  const accent = SKILL_TYPE_TEXT[skillTypeCategory(skill)];
   // Heal amounts read green, the 7DS convention.
   const numberClassName =
     skill.type === "heal" ? "font-semibold text-role-heal" : undefined;

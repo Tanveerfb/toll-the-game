@@ -10,7 +10,7 @@
   "skills": [
     {
       "skillName": "Earth Stance: Fortress",
-      "description": "Applies a stance that grants allies [stance.value]% damage reduction for [stance.duration] turns.",
+      "description": "Assumes a stance for [stance.duration] turns: reduces allies' damage taken by [stance.value]%.",
       "characterId": "mustafa",
       "type": "buff",
       "statMultiplier": "def",

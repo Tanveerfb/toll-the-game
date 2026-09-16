@@ -110,12 +110,16 @@ describe("single-ally targeting (Leorio's Member of the Zodiac)", () => {
   it("does not repeat a target an ally-facing description already names", () => {
     // Ruling: "Grants all allies … to all allies" said it twice — the target
     // guard only recognised enemy phrasings (Tanveer, 2026-08-10).
+    //
+    // The verb reads "raises" rather than "increases" since #130 (2026-09-16)
+    // folded the two wordings into one. Only the word changed; what this test
+    // is actually about — the target being named once — is untouched.
     const ward = isoldeData.ultimate as unknown as CharacterSkillData;
     // Index 2 = ult level 3, the level Debuff Immunity first appears at
     // (minUltLevel 3) and where the buff runs 30% for 2 turns.
     const text = buildDescriptionForRank(ward, 2);
     expect(text).toBe(
-      "Grants all allies Debuff Immunity and increases their basic stats by 30% for 2 turns.",
+      "Grants all allies Debuff Immunity and raises their basic stats by 30% for 2 turns.",
     );
     expect(text.match(/all allies/g)).toHaveLength(1);
 
@@ -123,7 +127,7 @@ describe("single-ally targeting (Leorio's Member of the Zodiac)", () => {
     // clause is gone entirely (2026-08-19), so the sentence is rebuilt from a
     // different opening — and that opening names the target just as much.
     const low = buildDescriptionForRank(ward, 0);
-    expect(low).toBe("Increases all allies' basic stats by 20% for 2 turns.");
+    expect(low).toBe("Raises all allies' basic stats by 20% for 2 turns.");
     expect(low).not.toContain("Debuff Immunity");
     expect(low.match(/all allies/g)).toHaveLength(1);
   });

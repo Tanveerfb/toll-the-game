@@ -257,7 +257,7 @@ inventory, ascension cost list, gacha payout, chapter rewards and clear summary 
 
 ## Category D — Miscellaneous
 
-**Status: D1 delivered 2026-08-22. D2 open.**
+**Status: D1 delivered 2026-08-22. D2 open. D3 open (drawn, not generated).**
 
 Anything that is neither a character, a scene background, nor an inventory icon — UI
 textures, banner composites. One banner composite exists (`public/banners/`); its
@@ -332,6 +332,63 @@ compositing approach is documented under "Banner splash art" in `ART_PIPELINE.md
   comment) when the new plate lands, so the art is centred again.
 - **Status:** `open`
 - **Requested:** 2026-09-01, from the mobile browser audit of `/gacha`.
+
+### D3 — skill-class glyphs (5) — DRAWN, not generated
+
+**Read the first two lines before doing anything.** This is a **geometry**
+request and ComfyUI cannot satisfy it — it is the same class of asset as D1 (the
+app icon) and C5 (the coin frames), both of which were drawn in Python after
+diffusion declined. `ART_PIPELINE.md` under "Logos and marks": *"a mark is
+geometry, and a roll cannot promise geometry"*, and Animagine returns an **item
+sheet** for "icon", "badge", "emblem", "medallion" and "crest" alike. Do not
+queue a batch. Write a script.
+
+- **Purpose:** the class badge on a hand card, in the top-right corner
+  (`components/game/battle/Hand.tsx`), and the same glyph in the archive's kit
+  document (`SkillDocument.tsx`) and kit details (`KitDetails.tsx`). Five
+  classes, ruling #133: **attack** (red `el-red #ff5a4e`), **attack-debuff**
+  (purple `el-dark #a874ff`), **heal/cleanse** (green `el-green #35d48b`),
+  **buff** (blue `el-blue #37a6ff`), **stance** (yellow `el-light #e8d174`).
+  They must read as five distinct silhouettes **in one colour**, because the
+  colour is applied by the component and the shape has to carry the class on a
+  greyscale screenshot by itself.
+
+- **Specs:** monochrome (white on transparent), tinted in CSS via
+  `currentColor`, so **SVG, not PNG** — a raster glyph cannot take the class
+  colour. 24×24 viewBox, 2px stroke on a 24px grid, drawn to read at the size it
+  actually ships at. **A deviation from every other category here:** this is the
+  first vector request in the file, and the inventory-icon specs (512px PNG,
+  must read at 24px) do not apply.
+
+- **The size constraint is the whole problem.** It renders at **10px inside a
+  16px badge** on a card that is 47px wide with eight in hand at 390px. Ten
+  pixels is well under the 32px floor this file's own rules call the limit of
+  what a drawn mark can promise, and under Category C's 24px. **A bespoke glyph
+  buys very little at 10px** — at that size a sword and a pair of swords are two
+  smudges whatever drew them. If this is worth doing, the badge should grow
+  first, and that is a layout decision, not an art one.
+
+- **Prompt notes:** none — nothing is prompted. Draw the five as a family: one
+  stroke weight, one optical size, one corner radius, silhouettes that differ in
+  overall shape rather than in detail. The pair that has to survive 10px is
+  attack vs attack-debuff, since they are the two most alike and the two most
+  common.
+
+- **Lands at:** `components/ui/icons/skill-class/*.svg` as React components, and
+  `SKILL_TYPE_ICON` in `lib/game/skillTypeStyle.ts` swaps its five lucide
+  imports for them. That map is the single registration point — nothing else
+  reads the glyphs, so one edit ships the set.
+
+- **Fallback, already shipping:** lucide `Sword`, `Swords`, `Heart`,
+  `ArrowBigUp` and `ShieldHalf`, tinted by class colour. They are legible and
+  correct; nothing is blocked, and `tests/skillTypeColours.test.ts` pins that
+  the five stay five distinct shapes whichever set is in use.
+
+- **Status:** `open` — **low priority, and honestly optional.** Tanveer offered it
+  ("we can even have a dedicated icon that you can request for the comfy
+  generations **if we need something like that**"); the honest answer is that at
+  the current badge size we do not yet.
+- **Requested:** 2026-09-16, from ruling #133 (colour classification).
 
 **Board terrain** for the story node board will land here once the route work starts
 (16:9, no background removal, no characters) — not requested yet, because the board's

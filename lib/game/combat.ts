@@ -520,6 +520,54 @@ export function executeSkill(
     action.skill.type === "debuff" ||
     action.skill.type === "disable";
 
+  /**
+   * Highest taunt stamp on a unit, or 0 when it carries none.
+   *
+   * Taunt precedence is most-recent-wins (#131). The old model got that from
+   * array order on the victim, which no longer exists now that the marker sits
+   * on the taunter.
+   */
+  const tauntSeqOf = (u: BattleCharacter): number =>
+    u.buffs.reduce(
+      (max, b) => (b.type === "taunt" ? Math.max(max, b.appliedSeq ?? 0) : max),
+      0,
+    );
+
+  /**
+   * One past the highest stamp anywhere on the field.
+   *
+   * Derived from current state rather than a module counter, so `executeSkill`
+   * stays pure — the same teams in always give the same teams out, which is
+   * what the whole engine's testability rests on.
+   */
+  const nextAppliedSeq = (): number =>
+    [...updatedTeams.playerTeam, ...updatedTeams.enemyTeam].reduce(
+      (max, u) =>
+        u.buffs.reduce((m, b) => Math.max(m, b.appliedSeq ?? 0), max),
+      0,
+    ) + 1;
+
+  /**
+   * Ties together every entry this one cast puts on the caster, so the panel
+   * can head them with the skill's name instead of listing unrelated rows
+   * (#131). Stable within a cast and distinct between casts.
+   */
+  const stanceGroupId = `${action.sourceInstanceId}:${action.skill.skillName}:${actionIndex}`;
+
+  /**
+   * Whether this skill is a stance at all.
+   *
+   * Grouping is decided per SKILL, not per mechanic (#132). Tanveer's example
+   * is a skill that "applies taunt and raises defense for two turns", where
+   * cancelling the stance takes the DEF raise with it — so that raise belongs
+   * to the stance however it happens to be typed in the JSON. Tagging only
+   * `stance`-typed entries would let a DEF raise authored as a plain `buff`
+   * mechanic survive a cancelStances that killed the rest of its own stance.
+   */
+  const skillIsStance = skillMechanics.some(
+    (m) => m.type === "stance" || m.type === "taunt",
+  );
+
   // Determine targets
   let targets: BattleCharacter[] = [];
   const enemyTeamForSource =
@@ -533,23 +581,31 @@ export function executeSkill(
     targets = targets.filter((t) => t.currentHP > 0 && !t.isSub);
   } else {
     let actualTarget = getUpdatedChar(primaryTarget.instanceId)!;
-    // Taunt override for single-target offensive skills. Multiple taunters
-    // can be active at once — most-recently-applied wins, and if that
-    // taunter has since died, fall through to the next-most-recent taunter
-    // still alive rather than hitting the original target.
+    // Taunt override for single-target offensive skills.
+    //
+    // #131 inverted where the marker lives. It used to be a debuff stamped on
+    // every enemy the taunt reached, which meant the taunter's own card had to
+    // reach across the field to plant it, ruling #31 had to sweep both teams
+    // to revoke it, and Debuff Immunity on an enemy quietly made that enemy
+    // untauntable. Now the taunt is part of the taunter's own stance and this
+    // reads the defending side instead.
+    //
+    // Multiple taunters can be active at once — most-recently-applied wins,
+    // and a taunter that has since died is simply not alive to be picked, so
+    // the next-most-recent live one takes over.
     if (isOffensive) {
-      const tauntDebuffs = updatedSource.debuffs.filter(
-        (d) => d.type === "taunt" && d.sourceId,
+      const taunters = enemyTeamForSource.filter(
+        (u) =>
+          u.currentHP > 0 && !u.isSub && u.buffs.some((b) => b.type === "taunt"),
       );
-      for (let i = tauntDebuffs.length - 1; i >= 0; i--) {
-        const tauntTarget = getUpdatedChar(tauntDebuffs[i].sourceId!);
-        if (tauntTarget && tauntTarget.currentHP > 0) {
-          actualTarget = tauntTarget;
-          log(
-            `[Action] ${updatedSource.name} was taunted and redirected to ${tauntTarget.name}.`,
-          );
-          break;
-        }
+      if (taunters.length > 0) {
+        const puller = taunters.reduce((best, u) =>
+          tauntSeqOf(u) >= tauntSeqOf(best) ? u : best,
+        );
+        actualTarget = puller;
+        log(
+          `[Action] ${updatedSource.name} was taunted and redirected to ${puller.name}.`,
+        );
       }
     }
     targets = [actualTarget];
@@ -586,12 +642,51 @@ export function executeSkill(
         buffDuration: mech.duration,
         unstackable: mech.unstackable,
         uncancellable: mech.uncancellable,
+        // Only a stance is grouped (#131). A plain self-buff from a
+        // non-stance skill is one effect, and heading it with the skill name
+        // would restyle every buff row in the game for no gain — the ask was
+        // about stances, whose parts read as unrelated numbers without
+        // something naming them.
+        //
+        // Every self entry from a stance skill joins, whatever its own type
+        // (#132) — that is what makes cancelStances take the whole thing.
+        groupId: skillIsStance ? stanceGroupId : undefined,
+        groupName: skillIsStance ? action.skill.skillName : undefined,
       });
     log(
       `[Action] ${updatedSource.name} gained ${mech.type} to ${statPhrase(mech)} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim() +
         ".",
     );
   };
+
+  // A taunt goes up on the CASTER, with the rest of its stance (#131). It is
+  // applied once per cast rather than once per target: it used to ride the
+  // per-target loop because it landed on each enemy, and running that loop now
+  // would push one identical entry per enemy hit.
+  //
+  // Taunt now reaches every enemy by construction, which is what the glossary
+  // has always claimed ("Direct all single target enemy attacks to self") even
+  // while `toll_collector`'s taunt, having no `aoe`, only ever pulled the one
+  // enemy it struck.
+  const tauntMechanic = skillMechanics.find((m) => m.type === "taunt");
+  if (tauntMechanic) {
+    // A recast overrides this unit's own previous taunt rather than stacking
+    // a stale duplicate — the same rule the enemy-side version used.
+    updatedSource.buffs = updatedSource.buffs.filter((b) => b.type !== "taunt");
+    updatedSource.buffs.push({
+      type: "taunt",
+      buffDuration: tauntMechanic.duration,
+      appliedSeq: nextAppliedSeq(),
+      groupId: stanceGroupId,
+      groupName: action.skill.skillName,
+    });
+    log(
+      `[Action] ${updatedSource.name} is taunting${formatTurns(tauntMechanic.duration)}.`.replace(
+        " .",
+        ".",
+      ),
+    );
+  }
 
   // Self buffs apply BEFORE the damage calc (ruling #22, "buff first, hit
   // boosted" — Gon's Jajanken Rock benefits from its own +30% ATK), unless the
@@ -600,6 +695,7 @@ export function executeSkill(
   skillMechanics.forEach((mech) => {
     if (isSelfMechanic(mech) && !mech.requiresDamage) applySelfBuff(mech);
   });
+
 
   // A friendly mechanic on an ATTACKING skill: the target loop below walks
   // the enemy team, so an allies-audience mechanic can never ride it. Applied
@@ -637,6 +733,14 @@ export function executeSkill(
               unstackable: mech.unstackable,
               uncancellable: mech.uncancellable,
               hpScalePercent: scalesHp ? percent : undefined,
+              // A stance applied to an ALLY joins its stance's group too
+              // (#131/#132). This site was missed when grouping landed, so
+              // Mustafa's Earth Stance: Fortress rendered on every ally as a
+              // bare row called "Stance" — the exact thing the group exists to
+              // stop. Colour and cancel were unaffected, since both key off the
+              // entry's own type; only the name was lost.
+              groupId: skillIsStance ? stanceGroupId : undefined,
+              groupName: skillIsStance ? action.skill.skillName : undefined,
             });
             if (scalesHp && percent) {
               Object.assign(ally, scaleMaxHp(ally, percent));
@@ -908,37 +1012,46 @@ export function executeSkill(
     // Cancels resolve BEFORE damage (Evil Spirit order: strip stances and
     // buffs, then hit) — canceling a counter stance prevents the counter.
     // Uncancellable effects (synergy badges, ramp stacks) survive.
-    // Ruling #31: cancelling a unit's stances also drops the taunts it
-    // authored — attackers are no longer redirected to it.
+    // Ruling #31 — cancelling a unit's stances also drops the taunts it
+    // authored — is now structural rather than swept: since #131 the taunt is
+    // an entry in the taunter's own `buffs`, so the filters below remove it
+    // along with everything else the cancel takes. The sweep that used to walk
+    // both teams looking for markers tagged with this unit's id is gone.
     if (isOffensive) {
-      const clearTauntsAuthoredByTarget = () => {
-        let cleared = false;
-        [...updatedTeams.playerTeam, ...updatedTeams.enemyTeam].forEach(
-          (unit) => {
-            const before = unit.debuffs.length;
-            unit.debuffs = unit.debuffs.filter(
-              (d) =>
-                !(
-                  d.type === "taunt" &&
-                  d.sourceId === updatedTarget.instanceId
-                ),
-            );
-            if (unit.debuffs.length !== before) cleared = true;
-          },
-        );
-        if (cleared) targetEffects.push("broke the taunt");
-      };
+      // Ruling #132: a stance and a buff are different things, and each
+      // cancel reaches exactly one of them.
+      //
+      //   cancelBuffs   → free-standing buffs only. A stance survives it.
+      //   cancelStances → the stance and EVERY part of it, the stat raise
+      //                   included. A plain buff survives it.
+      //
+      // Tanveer: *"if there is a skill which just says raises defense by 30%
+      // then this would be affected by cancel buffs but it will not be
+      // affected by cancel stances."* Before this, cancelBuffs swept the lot,
+      // so a stance had no defence against either and the distinction the two
+      // mechanics exist to draw did not exist.
+      //
+      // Membership is by GROUP, not by entry type: a stance that raises DEF
+      // stores that raise as its own entry, and the group is what says it
+      // belongs to the stance rather than standing alone.
+      const isStancePart = (b: StatusEffect) =>
+        b.type === "stance" || b.type === "taunt" || b.groupId !== undefined;
+      // Independent, not `else if`. `toll_collector`'s Settle the Account
+      // authors BOTH and only ever ran the first — invisible while cancelBuffs
+      // removed stances anyway, and a silent no-op the moment it stopped.
       if (skillMechanics.some((m) => m.type === "cancelBuffs")) {
         updatedTarget.buffs = updatedTarget.buffs.filter(
-          (b) => b.uncancellable,
+          (b) => b.uncancellable || isStancePart(b),
         );
-        clearTauntsAuthoredByTarget();
         targetEffects.push("cancelled buffs");
-      } else if (skillMechanics.some((m) => m.type === "cancelStances")) {
+      }
+      if (skillMechanics.some((m) => m.type === "cancelStances")) {
+        // Ruling #31 ("cancelling stances breaks the target's taunts") is
+        // structural since #131 — the taunt is a part of the stance, so it
+        // goes with it here rather than needing a sweep across both teams.
         updatedTarget.buffs = updatedTarget.buffs.filter(
-          (b) => b.type !== "stance" || b.uncancellable,
+          (b) => b.uncancellable || !isStancePart(b),
         );
-        clearTauntsAuthoredByTarget();
         targetEffects.push("cancelled stances");
       }
     }
@@ -1311,22 +1424,6 @@ export function executeSkill(
             `lowered ${statPhrase(mech)} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim(),
           );
         }
-        if (mech.type === "taunt") {
-          // Applied to enemy, overriding their target. A recast from the
-          // SAME source overrides its own prior taunt (same rule as debuff)
-          // rather than stacking stale duplicates.
-          updatedTarget.debuffs = stripOwnEffect(
-            updatedTarget.debuffs,
-            updatedSource.instanceId,
-            (d) => d.type === "taunt",
-          );
-          updatedTarget.debuffs.push({
-            type: "taunt",
-            debuffDuration: mech.duration,
-            sourceId: updatedSource.instanceId,
-          });
-          targetEffects.push(`applied taunt${formatTurns(mech.duration)}`);
-        }
       });
 
       if (flowingRuinMech) {
@@ -1424,6 +1521,11 @@ export function executeSkill(
           uncancellable: mech.uncancellable,
           // Recorded so expiry can unwind the max-HP change (tick.ts).
           hpScalePercent: scalesHp ? percent : undefined,
+          // Same group rule as the self and ally paths (#131/#132). This is
+          // the route a SUPPORT-typed stance takes — the loop walks the
+          // caster's own team — and it is how Fortress actually lands.
+          groupId: skillIsStance ? stanceGroupId : undefined,
+          groupName: skillIsStance ? action.skill.skillName : undefined,
         });
         // "hp"/"all" aren't read dynamically (unlike atk/def via
         // effectiveStat) — bake the gain now, mirroring how passive.ts's

@@ -695,6 +695,28 @@ export interface StatusEffect {
   hpScalePercent?: number;
   /** Counter stance: % of ATK dealt back to attackers. */
   counterDamagePercent?: number;
+  /**
+   * Links every entry one stance applied, so the panel can show them as a
+   * named group rather than as unrelated rows (#131, 2026-09-16).
+   *
+   * Tanveer: a stance is one thing the player put up, and its parts are
+   * *"displayed separately on the character… it won't say one stance effect,
+   * it will say three separate effects."* The group is what keeps those rows
+   * legible as one stance while they are listed apart.
+   */
+  groupId?: string;
+  /** Heading for that group — the skill's own name, e.g. "Attention Drawer". */
+  groupName?: string;
+  /**
+   * Monotonic stamp recording when this entry landed.
+   *
+   * Only taunt reads it, for the most-recent-wins rule (#131). The old model
+   * got that ordering free from array position on the victim; once the marker
+   * moved to the taunter there is no shared array to order by, so the stamp
+   * carries it. Derived from the current maximum across both teams, which
+   * keeps `executeSkill` pure.
+   */
+  appliedSeq?: number;
   sealType?: string;
   /** Decay: damage captured from the applying hit, dealt per tick. */
   capturedDamage?: number;

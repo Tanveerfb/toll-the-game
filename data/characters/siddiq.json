@@ -49,6 +49,9 @@
         "type": "cancelBuffs"
       },
       {
+        "type": "cancelStances"
+      },
+      {
         "type": "stun",
         "duration": 2
       }
