@@ -57,12 +57,44 @@ import {
   maxBatchSize,
 } from "@/lib/game/autoClear";
 import DetailOverlay from "@/components/game/DetailOverlay";
+import TrialRail from "@/components/game/events/TrialRail";
+import {
+  beginRun,
+  runHealthBars,
+  waveTeam,
+  type StageRunState,
+} from "@/lib/game/stageRun";
+import { foldWaveFromBattle } from "@/lib/game/waveDriver";
+import { getTrialEncounter } from "@/lib/game/trialEncounters";
 
 type View =
   | { kind: "board" }
   | { kind: "brief"; event: GameEvent }
   | { kind: "battle"; event: GameEvent }
   | { kind: "results"; event: GameEvent; rewards: WorldBossRewards }
+  /**
+   * A cleared ascension trial.
+   *
+   * Separate from `results` because a trial pays nothing from the world-boss
+   * table — the reward IS the wall coming down, and the ranks banked while
+   * stuck landing at once (`clearRankWall`). Routing a trial through
+   * `results` would hand out sea monster eyes for beating a rank gate.
+   */
+  | {
+      kind: "trialResults";
+      event: GameEvent;
+      wall: number;
+      rankBefore: number;
+      rankAfter: number;
+    }
+  /**
+   * A trial in progress. Unlike the boss, a trial is a RUN — several fights on
+   * one HP bar — so the screen has to hold the run between them; the battle
+   * store only ever knows about the fight it is in.
+   */
+  | { kind: "trialBattle"; event: GameEvent; run: StageRunState }
+  /** The battle road between two fights (Tanveer, 2026-09-16). */
+  | { kind: "trialBreak"; event: GameEvent; run: StageRunState }
   /** Auto Clear's per-run breakdown plus the combined haul. Separate from
    *  `results` because it reports many runs and never came from a battle. */
   | {
@@ -71,6 +103,27 @@ type View =
       rewards: WorldBossRewards;
       runs: AutoClearRun[];
     };
+
+/** Shown only if a trial view outlives its encounter — a configuration error,
+ *  not a player-facing state. It exists so the guard has somewhere to go. */
+function TrialMissing({ onBack }: { onBack: () => void }) {
+  return (
+    <main className="terminal-grid flex min-screen-below-nav items-center justify-center bg-void px-4">
+      <div className="w-full max-w-md border border-edge-strong bg-panel p-5">
+        <p className="font-body text-sm text-readout-dim">
+          This trial has no encounter authored.
+        </p>
+        <button
+          type="button"
+          onClick={onBack}
+          className="mt-3 min-h-11 w-full border border-signal bg-signal/12 py-3 text-center font-body text-[11px] font-bold uppercase tracking-[0.18em] text-signal"
+        >
+          Back to events
+        </button>
+      </div>
+    </main>
+  );
+}
 
 /** One skipped fight, as the results table reports it. */
 interface AutoClearRun {
@@ -411,6 +464,7 @@ export default function EventsPage(): React.JSX.Element {
   const autoClearTickets = usePlayerStore((s) => s.autoClearTickets);
   const clearedEvents = usePlayerStore((s) => s.clearedEvents);
   const recordManualClear = usePlayerStore((s) => s.recordManualClear);
+  const clearRankWall = usePlayerStore((s) => s.clearRankWall);
   const clearedStages = useStoryStore((s) => s.cleared);
 
   /**
@@ -451,7 +505,9 @@ export default function EventsPage(): React.JSX.Element {
   useScreenMusic(
     view.kind === "battle"
       ? "battle"
-      : view.kind === "results" || view.kind === "autoResults"
+      : view.kind === "results" ||
+          view.kind === "autoResults" ||
+          view.kind === "trialResults"
         ? "victory"
         : "menu",
   );
@@ -460,8 +516,55 @@ export default function EventsPage(): React.JSX.Element {
   const rankCap = worldLevelCapForRank(account.rank);
   const difficulties = availableDifficulties({ cap: rankCap });
 
+  /** Starts the wave the run is currently on, carrying HP forward. */
+  const launchWave = React.useCallback(
+    (event: GameEvent, run: StageRunState) => {
+      const encounter = getTrialEncounter(event.id);
+      const wave = encounter?.waves[run.waveIndex];
+      if (!wave) return;
+      startCustomBattle(waveTeam(run), wave.enemies, {
+        stageEffects: wave.stageEffects,
+        victoryAtEnemyHpPercent: wave.victoryAtEnemyHpPercent,
+        // Wave 1 passes an empty map and everyone starts full; every later wave
+        // carries the survivors' HP. No heal between fights — ruling #103, and
+        // the whole point of the format.
+        carryHp: run.carryHp,
+      });
+    },
+    [startCustomBattle],
+  );
+
+  /**
+   * Enter a trial: one stamina charge buys the whole run, not each fight.
+   *
+   * Charging per wave would make a three-fight trial cost three times a boss
+   * run for a single one-off clear, and the `staminaCost` authored on the
+   * event is one number describing one attempt.
+   */
+  const enterTrial = React.useCallback(
+    (event: GameEvent) => {
+      const encounter = getTrialEncounter(event.id);
+      if (!encounter || encounter.waves.length === 0) return;
+      if (!spendStaminaAction(event.staminaCost)) {
+        setNotice("Not enough stamina — wait for it to regenerate.");
+        return;
+      }
+      setNotice(null);
+      if (team.length > 0) rememberLastTeam(team.map((c) => c.id));
+      const run = beginRun(event.id, encounter, toTeamPicks(team));
+      launchWave(event, run);
+      setView({ kind: "trialBattle", event, run });
+    },
+    [spendStaminaAction, team, rememberLastTeam, launchWave],
+  );
+
   const enter = React.useCallback(
     (event: GameEvent) => {
+      // A trial is a multi-wave run and takes the other path entirely.
+      if (getTrialEncounter(event.id)) {
+        enterTrial(event);
+        return;
+      }
       if (!event.enemyId) return;
       if (!spendStaminaAction(event.staminaCost)) {
         setNotice("Not enough stamina — wait for it to regenerate.");
@@ -477,7 +580,14 @@ export default function EventsPage(): React.JSX.Element {
       ]);
       setView({ kind: "battle", event });
     },
-    [spendStaminaAction, startCustomBattle, team, rememberLastTeam, difficulty],
+    [
+      spendStaminaAction,
+      startCustomBattle,
+      team,
+      rememberLastTeam,
+      difficulty,
+      enterTrial,
+    ],
   );
 
   /**
@@ -545,6 +655,38 @@ export default function EventsPage(): React.JSX.Element {
           contextLabel={view.event.name}
           worldBoss={{
             onContinue: () => {
+              // A trial and a boss resolve differently, and the split is the
+              // whole point: `clearsWall` was authored on both trials the day
+              // the board was built and NOTHING has ever called
+              // `clearRankWall` outside a test, so beating a trial left the
+              // rank cap exactly where it was. Fixed 2026-09-16.
+              if (view.event.kind === "trial") {
+                const wall = view.event.clearsWall;
+                if (wall === undefined) {
+                  resetBattle();
+                  setView({ kind: "board" });
+                  return;
+                }
+                const rankBefore = usePlayerStore.getState().account.rank;
+                clearRankWall(wall);
+                // Read after: `clearRankWall` re-applies the XP banked while
+                // the player sat against the wall, so this can jump several
+                // ranks at once.
+                const rankAfter = usePlayerStore.getState().account.rank;
+                // Deliberately NOT `recordManualClear`. That call exists to
+                // unlock Auto Clear, and a trial is `repeatable: false` —
+                // there is nothing to skip, and `autoClearEligible` is
+                // documented as never belonging on a one-off.
+                resetBattle();
+                setView({
+                  kind: "trialResults",
+                  event: view.event,
+                  wall,
+                  rankBefore,
+                  rankAfter,
+                });
+                return;
+              }
               // Read BEFORE the clear is recorded — `clearedEvents` is what
               // makes this the first clear, and recording first would pay
               // every clear as a repeat. Keyed per DIFFICULTY: each tier is a
@@ -614,6 +756,136 @@ export default function EventsPage(): React.JSX.Element {
                 </span>
               </div>
             ))}
+            <button
+              type="button"
+              onClick={() => setView({ kind: "board" })}
+              className="mt-3 border border-signal bg-signal/12 py-3 text-center font-body text-[11px] font-bold uppercase tracking-[0.18em] text-signal transition-colors hover:bg-signal/20"
+            >
+              Back to events
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // ---- A trial fight ----
+  if (view.kind === "trialBattle") {
+    const { event, run } = view;
+    const encounter = getTrialEncounter(event.id);
+    // Defensive: this view is only ever constructed after `enterTrial` has
+    // already resolved an encounter. Rendering a way out beats setting state
+    // during render, which React would warn about and which would loop.
+    if (!encounter) return <TrialMissing onBack={() => setView({ kind: "board" })} />;
+    return (
+      <main className="terminal-grid screen-below-nav relative flex flex-col overflow-hidden bg-void text-readout">
+        <BattleArena
+          contextLabel={`${event.name} · Fight ${run.waveIndex + 1}/${run.waveCount}`}
+          worldBoss={{
+            onContinue: () => {
+              const folded = foldWaveFromBattle(run, useGameStore.getState());
+              resetBattle();
+              if (!folded.complete) {
+                setView({ kind: "trialBreak", event, run: folded });
+                return;
+              }
+              // Last fight won — the wall comes down. Nothing is rolled: a
+              // trial pays no loot table, the lifted cap IS the reward.
+              const wall = event.clearsWall;
+              if (wall === undefined) {
+                setView({ kind: "board" });
+                return;
+              }
+              const rankBefore = usePlayerStore.getState().account.rank;
+              clearRankWall(wall);
+              const rankAfter = usePlayerStore.getState().account.rank;
+              setView({
+                kind: "trialResults",
+                event,
+                wall,
+                rankBefore,
+                rankAfter,
+              });
+            },
+            // A defeat costs the whole run and charges again. Retrying the
+            // failed FIGHT would make three fights on one HP bar meaningless —
+            // the attrition is the test (ruling #103).
+            onRetry: () => {
+              resetBattle();
+              enterTrial(event);
+            },
+            onQuit: () => {
+              resetBattle();
+              setView({ kind: "board" });
+            },
+          }}
+        />
+        <Deck />
+      </main>
+    );
+  }
+
+  // ---- The battle road, between two fights ----
+  if (view.kind === "trialBreak") {
+    const { event, run } = view;
+    const encounter = getTrialEncounter(event.id);
+    // Defensive: this view is only ever constructed after `enterTrial` has
+    // already resolved an encounter. Rendering a way out beats setting state
+    // during render, which React would warn about and which would loop.
+    if (!encounter) return <TrialMissing onBack={() => setView({ kind: "board" })} />;
+    // Max HP comes from the units as they were actually built for the last
+    // fight — levels and stage effects included — rather than the catalog.
+    const maxHpOf = (id: string) =>
+      useGameStore.getState().playerTeam.find((unit) => unit.id === id)?.hp ??
+      run.carryHp[id] ??
+      1;
+    return (
+      <main className="terminal-grid min-screen-below-nav bg-void text-readout">
+        <TrialRail
+          waves={encounter.waves}
+          cleared={run.waveIndex}
+          bars={runHealthBars(run, maxHpOf)}
+          onContinue={() => {
+            launchWave(event, run);
+            setView({ kind: "trialBattle", event, run });
+          }}
+          onQuit={() => setView({ kind: "board" })}
+        />
+      </main>
+    );
+  }
+
+  if (view.kind === "trialResults") {
+    const gained = view.rankAfter - view.rankBefore;
+    return (
+      <main className="terminal-grid flex min-screen-below-nav items-center justify-center bg-void px-4">
+        <div className="w-full max-w-md border border-edge-strong bg-panel">
+          <div className="border-b border-hairline bg-inset px-5 py-4">
+            <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
+              {view.event.name} cleared
+            </p>
+            <p className="font-heading text-2xl tracking-[0.08em] text-readout-strong">
+              Rank {view.wall} cap lifted
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 px-5 py-4">
+            <p className="font-body text-sm text-readout-dim">
+              {gained > 0
+                ? // The banked-XP payout is the reason a wall doesn't punish
+                  // you for playing through it — say so, because the ranks
+                  // arrive all at once and otherwise read as a glitch.
+                  `Account rank ${view.rankBefore} → ${view.rankAfter}. Everything you earned against the wall paid out at once, and stamina is full.`
+                : `Account rank ${view.rankAfter}. Ranks climb again from here.`}
+            </p>
+            <div className="flex items-center justify-between gap-3 border-b border-hairline pb-1.5">
+              <span className="font-body text-sm text-readout-dim">
+                Account rank
+              </span>
+              <span className="font-heading text-lg tabular-nums text-readout-strong">
+                {view.rankAfter}
+                {gained > 0 ? ` (+${gained})` : ""}
+              </span>
+            </div>
             <button
               type="button"
               onClick={() => setView({ kind: "board" })}

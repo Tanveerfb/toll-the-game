@@ -9,6 +9,9 @@ import { transitionBossPhases } from "@/lib/game/phases";
 import { promoteSubs } from "@/lib/game/sub";
 import { tickTeamBuffs, tickTeamDebuffs } from "@/lib/game/tick";
 import { FIELD_CAP, TEAM_CAP } from "@/lib/game/format";
+import { progressedStats } from "@/lib/game/progression";
+import { bonusActionsFor, stageAdjustedStats } from "@/lib/game/stageEffects";
+import type { StageEffect } from "@/types/stageEffects";
 import type { BattleCharacter } from "@/types/character";
 
 /**
@@ -39,8 +42,14 @@ import type { BattleCharacter } from "@/types/character";
  *    under-represented here.
  *  - **Player skill.** Both sides run the enemy AI. A result is "how these
  *    kits trade under identical, mediocre play", not "how good a player does".
- *  - **Levels, ascension, ult level.** Everyone fights at catalog base stats.
- *    That is the point for balance work and wrong for anything else.
+ *  - ~~**Levels, ascension, ult level.** Everyone fights at catalog base
+ *    stats.~~ **No longer true since 2026-09-16** — a unit may be given a
+ *    `level` / `ascension` / `ultLevel`, and a bare id still means the catalog
+ *    statline, so every existing balance comparison is unchanged. See
+ *    `UnitSpec`. Progression was added because tuning an *encounter* is a
+ *    different job from comparing kits: the First Ascension Trial is aimed at
+ *    a specific player power level, and that question cannot even be asked at
+ *    base stats.
  *
  * Read a win rate as a comparison between kits under fixed conditions. Do not
  * read it as a prediction of live play.
@@ -59,6 +68,58 @@ export interface SimResult {
   averageTurns: number;
   /** Mean surviving units on the winning side, 0–4. High means a stomp. */
   averageSurvivors: number;
+}
+
+/**
+ * A unit as the simulator fields it.
+ *
+ * A bare string is the catalog statline — level 1, unascended, ult level 1 —
+ * which is what every kit-vs-kit comparison wants and what this file did
+ * exclusively before 2026-09-16.
+ */
+export type UnitInput = string | UnitSpec;
+
+export interface UnitSpec {
+  id: string;
+  /**
+   * Fought at this level. Remember the ascension gate: `maxLevelForAscension`
+   * caps an unascended unit at level 1, level 20 needs ascension 1, 30 needs
+   * 2 and 40 needs 3. Passing `{ level: 20 }` with no ascension models a unit
+   * the game cannot produce, so `playerBand` exists to spell the real pairs.
+   */
+  level?: number;
+  ascension?: number;
+  ultLevel?: number;
+}
+
+/**
+ * The progression pairs the game can actually reach, by ascension band.
+ *
+ * Levels and ascension are not independent — a player at "level 20" is
+ * necessarily ascension 1, because that is the band that unlocks the level.
+ * Tuning against `{ level: 20, ascension: 0 }` would measure a 1.322x team
+ * that cannot exist instead of the real 1.489x one, which is a 13% error in
+ * the direction that makes an encounter look harder than it is.
+ */
+export const PLAYER_BANDS = {
+  1: { level: 1, ascension: 0 },
+  20: { level: 20, ascension: 1 },
+  30: { level: 30, ascension: 2 },
+  40: { level: 40, ascension: 3 },
+} as const;
+
+/** A full team at one band — the usual way to state "a Lv20 roster". */
+export function playerBand(
+  ids: string[],
+  band: keyof typeof PLAYER_BANDS,
+  ultLevel = 1,
+): UnitSpec[] {
+  const { level, ascension } = PLAYER_BANDS[band];
+  return ids.map((id) => ({ id, level, ascension, ultLevel }));
+}
+
+function toSpec(input: UnitInput): UnitSpec {
+  return typeof input === "string" ? { id: input } : input;
 }
 
 export interface SimOptions {
@@ -89,21 +150,28 @@ function makeRng(seed: number): () => number {
 }
 
 function buildUnit(
-  id: string,
+  input: UnitInput,
   team: "player" | "enemy",
   index: number,
   isSub: boolean,
+  /** HP to start at, for a unit carrying damage in from an earlier wave. */
+  startHp?: number,
 ): BattleCharacter {
+  const { id, level = 1, ascension = 0, ultLevel = 1 } = toSpec(input);
   const raw = getCharacterById(id);
   if (!raw) throw new Error(`Unknown character id: ${id}`);
+  // Same call `BattleProvider` makes, so a simulated unit and a played one are
+  // the same statline. `raw` is untouched — it is the shared catalog object.
+  const stats = progressedStats(raw, { level, ascension });
   return {
     ...(raw as unknown as BattleCharacter),
+    ...stats,
     instanceId: `${team[0]}${index + 1}_${id}`,
-    currentAttack: raw.atk,
-    currentDefense: raw.def,
-    currentHP: raw.hp,
+    currentAttack: stats.atk,
+    currentDefense: stats.def,
+    currentHP: startHp === undefined ? stats.hp : Math.min(startHp, stats.hp),
     ultGauge: 0,
-    ultLevel: 1,
+    ultLevel,
     buffs: [],
     debuffs: [],
     passiveState: {},
@@ -113,13 +181,31 @@ function buildUnit(
 }
 
 function buildTeam(
-  ids: string[],
+  inputs: UnitInput[],
   team: "player" | "enemy",
   fieldCap: number,
+  /** Character id → HP, for a wave run. Absent ids start at full. */
+  carryHp: Record<string, number> = {},
+  /** The encounter's modifiers, applied to this side (ruling #69). */
+  effects?: StageEffect[],
 ): BattleCharacter[] {
-  return ids
-    .slice(0, TEAM_CAP)
-    .map((id, i) => buildUnit(id, team, i, i >= fieldCap));
+  return inputs.slice(0, TEAM_CAP).map((input, i) => {
+    const unit = buildUnit(input, team, i, i >= fieldCap, carryHp[toSpec(input).id]);
+    if (!effects?.length) return unit;
+    // Same helper the battle uses, so a simulated arena and a played one
+    // cannot drift. Baked into base stats, not applied as a buff — which is
+    // why it is done here rather than pushed onto `buffs`.
+    const adjusted = stageAdjustedStats(unit, effects, team);
+    return {
+      ...unit,
+      ...adjusted,
+      currentAttack: adjusted.atk,
+      currentDefense: adjusted.def,
+      // An HP boost raises the ceiling; a unit carrying damage in keeps its
+      // damage rather than being topped up by the arena.
+      currentHP: Math.min(unit.currentHP === unit.hp ? adjusted.hp : unit.currentHP, adjusted.hp),
+    };
+  });
 }
 
 const living = (team: BattleCharacter[]) =>
@@ -127,20 +213,72 @@ const living = (team: BattleCharacter[]) =>
 const livingOnField = (team: BattleCharacter[]) =>
   team.filter((u) => u.currentHP > 0 && !u.isSub);
 
+/** How a fight ended, plus what the left side had left — a wave run needs the
+ *  second part to build the next fight. */
+interface BattleOutcome {
+  winner: "left" | "right" | null;
+  turns: number;
+  survivors: number;
+  /** Left-side survivors, id → HP as the fight ended. */
+  leftHp: Record<string, number>;
+  /** Left-side ids that fell. */
+  leftFallen: string[];
+  /**
+   * Total max HP the left side started this fight with.
+   *
+   * Returned rather than recomputed by the caller because **max HP is not
+   * constant** — `scaleMaxHp` lets a buff raise it mid-fight, so a pool
+   * computed from a freshly built team is the wrong denominator and reports
+   * over 100% remaining. Measuring against what this fight actually started
+   * with is the honest number; it can still exceed 100% while a max-HP buff
+   * is live, and that is a real thing that happened rather than an error.
+   */
+  leftStartPool: number;
+}
+
 /** One fight. Returns the winner and how long it took. */
 async function runOneBattle(
-  leftIds: string[],
-  rightIds: string[],
+  left: UnitInput[],
+  right: UnitInput[],
   fieldCap: number,
   maxTurns: number,
   rng: () => number,
-): Promise<{ winner: "left" | "right" | null; turns: number; survivors: number }> {
+  carryHp: Record<string, number> = {},
+  effects?: StageEffect[],
+): Promise<BattleOutcome> {
   let teams = {
     // "player"/"enemy" are engine roles, not sides of a match — a synergy that
     // reads `team` has to see a coherent one. Left is player, right is enemy.
-    playerTeam: buildTeam(leftIds, "player", fieldCap),
-    enemyTeam: buildTeam(rightIds, "enemy", fieldCap),
+    playerTeam: buildTeam(left, "player", fieldCap, carryHp, effects),
+    enemyTeam: buildTeam(right, "enemy", fieldCap, {}, effects),
   };
+  // Captured before a single skill resolves — see `leftStartPool`.
+  const leftStartPool = teams.playerTeam.reduce((sum, u) => sum + u.hp, 0);
+
+  /**
+   * The outcome, read off whatever `teams` holds right now.
+   *
+   * A closure rather than five hand-written object literals: the left side's
+   * surviving HP has to be captured at every exit, and an exit that forgot it
+   * would silently hand the next wave a full-health team.
+   */
+  const finish = (winner: "left" | "right" | null, turns: number): BattleOutcome => ({
+    winner,
+    turns,
+    survivors:
+      winner === "left"
+        ? living(teams.playerTeam).length
+        : winner === "right"
+          ? living(teams.enemyTeam).length
+          : 0,
+    leftHp: Object.fromEntries(
+      living(teams.playerTeam).map((u) => [u.id, Math.max(1, Math.round(u.currentHP))]),
+    ),
+    leftFallen: teams.playerTeam
+      .filter((u) => u.currentHP <= 0)
+      .map((u) => u.id),
+    leftStartPool,
+  });
 
   const noop = () => {};
   const queue = createMechanicQueue();
@@ -167,17 +305,17 @@ async function runOneBattle(
       };
 
       if (livingOnField(teams.playerTeam).length === 0) {
-        return { winner: "right", turns: turn + 1, survivors: living(teams.enemyTeam).length };
+        return finish("right", turn + 1);
       }
       if (livingOnField(teams.enemyTeam).length === 0) {
-        return { winner: "left", turns: turn + 1, survivors: living(teams.playerTeam).length };
+        return finish("left", turn + 1);
       }
 
       // Actions = living field members + 1, capped at 3 — both sides, same
       // rule (`actionEconomy.ts`).
       const actions = actionsForTurn(
         side === "player" ? teams.playerTeam : teams.enemyTeam,
-        0,
+        bonusActionsFor(effects, side),
       );
       const context = freshAITurnContext();
 
@@ -205,21 +343,21 @@ async function runOneBattle(
       teams = { ...teams, enemyTeam: phaseStep.team };
 
       if (livingOnField(teams.playerTeam).length === 0) {
-        return { winner: "right", turns: turn + 1, survivors: living(teams.enemyTeam).length };
+        return finish("right", turn + 1);
       }
       if (livingOnField(teams.enemyTeam).length === 0) {
-        return { winner: "left", turns: turn + 1, survivors: living(teams.playerTeam).length };
+        return finish("left", turn + 1);
       }
     }
   }
 
-  return { winner: null, turns: maxTurns, survivors: 0 };
+  return finish(null, maxTurns);
 }
 
 /** Run a matchup N times and report how it goes. */
 export async function simulate(
-  leftIds: string[],
-  rightIds: string[],
+  leftIds: UnitInput[],
+  rightIds: UnitInput[],
   options: SimOptions = {},
 ): Promise<SimResult> {
   const {
@@ -273,4 +411,147 @@ export async function simulate(
 export function winRate(result: SimResult): number | null {
   const decisive = result.wins + result.losses;
   return decisive === 0 ? null : (result.wins / decisive) * 100;
+}
+
+/**
+ * A multi-wave run — consecutive fights on one HP bar.
+ *
+ * Mirrors `lib/game/stageRun.ts`, which is the rule the game actually plays
+ * (ruling #103): **HP carries over and the fallen stay down**. A three-wave
+ * encounter is therefore not three fights, it is a resource problem, and
+ * simulating the waves separately would miss the entire difficulty of it —
+ * wave 3 against a full team is a different fight from wave 3 against two
+ * survivors at a third HP, and the second one is what a player meets.
+ *
+ * Fresh units are rebuilt each wave from spec plus carried HP, which is what
+ * `BattleProvider` does between waves: buffs, debuffs, ult gauge and passive
+ * state all reset, only HP and death persist.
+ */
+export interface RunResult {
+  runs: number;
+  /** Runs that cleared every wave. */
+  clears: number;
+  /** Runs that ended with the whole team down, by the wave that did it —
+   *  `wipesByWave[0]` is wave 1. This is the tuning signal: an encounter that
+   *  is too hard in the wrong place shows up here rather than in the clear
+   *  rate. */
+  wipesByWave: number[];
+  /** Runs that hit the turn cap without resolving, by wave. A draw is not a
+   *  clear, and a stalled wave usually means nothing on the field can finish
+   *  anything — worth seeing rather than folding into the loss column. */
+  stallsByWave: number[];
+  /** Mean waves cleared across every run, 0..waves.length. */
+  averageWavesCleared: number;
+  /** Mean units still standing when a run cleared. */
+  averageSurvivors: number;
+  /**
+   * How healthy the survivors are after each wave, indexed by wave: their HP
+   * over the max HP of **the units that entered that wave**.
+   *
+   * So it answers "what condition is the team in going into the next fight",
+   * not "how much of the original roster is left" — the denominator shrinks as
+   * units die, and `wipesByWave` / `averageSurvivors` carry the attrition.
+   * Measured against the pool the wave actually started with rather than a
+   * freshly built team, because `scaleMaxHp` lets a buff raise max HP
+   * mid-fight; it can still read slightly above 1 while such a buff is live,
+   * and that is real rather than a rounding artefact.
+   */
+  hpAfterWave: number[];
+  /** Mean player turns a full clear took. */
+  averageTurns: number;
+}
+
+/**
+ * One wave of a run. A bare array is enemies with no arena modifiers; the
+ * object form carries this wave's `stageEffects`, which is how a later wave
+ * gets harsher without touching a kit (ruling #69).
+ */
+export type WaveInput = UnitInput[] | { enemies: UnitInput[]; stageEffects?: StageEffect[] };
+
+function toWave(input: WaveInput): { enemies: UnitInput[]; stageEffects?: StageEffect[] } {
+  return Array.isArray(input) ? { enemies: input } : input;
+}
+
+export async function simulateRun(
+  team: UnitInput[],
+  waves: WaveInput[],
+  options: SimOptions = {},
+): Promise<RunResult> {
+  const { runs = 200, maxTurns = 40, fieldCap = FIELD_CAP, seed = 1 } = options;
+
+  const wipesByWave = new Array(waves.length).fill(0);
+  const stallsByWave = new Array(waves.length).fill(0);
+  const hpTotals = new Array(waves.length).fill(0);
+  const hpCounts = new Array(waves.length).fill(0);
+  let clears = 0;
+  let wavesClearedTotal = 0;
+  let survivorTotal = 0;
+  let turnTotal = 0;
+
+  for (let i = 0; i < runs; i += 1) {
+    let carryHp: Record<string, number> = {};
+    let fallen: string[] = [];
+    let turns = 0;
+
+    for (let w = 0; w < waves.length; w += 1) {
+      // One stream per WAVE, not per run — otherwise wave 3's rolls shift
+      // whenever wave 1 happens to consume a different number of them, and a
+      // tuning change to wave 1 would silently re-roll the whole encounter.
+      const rng = makeRng(seed + i * 7919 + w * 104_729);
+      const alive = team.filter((unit) => !fallen.includes(toSpec(unit).id));
+      const wave = toWave(waves[w]);
+      const outcome = await runOneBattle(
+        alive,
+        wave.enemies,
+        fieldCap,
+        maxTurns,
+        rng,
+        carryHp,
+        wave.stageEffects,
+      );
+      turns += outcome.turns;
+
+      if (outcome.winner !== "left") {
+        // A stall is not a wipe, and conflating them hides a fight that
+        // literally cannot be finished.
+        if (outcome.winner === null) stallsByWave[w] += 1;
+        else wipesByWave[w] += 1;
+        wavesClearedTotal += w;
+        break;
+      }
+
+      carryHp = outcome.leftHp;
+      fallen = [...fallen, ...outcome.leftFallen];
+      const remaining = Object.values(carryHp).reduce((a, b) => a + b, 0);
+      hpTotals[w] +=
+        outcome.leftStartPool > 0 ? remaining / outcome.leftStartPool : 0;
+      hpCounts[w] += 1;
+
+      if (w === waves.length - 1) {
+        clears += 1;
+        wavesClearedTotal += waves.length;
+        survivorTotal += Object.keys(carryHp).length;
+        turnTotal += turns;
+      }
+    }
+  }
+
+  return {
+    runs,
+    clears,
+    wipesByWave,
+    stallsByWave,
+    averageWavesCleared: runs > 0 ? wavesClearedTotal / runs : 0,
+    averageSurvivors: clears > 0 ? survivorTotal / clears : 0,
+    hpAfterWave: hpTotals.map((total, w) =>
+      hpCounts[w] > 0 ? total / hpCounts[w] : 0,
+    ),
+    averageTurns: clears > 0 ? turnTotal / clears : 0,
+  };
+}
+
+/** Clear rate as a percentage of runs. Unlike `winRate` a stalled run counts
+ *  against it — a run that didn't clear didn't clear. */
+export function clearRate(result: RunResult): number {
+  return result.runs === 0 ? 0 : (result.clears / result.runs) * 100;
 }

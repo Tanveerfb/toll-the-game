@@ -390,9 +390,66 @@ queue a batch. Write a script.
   the current badge size we do not yet.
 - **Requested:** 2026-09-16, from ruling #133 (colour classification).
 
-**Board terrain** for the story node board will land here once the route work starts
-(16:9, no background removal, no characters) — not requested yet, because the board's
-own visuals aren't built.
+### D4 — battle-road terrain plate — the ascension trial's map
+
+Supersedes the "board terrain, not requested yet" placeholder that sat here: the
+route work has started. `components/game/events/TrialRail.tsx` shipped
+2026-09-16 as the compact form — a vertical rail of nodes with the upcoming
+enemies shown as portraits — and the full map is the next step.
+
+**Read this first: the path is NOT art.** The winding route, the node markers,
+their cleared/current/locked states and the enemy portraits are all **geometry
+and composition**, drawn in code from roster art the game already has. That is
+the D3 / D1 / C5 lesson and it applies here too: a roll cannot promise a node
+that lands where the component expects it. What is being requested is the
+**terrain the path is drawn on top of** — one plate, nothing else.
+
+- **Purpose:** the background of the battle-road screen between fights in a
+  multi-fight run — the First Ascension Trial today
+  (`lib/game/trialEncounters.ts`, three fights on one HP bar), and story
+  multi-wave stages afterwards, which use the same runner
+  (`lib/game/stageRun.ts`). Structure is Tanveer's, 2026-09-16, adopting
+  Dokkan's Super/Extreme Battle Road: *"Clearing one fight will lead to next
+  one. The hp of chars stay. And there is no heal in between."*
+
+- **Specs: portrait `768×1344` (9:16).** A deliberate **deviation from Category
+  A's 16:9**, and the first portrait plate in this file — the screen is the
+  mobile column (390×844, ruling #107) scrolled vertically, so a landscape
+  plate would be cropped to a sliver. No background removal, WebP lossy q90 like
+  every other background. **No characters in the plate**: every figure on this
+  screen is a roster portrait composited by the component, and a painted-in
+  figure would collide with one.
+
+- **The composition constraint is the real brief.** The path runs roughly up
+  the **centre third** with 36px enemy portraits and node markers sitting on
+  it, so that band must be **quiet and low-contrast** — the same rule Category
+  A follows for its lower third, moved to the middle. Detail belongs at the
+  left and right edges. Grade it down before shipping, darker and less
+  saturated than a character card, or the portraits lose their silhouettes.
+
+- **Prompt notes:** open terrain seen from a high angle — the toll road and the
+  scrub either side of it, matching `open_road` in Category A so the trial reads
+  as somewhere in the same world. **No wordmark, no title, no UI painted into
+  the plate** — that is entry D2's lesson, where a banner arrived with its own
+  heading duplicating the one the screen already renders, and the fix was
+  amending the recipe rather than re-rendering. `ART_PIPELINE.md` step 4 of
+  "Banner splash art" is the step that did it.
+
+- **Lands at:** `public/backgrounds/trial_road.webp`. **There is no registry for
+  this yet and one has to be built** — `lib/game/storyBackgrounds.ts` maps story
+  scene slugs and this is not a scene. The component reads no background at all
+  today, so whoever wires the plate adds the lookup at the same time; without
+  that step the file sits in `public/` invisible, which is the failure this
+  file's format block calls out.
+
+- **Fallback, already shipping:** the rail renders on the `terminal-grid`
+  background with no plate, and reads fine. **Nothing is blocked** — this is
+  polish on a screen that already works.
+
+- **Status:** `open`. Medium priority — unlike D3 this one ships at full screen
+  width, so the asset is actually *seen* and the effort converts.
+- **Requested:** 2026-09-16, from the First Ascension Trial adopting the
+  battle-road structure.
 
 ---
 

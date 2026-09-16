@@ -87,11 +87,19 @@ describe("grantAccountXp", () => {
   });
 
   it("pays the banked XP out the moment the trial is cleared", () => {
+    // This test asserted `freed.rank === 20` until 2026-09-16 — the exact
+    // opposite of its own title. It was green because `grantAccountXp` bailed
+    // on `amount <= 0` before the loop, so the zero-XP call `clearRankWall`
+    // makes to cash out the bank did nothing at all. The second assertion
+    // ("the next grant should climb") passed and covered for it, so a wall
+    // could be cleared and the ranks behind it stayed banked forever.
     const stuck = grantAccountXp({ rank: 20, xp: 0 }, 100_000, []);
+    expect(stuck.rank).toBe(20);
     const freed = grantAccountXp(stuck, 0, [20]);
-    // Zero more XP, but the wall is gone — the next grant should climb.
-    expect(freed.rank).toBe(20);
-    expect(grantAccountXp(stuck, 1, [20]).rank).toBeGreaterThan(20);
+    // Zero more XP, and everything banked lands at once — stopping only at
+    // the NEXT wall, which is still up.
+    expect(freed.rank).toBe(40);
+    expect(freed.rank).toBeGreaterThan(stuck.rank);
   });
 
   it("ignores zero and negative grants", () => {

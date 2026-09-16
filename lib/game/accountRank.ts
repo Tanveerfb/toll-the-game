@@ -84,7 +84,13 @@ export function grantAccountXp(
   amount: number,
   clearedWalls: number[] = [],
 ): AccountProgress {
-  if (amount <= 0) return progress;
+  // `amount < 0`, NOT `<= 0`. A zero grant still has to walk the loop: that is
+  // exactly how `clearRankWall` cashes out the XP banked against a wall, and
+  // the guard used to bail before the loop ran — so the wall came down and the
+  // ranks earned behind it stayed banked forever (found 2026-09-16). Outside
+  // that case a zero grant is a genuine no-op, because XP at rest is always
+  // below the next rank's cost.
+  if (amount < 0) return progress;
   let { rank, xp } = progress;
   xp += Math.floor(amount);
 

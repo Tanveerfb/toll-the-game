@@ -250,7 +250,16 @@ function defaultCharacterProgress(
   return characters[characterId] ?? { level: 1, ascension: 0, xp: 0, ultLevel: 1 };
 }
 
-const defaultState = {
+/**
+ * The persisted shape, and every field's starting value.
+ *
+ * Exported because `tests/cloudSave.test.ts` walks its keys to prove that
+ * every persisted field has been given a sync decision — synced to Firestore
+ * or deliberately device-local. `clearedEvents` and `autoClearTickets` were
+ * silently neither for a month (see that file), which paid first-clear
+ * bundles twice.
+ */
+export const DEFAULT_PLAYER_STATE = {
   uid: null,
   roster: ["duke"], // Starter characters
   currencies: { gems: 1000, coin: 0, permanentTicket: 0 }, // Starter currency
@@ -491,7 +500,7 @@ export const CURRENT_PLAYER_STATE_VERSION = 9;
 export const usePlayerStore = create<PlayerState>()(
   persist(
     (set, get) => ({
-      ...defaultState,
+      ...DEFAULT_PLAYER_STATE,
       hasHydrated: false,
 
       setPlayerState: (newState) => set((state) => ({ ...state, ...newState })),
@@ -501,7 +510,7 @@ export const usePlayerStore = create<PlayerState>()(
       })),
 
       resetPlayerState: () => set((state) => ({
-        ...defaultState,
+        ...DEFAULT_PLAYER_STATE,
         stamina: { current: STAMINA_CAP, updatedAt: Date.now() },
         hasHydrated: state.hasHydrated,
       })),

@@ -6,30 +6,28 @@ Living snapshot. Session history is folded to
 
 ## Start here
 
-**State:** Six rulings deep into what a stance *is*. A stance is now a named
-group of effects that cancels as one unit, a taunt lives on the taunter rather
-than on the enemies it pulls, `cancelBuffs` and `cancelStances` reach different
-things, and colour classifies both effects and skills. Rulings **#130–#135**,
-all in `docs/HANDOFF.md`. Suite **1,454 tests / 115 files**, browser 17, lint
-clean, build clean — all run at this checkpoint. Details in the 2026-09-16
-session log.
+**State:** PVE. The ascension-trial loop was scaffolding — `clearRankWall` had
+no caller, its XP cash-out bailed before its own loop, and every event victory
+ran through the world-boss reward table. All fixed. His cloud-sync bug is fixed
+at the root and guarded. The simulator can measure a player band and run
+multi-wave fights. Rulings through **#136**, which is **PROVISIONAL**. Suite
+**1,485 tests / 117 files**, browser 17, lint clean, build clean. Details in
+the 2026-09-16b session log.
 
-**Next:** His call — he said the next session goes *"a different route"*, so
-do not assume this thread continues. The two smallest open items are the
-`skill.type` corrections on Mustafa and Yalina (measured inert, offered three
-times) and the mode/format toggles on `TeamSelect`, still unchosen from
-2026-09-01.
+**Next:** His. He is designing the ascension-quest structure himself — *"this
+needs more of a personal touch from me"* — so **do not build on #136 or extend
+`trialEncounters.ts`** until he brings the shape back.
 
-**Blocked on:** Nothing. Waiting on *him*: those toggles, the two `skill.type`
-fields, whether the four mechanics 7DS has and this game lacks are worth
-inventing, the OST and SFX files, and a Sentry DSN.
+**Blocked on:** Him, on the trial structure. Also still waiting: the
+`skill.type` fields on Mustafa and Yalina (measured inert), the `TeamSelect`
+toggles from 2026-09-01, the OST and SFX files, and a Sentry DSN.
 
-**Don't trust:** Any claim about how something **looks** — nothing shipped this
-session has been seen, only measured. Named: the yellow stance rows, the count
-strip's third token, the rainbow ultimate frame, the tinted skill glyphs. And
-the lesson this session earned twice over: **a green guard is not a working
-guard** — three checks in `kitDescriptionRules.test.ts` had never run, passing
-since the day they were written. Prove a guard fails before trusting it passes.
+**Don't trust:** Anything about how it **looks** — no browser this session, and
+`TrialRail` has never been rendered. And read the two balance findings in the
+2026-09-16b log before tuning *any* encounter: **DEF stacking beats the content
+outright** (subtractive mitigation makes DEF superlinear) and **+25% enemy ATK
+collapses every archetype at once**. The usable tuning range is much narrower
+than the stat bands imply.
 
 ## Working (implemented, tested, browser-verified)
 
@@ -380,6 +378,138 @@ since the day they were written. Prove a guard fails before trusting it passes.
 - **Fixes (2026-07-12/13)** — Mustafa's Earth Stance: Fortress is a team-wide (aoe) DR stance, no ally pick; single-target attacks retarget to a living enemy when their marked target died mid-queue (focus-fire no longer wastes cards on a corpse).
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
 
+## Session log — 2026-09-16b: PVE, and two findings bigger than the feature
+
+Started as "we'll work on PVE content now", went to the events board, and ended
+with an encounter built, a measuring tool that did not exist, and two balance
+findings that outrank the thing they were found by.
+
+**Suite 1,485 tests / 117 files**, browser 17, lint 0 errors (3 known
+`duel.test.ts` warnings), build compiles. Ruling **#136 — PROVISIONAL**.
+
+### The trial loop was scaffolding end to end
+
+Both ascension trials have been on the board since the rank system shipped,
+gating ranks 20 and 40, with `enemyId: null` and an honest "Encounter not
+authored yet". Three separate things were missing, and **all three had to be
+fixed for any of them to matter**:
+
+- **`clearRankWall` had no production caller.** Defined, typed, referenced once
+  in a test *comment*. `clearsWall` was dead data: beat the trial, the cap
+  stays.
+- **`grantAccountXp` bailed on `amount <= 0`** — before the loop. `clearRankWall`
+  cashes out banked XP by calling it with zero, documented in its own comment,
+  and that call did nothing. So even wired, the wall would fall and the ranks
+  behind it stay banked.
+- **The victory handler was boss-shaped unconditionally.** Every event ran
+  through `rollWorldBossRewards` and `recordManualClear`, so a cleared trial
+  would have paid ascension materials and unlocked Auto Clear on a
+  `repeatable: false` fight — the exact thing `autoClearEligible`'s own doc
+  forbids.
+
+**A test was pinning the second bug.** `tests/accountRank.test.ts` had a case
+titled *"pays the banked XP out the moment the trial is cleared"* asserting
+`expect(freed.rank).toBe(20)` — no payout. A second assertion passed and
+covered for it. Green since the day it was written, and the title said the
+opposite of the assertion.
+
+### His cloud-sync bug, reported from a real account
+
+*"It works on a single device. But if i change device, log in with the same
+account and go to attempt the event. I have to clear it again to use auto clear
+tickets. This also results in another instance of first time clear rewards."*
+
+**`clearedEvents` was never in `CLOUD_FIELDS`.** One cause, both symptoms:
+a fresh device reads `[]`, so `isFirstClear` is true again and the Auto Clear
+gate re-locks. `autoClearTickets` was missing the same way — the quieter half,
+and he had not noticed it. Both were added to the store on 2026-08-13, the same
+day six other fields were synced, and missed by that pass; the test file's own
+header describes the identical defect being fixed for `claimedOrders`.
+
+Worse than reported: **not device-specific**. `AuthProvider` calls
+`resetPlayerState()` on sign-out, so signing out and back in on one device
+reproduces it.
+
+The fix that matters is not the two entries. `DEVICE_LOCAL_FIELDS` now exists
+so **"does not sync" has to be written down**, and a test fails when a
+persisted field is in neither list. Run before the fix, it named both missing
+fields itself. The rule is in `AGENTS.md`, because it fires when a field is
+added, which is not when anyone reads `cloudSave.ts`.
+
+### The simulator can measure a player band now
+
+`npm run sim` could not answer "is this hard for a level 20 team", because
+*"everyone fights at catalog base stats"*. It now takes
+`level`/`ascension`/`ultLevel`, runs **multi-wave runs on one HP bar** with
+carry-HP, and applies stage effects through the same helper the battle uses. A
+bare id still means base stats, so every existing kit comparison is unchanged.
+
+Two traps found while building it, both now documented in the file:
+
+- **Level and ascension are not independent.** Level 20 *requires* ascension 1.
+  Tuning against `{level: 20, ascension: 0}` measures a 1.322x team that cannot
+  exist instead of the real 1.489x one — a 13% error in the direction that
+  flatters the encounter. `PLAYER_BANDS` spells the reachable pairs.
+- **Max HP is not constant.** `scaleMaxHp` lets a buff raise it mid-fight, so a
+  remaining-HP metric measured against a freshly built team reads over 100%.
+  The denominator is now captured at the start of each fight.
+
+**Falsified before use:** Lv40 vs Lv1 is 100%, the mirror is 52%, Lv20 vs Lv30
+is **5.9%**.
+
+### Two findings that outrank the feature
+
+**1. Stacking DEF beats the content outright.** A Yalina/Mustafa/Gabrist/Lyra
+team clears the trial **100% of the time at every enemy level tried**, finishing
+the last fight at 74% HP. `lib/game/damage.ts` mitigates with
+`Math.max(1, baseDamage - effectiveDefense)` — flat subtraction, so DEF is
+superlinear rather than diminishing. Raising enemy levels cannot close it:
+enemy ATK and player DEF sit on the same curve.
+
+Three fixes were measured and **all three failed**: Iron's Pierce in wave 1 (no
+effect, and it made the trial *easier* for everyone else, since Iron is a
+230-ATK tank), fielding all four NPCs 3+1 (no effect), and an enemy ATK stage
+effect — which found the second thing.
+
+**2. Difficulty is knife-edged.** `+25%` enemy ATK took every archetype from
+**75 / 38 / 100%** to **1 / 3 / 3%**. There is no window between "the wall
+survives" and "nobody survives". Subtractive mitigation means damage *through*
+a target scales violently with ATK, so the usable tuning range is far narrower
+than the stat bands suggest.
+
+Both are roster-wide properties of the damage formula, **not** properties of
+this encounter, so neither was tuned around. Recorded as observations. The
+formula and the bands are his.
+
+### What was built, and what is provisional
+
+Built and standing whatever he decides: the three bug fixes, the sync guard,
+the simulator, and **the wave runner leaving story** — `lib/game/stageRun.ts`
+now takes a `RunnableEncounter` (an id and waves) that `StoryStage` satisfies
+structurally, instead of the trial being authored as a fake story stage
+dragging scenes, missions and an origin tag behind it. `foldWaveFromBattle`
+moved to `lib/game/waveDriver.ts` so the two screens running waves share one
+copy.
+
+**Provisional, and his to settle:** the encounter itself
+(`lib/game/trialEncounters.ts`), the battle-road screen
+(`components/game/events/TrialRail.tsx`), and ruling **#136**, which is marked
+PROVISIONAL in the ledger. He designed the shape — three fights, a 3+1 NPC
+group, an elite, then Molvarr, no heal between — and then said *"I guess this
+needs more of a personal touch from me… we'll make a structure."* The entry
+keeps his quotes and says plainly not to build on it yet.
+
+Measured at levels 15/20/24, 200 runs × 3 seeds, Lv20 teams: balanced **74–80%**
+ending at ~26% HP, all-damage 26–39%, low-damage **0%**, and the balanced team
+at level 1 **0%**, wiping to the elite every run. The simulator plays the
+*player* side with the enemy AI, so those are floors.
+
+### Not verified
+
+No browser this session. `TrialRail` has never been rendered, and neither has
+the trial results screen. Both are pinned by type and by tests; neither has
+been looked at.
+
 ## Session log — 2026-09-16: what a stance is, and what a colour means
 
 **Checkpoint commit `0476008`** — "Make a stance a real thing, and give colour a
@@ -565,207 +695,11 @@ the new count token, the rainbow ultimate frame, the tinted skill glyphs, and
 the grouped stance panel. Geometry and behaviour are pinned by tests; **taste
 is not, and that pass is his**.
 
-## Session log — 2026-09-01/16: the second browser pass, and the battle screen's bottom
+## Session log — 2026-09-01/16 — folded
 
-**Committed as `fc85527`.**
-
-The first browser audit (entry below) covered nine routes and stopped at the
-battle screen. This one finished the sweep, then he drove three rounds of battle
-UI off what he could see. Committed 2026-09-16; the work is dated 2026-09-01.
-
-Rulings **#127–#129**.
-
-### 1. The dead scroll that was on eleven screens
-
-`<main className="min-h-dvh">` is the wrong floor for an element that *starts*
-at `--nav-h` and has `body` padding `--tabbar-h` beneath it. Minimum document =
-nav + 100dvh + tab bar, so **every screen using it scrolled ~96px into nothing**
-— measured at 393×751, `/` `/story` `/events` all identical.
-
-`.min-screen-below-nav` now carries `calc(100dvh - var(--nav-h) - var(--tabbar-h))`
-and 15 call sites use it. Re-measured: dead scroll **96 → 0**. `/gacha` and
-`/profile` still scroll, on real content.
-
-The existing `tests/viewportUnits.test.ts` "not passing by absence" count
-dropped 15 → 1 and **failed**, which is what it is for; it counts both spellings
-now. `tests/navHeight.test.ts` gained the `min-h-dvh` ban.
-
-### 2. The blocker: nothing could start a fight on a phone
-
-The bottom tab bar (#123) is `fixed bottom-0 z-50`. `TeamSelect` pinned START at
-`bottom-0 z-40` and `StageBrief` its launch bar at `bottom-0 z-20`, so from the
-day the tab bar shipped **both were covered outright**. `elementFromPoint` at
-the centre of "Start battle" returned **the Gacha tab** — found by clicking
-Start and landing on `/gacha`. Practice and the world boss were unstartable.
-
-Both compose through `bottom-[var(--tabbar-h)]` now, which is `0rem` from `sm`
-up so desktop is untouched. Guarded in `tests/overlayStacking.test.ts`, and the
-guard was **proven by reintroducing the bug** — it fails naming
-`TeamSelect.tsx:316`.
-
-This shipped in the same session that created it. Nothing caught it because both
-elements are correct in isolation and the defect is purely stacking.
-
-### 3. A grid with no columns declared
-
-`/archive/[id]` scrolled sideways **86px** at 395. A `grid` whose only
-`grid-cols` is behind a breakpoint gets **one implicit `auto` track**, and an
-auto track may exceed its container: it sized to 453px inside 351px and dragged
-the portrait rail off-screen. `grid-cols-1` is `repeat(1, minmax(0, 1fr))` and
-the `0` floor is what fixes it. Four more files carried the same latent shape
-and were pre-empted.
-
-### 4. His four picks off the first sweep
-
-- **Sealed chapter slots** on `/story` (`CHAPTER 2 · SEALED`, numbered, max 3,
-  `div` not `button` — #99 holds, there is nothing to open). The void went
-  ~340px → ~150px.
-- **The "In progress" chip got a scrim.** The card's gradient runs
-  `transparent 28% → dark 86%`, so at `top-2` the chip sat on raw artwork.
-- **Featured units became a table** (`components/gacha/FeaturedModal.tsx`) —
-  portrait, name, element, owned/ult. The grid was twelve 44px `Hint` tiles:
-  correct under #125, but twelve taps to read one banner. The row now answers
-  "how many do I own" without opening anything.
-- **The banner wordmark.** `/gacha` rendered its own name twice, once as the
-  heading and once as a half-cut band of art. **The root cause was
-  `ART_PIPELINE.md` step 4**, which instructed the compositor to paint a
-  wordmark on — so every future banner would have inherited it. The recipe is
-  amended and `ART_REQUESTS.md` **D2** queues the re-composite; `object-top`
-  plus a bottom scrim hold until it lands.
-
-`object-top` alone was not enough, and the arithmetic is worth keeping: the
-image box is **349px** inside the section's padding, not the 393 of the
-viewport, so a 2:1 source covering a 159-tall box still shows source y 0..700 —
-28px into a band at 672.
-
-### 5. Events answer two questions now (#127)
-
-`GameEvent.visibleWhen` + `isEventVisible`, declarative rather than a predicate
-so the next author can read the rule. Verified live: at rank 20 with the wall
-uncleared, the Second Ascension Trial is **off the board**.
-
-**Molvarr is gated on `c9` and still visible today, deliberately.** A chapter
-absent from the story catalog cannot gate anything — "clear a chapter that does
-not exist" is unsatisfiable and would hide the game's only repeatable fight
-*permanently* rather than until chapter 9 ships. The gate arms itself the day
-`c9` lands in `data/story/`.
-
-### 6. The battle screen, in three rounds he called
-
-Measured in a live 4v4 at 390×844, not extrapolated. Mockup:
-`docs/design/mockups/battle-mobile-v2.html`.
-
-- **The hand hid two of its eight cards.** The 56px floor from #118 meant eight
-  cards wanted 492px in a 370px scroller — **122px hidden**. Floor is `min-w-11`
-  (44px) and the rail full-bleeds via `-mx-3`; cards land at **47px**, eight on
-  one line, `offscreen: 0`. Height 128 → 108, which funded §3 below.
-- **The action bar had a real defect under the clunk:** three 56px queue slots
-  in an **83px** scroller, 97px clipped, so two of three queued actions were
-  invisible. Reset is an icon, the ACTIONS chip is gone (124px restating what
-  filled slots already show — its `aria-label` and tutorial anchor moved to the
-  queue), slots are `flex-1`. **End Turn keeps its word on purpose**: it is the
-  one irreversible control in a turn.
-- **4v4 was tuned for 3v3.** Tile pitch 120 → 96, HP bar 99 → 74, field height
-  **383px either way** — so four tiles paid 25% of their width and got nothing
-  back. `tileAspect()` returns `aspect-[9/19]` at four-up; three and fewer are
-  untouched. Portrait area measures 85×92 now.
-
-### 7. Merge All (#128), and two things that already existed
-
-He asked whether to add an auto-merge toggle. **Auto-merge already existed and
-always ran** (`applyAdjacentMerges`, on every draw and play), and **his pairing
-rule was already the behaviour** — `canCardsAutoMerge` requires *equal rank*, so
-a fresh R2 stops matching the R1 beside it. Neither needed inventing; both were
-nearly rebuilt.
-
-What was actually missing is **non-adjacency**. Offered a toggle versus a
-button; he took the button, because merging costs a card, banks +1 ult gauge and
-spends cards against the R3 cap — three effects a toggle makes unwatched.
-
-`applyAllMerges` + `hasMergeablePair`, `mergeAllCards`, 15 tests.
-
-### 8. The bottom row and the controls sheet (#129)
-
-The control row moved below the hand and the team-bar dots were deleted. The row
-**portals into a slot `Deck` renders**, because `Deck` is a sibling rendered
-after `BattleArena` and no DOM order puts a child of the arena below it; moving
-it into `Deck` would have needed the sequencer bound to `arenaRef` plus a dozen
-arena locals. A missing slot renders it inline rather than dropping it.
-
-The controls sheet was **149px of buttons under 695px of empty scrim** — 82% of
-the screen dimmed for four controls. Offered three ways out; he chose to **fill
-it**. What fills it is what the status strip hides on a phone (`hidden sm:`
-context, `hidden md:` counts) plus two things never on it at all: actions this
-turn, and stage effects — which `StageBrief` shows *before* a fight and nothing
-showed during one. 286px / 34%, scrolls past `85dvh`.
-
-### What was tried and rejected
-
-- **An auto-merge toggle** (§7). Offered, declined in favour of the button.
-- **Deleting the controls sheet** and inlining Log/Foe/Team/Exit beside Speed —
-  measured as viable at 66px each, since the Controls button alone is 280px
-  wide. He chose to fill the sheet instead. Shrinking it to a popover was the
-  third option, also declined.
-- **Moving the control row into `Deck`** (§8) — rejected on coupling, not taste.
-- **A layout effect calling `setState`** to find the portal slot. Works, lints
-  as a cascading render; `useSyncExternalStore` says the same thing without one.
-
-### Deliberately not done — all his call
-
-- **The interaction notice replaces the entire control row.** While a toast is
-  up there is no Skip, no Speed and no Controls — and with Controls go Log, Foe,
-  Team and **Exit**. Recoverable by dismissing, but the way out of a fight
-  should not sit behind a toast. Noted in `BattleArena`.
-- **The per-card Merge arming step stages a choice the engine discards.**
-  `mergeDeckCard` takes only the base card id and eats the **first** match, and
-  `canCardsAutoMerge` requires the same owner, skill *and* rank — so every
-  candidate partner is interchangeable. The comment justifying the second tap
-  ("+1 ult gauge to the *eaten* card's owner") is wrong; both share an owner by
-  definition. It is a gesture #118 describes, so it is his.
-- **`/events` still has the ~280px empty band `/story` had.** Not in the four he
-  picked.
-- **Mode/format toggles on `TeamSelect`** — he called them clunky and the
-  diagnosis is written up (two different "selected" colours, `role-attack` red
-  against `signal` cyan on the same row, which #84 says should not happen; plus
-  a `min-w-[18rem]` hint that forces a third row at 390). Options offered, none
-  chosen yet.
-
-### Confidence and gaps
-
-**Verified by running it, at the checkpoint:** `npm run check` → **109 files /
-1,370 tests, 0 errors**, the same 3 pre-existing `duel.test.ts` warnings.
-`npm run lint` → 0 errors. `NEXT_DIST_DIR=.next-verify next build` compiled 56
-static pages.
-
-**Verified in a browser at 390×844 and 393/395×751**, in a live 4v4: the hand at
-47px with nothing off-screen, the action bar's three visible slots, the 4v4
-portrait gain, the control row below the hand, the filled sheet at 286px,
-START clickable (`elementFromPoint` returns the button), `/archive/[id]` at
-`hScroll: 0`, the Second Ascension Trial absent, Molvarr present.
-
-**`/profile` has been rendered** — the claim in the entry below that nobody had
-seen it is **retired**. It opened via his signed-in session on `:3000`, and the
-first thing it showed was a bug: the account header is a `flex-wrap` row whose
-name column was `min-w-0 flex-1`, so at 393px it shrank to **72px for 138px of
-text** rather than wrapping the rank block. "Tanveer Singh" rendered as
-"Tanv…", the email as nine characters. `min-w-36` is the floor that makes
-`flex-wrap` actually wrap. The `Sound` panel and the relocated Claude toggle
-render correctly.
-
-**Built and unseen.** Three controls-sheet rows — fight context, duel mode,
-stage effects — render only when they apply, so reaching them needs a story
-battle with authored stage effects. Merge All's **enabled** path: the button was
-verified rendering and correctly *disabled*, but a mergeable hand could not be
-manufactured through normal play, because the automatic pass eats adjacent
-duplicates on draw. Covered by 15 tests, not by a tap.
-
-**Assumed, not verified:** every aesthetic judgement — whether 47px cards read,
-whether the sheet's readout is the right readout, whether `aspect-[9/19]` looks
-right rather than merely measuring better.
-
-**A tooling note worth keeping:** Claude-in-Chrome's `resize_window` reports
-success on a maximized window and does nothing — `outerWidth` stays put. The
-in-app browser's viewport emulation is the reliable way to test a width.
+**2026-09-01/16** — the second browser pass and the battle screen's bottom:
+hand cards floored at 44px not 56, the merge affordance, and rulings #126–#129.
+Moved verbatim to [`docs/archive/STATUS-2026-09.md`](archive/STATUS-2026-09.md).
 
 ## Session log — 2026-09-01 — folded
 

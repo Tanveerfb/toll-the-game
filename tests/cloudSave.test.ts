@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { CLOUD_FIELDS, cloudDocument, cloudPatch } from "@/lib/game/cloudSave";
+import {
+  CLOUD_FIELDS,
+  DEVICE_LOCAL_FIELDS,
+  cloudDocument,
+  cloudPatch,
+} from "@/lib/game/cloudSave";
 import {
   CURRENT_PLAYER_STATE_VERSION,
+  DEFAULT_PLAYER_STATE,
   migratePlayerState,
   type PlayerState,
 } from "@/store/playerStore";
@@ -38,6 +44,8 @@ const LOCAL = {
   lastTeam: ["duke", "lyra"],
   stats: { pulls: 260, bossClears: 41 },
   claimedOrders: { "first-chapter": true, "first-boss": true },
+  autoClearTickets: 7,
+  clearedEvents: ["molvarr::hell"],
 } as unknown as PlayerState;
 
 describe("what gets written", () => {
@@ -134,5 +142,112 @@ describe("an empty document", () => {
   it("patches nothing at all", () => {
     const migrated = migratePlayerState({}, CURRENT_PLAYER_STATE_VERSION);
     expect(cloudPatch({}, migrated)).toEqual({});
+  });
+});
+
+/**
+ * The clear record and the tickets travel too (2026-09-16).
+ *
+ * Reported by Tanveer from a real account: signing in on a second device left
+ * every event needing a fresh manual clear before Auto Clear would unlock,
+ * **and paid the first-clear bundle a second time**. Both symptoms are one
+ * cause — `clearedEvents` was persisted locally and never added to
+ * `CLOUD_FIELDS`, so it could not leave the device that earned it.
+ *
+ * This is the same defect the 2026-08-13 pass fixed for `claimedOrders`,
+ * arriving through the field that was added on the same day and missed.
+ * `autoClearTickets` was missed in the identical way and is the quieter half:
+ * tickets are bought with account rank-ups and Bureau Orders, and they simply
+ * did not exist on a second device.
+ *
+ * Note this is NOT device-specific in the way it was reported. `AuthProvider`
+ * calls `resetPlayerState()` on sign-out, so signing out and back in on the
+ * *same* device reproduced it exactly.
+ */
+describe("the clear record and the tickets", () => {
+  it("round-trips a manual clear, so Auto Clear stays unlocked", () => {
+    const document = cloudDocument(LOCAL);
+    const migrated = migratePlayerState(document, CURRENT_PLAYER_STATE_VERSION);
+    const patch = cloudPatch(document, migrated);
+    expect(patch.clearedEvents).toEqual(["molvarr::hell"]);
+    expect(patch.autoClearTickets).toBe(7);
+  });
+
+  it("carries the clear record onto a fresh device", () => {
+    // The exact report: a starter-state device pulls the cloud doc and must
+    // come away knowing the boss was already beaten. `isFirstClear` in
+    // app/events/page.tsx is `!clearedEvents.includes(key)`, so an empty list
+    // here is a second first-clear bundle.
+    const fresh = {
+      ...LOCAL,
+      clearedEvents: [] as string[],
+      autoClearTickets: 0,
+    } as unknown as PlayerState;
+    const document = cloudDocument(LOCAL);
+    const migrated = migratePlayerState(document, CURRENT_PLAYER_STATE_VERSION);
+    const merged = { ...fresh, ...cloudPatch(document, migrated) };
+    expect(merged.clearedEvents).toContain("molvarr::hell");
+    expect(merged.autoClearTickets).toBe(7);
+  });
+
+  it("leaves a legacy document's missing clears alone", () => {
+    // Same presence rule as every other late arrival: a document written
+    // before today has no `clearedEvents`, and taking the migrated `[]` would
+    // re-lock Auto Clear for everyone who already plays.
+    const legacy = {
+      roster: ["duke"],
+      currencies: { gems: 100, coin: 0, permanentTicket: 0 },
+      version: 6,
+    };
+    const migrated = migratePlayerState(legacy, legacy.version);
+    expect(migrated.clearedEvents).toEqual([]);
+    const merged = { ...LOCAL, ...cloudPatch(legacy, migrated) };
+    expect(merged.clearedEvents).toEqual(["molvarr::hell"]);
+    expect(merged.autoClearTickets).toBe(7);
+  });
+});
+
+/**
+ * The structural guard, so this cannot happen a third time.
+ *
+ * Both of the above were introduced the same way: a field was added to the
+ * store, persisted to localStorage by default, and nobody made a decision
+ * about whether it should sync. There was no place where that decision was
+ * required, so the answer defaulted to "no" in silence.
+ *
+ * Every persisted field must now be named in exactly one of the two lists.
+ * Adding one to the store and neither list fails here.
+ */
+describe("every persisted field has a sync decision", () => {
+  /**
+   * `hasHydrated` is the one persisted field not in `DEFAULT_PLAYER_STATE` —
+   * the store sets it at init and `resetPlayerState` deliberately carries the
+   * live value across a reset, so it cannot live in the defaults. It is still
+   * written to localStorage, so it still needs a decision.
+   */
+  const PERSISTED = [...Object.keys(DEFAULT_PLAYER_STATE), "hasHydrated"];
+
+  it("is either synced or explicitly device-local — never neither", () => {
+    const undecided = PERSISTED.filter(
+      (field) =>
+        !(CLOUD_FIELDS as readonly string[]).includes(field) &&
+        !(DEVICE_LOCAL_FIELDS as readonly string[]).includes(field),
+    );
+    expect(undecided).toEqual([]);
+  });
+
+  it("is never named in both", () => {
+    const both = (CLOUD_FIELDS as readonly string[]).filter((field) =>
+      (DEVICE_LOCAL_FIELDS as readonly string[]).includes(field),
+    );
+    expect(both).toEqual([]);
+  });
+
+  it("names nothing that isn't actually persisted", () => {
+    // A field removed from the store must leave both lists with it, or the
+    // document keeps writing a key nothing reads.
+    for (const field of [...CLOUD_FIELDS, ...DEVICE_LOCAL_FIELDS]) {
+      expect(PERSISTED).toContain(field);
+    }
   });
 });

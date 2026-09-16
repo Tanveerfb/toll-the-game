@@ -17,8 +17,15 @@ import { CURRENT_PLAYER_STATE_VERSION } from "@/store/playerStore";
  * signing in on a second device silently lost your account rank and re-offered
  * every completed Bureau Order for a second payout.
  *
- * `uid` and `hasHydrated` are deliberately absent: one is the document's own
- * key and the other is a runtime flag.
+ * `clearedEvents` and `autoClearTickets` joined on 2026-09-16 with the exact
+ * same symptom, reported by Tanveer from a real account: a second device
+ * demanded a fresh manual clear before Auto Clear would unlock, **and paid the
+ * first-clear bundle again**. Both were added to the store on 2026-08-13 —
+ * the same day the six above were synced — and missed in that pass.
+ *
+ * Fields that deliberately stay device-local are named in
+ * `DEVICE_LOCAL_FIELDS`, and a test fails if a persisted field is in neither
+ * list. That guard is the actual fix; the two entries below are the symptom.
  */
 export const CLOUD_FIELDS = [
   "roster",
@@ -33,9 +40,26 @@ export const CLOUD_FIELDS = [
   "lastTeam",
   "stats",
   "claimedOrders",
+  "clearedEvents",
+  "autoClearTickets",
 ] as const;
 
 export type CloudField = (typeof CLOUD_FIELDS)[number];
+
+/**
+ * Persisted fields that deliberately do NOT travel, and why each one doesn't.
+ *
+ * This list exists so that "not synced" has to be written down. Every field
+ * the store persists must appear here or in `CLOUD_FIELDS`, and
+ * `tests/cloudSave.test.ts` fails the build when one appears in neither —
+ * which is how `clearedEvents` and `autoClearTickets` went a month without
+ * syncing and paid first-clear bundles twice.
+ *
+ * - `uid` is the document's own key.
+ * - `hasHydrated` is a runtime flag; persisting `true` would be read back as
+ *   gospel before rehydration had actually happened.
+ */
+export const DEVICE_LOCAL_FIELDS = ["uid", "hasHydrated"] as const;
 
 /**
  * What to take from a cloud document, and what to leave alone.

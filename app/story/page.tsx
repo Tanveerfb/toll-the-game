@@ -23,7 +23,6 @@ import {
   type StageRunSummary,
 } from "@/lib/game/stageMissions";
 import {
-  applyWaveOutcome,
   beginRun,
   runHealthBars,
   toSummary,
@@ -44,6 +43,7 @@ import {
 import { rollStageRewards, type StageClearResult } from "@/lib/game/storyRewards";
 import { resolveStoryTeam } from "@/lib/game/storyTeam";
 import { useGameStore } from "@/store/gameStore";
+import { foldWaveFromBattle } from "@/lib/game/waveDriver";
 import { usePlayerStore } from "@/store/playerStore";
 import { useStoryStore } from "@/store/storyStore";
 import type { StoryStage as StoryStageData, StoryTeamPick } from "@/types/story";
@@ -129,7 +129,7 @@ export default function StoryPage(): React.JSX.Element {
   /** Launches the wave the run is currently on, carrying HP forward. */
   const launchWave = React.useCallback(
     (run: StageRunState) => {
-      const stage = getStoryStage(run.chapterId, run.stageId);
+      const stage = getStoryStage(run.ownerId, run.stageId);
       if (!stage) return;
       const wave = stage.waves[run.waveIndex];
       if (!wave) return;
@@ -147,38 +147,16 @@ export default function StoryPage(): React.JSX.Element {
   /**
    * Reads the wave that just ended off the battle store and folds it into the run.
    *
-   * Done here rather than inside the engine because none of it is a combat rule:
-   * survivors and their HP come from `playerTeam`, turns from the store's counter,
-   * and ultimates from the typed event stream. `combat.ts` — the most ruling-dense
-   * file in the repo — is untouched by the wave model.
+   * The logic moved to `lib/game/waveDriver.ts` on 2026-09-16, when the events
+   * board became the second screen to run waves — it reads three separate store
+   * fields and has to get all three right, so a second copy was the wrong
+   * answer. This is now just the store read.
    */
-  const foldWave = React.useCallback((run: StageRunState): StageRunState => {
-    const battle = useGameStore.getState();
-    const survivors = battle.playerTeam
-      .filter((unit) => unit.currentHP > 0)
-      .map((unit) => ({ id: unit.id, hp: unit.currentHP }));
-    const fallenIds = battle.playerTeam
-      .filter((unit) => unit.currentHP <= 0)
-      .map((unit) => unit.id);
-    // One pass over the player's actions: ultimates and ranked cards are
-    // mutually exclusive, since an ultimate carries no rank at all. `rank` is
-    // optional on the event and an absent rank reads as 1, matching the
-    // sequencer's own convention.
-    let ultimates = 0;
-    const rankUses: Record<1 | 2 | 3, number> = { 1: 0, 2: 0, 3: 0 };
-    for (const event of battle.battleEvents) {
-      if (event.kind !== "action" || event.sourceTeam !== "player") continue;
-      if (event.isUlt) ultimates += 1;
-      else rankUses[event.rank ?? 1] += 1;
-    }
-    return applyWaveOutcome(run, {
-      survivors,
-      fallenIds,
-      turns: battle.playerTurns,
-      ultimates,
-      rankUses,
-    });
-  }, []);
+  const foldWave = React.useCallback(
+    (run: StageRunState): StageRunState =>
+      foldWaveFromBattle(run, useGameStore.getState()),
+    [],
+  );
 
   /**
    * Pays out a finished stage and marks it cleared.
@@ -189,27 +167,27 @@ export default function StoryPage(): React.JSX.Element {
    */
   const finishStage = React.useCallback(
     (run: StageRunState) => {
-      const chapter = getStoryChapter(run.chapterId);
-      const stage = getStoryStage(run.chapterId, run.stageId);
+      const chapter = getStoryChapter(run.ownerId);
+      const stage = getStoryStage(run.ownerId, run.stageId);
       if (!chapter || !stage) {
         setView({ kind: "chapters" });
         return;
       }
       const summary = toSummary(run);
-      const isFirstClear = cleared[stageKey(run.chapterId, run.stageId)] !== true;
+      const isFirstClear = cleared[stageKey(run.ownerId, run.stageId)] !== true;
       const outcomes = evaluateMissions(stage, chapter.id, summary, claimedMissions);
       const result = rollStageRewards(stage.rewards, isFirstClear, outcomes);
 
       grantStoryRewards(result.total);
       completeStage(
-        run.chapterId,
+        run.ownerId,
         run.stageId,
         outcomes.filter((outcome) => outcome.paysNow).map((outcome) => outcome.mission.id),
         user?.uid,
       );
       setView({
         kind: "result",
-        chapterId: run.chapterId,
+        chapterId: run.ownerId,
         stageId: run.stageId,
         run: summary,
         missions: outcomes,
@@ -287,8 +265,8 @@ export default function StoryPage(): React.JSX.Element {
   // ---- Battle ----
   if (view.kind === "battle") {
     const { run } = view;
-    const stage = getStoryStage(run.chapterId, run.stageId);
-    const chapter = getStoryChapter(run.chapterId);
+    const stage = getStoryStage(run.ownerId, run.stageId);
+    const chapter = getStoryChapter(run.ownerId);
     if (!stage || !chapter) return bounce();
     const last = run.waveIndex + 1 >= run.waveCount;
     return (
@@ -323,7 +301,7 @@ export default function StoryPage(): React.JSX.Element {
               resetBattle();
               if (
                 beginStage(
-                  run.chapterId,
+                  run.ownerId,
                   run.stageId,
                   run.team.map((pick) => pick.id),
                   true,
@@ -333,18 +311,18 @@ export default function StoryPage(): React.JSX.Element {
               ) {
                 return;
               }
-              setView({ kind: "brief", chapterId: run.chapterId, stageId: run.stageId });
+              setView({ kind: "brief", chapterId: run.ownerId, stageId: run.stageId });
             },
             // Losing because the team was wrong used to cost a four-step detour.
             // It doesn't refund the failed attempt — starting from the brief
             // charges afresh, exactly as the long way round did.
             onChangeTeam: () => {
               resetBattle();
-              setView({ kind: "brief", chapterId: run.chapterId, stageId: run.stageId });
+              setView({ kind: "brief", chapterId: run.ownerId, stageId: run.stageId });
             },
             onQuit: () => {
               resetBattle();
-              setView({ kind: "stages", chapterId: run.chapterId });
+              setView({ kind: "stages", chapterId: run.ownerId });
             },
           }}
         />
@@ -356,7 +334,7 @@ export default function StoryPage(): React.JSX.Element {
   // ---- Between waves ----
   if (view.kind === "break") {
     const { run } = view;
-    const stage = getStoryStage(run.chapterId, run.stageId);
+    const stage = getStoryStage(run.ownerId, run.stageId);
     if (!stage) return bounce();
     const maxHpOf = (id: string) =>
       useGameStore.getState().playerTeam.find((unit) => unit.id === id)?.hp ??
@@ -365,7 +343,7 @@ export default function StoryPage(): React.JSX.Element {
     return (
       <StoryStage
         variant="stage"
-        backgroundId={stageBackgroundId(stage, getStoryChapter(run.chapterId))}
+        backgroundId={stageBackgroundId(stage, getStoryChapter(run.ownerId))}
         dimBackground
       >
         <WaveBreak
@@ -373,7 +351,7 @@ export default function StoryPage(): React.JSX.Element {
           total={run.waveCount}
           bars={runHealthBars(run, maxHpOf)}
           onContinue={() => setView({ kind: "versus", run, skipScenes: view.skipScenes })}
-          onQuit={() => setView({ kind: "stages", chapterId: run.chapterId })}
+          onQuit={() => setView({ kind: "stages", chapterId: run.ownerId })}
         />
       </StoryStage>
     );
@@ -382,8 +360,8 @@ export default function StoryPage(): React.JSX.Element {
   // ---- VS splash ----
   if (view.kind === "versus") {
     const { run } = view;
-    const stage = getStoryStage(run.chapterId, run.stageId);
-    const chapter = getStoryChapter(run.chapterId);
+    const stage = getStoryStage(run.ownerId, run.stageId);
+    const chapter = getStoryChapter(run.ownerId);
     if (!stage || !chapter) return bounce();
     return (
       <StoryStage variant="stage" backgroundId={stageBackgroundId(stage, chapter)}>
@@ -403,8 +381,8 @@ export default function StoryPage(): React.JSX.Element {
   // ---- Scenes ----
   if (view.kind === "scene") {
     const { run } = view;
-    const stage = getStoryStage(run.chapterId, run.stageId);
-    const chapter = getStoryChapter(run.chapterId);
+    const stage = getStoryStage(run.ownerId, run.stageId);
+    const chapter = getStoryChapter(run.ownerId);
     if (!stage || !chapter) return bounce();
     const scenes = view.which === "intro" ? stage.intro : stage.outro;
     return (
@@ -413,7 +391,7 @@ export default function StoryPage(): React.JSX.Element {
           scenes={scenes}
           chapterTitle={`${stageLabel(chapter, stage)} · ${stage.name}`}
           fallbackBackgroundId={chapter.localeId}
-          confirmSkip={cleared[stageKey(run.chapterId, run.stageId)] !== true}
+          confirmSkip={cleared[stageKey(run.ownerId, run.stageId)] !== true}
           onFinish={() => {
             if (view.which === "intro") {
               // A scene stage's intro runs straight into its outro; a battle
@@ -435,8 +413,8 @@ export default function StoryPage(): React.JSX.Element {
   // ---- Stage title card ----
   if (view.kind === "title") {
     const { run } = view;
-    const stage = getStoryStage(run.chapterId, run.stageId);
-    const chapter = getStoryChapter(run.chapterId);
+    const stage = getStoryStage(run.ownerId, run.stageId);
+    const chapter = getStoryChapter(run.ownerId);
     if (!stage || !chapter) return bounce();
     return (
       <StoryStage variant="stage" backgroundId={stageBackgroundId(stage, chapter)}>

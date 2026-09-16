@@ -1,5 +1,6 @@
 import { emptyRunSummary, type StageRunSummary } from "@/lib/game/stageMissions";
-import type { StoryStage, StoryTeamPick } from "@/types/story";
+import type { StoryTeamPick } from "@/types/story";
+import type { StageEffect } from "@/types/stageEffects";
 
 /**
  * A stage run in progress — the wave loop's state, kept pure.
@@ -11,9 +12,32 @@ import type { StoryStage, StoryTeamPick } from "@/types/story";
  *
  * Deliberately not in the store and not in React: the interesting rules here are
  * arithmetic (who survived, what the run is worth, whether the stage is done) and
- * they are worth testing without mounting a provider. The story page holds one of
+ * they are worth testing without mounting a provider. The screen holds one of
  * these in state and hands it back on every wave result.
+ *
+ * **Not story-specific.** It was, until the First Ascension Trial needed the
+ * same three-fights-one-HP-bar rule from the events board (2026-09-16). What it
+ * actually needs is an id and a list of waves, so that is what it asks for —
+ * `RunnableEncounter`, which `StoryStage` satisfies structurally without
+ * changing. The alternative was authoring a trial as a fake story stage, which
+ * would have dragged scenes, missions, chapter rewards and an origin tag along
+ * with it, none of which a trial has.
  */
+
+/**
+ * The minimum a thing needs to be fought as a run.
+ *
+ * `StoryStage` matches this already. An events-board encounter provides the
+ * same two fields and nothing else.
+ */
+export interface RunnableEncounter {
+  id: string;
+  waves: {
+    enemies: StoryTeamPick[];
+    stageEffects?: StageEffect[];
+    victoryAtEnemyHpPercent?: number;
+  }[];
+}
 
 export interface WaveOutcome {
   /** Surviving player units and their HP as the wave ended. */
@@ -29,7 +53,12 @@ export interface WaveOutcome {
 }
 
 export interface StageRunState {
-  chapterId: string;
+  /**
+   * Who owns this encounter — a chapter id for story, the event id for a
+   * trial. Named neutrally because the runner is shared; it was `chapterId`
+   * until the trial started using it.
+   */
+  ownerId: string;
   stageId: string;
   /** Which wave is being fought, 0-based. */
   waveIndex: number;
@@ -50,13 +79,13 @@ export interface StageRunState {
 }
 
 export function beginRun(
-  chapterId: string,
-  stage: StoryStage,
+  ownerId: string,
+  stage: RunnableEncounter,
   team: StoryTeamPick[],
   isRetry = false,
 ): StageRunState {
   return {
-    chapterId,
+    ownerId,
     stageId: stage.id,
     waveIndex: 0,
     waveCount: stage.waves.length,
@@ -122,7 +151,7 @@ export function waveTeam(state: StageRunState): StoryTeamPick[] {
 
 /** The current wave's authored enemies. */
 export function waveEnemies(
-  stage: StoryStage,
+  stage: RunnableEncounter,
   state: StageRunState,
 ): StoryTeamPick[] {
   return stage.waves[state.waveIndex]?.enemies ?? [];

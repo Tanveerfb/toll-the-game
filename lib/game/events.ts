@@ -1,5 +1,6 @@
 import { getCharacterById, getCharacterPhases } from "@/lib/game/characterCatalog";
 import { RANK_WALLS } from "@/lib/game/accountRank";
+import { getTrialEncounter } from "@/lib/game/trialEncounters";
 
 /**
  * The events board.
@@ -114,8 +115,10 @@ export const GAME_EVENTS: readonly GameEvent[] = [
     kind: "trial",
     kicker: `Trial · Rank ${FIRST_WALL} wall`,
     name: "First Ascension Trial",
-    summary: `Clear once to lift the rank ${FIRST_WALL} cap and resume gaining ranks.`,
-    // No encounter authored yet — the board shows it, the brief refuses entry.
+    summary: `Three fights, one HP bar. Clear once to lift the rank ${FIRST_WALL} cap and resume gaining ranks.`,
+    // Deliberately null: this trial is a three-wave run, not one opponent, so
+    // its encounter lives in `trialEncounters.ts` and `hasEncounter` is what
+    // decides whether it can be entered (2026-09-16).
     enemyId: null,
     staminaCost: 30,
     requiredRank: FIRST_WALL,
@@ -200,11 +203,32 @@ export function eventLockReason(
   if (event.clearsWall !== undefined && clearedWalls.includes(event.clearsWall)) {
     return "Already cleared";
   }
-  if (event.enemyId === null) {
+  if (!hasEncounter(event)) {
     // Honest about the real state rather than presenting a dead button.
     return "Encounter not authored yet";
   }
   return null;
+}
+
+/**
+ * Whether this event has a fight behind it.
+ *
+ * Two shapes answer yes. A boss names a single `enemyId`. A **trial** names
+ * none and instead carries a multi-wave encounter in `trialEncounters.ts`,
+ * because the First Ascension Trial is three fights on one HP bar rather than
+ * one opponent (Tanveer, 2026-09-16). The Second still has neither, and the
+ * board keeps saying so.
+ */
+export function hasEncounter(event: GameEvent): boolean {
+  return event.enemyId !== null || getTrialEncounter(event.id) !== undefined;
+}
+
+/** How many fights entering this event commits you to. 1 for a boss, the wave
+ *  count for a trial, 0 when nothing is authored. */
+export function eventWaveCount(event: GameEvent): number {
+  const encounter = getTrialEncounter(event.id);
+  if (encounter) return encounter.waves.length;
+  return event.enemyId ? 1 : 0;
 }
 
 /** Phase count for the board's summary line; 1 for anything not multi-phase. */
