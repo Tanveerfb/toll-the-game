@@ -385,7 +385,7 @@ with an encounter built, a measuring tool that did not exist, and two balance
 findings that outrank the thing they were found by.
 
 **Suite 1,485 tests / 117 files**, browser 17, lint 0 errors (3 known
-`duel.test.ts` warnings), build compiles. Ruling **#136 — PROVISIONAL**.
+`duel.test.ts` warnings), build compiles. Ruling **#136 — PROVISIONAL**. Committed as `2b63f48`.
 
 ### The trial loop was scaffolding end to end
 
