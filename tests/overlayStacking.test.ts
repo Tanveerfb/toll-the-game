@@ -100,6 +100,54 @@ describe("full-viewport overlays escape their stacking context", () => {
     expect(src).toContain("document.body");
   });
 
+  /**
+   * A second stacking failure, from the other direction: not an overlay trapped
+   * *behind* the page, but a page's own pinned action bar buried *under* the
+   * bottom tab bar.
+   *
+   * The tab bar (ruling #123) is `fixed inset-x-0 bottom-0 z-50`. `TeamSelect`
+   * pinned START at `bottom-0 z-40` and `StageBrief` its launch bar at
+   * `bottom-0 z-20`, so from the day the tab bar shipped both were covered
+   * outright — `elementFromPoint` at the centre of "Start battle" returned the
+   * Gacha tab, and a tap navigated away instead of starting the fight. Practice
+   * and the world boss were unstartable on a phone.
+   *
+   * Nothing failed and nothing looked broken; the bar was simply not there.
+   * So the rule is structural: anything pinned to the bottom edge clears the
+   * bar by composing through `--tabbar-h`, which is `0rem` wherever the bar
+   * does not render. Found in a browser 2026-09-01.
+   */
+  it("nothing pins itself under the bottom tab bar", () => {
+    const offenders: string[] = [];
+    for (const rel of files) {
+      const src = fs.readFileSync(rel, "utf8");
+      for (const match of src.matchAll(/className="[^"]*\bfixed\b[^"]*"/g)) {
+        const cls = match[0];
+        if (!/\bbottom-0\b/.test(cls)) continue;
+        // The tab bar itself is the thing being cleared.
+        if (cls.includes("app-tabbar")) continue;
+        // A full-viewport overlay pins all four edges; it is not a bottom bar,
+        // and it sits above the tab bar by z-index on purpose.
+        if (/\binset-0\b/.test(cls)) continue;
+        const line = src.slice(0, match.index).split("\n").length;
+        offenders.push(rel + ":" + line);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("the two bars that were buried now compose through the variable", () => {
+    // Named explicitly: a generic scan passes just as well when a file is
+    // deleted, and these are the two screens whose primary action it was.
+    for (const rel of [
+      "components/game/TeamSelect.tsx",
+      "components/game/story/StageBrief.tsx",
+    ]) {
+      const src = fs.readFileSync(rel, "utf8");
+      expect(src, rel).toContain("bottom-[var(--tabbar-h)]");
+    }
+  });
+
   it("keeps the archive detail rail sticky, the layout that exposed this", () => {
     const src = fs.readFileSync("app/archive/[id]/page.tsx", "utf8");
     expect(src).toContain("lg:sticky");

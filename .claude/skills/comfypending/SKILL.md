@@ -81,6 +81,14 @@ The file's own format block is authoritative. It asks for:
   "medallion" and "crest" the same way it does for "game item icon" — eight
   images established that, after the pipeline doc had already warned about the
   category. Read that section first; it is cheaper than the batch.
+- **When delivered art has a defect, check whether the *pipeline* produces it
+  before queueing a re-render.** The gacha banner carried its own title painted
+  into the plate, duplicating the heading the screen already renders — and that
+  was not a bad roll. **Step 4 of "Banner splash art" in `ART_PIPELINE.md` told
+  the compositor to add a wordmark**, so every future banner would have inherited
+  it. The entry is worth writing either way, but the fix was amending the recipe;
+  queueing a re-render alone would have produced the same defect again
+  (2026-09-01, entry D2).
 - **Never invent game content to justify art.** Art follows an approved design and never
   leads it — Tanveer owns kits, mechanics and characters (see `AGENTS.md`). If the thing
   the art depicts doesn't exist yet, say that in the entry rather than designing it.

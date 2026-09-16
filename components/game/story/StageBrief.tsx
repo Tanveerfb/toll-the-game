@@ -313,7 +313,11 @@ export default function StageBrief({
 
       {/* Primaries in the thumb-reachable lower third, and pinned so the picker
           above can grow without pushing BEGIN off the screen (ruling #107). */}
-      <div className="fixed inset-x-0 bottom-0 z-20 bg-[linear-gradient(180deg,transparent,rgba(6,9,12,0.96)_40%)] px-3 pt-5 pb-3">
+      {/* Cleared of the bottom tab bar, which is `fixed bottom-0 z-50` and was
+          covering this bar's primary action outright (ruling #123, measured
+          2026-09-01 — the same defect as `TeamSelect`'s START). `--tabbar-h` is
+          `0rem` from `sm` up, so desktop is unchanged. */}
+      <div className="fixed inset-x-0 bottom-[var(--tabbar-h)] z-20 bg-[linear-gradient(180deg,transparent,rgba(6,9,12,0.96)_40%)] px-3 pt-5 pb-3">
         <div className="mx-auto flex w-full max-w-md items-stretch gap-2">
           <div className="flex-1">
             <Button

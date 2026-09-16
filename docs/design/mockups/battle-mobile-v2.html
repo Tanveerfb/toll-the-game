@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The battle screen at 390 — hand, action bar, 4v4 field</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* Combat Terminal tokens, copied from styles/globals.css @theme so this file
+     stands alone and still reads as the game. */
+  :root {
+    --void: #06090c;
+    --panel: #0d141b;
+    --panel-raised: #111a23;
+    --inset: #080d12;
+    --gridline: #0e1720;
+    --hairline: #16212b;
+    --edge: #1c2a36;
+    --edge-strong: #31596b;
+    --readout-strong: #eaf2f8;
+    --readout: #cbd8e2;
+    --readout-dim: #8ea6b8;
+    --readout-muted: #5d7285;
+    --signal: #4fd3e8;
+    --el-light: #e8d174;
+    --el-red: #ff5a4e;
+    --el-blue: #37a6ff;
+    --el-green: #35d48b;
+    --heading: "Bangers", "Impact", cursive;
+    --body: "Rajdhani", "Segoe UI", sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--void);
+    color: var(--readout);
+    font-family: var(--body);
+    line-height: 1.5;
+    padding: 28px 20px 80px;
+    background-image:
+      linear-gradient(var(--gridline) 1px, transparent 1px),
+      linear-gradient(90deg, var(--gridline) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  h1 {
+    font-family: var(--heading);
+    font-size: clamp(30px, 5vw, 46px);
+    letter-spacing: 0.05em;
+    color: var(--readout-strong);
+    line-height: 1.05;
+    text-wrap: balance;
+  }
+  .eyebrow {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--signal);
+  }
+  h2 {
+    font-family: var(--heading);
+    font-size: 26px; letter-spacing: 0.04em;
+    color: var(--readout-strong); margin-bottom: 4px;
+  }
+  h3 {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--readout-muted);
+    margin-bottom: 8px;
+  }
+  p { max-width: 68ch; color: var(--readout-dim); font-size: 15px; }
+  p + p { margin-top: 10px; }
+  section { margin-top: 44px; }
+  .lede { margin-top: 12px; }
+  code {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.87em; color: var(--signal);
+    background: var(--inset); border: 1px solid var(--hairline);
+    padding: 1px 5px;
+  }
+  b, strong { color: var(--readout-strong); font-weight: 700; }
+
+  /* Measured-fact callout. Every number on this page came from
+     getBoundingClientRect on the running game at 395x751, not from reading CSS. */
+  .measured {
+    border-left: 2px solid var(--signal);
+    background: linear-gradient(90deg, rgba(79,211,232,0.06), transparent 70%);
+    padding: 10px 14px; margin-top: 14px;
+    font-size: 14px; color: var(--readout);
+  }
+  .measured b { color: var(--signal); }
+
+  .verdict {
+    border-left: 2px solid var(--el-light);
+    background: linear-gradient(90deg, rgba(232,209,116,0.07), transparent 70%);
+    padding: 10px 14px; margin-top: 14px; font-size: 14px;
+  }
+
+  .row { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 18px; align-items: flex-start; }
+  .col { flex: 1 1 340px; min-width: 300px; }
+
+  /* A 390px phone column, the design canvas from ruling #107. */
+  .phone {
+    width: 390px; max-width: 100%;
+    border: 1px solid var(--edge);
+    background: var(--void);
+    overflow: hidden;
+  }
+  .phone-label {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.2em;
+    text-transform: uppercase; margin-bottom: 7px;
+  }
+  .tag-now { color: var(--el-red); }
+  .tag-new { color: var(--el-green); }
+  .px { color: var(--readout-muted); letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+
+  /* ── shared battle chrome ─────────────────────────────────────────── */
+  .status {
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--hairline);
+    padding: 7px 10px; background: var(--panel);
+  }
+  .status .turn { font-family: var(--heading); font-size: 15px; letter-spacing: 0.06em; color: var(--readout-strong); }
+  .status .phase { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--readout-muted); }
+
+  .side-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.24em;
+    text-transform: uppercase; color: var(--readout-muted);
+    padding: 6px 10px 3px;
+  }
+  .field { display: grid; gap: 5px; padding: 0 8px 8px; }
+  .field.f3 { grid-template-columns: repeat(3, 1fr); }
+  .field.f4 { grid-template-columns: repeat(4, 1fr); }
+  .unit {
+    border: 1px solid var(--edge); background: var(--panel);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .unit .art {
+    aspect-ratio: 1 / 1;
+    background:
+      radial-gradient(circle at 50% 35%, rgba(55,166,255,0.42), transparent 62%),
+      linear-gradient(160deg, #16283a, #0b1219);
+  }
+  .unit.a4 .art { aspect-ratio: 4 / 5; }
+  .unit .meta { padding: 4px 5px 5px; }
+  .unit .nm {
+    font-family: var(--heading); letter-spacing: 0.05em; color: var(--readout-strong);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .f3 .nm { font-size: 13px; } .f4 .nm { font-size: 11px; }
+  .unit .hp {
+    font-family: var(--heading); color: var(--readout-strong);
+    font-variant-numeric: tabular-nums;
+  }
+  .f3 .hp { font-size: 15px; } .f4 .hp { font-size: 12px; }
+  .unit .hp small { color: var(--readout-muted); font-size: 0.7em; }
+  .bar { height: 3px; background: var(--inset); border: 1px solid var(--hairline); margin-top: 3px; }
+  .bar i { display: block; height: 100%; background: var(--el-green); }
+  .ult { height: 3px; background: var(--inset); border: 1px solid var(--hairline); margin-top: 2px; }
+  .ult i { display: block; height: 100%; background: var(--el-light); }
+
+  /* ── action bar ───────────────────────────────────────────────────── */
+  .actionbar {
+    display: flex; align-items: stretch; gap: 6px;
+    padding: 6px 8px; border-top: 1px solid var(--hairline); background: var(--inset);
+  }
+  .ab-chip {
+    display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+    border: 1px solid var(--edge); padding: 0 7px; height: 23px; align-self: center;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--readout-muted);
+  }
+  .pip { width: 8px; height: 8px; border: 1px solid var(--edge-strong); }
+  .pip.on { background: var(--signal); border-color: var(--signal); }
+  .slots { display: flex; gap: 4px; min-width: 0; }
+  .slots.clipped { overflow: hidden; flex: 1 1 0; }
+  .slot {
+    width: 56px; height: 44px; flex-shrink: 0;
+    border: 1px dashed var(--edge-strong); background: var(--void);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--heading); font-size: 15px; color: var(--readout-muted);
+  }
+  .slot.filled { border-style: solid; border-color: var(--signal); color: var(--signal); background: rgba(79,211,232,0.09); }
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    height: 44px; padding: 0 12px; border: 1px solid var(--edge);
+    background: var(--void); color: var(--readout-dim);
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .btn.primary { border-color: var(--signal); color: var(--signal); background: rgba(79,211,232,0.1); }
+  .btn.icon { width: 44px; padding: 0; }
+  .btn svg { width: 17px; height: 17px; flex-shrink: 0; }
+
+  /* ── hand ─────────────────────────────────────────────────────────── */
+  .hand-wrap { border-top: 1px solid var(--hairline); background: var(--panel); }
+  .hand { display: flex; align-items: stretch; }
+  .hand.now { gap: 4px; padding: 8px; overflow: hidden; }
+  .hand.fit { gap: 2px; padding: 2px; }
+  .card {
+    border: 1px solid var(--edge); background: var(--inset);
+    display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+  }
+  .hand.now .card { width: 56px; height: 128px; }
+  .hand.fit .card { flex: 1 1 0; min-width: 0; height: 107px; }
+  .card .cart {
+    flex: 1;
+    background:
+      radial-gradient(circle at 50% 40%, rgba(255,90,78,0.4), transparent 60%),
+      linear-gradient(160deg, #2a1620, #0b1219);
+  }
+  .card .cn {
+    font-size: 8px; letter-spacing: 0.02em; color: var(--readout);
+    padding: 2px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    border-top: 1px solid var(--hairline);
+  }
+  .card .cp { font-size: 8px; color: var(--readout-muted); padding: 0 3px 2px; }
+  .card.off { opacity: 0.28; }
+  .cut {
+    position: absolute; top: 0; bottom: 0; right: 0; width: 62px;
+    background: repeating-linear-gradient(45deg, rgba(255,90,78,0.16) 0 6px, transparent 6px 12px);
+    border-left: 1px dashed var(--el-red); pointer-events: none;
+  }
+  .cut span {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(90deg);
+    font-size: 9px; font-weight: 700; letter-spacing: 0.14em; color: var(--el-red);
+    text-transform: uppercase; white-space: nowrap;
+  }
+
+  table { border-collapse: collapse; width: 100%; margin-top: 14px; font-size: 14px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--hairline); }
+  th { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--readout-muted); }
+  td.n { font-variant-numeric: tabular-nums; color: var(--readout-strong); }
+  .scroll-x { overflow-x: auto; }
+
+  ul { margin: 10px 0 0 18px; color: var(--readout-dim); font-size: 15px; }
+  li { margin-bottom: 6px; }
+  li b { color: var(--readout-strong); }
+  hr { border: 0; border-top: 1px solid var(--hairline); margin: 40px 0 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="eyebrow">Mockup · ruling #106 · 2026-09-01</span>
+  <h1>The battle screen at 390</h1>
+  <p class="lede">
+    Three things Tanveer called out after the first look at a live battle on a
+    phone: the hand cannot show its own cards, the bar above it is doing too
+    much with too many words, and the field's fitness for 4v4 was never
+    checked. All three are measured below on the running game at
+    <b>395&times;751</b>, in a real 4v4, with <code>getBoundingClientRect</code>
+    — not read off the CSS.
+  </p>
+
+  <!-- ═══════════════════════════ 1. HAND ═══════════════════════════ -->
+  <section>
+    <h2>1 &middot; The hand hides two of its eight cards</h2>
+    <p>
+      Cards are <code>flex: 1 1 0</code> between a <b>56px</b> floor and a 96px
+      ceiling. The floor is the problem: eight cards at 56px, plus seven 4px
+      gaps and 16px of padding, need <b>492px</b>. The scroller has
+      <b>370px</b>. It scrolls, so nothing is lost — but at rest the player is
+      looking at six of their eight options, and the two they cannot see are
+      the two on the end they never scroll to.
+    </p>
+
+    <div class="measured">
+      Measured in a live 4v4 &mdash; hand of 8, container <b>370px</b>, content
+      <b>492px</b>, <b>122px hidden</b>, <b>2 cards</b> fully off-screen.
+      In the 3v3 before it: hand of 7, 62px hidden, 1 card off-screen.
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <div class="phone-label"><span class="tag-now">Today</span><span class="px">8 cards &middot; 122px past the edge</span></div>
+        <div class="phone" style="position: relative;">
+          <div class="hand-wrap">
+            <div class="hand now">
+              <div class="card"><div class="cart"></div><div class="cn">Attention&hellip;</div><div class="cp">Power 0</div></div>
+              <div class="card"><div class="cart"></div><div class="cn">Unexpecte&hellip;</div><div class="cp">Power 9</div></div>
+              <div class="card"><div class="cart"></div><div class="cn">Drain</div><div class="cp">Power 200</div></div>
+              <div class="card"><div class="cart"></div><div class="cn">Snatch</div><div class="cp">Power 0</div></div>
+              <div class="card"><div class="cart"></div><div class="cn">Jojankerc&hellip;</div><div class="cp">Power 195</div></div>
+              <div class="card"><div class="cart"></div><div class="cn">Jojankerc&hellip;</div><div class="cp">Power 230</div></div>
+              <div class="card off"><div class="cart"></div><div class="cn">House Ru&hellip;</div><div class="cp">Power 260</div></div>
+              <div class="card off"><div class="cart"></div><div class="cn">Marked C&hellip;</div><div class="cp">Power 260</div></div>
+            </div>
+          </div>
+          <div class="cut"><span>off-screen</span></div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="phone-label"><span class="tag-new">Proposed</span><span class="px">8 cards &middot; 47px each &middot; one line</span></div>
+        <div class="phone">
+          <div class="hand-wrap">
+            <div class="hand fit">
+              <div class="card"><div class="cart"></div><div class="cn">Attentio&hellip;</div><div class="cp">0</div></div>
+              <div class="card"><div class="cart"></div><div class="cn">Unexpec&hellip;</div><div class="cp">9</div></div>
+              <div class="card"><div class="cart"></div><div class="cn">Drain</div><div class="cp">200</div></div>
+              <div class="card"><div class="cart"></div><div class="cn">Snatch</div><div class="cp">0</div></div>
+              <div class="card"><div class="cart"></div><div class="cn">Jojanke&hellip;</div><div class="cp">195</div></div>
+              <div class="card"><div class="cart"></div><div class="cn">Jojanke&hellip;</div><div class="cp">230</div></div>
+              <div class="card"><div class="cart"></div><div class="cn">House R&hellip;</div><div class="cp">260</div></div>
+              <div class="card"><div class="cart"></div><div class="cn">Marked&hellip;</div><div class="cp">260</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top:16px;">
+      Two changes get eight cards onto one line and keep every card above the
+      44px touch floor. <b>Full-bleed the rail</b> — it currently sits inside
+      12px page margins it does not need — and <b>drop the gap to 2px with 2px
+      padding</b>.
+    </p>
+
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Layout</th><th>Available</th><th>Gaps + padding</th><th>Per card</th><th>Fits 8?</th></tr></thead>
+        <tbody>
+          <tr><td>Today &mdash; 12px margins, 4px gap, 8px pad</td><td class="n">370</td><td class="n">44</td><td class="n">56 (floor)</td><td style="color:var(--el-red)">No &mdash; 122px over</td></tr>
+          <tr><td>Keep margins, tighten gap</td><td class="n">370</td><td class="n">18</td><td class="n">44.0</td><td style="color:var(--el-light)">Exactly at the floor</td></tr>
+          <tr><td><b>Full-bleed, 2px gap, 2px pad</b></td><td class="n">395</td><td class="n">18</td><td class="n"><b>47.1</b></td><td style="color:var(--el-green)"><b>Yes, with 3px spare</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="verdict">
+      <b>Card height comes down too.</b> 56&times;128 is a 1:2.3 card; 47&times;107
+      keeps that proportion. That returns <b>21px</b> to the field, which is
+      exactly what section 3 needs. The name line loses about two characters —
+      press-and-hold already opens the card (ruling #118), so the full name was
+      never living on the face of it anyway.
+    </div>
+  </section>
+
+  <!-- ═══════════════════════ 2. ACTION BAR ═══════════════════════ -->
+  <section>
+    <h2>2 &middot; The action bar &mdash; and the two slots you cannot see</h2>
+    <p>
+      This one is not only clunky. The three queued-action slots are 56px each
+      inside a scroller that measures <b>83px</b>: <b>97px of it is clipped</b>,
+      so <b>two of your three queued actions are invisible</b>. The turn's
+      whole state is in that strip.
+    </p>
+    <p>
+      The rest is redundancy. <span style="color:var(--readout-strong)">ACTIONS
+      &#9642;&#9642;&#9642; 3&nbsp;LEFT</span> takes 124px to say what three
+      empty slots already say. <span style="color:var(--readout-strong)">RESET</span>
+      and <span style="color:var(--readout-strong)">END TURN</span> take 141px
+      of text for two controls whose icons are unambiguous.
+    </p>
+
+    <div class="measured">
+      Measured: chip <b>124px</b> &middot; slot scroller <b>83px</b> holding
+      <b>180px</b> &middot; Reset <b>60px</b> &middot; End&nbsp;Turn
+      <b>81px</b>. Total demand <b>445px</b> in a <b>371px</b> bar.
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <div class="phone-label"><span class="tag-now">Today</span><span class="px">1 of 3 slots visible</span></div>
+        <div class="phone">
+          <div class="actionbar">
+            <span class="ab-chip">Actions <i class="pip on"></i><i class="pip"></i><i class="pip"></i> 3 left</span>
+            <div class="slots clipped">
+              <div class="slot">1</div><div class="slot">2</div><div class="slot">3</div>
+            </div>
+            <div class="btn">Reset</div>
+            <div class="btn">End Turn</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="phone-label"><span class="tag-new">Option A &mdash; recommended</span><span class="px">3 slots visible &middot; icons</span></div>
+        <div class="phone">
+          <div class="actionbar">
+            <div class="btn icon" title="Reset">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>
+            </div>
+            <div class="slots" style="flex:1 1 0">
+              <div class="slot filled" style="flex:1 1 0;width:auto">1</div>
+              <div class="slot" style="flex:1 1 0;width:auto">2</div>
+              <div class="slot" style="flex:1 1 0;width:auto">3</div>
+            </div>
+            <div class="btn primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+              End
+            </div>
+          </div>
+        </div>
+        <div class="phone-label" style="margin-top:16px;"><span class="tag-new">Option B</span><span class="px">slots join the hand</span></div>
+        <div class="phone">
+          <div class="actionbar" style="padding-bottom:2px;">
+            <div class="slots" style="flex:1 1 0">
+              <div class="slot filled" style="flex:1 1 0;width:auto;height:38px">1</div>
+              <div class="slot" style="flex:1 1 0;width:auto;height:38px">2</div>
+              <div class="slot" style="flex:1 1 0;width:auto;height:38px">3</div>
+            </div>
+          </div>
+          <div class="actionbar" style="border-top:0;padding-top:2px;">
+            <div class="btn icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>
+            </div>
+            <div class="btn primary" style="flex:1 1 0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+              End Turn
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ul>
+      <li><b>A</b> keeps one row and 44px on everything. Reset becomes the
+        universal &#8635;; End Turn keeps a word because it is the one
+        irreversible control in the fight and an icon alone would not earn
+        that. The three slots become <code>flex-1</code>, so they are ~76px
+        each and all three are visible at every hand size.</li>
+      <li><b>B</b> puts the slots directly above the hand, because that is
+        where cards go — the destination sits next to the source, and the drag
+        gets shorter. Costs a second 44px row.</li>
+      <li>Dropped in both: the <b>ACTIONS / N LEFT</b> chip. Three slots that
+        fill up as you commit already carry it, and <code>aria-label</code> can
+        keep the count for a screen reader without spending 124px.</li>
+    </ul>
+  </section>
+
+  <!-- ═══════════════════════ 3. THE FIELD ═══════════════════════ -->
+  <section>
+    <h2>3 &middot; Is the field tuned for 4v4?</h2>
+    <p>
+      It fits, and nothing overflows — but it was sized for three. Going to four
+      takes <b>25%</b> off every tile's width, and the tile spends that on the
+      two things a player reads mid-turn: the portrait and the HP number.
+    </p>
+
+    <div class="measured">
+      Measured in a live battle, same viewport. <b>3v3</b>: tile pitch
+      <b>120px</b>, HP bar <b>99px</b>. <b>4v4</b>: tile pitch <b>96px</b>, HP
+      bar <b>74px</b>. Field height <b>383px</b> in both &mdash; two rows, so
+      each row gets ~190px whether it holds three tiles or four.
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <div class="phone-label"><span class="px">3v3 &mdash; today</span><span class="px">120px pitch</span></div>
+        <div class="phone">
+          <div class="status"><span class="turn">TURN 1</span><span class="phase">Player action</span></div>
+          <div class="side-label">Enemy</div>
+          <div class="field f3">
+            <div class="unit"><div class="art"></div><div class="meta"><div class="nm">SERAS</div><div class="hp">3869<small>/3869</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:0"></i></div></div></div>
+            <div class="unit"><div class="art"></div><div class="meta"><div class="nm">BAN</div><div class="hp">3780<small>/3780</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:0"></i></div></div></div>
+            <div class="unit"><div class="art"></div><div class="meta"><div class="nm">BATRA</div><div class="hp">3522<small>/3522</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:0"></i></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="phone-label"><span class="px">4v4 &mdash; today</span><span class="px">96px pitch &middot; 74px HP bar</span></div>
+        <div class="phone">
+          <div class="status"><span class="turn">TURN 1</span><span class="phase">Player action</span></div>
+          <div class="side-label">Enemy</div>
+          <div class="field f4">
+            <div class="unit"><div class="art"></div><div class="meta"><div class="nm">SERAS</div><div class="hp">3869<small>/3869</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:0"></i></div></div></div>
+            <div class="unit"><div class="art"></div><div class="meta"><div class="nm">BAN</div><div class="hp">3780<small>/3780</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:0"></i></div></div></div>
+            <div class="unit"><div class="art"></div><div class="meta"><div class="nm">BATRA</div><div class="hp">3522<small>/3522</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:0"></i></div></div></div>
+            <div class="unit"><div class="art"></div><div class="meta"><div class="nm">YALINA</div><div class="hp">4200<small>/4200</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:0"></i></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <div class="phone-label"><span class="tag-new">Proposed &mdash; 4v4</span><span class="px">4:5 portrait &middot; +21px from the hand</span></div>
+        <div class="phone">
+          <div class="status"><span class="turn">TURN 1</span><span class="phase">Player action</span></div>
+          <div class="side-label">Enemy</div>
+          <div class="field f4">
+            <div class="unit a4"><div class="art"></div><div class="meta"><div class="nm">SERAS</div><div class="hp">3869<small>/3869</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:0"></i></div></div></div>
+            <div class="unit a4"><div class="art"></div><div class="meta"><div class="nm">BAN</div><div class="hp">3780<small>/3780</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:0"></i></div></div></div>
+            <div class="unit a4"><div class="art"></div><div class="meta"><div class="nm">BATRA</div><div class="hp">3522<small>/3522</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:0"></i></div></div></div>
+            <div class="unit a4"><div class="art"></div><div class="meta"><div class="nm">YALINA</div><div class="hp">4200<small>/4200</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:0"></i></div></div></div>
+          </div>
+          <div class="side-label">Your team</div>
+          <div class="field f4">
+            <div class="unit a4"><div class="art"></div><div class="meta"><div class="nm">YALINA</div><div class="hp">4200<small>/4200</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:40%"></i></div></div></div>
+            <div class="unit a4"><div class="art"></div><div class="meta"><div class="nm">BAN</div><div class="hp">3969<small>/3969</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:0"></i></div></div></div>
+            <div class="unit a4"><div class="art"></div><div class="meta"><div class="nm">GON</div><div class="hp">3748<small>/3748</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:0"></i></div></div></div>
+            <div class="unit a4"><div class="art"></div><div class="meta"><div class="nm">SERAS</div><div class="hp">5628<small>/5628</small></div><div class="bar"><i style="width:100%"></i></div><div class="ult"><i style="width:0"></i></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <h3>What changes, and why</h3>
+        <ul>
+          <li><b>The portrait goes 4:5, not 1:1.</b> A square tile at 96px pitch
+            wastes its width on background; a taller crop keeps the face at the
+            same size while the tile narrows. This is the single biggest
+            legibility win and costs nothing but a crop.</li>
+          <li><b>The 21px the hand gives back goes here</b>, so the two rows are
+            ~200px instead of ~190 and the portrait does not pay for the
+            narrower tile twice.</li>
+          <li><b>The name drops to 11px and truncates honestly.</b> "GON
+            FREECSS" does not fit 74px at any size worth reading; press-and-hold
+            already opens the unit (ruling #118).</li>
+        </ul>
+        <div class="verdict" style="margin-top:16px;">
+          <b>The honest answer to "is it tuned for 4v4":</b> no, it was tuned
+          for 3v3 and 4v4 inherits it. Nothing breaks and nothing overflows —
+          this is a legibility change, not a bug fix, which is why it is here
+          and not already done.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+  <section>
+    <h2>Not proposed here</h2>
+    <ul>
+      <li><b>Merge is 38&times;20</b> on a hand card — under the 44px floor
+        twice over. It is a fix, not a layout question, so it does not need a
+        mockup; it needs a decision about whether the arm-merge affordance
+        stays a button on the card face at 47px wide.</li>
+      <li><b>The interaction notice replaces the whole control row.</b> While
+        an auto-merge notice is up, Skip, Speed and Controls — and with them
+        Log, Foe, Team and Exit — do not exist. Recoverable by dismissing, but
+        the way out of a battle should not be behind a toast.</li>
+      <li><b>The auto-merge notice truncates</b> at 305 of the 350px it wants.</li>
+    </ul>
+  </section>
+
+</div>
+</body>
+</html>

@@ -1,16 +1,16 @@
 "use client";
 
 import Image from "next/image";
+import { ChevronRight } from "lucide-react";
 import ItemIcon from "@/components/game/ItemIcon";
 import React from "react";
 import { usePlayerStore, type ResolvedPullOutcome } from "@/store/playerStore";
 import { getGemBanner, getTicketBanner } from "@/lib/gacha/banners";
 import { getCharacterArt } from "@/lib/game/characterArt";
-import { getCharacterById } from "@/lib/game/characterCatalog";
 import ConfirmPullModal from "@/components/gacha/ConfirmPullModal";
 import RatesModal from "@/components/gacha/RatesModal";
+import FeaturedModal from "@/components/gacha/FeaturedModal";
 import ClaimSection from "@/components/gacha/ClaimSection";
-import Hint from "@/components/ui/Hint";
 import PullReveal from "@/components/gacha/PullReveal";
 import {
   canClaimLimitedFinal,
@@ -38,6 +38,7 @@ function markerAt(threshold: number, final: number): number {
 export default function BannerScreen(): React.JSX.Element {
   const [tab, setTab] = React.useState<Tab>("limited");
   const [showRates, setShowRates] = React.useState(false);
+  const [showFeatured, setShowFeatured] = React.useState(false);
   // A draw is confirmed before it rolls: 50 gems is ten Molvarr first clears,
   // and it used to fire on one tap of a button whose only warning was its own
   // label (Tanveer, 2026-08-13).
@@ -70,6 +71,14 @@ export default function BannerScreen(): React.JSX.Element {
 
   const isLimited = tab === "limited";
   const featured = isLimited ? gemBanner.featured : ticketBanner.featured;
+  // Ownership of the featured pool, resolved once for both the summary row and
+  // the modal's table.
+  const featuredRows = featured.map((id) => ({
+    id,
+    owned: hasHydrated && roster.includes(id),
+    ultLevel: characters[id]?.ultLevel ?? 1,
+  }));
+  const ownedFeatured = featuredRows.filter((row) => row.owned).length;
   const bar = isLimited ? pity.limited.bar : pity.permanent.bar;
   const finalThreshold = isLimited
     ? LIMITED_MILESTONE_FINAL
@@ -131,7 +140,7 @@ export default function BannerScreen(): React.JSX.Element {
     `Draw ×${count} · ${count === 1 ? singleCost : multiCost} ${unit}`;
 
   return (
-    <main className="terminal-grid min-h-dvh bg-void">
+    <main className="terminal-grid min-screen-below-nav bg-void">
       <section className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-6 md:px-8">
         {ticketBannerAvailable ? (
           <div className="flex gap-1.5 border-b border-edge pb-2">
@@ -172,9 +181,29 @@ export default function BannerScreen(): React.JSX.Element {
             fill
             priority
             sizes="(max-width: 768px) 100vw, 672px"
-            className="object-cover opacity-55"
+            // `object-top`, not the default centre. The plate has its own title
+            // painted into the bottom of the artwork — "V1. BETA ROSTER BANNER"
+            // in gold, source y 672-724 of 768 — and `BannerScreen` renders
+            // that same string as the heading laid over it, so the screen
+            // showed the banner's name twice, the second time as a half-cut
+            // band of art. Found in a browser 2026-09-01. A textless
+            // re-render is queued as D2 in docs/ART_REQUESTS.md; this pair of
+            // workarounds holds until it lands, and both go when it does.
+            //
+            // `object-top` alone does not do it, which is worth writing down
+            // because the arithmetic is not obvious: the image box is 349 wide
+            // inside the section's padding, not the 393 of the viewport, so a
+            // 2:1 source covering a 159-tall box shows source y 0..700 — still
+            // 28px into the band. Hence the scrim below as well.
+            className="object-cover object-top opacity-55"
           />
           <span className="absolute inset-0 bg-linear-to-r from-void via-void/70 to-transparent" />
+          {/* Buries whatever of the wordmark the crop leaves. Deliberately
+              generous: the exact overlap moves with the container's width, and
+              a scrim that is too tall costs nothing here — the plate's own
+              composition puts its characters in the upper two thirds, and the
+              screen already reads this art through two other gradients. */}
+          <span className="absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-void via-void/85 to-transparent" />
           <div className="relative flex h-full max-w-[70%] flex-col justify-center gap-1 px-5">
             <span className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
               {/* No end date and no "Limited" — the beta roster was always
@@ -195,33 +224,41 @@ export default function BannerScreen(): React.JSX.Element {
         </div>
 
         {/* FEATURED — which of these you already have is the whole reason a
-            pull is exciting or a shrug. */}
+            pull is exciting or a shrug.
+
+            A row that opens a table, not a grid of portraits (Tanveer,
+            2026-09-01). The grid was twelve 44px tiles whose name and ownership
+            each sat behind a `Hint`: correct under ruling #125 — a tap opens
+            it, unlike the `title=` it replaced — but twelve taps to read one
+            banner. The count answers the usual question without opening
+            anything, and `FeaturedModal` answers the rest in one place. */}
         {featured.length > 0 ? (
-          <div className="border border-hairline bg-panel px-3 py-2.5">
-            <p className="mb-2 font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
-              Featured
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {featured.map((id) => {
+          <button
+            type="button"
+            onClick={() => setShowFeatured(true)}
+            className="flex w-full items-center gap-3 border border-hairline bg-panel px-3 py-2.5 text-left transition-colors hover:border-edge-strong"
+          >
+            <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+                Featured
+              </span>
+              <span className="font-body text-sm text-readout">
+                {hasHydrated
+                  ? `${ownedFeatured} of ${featured.length} owned`
+                  : `${featured.length} units`}
+              </span>
+            </span>
+            {/* The portraits still carry the glance — five of them, as a
+                sample, so the row says what kind of units these are without
+                pretending to be the full list. */}
+            <span className="ml-auto flex shrink-0 -space-x-2">
+              {featured.slice(0, 5).map((id) => {
                 const art = getCharacterArt(id);
-                const character = getCharacterById(id);
                 const owned = hasHydrated && roster.includes(id);
-                const ultLevel = characters[id]?.ultLevel ?? 1;
-                const label = owned
-                  ? `${character?.name ?? id} — owned, ult ${ultLevel}`
-                  : `${character?.name ?? id} — not owned`;
                 return (
-                  // Was a `<span title={…}>`, which is ruling #120's exact
-                  // failure and worse here than anywhere else: these twelve
-                  // tiles are the only place the banner says who is in it, so
-                  // on a phone the summon screen sold twelve anonymous
-                  // squares. Ownership reads from the border and the dimming;
-                  // the name and ult level needed a tap.
-                  <Hint
+                  <span
                     key={id}
-                    content={label}
-                    ariaLabel={label}
-                    className={`relative h-11 w-11 overflow-hidden border ${
+                    className={`relative h-9 w-9 overflow-hidden border bg-inset ${
                       owned ? "border-edge-strong" : "border-hairline opacity-45"
                     }`}
                   >
@@ -230,20 +267,19 @@ export default function BannerScreen(): React.JSX.Element {
                         src={art}
                         alt=""
                         fill
-                        sizes="44px"
+                        sizes="36px"
                         className="object-cover object-top"
                       />
                     ) : null}
-                    {owned && ultLevel > 1 ? (
-                      <span className="absolute bottom-0 right-0 bg-signal px-1 font-body text-[8px] font-bold text-void">
-                        U{ultLevel}
-                      </span>
-                    ) : null}
-                  </Hint>
+                  </span>
                 );
               })}
-            </div>
-          </div>
+            </span>
+            <ChevronRight
+              className="h-4 w-4 shrink-0 text-readout-muted"
+              strokeWidth={2}
+            />
+          </button>
         ) : null}
 
         {/* MILESTONE TRACK */}
@@ -365,6 +401,14 @@ export default function BannerScreen(): React.JSX.Element {
           </button>
         </div>
       </section>
+
+      {showFeatured ? (
+        <FeaturedModal
+          rows={featuredRows}
+          hasHydrated={hasHydrated}
+          onClose={() => setShowFeatured(false)}
+        />
+      ) : null}
 
       {showRates ? (
         <RatesModal

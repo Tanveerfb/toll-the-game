@@ -122,6 +122,34 @@ export function isChapterUnlocked(
 }
 
 /**
+ * Every stage in the chapter cleared.
+ *
+ * `isChapterUnlocked` asks whether you may *start* it; this asks whether you
+ * have finished it. Added 2026-09-01 for event visibility gating
+ * (`lib/game/events.ts`) — a World Boss that the story introduces should not be
+ * on the board before the story introduces it.
+ */
+export function isChapterCleared(
+  cleared: Record<string, boolean>,
+  chapterId: string,
+): boolean {
+  const chapter = getStoryChapter(chapterId);
+  if (!chapter || chapter.stages.length === 0) return false;
+  return chapter.stages.every((stage) => cleared[stageKey(chapterId, stage.id)]);
+}
+
+/** Every chapter, as `chapterId -> fully cleared`. */
+export function clearedChapterMap(
+  cleared: Record<string, boolean>,
+): Record<string, boolean> {
+  const out: Record<string, boolean> = {};
+  for (const chapter of getStoryChapters()) {
+    out[chapter.id] = isChapterCleared(cleared, chapter.id);
+  }
+  return out;
+}
+
+/**
  * What the stage list may show about a stage.
  *
  * Sequential unlock means at most one stage is ever `current`: the first

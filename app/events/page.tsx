@@ -39,8 +39,11 @@ import {
   eventLockReason,
   eventPhaseCount,
   GAME_EVENTS,
+  isEventVisible,
   type GameEvent,
 } from "@/lib/game/events";
+import { clearedChapterMap } from "@/lib/game/storyCatalog";
+import { useStoryStore } from "@/store/storyStore";
 import {
   availableDifficulties,
   enemyLevelForDifficulty,
@@ -198,7 +201,7 @@ function AutoClearResults({
   const totalStamina = runs.reduce((sum, run) => sum + run.staminaUsed, 0);
 
   return (
-    <main className="terminal-grid flex min-h-dvh items-center justify-center bg-void px-4 py-6">
+    <main className="terminal-grid flex min-screen-below-nav items-center justify-center bg-void px-4 py-6">
       <div className="w-full max-w-lg border border-edge-strong bg-panel">
         <div className="border-b border-hairline bg-inset px-5 py-4">
           <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
@@ -339,9 +342,15 @@ function EventCard({
           // Only reached by an event with no authored encounter — the two
           // ascension trials. Every fightable enemy resolves art, bosses
           // included (`getCharacterArt` maps NPC ids to `public/npc/`).
-          <span className="font-heading text-2xl text-readout-muted">
-            {locked ? <Lock className="h-6 w-6" strokeWidth={1.8} /> : "☠"}
-          </span>
+          //
+          // Always the skull, never a lock. The right-hand slot below carries
+          // that, and it is the slot that answers "where does this row take
+          // me"; this one is a portrait placeholder, and a lock here says
+          // nothing about the enemy. The two always coincided — the fallback
+          // fires only for the trials, which are the only locked events — so a
+          // locked trial drew two locks and a reason chip for one fact
+          // (browser audit, 2026-09-01).
+          <span className="font-heading text-2xl text-readout-muted">☠</span>
         )}
       </span>
 
@@ -402,6 +411,25 @@ export default function EventsPage(): React.JSX.Element {
   const autoClearTickets = usePlayerStore((s) => s.autoClearTickets);
   const clearedEvents = usePlayerStore((s) => s.clearedEvents);
   const recordManualClear = usePlayerStore((s) => s.recordManualClear);
+  const clearedStages = useStoryStore((s) => s.cleared);
+
+  /**
+   * The board lists what the player may *see*; `eventLockReason` then decides
+   * what they may enter. Two questions, and events answer them differently —
+   * the first trial is visible at rank 1 and locked until 20, while the second
+   * is withheld until the first is behind you (ruling in `docs/HANDOFF.md`,
+   * 2026-09-01).
+   */
+  const visibleEvents = React.useMemo(() => {
+    const clearedChapters = clearedChapterMap(clearedStages);
+    return GAME_EVENTS.filter((event) =>
+      isEventVisible(event, {
+        accountRank: account.rank,
+        clearedWalls: account.clearedWalls,
+        clearedChapters,
+      }),
+    );
+  }, [clearedStages, account.rank, account.clearedWalls]);
   const spendAutoClearRun = usePlayerStore((s) => s.spendAutoClearRun);
 
   const [view, setView] = React.useState<View>({ kind: "board" });
@@ -561,7 +589,7 @@ export default function EventsPage(): React.JSX.Element {
   if (view.kind === "results") {
     const rows = rewardRows(view.rewards);
     return (
-      <main className="terminal-grid flex min-h-dvh items-center justify-center bg-void px-4">
+      <main className="terminal-grid flex min-screen-below-nav items-center justify-center bg-void px-4">
         <div className="w-full max-w-md border border-edge-strong bg-panel">
           <div className="border-b border-hairline bg-inset px-5 py-4">
             <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
@@ -621,7 +649,7 @@ export default function EventsPage(): React.JSX.Element {
     const autoRuns = Math.min(auto.affordable, maxBatchSize(event.staminaCost));
 
     return (
-      <main className="terminal-grid min-h-dvh bg-void">
+      <main className="terminal-grid min-screen-below-nav bg-void">
         <section className="mx-auto flex w-full max-w-4xl flex-col gap-3 px-4 py-6 md:px-8">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <button
@@ -640,7 +668,7 @@ export default function EventsPage(): React.JSX.Element {
             </h1>
           </div>
 
-          <div className="grid gap-3 lg:grid-cols-[1fr_20rem]">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_20rem]">
             <div className="flex flex-col gap-3">
               <div className="flex gap-3 border border-edge-strong bg-panel p-3">
                 <span className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden border border-edge bg-inset">
@@ -896,7 +924,7 @@ export default function EventsPage(): React.JSX.Element {
   }
 
   return (
-    <main className="terminal-grid min-h-dvh bg-void">
+    <main className="terminal-grid min-screen-below-nav bg-void">
       <section className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 py-6 md:px-8">
         <header className="border-l-2 border-signal pl-3">
           <span className="block font-body text-[10px] font-bold uppercase tracking-[0.34em] text-signal">
@@ -912,7 +940,7 @@ export default function EventsPage(): React.JSX.Element {
         </header>
 
         <div className="flex flex-col gap-2">
-          {GAME_EVENTS.map((event) => (
+          {visibleEvents.map((event) => (
             <EventCard
               key={event.id}
               event={event}

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Newspaper, Skull, Sparkles } from "lucide-react";
 import ItemIcon from "@/components/game/ItemIcon";
+import OrdersButton from "@/components/game/OrdersButton";
 import { useAuth } from "@/hooks/AuthProvider";
 import { useScreenMusic } from "@/hooks/useScreenMusic";
 import { useGameStore } from "@/store/gameStore";
@@ -244,7 +245,7 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
   }
 
   return (
-    <main className="terminal-grid min-h-dvh bg-void">
+    <main className="terminal-grid min-screen-below-nav bg-void">
       <section className="mx-auto w-full max-w-5xl px-4 py-5 md:px-8 md:py-7">
         {/* HERO — the one thing to do next, derived from progress rather than
             fixed. The menu this replaced gave MAIN STORY and LOGIN the same
@@ -309,7 +310,17 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
         </button>
 
         {/* ORDERS — the "what do I do next" answer, directly under the "what
-            do I do now" one. Retires itself once every order is claimed. */}
+            do I do now" one. Retires itself once every order is claimed.
+
+            Restored as a full-width row on 2026-09-01 (Tanveer). It had been
+            moved to the nav on 2026-08-13 so it was reachable from every
+            screen, but the nav row it moved to is `sm:` and up: on a phone the
+            only trace of a claimable order was an unlabelled count badge on
+            the wordmark. `OrdersButton` renders nothing when there is nothing
+            to claim, so this costs no space once the board retires. */}
+        <div className="mt-2.5">
+          <OrdersButton variant="tile" />
+        </div>
 
         {/* ALERTS — only what is true right now. */}
         {ready || hasUnread ? (

@@ -69,6 +69,75 @@ export function applyAdjacentMerges(cards: ActionCard[]): MergeResult {
 }
 
 /**
+ * Merge every pair in the hand that can merge, wherever the two cards sit.
+ *
+ * `applyAdjacentMerges` above only ever collides neighbours, which is right for
+ * the automatic pass — it fires on every draw and every play, and silently
+ * rearranging a hand the player has ordered would be worse than leaving two
+ * matching cards apart. Non-adjacent pairs are the player's business, and until
+ * now the only way to settle one was the per-card Merge button: press it,
+ * then pick a partner, once per pair.
+ *
+ * This is that button applied to the whole hand at once — Tanveer's call on
+ * 2026-09-01, chosen over an auto-merge toggle. The reason it is a button and
+ * not a setting is that merging is not free: two cards become one, so the hand
+ * shrinks; every merge grants +1 ult gauge, so ultimates re-time; and rank
+ * scales `damageRanked` against an R3 cap, so merging early spends two cards
+ * reaching a ceiling. A toggle makes all three happen unwatched. A button keeps
+ * the turn the player's.
+ *
+ * **One card merges with one card.** Three identical R1s produce one R2 and
+ * leave the third alone, because `canCardsAutoMerge` requires *equal* rank and
+ * the new R2 no longer matches an R1. Four produce two R2s, which then meet and
+ * become an R3 — the pass repeats until nothing can merge, exactly as the
+ * adjacent one does when it steps back over a fresh merge.
+ */
+export function applyAllMerges(cards: ActionCard[]): MergeResult {
+  const next = [...cards];
+  const mergeSourceIds: string[] = [];
+  const notices: string[] = [];
+  const steps: ActionCard[][] = [];
+  let mergeCount = 0;
+
+  // Restart the scan after each merge rather than continuing it: a merge
+  // changes the rank of one card and removes another, so every pairing decided
+  // earlier in the same sweep may no longer hold. The hand caps at eight
+  // (4v4), so the cost of being obviously correct here is nothing.
+  let merged = true;
+  while (merged) {
+    merged = false;
+    for (let i = 0; i < next.length && !merged; i += 1) {
+      for (let j = i + 1; j < next.length; j += 1) {
+        if (!canCardsAutoMerge(next[i], next[j])) continue;
+
+        const newRank = Math.min(3, next[i].rank + 1) as 1 | 2 | 3;
+        next[i] = { ...next[i], rank: newRank };
+        next.splice(j, 1);
+
+        mergeCount += 1;
+        mergeSourceIds.push(next[i].sourceInstanceId);
+        notices.push(`${next[i].skill.skillName} merged to R${newRank}.`);
+        steps.push([...next]);
+        merged = true;
+        break;
+      }
+    }
+  }
+
+  return { deck: next, mergeCount, mergeSourceIds, notices, steps };
+}
+
+/** Whether `applyAllMerges` would change anything — what disables the button. */
+export function hasMergeablePair(cards: ActionCard[]): boolean {
+  for (let i = 0; i < cards.length; i += 1) {
+    for (let j = i + 1; j < cards.length; j += 1) {
+      if (canCardsAutoMerge(cards[i], cards[j])) return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Take back ultimate cards whose owner is no longer fully charged.
  *
  * An ultimate is dealt only at a full gauge (`refillHand`), but nothing used to

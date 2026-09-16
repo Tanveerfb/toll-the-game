@@ -10,6 +10,7 @@ import { ActionCard } from "@/types/action";
 import { AnyBattleEvent } from "@/types/battleEvent";
 import {
   applyAdjacentMerges,
+  applyAllMerges,
   canCardsAutoMerge,
   dropUnchargedUltimates,
   initialCardsFor,
@@ -241,6 +242,9 @@ interface BattleState {
   deselectCard: (cardId: string) => void;
   reorderDeckCard: (draggedCardId: string, targetCardId: string) => void;
   mergeDeckCard: (cardId: string) => void;
+  /** Settle every mergeable pair in the hand at once (Tanveer, 2026-09-01).
+   *  Sets a notice and changes nothing when no pair can merge. */
+  mergeAllCards: () => void;
   removeDeadCharacterCards: (instanceId: string) => void;
   /**
    * Drop ultimate cards from a side's hand when their owner's gauge is no
@@ -870,6 +874,36 @@ export const useGameStore = create<BattleState>()(
       deck: mergedDeck,
       playerTeam: updatedPlayerTeam,
       interactionNotice: `${baseCard.skill.skillName} ranked up to R${updatedBase.rank}. +1 Ult Gauge.`,
+    });
+  },
+
+  mergeAllCards: () => {
+    const { deck, playerTeam } = get();
+    const result = applyAllMerges(deck);
+    if (result.mergeCount === 0) {
+      set({ interactionNotice: "Nothing in hand can merge." });
+      return;
+    }
+
+    // Same roll-up as `buildQueueAppend`: one gauge point per merge, banked
+    // against the unit whose cards they were. A four-card cascade is worth 3.
+    const updatedPlayerTeam = playerTeam.map((char) => {
+      const gains = result.mergeSourceIds.filter(
+        (sourceId) => sourceId === char.instanceId,
+      ).length;
+      if (gains <= 0) return char;
+      return {
+        ...char,
+        ultGauge: Math.min(ultGaugeMax(char), char.ultGauge + gains),
+      };
+    });
+
+    set({
+      deck: result.deck,
+      playerTeam: updatedPlayerTeam,
+      interactionNotice: `${result.mergeCount} merge${
+        result.mergeCount > 1 ? "s" : ""
+      }. +${result.mergeCount} Ult Gauge.`,
     });
   },
 

@@ -166,6 +166,40 @@ count was chosen for a desktop width and never revisited — hence the second gr
 excluding the responsive forms. Then check what's *in* the cells: three columns
 of 12px labels at 390px is unreadable even when the grid itself fits.
 
+### 5b. A grid with no unprefixed `grid-cols` — blocker
+
+```bash
+grep -rnoE 'className=\{?"[^"]*\bgrid\b[^"]*"' <paths> |
+  grep -E '(sm|md|lg|xl):grid-cols' | grep -vE '(^| )grid-cols'
+```
+
+A `grid` whose **only** `grid-cols` sits behind a breakpoint gets one implicit
+**`auto`** track below that breakpoint — and an auto track is allowed to exceed
+its container. `/archive/[id]` scrolled sideways **86px** at 395 because its
+single track sized to 453px inside 351px and dragged the whole portrait rail
+off-screen (2026-09-01). `grid-cols-1` is `repeat(1, minmax(0, 1fr))` and the
+`0` floor is the entire fix; the `lg:` override is unaffected.
+
+Four more files carried the same shape latently. It only *bites* when a child's
+intrinsic width exceeds the container, which is why it hides: the same markup is
+fine on three screens and broken on the fourth.
+
+### 5c. Anything pinned to the bottom edge — blocker
+
+```bash
+grep -rn "fixed inset-x-0 bottom-0\|fixed bottom-0" <paths> | grep -v app-tabbar
+```
+
+The bottom tab bar (#123) is `fixed bottom-0 z-50`. A screen's own pinned action
+bar at `bottom-0` sits **under** it and is simply not there. `TeamSelect`'s START
+(`z-40`) and `StageBrief`'s launch bar (`z-20`) were both covered outright from
+the day the tab bar shipped — practice and the world boss were unstartable on a
+phone, and nothing caught it because both elements are correct in isolation.
+
+Use `bottom-[var(--tabbar-h)]`, which is `0rem` wherever the bar does not
+render. Pinned by `tests/overlayStacking.test.ts`. A full-viewport overlay
+(`inset-0`) is not a bottom bar and is exempt.
+
 ### 6. Thumb reach — judgement, no grep
 
 Primary action in the lower third. A confirm button at the top of a long scroll
@@ -190,6 +224,28 @@ one of them from believing a screenshot. Bank both halves.
 - So: **`javascript_tool` with `getBoundingClientRect` is the finding;
   the screenshot is orientation.** Every number in a report should come from
   the DOM, not from counting pixels in an image.
+
+**`elementFromPoint` is the only honest "can I tap this" test.** Geometry said
+START was a 172x44 button in the right place; it was invisible to the player and
+a tap navigated to Gacha. One line finds it, and it finds occlusion that no
+`getBoundingClientRect` sweep can:
+
+```js
+const r = el.getBoundingClientRect();
+const hit = document.elementFromPoint((r.left+r.right)/2, (r.top+r.bottom)/2);
+const clickable = !!(hit && el.contains(hit));
+```
+
+Run it on every primary action. **A control you cannot reach is worse than one
+that is 40px**, and only this catches it.
+
+**Claude-in-Chrome cannot resize a maximized window.** `resize_window` returns
+*"Successfully resized"* and `outerWidth` does not move, so every subsequent
+measurement is silently at desktop width — which looks like the fix working.
+Check `innerWidth` after resizing, every time. The in-app browser
+(`mcp__Claude_Browser__*`) does real viewport emulation and is the reliable tool
+for a width; it has no access to his signed-in session, which only matters for
+`/profile`.
 
 **A stale server lies with total confidence.** `pkill -f "next start"` does not
 match the npx-spawned process on Windows. The replacement then dies on

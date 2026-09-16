@@ -16,43 +16,88 @@ import OrdersBoard, { useOrdersState } from "@/components/game/OrdersBoard";
  * Renders nothing at all when the board is hidden — before the stores
  * rehydrate, and permanently once every order is claimed. A button that opens
  * an empty modal is worse than no button.
+ *
+ * Two shapes, one modal. `nav` is the chip in the top bar's resource row,
+ * which is desktop-only — below `sm` that row folds away and Orders had no
+ * surface at all except a bare count on the wordmark. `tile` is the home
+ * screen's full-width row (Tanveer, 2026-09-01), which is where a phone player
+ * meets it. Sharing the component rather than rebuilding the row keeps one
+ * copy of the open/close state and one `DetailOverlay`.
  */
-export default function OrdersButton(): React.JSX.Element | null {
+export default function OrdersButton({
+  variant = "nav",
+}: {
+  variant?: "nav" | "tile";
+} = {}): React.JSX.Element | null {
   const [open, setOpen] = React.useState(false);
   const state = useOrdersState();
 
   if (state.hidden) return null;
 
   const badge = state.locked ? "!" : state.ready > 0 ? String(state.ready) : null;
+  const label = state.locked
+    ? "Bureau Orders — sign in to claim"
+    : state.ready > 0
+      ? `Bureau Orders — ${state.ready} ready to claim`
+      : "Bureau Orders";
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label={
-          state.locked
-            ? "Bureau Orders — sign in to claim"
-            : state.ready > 0
-              ? `Bureau Orders — ${state.ready} ready to claim`
-              : "Bureau Orders"
-        }
-        className={`flex min-h-11 shrink-0 items-center gap-1.5 border bg-void px-2 transition-colors ${
-          badge
-            ? "border-el-light/60 text-el-light hover:border-el-light"
-            : "border-hairline text-readout-dim hover:border-edge-strong hover:text-readout"
-        }`}
-      >
-        <ClipboardList className="h-3 w-3 shrink-0" strokeWidth={2.4} />
-        <span className="font-body text-[10px] font-bold uppercase tracking-[0.12em]">
-          Orders
-        </span>
-        {badge ? (
-          <span className="border border-el-light px-1 font-body text-[10px] font-bold leading-tight tabular-nums text-el-light">
-            {badge}
+      {variant === "tile" ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label={label}
+          className={`flex w-full items-center gap-3 border bg-inset px-3 py-2.5 text-left transition-colors ${
+            badge
+              ? "border-el-light/60 hover:border-el-light"
+              : "border-hairline hover:border-edge-strong"
+          }`}
+        >
+          <ClipboardList
+            className={`h-5 w-5 shrink-0 ${badge ? "text-el-light" : "text-readout-muted"}`}
+            strokeWidth={2}
+          />
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="font-heading text-lg tracking-[0.05em] text-readout-strong">
+              Bureau Orders
+            </span>
+            <span className="font-body text-[11px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+              {state.locked
+                ? "Sign in to claim"
+                : state.ready > 0
+                  ? `${state.ready} ready to claim`
+                  : `${state.claimed} of ${state.total} on this step`}
+            </span>
           </span>
-        ) : null}
-      </button>
+          {badge ? (
+            <span className="ml-auto shrink-0 border border-el-light px-1.5 py-0.5 font-body text-[11px] font-bold leading-tight tabular-nums text-el-light">
+              {badge}
+            </span>
+          ) : null}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label={label}
+          className={`flex min-h-11 shrink-0 items-center gap-1.5 border bg-void px-2 transition-colors ${
+            badge
+              ? "border-el-light/60 text-el-light hover:border-el-light"
+              : "border-hairline text-readout-dim hover:border-edge-strong hover:text-readout"
+          }`}
+        >
+          <ClipboardList className="h-3 w-3 shrink-0" strokeWidth={2.4} />
+          <span className="font-body text-[10px] font-bold uppercase tracking-[0.12em]">
+            Orders
+          </span>
+          {badge ? (
+            <span className="border border-el-light px-1 font-body text-[10px] font-bold leading-tight tabular-nums text-el-light">
+              {badge}
+            </span>
+          ) : null}
+        </button>
+      )}
 
       {open ? (
         <DetailOverlay

@@ -257,7 +257,7 @@ inventory, ascension cost list, gacha payout, chapter rewards and clear summary 
 
 ## Category D — Miscellaneous
 
-**Status: D1 delivered 2026-08-22. Nothing queued.**
+**Status: D1 delivered 2026-08-22. D2 open.**
 
 Anything that is neither a character, a scene background, nor an inventory icon — UI
 textures, banner composites. One banner composite exists (`public/banners/`); its
@@ -299,6 +299,39 @@ compositing approach is documented under "Banner splash art" in `ART_PIPELINE.md
   asked. Reopen this entry if the drawn mark is ever replaced by real art.
 - **Requested:** 2026-08-21, for the PWA work — the game is installable to a
   home screen now, and installing it puts this icon on someone's phone.
+
+### D2 — debut-2026-08 — re-composite the banner plate without its wordmark
+
+- **Purpose:** the gacha banner splash, behind the title block on
+  `components/gacha/BannerScreen.tsx` and again, at `opacity-25`, as the key art
+  on `app/login/page.tsx`. The plate that ships today has the banner's name
+  painted into the artwork — "V1. BETA ROSTER BANNER" in gold, occupying source
+  **y 672-724 of 768** — and `BannerScreen` renders that same string as its
+  heading immediately above. On a 393px phone the screen showed the name twice,
+  the second time as a half-cut band of art. Measured in a browser 2026-09-01.
+- **This is a pipeline change, not a prompt change.** The wordmark is not
+  something the model drew: **step 4** of "Banner splash art (compositing, not a
+  fresh render)" in `ART_PIPELINE.md` instructs the compositor to add it
+  ("add a title wordmark (arialbd, amber-400 fill, dark outline) bottom-center
+  over a bottom shade gradient"). That step has been amended to skip the
+  wordmark, so re-running the composite is the whole job — every future banner
+  inherits the fix. **Do not re-roll the characters**; this plate is approved
+  and only the text layer is wrong.
+- **Specs:** **1536×768 PNG, 2:1**, same as the current file — the category
+  default. Keep the bottom shade gradient: it is doing legibility work for the
+  DOM heading laid over it, and only the text on top of it goes. No background
+  removal on the finished plate.
+- **Prompt notes:** none — no txt2img pass. Composite only, per the amended
+  pipeline steps 1-4.
+- **Lands at:** `public/banners/debut-2026-08.png`, **overwriting in place**. No
+  registration needed: both call sites reference the literal path already, and
+  there is no `*Art.ts` map for banner plates.
+- **Fallback shipping today:** `BannerScreen` crops the band off with
+  `object-cover object-top`, which ends the crop at source y~625. It works and
+  costs the bottom of the composition. Remove the `object-top` (and this
+  comment) when the new plate lands, so the art is centred again.
+- **Status:** `open`
+- **Requested:** 2026-09-01, from the mobile browser audit of `/gacha`.
 
 **Board terrain** for the story node board will land here once the route work starts
 (16:9, no background removal, no characters) — not requested yet, because the board's

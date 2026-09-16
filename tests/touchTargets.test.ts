@@ -27,6 +27,14 @@ import { buttonVariants } from "@/components/ui/button";
  *  0.25rem per step and the root font size is untouched. */
 const FLOOR_CLASS = /\b(min-h|size)-(1[1-9]|[2-9]\d)\b/;
 
+/**
+ * Uppercase JSX tags that forward unknown props onto a real DOM element, so a
+ * `title` on one is a browser tooltip rather than a component prop. Grow this
+ * set; never add an allowlist of offenders instead — an allowlist of false
+ * positives teaches the next reader nothing (2026-09-01).
+ */
+const PASS_THROUGH_TAGS = new Set(["Link", "Image"]);
+
 /** For assertions about what a file *doesn't* contain — a comment naming the
  *  thing that was removed is not the thing being removed. */
 function stripComments(source: string): string {
@@ -239,8 +247,17 @@ describe("explanations are reachable without a pointer", () => {
         const between = before.slice(open).replace(/=>/g, "");
         if (between.includes(">")) continue;
         const tag = /^<([A-Za-z][\w.-]*)/.exec(source.slice(open))?.[1];
-        // Uppercase initial = a React component, whose `title` is a prop.
-        if (!tag || tag[0] !== tag[0].toLowerCase()) continue;
+        // Uppercase initial = a React component, whose `title` is a prop —
+        // *unless* the component is a thin wrapper that spreads the rest of its
+        // props onto a DOM node. `next/link` does, so `<Link title="Home">`
+        // renders `<a title="Home">` and is a browser tooltip like any other.
+        // That is how the wordmark's "N Bureau orders ready to claim" — the
+        // only place that count was ever spelled out — survived the sweep that
+        // was written to catch it. Found by reading the DOM, 2026-09-01.
+        if (!tag) continue;
+        if (tag[0] !== tag[0].toLowerCase() && !PASS_THROUGH_TAGS.has(tag)) {
+          continue;
+        }
         const line = before.split("\n").length;
         offenders.push(`${rel}:${line} <${tag} title=…>`);
       }

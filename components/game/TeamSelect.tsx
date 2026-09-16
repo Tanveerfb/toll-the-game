@@ -223,7 +223,7 @@ export default function TeamSelect({
 
       {/* The matchup. Two identical pickers read as two equal teams, so a VS
           divider says which way the fight runs. */}
-      <div className="mt-4 grid items-start gap-3 lg:grid-cols-[1fr_auto_1fr]">
+      <div className="mt-4 grid grid-cols-1 items-start gap-3 lg:grid-cols-[1fr_auto_1fr]">
         <div className="flex flex-col gap-2">
           <TeamPicker
             team={playerTeam}
@@ -301,7 +301,19 @@ export default function TeamSelect({
       {/* Action bar, pinned. Start used to sit top-right — above the teams it
           starts and directly beside Clear, which is the one control you never
           want next to it. */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-edge bg-void/95 backdrop-blur-sm">
+      {/* `bottom-[var(--tabbar-h)]`, not `bottom-0`. The bottom tab bar (ruling
+          #123) is also `fixed bottom-0`, at `z-50` against this bar's `z-40`,
+          so on a phone it covered START **completely** — measured 2026-09-01,
+          `elementFromPoint` at the centre of "Start battle" returned the Gacha
+          tab, and a tap navigated instead of starting the fight. Practice and
+          the world boss were both unstartable on the device the game is built
+          for.
+
+          Stacking rather than standing the tab bar down: unlike a battle, team
+          select is a screen you may well want to leave, and #123 hides the bar
+          only for `[data-battle-active]`. `--tabbar-h` is `0rem` at `sm` and
+          up, so this is `bottom-0` on desktop with no breakpoint of its own. */}
+      <div className="fixed inset-x-0 bottom-[var(--tabbar-h)] z-40 border-t border-edge bg-void/95 backdrop-blur-sm">
         {/* `pb-safe` replaces the bottom half of `py-3`: this bar is pinned to
             the screen edge, and START would otherwise sit under the iOS home
             indicator. */}

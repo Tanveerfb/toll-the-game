@@ -91,16 +91,26 @@ export default async function CharacterDetailPage({
   const isMultiPhase = getCharacterPhases(character).length > 1;
 
   return (
-    <main className="terminal-grid min-h-dvh bg-void">
+    <main className="terminal-grid min-screen-below-nav bg-void">
       <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8">
         <Link
           href="/archive"
-          className="chamfer inline-block border border-edge px-3 py-2 font-body text-[11px] font-bold uppercase tracking-[0.2em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+          className="chamfer inline-flex min-h-11 items-center border border-edge px-3 font-body text-[11px] font-bold uppercase tracking-[0.2em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
         >
           ← Character archive
         </Link>
 
-        <div className="mt-3 grid gap-3.5 lg:grid-cols-[290px_minmax(0,1fr)]">
+        {/* `grid-cols-1` is not decoration — without it this screen scrolled
+            sideways 86px at 395px (browser audit, 2026-09-01), which ruling
+            #107 makes a blocker rather than a bug.
+
+            A `grid` with no column declared gets one implicit **`auto`** track,
+            and an auto track is allowed to exceed its container: here it sized
+            to 453px inside 351px, dragging the whole aside — portrait, name,
+            stat bars — past the right edge. `grid-cols-1` is
+            `repeat(1, minmax(0, 1fr))`, and the `0` floor is the part doing the
+            work. The `lg:` override below is unaffected. */}
+        <div className="mt-3 grid grid-cols-1 gap-3.5 lg:grid-cols-[290px_minmax(0,1fr)]">
           {/* Identity rail. Sticky so the statline stays beside whatever
               multiplier you're reading further down a long kit. */}
           <aside className="flex flex-col gap-2.5 lg:sticky lg:top-4 lg:self-start">

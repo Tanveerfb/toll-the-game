@@ -124,7 +124,7 @@ export default function ProfilePage() {
   const nextWall = RANK_WALLS.find((wall) => wall > account.rank);
 
   return (
-    <main className="terminal-grid min-h-dvh bg-void">
+    <main className="terminal-grid min-screen-below-nav bg-void">
       <section className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-8">
         {/* The page opens with what it's about. It used to open with a Stamina
             card, and the account itself was a line of email text near the
@@ -135,7 +135,14 @@ export default function ProfilePage() {
             fallback={displayName}
             size={52}
           />
-          <div className="min-w-0 flex-1">
+          {/* `min-w-36` rather than `min-w-0`: the row wraps, but with a zero
+              floor this column shrank instead of pushing the rank block onto
+              the next line — at 393px the name got 72px for 138px of text, so
+              "Tanveer Singh" rendered as "Tanv…" and the email beside it as
+              nine characters. A floor wide enough to be worth reading is what
+              makes `flex-wrap` actually wrap. Measured in a browser
+              2026-09-01. */}
+          <div className="min-w-36 flex-1">
             <h1 className="truncate font-heading text-2xl leading-none tracking-[0.06em] text-readout-strong md:text-3xl">
               {displayName}
             </h1>
@@ -212,7 +219,7 @@ export default function ProfilePage() {
           />
         </div>
 
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <button
             type="button"
             onClick={() => setShowInventory(true)}

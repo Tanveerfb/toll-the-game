@@ -76,11 +76,11 @@ export default function NewsPostLayout({
   children,
 }: NewsPostLayoutProps) {
   return (
-    <main className="terminal-grid min-h-dvh bg-void">
+    <main className="terminal-grid min-screen-below-nav bg-void">
       <div className="mx-auto w-full max-w-2xl px-6 py-8">
         <Link
           href="/news"
-          className="chamfer inline-block border border-edge px-3 py-2 font-body text-[11px] font-bold uppercase tracking-[0.2em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+          className="chamfer inline-flex min-h-11 items-center border border-edge px-3 font-body text-[11px] font-bold uppercase tracking-[0.2em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
         >
           ← News
         </Link>
@@ -115,7 +115,7 @@ export default function NewsPostLayout({
         {older || newer ? (
           <nav
             aria-label="Nearby posts"
-            className="mt-8 grid gap-2.5 border-t border-hairline pt-4 sm:grid-cols-2"
+            className="mt-8 grid grid-cols-1 gap-2.5 border-t border-hairline pt-4 sm:grid-cols-2"
           >
             {older ? <StepLink entry={older} direction="older" /> : <span />}
             {newer ? <StepLink entry={newer} direction="newer" /> : null}

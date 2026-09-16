@@ -55,7 +55,11 @@ Two of those rules are **enforced in code, so don't re-implement them per screen
 
 **Navigation is a bottom tab bar below `sm`** (ruling #123, 2026-09-01) — five destinations in the thumb third, portalled to `<body>` because the nav's `backdrop-filter` makes `fixed` resolve against the nav rather than the viewport. It stands down while `[data-battle-active]` is on screen. Heights compose through `--tabbar-h`; `.screen-below-nav` subtracts both bars. The archive's filters moved into a sheet the same day (#124).
 
-**No mobile debt is outstanding.** The 2026-08-21 sweep took every screen, battle included: its controls moved off a side rail into a sheet, hand cards floor at 56px, merge arms from a button, and press-and-hold opens a card's or a unit's details — the gesture set is **tap = act, hold = explain** (#118). `docs/design/mockups/battle-mobile.html` records those decisions. None of it is browser-verified; the visual pass is his.
+**No mobile debt is outstanding.** The 2026-08-21 sweep took every screen, battle included: its controls moved off a side rail into a sheet, merge arms from a button, and press-and-hold opens a card's or a unit's details — the gesture set is **tap = act, hold = explain** (#118). `docs/design/mockups/battle-mobile.html` records those decisions, and `battle-mobile-v2.html` the 2026-09-01 revisions.
+
+Two corrections to the above, both from measuring it (2026-09-01). **Hand cards floor at 44px, not 56** — 56 was the fix for cards shrinking to 43px slivers, and it then hid two of a full hand of eight off the edge of a 370px scroller. Eight is the hard maximum (4v4) and the arithmetic is fixed: full-bleed 390px, 2px gaps, **47px a card**. And **it is browser-verified now** — geometry and behaviour are, at 390×844 against a live 4v4. Taste still is not, and never is; that pass is his.
+
+**Anything pinned to the bottom edge clears the tab bar** via `bottom-[var(--tabbar-h)]`, which is `0rem` wherever that bar does not render. A plain `bottom-0` sits *under* it: that is how `TeamSelect`'s START and `StageBrief`'s launch bar were both covered outright the day #123 shipped, leaving practice and the world boss unstartable on a phone. Pinned by `tests/overlayStacking.test.ts`.
 
 ## Folder Structure
 
@@ -120,5 +124,7 @@ Tanveer owns skill names, mechanical effects, damage multipliers, and character-
 **Filler story content is allowed since 2026-08-18 (ruling #108), under approval.** Claude may draft filler stages, scenes and NPCs so story mode has enough to play — but **nothing enters the game unapproved**, filler must never contradict or resolve canon (source: `E:\Toll - Web toon`), and **NPC kit numbers stay his**: draft the role, personality and combat concept, then ask. Approved content is recorded in `Filler/Approved_chapter_N.md`, proposals and rejects in `Filler/Drafts.md`, and every filler stage and scene carries `origin: "filler"` in the JSON.
 
 **Before drafting or rebalancing any kit, read `docs/design/KIT_DESIGN.md`.** It carries the stat bands, the wording rules, and the constraints that are easy to get wrong: buffs multiply so magnitudes stay small (self-buff 25/50/75, team-wide 20/30/50), one scaling stat per kit including heals, skill ranks never exceed 3, and inflating a stat silently buffs anything that scales off it.
+
+**A new event needs two answers, not one** (ruling #127, 2026-09-01). *When may it be seen* and *when may it be entered* are separate questions, and the events on the board answer them differently — the First Ascension Trial is visible at rank 1 and locked until 20, the Second is withheld entirely until the First is cleared. **Ask him for both before authoring an event**, and expect to ask: he said to log this so the question gets put to him if he forgets to volunteer it. `GameEvent.visibleWhen` carries the first; `requiredRank` and `eventLockReason` carry the second.
 
 **Character stat bands changed on 2026-08-10** (ruling #68): HP now sits at 2900–4000, ATK broadly unchanged, DEF ~1.6x its old value. `data/characters/*.json` is the source of truth — statlines quoted in older docs and in `author_notes.md` predate this.

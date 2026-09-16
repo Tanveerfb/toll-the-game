@@ -171,9 +171,15 @@ composite built from existing character portraits:
    frame-filling effect (water, lightning) need very little falloff; characters with a plain flat
    card background need a much tighter `inner_r` (~0.4) and heavier feather (~26) or the rectangle
    stays visible — this was the main iteration loop building the first banner.
-4. Two most "hero" characters get a bigger scale + lower placement than the rest; add a title
-   wordmark (arialbd, amber-400 fill, dark outline) bottom-center over a bottom shade gradient for
-   legibility.
+4. Two most "hero" characters get a bigger scale + lower placement than the rest; add a bottom
+   shade gradient for legibility.
+
+   **No title wordmark on the plate** (Tanveer, 2026-09-01). It used to be painted here — arialbd,
+   amber-400 fill, dark outline, bottom-center — and `BannerScreen` renders the banner's name as
+   its own heading directly above the art, so every plate carried its title twice. Worse on a
+   phone: a centred `object-cover` crop at 393px cuts the band in half rather than dropping it,
+   which is how it was found. Keep the shade gradient — it is doing legibility work for the DOM
+   heading laid over it. The **text** is what goes.
 5. Script lives session-local (scratchpad), not committed — rebuild from scratch per banner rather
    than trying to generalize a reusable tool prematurely.
 

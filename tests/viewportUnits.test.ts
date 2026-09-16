@@ -67,9 +67,25 @@ describe("viewport units are dynamic (ruling #107)", () => {
     expect(offenders).toEqual([]);
   });
 
+  /**
+   * The count dropped from 15 to 1 on 2026-09-01 and that was the fix, not a
+   * regression: `min-h-dvh` on a `<main>` is a full viewport *below* the nav
+   * and above the tab bar's body padding, so every screen using it scrolled
+   * 96px of nothing (measured at 393x751). Those screens now take
+   * `.min-screen-below-nav`, whose `100dvh` lives in `styles/globals.css`.
+   *
+   * So this counts both spellings. The point of the assertion is unchanged —
+   * prove the ban above isn't passing because nothing sizes to the viewport at
+   * all — and `tests/navHeight.test.ts` holds the shared classes to their
+   * definitions.
+   */
   it("the dynamic units are actually in use, so this isn't passing by absence", () => {
-    const users = files.filter((rel) => /\b(min-)?h-dvh\b/.test(code(rel)));
+    const users = files.filter((rel) =>
+      /\b(min-)?h-dvh\b|\b(min-)?screen-below-nav\b/.test(code(rel)),
+    );
     expect(users.length).toBeGreaterThanOrEqual(10);
+    const css = fs.readFileSync("styles/globals.css", "utf8");
+    expect(css).toMatch(/height:\s*calc\(100dvh/);
   });
 
   it("globals.css sizes the body dynamically too", () => {

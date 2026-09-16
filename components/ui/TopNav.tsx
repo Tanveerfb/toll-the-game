@@ -202,12 +202,19 @@ export default function TopNav() {
           survives on this row alone. */}
       <div className="mx-auto flex h-11 w-full max-w-6xl items-center gap-3 px-4 md:gap-5 md:px-8">
         {/* The wordmark is the only route home — there used to be a "Menu"
-            link beside it doing exactly the same thing. */}
+            link beside it doing exactly the same thing.
+
+            The reading below is an `aria-label`, not a `title` (ruling #125).
+            `Link` forwards `title` straight to its `<a>`, so an uppercase tag
+            name hid a real browser tooltip from the 2026-09-01 sweep — and the
+            string it carried was the only place the badge's count was ever
+            spelled out. A phone gets no hover, so that reading lived nowhere.
+            Found by reading the rendered DOM, 2026-09-01. */}
         <Link
           href="/"
-          title={
+          aria-label={
             readyOrders > 0
-              ? `${readyOrders} Bureau order${readyOrders > 1 ? "s" : ""} ready to claim`
+              ? `Home — ${readyOrders} Bureau order${readyOrders > 1 ? "s" : ""} ready to claim`
               : "Home"
           }
           className="relative inline-flex min-h-11 shrink-0 items-center font-heading text-xl tracking-[0.2em] text-signal"

@@ -28,11 +28,23 @@ describe("nav height is declared once, not repeated", () => {
     .flatMap((r) => walk(path.join(process.cwd(), r)))
     .map((f) => path.relative(process.cwd(), f).split(path.sep).join("/"));
 
+  /**
+   * A comment naming the class that was removed is not the class. `StoryStage`
+   * explains at the usage site why it is *not* `min-h-dvh`, which a raw-text
+   * scan reads as a violation.
+   */
+  function source(rel: string): string {
+    return fs
+      .readFileSync(rel, "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|[^:])\/\/.*$/gm, "$1");
+  }
+
   it("no screen hardcodes the nav height any more", () => {
     // The exact string that used to appear six times. A new screen copying it
     // from an old one is the regression this catches.
     const offenders = files.filter((rel) =>
-      /100dvh\s*-\s*[\d.]+rem/.test(fs.readFileSync(rel, "utf8")),
+      /100dvh\s*-\s*[\d.]+rem/.test(source(rel)),
     );
     expect(offenders).toEqual([]);
   });
@@ -41,7 +53,7 @@ describe("nav height is declared once, not repeated", () => {
     // If this drops to zero the class was renamed away and every full-height
     // screen is silently sizing itself to something else.
     const users = files.filter((rel) =>
-      fs.readFileSync(rel, "utf8").includes("screen-below-nav"),
+      source(rel).includes("screen-below-nav"),
     );
     expect(users.length).toBeGreaterThanOrEqual(3);
   });
@@ -58,6 +70,32 @@ describe("nav height is declared once, not repeated", () => {
     // The two-row value has to be keyed off what the nav actually rendered,
     // or the variable and the markup drift apart.
     expect(css).toMatch(/:has\(\[data-nav-rows="2"\]\)/);
+  });
+
+  /**
+   * `min-h-dvh` on a `<main>` is the same magic number in a different costume.
+   * That element starts at `--nav-h` and `body` pads `--tabbar-h` beneath it,
+   * so a `100dvh` *floor* guarantees the document is both bars taller than the
+   * viewport. Measured in a browser at 393x751 on 2026-09-01: eleven screens
+   * scrolled 96px, every pixel of it empty.
+   */
+  it("no screen floors itself at a full viewport below the nav", () => {
+    const offenders = files.filter((rel) =>
+      /\bmin-h-(dvh|screen)\b/.test(source(rel)),
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  it("the scrolling screens use the shared min-height class", () => {
+    const users = files.filter((rel) =>
+      source(rel).includes("min-screen-below-nav"),
+    );
+    expect(users.length).toBeGreaterThanOrEqual(8);
+    const css = fs.readFileSync("styles/globals.css", "utf8");
+    expect(css).toContain(".min-screen-below-nav");
+    expect(css).toContain(
+      "min-height: calc(100dvh - var(--nav-h) - var(--tabbar-h))",
+    );
   });
 
   it("the nav publishes its row count for that selector to read", () => {

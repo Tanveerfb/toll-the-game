@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { ChevronsRight, Combine, RotateCcw } from "lucide-react";
 import { useGameStore } from "@/store/gameStore";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
 import { useBattleContext } from "@/hooks/BattleProvider";
 import type { ActionCard } from "@/types/action";
 import { mergePartnerIds } from "@/lib/game/handTransition";
+import { hasMergeablePair } from "@/lib/game/deck";
 import Hand from "@/components/game/battle/Hand";
 import CardDetail, {
   skillPowerText,
@@ -26,8 +28,6 @@ import {
 } from "@/hooks/useDealSequence";
 import { actionsForTurn } from "@/lib/game/actionEconomy";
 import { bonusActionsFor } from "@/lib/game/stageEffects";
-import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
-import type { BattleCharacter } from "@/types/character";
 
 /** Merge tier. Deliberately not stars — a star row reads as rarity, which is
  *  a different axis and one this game also has. */
@@ -61,40 +61,6 @@ function getColorTokenClasses(color?: string): string {
   }
 }
 
-// Compact per-unit dots (spec §1 item 6, "Team bar") — an at-a-glance
-// who's-alive readout, one row per side.
-function TeamBarDots({
-  units,
-  presentedHp,
-}: {
-  units: BattleCharacter[];
-  /** HP as currently shown by the sequencer. These dots read store truth
-   *  directly, so without this they went dark the moment the engine
-   *  committed — announcing a death while the tile was still mid-lunge. */
-  presentedHp: Record<string, number>;
-}): React.JSX.Element {
-  return (
-    <div className="flex items-center gap-1">
-      {/* Field only — the bench isn't part of the battlefield readout; it
-          lives in the Team list (Tanveer, 2026-08-11). */}
-      {units
-        .filter((unit) => !unit.isSub)
-        .map((unit) => {
-          const shownHp = presentedHp[unit.instanceId] ?? unit.currentHP;
-          return (
-            <span
-              key={unit.instanceId}
-              aria-label={`${unit.name} — ${Math.max(0, shownHp)}/${unit.hp} HP`}
-              className={`h-2 w-2 rounded-full ${ELEMENT_SWATCH[unit.color]} ${
-                shownHp <= 0 ? "opacity-25 grayscale" : "opacity-100"
-              }`}
-            />
-          );
-        })}
-    </div>
-  );
-}
-
 export default function Deck() {
   const {
     deck,
@@ -102,19 +68,17 @@ export default function Deck() {
     selectCard,
     deselectCard,
     playerTeam,
-    enemyTeam,
     battlePhase,
     mergeDeckCard,
     reorderDeckCard,
     resetHand,
+    mergeAllCards,
     handSnapshot,
     queuedNullCount,
     addNullAction,
     removeNullAction,
     bigHitFocus,
   } = useGameStore();
-
-  const presentedHp = useGameStore((s) => s.presentedHp);
 
   const slotsUsed = actionQueue.length + queuedNullCount;
   // Living field members +1, capped at 3 — same rule as the enemy side, so a
@@ -161,6 +125,11 @@ export default function Deck() {
     (card: ActionCard): boolean => mergePartnerIds(card, deck).length > 0,
     [deck],
   );
+
+  /** Drives the Merge All button's disabled state, from the same predicate the
+   *  action itself runs — so the button is never live over a hand that cannot
+   *  merge, and never dead over one that can. */
+  const canMergeAny = React.useMemo(() => hasMergeablePair(deck), [deck]);
 
   const beginPreview = React.useCallback((card: ActionCard) => {
     if (previewHideTimerRef.current) {
@@ -265,28 +234,57 @@ export default function Deck() {
           NOT — Reset and End Turn used to sit inside the same overflow
           container, so a full queue on a narrow screen scrolled End Turn off
           the edge. */}
-      <div className="mb-1.5 flex items-center gap-2">
-        {/* The cap used to be inferable only by counting leftover empty boxes. */}
+      <div className="mb-1.5 flex items-center gap-1.5">
+        {/* Reset is an icon (Tanveer, 2026-09-01: "we don't need text that can
+            be assumed by players"). End Turn keeps its word deliberately — it
+            is the one irreversible control in a turn, and an unlabelled glyph
+            is not what should commit three actions. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={!isPlayerActionPhase || !handSnapshot}
+          onClick={resetHand}
+          aria-label="Reset the hand"
+          className="w-11 shrink-0 px-0"
+        >
+          <RotateCcw className="h-4 w-4" strokeWidth={2.2} />
+        </Button>
+
+        {/* Merge All (Tanveer, 2026-09-01), chosen over an auto-merge toggle.
+            Auto-merge already runs on every draw and every play, but only
+            between *neighbours*; settling a non-adjacent pair meant the
+            per-card Merge button, once per pair. This does the lot in one tap
+            and still leaves the turn a decision — merging shrinks the hand,
+            banks ult gauge and spends cards against the R3 cap, and a toggle
+            would do all three unwatched.
+
+            Disabled rather than hidden when nothing can merge: a control that
+            vanishes teaches nobody why. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={!isPlayerActionPhase || !canMergeAny}
+          onClick={mergeAllCards}
+          aria-label="Merge every matching pair in the hand"
+          className="w-11 shrink-0 px-0"
+        >
+          <Combine className="h-4 w-4" strokeWidth={2.2} />
+        </Button>
+
+        {/* The queue. It had 83px to show three 56px slots — 97px clipped, so
+            two of the three actions you had committed were invisible, which is
+            most of what the turn's state is. Measured 2026-09-01.
+
+            Reclaimed from the ACTIONS chip that used to sit to the left: it
+            spent 124px restating what filled and empty slots already show, so
+            it is gone and its `aria-label` and tutorial anchor moved here.
+            Empty slots are `flex-1` now, so the row always fills its width and
+            the count is legible without counting pips. */}
         <div
           data-tutorial="actions"
-          className="flex shrink-0 items-center gap-1 border border-hairline bg-inset px-1.5 py-1"
-          aria-label={`${actionCap} action${actionCap > 1 ? "s" : ""} this turn`}
+          aria-label={`${actionCap} action${actionCap > 1 ? "s" : ""} this turn, ${Math.max(0, actionCap - slotsUsed)} remaining`}
+          className="hud-scroll flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
         >
-          <span className="mr-0.5 font-body text-[8px] font-bold uppercase tracking-[0.16em] text-readout-muted">
-            Actions
-          </span>
-          {Array.from({ length: actionCap }).map((_, i) => (
-            <span
-              key={`pip-${i}`}
-              className={`block h-3 w-2 border ${i < slotsUsed ? "border-signal bg-signal" : "border-edge bg-void"}`}
-            />
-          ))}
-          <span className="ml-1 font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-dim">
-            {Math.max(0, actionCap - slotsUsed)} left
-          </span>
-        </div>
-
-        <div className="hud-scroll flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
           {actionQueue.map((card) => {
             const char = playerTeam.find(
               (c) => c.instanceId === card.sourceInstanceId,
@@ -336,7 +334,7 @@ export default function Deck() {
               key={`pass-${i}`}
               type="button"
               onClick={() => isPlayerActionPhase && removeNullAction()}
-              className="flex min-h-11 w-14 shrink-0 items-center justify-center border border-edge bg-panel-raised/60 font-body text-[9px] uppercase tracking-widest text-readout-dim transition-colors hover:border-el-red/70 hover:text-el-red"
+              className="flex min-h-11 min-w-14 flex-1 items-center justify-center border border-edge bg-panel-raised/60 font-body text-[9px] uppercase tracking-widest text-readout-dim transition-colors hover:border-el-red/70 hover:text-el-red"
             >
               Pass
             </button>
@@ -349,63 +347,66 @@ export default function Deck() {
               onClick={() => isPlayerActionPhase && addNullAction()}
               disabled={!isPlayerActionPhase}
               aria-label="Pass this action"
-              className="flex min-h-11 w-14 shrink-0 items-center justify-center border border-dashed border-edge font-body text-[10px] text-readout-muted transition-colors enabled:hover:border-edge-strong enabled:hover:text-readout-dim disabled:cursor-not-allowed"
+              className="flex min-h-11 min-w-14 flex-1 items-center justify-center border border-dashed border-edge font-body text-[10px] text-readout-muted transition-colors enabled:hover:border-edge-strong enabled:hover:text-readout-dim disabled:cursor-not-allowed"
             >
               {slotsUsed + i + 1}
             </button>
           ))}
         </div>
 
-        {/* Pinned outside the scroll container above. */}
-        <div className="flex shrink-0 items-center gap-1.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={!isPlayerActionPhase || !handSnapshot}
-            onClick={resetHand}
-            className="shrink-0"
-          >
-            Reset
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={!isPlayerActionPhase || actionQueue.length === 0}
-            onClick={resolveplayerTurnWrapper}
-            className="shrink-0"
-          >
-            End Turn
-          </Button>
-        </div>
+        {/* Pinned outside the scroll container above — End Turn scrolling off
+            the edge behind a full queue is the bug that put it here. */}
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={!isPlayerActionPhase || actionQueue.length === 0}
+          onClick={resolveplayerTurnWrapper}
+          className="shrink-0 gap-1.5"
+        >
+          <ChevronsRight className="h-4 w-4" strokeWidth={2.2} />
+          End
+        </Button>
       </div>
 
       {/* The hand — always visible, and every card interaction inside it is
           animated (components/game/battle/Hand.tsx). Cards flex to fill the
-          row so the whole hand shows at once, 7DSGC-style. */}
-      <Hand
-        cards={presentedDeck}
-        playerTeam={playerTeam}
-        interactive={isPlayerActionPhase}
-        queueFull={slotsUsed >= actionCap}
-        reducedMotion={reducedMotion}
-        onSelect={selectCard}
-        onMerge={mergeDeckCard}
-        onReorder={reorderDeckCard}
-        onPreviewStart={beginPreview}
-        onPreviewEnd={endPreview}
-        onDetail={setDetailCard}
-        canUseMergeButton={canMergeCard}
-      />
+          row so the whole hand shows at once, 7DSGC-style.
 
-      {/* Team bar — bottom edge of the screen (spec §1 item 6), below the
-          always-visible hand. */}
-      <div className="mt-1.5 flex items-center justify-center gap-3">
-        <TeamBarDots units={playerTeam} presentedHp={presentedHp} />
-        <span className="font-body text-[9px] uppercase tracking-[0.2em] text-readout-muted">
-          vs
-        </span>
-        <TeamBarDots units={enemyTeam} presentedHp={presentedHp} />
+          `-mx-3` cancels this panel's `px-3`, because the hand is the one row
+          that needs every pixel of the screen and gains nothing from aligning
+          with the controls above it. Eight cards is the hard maximum (4v4) and
+          the arithmetic is tight: at 390px the padded 366px row fits eight 44px
+          cards plus gaps in 370px — 4px over, so the last card clipped. Full
+          width gives 372px of room for 8 x 46.5px, which clears the 44px floor
+          instead of sitting exactly on it. Measured 2026-09-01. */}
+      <div className="-mx-3">
+        <Hand
+          cards={presentedDeck}
+          playerTeam={playerTeam}
+          interactive={isPlayerActionPhase}
+          queueFull={slotsUsed >= actionCap}
+          reducedMotion={reducedMotion}
+          onSelect={selectCard}
+          onMerge={mergeDeckCard}
+          onReorder={reorderDeckCard}
+          onPreviewStart={beginPreview}
+          onPreviewEnd={endPreview}
+          onDetail={setDetailCard}
+          canUseMergeButton={canMergeCard}
+        />
       </div>
+
+      {/* Where the arena's Speed / Skip / Controls row paints (Tanveer,
+          2026-09-01). It lives in `BattleArena` because it needs the
+          sequencer bound to the arena's own ref and the controls sheet needs a
+          dozen arena locals, so it stays in that component's React tree and
+          portals into this slot — which is how it can be the last thing on the
+          screen while `BattleArena` is still the first of the two siblings.
+
+          This replaces the team-bar dots that used to close the screen. They
+          duplicated the HP bar already on every unit tile and cost a row at the
+          one edge a thumb reaches most easily. */}
+      <div data-battle-control-slot className="mt-1.5 empty:hidden" />
     </div>
   );
 }

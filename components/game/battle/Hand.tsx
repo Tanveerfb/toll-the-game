@@ -654,7 +654,7 @@ export default function Hand({
       // Cost, accepted: drag-to-reorder no longer works by touch, because the
       // same horizontal swipe now scrolls the row. Mouse drag is unaffected,
       // and merging by touch goes through the card's Merge button (#118).
-      className="hud-scroll flex w-full touch-pan-x justify-start gap-1 overflow-x-auto border border-hairline bg-void/70 p-2 [&>*:first-child]:ml-auto [&>*:last-child]:mr-auto"
+      className="hud-scroll flex w-full touch-pan-x justify-start gap-0.5 overflow-x-auto border-y border-hairline bg-void/70 p-0.5 [&>*:first-child]:ml-auto [&>*:last-child]:mr-auto"
     >
       {displayed.map((card) => {
         const char = playerTeam.find(
@@ -692,14 +692,31 @@ export default function Hand({
             // A long press is the details gesture now, and on touch the OS
             // reads the same press as "select this text / open a menu".
             onContextMenu={(e) => e.preventDefault()}
-            // `min-w-14` is the floor, and it is the whole fix: these were
-            // `flex-1 min-w-0`, so a full hand of eight divided 390px into
-            // 43px slivers and the row it sits in — which has always been
-            // `overflow-x-auto` — never scrolled, because nothing ever
-            // overflowed. With a floor the cards keep their shape and the
-            // container finally does its job.
+            // The floor is `min-w-11` (44px), not `min-w-14` (56px), and the
+            // two together are what put eight cards on one line.
+            //
+            // History, because the number has now moved twice. These were
+            // `flex-1 min-w-0`, so a full hand divided 390px into 43px slivers
+            // and the `overflow-x-auto` row never scrolled, because nothing
+            // ever overflowed. A 56px floor fixed the slivers and created the
+            // opposite problem: measured in a live 4v4 on 2026-09-01, eight
+            // cards wanted 492px in a 370px scroller — **122px hidden, two
+            // cards fully off-screen at rest**, and the two you cannot see are
+            // the two nobody scrolls to.
+            //
+            // Tanveer's call that day: everything visible, in one line, size
+            // adjusted to suit. Eight is the hard maximum (4v4,
+            // `lib/game/deck.ts`), so the arithmetic is fixed — full-bleed
+            // 395px, minus 2px padding and seven 2px gaps, leaves **47px a
+            // card**, which clears the 44px floor with 3px to spare. The row
+            // keeps `overflow-x-auto` for the desktop widths where cards hit
+            // their 96px ceiling instead.
+            //
+            // `h-27` (108px) holds the 1:2.3 proportion the 56x128 card had,
+            // and hands ~20px back to the field — which is where the 4v4
+            // portraits needed it.
             className={`
-              no-callout relative flex h-32 min-w-14 max-w-24 flex-1 select-none flex-col overflow-hidden rounded-xl border bg-panel
+              no-callout relative flex h-27 min-w-11 max-w-24 flex-1 select-none flex-col overflow-hidden rounded-lg border bg-panel
               ${frame.borderClass}
               ${interactive ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
               ${interactive && !isDragged ? "transition-transform duration-150 hover:-translate-y-2" : ""}

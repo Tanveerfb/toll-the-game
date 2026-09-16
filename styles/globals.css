@@ -255,6 +255,16 @@ body {
   height: calc(100dvh - var(--nav-h) - var(--tabbar-h));
 }
 
+/* The scrolling counterpart. `min-h-dvh` is the wrong floor for a screen that
+   sits *below* the nav: `<main>` already starts at `--nav-h`, and `body` then
+   adds `--tabbar-h` of padding underneath it, so a full `100dvh` minimum
+   guarantees the document is a nav plus a tab bar taller than the viewport.
+   Measured in a browser at 393x751 on 2026-09-01: every screen using
+   `min-h-dvh` scrolled 96px with nothing in the last 96px. */
+.min-screen-below-nav {
+  min-height: calc(100dvh - var(--nav-h) - var(--tabbar-h));
+}
+
 /* ── Safe area ─────────────────────────────────────────────────────────────
    `viewportFit: "cover"` (app/layout.tsx) lets the page reach the physical
    edges of the screen, which is what `dvh` is measuring. The trade is that a

@@ -1,4 +1,4 @@
-# Status — 2026-09-01
+# Status — 2026-09-16
 
 Living snapshot. Session history is folded to
 [`docs/archive/STATUS-2026-08.md`](archive/STATUS-2026-08.md); the resurrection
@@ -6,33 +6,31 @@ audit is in git (`docs/STATUS.md` @ `c3040f7`).
 
 ## Start here
 
-**State:** The game is mobile-first everywhere and, since 2026-09-01, that has
-been checked **in a browser** rather than argued from source — navigation is a
-bottom tab bar, the archive's filters are a sheet, and the battle log finally
-records which buffs and debuffs an action applied (Open Issue #22, closed).
-Rulings **#123–#126**. Suite **1,343 tests / 106 files** plus **17 browser
-tests**, build clean. Committed as `5ef2825`. Details in the 2026-09-01
-session log.
+**State:** Two browser passes deep. The whole game has now been measured on a
+phone rather than argued from source, and the battle screen has been through
+three rounds of his direction: the hand shows all eight cards, the action bar
+shows all three queued actions, 4v4 has its own tile ratio, Merge All exists,
+and the controls sheet carries what the status strip hides below `sm`. Rulings
+**#127–#129**. Suite **1,370 tests / 109 files**, lint clean, build clean —
+all run at this checkpoint. Details in the 2026-09-01/16 session log.
 
-**Next:** His look at the two screens that changed shape — the tab bar and the
-archive sheet. Geometry and behaviour are verified at 390×844 against a
-production build; only taste is open. `/profile` is the one thing nobody has
-seen at all (see Don't trust).
+**Next:** The mode/format toggles on `TeamSelect` — he called them clunky, the
+diagnosis is written up in that log's "Deliberately not done", and the options
+are offered but unchosen. Needs his pick, not investigation.
 
-**Blocked on:** Nothing. Three things wait on *him*, not on work: the OST and
-SFX files (`docs/AUDIO.md`; both buses are silent by design until they exist),
-a Sentry DSN, and the `/story` empty-state wording, which ships as a draft
-marked in the component.
+**Blocked on:** Nothing. Four things wait on *him*: those toggles, the two
+battle items in "Deliberately not done" (the notice that eats the control row,
+the Merge arming step), the OST and SFX files (`docs/AUDIO.md`), and a Sentry
+DSN.
 
-**Don't trust:** Any claim about how something *looks*. Named specifically:
-**`/profile` has never been rendered** — it redirects signed-out visitors, and
-this session did not sign in, so the new `Sound` panel and the relocated Claude
-toggle are typechecked and built but unseen. Still never exercised by anything:
-the service worker (needs a production origin), the PWA install flow, Sentry
-(inert without a DSN, `withSentryConfig` deliberately not applied). And a
-warning this session earned twice: **a green guard is not a working guard** —
-`tests/touchTargets.test.ts` passed while scanning 83 files and finding none of
-nine real offenders.
+**Don't trust:** Any claim about how something *looks* — geometry is measured,
+taste is not. Named specifically: three controls-sheet rows (fight context,
+duel mode, stage effects) and Merge All's *enabled* path are built, tested and
+**never seen**, because reaching them needs a story battle with authored stage
+effects and a hand the automatic merge has not already eaten. Still never
+exercised: the service worker, the PWA install flow, Sentry. And the warning
+2026-09-01 earned twice, which paid off again this pass: **a green guard is not
+a working guard** — prove a new guard fails before trusting that it passes.
 
 ## Working (implemented, tested, browser-verified)
 
@@ -383,6 +381,206 @@ nine real offenders.
 - **Fixes (2026-07-12/13)** — Mustafa's Earth Stance: Fortress is a team-wide (aoe) DR stance, no ally pick; single-target attacks retarget to a living enemy when their marked target died mid-queue (focus-fire no longer wastes cards on a corpse).
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
 
+## Session log — 2026-09-01/16: the second browser pass, and the battle screen's bottom
+
+The first browser audit (entry below) covered nine routes and stopped at the
+battle screen. This one finished the sweep, then he drove three rounds of battle
+UI off what he could see. Committed 2026-09-16; the work is dated 2026-09-01.
+
+Rulings **#127–#129**.
+
+### 1. The dead scroll that was on eleven screens
+
+`<main className="min-h-dvh">` is the wrong floor for an element that *starts*
+at `--nav-h` and has `body` padding `--tabbar-h` beneath it. Minimum document =
+nav + 100dvh + tab bar, so **every screen using it scrolled ~96px into nothing**
+— measured at 393×751, `/` `/story` `/events` all identical.
+
+`.min-screen-below-nav` now carries `calc(100dvh - var(--nav-h) - var(--tabbar-h))`
+and 15 call sites use it. Re-measured: dead scroll **96 → 0**. `/gacha` and
+`/profile` still scroll, on real content.
+
+The existing `tests/viewportUnits.test.ts` "not passing by absence" count
+dropped 15 → 1 and **failed**, which is what it is for; it counts both spellings
+now. `tests/navHeight.test.ts` gained the `min-h-dvh` ban.
+
+### 2. The blocker: nothing could start a fight on a phone
+
+The bottom tab bar (#123) is `fixed bottom-0 z-50`. `TeamSelect` pinned START at
+`bottom-0 z-40` and `StageBrief` its launch bar at `bottom-0 z-20`, so from the
+day the tab bar shipped **both were covered outright**. `elementFromPoint` at
+the centre of "Start battle" returned **the Gacha tab** — found by clicking
+Start and landing on `/gacha`. Practice and the world boss were unstartable.
+
+Both compose through `bottom-[var(--tabbar-h)]` now, which is `0rem` from `sm`
+up so desktop is untouched. Guarded in `tests/overlayStacking.test.ts`, and the
+guard was **proven by reintroducing the bug** — it fails naming
+`TeamSelect.tsx:316`.
+
+This shipped in the same session that created it. Nothing caught it because both
+elements are correct in isolation and the defect is purely stacking.
+
+### 3. A grid with no columns declared
+
+`/archive/[id]` scrolled sideways **86px** at 395. A `grid` whose only
+`grid-cols` is behind a breakpoint gets **one implicit `auto` track**, and an
+auto track may exceed its container: it sized to 453px inside 351px and dragged
+the portrait rail off-screen. `grid-cols-1` is `repeat(1, minmax(0, 1fr))` and
+the `0` floor is what fixes it. Four more files carried the same latent shape
+and were pre-empted.
+
+### 4. His four picks off the first sweep
+
+- **Sealed chapter slots** on `/story` (`CHAPTER 2 · SEALED`, numbered, max 3,
+  `div` not `button` — #99 holds, there is nothing to open). The void went
+  ~340px → ~150px.
+- **The "In progress" chip got a scrim.** The card's gradient runs
+  `transparent 28% → dark 86%`, so at `top-2` the chip sat on raw artwork.
+- **Featured units became a table** (`components/gacha/FeaturedModal.tsx`) —
+  portrait, name, element, owned/ult. The grid was twelve 44px `Hint` tiles:
+  correct under #125, but twelve taps to read one banner. The row now answers
+  "how many do I own" without opening anything.
+- **The banner wordmark.** `/gacha` rendered its own name twice, once as the
+  heading and once as a half-cut band of art. **The root cause was
+  `ART_PIPELINE.md` step 4**, which instructed the compositor to paint a
+  wordmark on — so every future banner would have inherited it. The recipe is
+  amended and `ART_REQUESTS.md` **D2** queues the re-composite; `object-top`
+  plus a bottom scrim hold until it lands.
+
+`object-top` alone was not enough, and the arithmetic is worth keeping: the
+image box is **349px** inside the section's padding, not the 393 of the
+viewport, so a 2:1 source covering a 159-tall box still shows source y 0..700 —
+28px into a band at 672.
+
+### 5. Events answer two questions now (#127)
+
+`GameEvent.visibleWhen` + `isEventVisible`, declarative rather than a predicate
+so the next author can read the rule. Verified live: at rank 20 with the wall
+uncleared, the Second Ascension Trial is **off the board**.
+
+**Molvarr is gated on `c9` and still visible today, deliberately.** A chapter
+absent from the story catalog cannot gate anything — "clear a chapter that does
+not exist" is unsatisfiable and would hide the game's only repeatable fight
+*permanently* rather than until chapter 9 ships. The gate arms itself the day
+`c9` lands in `data/story/`.
+
+### 6. The battle screen, in three rounds he called
+
+Measured in a live 4v4 at 390×844, not extrapolated. Mockup:
+`docs/design/mockups/battle-mobile-v2.html`.
+
+- **The hand hid two of its eight cards.** The 56px floor from #118 meant eight
+  cards wanted 492px in a 370px scroller — **122px hidden**. Floor is `min-w-11`
+  (44px) and the rail full-bleeds via `-mx-3`; cards land at **47px**, eight on
+  one line, `offscreen: 0`. Height 128 → 108, which funded §3 below.
+- **The action bar had a real defect under the clunk:** three 56px queue slots
+  in an **83px** scroller, 97px clipped, so two of three queued actions were
+  invisible. Reset is an icon, the ACTIONS chip is gone (124px restating what
+  filled slots already show — its `aria-label` and tutorial anchor moved to the
+  queue), slots are `flex-1`. **End Turn keeps its word on purpose**: it is the
+  one irreversible control in a turn.
+- **4v4 was tuned for 3v3.** Tile pitch 120 → 96, HP bar 99 → 74, field height
+  **383px either way** — so four tiles paid 25% of their width and got nothing
+  back. `tileAspect()` returns `aspect-[9/19]` at four-up; three and fewer are
+  untouched. Portrait area measures 85×92 now.
+
+### 7. Merge All (#128), and two things that already existed
+
+He asked whether to add an auto-merge toggle. **Auto-merge already existed and
+always ran** (`applyAdjacentMerges`, on every draw and play), and **his pairing
+rule was already the behaviour** — `canCardsAutoMerge` requires *equal rank*, so
+a fresh R2 stops matching the R1 beside it. Neither needed inventing; both were
+nearly rebuilt.
+
+What was actually missing is **non-adjacency**. Offered a toggle versus a
+button; he took the button, because merging costs a card, banks +1 ult gauge and
+spends cards against the R3 cap — three effects a toggle makes unwatched.
+
+`applyAllMerges` + `hasMergeablePair`, `mergeAllCards`, 15 tests.
+
+### 8. The bottom row and the controls sheet (#129)
+
+The control row moved below the hand and the team-bar dots were deleted. The row
+**portals into a slot `Deck` renders**, because `Deck` is a sibling rendered
+after `BattleArena` and no DOM order puts a child of the arena below it; moving
+it into `Deck` would have needed the sequencer bound to `arenaRef` plus a dozen
+arena locals. A missing slot renders it inline rather than dropping it.
+
+The controls sheet was **149px of buttons under 695px of empty scrim** — 82% of
+the screen dimmed for four controls. Offered three ways out; he chose to **fill
+it**. What fills it is what the status strip hides on a phone (`hidden sm:`
+context, `hidden md:` counts) plus two things never on it at all: actions this
+turn, and stage effects — which `StageBrief` shows *before* a fight and nothing
+showed during one. 286px / 34%, scrolls past `85dvh`.
+
+### What was tried and rejected
+
+- **An auto-merge toggle** (§7). Offered, declined in favour of the button.
+- **Deleting the controls sheet** and inlining Log/Foe/Team/Exit beside Speed —
+  measured as viable at 66px each, since the Controls button alone is 280px
+  wide. He chose to fill the sheet instead. Shrinking it to a popover was the
+  third option, also declined.
+- **Moving the control row into `Deck`** (§8) — rejected on coupling, not taste.
+- **A layout effect calling `setState`** to find the portal slot. Works, lints
+  as a cascading render; `useSyncExternalStore` says the same thing without one.
+
+### Deliberately not done — all his call
+
+- **The interaction notice replaces the entire control row.** While a toast is
+  up there is no Skip, no Speed and no Controls — and with Controls go Log, Foe,
+  Team and **Exit**. Recoverable by dismissing, but the way out of a fight
+  should not sit behind a toast. Noted in `BattleArena`.
+- **The per-card Merge arming step stages a choice the engine discards.**
+  `mergeDeckCard` takes only the base card id and eats the **first** match, and
+  `canCardsAutoMerge` requires the same owner, skill *and* rank — so every
+  candidate partner is interchangeable. The comment justifying the second tap
+  ("+1 ult gauge to the *eaten* card's owner") is wrong; both share an owner by
+  definition. It is a gesture #118 describes, so it is his.
+- **`/events` still has the ~280px empty band `/story` had.** Not in the four he
+  picked.
+- **Mode/format toggles on `TeamSelect`** — he called them clunky and the
+  diagnosis is written up (two different "selected" colours, `role-attack` red
+  against `signal` cyan on the same row, which #84 says should not happen; plus
+  a `min-w-[18rem]` hint that forces a third row at 390). Options offered, none
+  chosen yet.
+
+### Confidence and gaps
+
+**Verified by running it, at the checkpoint:** `npm run check` → **109 files /
+1,370 tests, 0 errors**, the same 3 pre-existing `duel.test.ts` warnings.
+`npm run lint` → 0 errors. `NEXT_DIST_DIR=.next-verify next build` compiled 56
+static pages.
+
+**Verified in a browser at 390×844 and 393/395×751**, in a live 4v4: the hand at
+47px with nothing off-screen, the action bar's three visible slots, the 4v4
+portrait gain, the control row below the hand, the filled sheet at 286px,
+START clickable (`elementFromPoint` returns the button), `/archive/[id]` at
+`hScroll: 0`, the Second Ascension Trial absent, Molvarr present.
+
+**`/profile` has been rendered** — the claim in the entry below that nobody had
+seen it is **retired**. It opened via his signed-in session on `:3000`, and the
+first thing it showed was a bug: the account header is a `flex-wrap` row whose
+name column was `min-w-0 flex-1`, so at 393px it shrank to **72px for 138px of
+text** rather than wrapping the rank block. "Tanveer Singh" rendered as
+"Tanv…", the email as nine characters. `min-w-36` is the floor that makes
+`flex-wrap` actually wrap. The `Sound` panel and the relocated Claude toggle
+render correctly.
+
+**Built and unseen.** Three controls-sheet rows — fight context, duel mode,
+stage effects — render only when they apply, so reaching them needs a story
+battle with authored stage effects. Merge All's **enabled** path: the button was
+verified rendering and correctly *disabled*, but a mergeable hand could not be
+manufactured through normal play, because the automatic pass eats adjacent
+duplicates on draw. Covered by 15 tests, not by a tap.
+
+**Assumed, not verified:** every aesthetic judgement — whether 47px cards read,
+whether the sheet's readout is the right readout, whether `aspect-[9/19]` looks
+right rather than merely measuring better.
+
+**A tooling note worth keeping:** Claude-in-Chrome's `resize_window` reports
+success on a maximized window and does nothing — `outerWidth` stays put. The
+in-app browser's viewport emulation is the reliable way to test a width.
+
 ## Session log — 2026-09-01: the log shows effects, and the first browser audit
 
 Asked to work autonomously and find what was worth doing. Two halves: closing
@@ -537,199 +735,15 @@ right five, whether the sheet grouping reads well, whether the archive header
 still feels like a header at `text-2xl`.
 
 **Unverified because I could not reach it:** the `Sound` section on `/profile`
-renders only for a signed-in user, and I did not sign in. Its code path is the
+renders only for a signed-in user, and I did not sign in. **Superseded later the
+same day — see the entry above; it was rendered, and a truncation bug fixed.**
+Its code path is the
 same store the nav mute uses, and it typechecks and builds — but nobody has
 looked at it.
 
 **What I would check first coming back cold:** `/profile` on a phone, for the
 Sound panel and the dev toggle; then whether the five tab choices survive five
 minutes of actually playing.
-
-## Session log — 2026-08-21/22: mobile-first everywhere, six tools, and an app icon
-
-**Committed as `91a75c0`.**
-
-One long session in five movements. Started with 21 uncommitted files from the
-art-wiring work and ended with 93.
-
-### 1. Art wiring finished (carried in from before the compact)
-
-`components/game/ItemIcon.tsx` — one component turning a material/currency/coin
-id into a picture, with the lucide glyph as fallback. Twelve surfaces draw icons
-now. Story backdrops reached the brief, stage list, title card, versus splash,
-wave break and result via a new `stageBackgroundId()` that derives a stage's
-plate from its scenes rather than asking for a second authoring pass. Fixed
-`ChapterList` computing its tint from `getStoryBackground(undefined)` under a
-comment claiming it used the chapter's locale — the comment was right and the
-call was not.
-
-### 2. The mobile-first audit, and the sweep that followed
-
-Audited all **84** `.tsx` files. **The roadmap's debt list was wrong in both
-directions.** Gacha and archive were already close to phone-safe; the two real
-problems were not on the list at all:
-
-- `components/ui/button.tsx` had **five of nine sizes under 44px**, `default`
-  worst at 36px — taken implicitly by 20 of 51 `<Button>` call sites. This is
-  why per-screen fixes never held: `components/game/story/`, built mobile-first
-  as ruling #107's own calibration set, still shipped two 36px buttons.
-- **Every mechanic keyword in the game was a radix `Tooltip` on a bare
-  `<span>`** — hover and focus only, and a span offers a phone neither. The
-  entire glossary, the nav's resource labels and the progression panel's
-  disabled-reason message did not exist on mobile.
-
-Fixed in the primitives (**#119**) and via a new `components/ui/Hint.tsx`
-(**#120**). Then the sweep: nav, hub, gacha, archive, orders, world boss, team
-select, and battle's controls. Two hand-rolled range inputs at 4px and 6px moved
-onto `Slider`. Safe-area handling added.
-
-The widened `viewportUnits` test **found two static-`vh` shells the audit had
-missed** — `PullReveal` and `UnitDetailPanel`, both `max-h-[92vh]`. Four modal
-shells total had survived the 2026-08-19 sweep because its regex only matched
-`100vh`.
-
-### 3. The battle screen, rebuilt (#118)
-
-He folded battle into the general pass rather than keeping it a separate
-session, then answered four layout calls from an HTML mockup
-(`docs/design/mockups/battle-mobile.html`, now a record rather than a question):
-
-- **Controls into a bottom sheet.** The `w-14` rail was 14% of a 390px screen,
-  permanently, out of thumb reach. Skip and Speed stay out; the rest sit behind
-  Controls. `RailButton` became `ControlButton` in the same pass.
-- **Hand cards floor at 56px** (`min-w-14`). They were `flex-1 min-w-0` inside
-  an `overflow-x-auto` row, so eight cards divided 390px into 43px slivers and
-  nothing ever overflowed, meaning the row never scrolled either. Centring had
-  to change with it: plain `justify-center` makes the *first* card unreachable
-  once content overflows.
-- **Merge arms from the card's own button**, committing immediately when there
-  is only one partner (nothing to choose) and asking when there are two — which
-  matters, because a merge grants +1 ult gauge to the *eaten* card's owner.
-- **The tile keeps focus-fire, loses the effect strip's tap.** The strip was a
-  16px button nested inside the tile, which is itself a button to the same
-  panel. Focus-fire moved onto the portrait at a real 44px.
-
-**The event ticker was cut**, his call — *"if someone needs to know what
-happened then they can just check the log."*
-
-**And a gap he found that the audit had not:** the card preview was hover-only,
-so **on a phone there was no way to read a skill in battle at all**.
-Press-and-hold now opens it (`CardDetail`, shared with the desktop preview). He
-then asked for a hold *ring* — built at 3000ms, flagged as confirmation-length,
-cut to **1500ms** within the hour. One gesture, three endings, and the middle one
-matters most: an **abandoned** hold does nothing, because falling through to
-"play the card" would spend an action at the exact moment the player decided
-against it.
-
-### 4. Six tools, installed and wired (#121, #122)
-
-He asked what tooling could help, then took all six findings.
-
-| # | What | Where |
-|---|---|---|
-| 1 | Full `jsx-a11y` ruleset | `eslint.config.mjs`, `lib/a11y.ts`, `hooks/useEscapeKey.ts` |
-| 2 | Balance simulator | `lib/game/simulate.ts`, `scripts/sim.ts`, `npm run sim` |
-| 3 | Browser component tests | `vitest.config.ts` projects, `npm run test:browser` |
-| 4 | SFX bus | `lib/audio/cues.ts`, `lib/audio/sfx.ts`, `hooks/useSfx.ts` |
-| 5 | PWA | `app/manifest.ts`, `app/icon.png`, `public/sw.js` |
-| 6 | Telemetry | `@vercel/analytics`, `@vercel/speed-insights`, `lib/sentry.ts` |
-
-**Two of them found real bugs immediately, which is the whole argument for
-them.** The a11y ruleset found **23 problems across 9 files** on first run — and
-the three rules that caught most of them are exactly the ones
-`eslint-config-next` leaves off (it ships 6 of ~35, all about malformed ARIA,
-none about behaviour). Everything was fixed rather than suppressed; **zero
-suppressions were added**, and three written defensively turned out unnecessary
-and were deleted. Sharpest find: the story reader, chapter title card and versus
-splash all carried `role="button"`, `tabIndex={0}` and an `aria-label` with **no
-key handler** — focusable, announced as buttons, inert when pressed.
-
-The **first browser test found a bug in code written that morning**: `Hint`
-opened on focus *and* toggled on click, and a mouse focuses before it clicks, so
-clicking a keyword opened the popover then closed it again. Whether it broke
-depended on where the pointer had been. Nothing in the markup was wrong.
-
-The simulator needed the passive queue, which lived inside a React context —
-extracted to `lib/game/mechanicQueue.ts`, because a simulator that skipped
-passives would report win rates for a game nobody plays. Side benefit:
-`lib/game/passive.ts` was importing types *from a hook*, and that arrow now
-points the right way.
-
-### 5. The app icon
-
-Drawn, not generated, and the reasoning is in `ART_PIPELINE.md` under "Logos and
-marks". Animagine returns an **item sheet** for "emblem", "badge", "medallion"
-and "crest" — eight images, every one a scatter of ~20 objects. Flux and all
-five vector LoRAs turned out **unusable on this install**: the checkpoint is
-UNet-only and there are no Flux text encoders or VAE.
-
-Two things did fix Animagine and are worth reusing for any object render:
-**`no humans` as a positive booru tag**, and **never a colour list** (a list of
-five colours draws five separate objects). The resulting arch was good art and
-still lost — an illustration dies at 48px.
-
-So five candidates were drawn in `scripts/logo_candidates.py`, he picked the
-coin, and it took two revisions that are only visible small: two concentric
-rings moiréd at 48px, and the gate was originally cut *out* of a cyan face,
-making the dark shape the figure so the whole mark read as a **padlock**.
-
-### What was tried and abandoned
-
-- **`@serwist/next` for the PWA.** It does not support Turbopack despite what
-  its docs imply — it printed a warning and **silently produced no service
-  worker**. Its configurator mode does, at the cost of three more dependencies
-  and rewriting both `build` and `dev`; `build` is what Vercel runs on every
-  push and `dev` is his server. Backed out entirely; `public/sw.js` is
-  hand-written.
-- **Hover-to-open on `Hint`.** Built, then removed the same day — see above.
-  Cost: a small desktop regression, recorded in the component.
-- **`settings.controlComponents` for jsx-a11y.** Did not apply; the rule needed
-  it as an option, not a setting.
-- **Three `eslint-disable` directives** on modal scrims. Unnecessary once the
-  scrims carried `role="dialog"` and the inner `stopPropagation` was replaced by
-  a target check — deleted rather than left as stale suppressions.
-- **Two malformed tool calls** leaked the literal word "PARAMETER" into a
-  ComfyUI prompt. Those images are in the output folder.
-
-### What is deliberately unfinished
-
-- **Sentry is inert** without `NEXT_PUBLIC_SENTRY_DSN`, and `withSentryConfig`
-  is **not** applied, so stack traces stay minified until someone with the
-  account adds an auth token. `tracesSampleRate` is 0 on purpose.
-- **Both audio buses are silent.** `public/audio/` and `public/audio/sfx/` are
-  empty; `docs/AUDIO.md` lists what to drop in. Which sounds these are is his.
-- **The on-card Merge button stays under 44px**, opted out with `min-h-0` and a
-  comment. It sits on a 56px card; sizing it would cover the name underneath.
-- **Unit tiles did not get the hold ring.** On a card the hold competes with a
-  tap that costs an action; on a tile, tapping already opens details.
-- **The 11 npm advisories are pre-existing**, all transitive under the `shadcn`
-  CLI, which never ships.
-
-### Confidence and gaps
-
-**Verified this session, by running it:** `npm run check` gives 105 files /
-1,327 tests, 3 pre-existing `duel.test.ts` warnings, 0 errors.
-`npm run test:browser` gives 2 files / 12 tests in real Chromium. *(2026-09-01:
-106 files / 1,342 tests and 3 files / 17 browser tests, same 3 warnings.)*
-`NEXT_DIST_DIR=.next-verify next build` compiled successfully. `npm run sim`
-produces a ladder.
-
-**Assumed, not verified:** every visual claim. The 44px floor changes vertical
-density on ~7 screens and nobody has looked at them. The controls sheet, the
-56px cards, the reticle's placement over "Ult Ready", and whether 1.5s reads as
-deliberate or broken are all unseen.
-
-**Never exercised at all:** the service worker (disabled in dev by design, needs
-a production origin), the PWA install prompt, Sentry, and every SFX cue.
-
-**What I would check first coming back cold:** open `/practice` on a phone. The
-battle screen changed more than anything else and is the only one whose layout
-was rebuilt rather than adjusted.
-
-### Operational note
-
-**ComfyUI was started by this session** (the portable install on `E:`, port
-8188) and left running. It is not started automatically.
 
 ## Session history — folded to the archive
 
@@ -755,6 +769,7 @@ on 2026-08-20. Each line below is one section in that file.
 - Session log — 2026-08-13 (part 2): shadcn built, four features, two bugs, the economy audited
 - Session log — 2026-08-20: skills, an engine bug family, and six Dokkan kits
 - Session log — 2026-08-21: the road checkpoint, and 37 art assets
+- Session log — 2026-08-21/22: mobile-first everywhere, six tools, and an app icon (folded 2026-09-16)
 
 ## Open Issues
 

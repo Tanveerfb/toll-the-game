@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { Lock } from "lucide-react";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { getStoryBackground } from "@/lib/game/storyBackgrounds";
 import { SOURCE_CHAPTERS_WRITTEN, type StoryIndexChapter } from "@/lib/game/storyCatalog";
@@ -30,6 +31,17 @@ export default function ChapterList({
 }): React.JSX.Element {
   const adapted = chapters.length;
 
+  // Numbered from the highest live chapter, so a slot never collides with a
+  // chapter that is already on the screen. Capped at three.
+  const highestLive = chapters.reduce(
+    (max, chapter) => Math.max(max, chapter.number),
+    0,
+  );
+  const sealedSlots = Array.from(
+    { length: Math.max(0, Math.min(3, SOURCE_CHAPTERS_WRITTEN - highestLive)) },
+    (_, i) => highestLive + i + 1,
+  );
+
   return (
     <div className="mx-auto w-full max-w-md px-3 pt-3 pb-8">
       <p className="px-1 pb-2 text-[10px] tracking-[0.2em] text-readout-muted uppercase">
@@ -48,12 +60,41 @@ export default function ChapterList({
           At 390x844 one live chapter fills a third of the screen and the rest
           is empty grid, which reads as a screen that failed to load — the
           eyebrow above does say "1 of 12", but it is a 10px label at the top,
-          not an answer to the space below it. Withheld chapters cannot be
-          previewed (ruling #99: title, tagline and cover are all spoilers), so
-          this says how many and nothing else.
+          not an answer to the space below it.
+
+          Sealed slots rather than a note alone (Tanveer, 2026-09-01): a number
+          in a box does not show the *shape* of what is coming, and the list
+          needs to look like a list. Ruling #99 holds — a chapter's title,
+          tagline and cover are all spoilers, so a slot carries its number and
+          nothing else, and it is a `div`, not a `button`: there is nothing
+          behind it to open.
+
+          Three at most. The point is to show the list continues, and twelve
+          identical dashes would be a wall.
           COPY IS A DRAFT — Tanveer's to word. */}
+      {sealedSlots.length > 0 ? (
+        <ul className="mt-3 flex flex-col gap-2" aria-hidden>
+          {sealedSlots.map((number) => (
+            <li key={number}>
+              <div className="chamfer flex h-16 items-center gap-3 border border-dashed border-edge bg-inset/40 px-4">
+                <Lock
+                  className="h-4 w-4 shrink-0 text-readout-muted"
+                  strokeWidth={2}
+                />
+                <span className="font-heading text-sm tracking-[0.22em] text-readout-muted uppercase">
+                  Chapter {number}
+                </span>
+                <span className="ml-auto font-body text-[9px] font-bold tracking-[0.2em] text-readout-muted uppercase">
+                  Sealed
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
       {adapted < SOURCE_CHAPTERS_WRITTEN ? (
-        <p className="mt-3 border border-dashed border-edge px-4 py-5 text-center font-body text-xs leading-relaxed text-readout-muted">
+        <p className="mt-3 px-4 text-center font-body text-xs leading-relaxed text-readout-muted">
           {SOURCE_CHAPTERS_WRITTEN - adapted} more chapter
           {SOURCE_CHAPTERS_WRITTEN - adapted === 1 ? " is" : "s are"} written and
           being adapted. They unlock here as they land.
@@ -107,8 +148,15 @@ function ChapterCard({
         className="absolute inset-0 bg-[linear-gradient(180deg,transparent_28%,rgba(6,9,12,0.9)_86%)]"
       />
 
+      {/* The card's scrim runs `transparent 28% → dark 86%`, so at `top-2` this
+          chip sits on raw artwork — cyan text over the brightest part of a
+          cover. Measured unreadable in a browser at 393px, 2026-09-01. Its own
+          scrim rather than extending the gradient: the gradient exists to make
+          the *title block* legible, and darkening the top of every cover to
+          carry one 10px label would cost the art more than the label is
+          worth. */}
       <span
-        className={`absolute top-2 right-2 border px-2 py-0.5 text-[10px] tracking-[0.18em] uppercase ${
+        className={`absolute top-2 right-2 border bg-void/75 px-2 py-0.5 text-[10px] tracking-[0.18em] uppercase backdrop-blur-[2px] ${
           complete
             ? "border-edge text-readout-muted"
             : "border-edge-strong text-signal"

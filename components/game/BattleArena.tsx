@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,10 +45,42 @@ import DuelWaitingOverlay from "@/components/game/battle/DuelWaitingOverlay";
 import { publishDuelResult } from "@/lib/duel/client";
 import { useSettingsStore } from "@/store/settingsStore";
 import { scrimProps, useEscapeKey } from "@/hooks/useEscapeKey";
+import { actionsForTurn } from "@/lib/game/actionEconomy";
+import {
+  bonusActionsFor,
+  describeStageEffect,
+  groupStageEffects,
+} from "@/lib/game/stageEffects";
 
 /** Stable no-op so the memoized player tiles don't re-render every frame on a
  *  fresh inline closure. Player tiles never focus-fire. */
 const noop = (): void => {};
+
+/**
+ * A unit tile's aspect, by how many share the row.
+ *
+ * The tile is width-limited once four are on the field: at 390px each gets
+ * ~88px, and `aspect-[9/16]` then forces it to 158px tall inside a row that is
+ * ~190px — **32px of height left unused**, while the portrait it could have
+ * gone to shrank by 25% along with the width. Measured in a live 4v4,
+ * 2026-09-01; Tanveer's read was that the field had been tuned for 3v3 and 4v4
+ * inherited it, which is exactly what the numbers said.
+ *
+ * A taller ratio at four spends that height on the portrait, so the face holds
+ * its size while the tile narrows. Three and fewer are untouched — there the
+ * tile is already capped at `max-w-[112px]` and the aspect fills the row.
+ *
+ * Kept as a ratio rather than `h-full`: on a desktop-height field an
+ * unconstrained tile would run to 400px of column, and the cap is what stops
+ * that.
+ */
+function tileAspect(count: number): string {
+  return count >= 4 ? "aspect-[9/19]" : "aspect-[9/16]";
+}
+
+/** A `useSyncExternalStore` subscriber for a value that never changes after
+ *  mount. Module scope so its identity is stable between renders. */
+const NO_SUBSCRIBE = () => () => {};
 
 /**
  * One battle control — icon or portrait stack, plus a micro-label.
@@ -99,6 +132,26 @@ function ControlButton({
         {label}
       </span>
     </button>
+  );
+}
+
+/** One label/value line in the controls sheet's readout. */
+function SheetStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-b border-hairline py-1.5 last:border-b-0">
+      <span className="font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+        {label}
+      </span>
+      <span className="min-w-0 truncate text-right font-body text-xs text-readout-strong">
+        {value}
+      </span>
+    </div>
   );
 }
 
@@ -217,6 +270,7 @@ export default function BattleArena({
   const enemyOnField = enemyTeam.filter((u) => !u.isSub);
   // Dev-only duel mode: shows who is actually piloting the enemy side.
   const duelMode = useSettingsStore((s) => s.duelMode);
+  const stageEffects = useGameStore((s) => s.stageEffects);
 
   // Exit Battle (player-initiated forfeit) — ends the fight as a loss. Ordinary
   // reloads resume the battle (persistence); this is the deliberate way out.
@@ -318,6 +372,35 @@ export default function BattleArena({
   const [isExitConfirmOpen, setIsExitConfirmOpen] = React.useState(false);
   // The controls sheet — what the side rail became (ruling #118).
   const [isControlsOpen, setIsControlsOpen] = React.useState(false);
+  /**
+   * Where the Speed / Skip / Controls row paints.
+   *
+   * Tanveer moved it to the bottom of the screen on 2026-09-01, below the hand
+   * — but the hand is `Deck`, a *sibling* rendered after this component, so
+   * there is no DOM order in which a child of the arena comes after it. Moving
+   * the row into `Deck` was the other option and a worse one: it reads the
+   * sequencer bound to `arenaRef`, and the sheet it opens needs the roster
+   * panels, the log drawer and the exit confirm, all of which live here.
+   *
+   * So the row stays in this tree and portals into a slot `Deck` renders.
+   *
+   * `useSyncExternalStore` rather than a layout effect that calls `setState`:
+   * the effect version works and lints as a cascading render, and this says the
+   * same thing without one. The subscribe is a no-op because the slot never
+   * moves — React re-reads the snapshot after mounting and re-renders if it
+   * changed, which is exactly the one transition there is (null before `Deck`
+   * commits, the node after).
+   *
+   * **A null slot renders the row inline instead of dropping it.**
+   * `BattleArena` has been rendered without `Deck` before — that was a real
+   * bug, a battle you could read and exit but not play — so losing Skip, Speed
+   * and Exit to a layout change is not a trade worth taking.
+   */
+  const controlSlot = React.useSyncExternalStore(
+    NO_SUBSCRIBE,
+    () => document.querySelector<HTMLElement>("[data-battle-control-slot]"),
+    () => null,
+  );
   useEscapeKey(() => setIsControlsOpen(false), isControlsOpen);
 
   const phaseOrder = [
@@ -414,6 +497,99 @@ export default function BattleArena({
   // CSS classes/keyframes (and their prefers-reduced-motion opt-out).
   const screenShakeClass =
     seq.screenShake === "heavy" ? "battle-shake-strong" : "";
+
+  /* ── Control bar ──────────────────────────────────────────────────
+      This slot used to hold a one-line event ticker — the last thing that
+      happened, tappable for the full log. Tanveer cut it 2026-08-21:
+      *"if someone needs to know what happened then they can just check
+      the log."* It was a readout competing for the tightest vertical space
+      on the screen, restating something the log already holds in full.
+
+      What lives here instead is what the 56px side rail used to hold. The
+      rail was a desktop shape: at 390px it was 14% of the screen width,
+      permanently, taken from the play area, and it sat up under the top
+      half of the screen where a thumb doesn't reach. Only the two
+      time-critical controls stay out — Skip, which exists for the few
+      seconds an animation is playing, and Speed. The rest moved behind
+      Controls (ruling #118).
+
+      It paints at the *bottom* of the screen since 2026-09-01 (Tanveer),
+      below the hand, where the team-bar dots used to be — see `controlSlot`
+      for how, and why it is not simply a child of `Deck`.
+
+      **Known, not fixed here:** the notice branch below replaces the whole
+      row, so while an auto-merge toast is up there is no Skip, no Speed and
+      no Controls — and with Controls goes Log, Foe, Team and Exit. It is
+      recoverable by dismissing, but the way out of a fight should not sit
+      behind a toast. Found in a browser 2026-09-01; the fix is a layout call,
+      so it is Tanveer's. */
+  // Readouts for the controls sheet. Cheap enough to compute every render —
+  // the sheet is the only consumer and it is open for seconds at a time.
+  const sheetActionCap = actionsForTurn(
+    playerTeam,
+    bonusActionsFor(stageEffects, "player"),
+  );
+  const playerBenchCount = playerTeam.filter((u) => u.isSub).length;
+  const sheetStageEffects = (() => {
+    const grouped = groupStageEffects(stageEffects);
+    return [
+      ...grouped.both.map((e) => ({ side: "Both", text: describeStageEffect(e) })),
+      ...grouped.player.map((e) => ({ side: "You", text: describeStageEffect(e) })),
+      ...grouped.enemy.map((e) => ({ side: "Enemy", text: describeStageEffect(e) })),
+    ];
+  })();
+
+  const controlRow = (
+    <div className="shrink-0 border-t border-hairline bg-inset px-2 py-1.5">
+      {interactionNotice ? (
+        <div className="flex min-h-11 items-center justify-between gap-2">
+          <p className="min-w-0 truncate font-body text-xs uppercase tracking-[0.1em] text-el-red">
+            {interactionNotice}
+          </p>
+          <button
+            type="button"
+            onClick={clearInteractionNotice}
+            className="flex min-h-11 shrink-0 cursor-pointer items-center border border-el-red/70 px-3 font-body text-[10px] uppercase tracking-widest text-el-red"
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-stretch gap-1.5">
+          {seq.active ? (
+            <ControlButton
+              label="Skip"
+              title="Skip playback"
+              active
+              onClick={skipPlayback}
+              className="w-16"
+            >
+              <FastForward className="h-4 w-4" strokeWidth={2.2} />
+            </ControlButton>
+          ) : null}
+          <ControlButton
+            label={`${battleSpeed}×`}
+            title="Battle speed"
+            active={battleSpeed === 2}
+            onClick={() => setBattleSpeed(battleSpeed === 1 ? 2 : 1)}
+            className="w-16"
+          >
+            <Gauge className="h-4 w-4" strokeWidth={2.2} />
+          </ControlButton>
+          <ControlButton
+            label="Controls"
+            title="Battle controls"
+            tutorialAnchor="team"
+            active={isControlsOpen}
+            onClick={() => setIsControlsOpen(true)}
+            className="flex-1"
+          >
+            <MoreHorizontal className="h-4 w-4" strokeWidth={2.2} />
+          </ControlButton>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     // No z-index here: it would trap the fixed drawer/overlay children in a
@@ -868,7 +1044,7 @@ export default function BattleArena({
               {enemyOnField.map((unit) => (
                 <div
                   key={unit.instanceId}
-                  className="aspect-[9/16] max-h-full min-w-0 max-w-[112px] flex-1"
+                  className={`${tileAspect(enemyOnField.length)} max-h-full min-w-0 max-w-[112px] flex-1`}
                 >
                   <TeamUnitTile
                     unit={unit}
@@ -911,7 +1087,7 @@ export default function BattleArena({
               {playerOnField.map((unit) => (
                 <div
                   key={unit.instanceId}
-                  className="aspect-[9/16] max-h-full min-w-0 max-w-[112px] flex-1"
+                  className={`${tileAspect(playerOnField.length)} max-h-full min-w-0 max-w-[112px] flex-1`}
                 >
                   <TeamUnitTile
                     unit={unit}
@@ -930,69 +1106,13 @@ export default function BattleArena({
 
       </div>
 
-      {/* ── Control bar ──────────────────────────────────────────────────
-          This slot used to hold a one-line event ticker — the last thing that
-          happened, tappable for the full log. Tanveer cut it 2026-08-21:
-          *"if someone needs to know what happened then they can just check
-          the log."* It was a readout competing for the tightest vertical space
-          on the screen, restating something the log already holds in full.
+      {/* The control row paints at the bottom of the screen, through a slot
+          `Deck` renders below the hand (Tanveer, 2026-09-01). `controlSlot`
+          above carries the why, including why a missing slot falls back to
+          rendering here rather than showing nothing. */}
+      {controlSlot ? null : controlRow}
 
-          What lives here instead is what the 56px side rail used to hold. The
-          rail was a desktop shape: at 390px it was 14% of the screen width,
-          permanently, taken from the play area, and it sat up under the top
-          half of the screen where a thumb doesn't reach. Only the two
-          time-critical controls stay out — Skip, which exists for the few
-          seconds an animation is playing, and Speed. The rest moved behind
-          Controls (ruling #118). */}
-      <div className="shrink-0 border-t border-hairline bg-inset px-2 py-1.5 backdrop-blur-sm">
-        {interactionNotice ? (
-          <div className="flex min-h-11 items-center justify-between gap-2">
-            <p className="min-w-0 truncate font-body text-xs uppercase tracking-[0.1em] text-el-red">
-              {interactionNotice}
-            </p>
-            <button
-              type="button"
-              onClick={clearInteractionNotice}
-              className="flex min-h-11 shrink-0 cursor-pointer items-center border border-el-red/70 px-3 font-body text-[10px] uppercase tracking-widest text-el-red"
-            >
-              Dismiss
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-stretch gap-1.5">
-            {seq.active ? (
-              <ControlButton
-                label="Skip"
-                title="Skip playback"
-                active
-                onClick={skipPlayback}
-                className="w-16"
-              >
-                <FastForward className="h-4 w-4" strokeWidth={2.2} />
-              </ControlButton>
-            ) : null}
-            <ControlButton
-              label={`${battleSpeed}×`}
-              title="Battle speed"
-              active={battleSpeed === 2}
-              onClick={() => setBattleSpeed(battleSpeed === 1 ? 2 : 1)}
-              className="w-16"
-            >
-              <Gauge className="h-4 w-4" strokeWidth={2.2} />
-            </ControlButton>
-            <ControlButton
-              label="Controls"
-              title="Battle controls"
-              tutorialAnchor="team"
-              active={isControlsOpen}
-              onClick={() => setIsControlsOpen(true)}
-              className="flex-1"
-            >
-              <MoreHorizontal className="h-4 w-4" strokeWidth={2.2} />
-            </ControlButton>
-          </div>
-        )}
-      </div>
+      {controlSlot ? createPortal(controlRow, controlSlot) : null}
 
       {/* The sheet itself — bottom-anchored rather than centred, because every
           control in it is one a thumb has to reach. */}
@@ -1006,8 +1126,95 @@ export default function BattleArena({
           className="fixed inset-0 z-50 flex flex-col justify-end bg-void/70 backdrop-blur-sm"
           {...scrimProps(() => setIsControlsOpen(false))}
         >
-          <div className="pb-safe border-t border-edge-strong bg-panel px-3 pt-3 shadow-[0_-18px_50px_rgba(0,0,0,0.7)]">
+          <div className="pb-safe max-h-[85dvh] overflow-y-auto border-t border-edge-strong bg-panel px-3 pt-3 shadow-[0_-18px_50px_rgba(0,0,0,0.7)]">
             <span className="mx-auto mb-3 block h-1 w-11 bg-edge-strong" />
+
+            {/* The readout half (Tanveer, 2026-09-01). Measured before this
+                existed: the sheet was 149px of buttons under 695px of empty
+                scrim — 82% of the screen dimmed to show four controls. Offered
+                three ways out (drop the sheet, shrink it, or fill it) and he
+                chose to fill it.
+
+                What fills it is not invented: it is what the status strip
+                shows on a wide screen and **hides on a phone**. The strip is
+                one line competing for ~390px, so it ranks what it keeps —
+                phase first, then the bar, then where you are, then the counts
+                (see the note on the strip itself). Everything it drops below
+                `sm`/`md` is here, where there is room, plus the two things
+                that were never on it at all: how many actions this turn, and
+                what the stage is doing to the fight. */}
+            <div className="mb-3 border border-hairline bg-inset px-3 py-1">
+              <SheetStat
+                label="Turn"
+                value={`${currentTurn + 1} · ${phaseLabel}`}
+              />
+              {contextLabel ? (
+                <SheetStat label="Fight" value={contextLabel} />
+              ) : null}
+              {duelMode ? (
+                <SheetStat
+                  label="Mode"
+                  value={
+                    <span className="text-violet-200">Duel — Claude plays the foe</span>
+                  }
+                />
+              ) : null}
+              <SheetStat
+                label="Actions"
+                value={`${sheetActionCap} this turn`}
+              />
+              <SheetStat
+                label="Resolved"
+                value={`${playerTurns} player · ${enemyTurns} enemy`}
+              />
+              {/* Nothing on the battle screen says how many units are on the
+                  field versus waiting on the bench, and the bench is what the
+                  sub rule turns on — a sub enters at the start of a turn after
+                  a teammate falls (`lib/game/sub.ts`). "Team" opens the roster,
+                  but that is a tap away and this is the one number you want
+                  before deciding whether to trade. */}
+              <SheetStat
+                label="Field"
+                value={`${playerOnField.length} on field${
+                  playerBenchCount > 0 ? ` · ${playerBenchCount} benched` : ""
+                }`}
+              />
+            </div>
+
+            {/* Stage effects have never been visible once a fight starts —
+                `StageBrief` shows them beforehand and then they are gone, even
+                though they are modifying the battle in front of you. Rendered
+                only when the encounter has any, so an ordinary fight does not
+                get an empty box. */}
+            {sheetStageEffects.length > 0 ? (
+              <div className="mb-3 border border-hairline bg-inset px-3 py-2">
+                <span className="font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+                  Stage effects
+                </span>
+                <ul className="mt-1.5 flex flex-col gap-1">
+                  {sheetStageEffects.map((entry, i) => (
+                    <li
+                      key={`${entry.side}-${i}`}
+                      className="flex items-baseline gap-2 font-body text-xs text-readout"
+                    >
+                      <span
+                        className={`shrink-0 font-bold uppercase tracking-[0.14em] text-[9px] ${
+                          entry.side === "Enemy"
+                            ? "text-el-red"
+                            : entry.side === "You"
+                              ? "text-signal"
+                              : "text-readout-muted"
+                        }`}
+                      >
+                        {entry.side}
+                      </span>
+                      <span className="min-w-0">{entry.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
             <div className="grid grid-cols-3 gap-2">
               <ControlButton
                 label="Log"
