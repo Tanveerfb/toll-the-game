@@ -1,6 +1,8 @@
 {
   "id": "sara",
+  "cardNumber": 100026,
   "name": "Sara",
+  "heading": "Beast Caller",
   "color": "red",
   "tags": ["Human", "Female"],
   "lore": "Ledger exam examinee, girl, animal control theme.",

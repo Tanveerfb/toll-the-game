@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { getCharacterArt } from "@/lib/game/characterArt";
+import { archiveHref } from "@/lib/game/characterCatalog";
 import { usePlayerStore } from "@/store/playerStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { progressedStats } from "@/lib/game/progression";
@@ -16,6 +17,10 @@ type CharacterColor = "light" | "red" | "blue" | "green" | "dark";
 
 export interface CharacterBrowserItem {
   id: string;
+  /** The archive URL's public handle - see `archiveHref`. */
+  cardNumber: number;
+  /** The title above the name (ruling #141). */
+  heading?: string;
   name: string;
   color: CharacterColor;
   atk: number;
@@ -533,7 +538,7 @@ export default function CharacterBrowser({
               // `text-(--el)` below needs no hint — it defaults to colour.
               <Link
                 key={character.id}
-                href={`/archive/${character.id}`}
+                href={archiveHref(character)}
                 className="chamfer-lg group flex flex-col border border-edge bg-panel transition-colors hover:border-(color:--el)"
                 style={{ "--el": hue } as React.CSSProperties}
               >
@@ -582,6 +587,14 @@ export default function CharacterBrowser({
                 </div>
 
                 <div className="border-t border-hairline px-2 py-2">
+                  {/* Heading above the name (#141). This tile has a dedicated
+                      text block under the art, so the line costs ~10px and
+                      crowds nothing. */}
+                  {character.heading ? (
+                    <p className="truncate font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+                      {character.heading}
+                    </p>
+                  ) : null}
                   <p className="truncate font-heading text-lg tracking-title text-readout group-hover:text-(--el)">
                     {character.name}
                   </p>

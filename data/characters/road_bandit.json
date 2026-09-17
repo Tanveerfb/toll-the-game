@@ -1,6 +1,8 @@
 {
   "id": "road_bandit",
+  "cardNumber": 100025,
   "name": "Road Bandit",
+  "heading": "Common Foe",
   "color": "dark",
   "storyOnly": true,
   "tags": [

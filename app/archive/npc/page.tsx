@@ -12,6 +12,8 @@ const characters: CharacterBrowserItem[] = getAllCharacters()
   .filter((character) => character.storyOnly === true)
   .map((character) => ({
     id: character.id,
+    cardNumber: character.cardNumber,
+    heading: character.heading,
     name: character.name,
     color: character.color,
     atk: character.atk,

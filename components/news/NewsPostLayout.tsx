@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Screen } from "@/components/ui/Screen";
 import type { NewsFeedEntry, NewsKind } from "@/lib/news/feed";
 
 interface NewsPostLayoutProps {
@@ -76,52 +77,56 @@ export default function NewsPostLayout({
   children,
 }: NewsPostLayoutProps) {
   return (
-    <main className="terminal-grid min-screen-below-nav bg-void">
-      <div className="mx-auto w-full max-w-2xl px-6 py-8">
-        <Link
-          href="/news"
-          className="chamfer inline-flex min-h-11 items-center border border-edge px-3 font-body text-[11px] font-bold uppercase tracking-eyebrow text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+    // Same migration as the index: `--container-read` is 42rem, exactly the
+    // `max-w-2xl` this already used, so the width does not move - what goes is
+    // a hand-typed shell and the app's only `px-6` gutter.
+    // `gap-0`: a post sets its own vertical rhythm with `mt-*` on each block,
+    // so Screen's default `gap-3` would compound with it rather than replace
+    // it. The index takes the default, because it has no rhythm of its own.
+    <Screen width="read" contentClassName="gap-0">
+      <Link
+        href="/news"
+        className="chamfer inline-flex min-h-11 items-center border border-edge px-3 font-body text-[11px] font-bold uppercase tracking-eyebrow text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+      >
+        ← News
+      </Link>
+
+      <header className="mt-4 border-l-2 border-signal pl-3">
+        <span
+          className={`inline-block border px-1.5 py-px font-body text-[9px] font-bold uppercase tracking-label ${KIND_TONE[kind]}`}
         >
-          ← News
-        </Link>
+          {KIND_LABEL[kind]}
+        </span>
+        <h1 className="mt-1.5 font-heading text-4xl leading-none tracking-title text-readout-strong">
+          {title}
+        </h1>
+        <p className="mt-1.5 font-body text-[11px] font-bold uppercase tracking-label text-readout-muted">
+          {formatDate(date)}
+          <span className="mx-2 text-edge-strong">·</span>
+          {readingMinutes} min read
+        </p>
+      </header>
 
-        <header className="mt-4 border-l-2 border-signal pl-3">
-          <span
-            className={`inline-block border px-1.5 py-px font-body text-[9px] font-bold uppercase tracking-label ${KIND_TONE[kind]}`}
-          >
-            {KIND_LABEL[kind]}
-          </span>
-          <h1 className="mt-1.5 font-heading text-4xl leading-none tracking-title text-readout-strong">
-            {title}
-          </h1>
-          <p className="mt-1.5 font-body text-[11px] font-bold uppercase tracking-label text-readout-muted">
-            {formatDate(date)}
-            <span className="mx-2 text-edge-strong">·</span>
-            {readingMinutes} min read
-          </p>
-        </header>
+      {/* The summary already exists in frontmatter and was only ever shown on
+          the feed. Set at reading size here, the post opens by saying what
+          it's about instead of starting mid-argument. */}
+      {summary ? (
+        <p className="mt-4 border-b border-hairline pb-4 font-body text-[17px] leading-relaxed text-readout">
+          {summary}
+        </p>
+      ) : null}
 
-        {/* The summary already exists in frontmatter and was only ever shown on
-            the feed. Set at reading size here, the post opens by saying what
-            it's about instead of starting mid-argument. */}
-        {summary ? (
-          <p className="mt-4 border-b border-hairline pb-4 font-body text-[17px] leading-relaxed text-readout">
-            {summary}
-          </p>
-        ) : null}
+      <div className="mt-2">{children}</div>
 
-        <div className="mt-2">{children}</div>
-
-        {older || newer ? (
-          <nav
-            aria-label="Nearby posts"
-            className="mt-8 grid grid-cols-1 gap-2.5 border-t border-hairline pt-4 sm:grid-cols-2"
-          >
-            {older ? <StepLink entry={older} direction="older" /> : <span />}
-            {newer ? <StepLink entry={newer} direction="newer" /> : null}
-          </nav>
-        ) : null}
-      </div>
-    </main>
+      {older || newer ? (
+        <nav
+          aria-label="Nearby posts"
+          className="mt-8 grid grid-cols-1 gap-2.5 border-t border-hairline pt-4 sm:grid-cols-2"
+        >
+          {older ? <StepLink entry={older} direction="older" /> : <span />}
+          {newer ? <StepLink entry={newer} direction="newer" /> : null}
+        </nav>
+      ) : null}
+    </Screen>
   );
 }

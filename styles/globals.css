@@ -160,6 +160,25 @@ h6 {
      already using `tracking-wide` by 9x. Named for its job instead. */
   --tracking-eyebrow: 0.22em; /* the rare eyebrow above a page title */
 
+  /* Content widths, as three kinds of screen rather than ten numbers.
+     Measured 2026-09-17: ten distinct `max-w-*` values across the app
+     (`md` x16, `6xl` x7, `2xl` x7, `lg` x4, `3xl` x3, plus five singles),
+     with no rule for picking one.
+
+     At 390px EVERY one of them is inert - the viewport is narrower than all
+     of them, so the gutter does the work and the screens look identical.
+     They only diverge on desktop, where `6xl` (1152px) and `md` (448px) are
+     not the same column at all. That is the "re-laid-out wide variant"
+     ruling #107 rules out, arrived at by accident rather than by decision.
+
+     Three, because that is how many KINDS of screen exist. Named in the
+     `--container-*` namespace so Tailwind generates `max-w-read`,
+     `max-w-app` and `max-w-panel` as real utilities - `components/ui/
+     Screen.tsx` is what picks between them. */
+  --container-read: 42rem;  /* prose and documents - kit pages, news posts */
+  --container-app: 56rem;   /* boards and lists - events, archive, story */
+  --container-panel: 28rem; /* one focused panel - results, confirmations */
+
   /* Surfaces. The void is the page; panels sit on it. */
   --color-void: #06090c;
   --color-panel: #0d141b;

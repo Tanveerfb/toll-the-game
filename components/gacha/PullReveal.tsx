@@ -229,6 +229,15 @@ export default function PullReveal({
                         ) : null}
                       </div>
                       <div className="px-1.5 py-1">
+                        {/* Heading above the name (#141). Tight here - this is
+                            a ten-pull grid and the tile already carries a
+                            status line below - so it truncates rather than
+                            wraps. */}
+                        {character?.heading ? (
+                          <p className="truncate font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+                            {character.heading}
+                          </p>
+                        ) : null}
                         <p className="truncate font-heading text-sm leading-tight tracking-title text-readout-strong">
                           {character?.name ?? outcome.characterId}
                         </p>

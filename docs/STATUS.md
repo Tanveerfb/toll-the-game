@@ -1,4 +1,4 @@
-# Status — 2026-09-17
+# Status — 2026-09-18
 
 Living snapshot. Session history is folded to
 [`docs/archive/STATUS-2026-08.md`](archive/STATUS-2026-08.md) and
@@ -6,28 +6,25 @@ Living snapshot. Session history is folded to
 
 ## Start here
 
-**State:** His PVE vocabulary is settled and recorded (rulings **#137–#140**,
-long form in `Plans/2026-09-16-pve-structure.md`). A code-quality audit ran and
-its top five findings are fixed — hydration gates, 362 dead lines, the
-`wave`→`fight` rename, tests for two untested engine modules, and the button
-primitive. Letter-spacing is three tokens instead of eighteen values. Suite
-**1,507 tests / 121 files**, browser 17, lint clean, build clean. Committed as `904bf67`.
+**State:** Four screens rebuilt from measurement — events (decomposed), the kit
+table (now **Kit Numbers**), the growth modal (tabs) and news (option B). The
+layout system is **built** for steps 1–4. All 31 kits carry a heading and a card
+number. Suite **1,542 tests / 125 files**, browser 17, build clean.
 
-**Next:** The layout system — `Plans/2026-09-17-layout-system.md`, approved in
-principle, tracking values chosen. Start at `Panel` + `Screen`, the two with the
-most call sites. Everything in it is structural except `TeamPicker` search,
-which is UX and therefore his.
+**Next:** Migrate the remaining **10 hand-typed page shells** onto `<Screen>` —
+`tests/layoutSystem.test.ts` ratchets the count and names them on failure. Lower
+the ratchet in the same commit.
 
-**Blocked on him:** naming Molvarr's second form (blocks steps 5–6 of
-`Plans/2026-09-17-fight-phases.md`), the ascension-trial structure behind
-**PROVISIONAL #136**, and the story adaptation, which is parked until he
-finishes Arc One.
+**Blocked on him:** notices — `content/news/notices/` holds only
+`_placeholder.mdx`, so the news kind filter cannot render until one is written.
+Also still open: Molvarr's second-form naming, **PROVISIONAL #136**, and the
+story adaptation, parked until Arc One is finished.
 
-**Don't trust:** the **battle screen** was deliberately excluded from every
-change — its density is tuned and unreviewable without his eyes. **`TrialRail`
-has still never been rendered.** And the lesson this session paid for twice:
-**a green suite is not a working screen** — 1,506 passing tests missed a trial
-that could not be entered at all, and ten minutes of looking found it.
+**Don't trust:** see **Confidence and gaps** below — it is the only section that
+separates what was checked from what was assumed. The short version: the
+**battle screen** was excluded from every change this session, and **`TrialRail`
+has still never been rendered** (reaching it needs a trial fight actually won;
+this session started one and did not finish it).
 
 ## Working (implemented, tested, browser-verified)
 
@@ -304,7 +301,7 @@ that could not be entered at all, and ten minutes of looking found it.
   - **Kit registration guard** — `characterCatalog.ts` needs an import line *and* a `rawCharacters` entry per kit; miss either and the character silently doesn't exist (no build error, no type error). `import.meta.glob` would have removed the hand-maintenance, but **Turbopack compiles it and then throws `.glob is not a function` at runtime**, failing the prerender (measured; Vitest supports it, Turbopack doesn't). Registration therefore stays explicit, guarded by `tests/characterCatalogRegistration.test.ts` — kit-on-disk-not-registered, registered-with-no-JSON, and `id` matching filename. Verified by planting an unregistered kit and watching it fail.
   - **Not done, deliberately:** per-battle kit loading. All 27 kits are **9.5 KB gzipped combined** against a ~2.4 MB bundle — lazy-loading them saves ~7 KB while adding an async gate before every fight and a mid-battle re-fetch on resume.
 
-- **Damage Preview → Kit Preview (2026-08-04, Tanveer's ask)** — audited `buildCharacterDamagePreview` across all 27 kits; it was a *damage* table that fell silent on everything else. Five real defects, all fixed and regression-tested (`tests/kitPreview.test.ts`, 16 tests):
+- **Damage Preview → Kit Preview (2026-08-04, Tanveer's ask)** — **AMENDED 2026-09-17: renamed again to "Kit Numbers", passive rows removed, per-character scenarios deleted, and the ultimate now shows all six ult levels instead of one. The entry below describes the 2026-08-04 state; the table it describes no longer has a Scenario column or a passive row.** — audited `buildCharacterDamagePreview` across all 27 kits; it was a *damage* table that fell silent on everything else. Five real defects, all fixed and regression-tested (`tests/kitPreview.test.ts`, 16 tests):
   1. **Non-damage skills reported "1 damage"** — the engine's `max(1, base − def)` floor leaking into rows for skills that deal none. Mustafa's Fortress (a team damage-reduction stance) and Leorio's Member of the Zodiac (a team ATK/DEF buff) both read `1 damage` with *empty notes*. New `summarizeSupportEffects` describes buff/debuff/stance/cleanse/immunity/taunt/gauge effects; those rows now read "Damage taken −60% (2 turns)" and "ATK · DEF +40% (2 turns)". Sibling stat changes sharing an amount and duration merge into one line.
   2. **Multi-phase kits truncated to phase 1** — Molvarr's entire second phase (Abyssal Pierce, Devouring Bite, Tidal Cataclysm) never appeared, on a page that showed his phase switcher directly above. Phases are now walked explicitly; rows carry a `phaseLabel` and the archive renders one table per phase. Molvarr: **7 → 21 rows**.
   3. **Passives absent entirely.** Every character now gets a passive row. Summarising from `mechanics[]` alone produced "See kit" for most of the roster (passive mechanic types are conditional/stateful), so it reads the *authored* description instead — the structured `#`/`-` format even splits condition (→ Scenario column) from effect (→ Result). Literal 👆/👇 become ↑/↓ since this table is plain text.
@@ -312,7 +309,7 @@ that could not be entered at all, and ten minutes of looking found it.
   5. **Seals: only the first was read, and `sealType` was ignored.** Chiara's House Rules carries two seals with different rank gates, so R2 claimed "No seal at this rank" while the skill's own description one section above listed one. All seals are now reported, each naming which skills it locks.
   Also de-duplicates self-buffs already folded into the damage number ("Self DEF buff included (+30%). DEF +30% (2 turns)."), while keeping buffs on stats the damage number *doesn't* fold in (Chiara's ult Evade). Section renamed **Kit Preview** — it is no longer only about damage.
 
-- **Archive detail page as a document (UX Batch 5, 2026-08-04)** — kit info rendered as nested bordered cards (`Section` → `SkillBlock` → rank rows): every skill looked like every other skill, and telling R1 from R3 meant diffing three prose paragraphs by eye. `/news` reads well because it's a *document*; the archive now uses the same typography. **`components/ui/prose.tsx` (new)** holds the heading/paragraph/list/table styles that previously lived only in `mdx-components.tsx` — both consume it, which is what makes the two pages genuinely match rather than approximately match; it also exports `ProseSection` (amber-ruled heading + optional right-aligned note) and `ProseTable`. **`components/game/SkillDocument.tsx` (new)** renders one skill as ruled heading + metadata line (type · mechanics, deduped — a debuff skill with a `debuff` mechanic used to read "Debuff · Debuff") + a **rank table**: Rank / Mult / Effect. The multiplier column is real data (`damageRanked[i]`, no string parsing), so the rank delta is visible at a glance while the description keeps its full keyword-highlighted wording. **Kit data stays in `data/characters/*.json`** — it's runtime data the engine, tests, Zod and Kit Lab all depend on; this batch is rendering only. The duplicate `SkillBlock` in `app/archive/[id]/page.tsx` is deleted (`KitDetails.tsx` keeps the compact in-battle variant); `KitPhases` gained a `variant` prop (`compact` for battle overlays, `document` for the archive) so multi-phase bosses don't render as cards on a page where everyone else renders as a document. Damage Preview restyled to match. Browser-verified: `/archive/duke` (single-phase), `/archive/molvarr` (2 phases, 3 passives), 1440px and 390px, no horizontal overflow.
+- **Archive detail page as a document (UX Batch 5, 2026-08-04)** — kit info rendered as nested bordered cards (`Section` → `SkillBlock` → rank rows): every skill looked like every other skill, and telling R1 from R3 meant diffing three prose paragraphs by eye. `/news` reads well because it's a *document*; the archive now uses the same typography. **`components/ui/prose.tsx` (new)** holds the heading/paragraph/list/table styles that previously lived only in `mdx-components.tsx` — both consume it, which is what makes the two pages genuinely match rather than approximately match; it also exports `ProseSection` (amber-ruled heading + optional right-aligned note) and `ProseTable`. **`components/game/SkillDocument.tsx` (new)** renders one skill as ruled heading + metadata line (type · mechanics, deduped — a debuff skill with a `debuff` mechanic used to read "Debuff · Debuff") + a **rank table**: Rank / Mult / Effect. The multiplier column is real data (`damageRanked[i]`, no string parsing), so the rank delta is visible at a glance while the description keeps its full keyword-highlighted wording. **Kit data stays in `data/characters/*.json`** — it's runtime data the engine, tests, Zod and Kit Lab all depend on; this batch is rendering only. The duplicate `SkillBlock` in `app/archive/[id]/page.tsx` is deleted *(that route is `app/archive/character/[cardNumber]/` since 2026-09-17, ruling #143 — and the `/archive/duke` and `/archive/molvarr` URLs quoted later in this entry are now `/archive/character/100007` and `/100021`)* (`KitDetails.tsx` keeps the compact in-battle variant); `KitPhases` gained a `variant` prop (`compact` for battle overlays, `document` for the archive) so multi-phase bosses don't render as cards on a page where everyone else renders as a document. Damage Preview restyled to match. Browser-verified: `/archive/duke` (single-phase), `/archive/molvarr` (2 phases, 3 passives), 1440px and 390px, no horizontal overflow.
   - **Deliberately NOT done:** the planned `CharacterGrid` extraction across `CharacterBrowser` / TeamSelect's roster overlay / the gacha pool. The three differ in *interaction*, not just layout — browse-and-navigate vs multi-select-with-pick-order vs read-only rates — so one shared grid would need a prop for each and serve none of them well. The genuinely shared unit is the character *tile*, not the grid; revisit at that scope.
 
 - **Per-character VFX across the roster (UX Batch 4, 2026-08-04)** — `characterVfx.ts` covered **5 of 27** characters; the other 22 fell back to a generic element-colored ring. Now **all 27** (playable + story-only + boss) carry a tint and shape. Five new shapes joined ring/ripple/shard/flicker/blot: `bolt` (Killua/Seras), `slash` (Gon/Leorio/Yalina), `bloom` (Siddiq/Chiara/Isolde), `paw` (Sara/wild_beast), `quake` (Diane/Mustafa/iron) — each a `clip-path` + accent pair, same cost as the existing ones. Power themes follow `docs/design/SKILL_ART_PLAN.md`'s per-character table, so a character's VFX and their generated skill art describe the same power. The arena's burst renderer had `shape === "ripple"` / `shape === "flicker"` branches inline; accents are now resolved from the registry via `getVfxAccent` (`second-ring` / `inner-pop` / `core` / `wave`), so **a new flavor is a data edit, not a JSX edit**. **Ult cut-ins switched to skill art** — `getSkillArt(characterId, skillName) ?? getCharacterArt(...)`; all 48 playable/boss ultimates already have their own art, so every ultimate's cut-in now reads distinctly at zero asset cost (they previously all showed the same portrait). Rank escalation was **already** implemented (`lib/game/revealTier.ts`: basic/R1/R2/R3/ultimate driving projectile size, burst strength, shake, flash, wind-up, beam sweep, cutscene) — nothing to add. 5 new tests (`tests/characterVfx.test.ts`) lock the invariants that actually matter: full catalog coverage, and **every tint at least 60 channel-units away from its own element tint** (a flavor landing on its own hue renders as no flavor at all). Arena layout deliberately unchanged — the open spacing between team rows is Tanveer's intentional fix for v1's congestion.
@@ -377,6 +374,161 @@ that could not be entered at all, and ten minutes of looking found it.
 - **Enemy AI priority (ruling 2026-07-13)** — `getAIMove` picks across the whole acting pool by priority: ultimate (gauge full) → new buff (max 1/turn) or heal (ally <50%) → stance (max 1/turn, not already held) → debuff/disable (max 1/turn) → attack → other. Caps hold across the turn via a shared `AITurnContext` (`freshAITurnContext`/`noteAIAction`).
 - **Fixes (2026-07-12/13)** — Mustafa's Earth Stance: Fortress is a team-wide (aoe) DR stance, no ally pick; single-target attacks retarget to a living enemy when their marked target died mid-queue (focus-fire no longer wastes cards on a corpse).
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
+
+## Session log — 2026-09-17/18: four screens, and three guards that never ran
+
+The longest session so far. Two threads ran through it: **screens got rebuilt
+from measurement**, and **three enforcement tests turned out to have been
+passing without ever checking anything.** The second thread is the one worth
+reading.
+
+### The three dead guards
+
+Each was green, each had a doc comment explaining what it caught, and each was
+blind. **Two of the three were found by accident** while doing something else,
+which is the part to take seriously.
+
+1. **`tests/touchTargets.test.ts`'s `title=` check skipped the events page.**
+   It walks back from the attribute to its tag with `lastIndexOf("<")` — and
+   `disabled={autoRuns < 1}` one line above put a `<` in the way, so the tag
+   regex failed and the loop `continue`d past a real offender. That offender
+   was Auto Clear's "why is this greyed out" message, **hover-only, invisible
+   on a phone** — exactly what ruling #125 exists to prevent. Guard now walks
+   back over candidate `<` positions until one actually opens a tag.
+
+2. **`tests/buttonPrimitive.test.ts` was flagging NOTHING, repo-wide.** Its
+   pattern `<button\b[\s\S]*?>` is non-greedy and stops at the first `>` —
+   which `onClick={() => ...}` supplies before the className on most buttons in
+   this codebase. It caught the events breadcrumb earlier the same day **only**
+   because that one passed `onClick={onBack}` with no arrow, and that single
+   hit is what made the guard look alive. Stripping arrows first takes the
+   count **from 0 to 15 across 12 files**, all now listed in `ALLOWED` as dated
+   debt. `touchTargets` documents this exact trap and strips `=>` in its own
+   walk-back; the sibling never did.
+
+3. **A blind spot still open, recorded rather than bodged.** The button guard
+   reads the className written *at the tag*, so a file holding its classes in a
+   constant (`const CHIP = "... uppercase tracking-label"`) shows the scanner
+   nothing. `components/news/NewsFeed.tsx` hid five buttons that way. Catching
+   it needs the constants resolved, not a wider regex.
+
+**The lesson is sharper than "write tests".** All three were written *because*
+someone had already been bitten, and all three were verified by watching them
+pass. `AGENTS.md` already says to prove a new guard fails before trusting that
+it passes; what this session adds is that **an old guard can stop working when
+the code around it changes shape**, and nothing announces that.
+
+### Headings and card numbers (rulings #141, #143)
+
+All **31 kits** now carry a `heading` — the title above the name — and a
+`cardNumber`, verified **100001–100031, all unique**. He named them; the drafting
+and the two rounds of rejection are in `Plans/2026-09-17-character-headings.md`,
+including the register correction that reset the first draft: *"we don't need to
+have their lore inside … it's more like a title, a nickname."*
+
+**The URL change has a finding under it.** He asked for *"the url would show the
+char id, not the names"* — but `id` **is** a name (`duke`, `batra`) and is the
+key every save's `roster` holds, so renumbering it would have invalidated stored
+rosters. `cardNumber` is a second, immutable, display-only identifier, the same
+split Dokkan's `/cards/<number>` uses. `/archive/[id]` →
+**`/archive/character/[cardNumber]`**; `archiveHref()` is the only place that
+path is spelled.
+
+The six generic enemies share **Common Foe**. The faction set offered first
+(Checkpoint / Bandit / Raider / Wilds) was dropped on inspection because it
+stutters against the names it sits above — *Raider* over **Raider**.
+
+### The layout system, built (`Plans/2026-09-17-layout-system.md` steps 1–4)
+
+`Screen` (3 variants), `Panel` + `PanelHeader`/`PanelBody`, `SectionHeader`, and
+three `--container-*` width tokens. **Eight spellings of three page shells**
+collapse to one component; **ten content widths** collapse to three.
+`tests/layoutSystem.test.ts` ratchets hand-typed shells, **13 → 11** as screens
+migrated, and the ratchet was falsified before being trusted.
+
+### Four screens
+
+- **Events** — `app/events/page.tsx` **1,289 → 539 lines**, now the state
+  machine only; markup lives in `components/game/events/` (6 new files).
+  Reward builders moved to `lib/game/worldBossPreview.ts`, killing the C6
+  duplication with `StageBrief`.
+- **Kit Preview → Kit Numbers** — see the amended entry above. The defect that
+  justified keeping it: **the ultimate rendered one row** because `buildKitRows`
+  never looped ult levels and `getDamageMultiplier` never read
+  `damageByUltLevel`. `damagePreview.ts` **1,413 → 1,195 lines** with the
+  per-character `switch` deleted.
+- **Growth modal** — rebuilt as tabs from mockups he chose between.
+  **One tap now takes a character Lv 1 → 20; that was 190 taps.**
+- **News** — rebuilt as option B, "new since your last visit" then archive,
+  with search added.
+
+### The growth modal, in detail
+
+`components/game/growth/` — `LevelTab`, `AscendTab`, `UltimateTab`, plus shared
+`CostChip` and `StatDelta`. Underneath: **`planLevelUp`** (17 tests) and the
+store action **`levelCharacterTo`**.
+
+- **The measurement that drove it:** `xpToNext = 100 × level`, manuals are
+  100/400/1000 XP, **one per tap** — so Lv 1→20 was **190 presses** on basics,
+  on the level the First Ascension Trial requires. The ultimate control in the
+  same modal had already solved this with a slider, its own comment saying five
+  confirmations were too many.
+- **Cheapest tier first**, because of ruling **#145**. Verified live: Lv 1→20
+  spent 120 basics and 18 advanced and **left all 31 premiums untouched**.
+- **The slider is gone.** The ladder is the control now — tap UL5, see
+  385% → 520%. He asked for this: *"it was better than before, but it's not the
+  best thing."*
+- **Two functions retired**: `feedManualToCharacter` and the pure `feedManual`
+  had zero callers once the UI went target-first, and both walked XP into
+  levels. Keeping them would have left two ways to level a character — the
+  inconsistency the rework had just removed from the UI. Single-manual
+  behaviour is still reachable by pinning one.
+- **Selectors, not `usePlayerStore()`**: the old panel held **2 of the app's 3
+  whole-store subscriptions** against 88 selectors elsewhere.
+
+### The news page (ruling #147)
+
+Option **B** of three drawn. **Two features on that page had never rendered**:
+the kind filter needs both kinds and there are **zero notices**
+(`notices/_placeholder.mdx` is excluded by `posts.ts`), and pagination needs
+more than `NEWS_PAGE_SIZE = 15` against **nine** posts. Both kept, both now
+attached to the archive.
+
+`searchFeed` is pure and tested (8 tests), title and summary only. Both news
+files moved onto `<Screen width="read">` — `--container-read` is 42rem, exactly
+the `max-w-2xl` they already used, so **no width moved**; what went is a
+hand-typed shell and the app's only `px-6` gutter.
+
+**A first-visit defect I introduced and caught in the browser:** with nothing
+stored, `hasUnreadNews(date, null)` is true for everything, so all nine posts
+landed under *"New since your last visit"* and the archive read "Nothing here
+yet". There was no last visit, so nothing is new since it.
+
+### Browser findings (things no test would have caught)
+
+- The events brief announced a **trial as "Standard" tier** —
+  `enemy?.tier === "elite" ? "Elite" : "Standard"` on an event that resolves no
+  enemy, while its last fight is Molvarr, who is elite.
+- The ascension ladder drew **A3 40, A4 40, A5 40** — `maxLevelForAscension`
+  clamps unknown bands to 40, and `ascension.ts` says in its own comment that a
+  lookup miss should read as "not costed yet". Uncosted tiers show `—` now.
+- The news first-visit split, above.
+
+### Rulings added
+
+**#142** map is not difficulty · **#143** card number in public, `id` in code ·
+**#144** redesigns start with several mockups · **#145** players are conservative
+with resources · **#146** mockups must be clickable · **#147** news answers
+"what changed while I was away". **#144 and #146 also went into `AGENTS.md`**,
+because they govern how work is done.
+
+### Verified at the end of this session
+
+`npm run check` — **1,542 tests / 125 files**, 3 pre-existing eslint warnings in
+`tests/duel.test.ts`. `npm run test:browser` — **17 tests / 3 files**.
+`NEXT_DIST_DIR=.next-verify npx next build` — clean, `.next-verify` removed,
+`tsconfig.json` reverted. His `:3000` was never touched; every browser check ran
+on a scratch build on `:3210`, killed by PID afterwards.
 
 ## Session log — 2026-09-17: his vocabulary, an audit, and looking at it
 
@@ -485,169 +637,12 @@ The battle screen was deliberately untouched — its density is tuned and only h
 can judge it. `TrialRail` still has never been rendered: reaching it needs a
 fight won, and the trial's structure may change anyway.
 
-## Session log — 2026-09-16b: PVE, and two findings bigger than the feature
+## Session log — 2026-09-16b — folded
 
-Started as "we'll work on PVE content now", went to the events board, and ended
-with an encounter built, a measuring tool that did not exist, and two balance
-findings that outrank the thing they were found by.
-
-**Suite 1,485 tests / 117 files**, browser 17, lint 0 errors (3 known
-`duel.test.ts` warnings), build compiles. Ruling **#136 — PROVISIONAL**. Committed as `2b63f48`.
-
-### The trial loop was scaffolding end to end
-
-Both ascension trials have been on the board since the rank system shipped,
-gating ranks 20 and 40, with `enemyId: null` and an honest "Encounter not
-authored yet". Three separate things were missing, and **all three had to be
-fixed for any of them to matter**:
-
-- **`clearRankWall` had no production caller.** Defined, typed, referenced once
-  in a test *comment*. `clearsWall` was dead data: beat the trial, the cap
-  stays.
-- **`grantAccountXp` bailed on `amount <= 0`** — before the loop. `clearRankWall`
-  cashes out banked XP by calling it with zero, documented in its own comment,
-  and that call did nothing. So even wired, the wall would fall and the ranks
-  behind it stay banked.
-- **The victory handler was boss-shaped unconditionally.** Every event ran
-  through `rollWorldBossRewards` and `recordManualClear`, so a cleared trial
-  would have paid ascension materials and unlocked Auto Clear on a
-  `repeatable: false` fight — the exact thing `autoClearEligible`'s own doc
-  forbids.
-
-**A test was pinning the second bug.** `tests/accountRank.test.ts` had a case
-titled *"pays the banked XP out the moment the trial is cleared"* asserting
-`expect(freed.rank).toBe(20)` — no payout. A second assertion passed and
-covered for it. Green since the day it was written, and the title said the
-opposite of the assertion.
-
-### His cloud-sync bug, reported from a real account
-
-*"It works on a single device. But if i change device, log in with the same
-account and go to attempt the event. I have to clear it again to use auto clear
-tickets. This also results in another instance of first time clear rewards."*
-
-**`clearedEvents` was never in `CLOUD_FIELDS`.** One cause, both symptoms:
-a fresh device reads `[]`, so `isFirstClear` is true again and the Auto Clear
-gate re-locks. `autoClearTickets` was missing the same way — the quieter half,
-and he had not noticed it. Both were added to the store on 2026-08-13, the same
-day six other fields were synced, and missed by that pass; the test file's own
-header describes the identical defect being fixed for `claimedOrders`.
-
-Worse than reported: **not device-specific**. `AuthProvider` calls
-`resetPlayerState()` on sign-out, so signing out and back in on one device
-reproduces it.
-
-The fix that matters is not the two entries. `DEVICE_LOCAL_FIELDS` now exists
-so **"does not sync" has to be written down**, and a test fails when a
-persisted field is in neither list. Run before the fix, it named both missing
-fields itself. The rule is in `AGENTS.md`, because it fires when a field is
-added, which is not when anyone reads `cloudSave.ts`.
-
-### The simulator can measure a player band now
-
-`npm run sim` could not answer "is this hard for a level 20 team", because
-*"everyone fights at catalog base stats"*. It now takes
-`level`/`ascension`/`ultLevel`, runs **multi-wave runs on one HP bar** with
-carry-HP, and applies stage effects through the same helper the battle uses. A
-bare id still means base stats, so every existing kit comparison is unchanged.
-
-Two traps found while building it, both now documented in the file:
-
-- **Level and ascension are not independent.** Level 20 *requires* ascension 1.
-  Tuning against `{level: 20, ascension: 0}` measures a 1.322x team that cannot
-  exist instead of the real 1.489x one — a 13% error in the direction that
-  flatters the encounter. `PLAYER_BANDS` spells the reachable pairs.
-- **Max HP is not constant.** `scaleMaxHp` lets a buff raise it mid-fight, so a
-  remaining-HP metric measured against a freshly built team reads over 100%.
-  The denominator is now captured at the start of each fight.
-
-**Falsified before use:** Lv40 vs Lv1 is 100%, the mirror is 52%, Lv20 vs Lv30
-is **5.9%**.
-
-### Two findings that outrank the feature
-
-**1. Stacking DEF beats the content outright.** A Yalina/Mustafa/Gabrist/Lyra
-team clears the trial **100% of the time at every enemy level tried**, finishing
-the last fight at 74% HP.
-
-**The explanation here was wrong twice before it was measured** — recorded
-because the wrong versions are the tempting ones. It is *not* that raw DEF is
-superlinear: at base stats DEF buys only ~12% less damage per hit, and the
-hits-to-kill gap between a "tank" and a "carry" is mostly **HP**. The real
-mechanism is that **DEF buffs stack multiplicatively** (`lib/game/stats.ts`,
-ruling #36) while mitigation **subtracts** (`Math.max(1, baseDamage -
-effectiveDefense)`), so a buffed unit can pass the raw hit entirely and take the
-**1-damage floor**.
-
-Measured, against Molvarr's Crushing Maw R3 at level 24 (1,188 base damage),
-for Lyra at Lv20/asc1 alongside Mustafa, Gabrist and Ban:
-
-| layer | DEF | through |
-| --- | ---: | ---: |
-| base | 313 | 875 |
-| + Mustafa, Red/Green +50% | 470 | 718 |
-| + Gabrist, all allies +20% | 563 | 625 |
-| + Ban, [Human] basics +5% | 592 | **596 — half the hit** |
-| + her own passive +150% | **1,479** | **1** |
-
-**This is why no ATK or level lever can fix it, and the arithmetic says so
-before the simulator does.** +25% enemy ATK moves the hit to 1,485, which takes
-Lyra from 1 damage to 6 — still immune — while killing every team that is not
-above the line. The levers that *do* work cut DEF multiplicatively rather than
-out-scaling it: **Pierce** (50% of DEF ignored), **Critical** (a % ignored), and
-DEF-down debuffs.
-
-**And it is partly deliberate, so it is not simply a defect.** Tanveer,
-2026-09-16: Lyra's passive *"was only 50% extra defense as first attacker. I
-buffed it to 150% just because I wanted her to have a gimmick, and as long as
-the character is open to playing her gimmick then they get rewarded… It's a very
-niche type of gameplay reward mechanic but it's a unique thing."* The payoff is
-designed. What is open is that a whole **team** of such characters compounds
-into immunity, and that no encounter-side dial answers it.
-
-Three fixes were measured and **all three failed**: Iron's Pierce in wave 1 (no
-effect, and it made the trial *easier* for everyone else, since Iron is a
-230-ATK tank), fielding all four NPCs 3+1 (no effect), and an enemy ATK stage
-effect — which found the second thing.
-
-**2. Difficulty is knife-edged.** `+25%` enemy ATK took every archetype from
-**75 / 38 / 100%** to **1 / 3 / 3%**. There is no window between "the wall
-survives" and "nobody survives". Subtractive mitigation means damage *through*
-a target scales violently with ATK, so the usable tuning range is far narrower
-than the stat bands suggest.
-
-Both are roster-wide properties of the damage formula, **not** properties of
-this encounter, so neither was tuned around. Recorded as observations. The
-formula and the bands are his.
-
-### What was built, and what is provisional
-
-Built and standing whatever he decides: the three bug fixes, the sync guard,
-the simulator, and **the wave runner leaving story** — `lib/game/stageRun.ts`
-now takes a `RunnableEncounter` (an id and waves) that `StoryStage` satisfies
-structurally, instead of the trial being authored as a fake story stage
-dragging scenes, missions and an origin tag behind it. `foldWaveFromBattle`
-moved to `lib/game/waveDriver.ts` so the two screens running waves share one
-copy.
-
-**Provisional, and his to settle:** the encounter itself
-(`lib/game/trialEncounters.ts`), the battle-road screen
-(`components/game/events/TrialRail.tsx`), and ruling **#136**, which is marked
-PROVISIONAL in the ledger. He designed the shape — three fights, a 3+1 NPC
-group, an elite, then Molvarr, no heal between — and then said *"I guess this
-needs more of a personal touch from me… we'll make a structure."* The entry
-keeps his quotes and says plainly not to build on it yet.
-
-Measured at levels 15/20/24, 200 runs × 3 seeds, Lv20 teams: balanced **74–80%**
-ending at ~26% HP, all-damage 26–39%, low-damage **0%**, and the balanced team
-at level 1 **0%**, wiping to the elite every run. The simulator plays the
-*player* side with the enemy AI, so those are floors.
-
-### Not verified
-
-No browser this session. `TrialRail` has never been rendered, and neither has
-the trial results screen. Both are pinned by type and by tests; neither has
-been looked at.
+**2026-09-16b** — PVE and two findings bigger than the feature: the First
+Ascension Trial's encounter, `simulateRun` as a measuring tool, and the
+defence/action-economy findings that outranked it. Moved verbatim to
+[`docs/archive/STATUS-2026-09.md`](archive/STATUS-2026-09.md).
 
 ## Session log — 2026-09-16 — folded
 
@@ -693,6 +688,55 @@ on 2026-08-20. Each line below is one section in that file.
 - Session log — 2026-08-21: the road checkpoint, and 37 art assets
 - Session log — 2026-08-21/22: mobile-first everywhere, six tools, and an app icon (folded 2026-09-16)
 
+## Confidence and gaps
+
+Rewritten every checkpoint. **This section is what stops the rest of the
+document being read as uniformly solid.**
+
+### Verified in this session, by running it
+
+- `npm run check` — **1,542 tests / 125 files**; 3 eslint warnings, all
+  pre-existing in `tests/duel.test.ts`.
+- `npm run test:browser` — **17 tests / 3 files**.
+- `NEXT_DIST_DIR=.next-verify npx next build` — clean.
+- **Counted from the files, not recalled:** 31 kits, all with a heading;
+  card numbers 100001–100031, uniqueness asserted; 6 kits reading `Common Foe`;
+  `app/events/page.tsx` 539 lines; `lib/game/damagePreview.ts` 1,195 lines;
+  11 files still containing `terminal-grid`.
+- **Driven in a browser on a scratch build:** the events board, both event
+  briefs, a live trial **fight 1**; the growth modal's three tabs, including a
+  real Lv 1→20 commit whose spend was read back out of `localStorage`; the news
+  page in first-visit, returning and search states.
+
+### Believed but NOT verified
+
+- **Every visual judgement.** He reviewed the growth modal and said it *"looks
+  good and consistent"*; **the news rebuild has not been looked at by him**, and
+  neither have the heading lines on `TeamPicker` and the gacha reveal, which
+  were flagged at the time as the tight ones.
+- **The 12 files newly listed in `buttonPrimitive`'s `ALLOWED`** are assumed to
+  be genuine action buttons worth migrating. They were counted, not read.
+- **`Common Foe` on six enemies** reads fine in the archive list; it has not
+  been seen anywhere else those units render.
+
+### Untested by anything
+
+- **`TrialRail` has still never been rendered**, and neither has the trial
+  results screen or the multi-fight carry-HP path beyond fight 1. A trial fight
+  was started this session and not won.
+- **Battle screen** — deliberately untouched all session. Its density is his.
+- **Auto Clear's blocker messages** now render as visible text instead of a
+  hover `title=`; the *wording* has not been reviewed.
+
+### What I would check first coming back cold
+
+1. Open `/news` as a returning player — it is the newest screen and the least
+   looked at.
+2. Win a trial, to render `TrialRail` and the trial results screen for the first
+   time.
+3. Re-run the three repaired guards against a deliberately broken file, because
+   **this session proved that a green guard can mean nothing**.
+
 ## Open Issues
 
 | # | Issue | Where | Severity |
@@ -716,7 +760,7 @@ Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier sta
 - **Story chapters 2–12** — the twelve webtoon chapters were all adapted under the v1 Part structure and that data was **deleted** on 2026-08-18 with the rebuild. Only **chapter 1** exists in v2 (`data/story/chapter-1.json`); the rest are re-authored one chapter at a time through the FillerAssist pass, against the source beat sheets in `E:\Toll - Web toon`. `UPCOMING_PARTS` is gone — `SOURCE_CHAPTERS_WRITTEN` in `storyCatalog.ts` records that twelve source chapters exist without naming any of them.
 - Story **Phase 3** — the bracket chapter 12 ends on. Not written in the source yet.
 - ~10 additional characters (Tanveer adds when game is in working order)
-- **Mobile layout pass** — still the biggest remaining gap in roadmap item 2, but narrowed on 2026-08-20: all 15 `min-h-screen` uses are now `min-h-dvh` and `tests/viewportUnits.test.ts` prevents new ones. Battle, gacha, archive and the hub still need their per-screen passes (the `mobilecheck` skill runs one screen at a time)
+- **Mobile layout pass** — narrowed again on 2026-09-17: `Screen`, `Panel` and `SectionHeader` now exist and **events, news and the growth modal are migrated**, with `tests/layoutSystem.test.ts` ratcheting the remaining **10 hand-typed shells**. Still the biggest gap in roadmap item 2, but the shape is now mechanical rather than per-screen invention. Narrowed earlier on 2026-08-20: all 15 `min-h-screen` uses are now `min-h-dvh` and `tests/viewportUnits.test.ts` prevents new ones. Battle, gacha, archive and the hub still need their per-screen passes (the `mobilecheck` skill runs one screen at a time)
 - **Audio assets** — the music *system* shipped 2026-08-09; `public/audio/` is empty until Tanveer supplies the OST (`docs/AUDIO.md`). No SFX system exists and none is planned.
 - ~~FTUE / onboarding~~ **built 2026-08-13** (Bureau Orders + four battle coach marks). Daily loop and analytics remain — the orders evaluator was built general so daily missions are mostly a data change (see `docs/PRODUCT_AUDIT.md`)
 - ~~Deployment~~ — **already live at https://toll-the-game.vercel.app/**, and has been. The Vercel project is linked and every push to `master` auto-builds. These docs said "not started" and I repeated it to Tanveer on 2026-08-13; he corrected it. **A push is a deploy — treat `master` as production.**

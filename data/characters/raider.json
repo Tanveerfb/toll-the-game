@@ -1,6 +1,8 @@
 {
   "id": "raider",
+  "cardNumber": 100024,
   "name": "Raider",
+  "heading": "Common Foe",
   "color": "red",
   "storyOnly": true,
   "tags": [

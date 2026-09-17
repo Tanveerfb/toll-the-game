@@ -1,6 +1,8 @@
 {
   "id": "duke",
+  "cardNumber": 100007,
   "name": "Duke",
+  "heading": "The Unmastered Art",
   "color": "blue",
   "tags": [
     "Human"

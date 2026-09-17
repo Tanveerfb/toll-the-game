@@ -10,6 +10,8 @@ import {
 const characters: CharacterBrowserItem[] = getPlayableCharacters().map(
   (character) => ({
     id: character.id,
+    cardNumber: character.cardNumber,
+    heading: character.heading,
     name: character.name,
     color: character.color,
     atk: character.atk,

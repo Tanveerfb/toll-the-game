@@ -22,29 +22,56 @@ function resetToKnownState() {
   });
 }
 
-describe("feedManualToCharacter", () => {
+/**
+ * `feedManualToCharacter` was retired on 2026-09-17 and these are its tests,
+ * rewritten against `levelCharacterTo`, which replaced it.
+ *
+ * It spent exactly one manual per call, which is why reaching Lv 20 took 190
+ * presses. Once the growth modal moved to target-first, nothing in the app
+ * called it and keeping it would have left two ways to level a character -
+ * the same inconsistency the rework had just removed from the UI.
+ *
+ * Single-manual behaviour is still reachable, by pinning one:
+ * `levelCharacterTo(id, cap, { training_manual: 1 })`.
+ */
+describe("levelCharacterTo", () => {
   beforeEach(resetToKnownState);
 
   it("refuses when no manual of that tier is owned", () => {
     usePlayerStore.setState({ inventory: { training_manual: 0 } });
-    const ok = usePlayerStore.getState().feedManualToCharacter("duke", "training_manual");
+    const ok = usePlayerStore.getState().levelCharacterTo("duke", 5);
     expect(ok).toBe(false);
   });
 
   it("refuses when the character is at ascension 0 (maxLevel 1, already at floor)", () => {
-    const ok = usePlayerStore.getState().feedManualToCharacter("duke", "training_manual");
+    const ok = usePlayerStore.getState().levelCharacterTo("duke", 5);
     expect(ok).toBe(false);
     expect(usePlayerStore.getState().inventory.training_manual).toBe(3);
     expect(usePlayerStore.getState().currencies.coin).toBe(100000);
   });
 
-  it("levels up, deducts one manual and the coin cost, once ascended past 0", () => {
+  it("spends one pinned manual and its coin cost, once ascended past 0", () => {
     usePlayerStore.setState({ characters: { duke: { level: 1, ascension: 1, xp: 0, ultLevel: 1 } } });
-    const ok = usePlayerStore.getState().feedManualToCharacter("duke", "training_manual");
+    const ok = usePlayerStore
+      .getState()
+      .levelCharacterTo("duke", 60, { training_manual: 1 });
     expect(ok).toBe(true);
     expect(usePlayerStore.getState().characters.duke).toEqual({ level: 2, ascension: 1, xp: 0, ultLevel: 1 });
     expect(usePlayerStore.getState().inventory.training_manual).toBe(2);
     expect(usePlayerStore.getState().currencies.coin).toBe(100000 - 200);
+  });
+
+  it("spends the whole stack in one call, which is the point of it", () => {
+    usePlayerStore.setState({
+      characters: { duke: { level: 1, ascension: 1, xp: 0, ultLevel: 1 } },
+      inventory: { training_manual: 3 },
+    });
+    const ok = usePlayerStore.getState().levelCharacterTo("duke", 60);
+    expect(ok).toBe(true);
+    // 300 XP: Lv1->2 costs 100, Lv2->3 costs 200. Lands on 3 exactly.
+    expect(usePlayerStore.getState().characters.duke.level).toBe(3);
+    expect(usePlayerStore.getState().inventory.training_manual).toBe(0);
+    expect(usePlayerStore.getState().currencies.coin).toBe(100000 - 600);
   });
 
   it("refuses when coin is insufficient even if the manual is owned", () => {
@@ -52,7 +79,7 @@ describe("feedManualToCharacter", () => {
       characters: { duke: { level: 1, ascension: 1, xp: 0, ultLevel: 1 } },
       currencies: { gems: 0, coin: 50, permanentTicket: 0 },
     });
-    const ok = usePlayerStore.getState().feedManualToCharacter("duke", "training_manual");
+    const ok = usePlayerStore.getState().levelCharacterTo("duke", 60);
     expect(ok).toBe(false);
     expect(usePlayerStore.getState().inventory.training_manual).toBe(3);
     expect(usePlayerStore.getState().characters.duke).toEqual({ level: 1, ascension: 1, xp: 0, ultLevel: 1 });

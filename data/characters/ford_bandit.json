@@ -1,6 +1,8 @@
 {
   "id": "ford_bandit",
+  "cardNumber": 100008,
   "name": "Ford Bandit",
+  "heading": "Common Foe",
   "color": "blue",
   "storyOnly": true,
   "tags": [

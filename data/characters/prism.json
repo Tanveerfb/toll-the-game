@@ -1,6 +1,8 @@
 {
   "id": "prism",
+  "cardNumber": 100023,
   "name": "Prism",
+  "heading": "No One Falls",
   "color": "light",
   "storyOnly": true,
   "tags": ["Human"],

@@ -2,16 +2,16 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
-import { PROSE, ProseSection, ProseTable } from "@/components/ui/prose";
+import { ProseSection } from "@/components/ui/prose";
 import SkillDocument from "@/components/game/SkillDocument";
 import {
-  characterIds,
-  getCharacterById,
+  characterCardNumbers,
+  getCharacterByCardNumber,
   getCharacterPhases,
   getPlayableCharacters,
 } from "@/lib/game/characterCatalog";
 import KitPhases from "@/components/game/KitPhases";
+import KitNumbers from "@/components/game/KitNumbers";
 import PreviewButton from "@/components/game/PreviewButton";
 import CharacterProgressionPanel from "@/components/game/CharacterProgressionPanel";
 import UltimateDocument from "@/components/game/UltimateDocument";
@@ -24,7 +24,16 @@ import {
 import { getCharacterArt } from "@/lib/game/characterArt";
 
 interface CharacterPageProps {
-  params: Promise<{ id: string }>;
+  /**
+   * The card's public number, not its `id`.
+   *
+   * `id` is a name (`duke`, `batra`) and Tanveer asked for the opposite -
+   * *"the url would show the char id, not the names"* (2026-09-17). It is
+   * also the key every save's `roster` holds, so it could not simply be
+   * renumbered; `cardNumber` is a second, immutable identifier that exists to
+   * be shown. `lib/game/characterCatalog.ts` resolves it back.
+   */
+  params: Promise<{ cardNumber: string }>;
 }
 
 const EL_HUE: Record<string, string> = {
@@ -57,15 +66,17 @@ const ROSTER_PEAK = (() => {
   };
 })();
 
-export function generateStaticParams(): Array<{ id: string }> {
-  return characterIds.map((id) => ({ id }));
+export function generateStaticParams(): Array<{ cardNumber: string }> {
+  return characterCardNumbers.map((cardNumber) => ({
+    cardNumber: String(cardNumber),
+  }));
 }
 
 export default async function CharacterDetailPage({
   params,
 }: CharacterPageProps): Promise<ReactNode> {
-  const { id } = await params;
-  const character = getCharacterById(id);
+  const { cardNumber } = await params;
+  const character = getCharacterByCardNumber(cardNumber);
 
   if (!character) {
     notFound();
@@ -74,18 +85,7 @@ export default async function CharacterDetailPage({
   const hue = EL_HUE[character.color] ?? EL_HUE.light;
   const art = getCharacterArt(character.id);
   const passive = character.passive as KitPassiveView | undefined;
-  // Multi-phase kits return rows tagged with their phase; group them so each
-  // phase gets its own table rather than one undifferentiated list.
   const previewRows = buildCharacterDamagePreview(character);
-  const previewGroups: Array<{
-    phaseLabel?: string;
-    rows: typeof previewRows;
-  }> = [];
-  for (const row of previewRows) {
-    const last = previewGroups[previewGroups.length - 1];
-    if (last && last.phaseLabel === row.phaseLabel) last.rows.push(row);
-    else previewGroups.push({ phaseLabel: row.phaseLabel, rows: [row] });
-  }
   // Multi-phase kits (bosses, and later playable transformations) get a phase
   // switcher instead of the flat Skills + Passive sections.
   const isMultiPhase = getCharacterPhases(character).length > 1;
@@ -139,11 +139,24 @@ export default async function CharacterDetailPage({
               </div>
 
               <div className="border-t border-hairline px-3 py-2.5">
+                {/* Heading above the name, the way ruling #141 describes it:
+                    every version of a character keeps the same NAME and is
+                    told apart by the heading. Tanveer confirmed the archive
+                    entry page as a place it belongs (2026-09-17) and ruled it
+                    out of the battle UI. */}
+                {character.heading ? (
+                  <p className="font-body text-[11px] font-bold uppercase tracking-eyebrow text-signal">
+                    {character.heading}
+                  </p>
+                ) : null}
                 <h1 className="font-heading text-4xl leading-none tracking-title text-readout-strong">
                   {character.name}
                 </h1>
-                <p className="mt-0.5 font-body text-[11px] font-bold uppercase tracking-eyebrow text-readout-muted">
-                  {character.id}
+                {/* The card number, not `id`. `id` is a name (`duke`,
+                    `batra`), and printing it here put the thing the URL was
+                    just changed to hide back on the page. */}
+                <p className="mt-0.5 font-body text-[11px] font-bold uppercase tracking-eyebrow text-readout-muted tabular-nums">
+                  No. {character.cardNumber}
                 </p>
                 {Array.isArray(character.tags) && character.tags.length > 0 ? (
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -229,58 +242,17 @@ export default async function CharacterDetailPage({
             )}
 
             <ProseSection
-              title="Kit Preview"
+              title="Kit Numbers"
               note={`vs dummy: ${DAMAGE_PREVIEW_DUMMY.atk} ATK / ${DAMAGE_PREVIEW_DUMMY.def} DEF / ${DAMAGE_PREVIEW_DUMMY.hp} HP`}
             >
-              {previewGroups.map(({ phaseLabel, rows }) => (
-                <div key={phaseLabel ?? "base"}>
-                  {phaseLabel ? (
-                    <h3 className={PROSE.h3}>{phaseLabel}</h3>
-                  ) : null}
-                  <ProseTable>
-                    <thead>
-                      <tr>
-                        <th className={PROSE.th}>Ability</th>
-                        <th className={PROSE.th}>Tier</th>
-                        <th className={PROSE.th}>Mult</th>
-                        <th className={PROSE.th}>Scenario</th>
-                        <th className={PROSE.th}>Result</th>
-                        <th className={PROSE.th}>Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((row) => (
-                        <tr key={row.id}>
-                          <td
-                            className={`${PROSE.td} font-heading text-sm tracking-title text-readout-strong`}
-                          >
-                            {row.abilityName}
-                          </td>
-                          <td className={PROSE.td}>{row.rankLabel}</td>
-                          <td className={PROSE.td}>{row.multiplierLabel}</td>
-                          <td className={PROSE.td}>{row.scenarioLabel}</td>
-                          {/* The result is the one number the whole row exists
-                              to produce, so it carries the element hue — the
-                              only place on this page besides the identity chip
-                              where the element speaks. */}
-                          <td className={PROSE.td} style={{ color: hue }}>
-                            <KeyworkHighlighter
-                              text={row.resultLabel}
-                              className="font-body text-[13px] font-bold tabular-nums"
-                            />
-                          </td>
-                          <td className={`${PROSE.td} max-w-70 whitespace-normal`}>
-                            <KeyworkHighlighter
-                              text={row.notes || "—"}
-                              className="font-body text-xs leading-5 text-readout-muted"
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </ProseTable>
-                </div>
-              ))}
+              {/* One button per ability, numbers behind an overlay. The old
+                  six-column table (Ability / Tier / Mult / Scenario / Result /
+                  Notes, with a sentence in the last one) was unreadable at
+                  390px - Tanveer, 2026-09-17: *"on a mobile width it is very
+                  squeezed"*. The Scenario column is gone outright: every row
+                  is computed at one baseline now, so it said "Standard" all
+                  the way down. */}
+              <KitNumbers rows={previewRows} />
             </ProseSection>
           </div>
         </div>

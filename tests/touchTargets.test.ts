@@ -234,8 +234,32 @@ describe("explanations are reachable without a pointer", () => {
       const source = stripComments(fs.readFileSync(rel, "utf8"));
       for (const match of source.matchAll(/\btitle=/g)) {
         // Walk back to the `<` that opened this attribute's tag.
+        //
+        // NOT `lastIndexOf("<")`: a `<` also appears inside JSX expressions,
+        // and the nearest one is very often a comparison rather than a tag.
+        // `app/events/page.tsx` carried
+        //
+        //     <button
+        //       disabled={autoRuns < 1}
+        //       title={...}
+        //
+        // so the search landed on `< 1}`, the tag regex below failed to parse
+        // a name out of it, and the `continue` skipped a genuine offender.
+        // Green since the day this check was written (found 2026-09-17, while
+        // rewriting that button onto the `Button` primitive).
+        //
+        // So: consider every `<` walking backwards and take the first that
+        // actually opens a tag — a name followed by whitespace, `/` or `>`.
+        // `< 1}` fails on the space; `{a<b}` fails because `b}` has no
+        // terminator.
         const before = source.slice(0, match.index);
-        const open = before.lastIndexOf("<");
+        let open = -1;
+        for (let at = before.lastIndexOf("<"); at !== -1; at = before.lastIndexOf("<", at - 1)) {
+          if (/^<[A-Za-z][\w.-]*[\s/>]/.test(before.slice(at, at + 40))) {
+            open = at;
+            break;
+          }
+        }
         if (open === -1) continue;
         // Everything between that `<` and the attribute. A `>` in here would
         // normally mean the tag already closed and we are in element content

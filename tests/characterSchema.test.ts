@@ -43,6 +43,9 @@ describe("kit validation (STATUS #7 — typos fail loudly at load)", () => {
   it("rejects an unknown passive trigger", () => {
     const broken = {
       id: "badtrigger",
+      // Present so this fixture is rejected for its TRIGGER, which is what the
+      // test claims, rather than for a missing required field.
+      cardNumber: 100002,
       name: "Bad Trigger",
       color: "blue",
       atk: 100,
@@ -96,6 +99,7 @@ describe("substat fields (crit dmg, recovery rate, lifesteal, crit resist)", () 
   function baseCharacter(overrides: Record<string, unknown> = {}) {
     return {
       id: "test",
+      cardNumber: 100001,
       name: "Test",
       color: "blue",
       atk: 100,

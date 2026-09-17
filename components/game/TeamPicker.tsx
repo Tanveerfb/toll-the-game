@@ -505,6 +505,14 @@ export default function TeamPicker({
                       </span>
                     ) : null}
                     <span className="relative z-10 w-full bg-void/80 px-1.5 py-1">
+                      {/* Heading above the name (#141). The roster picker's
+                          tile already carries a stat line, so this is a third
+                          line on a small tile - flagged for his eye. */}
+                      {character.heading ? (
+                        <span className="block truncate font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+                          {character.heading}
+                        </span>
+                      ) : null}
                       <span className="block truncate font-heading text-sm tracking-title text-readout-strong">
                         {character.name}
                       </span>

@@ -1,6 +1,8 @@
 {
   "id": "frost",
+  "cardNumber": 100009,
   "name": "Frost",
+  "heading": "The Second Strike",
   "color": "blue",
   "storyOnly": true,
   "tags": ["Human"],

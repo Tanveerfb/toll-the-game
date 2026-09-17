@@ -360,7 +360,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
     **What survives, and still blocks work:** **`storyOnly` enemy stat bands are unassigned** at `docs/design/KIT_DESIGN.md:83`, and every new filler enemy kit waits on them — chapter 1's `wild_beast` included. That is his to fill in. The third blocker, a story canon/voice doc, is now answered by the `FillerAssist` skill reading `Master_Context.md` directly.
 
-106. **Mockups are HTML files, and art requests need no permission** (2026-08-17). Two working-style rulings. *"next time, you can open that mockup in the browser or html file okay?"* — design proposals go in a self-contained HTML file rendered in the game's real palette and fonts, not an inline chat widget, because he does the visual judging and a file survives the conversation. And: *"if you think we can use a custom asset (image asset) for something then you don't have to ask me to call comfypending skill to put the requested item into the list"* — append to `docs/ART_REQUESTS.md` directly whenever art would help, mentioning it in the reply rather than asking first.
+106. **Mockups are HTML files, and art requests need no permission** (2026-08-17). **Extended by #144 (2026-09-17), which adds when to draw one and how many.** Two working-style rulings. *"next time, you can open that mockup in the browser or html file okay?"* — design proposals go in a self-contained HTML file rendered in the game's real palette and fonts, not an inline chat widget, because he does the visual judging and a file survives the conversation. And: *"if you think we can use a custom asset (image asset) for something then you don't have to ask me to call comfypending skill to put the requested item into the list"* — append to `docs/ART_REQUESTS.md` directly whenever art would help, mentioning it in the reply rather than asking first.
 
 107. **Mobile first, desktop second — project-wide** (2026-08-18). *"must be mobile first and desktop second. most of the player who are willing to try out my game would play on mobile so keep that in mind."* Said while approving the story-mode rebuild, and deliberately recorded as a **global** rule rather than a story-mode preference, which is why it also sits in `AGENTS.md` where every session inherits it.
 
@@ -903,6 +903,90 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
     So the test is **what the thing is to the player**, not how the data is stored: forms of *one* unit that it moves between — boss phases, a transformation — are one entry with a switcher, even though each form is technically its own kit. **Separate versions of a character** — a re-coloured or re-imagined alternate — are separate entries, because they are separate units a player owns and fields independently.
 
     **The component already exists**: `components/game/KitPhases.tsx`, built 2026-07-20 and explicitly *"reusable for playable-character transformations later"*. Tabs per phase, a plain kit when there is only one. Only its data source is affected by the phase work in `Plans/2026-09-17-fight-phases.md`.
+
+141. **A unit is a heading plus a name** (2026-09-17, follows #140, adopted from Dokkan). Every variant of a character keeps the **same character name** and is told apart by a **heading** above it:
+
+    > *"That game usually has two names for a single unit — a heading and then the name. So it could be like 'An Unyielding Foe' as the highlight, and then it would be 'Frieza Final Form Full Power'. Red Lyra might have some line and then it would be Lyra, and the green Lyra would have a different heading but the character name would be the same — Lyra.*
+    >
+    > *How would that help us in the boss fights? The story version will have a different heading but obviously the same name, and the proper strong fight one will have a different heading. And obviously different kit. And in terms of coding, it would mean a different character ID."*
+
+    **The shape:** `id` is unique per variant (already true), `name` is the character and is **shared** across variants, and a new **heading** distinguishes them. So Red Lyra and Green Lyra are both *Lyra*; the story Lyra and the farmable Lyra are both *Lyra*; the heading carries which one.
+
+    **This fixes something already broken.** `lyra` and `lyra_npc` **both display as "Lyra"** today, in all 57 places a character name renders, with nothing to tell them apart — the only duplicate display name in the roster, and it exists now rather than in some future banner.
+
+    **It also tidies #140's naming.** Molvarr's second phase was going to be called *"Molvarr (Roused)"*; with a heading it is simply heading **Roused**, name **Molvarr** — the parenthetical was the absence of this field.
+
+    **Not the same axis as #140.** That ruling decides how many **archive entries** exist (transformations share one, versions get their own); this decides how a unit is **labelled** wherever it appears. A phase and a version both get a heading; only one of them gets its own page.
+
+    **Evidence: his description plus four DokkanDB screenshots** he supplied the same day (transcribed in `Plans/2026-09-16-pve-structure.md` point 22). The decisive one: searching "Ultimate Gohan" returns six cards, and **two of them are both Super AGL and both UR** — colour and rarity do not separate them, so the heading is the *only* label that does. A heading is an identifier a player reads, not flavour.
+
+    One rule follows from that: **heading and name are unique only together**. `id` remains the key; this is a display-uniqueness rule, worth a guard once headings exist. **Nothing else should be read off those screenshots** — they are a third-party fan database, and its typography, search and layout are that site's choices, not Dokkan's and not his (*"I'm just giving you information on how another game does it — everything else doesn't matter"*).
+
+    Field name, schema shape and the display-site migration are Claude's (site structure and data types, #139). **Every heading's text is his**, like any other name.
+
+142. **The stage map is a gameplay mechanic, not a difficulty mechanic** (2026-09-17, closes point 23 of `Plans/2026-09-16-pve-structure.md`, governs how any board work is scoped). Claude had spent the whole research pass treating the branching board as a decision layer — routing as resource management, a "mastery loop", a self-set difficulty dial. Tanveer cut all of it:
+
+    > *"Don't get the wrong idea. Mastering the map is not the hard part — it doesn't even add to difficulty in any shape or form. The actual fight is what matters… we can have a small board, it would still feature the Molvarr fight; we can have a big board, it might still feature only the Molvarr fight. The map has nothing to do with the difficulty. It is just a gameplay mechanic, and it really does not contribute much to difficulty in any shape or form."*
+
+    **Difficulty is authored entirely in the fights** — enemy levels, kits, phases. That is where it already lives in code: `lib/game/trialEncounters.ts` sets a level per enemy per fight, and point 6's "4/10 for an all-Lv20 team" target was hit by moving those numbers. **A board never tunes a stage.** So when a stage plays too easy or too hard, the fix is in the encounter, never in the map.
+
+    **Three independent axes, and none predicts another:** board **shape** (structural — Claude builds, he picks per stage), **farmability** (entirely his, per stage — he states it, it is never inferred), and **difficulty** (entirely in the fights). His own test case is the same Molvarr fight sitting on a small board or a big one at identical difficulty.
+
+    **Same failure shape as the farmability correction earlier the same day** — *"You are assuming that every stage can be farmable. That's not the case."* Both times a single described example was generalised into a rule about a whole board category. Point 23 records both corrections in place, with the superseded framing named rather than deleted.
+
+    **What this changes in practice:** board work is scoped as presentation and pacing, sized accordingly, and **never used to justify or explain a difficulty number**. It does not change what is built — nothing board-related is built yet — it changes what a spec for it may claim.
+
+143. **A character is identified by a card number in public, by `id` in code** (2026-09-17, implements #141's display half, governs `app/archive/character/[cardNumber]`). Asked where headings should appear, he answered that and then added a routing rule:
+
+    > *"Headings wouldn't appear in battle UI. But on archive entry pages? Yes. The url would show the char id. Not the names. E.g. archive/character/134557."*
+
+    **The finding that shaped the fix: `id` IS a name.** Every kit's `id` is a slug like `duke` or `batra`, so the old `/archive/duke` was exactly the URL he was ruling out — and `id` could not simply be renumbered, because it is the key every save's `roster` array holds (`CLOUD_FIELDS`, synced to Firestore), plus what `data/story/*.json` and the banners reference. Renumbering it would have invalidated stored rosters.
+
+    **So there are two identifiers, deliberately.** `id` stays the internal key and never appears in a URL; **`cardNumber`** is a second, immutable integer that exists purely to be shown — the same split Dokkan's own `/cards/<number>` URLs use. All 31 kits carry one (100001–100031), the archive entry page prints `No. <number>` where it used to print `id`, and `archiveHref()` is the single place the path is spelled.
+
+    **A card number is assigned once and never changed or reused.** It is a public URL, so changing one silently breaks any link to that card. The initial block was handed out in alphabetical order of `id` purely for reproducibility — **that order carries no meaning, nothing may re-derive a number from it, and a new character takes the next free number rather than an alphabetical slot.** `tests/characterHeadings.test.ts` pins uniqueness and range.
+
+    **Where headings appear:** archive entry pages **yes**, battle UI **no** — which matches the constraint that battle density is his and a 47px hand card has no room for a title above a name. He then asked for the remaining surfaces too, so `CharacterBrowser`, `TeamPicker`'s roster tiles and the gacha reveal all carry one; the last two are tight and are flagged for his visual pass.
+
+    **The six generic enemies share `Common Foe`** — he asked for a heading on them rather than none. The faction set offered first (Checkpoint / Bandit / Raider / Wilds) was dropped because it stutters against the names it sits above: *Raider* over **Raider**, *Bandit* over **Ford Bandit**. All 31 kits now carry a heading and `tests/characterHeadings.test.ts` has no exempt list.
+
+144. **A redesign starts with mockups — several, so he can pick** (2026-09-17, extends #106 from a file-format rule into a workflow; also in `AGENTS.md`). #106 settled that a mockup is an HTML file rather than a chat widget. This settles **when one is drawn and how many**:
+
+    > *"If you want to go with the new workflow — while we are working on the website and I ask you to redesign something, what you can always do is draw mockups, and then I have a look and then I can tell you which of the mockups is the best one."*
+
+    **So: asked to redesign a screen, draw options first and build nothing.** Not one proposal to approve or reject — **several to choose between**, because choosing is faster for him than critiquing, and the comparison is what surfaces the trade-off. Options that differ only in decoration are not options; each one has to take a different position on the actual problem.
+
+    **This is the shape #139 asks for.** UI and UX direction are his and Claude does not originate them — but drawing candidates is not originating, it is *presenting a choice*, and measurement (what is slow, what is inconsistent, what is 190 taps) is squarely Claude's. The mockup is where those two meet: Claude measures and draws, he decides.
+
+    Mockups live in `docs/design/mockups/`, self-contained, in the game's real palette and fonts, drawn at **390px** (#107). The first one under this ruling is `growth-modal.html`.
+
+    **Existing work this changes:** nothing already built. It changes what happens *before* the next redesign — the layout system, the events decomposition and the Kit Numbers rework were all built directly from measurement this session, and under this ruling the visual half of each would have been drawn first.
+
+145. **Players are conservative with resources — never design as if they spend freely** (2026-09-17, corrects a framing in the growth-modal mockups, governs any "spend it all" affordance). Option B of `growth-modal.html` was drawn as *"the inverse, and closer to how a player actually thinks: I have these manuals, dump them."* He rejected the option and, more usefully, the premise:
+
+    > *"Spend first is not good — I don't want people spending all of them. 'Closer to how a player actually thinks: I have these manuals, dump them' — not really. A lot of people play it conservatively, so that they are very conservative with their resources. So it's not always the truth. Someone like me who just wants to level up characters as soon as possible, yes sure — but not for all of them."*
+
+    **The design consequence:** an affordance whose default is *spend everything* is wrong even when it is convenient, because it serves one play style and quietly punishes the other. A hoarder must never have to undo a default. **Claude's own habit of playing fast is not the player model**, and neither is his — he named himself as the impatient case and still ruled against designing for it.
+
+    **The reasoning error is the familiar one**, in a new place: one plausible player was generalised into *"how a player actually thinks"*. Same shape as the farmability and difficulty corrections earlier the same day (#142), and as ruling #134 — a single case promoted to a rule. See the session memory `one-example-is-not-a-rule`.
+
+    **What was chosen instead:** **option C**, which offers targets *and* per-stack control with nothing hidden, so neither play style has to fight a default. The auto-solve therefore spends **cheapest tier first** — it burns the common manuals and preserves the rare ones, which is the conservative instinct — and any row can be pinned to override it.
+
+146. **A mockup he cannot click cannot answer how it flows** (2026-09-17, sharpens #144). Reviewing the growth mockups:
+
+    > *"Target first — look, it is very good, it looks good. But I'm not sure how the ascension and ultimate tabs would flow like. I can't click on them."*
+
+    Static mockups answered *what does it look like* and left *what happens when I use it* unanswered — on a design whose whole subject was tabs. **Draw mockups with the interaction live**: tabs switch, targets select, costs recompute. It is a few lines of vanilla JS in a file that is already self-contained, and it is the difference between him judging a picture and judging the design. Recorded in `AGENTS.md` beside #144.
+
+147. **The news page answers "what changed while I was away"** (2026-09-18, first design chosen under the #144 mockup workflow). Offered three positions — a tightened flat feed, a "since you last played" split, and a searchable changelog — he chose the second: **"go with B"**. **That phrasing is an option label he selected, not prose he wrote.**
+
+    **The shape:** posts newer than your last visit sit in their own block at the top; everything else is an archive below it, with search, the kind filter and pagination attached to the archive rather than the page.
+
+    **It needed no new persisted field**, which is why it was buildable straight away. `markNewsViewed` already stores **one date**, and *"new since your last visit"* is exactly what one date means — so the heading states the model rather than implying per-post tracking. Opening the page still marks everything seen, including posts you did not open. **Per-post read tracking remains undecided and unbuilt**; it would be a new `playerStore` field and would need a cloud-sync decision.
+
+    **Two features on that page had never rendered**, and the rebuild kept both while making their conditions honest: the kind filter requires both kinds to exist and there are **zero notices** (`notices/` holds only `_placeholder.mdx`, which `posts.ts` excludes), and pagination requires more than `NEWS_PAGE_SIZE = 15` posts against **nine**. Both now belong to the archive, which is the half that grows.
+
+    **Search was the genuine gap** — `AGENTS.md` names `CharacterBrowser` as the QOL benchmark and news met none of it. `searchFeed` is pure and tested; it reads title and summary only, because a hit on text that is not on screen reads as a bug.
 
 **Kit data stays JSON** — settled 2026-08-04. It's runtime data `combat.ts`, `descriptionTranslator`, `damagePreview`, the Zod schema, Kit Lab and ~20 test files all depend on. MDX is for prose (`content/news/`), not for kits.
 

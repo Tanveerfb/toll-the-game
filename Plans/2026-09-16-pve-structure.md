@@ -1261,3 +1261,452 @@ caveat that it adds an authored concept that touches the victory condition.
 Additive, not a rewrite. **Not started** — it needs the plan-first treatment
 (`AGENTS.md`), and no content asks for it yet.
 
+---
+
+## 21. The Lyra fight, overhauled into two weights
+
+> *"We will overhaul the Lyra fight too. We'll keep a very light version — not
+> a world boss, but a very strong fight against Lyra, and it would drop
+> materials. It would basically work as the Molvarr boss fight.*
+>
+> *But in the story, since it's only going to be Duke versus Lyra — one player
+> character versus enemy Lyra — I will make a lighter version of the fight for
+> the story only. Then it would unlock, after clearing chapter 2, a new entry
+> in the events page so that people can farm and gain materials.*
+>
+> *I have some ideas and extra passives, extra skills we can give Lyra, just
+> like Molvarr."*
+
+**What it settles:**
+
+- **Two weights of one fight.** A **light** story encounter — **1v1, Duke
+  against Lyra** — and a **heavy** farmable events entry that behaves like the
+  Molvarr boss: material drops, repeatable.
+- **The events entry unlocks on clearing chapter 2.**
+- **Lyra's kit grows** — extra skills and passives, Molvarr-style. His to
+  author.
+
+### The trap this is adjacent to, and how to avoid repeating it
+
+`types/stageEffects.ts` records that a second Lyra kit already existed once:
+
+> *"Part 2 Chapter 2 was built the wrong way first: `lyra_npc_2` was a
+> byte-for-byte copy of `lyra_npc` whose only difference was a passive line
+> granting 'All stats 5% up'. That duplicate drifted (it never got registered
+> for art) and has been deleted in favour of a stage effect."*
+
+**His case is not that mistake** — extra skills and passives is a genuinely
+different kit, not a stat bump wearing a second file. But **light-story versus
+heavy-events is the same shape**: one character, two definitions, drifting
+apart the moment either is touched.
+
+**The mechanism that already exists for exactly this:** author **one** Lyra kit
+at the heavy weight, and let the story fight be the same kit at a **lower
+level** and/or under a **`statBoost` stage effect** (ruling #69). Levels are
+per-enemy per-encounter (`StoryTeamPick.level`), which is how the ascension
+trial tunes its three fights without touching a kit. One kit, two weights, no
+drift — and it is what `lyra_npc_2`'s deletion was in favour of.
+
+**Where a second kit WOULD be right:** if the heavy version has skills or
+passives the story version must not have at all. A stat dial cannot remove a
+mechanic. That is a real fork and it is his call, but it should be a decision
+rather than the default.
+
+### Both answered, 2026-09-17
+
+**Two kits, not one.** He took the second option deliberately: *"they differ in
+mechanics"* — the heavy version carries skills or passives the story fight must
+not have at all, and a level dial can lower a number but cannot remove a
+mechanic. So this is **not** the `lyra_npc_2` mistake repeating; that duplicate
+existed only for a 5% stat bump, which is precisely the case a stage effect
+should cover.
+
+**It does inherit that duplicate's risk**, though, and the recorded failure mode
+is specific: *"it never got registered for art"*. Two kits for one character
+drift in the places nobody looks — art registration, tags, element, display
+name. **Worth a guard once the second kit exists:** the pair must agree on
+identity (colour, tags, art registration) while being free to differ on skills,
+passives and stats. Not written yet, because there is nothing to guard.
+
+**Visibility: hidden until chapter 2 is cleared** — Molvarr's shape,
+`visibleWhen: { clearedChapter: "c2" }`. Since the unlock is the same clear,
+**visibility and unlock coincide**: the entry simply appears already unlocked.
+That needs no new mechanism — a `visibleWhen` chapter gate with no rank
+requirement does exactly this, and `eventLockReason` has nothing left to
+report.
+
+### Not blocked by the story
+
+**Chapter 2 does not exist.** `data/story/` holds `chapter-1.json` only, and
+story is parked until he finishes Arc One. A `clearedChapter: "c2"` gate is
+therefore **inert** until the chapter lands — deliberate and documented in
+`isEventVisible`, the same property that lets Molvarr's `c9` gate sit harmless
+today.
+
+So **the events entry can be authored and shipped now**, gate included, and it
+switches itself on when chapter 2 arrives. The light 1v1 story fight waits for
+the story; the farmable heavy one does not.
+
+**What is needed from him before any of it is built:** the heavy kit's **name**,
+its **skills and passives**, and its **numbers**. All three are his
+(`AGENTS.md`), and none of it should be drafted ahead of him.
+
+---
+
+## 22. Heading plus name — recorded as ruling #141
+
+His Dokkan-derived convention: a unit shows a **heading** above a **character
+name**, the name is shared by every variant, and the heading is what tells them
+apart. *"Different kit, different heading, but obviously the same character
+name. And in terms of coding, it would mean a different character ID."*
+
+Full entry in `docs/HANDOFF.md` **#141**. Three things worth keeping here:
+
+- **It repairs a live defect.** `lyra` and `lyra_npc` both render as **"Lyra"**
+  — the roster's only duplicate display name — across the **57** places a
+  character name appears.
+- **It removes the bracket from point 6 / the phase spec.** *"Molvarr
+  (Roused)"* becomes heading **Roused**, name **Molvarr**. The parenthetical was
+  this field missing.
+- **It is a different axis from #140.** #140 decides how many archive *entries*
+  exist; #141 decides how a unit is *labelled* anywhere it appears. A phase and
+  a version both get a heading; only a version gets its own page.
+
+**Sizing, measured:** one optional field on `CharacterData` and the Zod schema,
+then the display sites. **57 render sites across 12+ files** read a character
+name — archive list and detail, events board and brief, story, battle tiles,
+unit detail, the log, team picker, gacha. Not all of them should show a
+heading; a battle tile has no room for one and the archive card does. **Which
+surfaces show it is UX and therefore his** (#139) — the field and the migration
+are not.
+
+### The reference, transcribed (4 screenshots, DokkanDB, 2026-09-17)
+
+He supplied **Ultimate Gohan** as the worked case. Searching "Ultimate go"
+returns **six cards**, all named *Ultimate Gohan*:
+
+| card | class | rarity | heading |
+| --- | --- | --- | --- |
+| 1 | Super AGL | UR (EZA) | *Exceptional Potential* |
+| 2 | Super AGL | UR | *Frontline Fighter* |
+| 3 | Super PHY | UR (EZA) | — |
+| 4 | Super PHY | UR | — |
+| 5 | Super AGL | SSR | — |
+| 6 | Super TEQ | SSR | — |
+
+**Cards 1 and 2 are both Super AGL and both UR.** Colour and rarity do not tell
+them apart — **the heading is the only distinguishing label**. That is the point
+of the mechanic, and it is stronger evidence than the description alone: a
+heading is not flavour text, it is what a player reads to know which unit this
+is.
+
+**One thing follows from the data, and only one:** the heading and the name are
+unique only **together**. Six cards share a name; two share name, class and
+rarity. So `id` stays the key and this is a display-uniqueness rule — worth a
+guard once headings exist.
+
+> **Take the mechanic, not the presentation.** These are screenshots of
+> **DokkanDB, a third-party fan database** — not the game. Its typography,
+> search behaviour and layout are that site's choices and carry no design
+> weight here. Tanveer, 2026-09-17: *"I'm just giving you information on how
+> another game does it — everything else doesn't matter."* An earlier version
+> of this section read a font style and a search field as evidence; they were
+> neither his nor Dokkan's.
+
+**Nothing built.** It wants his heading text for at least `lyra` and `lyra_npc`
+before it is worth wiring, since those two are the reason it is urgent.
+
+---
+
+## 23. Stage map nodes — the mechanism, researched
+
+**Research note, not a design.** He supplied 11 in-game screenshots of Dokkan's
+"King of the Demon Realm Strikes" board with a walkthrough, and was explicit
+about the terms: *"I don't want a plagiarised copy. What I want you to research
+is how Dokkan does it and how effectively it does it, so that we can do
+something similar — not same — in our own game."* And: *"do not worry about
+anything that's not in our game yet."*
+
+**Take the mechanism, not the presentation.** Nothing about its art, layout,
+typography or its item system belongs here.
+
+### The mechanism, abstracted
+
+1. **Entry is three levels:** an event, a stage list inside it, then the board.
+   That is exactly his Event → Stage model from point 18, already settled.
+2. **The player is offered THREE movement values and picks one.** Not a die
+   roll — *"it is like a random choice between three selections, and whenever I
+   select one, a random number replaces the value after I land on the tile."*
+   So the three slots are a standing menu: spend one, it refills at random.
+   Randomness sets what is available; the player chooses from it.
+
+   **The pool is an authored property of the board**, which is the tuning dial:
+   *"sometimes all three can be forced — so it can be only number two that can
+   be selected, you cannot see any other number. And sometimes it's limited to
+   only numbers between one to three, so only low level. Normally it is between
+   one to six — that's the standard."* A board can therefore be made tight
+   (all 2s, no routing freedom), cautious (1-3, short hops, more stops) or
+   standard (1-6).
+3. **The board shows where each value would land you.** Small numbered markers
+   sit beside tiles — a `3` next to the enemy tile, a `2` next to the item tile.
+   So the pick is **informed**: each turn is a small routing puzzle, not a
+   gamble.
+4. **Junctions are a second, separate choice.** On reaching a fork the player
+   picks a direction. Movement is otherwise forced along the path.
+5. **Tiles carry:** nothing, a fight, a reward, an unknown (`?`), currency, and
+   the goal. *(Dokkan also has item tiles; we have no item system and none is
+   planned, so those do not transfer.)*
+6. **Some tiles are forced stops.** The boss carries a STOP marker and sits
+   across the path just before the goal — *"no matter which number you select,
+   you will have to face the boss, as it's in the way."* Clearing it leaves you
+   standing on that tile; you then move on to the finish.
+7. **One pooled HP bar spans the whole board.** **This does NOT transfer** —
+   *"don't worry about shared HP bar, that is a different mechanic. In our game
+   each character has their own dedicated HP bar"* (7DS Grand Cross style). Our
+   equivalent is per-character HP carrying across fights with the fallen staying
+   down — ruling **#103** — which is a *different* and, for routing, a stronger
+   thing. See below.
+8. **Rewards accumulate and are paid once, at the end**, on a stage-clear
+   summary.
+
+### Why it works — the part he actually asked about
+
+**THE BOARD IS NOT WHERE DIFFICULTY LIVES — his correction, 2026-09-17**, and
+it deflates most of what this section originally claimed:
+
+> *"Don't get the wrong idea. Mastering the map is not the hard part — it
+> doesn't even add to difficulty in any shape or form. The actual fight is what
+> matters… we can have a small board, it would still feature the Molvarr fight;
+> we can have a big board, it might still feature only the Molvarr fight. The
+> map has nothing to do with the difficulty. It is just a gameplay mechanic, and
+> it really does not contribute much to difficulty in any shape or form."*
+
+**So difficulty is authored entirely in the fights** — enemy levels, kits,
+phases — which is where it has always been tuned here (`trialEncounters.ts`
+sets a level per enemy per fight, and point 6's 4/10 target was hit by moving
+those numbers, not by any board). **The board supplies pacing and texture.**
+
+What carried damage still does is make an *optional* fight cost something
+rather than nothing, so taking one is a choice rather than free — and ours
+costs something specific, because HP is per-character and the fallen stay down
+(#103), so a detour risks a named unit and, with it, an action per turn
+(`actionsForTurn`). **That is texture, not a difficulty dial.** An earlier
+version of this section read it as resource management that turned the board
+into the game; that was **reading far more into it than is there**.
+
+**The three-value pick converts randomness into agency.** A single die would
+make the board a slot machine. Three options, with the landing tiles marked,
+makes each turn a real if small decision — and crucially a decision the player
+can get *wrong*, which is what makes getting it right feel like anything.
+
+**The forced stop guarantees the content.** Routing changes *what condition you
+meet it in* — how much you spent on optional fights — but never *whether* you
+meet it. So the map cannot be used to skip the thing the stage exists for; it
+only decides how well prepared you arrive. That separation is the single most
+transferable idea here, and he confirmed it.
+
+**It is a tile property, not a boss feature.** His words: *"this is not just for
+the boss, it could be for anything else. It could be a point where you have to
+land, a damage point, an item pick spot."* So **forced-stop** is a flag any
+tile may carry — a mandatory fight, a scripted loss of condition, a guaranteed
+pickup — and the boss is simply its most obvious user.
+
+### What transfers, and what does not
+
+**Transfers cleanly:**
+
+- Three-values-pick-one, with landing tiles marked. Needs no new systems.
+- Junction direction choice.
+- Forced-stop tiles for content that must be faced.
+- One HP bar across the board — **already true** (#103), and the runner that
+  does it already exists (`lib/game/stageRun.ts`).
+- Accumulated rewards paid at a stage-clear summary.
+
+**Does not transfer — and the screen space it frees is ours to reuse:**
+
+- **The pooled HP bar.** We show per-character HP instead.
+- **Item tiles and the ITEM button.** No item system and none planned.
+- **Auto Battle.** Rejected on its own merits (`lib/game/autoClear.ts`) — it
+  needs a player-side AI across 27 kits and *"would be judged against how he
+  plays"*. Auto Clear is the shipped answer.
+- **Auto Map.**
+
+His instruction on the gap that leaves: *"we can replace those things with
+something else that works in our game — like a button that lets us check the
+status of our teams, or something else."* So the board's chrome is a **fresh
+layout**, not a translation of the reference's, and what goes there is UX and
+therefore his (#139).
+- **The wide board.** *(Correction: an earlier note in this session claimed
+  Dokkan's board is landscape and would not fit our 390px column. These
+  screenshots are **portrait phone** and the board scrolls vertically — so a
+  portrait board is demonstrably viable. The concern was wrong.)*
+
+### Board length is a design axis, and it decides who chooses the run
+
+He supplied two deliberately opposite boards.
+
+**Minimal — "Temporary Alliance".** Roughly **four tiles**: START, a blank, a
+forced-stop boss, a blank, the goal. No junctions, no optional tiles, nothing
+to pick up. His summary: *"just go fight, get out."*
+
+**Branching — "Androids/Cell Saga".** A large board carrying **eight or more
+forced-stop fights** (Cell, Trunks, the Androids, Vegeta, Goku, Frieza, Gohan,
+Mr Satan), junction arrows throughout — and, crucially, **several goal tiles**
+rather than one.
+
+**That last detail is the mechanism.** Multiple exits at different depths mean
+the player decides how much of the board to take: *"there's a possibility you
+only have to fight one and then you can get out of the stage — this will count
+as a clear. And you can also fight up to four or five maximum in a single
+run."*
+
+So the two shapes are not "short version" and "long version" of one thing:
+
+| | minimal board | branching board |
+| --- | --- | --- |
+| path | single | many, with junctions |
+| exits | one | **several, at different depths** |
+| content faced | **fixed** — all of it | **player's choice**, 1 to ~5 fights |
+| the decision | none; the stage is the fight | how deep to go before leaving |
+
+**Length is pacing, and nothing else.** *"A small board would still feature the
+Molvarr fight; a big board might still feature only the Molvarr fight."* So size
+says how much journey wraps the content and says nothing about how hard that
+content is. A minimal board suits a stage that is purely its fight; a longer one
+suits a stage meant to feel like a trek. **Neither makes the fight harder.**
+
+**And the roll pool interacts with shape.** On the branching board all three
+values were **2** — a deliberately tight pool. Low values mean you cannot fly
+past anything: you land often, meet most junctions, and choose constantly. A
+tight pool raises **decision density**; a wide one lets a player skip ahead.
+That is a second dial, independent of the board's size.
+
+### What this means for us, concretely
+
+- **Molvarr** wants a **minimal** board: start, a forced-stop boss, goal. The
+  fight is the content.
+- **The ascension trial** is a **linear board with three forced stops** — no
+  junctions, no optional tiles, since all three fights are mandatory by design
+  (point 6).
+- **We have already built the degenerate case.**
+  `components/game/events/TrialRail.tsx` is a linear board of forced stops with
+  no movement layer. A minimal board is that plus tiles and a roll; a branching
+  board is that plus junctions and extra exits. **The rail is not thrown away
+  by this work** — it is the base case.
+- A **branching** board is **not** the farmable case — see the clear rules
+  below. *(An earlier line here said it was; that was wrong.)*
+
+### Losing, clearing, and what a branching board is actually for
+
+> *"Losing meaning you don't clear the stage, aka you have to re-attempt it,
+> and then obviously start from the very beginning.*
+>
+> *In the cases where there are multiple fights and you clear one fight and
+> clear the stage — yes, that would technically count as a clear, but it may
+> not support auto clears, as it's meant to be difficult content and not
+> farmable. It does give you rewards, but only one time. Usually people use
+> such stages, or re-attempt such stages, to test their teams and have
+> different ways of beating a tough stage."*
+
+**Settled:**
+
+- **A loss costs the whole board.** Re-attempt from the start; no progress
+  kept. The whole run is the unit of risk — which is a rule about what a
+  re-attempt costs, not a claim that routing is hard.
+- **Reaching any exit is a clear**, even after one fight.
+- **Rewards are one-time**, and these stages are **not auto-clearable**.
+- **Replay is for testing teams**, not for loot — and what is being tested is
+  the team against the *fights*. *"People use such stages to test their teams
+  and have different ways of beating a tough stage."*
+
+**So a branching board lets the player choose how much of the stage to take** —
+one fight and out, or four or five. That is variety within a run, not a
+difficulty setting: each fight is whatever it was authored to be, and meeting
+fewer of them makes no single one easier. Early exit counting as a clear is
+consistent with that, and with these stages not being farmed.
+
+**This needs no new mechanism from us.** It is exactly the shape the ascension
+trials already have: `repeatable: false`, no `autoClearEligible`, a one-off
+bundle. `lib/game/events.ts` already documents the rule that **a non-repeatable
+event must never be Auto Clear eligible** — *"skipping a one-off clear skips the
+content itself"* — and `tests/ascensionTrial.test.ts` pins it across every
+event. A difficult branching stage inherits all of that for free.
+
+**Shape and farmability are INDEPENDENT axes, and only one of them is mine.**
+
+An earlier version of this section had a table mapping board shape to
+`repeatable`, as though branching implied non-farmable. **That was wrong**, and
+wrong in a familiar way: he described *one* branching stage as difficult and
+non-farmable, and it was turned into a rule about branching boards. The same
+mistake as ruling #134, which was written from a single screenshot.
+
+His correction: *"You are assuming that every stage can be farmable. That's not
+the case. Only some are meant to be, and it's mostly tied to where things are
+rewarded. I would tell you which stages are farmable and which are not."*
+
+So:
+
+| axis | what it is | whose |
+| --- | --- | --- |
+| **Board shape** — minimal / linear / branching | where the content lives, and whether the player picks the run's depth | structural; mine to build, his to choose per stage |
+| **Farmable** — `repeatable`, `autoClearEligible`, the reward table | whether the stage is meant to be run again for loot | **entirely his, per stage** |
+
+**Do not infer one from the other.** A minimal board can be farmable — Molvarr
+is `repeatable: true`. A branching board can be one-time. **Ask, or wait to be
+told.**
+
+**Nothing needs building for this.** `repeatable` and `autoClearEligible` are
+already per-event fields on `GameEvent`, and the guard that a non-repeatable
+event is never Auto Clear eligible already exists. The only change required is
+to stop deriving farmability from anything.
+
+*(He also mentioned big boards existing for grindable events — a real case
+whose clear rules were not discussed. Same rule applies: do not assume.)*
+
+### The board is fixed per stage — answered 2026-09-17
+
+> *"A fixed board per stage. It will never be randomised each attempt, so one
+> dedicated board per stage. It might mean there will be a lot of boards if we
+> end up making a lot of content, but that's fine… I don't think I'll be doing
+> a hundred stages at this point — ten, twenty max, which is fine. Story ones
+> may add up a lot, but that's still fine."*
+
+**What it is, and what it is not.** A fixed board makes a stage a *recognisable
+place* — the same terrain every attempt, with only the roll varying. **It is
+not a mastery layer**, and the paragraph that stood here claiming a re-rolled
+board would "turn skill into luck" was written before his correction above and
+was wrong on the same point: routing is not the skill being tested. What fixed
+boards actually buy is authoring control — he knows exactly what a stage
+contains, because he placed it.
+
+**Consequences for the data:**
+
+- **A board is authored content, not generated.** It belongs in the encounter
+  alongside its enemies, the way `trialEncounters.ts` already holds fights.
+- **Authoring cost is the real constraint on the schema.** At 10-20 stages a
+  hand-written board is fine, but the shape has to stay compact enough that
+  writing one is not a chore — a tile list with links, not a coordinate
+  grid. That is a design constraint on the data types, which is mine (#139).
+- Story stages could multiply this, but story is parked until he finishes Arc
+  One, so it is not a near-term pressure.
+
+### Three independent axes — the summary this point ends on
+
+| axis | what it decides | whose |
+| --- | --- | --- |
+| **Board shape** — minimal / linear / branching, and its length | how much journey wraps the content, and whether the player picks the run's depth | structural; mine to build, **his to choose per stage** |
+| **Farmable** — `repeatable`, `autoClearEligible`, rewards | whether the stage is meant to be run again for loot | **entirely his, per stage** |
+| **Difficulty** — enemy levels, kits, phases | how hard the stage is | **entirely in the fights**; the board contributes nothing |
+
+**None of the three predicts another.** His example is the test case: *the same
+Molvarr fight can sit on a small board or a big one*, and it is the same
+difficulty either way. Do not derive farmability from shape (that mistake is
+recorded above), and do not derive difficulty from either.
+
+**The research in this point is complete.** Every question raised has an
+answer: the roll and its authored pool, junctions, forced-stop tiles, board
+shapes, multiple exits, loss semantics, clear semantics, farmability, board
+persistence, and where difficulty lives. **It is ready to become a spec when he
+wants one** — and nothing in it should be built before that spec is written
+and read, per the plan-first rule in `AGENTS.md`.
+

@@ -1,6 +1,8 @@
 {
   "id": "isolde",
+  "cardNumber": 100014,
   "name": "Isolde",
+  "heading": "Silken Ward",
   "color": "light",
   "tags": ["Fairy", "Female", "Bureau"],
   "lore": "Bureau official who weaves protective thread-magic around her allies. Elegant, sharp-eyed, and unhurried even mid-battle.",

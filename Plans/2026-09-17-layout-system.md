@@ -1,6 +1,13 @@
 # A layout system for every screen except battle
 
-**Proposal, 2026-09-17. Nothing built.** Written because he opened the scope:
+**Status, 2026-09-17: steps 1-4 of the order at the bottom are BUILT.**
+L4 (tracking), L1 (widths), L2 (`Screen`), L5 (`Panel`), L6 (`SectionHeader`)
+and L7 (`RewardList`) all exist, and `app/events/` is the first screen moved
+onto them. Twelve screens still hand-type a shell; `tests/layoutSystem.test.ts`
+ratchets that number so it can only go down. **Still unbuilt: Q-a, Q-b, Q-c,
+Q-d.**
+
+Written because he opened the scope:
 *"I am open to let you change all other pages other than battle UI. You can
 start by proposing a consistent and QOL tuned layout and design choices that we
 can adopt."* — and then, importantly: *"the game is meant to be mobile first."*
@@ -182,6 +189,21 @@ there.
 4. **L6 `SectionHeader`**, **L7 `RewardList`**.
 5. **Q-a**, **Q-b**, **Q-c**.
 
-**Not verifiable by me:** whether any of it *looks* right. Geometry and
-behaviour I can pin with tests at 390×844; taste is his pass, and he has no
-browser right now — which is the reason this is a proposal and not a commit.
+**Verified in a browser, 2026-09-17**, at 375×812 against a scratch build on
+:3210 (never his :3000). The events board, both briefs and a live trial fight
+render correctly; entering the trial charges 30 stamina **once** for the whole
+run, which is the behaviour the refactor was most likely to break.
+
+Two things that check found, neither caused by this work:
+
+1. `tests/touchTargets.test.ts`'s `title=` guard had **never run on the events
+   page**. Its walk-back used `lastIndexOf("<")`, and `disabled={autoRuns < 1}`
+   one line above the attribute meant the search landed on that `<` instead of
+   the tag. The Auto Clear button's blocker message was hover-only the whole
+   time. Guard fixed and falsified; the message is now visible text.
+2. The brief announced a trial as **Standard** tier — `enemy?.tier === "elite"
+   ? "Elite" : "Standard"` on an event that resolves no enemy — while the
+   trial's last fight is Molvarr, who is elite.
+
+**Still not verifiable by me:** whether any of it *looks* right. Geometry and
+behaviour are pinned; taste is his pass.

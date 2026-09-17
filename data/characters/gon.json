@@ -1,6 +1,8 @@
 {
   "id": "gon",
+  "cardNumber": 100012,
   "name": "Gon Freecss",
+  "heading": "Rookie Hunter",
   "color": "green",
   "tags": [
     "Collab",

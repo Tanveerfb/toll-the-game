@@ -1,6 +1,8 @@
 {
   "id": "ban",
+  "cardNumber": 100001,
   "name": "Ban",
+  "heading": "Fox Sin of Greed",
   "color": "green",
   "tags": [
     "Collab",

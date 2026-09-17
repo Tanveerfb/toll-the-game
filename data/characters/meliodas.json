@@ -1,6 +1,8 @@
 {
   "id": "meliodas",
+  "cardNumber": 100020,
   "name": "Meliodas",
+  "heading": "Captain of the Sins",
   "color": "red",
   "tags": [
     "Collab",

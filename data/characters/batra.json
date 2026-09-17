@@ -1,6 +1,8 @@
 {
   "id": "batra",
+  "cardNumber": 100002,
   "name": "Batra",
+  "heading": "Lion of Khalsa",
   "color": "blue",
   "tags": ["Human", "KHALSA"],
   "lore": "Ledger exam participant, Sikh, turban, lion-themed attacks.",

@@ -1,6 +1,8 @@
 {
   "id": "molvarr",
+  "cardNumber": 100021,
   "name": "Molvarr",
+  "heading": "Sunken Warden",
   "color": "dark",
   "tags": ["Demon"],
   "storyOnly": true,

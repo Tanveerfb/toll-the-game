@@ -332,7 +332,7 @@ describe("turn-start passives on ordinary (non-phased) enemies", () => {
     } as Partial<BattleCharacter>);
 
   it("fires the spike for an enemy with no phases at all", () => {
-    // The engine used to gate this on `isBoss`, so a mob's passive silently
+    // The engine used to gate this on `isPhased`, so a mob's passive silently
     // never ran.
     let m = mob({ passiveState: { phaseTurn: 9 }, currentHP: 300 });
     m = applyBossTurnStart([m], [char()], noop).enemyTeam[0];

@@ -14,7 +14,22 @@ import type { Action } from "@/types/action";
 
 const CORROSION_PERCENT = 10; // % remaining HP per stack per turn (tick.ts default; max HP only on R3/ultimate applications)
 
-export function isBoss(char: { phases?: CharacterPhase[] }): boolean {
+/**
+ * Whether this unit has phases — NOT whether it is a boss.
+ *
+ * Called `isBoss` until 2026-09-17, which invited exactly the wrong fix: a
+ * plan to make it read the `boss` flag instead. Every caller is about phases,
+ * not status — `activeSpSkill` reads `phases[phaseIndex]`,
+ * `bossForcedSpThisTurn` needs that SP and the `phaseTurn` counter, and
+ * `applyBossTurnStart` runs a phased unit unconditionally so the counter keeps
+ * ticking. And `lyra_npc` carries `boss: true` with **zero phases**, so the
+ * swap would have run phase-turn logic for a unit that has none.
+ *
+ * When phases move from the character to the fight
+ * (`Plans/2026-09-17-fight-phases.md`), this predicate's INPUT changes and its
+ * meaning does not.
+ */
+export function isPhased(char: { phases?: CharacterPhase[] }): boolean {
   return (char.phases?.length ?? 0) > 0;
 }
 
@@ -98,7 +113,7 @@ export function bossForcedSpAction(
 ): Action | null {
   const boss = enemyTeam.find(
     (u) =>
-      isBoss(u) && u.currentHP > 0 && !u.isSub && bossForcedSpThisTurn(u),
+      isPhased(u) && u.currentHP > 0 && !u.isSub && bossForcedSpThisTurn(u),
   );
   if (!boss) return null;
   const sp = activeSpSkill(boss);
@@ -138,12 +153,12 @@ export function applyBossTurnStart(
     // Beyond that, an ordinary enemy runs if it carries a turn-start mechanic.
     // `activeBossMechanics` already falls back to a non-phased unit's single
     // `passive`, but that fallback was unreachable from here while the gate
-    // was `isBoss` alone — so a mob could author one of these and it would
+    // was `isPhased` alone — so a mob could author one of these and it would
     // silently never fire. Part 1's mobs use `bossStatSpike` as an anti-stall
     // (Tanveer, 2026-08-09) and have no phases.
     const mechs = activeBossMechanics(unit);
     if (
-      !isBoss(unit) &&
+      !isPhased(unit) &&
       !mechs.some((m) => TURN_START_MECHANICS.has(m.type))
     ) {
       return unit;

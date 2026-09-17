@@ -1,6 +1,8 @@
 {
   "id": "lyra_npc",
+  "cardNumber": 100018,
   "name": "Lyra",
+  "heading": "Unyielding Ice",
   "color": "red",
   "storyOnly": true,
   "boss": true,

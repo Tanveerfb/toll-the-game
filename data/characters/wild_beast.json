@@ -1,6 +1,8 @@
 {
   "id": "wild_beast",
+  "cardNumber": 100030,
   "name": "Wild Beast",
+  "heading": "Common Foe",
   "color": "green",
   "storyOnly": true,
   "tags": [

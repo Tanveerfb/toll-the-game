@@ -4,6 +4,8 @@ import {
   getLatestNewsDate,
 } from "@/lib/news/posts";
 import NewsFeed from "@/components/news/NewsFeed";
+import { Screen } from "@/components/ui/Screen";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 
 export default async function NewsPage() {
   const [updates, notices, latestNewsDate] = await Promise.all([
@@ -13,25 +15,20 @@ export default async function NewsPage() {
   ]);
 
   return (
-    <main className="terminal-grid min-screen-below-nav bg-void">
-      <div className="mx-auto w-full max-w-2xl px-6 py-8">
-        <header className="border-l-2 border-signal pl-3">
-          <span className="block font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
-            Patch notes and service notices
-          </span>
-          <h1 className="font-heading text-4xl leading-none tracking-label text-readout-strong">
-            News
-          </h1>
-        </header>
-
-        <div className="mt-5">
-          <NewsFeed
-            updates={updates}
-            notices={notices}
-            latestNewsDate={latestNewsDate}
-          />
-        </div>
-      </div>
-    </main>
+    // `width="read"` is not a change of width: `--container-read` is 42rem,
+    // which is exactly the `max-w-2xl` this page already used. What it replaces
+    // is a hand-typed shell and a `px-6` gutter, the only two on the app's
+    // pages (every other screen is `px-4 py-6 md:px-8`).
+    <Screen width="read">
+      <SectionHeader
+        eyebrow="Patch notes and service notices"
+        title="News"
+      />
+      <NewsFeed
+        updates={updates}
+        notices={notices}
+        latestNewsDate={latestNewsDate}
+      />
+    </Screen>
   );
 }

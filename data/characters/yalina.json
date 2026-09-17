@@ -1,6 +1,8 @@
 {
   "id": "yalina",
+  "cardNumber": 100031,
   "name": "Yalina",
+  "heading": "Unshaken Guard",
   "color": "green",
   "tags": ["Human", "Female"],
   "lore": "Ledger exam examinee, teammate and friend of Sara.",

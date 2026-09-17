@@ -149,7 +149,7 @@ describe("full-viewport overlays escape their stacking context", () => {
   });
 
   it("keeps the archive detail rail sticky, the layout that exposed this", () => {
-    const src = fs.readFileSync("app/archive/[id]/page.tsx", "utf8");
+    const src = fs.readFileSync("app/archive/character/[cardNumber]/page.tsx", "utf8");
     expect(src).toContain("lg:sticky");
     expect(src).toContain("CharacterProgressionPanel");
   });

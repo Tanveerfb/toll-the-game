@@ -66,7 +66,8 @@ Two corrections to the above, both from measuring it (2026-09-01). **Hand cards 
 ```
 app/                  Next.js App Router — /, /practice, /story, /events (world boss),
                       /gacha,
-                      /archive, /archive/[id], /archive/npc, /news, /login, /profile
+                      /archive, /archive/character/[cardNumber], /archive/npc,
+                      /news, /login, /profile
 components/
   ui/                 shadcn primitives + KeyworkHighlighter + prose.tsx (document
                       typography, shared with mdx-components.tsx)
@@ -78,7 +79,8 @@ components/
                       UnitDetailPanel, TeamDetailsList, BattleLogDrawer, EffectsList
   gacha/              BannerScreen, PullReveal, RatesModal, MilestonePicker,
                       ConfirmPullModal (summon confirm + currency-shift preview)
-  news/               NewsFeedTabs, NewsPostLayout
+  news/               NewsFeed (option B: new-since-last-visit, then archive),
+                      NewsPostLayout
 hooks/                BattleProvider (phase engine), MechanicProvider (phase queue),
                       AuthProvider, useBattleSequencer (cinematics)
 lib/
@@ -180,6 +182,23 @@ npx next build`, then `npx next start -p 3210`; kill by PID from `netstat`,
 remove `.next-verify`, and `git checkout tsconfig.json`. To reach gated content,
 edit `toll-player-storage` in the browser's own localStorage rather than
 touching `data/` — it is that viewer's copy and nothing in the repo changes.
+
+**Asked to redesign a screen? Draw mockups first, and draw more than one**
+(ruling #144, 2026-09-17). *"You can always draw mockups, and then I have a look
+and then I can tell you which of the mockups is the best one."* Options, not a
+proposal — choosing is faster for him than critiquing, and the comparison is
+what exposes the trade-off. Each option must take a **different position on the
+problem**; three variations on one idea are one option. Self-contained HTML in
+`docs/design/mockups/`, real palette and fonts, drawn at **390px** (#106, #107),
+and **make the interaction live** — tabs switch, selections select, costs
+recompute (#146). A static picture cannot answer *how does it flow*, which is
+the question he asked first about a design whose subject was tabs.
+
+**Measuring is Claude's, deciding is his, and the mockup is where they meet.**
+Ruling #139 says Claude does not originate UX direction — drawing candidates is
+not originating, it is presenting a choice. Bring the measurement with them: *"the
+level tab costs 190 taps to reach Lv 20"* is why an option exists, and without it
+he is picking between pictures.
 
 **Plan in detail first, build second.** The mobile pass worked because he
 specified every section — down to card and deck sizes — *before* implementation,

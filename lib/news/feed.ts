@@ -73,6 +73,30 @@ export function buildFeed(
 }
 
 /** Consecutive runs sharing a year-month. Input must already be sorted. */
+/**
+ * Filter the feed by a free-text query over title and summary.
+ *
+ * Added 2026-09-17. The page had a kind filter and pagination and no way to
+ * FIND anything - `AGENTS.md` names `CharacterBrowser` (search, sort, filter
+ * sheet, active count) as the QOL benchmark and news met none of it. Survivable
+ * at nine posts; the first thing to break at thirty.
+ *
+ * Deliberately dumb: case-insensitive substring over the two fields a reader
+ * can actually see in the list. No fuzzy matching and no body search - a hit on
+ * text that is not on screen looks like a bug, and MDX bodies are not loaded
+ * for the index anyway.
+ */
+export function searchFeed(
+  entries: NewsFeedEntry[],
+  query: string,
+): NewsFeedEntry[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return entries;
+  return entries.filter((entry) =>
+    `${entry.title} ${entry.summary ?? ""}`.toLowerCase().includes(needle),
+  );
+}
+
 export function groupByMonth(entries: NewsFeedEntry[]): NewsMonthGroup[] {
   const groups: NewsMonthGroup[] = [];
   for (const entry of entries) {

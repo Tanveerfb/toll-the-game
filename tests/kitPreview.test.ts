@@ -55,15 +55,72 @@ describe("kit preview coverage", () => {
     expect(rowsFor("duke").every((r) => r.phaseLabel === undefined)).toBe(true);
   });
 
-  it("includes a passive row for every character that has a passive", () => {
+  /**
+   * Inverted 2026-09-17. This asserted a passive row for every character;
+   * Tanveer removed passives from this table: *"the passive doesn't need to be
+   * there - it's only the skills and ultimates."* The passive is still
+   * documented in full on the same page, in its own section.
+   */
+  it("shows no passive rows at all", () => {
+    const passiveRows = characters.flatMap((c) =>
+      buildCharacterDamagePreview(c)
+        .filter((r) => r.rankLabel === "Passive")
+        .map((r) => `${c.id}: ${r.abilityName}`),
+    );
+    expect(passiveRows).toEqual([]);
+  });
+
+  /**
+   * The gap that made this table worth keeping rather than deleting.
+   *
+   * An ultimate ladders by ult level, not rank (#92), and `buildKitRows` used
+   * to push it **once** - so Lyra's `damageByUltLevel` of
+   * [350, 385, 430, 475, 520, 575] rendered as a single 350% row and five
+   * sixths of the progression was invisible on a page whose job is showing
+   * progression.
+   *
+   * **Falsified before being trusted**: collapsing the ult-level loop back to
+   * a single `push(kit.ultimate)` turns this red on all 24 kits with one.
+   */
+  it("gives an ultimate one row per ult level", () => {
+    const wrong: string[] = [];
     for (const character of characters) {
-      if (!character.passive) continue;
-      const rows = buildCharacterDamagePreview(character);
-      expect(
-        rows.some((r) => r.rankLabel === "Passive"),
-        `${character.id} has a passive but no passive row`,
-      ).toBe(true);
+      const levels = character.ultimate?.damageByUltLevel;
+      if (!Array.isArray(levels) || levels.length === 0) continue;
+      const rows = buildCharacterDamagePreview(character).filter(
+        (r) => r.abilityName === character.ultimate!.skillName,
+      );
+      if (rows.length !== levels.length) {
+        wrong.push(`${character.id}: ${rows.length} rows for ${levels.length} levels`);
+      }
     }
+    expect(wrong).toEqual([]);
+  });
+
+  /**
+   * Every ability answers the same question the same way.
+   *
+   * The per-character scenario switch this replaced hand-wrote cases for six
+   * ids and let everyone else fall through, so Batra got 13 rows and Lyra 7
+   * for the same question. A skill's row count is now its own ladder length
+   * and nothing else.
+   */
+  it("gives a ranked skill one row per rank", () => {
+    const wrong: string[] = [];
+    for (const character of characters) {
+      const rows = buildCharacterDamagePreview(character);
+      for (const skill of character.skills) {
+        const ranks = skill.damageRanked;
+        if (!Array.isArray(ranks) || ranks.length === 0) continue;
+        const forSkill = rows.filter((r) => r.abilityName === skill.skillName);
+        if (forSkill.length !== ranks.length) {
+          wrong.push(
+            `${character.id}/${skill.skillName}: ${forSkill.length} rows for ${ranks.length} ranks`,
+          );
+        }
+      }
+    }
+    expect(wrong).toEqual([]);
   });
 });
 
@@ -150,11 +207,10 @@ describe("kit preview correctness", () => {
     expect(houseRules[2].notes).toMatch(/Seals attack debuff skills for 2 turns/);
   });
 
-  it("reads a passive's authored description rather than guessing from mechanics", () => {
-    const passive = rowsFor("mustafa").find((r) => r.rankLabel === "Passive");
-    expect(passive?.resultLabel).toContain("DEF 50%");
-    // Literal 👆/👇 are a phone-typeable stand-in for icons — this table is
-    // plain text, so they must not survive as raw emoji.
+  it("never leaks a raw stand-in emoji into a row", () => {
+    // Literal 👆/👇 are a phone-typeable stand-in for icons — these rows are
+    // plain text, so they must not survive as raw emoji. The passive half of
+    // this test went with the passive rows (2026-09-17).
     const anyEmoji = characters.flatMap((c) =>
       buildCharacterDamagePreview(c).filter((r) =>
         /[\u{1F446}\u{1F447}]/u.test(`${r.resultLabel} ${r.notes}`),
@@ -163,15 +219,20 @@ describe("kit preview correctness", () => {
     expect(anyEmoji).toEqual([]);
   });
 
-  it("leaves no passive row saying nothing useful", () => {
-    const useless = characters
-      .filter((c) => c.passive)
-      .flatMap((c) =>
-        buildCharacterDamagePreview(c)
-          .filter((r) => r.rankLabel === "Passive" && r.resultLabel === "See kit")
-          .map(() => c.id),
-      );
-    expect(useless).toEqual([]);
+  it("computes every row at one baseline, so the figures compare", () => {
+    // The scenario column is gone from the UI because it no longer varies by
+    // character. Two labels exist and only one of them is a scenario:
+    // "Standard" is the baseline every row is computed at, and "Per counter"
+    // is a UNIT - a counter stance's row reports damage dealt back per attack
+    // received, not damage dealt on use. Anything else appearing here means
+    // per-character scenarios have crept back and the figures have stopped
+    // being comparable between characters.
+    const labels = new Set(
+      characters.flatMap((c) =>
+        buildCharacterDamagePreview(c).map((r) => r.scenarioLabel),
+      ),
+    );
+    expect([...labels].sort()).toEqual(["Per counter", "Standard"]);
   });
 });
 

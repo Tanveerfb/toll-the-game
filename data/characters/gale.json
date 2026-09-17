@@ -1,6 +1,8 @@
 {
   "id": "gale",
+  "cardNumber": 100011,
   "name": "Gale",
+  "heading": "Unseen Gust",
   "color": "green",
   "storyOnly": true,
   "tags": ["Human"],

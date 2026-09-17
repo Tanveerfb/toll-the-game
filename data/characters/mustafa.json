@@ -1,6 +1,8 @@
 {
   "id": "mustafa",
+  "cardNumber": 100022,
   "name": "Mustafa",
+  "heading": "Earthen Resolve",
   "color": "green",
   "tags": ["Human"],
   "lore": "South Asian male, ledger exam participant, likes to drink tea, India-themed attacks.",

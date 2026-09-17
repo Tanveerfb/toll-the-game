@@ -1,6 +1,8 @@
 {
   "id": "chiara",
+  "cardNumber": 100005,
   "name": "Chiara",
+  "heading": "Bureau Dealer",
   "color": "dark",
   "tags": [
     "Human",

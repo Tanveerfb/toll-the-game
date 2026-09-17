@@ -50,6 +50,9 @@ export function buildPracticeDummy(): CharacterData {
   };
   return {
     id: PRACTICE_DUMMY_ID,
+    // Not a real card: 0 sits outside the 100000-999999 range every authored
+    // kit uses, so the dummy can never collide with one or reach the archive.
+    cardNumber: 0,
     name: "Training Dummy",
     color: "light",
     atk: DAMAGE_PREVIEW_DUMMY.atk,
@@ -115,7 +118,22 @@ interface NormalizedMechanic {
   damageBonusPercent?: number;
 }
 
-const STANDARD_SCENARIO: PreviewScenario = {
+/**
+ * The one state every row is computed in.
+ *
+ * Full HP, no buffs, one enemy, no stacks - so every number in the table is
+ * comparable with every other, across skills and across characters. The
+ * per-character scenario switch this replaced gave Batra thirteen rows and
+ * Lyra seven for the same question, because six characters had hand-written
+ * cases (`batra`, `duke`, `master_tao`, `sara`, `siddiq`, `yalina`) and
+ * everyone else fell through to a generic pair. A new character either got a
+ * bespoke case written by hand or a thinner table than its neighbours.
+ *
+ * A conditional bonus (Spite scaling with lost HP, Concentrate with fewer
+ * enemies) is described in the skill's own text on the same page; it does not
+ * need a second, differently-shaped table to restate it.
+ */
+const BASELINE: PreviewScenario = {
   id: "standard",
   label: "Standard",
   attackerHpPercent: 100,
@@ -214,219 +232,21 @@ function hasMechanic(skill: CharacterSkillData, type: string): boolean {
   );
 }
 
-function hasPassiveMechanic(character: CharacterData, type: string): boolean {
-  return (
-    rawPassiveMechanics(character.passive).some(
-      (mechanic) => typeof mechanic.type === "string" && mechanic.type === type,
-    ) ?? false
-  );
-}
-
-/**
- * Mechanic-driven scenarios for kits without a hand-written case —
- * Weakpoint/Rupture/Detonate get their conditional-target rows and
- * Deathblow carriers get a low-HP row.
- */
-function getGenericScenarios(
-  character: CharacterData,
-  skill: CharacterSkillData,
-): PreviewScenario[] {
-  let scenarios: PreviewScenario[] = [STANDARD_SCENARIO];
-
-  if (hasMechanic(skill, "weakpoint")) {
-    scenarios = [
-      { id: "clean", label: "Clean target", targetHasDebuff: false },
-      {
-        id: "debuffed",
-        label: "Debuffed target",
-        targetHasDebuff: true,
-        note: "Weakpoint hits debuffed enemies for 3x.",
-      },
-    ];
-  } else if (hasMechanic(skill, "rupture")) {
-    scenarios = [
-      { id: "unbuffed", label: "Unbuffed target" },
-      {
-        id: "buffed",
-        label: "Buffed target",
-        targetHasBuff: true,
-        note: "Rupture hits buffed enemies for 2x.",
-      },
-    ];
-  } else if (hasMechanic(skill, "detonate")) {
-    scenarios = [
-      { id: "gauge-0", label: "0 ult gauge", targetUltGauge: 0 },
-      {
-        id: "gauge-5",
-        label: "5 ult gauge",
-        targetUltGauge: 5,
-        note: "Detonate: +20% damage per gauge point.",
-      },
-    ];
-  }
-
-  const dealsDamage =
-    (skill.damageRanked?.some((value) => value > 0) ?? false) ||
-    (skill.damage ?? 0) > 0;
-  if (hasPassiveMechanic(character, "deathblow") && dealsDamage) {
-    const last = scenarios[scenarios.length - 1];
-    scenarios = [
-      ...scenarios,
-      {
-        ...last,
-        id: `${last.id}-hp-40`,
-        label: `${last.label === "Standard" ? "" : `${last.label}, `}40% HP`,
-        attackerHpPercent: 40,
-        note: "Deathblow: damage rises as max HP is lost.",
-      },
-    ];
-  }
-
-  return scenarios;
-}
-
-function getRelevantScenarios(
-  character: CharacterData,
-  skill: CharacterSkillData,
-): PreviewScenario[] {
-  switch (character.id) {
-    case "batra":
-      if (hasMechanic(skill, "spite")) {
-        return [
-          {
-            id: "hp-100",
-            label: "100% HP",
-            attackerHpPercent: 100,
-            note: "Batra loses 5% max HP before the hit from Fierce Dedication.",
-          },
-          {
-            id: "hp-50",
-            label: "50% HP",
-            attackerHpPercent: 50,
-            note: "Shows Spite scaling from mid-health plus the passive HP cost.",
-          },
-          {
-            id: "hp-10",
-            label: "10% HP",
-            attackerHpPercent: 10,
-            note: "Shows near-lethal Spite scaling after the passive HP cost.",
-          },
-        ];
-      }
-      return [STANDARD_SCENARIO];
-
-    case "duke":
-      return skill.type === "heal"
-        ? [STANDARD_SCENARIO]
-        : [
-            STANDARD_SCENARIO,
-            {
-              id: "flowing-ruin-3",
-              label: "Flowing Ruin x3",
-              empoweredSkillMultiplierPercent: 50,
-              note: "Assumes the next skill is empowered by Duke's passive at 3 stacks.",
-            },
-          ];
-
-    case "master_tao":
-      if (hasMechanic(skill, "consumeIgnite")) {
-        return [
-          {
-            id: "ignite-0",
-            label: "0 Ignite",
-            targetIgniteStacks: 0,
-          },
-          {
-            id: "ignite-3",
-            label: "3 Ignite",
-            targetIgniteStacks: 3,
-            note: "Includes Tao's passive heal trigger once.",
-          },
-          {
-            id: "ignite-6",
-            label: "6 Ignite",
-            targetIgniteStacks: 6,
-            note: "Includes Tao's passive heal trigger twice.",
-          },
-        ];
-      }
-      return [STANDARD_SCENARIO];
-
-    case "sara":
-      if (hasMechanic(skill, "concentrate")) {
-        return [
-          {
-            id: "enemies-4",
-            label: "4 enemies",
-            enemyCount: 4,
-            note: "No Concentrate bonus with four enemies present.",
-          },
-          {
-            id: "enemies-2",
-            label: "2 enemies",
-            enemyCount: 2,
-            note: "Concentrate gains its two-target damage bonus.",
-          },
-          {
-            id: "enemies-1",
-            label: "1 enemy",
-            enemyCount: 1,
-            note: "Concentrate gains its maximum single-target bonus.",
-          },
-        ];
-      }
-      return [STANDARD_SCENARIO];
-
-    case "siddiq":
-      if (skill.type === "heal") {
-        return [STANDARD_SCENARIO];
-      }
-      return [
-        STANDARD_SCENARIO,
-        {
-          id: "passive-active",
-          label: "40% HP",
-          attackerHpPercent: 40,
-          note: "Vampiric Roots is active below 50% HP.",
-        },
-      ];
-
-    case "yalina":
-      if (hasMechanic(skill, "amplify")) {
-        return [
-          {
-            id: "no-buffs",
-            label: "0 buffs",
-            attackerBuffCount: 0,
-            momentumStacks: 0,
-          },
-          {
-            id: "two-buffs",
-            label: "2 buffs",
-            attackerBuffCount: 2,
-            momentumStacks: 0,
-            note: "Shows Amplify from two active buffs.",
-          },
-          {
-            id: "two-buffs-momentum-5",
-            label: "2 buffs + 5 Momentum",
-            attackerBuffCount: 2,
-            momentumStacks: 5,
-            note: "Combines Amplify with Yalina's capped passive stacks.",
-          },
-        ];
-      }
-      return [STANDARD_SCENARIO];
-
-    default:
-      return getGenericScenarios(character, skill);
-  }
-}
-
 function getDamageMultiplier(
   skill: CharacterSkillData,
   rankIndex?: number,
+  ultLevelIndex?: number,
 ): number {
+  // An ultimate ladders by ULT LEVEL, not by rank (ruling #92), and its six
+  // steps live in `damageByUltLevel`. This function did not read that field at
+  // all: it fell through to `skill.damage`, so the preview printed one number
+  // for a six-step ladder and Lyra's [350, 385, 430, 475, 520, 575] showed as
+  // a single 350% row. Found 2026-09-17.
+  if (typeof ultLevelIndex === "number") {
+    const byLevel = skill.damageByUltLevel?.[ultLevelIndex];
+    if (typeof byLevel === "number") return byLevel / 100;
+  }
+
   if (typeof rankIndex === "number") {
     return (skill.damageRanked?.[rankIndex] ?? 0) / 100;
   }
@@ -608,7 +428,12 @@ function applySkillDamageModifiers(
     const missingHpPercent = 100 - (currentHp / character.hp) * 100;
     const spiteBonusPercent = missingHpPercent * 2;
     modifiedDamage *= 1 + spiteBonusPercent / 100;
-    notes.push(`Spite bonus applied (+${Math.floor(spiteBonusPercent)}%).`);
+    // Silent at full health: "Spite bonus applied (+0%)" is a note that says
+    // nothing, and it appeared on every Batra row once the table moved to a
+    // full-HP baseline.
+    if (spiteBonusPercent >= 1) {
+      notes.push(`Spite bonus applied (+${Math.floor(spiteBonusPercent)}%).`);
+    }
   }
 
   if (mechanics.some((mechanic) => mechanic.type === "concentrate")) {
@@ -1151,11 +976,12 @@ function buildPreviewRow(
   passive: CharacterPassiveData | undefined,
   scenario: PreviewScenario,
   rankIndex?: number,
+  ultLevelIndex?: number,
 ): DamagePreviewRow {
   const mechanics = (skill.mechanics ?? []).map((mechanic) =>
     normalizeMechanic(mechanic, rankIndex ?? 0),
   );
-  const multiplier = getDamageMultiplier(skill, rankIndex);
+  const multiplier = getDamageMultiplier(skill, rankIndex, ultLevelIndex);
   const selfBuffState = applyPreHitSelfBuffs(
     skill,
     mechanics,
@@ -1260,91 +1086,24 @@ function buildPreviewRow(
   }
 
   return {
-    id: `${skill.skillName}-${rankIndex ?? "ultimate"}-${scenario.id}`,
+    id: `${skill.skillName}-${rankIndex ?? ultLevelIndex ?? "ultimate"}-${scenario.id}`,
     abilityName: skill.skillName,
+    // An ultimate names its LEVEL, not just "Ultimate". Six rows all labelled
+    // "Ultimate" gave the reader no way to tell which step of the ladder each
+    // number belonged to.
     rankLabel:
       typeof rankIndex === "number"
         ? `Rank ${rankIndex + 1}`
-        : skill.type === "ultimate"
-          ? "Ultimate"
-          : "Base",
+        : typeof ultLevelIndex === "number"
+          ? `Ult Lv ${ultLevelIndex + 1}`
+          : skill.type === "ultimate"
+            ? "Ultimate"
+            : "Base",
     multiplierLabel,
     scenarioLabel,
     resultLabel,
     notes: allNotes.join(" "),
   };
-}
-
-/**
- * The passive's own authored description, flattened to lines.
- *
- * Summarising a passive from its `mechanics[]` alone doesn't work: passive
- * mechanic types (synergy, aura, characterSynergy, turnRamp, chargedStacks, …)
- * are conditional and stateful, so a mechanical read produced "See kit" for
- * most of the roster. The authored description is already the accurate,
- * player-facing statement of what the passive does — the structured
- * `#`/`-`/`--` format even separates conditions from effects.
- */
-function describePassiveLines(passive: CharacterPassiveData): {
-  /** `#` heading lines — the condition the passive fires under. */
-  conditions: string[];
-  /** `-` bullets (and plain prose) — what it actually grants. */
-  effects: string[];
-} {
-  const description = (passive.description ?? "").trim();
-  if (!description) return { conditions: [], effects: [] };
-
-  const conditions: string[] = [];
-  const effects: string[] = [];
-  for (const raw of description.split("\n")) {
-    const line = raw.trim();
-    if (!line) continue;
-    // Literal 👆/👇 are a phone-typeable stand-in the UI renders as icons;
-    // this table is plain text, so they become arrows rather than emoji.
-    const text = line
-      .replace(/^#+\s*/, "")
-      .replace(/^-+\s*/, "")
-      .trim()
-      .replace(/👆/g, "↑")
-      .replace(/👇/g, "↓");
-    if (!text) continue;
-    if (line.startsWith("#")) conditions.push(text);
-    else effects.push(text);
-  }
-  return { conditions, effects };
-}
-
-/** One passive summarised as a preview row — what it grants, not what it
- *  hits for. Multi-phase bosses carry several. */
-function buildPassiveRows(
-  passives: CharacterPassiveData[],
-  phaseLabel?: string,
-): DamagePreviewRow[] {
-  return passives.map((passive, index) => {
-    const { conditions, effects } = describePassiveLines(passive);
-    const mechanics = rawPassiveMechanics(passive).map((mechanic) =>
-      normalizeMechanic(mechanic, 0),
-    );
-    // Description first (it's authored and accurate); the mechanical summary
-    // is a fallback for a passive with no description written yet.
-    const fallback = summarizeSupportEffects(mechanics);
-    // The Scenario column is "when", the Result column is "what" — so a
-    // structured passive's `#` condition belongs in Scenario, not Result.
-    const rawTrigger = rawPassiveTrigger(passive);
-    const trigger = rawTrigger
-      ? rawTrigger.replace(/^on/, "").replace(/([A-Z])/g, " $1").trim()
-      : "";
-    return {
-      id: `passive-${phaseLabel ?? "base"}-${index}`,
-      abilityName: passive.name || "Passive",
-      rankLabel: "Passive",
-      multiplierLabel: "—",
-      scenarioLabel: conditions[0] ?? trigger ?? "Always",
-      resultLabel: effects[0] ?? fallback[0] ?? "See kit",
-      notes: [...effects.slice(1), ...conditions.slice(1)].join(" · "),
-      phaseLabel,
-    };
-  });
 }
 
 function buildKitRows(
@@ -1353,13 +1112,30 @@ function buildKitRows(
   phaseLabel?: string,
 ): DamagePreviewRow[] {
   const rows: DamagePreviewRow[] = [];
-  const passive = kit.passives?.[0] ?? character.passive;
 
-  const push = (skill: CharacterSkillData, rankIndex?: number) => {
-    getRelevantScenarios(character, skill).forEach((scenario) => {
-      const row = buildPreviewRow(character, skill, passive, scenario, rankIndex);
-      rows.push(phaseLabel ? { ...row, id: `${phaseLabel}-${row.id}`, phaseLabel } : row);
-    });
+  const push = (
+    skill: CharacterSkillData,
+    rankIndex?: number,
+    ultLevelIndex?: number,
+  ) => {
+    const row = buildPreviewRow(
+      character,
+      skill,
+      // The passive is deliberately NOT applied. Tanveer, 2026-09-17: *"the
+      // idea was to just show raw numbers, how the character kit would work
+      // across different skills and ultimates. The passive doesn't need to be
+      // there - it's only the skills and ultimates."* Feeding the passive in
+      // put "Passive HP cost applied before damage (3050 -> 2898 HP)" on every
+      // one of Batra's rows and made the figures incomparable between
+      // characters, which is the opposite of what a raw table is for.
+      undefined,
+      BASELINE,
+      rankIndex,
+      ultLevelIndex,
+    );
+    rows.push(
+      phaseLabel ? { ...row, id: `${phaseLabel}-${row.id}`, phaseLabel } : row,
+    );
   };
 
   kit.skills.forEach((skill) => {
@@ -1370,9 +1146,18 @@ function buildKitRows(
     push(skill);
   });
 
-  if (kit.ultimate) push(kit.ultimate);
-
-  rows.push(...buildPassiveRows(kit.passives ?? (character.passive ? [character.passive] : []), phaseLabel));
+  // Every ult level, not just the first. An ultimate has no rank and ladders
+  // by ult level instead (#92), so one row hid five sixths of its progression.
+  if (kit.ultimate) {
+    const levels = kit.ultimate.damageByUltLevel;
+    if (Array.isArray(levels) && levels.length > 0) {
+      levels.forEach((_, ultLevelIndex) =>
+        push(kit.ultimate as CharacterSkillData, undefined, ultLevelIndex),
+      );
+    } else {
+      push(kit.ultimate);
+    }
+  }
 
   return rows;
 }

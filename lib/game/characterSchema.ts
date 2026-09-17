@@ -72,6 +72,38 @@ const passiveSchema = z
 export const characterSchema = z.looseObject({
   id: z.string().min(1),
   name: z.string().min(1),
+  /**
+   * The title above the name (ruling #141).
+   *
+   * Every variant of a character keeps the SAME `name` and is told apart by
+   * this. Red Lyra and Green Lyra are both *Lyra*; the story Lyra and the
+   * playable one are both *Lyra*; the heading carries which one you are
+   * looking at. `id` remains the key - a heading is display only, and nothing
+   * in `combat.ts` reads it.
+   *
+   * Optional on purpose: a generic enemy is a type rather than an individual,
+   * so it has no other version to be told apart from.
+   */
+  /**
+   * The card's public number - what appears in an archive URL.
+   *
+   * `id` is the internal key and always will be: it is what `roster` holds in
+   * every save, what `data/story/*.json` and the banners reference, and what
+   * the catalog is indexed by. It is ALSO a name (`duke`, `batra`), which is
+   * why it cannot be the public handle: Tanveer, 2026-09-17 - *"the url would
+   * show the char id, not the names"*.
+   *
+   * So the number is a second, immutable identifier that exists purely to be
+   * shown, the way Dokkan's own card URLs work. Renumbering `id` instead would
+   * have invalidated every stored roster.
+   *
+   * **Assigned once and never changed or reused.** The initial block was
+   * handed out in alphabetical order of `id` for reproducibility; that order
+   * carries no meaning and nothing may re-derive a number from it. A new
+   * character takes the next free number, not an alphabetical slot.
+   */
+  cardNumber: z.number().int().min(100000).max(999999),
+  heading: z.string().min(1).optional(),
   color: z.enum(["light", "red", "blue", "green", "dark"]),
   atk: z.number().positive(),
   def: z.number().positive(),

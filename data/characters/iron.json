@@ -1,6 +1,8 @@
 {
   "id": "iron",
+  "cardNumber": 100013,
   "name": "Iron",
+  "heading": "The Walking Wall",
   "color": "dark",
   "storyOnly": true,
   "tags": ["Human"],

@@ -100,11 +100,23 @@ Molvarr as he is; phase 2 is the stronger form with its own kit.
 
 ### Four traps in this migration
 
-1. **`isBoss()` is defined as "has phases"** — `lib/game/bossPassives.ts:17`
-   returns `(char.phases?.length ?? 0) > 0`. Strip `phases` and Molvarr silently
-   stops being a boss, taking the multi-passive boss engine with him. He already
-   carries a top-level `boss: true`, so **`isBoss` must read that instead**, and
-   that change lands *before* any data moves.
+1. ~~**`isBoss()` is defined as "has phases"** — make it read `boss: true`
+   instead.~~ **That advice was wrong, and acting on it would have introduced a
+   bug** (corrected 2026-09-17, on reading the callers).
+
+   `isBoss` never meant boss-ness. **Every caller is about phases**:
+   `activeSpSkill` reads `phases[phaseIndex].spSkill`, `bossForcedSpThisTurn`
+   needs that SP plus the `phaseTurn` counter, and `applyBossTurnStart` runs a
+   phased unit *unconditionally* so that counter keeps ticking. Worse,
+   **`lyra_npc` carries `boss: true` with zero phases** — so reading the flag
+   would have started running phase-turn logic for a unit that has none, while
+   dropping the invariant the predicate actually protects.
+
+   **Done instead: renamed to `isPhased`.** Zero behaviour change, the name now
+   states what it does, and when phases move to the fight this predicate's
+   *input* changes rather than its meaning. The lesson worth keeping: a
+   misleading name produced a plausible-sounding plan step that was wrong, and
+   only reading the callers caught it.
 2. **`bossPassives` reads the live phase** — `char.phases?.[char.phaseIndex ?? 0]`
    is how a boss's passives switch per phase. With phases on the fight, a unit's
    passives are simply its own, which is *simpler*, but every read has to move.
@@ -146,13 +158,24 @@ playable-character transformations later"*. **Only its data source changes** —
 `getCharacterPhases(character)` becomes whatever the new model exposes. The UI
 work here is close to nil.
 
-**Still his:** how the second form is identified — its own kit file, and what it
-is called. Kit names and kit JSON are his (`AGENTS.md`), so this plan does not
-name it.
+**ANSWERED 2026-09-17: the second form is `Molvarr (Roused)`.** Offered four
+names drawn from his own kit vocabulary, he took this one. It reads off the
+lore — *"a living mountain of corroded stone that Duke and Batra **rouse** from
+the depths"* — and echoes `Sunken Awakening`, the passive that carries across
+both phases. It also implies phase 1 was the thing half-asleep, which suits the
+jump from 285 to 400 ATK.
+
+Under ruling **#140** both forms share one archive entry with a switcher, so
+this doubles as a tab label — which is why it is short and why "Phase 2" was
+rejected (the tab would read *"Phase 2: Phase 2"*).
+
+**Still his:** whether it lives in its own kit file, and its statline. Kit JSON
+is his (`AGENTS.md`).
 
 ## Order of work
 
-1. **`isBoss` reads `boss: true`**, with a test. Nothing else changes yet.
+1. ~~`isBoss` reads `boss: true`~~ — **DONE 2026-09-17**, but as a rename to
+   `isPhased`; see trap 1 for why the original step was wrong.
 2. **Add fight-level phases to the encounter type** — `fights[].phases[].enemies[]`,
    with a single-phase fight as the default shape so every existing encounter is
    unchanged.

@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>News at 390 — three positions on what a news page is for</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --void:#06090c; --panel:#0d141b; --panel-raised:#111a23; --inset:#080d12;
+    --gridline:#0e1720; --hairline:#16212b; --edge:#1c2a36; --edge-strong:#31596b;
+    --readout-strong:#eaf2f8; --readout:#cbd8e2; --readout-dim:#8ea6b8; --readout-muted:#5d7285;
+    --signal:#4fd3e8; --el-light:#e8d174; --el-red:#ff5a4e; --el-blue:#37a6ff;
+    --el-green:#35d48b; --role-ultimate:#c08bff;
+    --heading:"Bangers","Impact",cursive; --body:"Rajdhani","Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--void);color:var(--readout);font-family:var(--body);font-size:15px;line-height:1.45;padding:24px 16px 80px}
+  .page{max-width:1300px;margin:0 auto}
+  h1{font-family:var(--heading);font-size:30px;letter-spacing:.08em;color:var(--readout-strong);margin-bottom:4px}
+  .sub{color:var(--readout-muted);font-size:13px;max-width:74ch}
+  .note{border-left:2px solid var(--signal);background:rgba(79,211,232,.05);padding:10px 12px;margin:18px 0;font-size:13px;color:var(--readout-dim);max-width:80ch}
+  .note b{color:var(--readout-strong)}
+  .note.warn{border-left-color:var(--el-red);background:rgba(255,90,78,.05)}
+  .rail{display:flex;flex-wrap:wrap;gap:26px;margin-top:22px;align-items:flex-start}
+  .col{width:390px;flex:0 0 390px}
+  .col>h2{font-family:var(--heading);font-size:19px;letter-spacing:.08em;color:var(--signal);margin-bottom:2px}
+  .col>.why{font-size:12.5px;color:var(--readout-muted);margin-bottom:10px;min-height:76px}
+
+  .screen{border:1px solid var(--edge-strong);background:var(--void);
+    background-image:linear-gradient(var(--gridline) 1px,transparent 1px),linear-gradient(90deg,var(--gridline) 1px,transparent 1px);
+    background-size:44px 44px;padding:16px;min-height:560px}
+  .hdr{border-left:2px solid var(--signal);padding-left:12px;margin-bottom:14px}
+  .hdr .eye{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:var(--signal)}
+  .hdr h3{font-family:var(--heading);font-size:32px;line-height:1;letter-spacing:.14em;color:var(--readout-strong)}
+
+  .search{display:flex;align-items:center;gap:8px;border:1px solid var(--edge);background:var(--inset);padding:0 10px;min-height:44px;margin-bottom:10px}
+  .search input{background:transparent;border:0;outline:0;color:var(--readout);font-family:var(--body);font-size:14px;width:100%}
+  .search input::placeholder{color:var(--readout-muted)}
+  .search .mag{color:var(--readout-muted);font-size:15px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+  .chip{min-height:44px;border:1px solid var(--edge);background:rgba(6,9,12,.6);color:var(--readout-dim);
+    padding:0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;cursor:pointer;display:flex;align-items:center}
+  .chip[data-on="1"]{border-color:var(--signal);background:var(--signal);color:var(--void)}
+  .count{margin-left:auto;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--readout-muted);font-variant-numeric:tabular-nums}
+  .count b{color:var(--signal)}
+
+  .month{margin-top:16px;margin-bottom:8px;border-bottom:1px solid var(--hairline);padding-bottom:6px;
+    font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:var(--readout-muted)}
+
+  .row{display:grid;grid-template-columns:38px minmax(0,1fr) 18px;gap:12px;align-items:start;
+    border:1px solid transparent;border-left:2px solid var(--hairline);padding:9px 12px;cursor:pointer;text-decoration:none}
+  .row:hover{border-color:var(--edge);border-left-color:var(--signal);background:var(--panel)}
+  .row[data-unread="1"]{border-left-color:var(--signal)}
+  .row .day{font-family:var(--heading);font-size:22px;line-height:1;letter-spacing:.04em;color:var(--readout-muted)}
+  .row[data-unread="1"] .day{color:var(--readout-strong)}
+  .row .t{font-family:var(--heading);font-size:17px;letter-spacing:.06em;color:var(--readout-strong)}
+  .row .s{display:block;margin-top:2px;font-size:12.5px;line-height:1.5;color:var(--readout-dim)}
+  .row .arw{padding-top:3px;color:var(--readout-muted);text-align:center}
+  .tagline{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+  .kind{border:1px solid;padding:0 5px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.14em}
+  .kind.update{border-color:rgba(55,166,255,.45);color:var(--el-blue)}
+  .kind.notice{border-color:rgba(192,139,255,.45);color:var(--role-ultimate)}
+  .new{background:var(--signal);color:var(--void);padding:0 5px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.14em}
+
+  .hero{border:1px solid var(--edge-strong);background:var(--panel);padding:14px;margin-bottom:6px}
+  .hero .eye{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:var(--signal)}
+  .hero h4{font-family:var(--heading);font-size:26px;line-height:1.05;letter-spacing:.06em;color:var(--readout-strong);margin:4px 0 6px}
+  .hero p{font-size:13.5px;line-height:1.55;color:var(--readout-dim)}
+  .hero .meta{margin-top:8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--readout-muted)}
+  .btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;margin-top:10px;
+    border:1px solid var(--signal);background:rgba(79,211,232,.12);color:var(--signal);
+    font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;cursor:pointer}
+  .btn.calm{border-color:var(--edge-strong);background:transparent;color:var(--readout)}
+
+  .unreadblock{border:1px solid rgba(79,211,232,.4);background:rgba(79,211,232,.05);padding:10px;margin-bottom:12px}
+  .unreadblock .h{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:var(--signal);margin-bottom:6px}
+  .quiet{font-size:12px;color:var(--readout-muted);padding:10px 0}
+  .empty{border:1px solid var(--hairline);background:var(--panel);padding:20px 12px;text-align:center;font-size:12.5px;color:var(--readout-muted)}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>News — three positions on what the page is for</h1>
+  <p class="sub">
+    Drawn at <b>390&nbsp;px</b>. All three are <b>live</b> — type in the search,
+    tap the filters, tap a row. Real post titles from <code>content/news/</code>.
+  </p>
+
+  <div class="note warn">
+    <b>Two features on this page have never rendered.</b>
+    The filter chips need <i>both</i> kinds to exist (<code>showFilter =
+    updates.length &gt; 0 &amp;&amp; notices.length &gt; 0</code>) and there are
+    <b>zero notices</b> — the only file in <code>notices/</code> is
+    <code>_placeholder.mdx</code>, which <code>posts.ts</code> excludes. And
+    pagination needs more than <code>NEWS_PAGE_SIZE = 15</code> posts; there are
+    <b>nine</b>. So today the live page is a header, an entry count and a list —
+    about 60 lines of built UI nobody has seen.
+  </div>
+
+  <div class="note">
+    <b>What is missing is search.</b> <code>CharacterBrowser</code> is the QOL
+    benchmark in <code>AGENTS.md</code> — search, sort, filter sheet, active
+    count. News has no way to find the patch note that mentioned a thing. With
+    nine posts that is survivable; it is the first thing to break at thirty.
+  </div>
+
+  <div class="rail">
+
+    <!-- ===================== A ===================== -->
+    <div class="col">
+      <h2>A — The feed, tightened</h2>
+      <p class="why">
+        Keeps today's shape and fixes what is measurably wrong: search added,
+        the dead pagination dropped until there is something to paginate, the
+        gutter brought onto the system. <b>Position: news is a list — make the
+        list good.</b> Least to build, least to argue about.
+      </p>
+      <div class="screen" data-variant="a">
+        <div class="hdr"><span class="eye">Patch notes and service notices</span><h3>News</h3></div>
+        <div class="search"><span class="mag">⌕</span><input data-search="a" placeholder="Search patch notes…" /></div>
+        <div class="chips"><span class="count"><b data-count="a">9</b> entries · <b>2</b> unread</span></div>
+        <div data-list="a"></div>
+      </div>
+    </div>
+
+    <!-- ===================== B ===================== -->
+    <div class="col">
+      <h2>B — Since you last played</h2>
+      <p class="why">
+        Answers the question a returning player actually has. What is new sits
+        in its own block at the top; everything else is archive underneath.
+        <b>Position: news exists to tell you what changed while you were
+        away.</b> Uses the read-tracking that already ships.
+      </p>
+      <div class="screen" data-variant="b">
+        <div class="hdr"><span class="eye">Patch notes and service notices</span><h3>News</h3></div>
+        <div class="unreadblock">
+          <div class="h">New since your last visit · 2</div>
+          <div data-list="b-unread"></div>
+        </div>
+        <div class="search"><span class="mag">⌕</span><input data-search="b" placeholder="Search the archive…" /></div>
+        <div class="month">Archive</div>
+        <div data-list="b"></div>
+      </div>
+    </div>
+
+    <!-- ===================== C ===================== -->
+    <div class="col">
+      <h2>C — Searchable changelog</h2>
+      <p class="why">
+        Treats the page as reference rather than a feed: search first, filters
+        always visible (not hidden until a second kind exists), months as
+        headers. <b>Position: news is a document you look things up in.</b>
+        Most useful at thirty posts, most over-built at nine.
+      </p>
+      <div class="screen" data-variant="c">
+        <div class="hdr"><span class="eye">Patch notes and service notices</span><h3>News</h3></div>
+        <div class="search"><span class="mag">⌕</span><input data-search="c" placeholder="Search titles and summaries…" /></div>
+        <div class="chips">
+          <button class="chip" data-filter="c" data-kind="all" data-on="1">All</button>
+          <button class="chip" data-filter="c" data-kind="update">Updates</button>
+          <button class="chip" data-filter="c" data-kind="notice">Notices</button>
+          <span class="count"><b data-count="c">9</b></span>
+        </div>
+        <div data-list="c"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="note" style="margin-top:32px">
+    <b>The post page itself</b> is in decent shape and is not redrawn here: back
+    link, kind badge, title, date and reading time, the frontmatter summary as a
+    standfirst, then older/newer steps. The only changes it needs are the same
+    two structural ones as the index — the <code>px-6</code> gutter and the
+    hand-typed shell both move onto <code>&lt;Screen width="read"&gt;</code>,
+    whose <code>--container-read</code> is <b>42rem</b>, exactly the
+    <code>max-w-2xl</code> it already uses.
+  </div>
+
+  <div class="note warn">
+    <b>A behaviour worth deciding on, whichever option wins.</b> "Unread" is one
+    date in <code>localStorage</code>, not per-post: opening the index calls
+    <code>markNewsViewed(latestNewsDate)</code>, which marks <b>everything</b>
+    read — including posts you never opened. So the per-row <b>New</b> badge
+    really means <i>"posted since you last opened this page"</i>. That is a
+    legitimate model and plenty of games use it, but the UI reads as per-post
+    tracking. <b>Option B leans on it hardest</b>, so it matters most there.
+  </div>
+
+  <div class="note">
+    <b>My pick: A now, B later.</b> At nine posts B's unread block is often
+    empty and C's filters are decoration. A fixes everything that is actually
+    broken and adds the one thing genuinely missing. <b>B becomes the right
+    answer the moment the game has players returning after a gap</b> — and it
+    needs the per-post read decision above settled first.
+  </div>
+</div>
+
+<script>
+  const POSTS = [
+    { d:"2026-09-01", t:"The Log Shows Effects", k:"update", u:true,
+      s:"The battle log now records every buff and debuff an action applied — and navigation moved to the bottom on phones." },
+    { d:"2026-08-21", t:"Built for a Phone", k:"update", u:true,
+      s:"Every screen redrawn for a 390px canvas: bigger targets, a bottom tab bar, and no affordance that needs a mouse." },
+    { d:"2026-08-13", t:"The Full Arc, and Levels That Count", k:"update", u:false,
+      s:"Chapter one runs end to end, and character levels finally change the numbers in a fight." },
+    { d:"2026-08-09", t:"Story Pays Out", k:"update", u:false,
+      s:"Stages now grant materials, coin and account XP on a first clear." },
+    { d:"2026-08-09", t:"The Story, Told Properly", k:"update", u:false,
+      s:"Scenes, backdrops and a stage brief replace the old wall of text." },
+    { d:"2026-08-04", t:"Interface Overhaul", k:"update", u:false,
+      s:"The Combat Terminal look lands across every screen in the game." },
+    { d:"2026-08-02", t:"Summon System Arrives", k:"update", u:false,
+      s:"Banners, rates, pity and a reveal sequence that shows what you actually got." },
+    { d:"2026-08-01", t:"The Story So Far", k:"update", u:false,
+      s:"Where the Ledger exam stands, and who you have met." },
+    { d:"2026-07-31", t:"World Boss Update", k:"update", u:false,
+      s:"Molvarr rises from the lake, with a difficulty ladder and a drop table." },
+  ];
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const monthLabel = (d) => MONTHS[+d.slice(5,7)-1] + " " + d.slice(0,4);
+  const day = (d) => +d.slice(8,10);
+
+  function rowHTML(p) {
+    return '<a class="row" data-unread="' + (p.u ? 1 : 0) + '">' +
+      '<span class="day">' + day(p.d) + '</span>' +
+      '<span><span class="tagline">' +
+        '<span class="t">' + p.t + '</span>' +
+        '<span class="kind ' + p.k + '">' + p.k + '</span>' +
+        (p.u ? '<span class="new">New</span>' : '') +
+      '</span><span class="s">' + p.s + '</span></span>' +
+      '<span class="arw">→</span></a>';
+  }
+
+  function grouped(list) {
+    let html = "", last = null;
+    for (const p of list) {
+      const m = monthLabel(p.d);
+      if (m !== last) { html += '<div class="month">' + m + '</div>'; last = m; }
+      html += rowHTML(p);
+    }
+    return html || '<div class="empty">No posts match that search.</div>';
+  }
+
+  const state = { a:{q:""}, b:{q:""}, c:{q:"", kind:"all"} };
+
+  function match(p, q) {
+    if (!q) return true;
+    const hay = (p.t + " " + p.s).toLowerCase();
+    return hay.includes(q.toLowerCase());
+  }
+
+  function render() {
+    // A — one flat searchable feed.
+    const a = POSTS.filter((p) => match(p, state.a.q));
+    document.querySelector('[data-list="a"]').innerHTML = grouped(a);
+    document.querySelector('[data-count="a"]').textContent = a.length;
+
+    // B — unread on top, archive below.
+    const bUnread = POSTS.filter((p) => p.u);
+    document.querySelector('[data-list="b-unread"]').innerHTML =
+      bUnread.length ? bUnread.map(rowHTML).join("")
+                     : '<div class="quiet">Nothing new since you were last here.</div>';
+    const b = POSTS.filter((p) => !p.u && match(p, state.b.q));
+    document.querySelector('[data-list="b"]').innerHTML = grouped(b);
+
+    // C — search plus an always-visible kind filter.
+    const c = POSTS.filter((p) =>
+      match(p, state.c.q) && (state.c.kind === "all" || p.k === state.c.kind));
+    document.querySelector('[data-list="c"]').innerHTML = grouped(c);
+    document.querySelector('[data-count="c"]').textContent = c.length;
+  }
+
+  document.querySelectorAll("[data-search]").forEach((el) => {
+    el.addEventListener("input", () => {
+      state[el.dataset.search].q = el.value;
+      render();
+    });
+  });
+  document.querySelectorAll("[data-filter]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const v = el.dataset.filter;
+      state[v].kind = el.dataset.kind;
+      document.querySelectorAll('[data-filter="' + v + '"]').forEach((b) =>
+        b.setAttribute("data-on", b === el ? "1" : "0"));
+      render();
+    });
+  });
+
+  render();
+</script>
+</body>
+</html>

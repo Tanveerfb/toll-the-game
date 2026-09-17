@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { spendStamina, STAMINA_CAP } from "@/lib/game/stamina";
 import { AUTO_CLEAR_TICKETS_PER_RANK } from "@/lib/game/autoClear";
-import { feedManual, type ManualTier } from "@/lib/game/leveling";
+import { planLevelUp, type ManualSpend } from "@/lib/game/leveling";
 import {
   ascensionBlocker,
   getAscensionCost,
@@ -151,7 +151,21 @@ export interface PlayerState {
    */
   spendAutoClearRun: (staminaCost: number) => boolean;
   spendStaminaAction: (amount: number) => boolean;
-  feedManualToCharacter: (characterId: string, manualTier: ManualTier) => boolean;
+  /**
+   * Spend manuals and coin to raise a character to `targetLevel`.
+   *
+   * Replaced `feedManualToCharacter`, which spent exactly one manual per call
+   * - the reason reaching Lv 20 cost **190 presses** with basic manuals
+   * (measured 2026-09-17), on the level the First Ascension Trial requires.
+   * Same contract as `levelUpUltimate`: forward-only, and it commits whatever
+   * the plan says it can reach rather than refusing outright, because coin
+   * usually binds before manuals do. To spend a single manual, pin one.
+   */
+  levelCharacterTo: (
+    characterId: string,
+    targetLevel: number,
+    pinned?: ManualSpend,
+  ) => boolean;
   ascendCharacter: (characterId: string) => boolean;
   /**
    * Spend character coins to raise an ultimate to `targetLevel`.
@@ -203,7 +217,6 @@ export type PersistedPlayerData = Omit<
   | "grantMaterials"
   | "grantCurrency"
   | "spendStaminaAction"
-  | "feedManualToCharacter"
   | "ascendCharacter"
   | "grantWorldBossRewards"
   | "grantStoryRewards"
@@ -241,6 +254,21 @@ function grantCoin(
 ): Record<string, number> {
   if (!coinId) return inventory;
   return { ...inventory, [coinId]: (inventory[coinId] ?? 0) + 1 };
+}
+
+/**
+ * A character's progress from the `characters` map alone.
+ *
+ * Exported so a component can subscribe to `characters` with a selector and
+ * still resolve progress, instead of pulling the whole store to reach
+ * `getCharacterProgress(state, id)`. Two components used to do the latter and
+ * re-rendered on every unrelated write (audit 2026-09-17).
+ */
+export function progressFromMap(
+  characters: Record<string, CharacterProgress>,
+  characterId: string,
+): CharacterProgress {
+  return defaultCharacterProgress(characters, characterId);
 }
 
 function defaultCharacterProgress(
@@ -565,23 +593,40 @@ export const usePlayerStore = create<PlayerState>()(
         return true;
       },
 
-      feedManualToCharacter: (characterId, manualTier) => {
+      levelCharacterTo: (characterId, targetLevel, pinned) => {
         const state = get();
-        const owned = state.inventory[manualTier] ?? 0;
-        if (owned < 1) return false;
-
         const progress = getCharacterProgress(state, characterId);
         const maxLevel = maxLevelForAscension(progress.ascension);
-        const result = feedManual(progress, maxLevel, manualTier);
-        if (!result) return false;
-        if (state.currencies.coin < result.coinCost) return false;
+        const plan = planLevelUp(
+          progress,
+          maxLevel,
+          targetLevel,
+          state.inventory,
+          state.currencies.coin,
+          pinned,
+        );
+        if (!plan) return false;
+
+        // The solver already clamped to what is held and affordable, so this is
+        // belt and braces - but the store is the last word on whether a spend
+        // is legal, and a UI bug must never be able to mint XP.
+        const inventory = { ...state.inventory };
+        for (const [tier, count] of Object.entries(plan.spend)) {
+          const owned = inventory[tier] ?? 0;
+          if (count > owned) return false;
+          inventory[tier] = owned - count;
+        }
+        if (state.currencies.coin < plan.coinCost) return false;
 
         set({
-          inventory: { ...state.inventory, [manualTier]: owned - 1 },
-          currencies: { ...state.currencies, coin: state.currencies.coin - result.coinCost },
+          inventory,
+          currencies: {
+            ...state.currencies,
+            coin: state.currencies.coin - plan.coinCost,
+          },
           characters: {
             ...state.characters,
-            [characterId]: { ...progress, level: result.level, xp: result.xp },
+            [characterId]: { ...progress, level: plan.level, xp: plan.xp },
           },
         });
         return true;

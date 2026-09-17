@@ -1,6 +1,8 @@
 {
   "id": "toll_collector",
+  "cardNumber": 100029,
   "name": "The Toll Collector",
+  "heading": "Rogue Ledger",
   "color": "red",
   "storyOnly": true,
   "tags": [

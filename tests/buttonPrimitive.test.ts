@@ -47,7 +47,46 @@ const ALLOWED = new Set<string>([
   "components/game/KitDetails.tsx",
   "components/game/TeamSelect.tsx",
   "components/game/PreviewButton.tsx",
+
+  // ---------------------------------------------------------------------
+  // Uncovered until 2026-09-17, when the arrow bug above was fixed.
+  //
+  // This guard had been flagging **nothing, repo-wide**, because its pattern
+  // stopped at the `>` inside `onClick={() => ...}`. Fixing that surfaced 15
+  // hand-rolled action buttons across these 12 files at once. They are listed
+  // rather than migrated in the same commit because migrating them is real
+  // work with visual consequences on screens Tanveer judges by eye — several
+  // are `chamfer`, and two are in battle, whose density is explicitly his.
+  //
+  // **This block is debt and must shrink.** Nothing new belongs in it: a
+  // button written today has no excuse, because the guard now sees it.
+  "app/login/page.tsx",
+  "components/gacha/BannerScreen.tsx",
+  "components/gacha/MilestonePicker.tsx",
+  "components/game/AccountModal.tsx",
+  "components/game/CharacterBrowser.tsx",
+  "components/game/CharacterProgressionPanel.tsx",
+  "components/game/Deck.tsx",
+  "components/game/KitPhases.tsx",
+  "components/game/OrdersBoard.tsx",
+  "components/game/SoundSettings.tsx",
+  "components/game/SubstatDrawer.tsx",
+  "components/game/battle/UnitDetailPanel.tsx",
 ]);
+
+/**
+ * The guard's OTHER blind spot, still open.
+ *
+ * It reads the className written at the tag. A file that puts its classes in a
+ * constant - `const CHIP = "... uppercase tracking-label"`, then
+ * ``className={`${CHIP} ${on ? A : B}`}`` - shows the scanner a className with
+ * no literal classes in it, so the button is invisible however it is styled.
+ *
+ * `components/news/NewsFeed.tsx` does exactly that for its filter and
+ * pagination chips, which is why it is absent from the list above despite
+ * hand-rolling five buttons. Catching that needs the constants resolved, not a
+ * wider regex, so it is recorded here rather than bodged.
+ */
 
 function tsxFiles(dir: string, found: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -61,7 +100,18 @@ function tsxFiles(dir: string, found: string[] = []): string[] {
 /** `<button …>` openings whose className reads as an action button. */
 function handRolledActions(source: string): string[] {
   const hits: string[] = [];
-  for (const match of source.matchAll(/<button\b[\s\S]*?>/g)) {
+  // Arrows first. The pattern below is non-greedy, so it stops at the
+  // FIRST `>` - and `onClick={() => ...}` puts one before the className on
+  // most buttons in this codebase. The className was therefore never
+  // reached and **this guard flagged nothing at all, repo-wide**. It caught
+  // the events breadcrumb on 2026-09-17 only because that one passed
+  // `onClick={onBack}` with no arrow. Stripping arrows first takes the
+  // repo-wide count from 0 to 15.
+  //
+  // `tests/touchTargets.test.ts` documents this exact trap and strips them
+  // in its own walk-back; this sibling never did (found 2026-09-17).
+  const scanned = source.replace(/=>/g, "  ");
+  for (const match of scanned.matchAll(/<button\b[\s\S]*?>/g)) {
     const tag = match[0];
     const className = /className=(?:"([^"]*)"|\{`([^`]*)`\})/.exec(tag);
     if (!className) continue;

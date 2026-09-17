@@ -60,6 +60,21 @@ N. **<Short claim, stated as a fact>** (YYYY-MM-DD). *"<his words, verbatim>"*
   echoed: you wrote those labels. #123 and #124 record them as selections.
   The tell is the word *(recommended)* — he does not recommend things to
   himself.
+
+  **And it holds for a mockup he picks from** (2026-09-17, ruling #144 made this
+  the normal way a redesign starts). *"Go with B"* and *"option C ... I think it
+  offers the best of both worlds"* are **selections of headings you wrote into
+  an HTML file**, so they are recorded the same way — see #147 and #145. This is
+  now the **most common** channel for a design decision, not a rare one, because
+  every redesign begins with two or three drawn options.
+
+  **What IS his, in a mockup review, is the reasoning he volunteers while
+  rejecting one.** #145 exists because he did not merely pick C — he said *"a
+  lot of people play it conservatively ... they are very conservative with their
+  resources"*, which is a rule about players that outlived the option it killed.
+  **Quote that half; mark the pick as a selection.** A review that produces only
+  a letter has given you one binding decision and no reasoning; a review like
+  that one gives you both, and the ledger should carry them differently.
 - **Bold claim first.** A reader scanning 108 entries reads bold text only.
 - **Say what it changes.** An entry that records a decision without naming the
   file, mechanic or screen it governs makes the next session guess.
