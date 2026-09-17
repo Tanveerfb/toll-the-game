@@ -9,7 +9,8 @@ Living snapshot. Session history is folded to
 **State:** Four screens rebuilt from measurement — events (decomposed), the kit
 table (now **Kit Numbers**), the growth modal (tabs) and news (option B). The
 layout system is **built** for steps 1–4. All 31 kits carry a heading and a card
-number. Suite **1,542 tests / 125 files**, browser 17, build clean.
+number. Suite **1,542 tests / 125 files**, browser 17, build clean. Committed
+as `525e335`.
 
 **Next:** Migrate the remaining **10 hand-typed page shells** onto `<Screen>` —
 `tests/layoutSystem.test.ts` ratchets the count and names them on failure. Lower
@@ -527,7 +528,7 @@ because they govern how work is done.
 `npm run check` — **1,542 tests / 125 files**, 3 pre-existing eslint warnings in
 `tests/duel.test.ts`. `npm run test:browser` — **17 tests / 3 files**.
 `NEXT_DIST_DIR=.next-verify npx next build` — clean, `.next-verify` removed,
-`tsconfig.json` reverted. His `:3000` was never touched; every browser check ran
+`tsconfig.json` reverted. **Committed as `525e335`.** His `:3000` was never touched; every browser check ran
 on a scratch build on `:3210`, killed by PID afterwards.
 
 ## Session log — 2026-09-17: his vocabulary, an audit, and looking at it
