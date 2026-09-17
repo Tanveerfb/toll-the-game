@@ -11,7 +11,7 @@ long form in `Plans/2026-09-16-pve-structure.md`). A code-quality audit ran and
 its top five findings are fixed — hydration gates, 362 dead lines, the
 `wave`→`fight` rename, tests for two untested engine modules, and the button
 primitive. Letter-spacing is three tokens instead of eighteen values. Suite
-**1,506 tests / 121 files**, browser 17, lint clean, build clean.
+**1,507 tests / 121 files**, browser 17, lint clean, build clean. Committed as `904bf67`.
 
 **Next:** The layout system — `Plans/2026-09-17-layout-system.md`, approved in
 principle, tracking values chosen. Start at `Panel` + `Screen`, the two with the
