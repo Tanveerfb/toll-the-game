@@ -14,33 +14,33 @@ import type { StoryMission, StoryMissionGoal, StoryStage } from "@/types/story";
  *  - **A mission is never lost.** Clearing a stage without meeting one leaves it
  *    claimable forever, so no stage becomes content a player can no longer
  *    finish. Nothing here records failure — only what a run satisfied.
- *  - **Turns are counted across the whole run**, not per wave. A `withinTurns`
- *    mission on a 3-wave stage is a budget for the stage, which is what makes it
+ *  - **Turns are counted across the whole run**, not per fight. A `withinTurns`
+ *    mission on a 3-fight stage is a budget for the stage, which is what makes it
  *    a real constraint on an attrition run rather than three easy checks.
  */
 
 /**
- * What a completed stage run did, gathered by the story shell as the waves play.
+ * What a completed stage run did, gathered by the story shell as the fights play.
  *
  * Deliberately flat and serialisable: it is assembled from `gameStore` counters
  * plus the typed `battleEvents` stream, and every field is something a player
  * could see happen.
  */
 export interface StageRunSummary {
-  /** Waves actually won. Compared against the stage's authored count. */
-  wavesCleared: number;
-  wavesTotal: number;
-  /** Player turns taken across every wave. */
+  /** Fights actually won. Compared against the stage's authored count. */
+  fightsCleared: number;
+  fightsTotal: number;
+  /** Player turns taken across every fight. */
   turns: number;
   /** Character ids that started the run, bench included. */
   fielded: string[];
-  /** Character ids that fell at any point. Persisting deaths across waves is
+  /** Character ids that fell at any point. Persisting deaths across fights is
    *  what makes `noLosses` meaningful (his ruling #103). */
   fallen: string[];
-  /** Player ultimates fired across every wave. */
+  /** Player ultimates fired across every fight. */
   ultimatesUsed: number;
   /**
-   * Player cards played across every wave, counted by rank.
+   * Player cards played across every fight, counted by rank.
    *
    * Keyed 1/2/3 rather than an array so a missing rank reads as absent instead
    * of as index confusion. Ultimates are excluded at the counting site — they
@@ -53,10 +53,10 @@ export interface StageRunSummary {
   isRetry: boolean;
 }
 
-export function emptyRunSummary(wavesTotal: number): StageRunSummary {
+export function emptyRunSummary(fightsTotal: number): StageRunSummary {
   return {
-    wavesCleared: 0,
-    wavesTotal,
+    fightsCleared: 0,
+    fightsTotal,
     turns: 0,
     fielded: [],
     fallen: [],
@@ -82,7 +82,7 @@ function taggedCount(fielded: string[], tag: string): number {
  * Whether one goal is satisfied by a run.
  *
  * Every goal implicitly requires the run to have been a clear — an unfinished
- * run has `wavesCleared < wavesTotal`, and `isCleared` gates the whole
+ * run has `fightsCleared < fightsTotal`, and `isCleared` gates the whole
  * evaluation in `evaluateMissions`, so a goal like `noLosses` can't be met by
  * losing without casualties.
  */
@@ -104,15 +104,15 @@ export function isGoalMet(goal: StoryMissionGoal, run: StageRunSummary): boolean
       return (run.rankUses[goal.rank] ?? 0) >= goal.count;
     case "firstAttempt":
       return !run.isRetry;
-    case "allWaves":
-      return run.wavesCleared >= run.wavesTotal;
+    case "allFights":
+      return run.fightsCleared >= run.fightsTotal;
   }
 }
 
 export function isCleared(run: StageRunSummary): boolean {
-  return run.wavesTotal > 0
-    ? run.wavesCleared >= run.wavesTotal
-    : // A scene stage has no waves; reaching the end of it *is* the clear.
+  return run.fightsTotal > 0
+    ? run.fightsCleared >= run.fightsTotal
+    : // A scene stage has no fights; reaching the end of it *is* the clear.
       true;
 }
 

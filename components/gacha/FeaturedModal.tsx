@@ -74,14 +74,14 @@ export default function FeaturedModal({
             <tr className="border-b border-hairline">
               <th
                 scope="col"
-                className="py-1.5 pr-2 text-left font-body text-[9px] font-bold uppercase tracking-[0.18em] text-readout-muted"
+                className="py-1.5 pr-2 text-left font-body text-[9px] font-bold uppercase tracking-label text-readout-muted"
                 colSpan={2}
               >
                 Unit
               </th>
               <th
                 scope="col"
-                className="py-1.5 text-right font-body text-[9px] font-bold uppercase tracking-[0.18em] text-readout-muted"
+                className="py-1.5 text-right font-body text-[9px] font-bold uppercase tracking-label text-readout-muted"
               >
                 Status
               </th>
@@ -120,7 +120,7 @@ export default function FeaturedModal({
                       </span>
                       {color ? (
                         <span
-                          className="shrink-0 border px-1 font-body text-[8px] font-bold tracking-[0.1em]"
+                          className="shrink-0 border px-1 font-body text-[8px] font-bold tracking-label"
                           style={{
                             color: EL_HUE[color],
                             borderColor: EL_HUE[color],
@@ -137,7 +137,7 @@ export default function FeaturedModal({
                         —
                       </span>
                     ) : row.owned ? (
-                      <span className="font-body text-[11px] font-bold uppercase tracking-[0.1em] text-signal">
+                      <span className="font-body text-[11px] font-bold uppercase tracking-label text-signal">
                         Owned
                         {row.ultLevel > 1 ? (
                           <span className="ml-1 tabular-nums">
@@ -146,7 +146,7 @@ export default function FeaturedModal({
                         ) : null}
                       </span>
                     ) : (
-                      <span className="font-body text-[11px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+                      <span className="font-body text-[11px] font-bold uppercase tracking-label text-readout-muted">
                         Not owned
                       </span>
                     )}

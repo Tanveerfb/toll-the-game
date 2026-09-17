@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import type { StoryTeamPick } from "@/types/story";
@@ -21,14 +22,14 @@ import type { StoryTeamPick } from "@/types/story";
  * rail ships today and needs no art that does not already exist, because it
  * composes portraits the roster already has.
  *
- * Two things it deliberately shows that a plain "Wave 2 of 3" line cannot:
+ * Two things it deliberately shows that a plain "Fight 2 of 3" line cannot:
  * the enemies waiting in later fights, and the HP the team is carrying into
  * the next one. Both are the information the no-heal rule makes load-bearing.
  */
 
 export interface TrialRailProps {
   /** Every fight in the run, front to back. */
-  waves: { enemies: StoryTeamPick[] }[];
+  fights: { enemies: StoryTeamPick[] }[];
   /** Fights already won. Equals the index of the one coming up. */
   cleared: number;
   /** The team's carried state between fights. Fallen units read 0. */
@@ -62,7 +63,7 @@ function EnemyPip({ pick, dimmed }: { pick: StoryTeamPick; dimmed: boolean }) {
         </span>
       )}
       {pick.isSub ? (
-        <span className="absolute inset-x-0 bottom-0 bg-void/80 text-center font-body text-[7px] font-bold uppercase tracking-[0.1em] text-readout-dim">
+        <span className="absolute inset-x-0 bottom-0 bg-void/80 text-center font-body text-[7px] font-bold uppercase tracking-label text-readout-dim">
           Sub
         </span>
       ) : null}
@@ -71,7 +72,7 @@ function EnemyPip({ pick, dimmed }: { pick: StoryTeamPick; dimmed: boolean }) {
 }
 
 export default function TrialRail({
-  waves,
+  fights,
   cleared,
   bars,
   onContinue,
@@ -86,16 +87,16 @@ export default function TrialRail({
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-6">
       <div>
-        <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
-          Fight {Math.min(cleared + 1, waves.length)} of {waves.length}
+        <p className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
+          Fight {Math.min(cleared + 1, fights.length)} of {fights.length}
         </p>
-        <p className="font-heading text-2xl tracking-[0.08em] text-readout-strong">
+        <p className="font-heading text-2xl tracking-title text-readout-strong">
           No healing between fights
         </p>
       </div>
 
       <ol className="flex flex-col">
-        {waves.map((wave, index) => {
+        {fights.map((fight, index) => {
           const done = index < cleared;
           const current = index === cleared;
           return (
@@ -111,7 +112,7 @@ export default function TrialRail({
                         : "border-edge-strong bg-inset"
                   }`}
                 />
-                {index < waves.length - 1 ? (
+                {index < fights.length - 1 ? (
                   <span
                     className={`w-px flex-1 ${done ? "bg-role-heal/50" : "bg-hairline"}`}
                   />
@@ -124,14 +125,14 @@ export default function TrialRail({
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <span
-                    className={`font-body text-[10px] font-bold uppercase tracking-[0.18em] ${
+                    className={`font-body text-[10px] font-bold uppercase tracking-label ${
                       current ? "text-signal" : "text-readout-dim"
                     }`}
                   >
                     {done ? "Cleared" : current ? "Next" : `Fight ${index + 1}`}
                   </span>
                   <span className="flex flex-wrap gap-1">
-                    {wave.enemies.map((pick, i) => (
+                    {fight.enemies.map((pick, i) => (
                       <EnemyPip key={`${pick.id}-${i}`} pick={pick} dimmed={done} />
                     ))}
                   </span>
@@ -144,7 +145,7 @@ export default function TrialRail({
 
       <div className="flex flex-col gap-2 border border-edge-strong bg-panel p-3">
         <div className="flex items-baseline justify-between">
-          <span className="font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-dim">
+          <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-dim">
             Carried into the next fight
           </span>
           <span className="font-heading text-sm tabular-nums text-readout-strong">
@@ -176,20 +177,12 @@ export default function TrialRail({
       </div>
 
       <div className="flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={onContinue}
-          className="min-h-11 border border-signal bg-signal/12 py-3 text-center font-body text-[11px] font-bold uppercase tracking-[0.18em] text-signal transition-colors hover:bg-signal/20"
-        >
+        <Button variant="secondary" size="sm" onClick={onContinue}>
           Next fight
-        </button>
-        <button
-          type="button"
-          onClick={onQuit}
-          className="min-h-11 border border-edge-strong py-3 text-center font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout-dim transition-colors hover:text-readout-strong"
-        >
+        </Button>
+        <Button variant="outline" size="sm" onClick={onQuit}>
           Abandon run
-        </button>
+        </Button>
       </div>
     </div>
   );

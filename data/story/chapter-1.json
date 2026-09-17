@@ -67,7 +67,7 @@
           "text": "The raid was ordered. Someone sent people to this village with a purpose. Duke was away when it happened. He was seventeen years old."
         }
       ],
-      "waves": [],
+      "fights": [],
       "team": [],
       "teamMode": "canon",
       "missions": [],
@@ -113,7 +113,7 @@
           "text": "Toll awakens when the body spends it without permission. When survival demands more than a person has. Duke didn't unlock it. He wore the lock down."
         }
       ],
-      "waves": [
+      "fights": [
         {
           "enemies": [
             {
@@ -143,7 +143,7 @@
       "missions": [
         {
           "id": "m1",
-          "label": "Clear both waves without losing a unit",
+          "label": "Clear both fights without losing a unit",
           "goal": {
             "type": "noLosses"
           },
@@ -219,7 +219,7 @@
           "text": "He trained for nine years. Not to become a fighter. He already was one. He trained because standing still felt like surrender."
         }
       ],
-      "waves": [
+      "fights": [
         {
           "enemies": [
             {
@@ -253,9 +253,9 @@
       "missions": [
         {
           "id": "m3",
-          "label": "Clear both waves",
+          "label": "Clear both fights",
           "goal": {
-            "type": "allWaves"
+            "type": "allFights"
           },
           "reward": {
             "gems": 3
@@ -331,7 +331,7 @@
           "text": "He pulls a worn piece of paper from inside his robe — edges soft from years of handling. Partial names. Locations. Fragments of something he's been building for years. He looks at it, then back at the notice. Refolds it. Puts it back."
         }
       ],
-      "waves": [],
+      "fights": [],
       "team": [],
       "teamMode": "canon",
       "missions": [],
@@ -397,7 +397,7 @@
           "text": "The licence is not the goal. It never was. It's the door."
         }
       ],
-      "waves": [
+      "fights": [
         {
           "enemies": [
             {

@@ -160,7 +160,7 @@ Reference definitions migrated from `author_notes.md` once confirmed stable agai
 **Sub-passive activation** (`passive.worksFromSub`, default `false`): only passives that purely grant a buff/effect without needing to interact with an enemy/ally target work from the bench. Confirmed opt-in: Leorio, Mustafa, Gabrist, Isolde. Confirmed opt-out (needs field presence): Chiara (has a literal "while on battlefield" condition), Diane, Meliodas, Ban, Duke, Lyra, Batra, Sara, Yalina, Siddiq, Gon, Killua, Master Tao.
 
 **Mechanic definitions:**
-- `[Power Strike]` — damage bonus scaling off enemy DEF: +1% damage per 2 points of enemy DEF.
+- `[Power Strike]` — damage bonus scaling off the enemy's **effective** DEF (current, after buffs — not base): **+3% damage per 10 points**, i.e. 30% per 100. **Revised 2026-09-16** from "+1% per 2 points" (5% per 10), which was never implemented; Tanveer set the live figure while planning the counter to DEF stacking. Still **not built** as a mechanic type, so ruling #65 forbids any description naming it. Carrier skills take **below-standard damage scaling** so the card is situational rather than a strict upgrade — see `Plans/2026-09-16-pve-structure.md` for the measured crossover.
 - `type-neutral` — ignores type advantage/disadvantage in both directions while active.
 - `Debuff Immunity` — blocks incoming debuffs for the buff's duration and clears existing debuffs on application.
 - Recovery Rate substat — multiplies all incoming healing (heals, HoT, lifesteal) by the percentage; base 100%.

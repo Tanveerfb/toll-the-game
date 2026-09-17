@@ -29,10 +29,10 @@ export default function DuelWaitingOverlay(): React.JSX.Element | null {
       <div className="pointer-events-auto flex items-center gap-3 border-2 border-violet-400/70 bg-panel/95 px-4 py-2.5 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
         <span className="h-2 w-2 animate-pulse bg-violet-300" />
         <div className="min-w-0">
-          <p className="font-heading text-sm tracking-[0.12em] text-violet-200">
+          <p className="font-heading text-sm tracking-label text-violet-200">
             CLAUDE IS THINKING
           </p>
-          <p className="truncate font-body text-[10px] uppercase tracking-[0.14em] text-readout-muted">
+          <p className="truncate font-body text-[10px] uppercase tracking-label text-readout-muted">
             {status || "Waiting for a move…"}
           </p>
         </div>

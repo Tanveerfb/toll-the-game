@@ -144,6 +144,22 @@ h6 {
    still stock greyscale and still unused — they go when the last screen
    migrates. */
 @theme {
+  /* Letter-spacing, as three jobs rather than eighteen numbers.
+     Measured 2026-09-17: 364 usages across 18 distinct values, of which the
+     top six (0.18/0.16/0.14/0.1/0.12/0.22em) were all doing the same job -
+     the uppercase micro-label. That is drift, not a scale.
+
+     0.14em is the label step because `components/ui/button.tsx` already used
+     it, so the most-migrated component needed no change. Approved by Tanveer,
+     2026-09-17; changing one now costs one line rather than 364 edits, which
+     is the point of naming them at all. */
+  --tracking-title: 0.08em;   /* heading-font display text */
+  --tracking-label: 0.14em;   /* uppercase micro-labels - the common case */
+  /* NOT `--tracking-wide`: that name is Tailwind's own scale step
+     (0.025em), and defining it here silently re-spaced the four places
+     already using `tracking-wide` by 9x. Named for its job instead. */
+  --tracking-eyebrow: 0.22em; /* the rare eyebrow above a page title */
+
   /* Surfaces. The void is the page; panels sit on it. */
   --color-void: #06090c;
   --color-panel: #0d141b;

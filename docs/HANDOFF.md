@@ -299,7 +299,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
     - **No fight in the game has more than 2 enemies** — 15 of 18 have exactly one, and none has 3+ — which leaves ~10 authored enemy-facing AoE payloads with almost nothing to hit (Diane's ultimate goes 1,776 → 5,328 across three targets). More PVE content is in progress; the gap closes with content, not with kit changes.
     - **Three ultimates deal less than their own rank-3 card at a single target**: Gabrist (350 vs 455), Master Tao (635 vs 635), Siddiq (445 vs 600), measured through `executeSkill` against Molvarr P1. All three trade damage for spread or utility. Pinned as a known list by `tests/balance.test.ts` — **a kit JOINING that list is a new ruling-#2 break and wants a decision before it ships.**
 
-    Also settled the same day: `lib/game/balance.ts`'s ultimate check was wrong twice over and disagreed with five of the eighteen shipped kits. It counted a **heal's** percentage as a damage skill to beat (Siddiq's 680% heal), and ignored **ruling #22** — an ultimate that self-buffs before it strikes benefits on the same hit, which is why Chiara's 333% out-damages her 400% card and Mustafa's 225% out-damages his 250%. Both false positives are gone; the three real ones remain.
+    Also settled the same day: `lib/game/balance.ts` (**deleted 2026-09-17**, audit finding M3 — the Kit Lab it served no longer exists)'s ultimate check was wrong twice over and disagreed with five of the eighteen shipped kits. It counted a **heal's** percentage as a damage skill to beat (Siddiq's 680% heal), and ignored **ruling #22** — an ultimate that self-buffs before it strikes benefits on the same hit, which is why Chiara's 333% out-damages her 400% card and Mustafa's 225% out-damages his 250%. Both false positives are gone; the three real ones remain.
 
 90. **Molvarr audit — what the fight is, and one correction to #73** (2026-08-14). Measured with a faithful turn loop (real enemy deck with merges, correct tick order, buff expiry, AI playing from a hand), not by multiplying numbers on paper.
 
@@ -839,6 +839,70 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
     **The difficulty target is a player band, not a number.** *"we have to tune the difficulty so that a team of all level 20 chars would have a 4/10 difficulty feel but anything lowered level team or poorly made team would struggle a lot."* Level 20 is necessarily ascension 1, so the reference team is **1.489x** base. Levels are authored per enemy per wave, so the dial never touches a kit. Measured values and the method live in `lib/game/trialEncounters.ts`; do not re-derive them from this entry, which deliberately states no figures (see this ledger's own header).
 
     **A trial pays no loot.** The lifted cap is the reward, and `clearRankWall` cashes out the XP banked against the wall. The events board previously ran every victory through the world-boss reward table regardless of event kind, so a cleared trial would have paid ascension materials and unlocked Auto Clear on a one-off fight.
+
+137. **Stage, fight, wave and phase are four different things** (2026-09-17, sharpens #103 and #136, supersedes the code's use of "wave"). Correcting an assumption Claude had made — that "wave" was simply the code's word for a separate fight. Tanveer:
+
+    > *"I think wave is still different than a separate fight or a phase… wave is basically a group of enemies, a new set of enemies appearing. Phase is just a single enemy transitioning to a new state."*
+
+    **CORRECTED the same day — he restated the whole vocabulary unprompted, and this is the version that stands:**
+
+    | term | means |
+    |---|---|
+    | **Event** | **a folder.** A group of stages — *"Ascension Quests (Event), and then it would show Ascension Trial 1 (Stage), Ascension Trial 2 (another stage)."* |
+    | **Stage** | **an entry** to a particular fight or story panel. Story stages, event stages, the Molvarr boss stage. |
+    | **Fight** | player vs any number of enemies. **Starting one resets everything** — *"it doesn't sustain anything from prior fights."* May hold more than one phase. |
+    | **Phase** | **any transition to a new state inside one fight.** A new set of enemies, or the **same** enemy back with a stronger or different kit, or one enemy changing form. **A fight is not won until every phase is cleared.** |
+    | **Stage map node** | a place on a stage map a player can land on — item drops, fights, jump points, an end point. Movement comes from a **"stage navigator roll"**. Nothing like it exists in the code. |
+
+    **"Wave" is retired as a term.** What the first version of this entry called a wave is now simply a **phase**; the distinction it drew — *"a wave changes how many enemies there are, a phase changes what one enemy is"* — **was wrong**, and is recorded here because it was briefly in the ledger.
+
+    **Two worked examples, his:** the **Molvarr fight is one fight with two phases**; the **First Ascension Trial is three fights in one stage, not phases**. And what a phase contains is his call — *"three minions and then the main guy, or the same guy who gets stronger in the next phase. That's my choice."*
+
+    **So `CharacterPhase` does not collide.** An enemy changing form is one *kind* of phase, not a different concept sharing the word, and nothing about it needs renaming.
+
+    **What "resets" means, and it is a reading rather than his words:** *"everything goes to initial values"* covers **in-fight** state — turn count, buffs, debuffs, ult gauge, passive state — while **HP and death are stage-level** and carry across a stage's fights. Both of his rules only hold together this way, and it is what `startCustomBattle` already does (everything resets except `carryHp`). Flagged to him as an inference.
+
+    **Consequence — the code is misnamed, and the corrected table does not change the target.** `StoryWave`, `waveIndex`, `waveEnemies`, `waveTeam`, `applyWaveOutcome`, `WaveBreak` and `foldWaveFromBattle` all mean **fight**. The player-facing strings already say "Fight N of M"; the code is the odd one out. The name is now actively dangerous rather than untidy, because `wave` is occupied by the concept one level up and a future reader of `waveEnemies` would reasonably expect reinforcements. Rename before more content is authored against it.
+
+    **Two stage shapes named the same day:** a **world boss** is one stage with one fight, that fight usually carrying phases, and it is a *category* rather than a description of Molvarr — *"any other boss, I consider that a world boss battle."* An **ascension trial** is several fights in one stage; his word for the feel is *"marathon fights"*. Molvarr is the category's only member today.
+
+138. **A dominant strategy is a missing counter, not a defect** (2026-09-17, governs how balance findings are reported; also in `AGENTS.md`). Tanveer, on being shown that a defence-stacked team beats content outright:
+
+    > *"My whole game is based around this rock paper scissors mechanic… I may introduce characters who have stances that let them have the damage reduction effect, but then characters with cancel stances would be in meta to counter such units… There will never be a problem that will interfere in the game for too long. We will always have a solution in some shape or form."*
+
+    So the answer to a dominant strategy is **the next mechanic**, not a nerf to the existing one. A measurement showing something dominating is reported as *"X currently has no counter"*, with the interaction named — never as a defect, never with a proposed nerf, and never by tuning an encounter to route around a kit he can change himself. Naming an unanswered strategy is doing him a favour: it says where the next mechanic goes.
+
+    Compatible with **#56** (*"Values are free. A number that doesn't land on a tier is intentional, not a bug"*) and with his own worked example the same day — Lyra's first-action DEF passive was **tripled** from its original value on purpose, to reward a niche playstyle.
+
+    **The layer already exists in code.** `cancelBuffs` and `cancelStances` reach different things (#132), so the counters were authored before the units that will need countering.
+
+139. **What is his and what is Claude's, stated precisely** (2026-09-17, sharpens the Design Ownership section of `AGENTS.md`; also recorded there). He set out the split, then narrowed it when Claude read "design" too widely:
+
+    > *"I manage the thinking process of the story side. You handle the code side and the design side… you are my co-assistant — you are doing the coding stuff and I am doing the thinking stuff. But our vision should also match."*
+
+    > *"When I said design, it's mostly the site structure, data types, that kind of design. I'm not talking about UI, UX — obviously that is my domain mostly, but then I do let you know what I need and how I need it, then you can code it out. That also comes under programming."*
+
+    | Claude | Tanveer |
+    |---|---|
+    | Site structure, data types, schemas, naming, what is measurable | **UI and UX direction** |
+    | Implementing his UX direction — that is programming, not design | Story, mechanics, kits, numbers, characters |
+    | Measuring, and describing the shape of a dial | Choosing every value on it |
+
+    **Claude does not originate UX direction.** The mobile rules (#107, #118–#125) are the *record of his direction*, not licence to invent more; surfacing a screen that breaks one is measurement and is welcome.
+
+    **One invitation-only carve-out:** he may ask for **names or kits for low-significance characters** — *"NPCs, or people who I don't feel like writing for… then I can ask for your suggestions."* By request only. It does not loosen #65, and never reaches a character who matters to the story.
+
+    **And his three engineering values, in his order:** *"consistency, modularization, and QOL."* **"It works" is not the bar** — a change adding a seventh variant of an existing button is a regression against consistency, and a fix landing in one screen rather than the shared primitive is a regression against modularization. **QOL** is specifically the affordances that make a feature usable rather than merely functional: *"when you create a new table — without QOL you don't add any search field, you don't add any filters, sort options, animations."* `components/game/CharacterBrowser.tsx` is the benchmark.
+
+140. **A transformation shares an archive entry; a version gets its own** (2026-09-17, follows #137's vocabulary, governs `app/archive/[id]`). Asked how a multi-phase boss should appear once phases move from the character to the fight, he drew the line by example:
+
+    > *"We'll keep only one entry to check what Molvarr does. By default it will show the phase one details, but there will be another section that can let the users click on it, and then it will show them phase two details. Technically it will be two separate kits, but it will show on the same page.*
+    >
+    > *Right now we have a Red Lyra, then we can have a Green Lyra. **Those will not be on the same pages, those will have their own dedicated archive entries.** But if a boss, or even a single playable unit, has multi phases or multi transformations, then it will be on a same single entry."*
+
+    So the test is **what the thing is to the player**, not how the data is stored: forms of *one* unit that it moves between — boss phases, a transformation — are one entry with a switcher, even though each form is technically its own kit. **Separate versions of a character** — a re-coloured or re-imagined alternate — are separate entries, because they are separate units a player owns and fields independently.
+
+    **The component already exists**: `components/game/KitPhases.tsx`, built 2026-07-20 and explicitly *"reusable for playable-character transformations later"*. Tabs per phase, a plain kit when there is only one. Only its data source is affected by the phase work in `Plans/2026-09-17-fight-phases.md`.
 
 **Kit data stays JSON** — settled 2026-08-04. It's runtime data `combat.ts`, `descriptionTranslator`, `damagePreview`, the Zod schema, Kit Lab and ~20 test files all depend on. MDX is for prose (`content/news/`), not for kits.
 

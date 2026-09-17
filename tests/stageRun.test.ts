@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
-  applyWaveOutcome,
+  applyFightOutcome,
   beginRun,
   isWipe,
   runHealthBars,
   toSummary,
-  waveEnemies,
-  waveTeam,
+  fightEnemies,
+  fightTeam,
 } from "@/lib/game/stageRun";
 import type { StoryStage } from "@/types/story";
 
 /**
- * The wave loop (story mode v2, 2026-08-18) — his ruling #103 made real.
+ * The fight loop (story mode v2, 2026-08-18) — his ruling #103 made real.
  *
- * Two properties carry the whole design: **HP carries between waves** and **the
- * fallen stay down**. If either leaks, a 3-wave stage collapses into three
+ * Two properties carry the whole design: **HP carries between fights** and **the
+ * fallen stay down**. If either leaks, a 3-fight stage collapses into three
  * independent fights and every mission and reward tuned against attrition is
  * wrong.
  */
@@ -27,7 +27,7 @@ const STAGE: StoryStage = {
   origin: "filler",
   intro: [],
   outro: [],
-  waves: [
+  fights: [
     { enemies: [{ id: "road_bandit" }, { id: "road_bandit" }] },
     { enemies: [{ id: "raider" }] },
     { enemies: [{ id: "road_bandit", level: 12 }] },
@@ -44,7 +44,7 @@ const SCENE_STAGE: StoryStage = {
   id: "s1",
   number: 1,
   kind: "story",
-  waves: [],
+  fights: [],
   team: [],
 };
 
@@ -53,12 +53,12 @@ function start() {
 }
 
 describe("beginning a run", () => {
-  it("starts on wave 1 with everyone at full", () => {
+  it("starts on fight 1 with everyone at full", () => {
     const run = start();
-    expect(run.waveIndex).toBe(0);
-    expect(run.waveCount).toBe(3);
+    expect(run.fightIndex).toBe(0);
+    expect(run.fightCount).toBe(3);
     expect(run.carryHp).toEqual({});
-    expect(waveTeam(run).map((p) => p.id)).toEqual(["duke", "lyra", "sara"]);
+    expect(fightTeam(run).map((p) => p.id)).toEqual(["duke", "lyra", "sara"]);
     expect(run.complete).toBe(false);
   });
 
@@ -68,8 +68,8 @@ describe("beginning a run", () => {
 });
 
 describe("carrying attrition forward", () => {
-  it("carries survivors' HP and drops the fallen from the next wave", () => {
-    const run = applyWaveOutcome(start(), {
+  it("carries survivors' HP and drops the fallen from the next fight", () => {
+    const run = applyFightOutcome(start(), {
       survivors: [
         { id: "duke", hp: 1800 },
         { id: "lyra", hp: 640 },
@@ -80,23 +80,23 @@ describe("carrying attrition forward", () => {
       rankUses: { 1: 0, 2: 0, 3: 0 },
     });
 
-    expect(run.waveIndex).toBe(1);
+    expect(run.fightIndex).toBe(1);
     expect(run.carryHp).toEqual({ duke: 1800, lyra: 640 });
-    expect(waveTeam(run).map((p) => p.id)).toEqual(["duke", "lyra"]);
-    expect(waveEnemies(STAGE, run).map((e) => e.id)).toEqual(["raider"]);
+    expect(fightTeam(run).map((p) => p.id)).toEqual(["duke", "lyra"]);
+    expect(fightEnemies(STAGE, run).map((e) => e.id)).toEqual(["raider"]);
   });
 
-  it("never revives a unit that fell in an earlier wave", () => {
-    // The engine would happily rebuild Sara at full HP for wave 3 if the run let
+  it("never revives a unit that fell in an earlier fight", () => {
+    // The engine would happily rebuild Sara at full HP for fight 3 if the run let
     // it, and nothing else in the codebase remembers she died.
-    const afterOne = applyWaveOutcome(start(), {
+    const afterOne = applyFightOutcome(start(), {
       survivors: [{ id: "duke", hp: 1000 }],
       fallenIds: ["sara", "lyra"],
       turns: 5,
       ultimates: 0,
       rankUses: { 1: 0, 2: 0, 3: 0 },
     });
-    const afterTwo = applyWaveOutcome(afterOne, {
+    const afterTwo = applyFightOutcome(afterOne, {
       survivors: [{ id: "duke", hp: 400 }],
       fallenIds: [],
       turns: 3,
@@ -104,19 +104,19 @@ describe("carrying attrition forward", () => {
       rankUses: { 1: 0, 2: 0, 3: 0 },
     });
     expect(afterTwo.fallen.sort()).toEqual(["lyra", "sara"]);
-    expect(waveTeam(afterTwo).map((p) => p.id)).toEqual(["duke"]);
+    expect(fightTeam(afterTwo).map((p) => p.id)).toEqual(["duke"]);
     expect(afterTwo.carryHp).toEqual({ duke: 400 });
   });
 
   it("records a death once even if it is reported twice", () => {
-    const once = applyWaveOutcome(start(), {
+    const once = applyFightOutcome(start(), {
       survivors: [{ id: "duke", hp: 900 }],
       fallenIds: ["sara"],
       turns: 2,
       ultimates: 0,
       rankUses: { 1: 0, 2: 0, 3: 0 },
     });
-    const twice = applyWaveOutcome(once, {
+    const twice = applyFightOutcome(once, {
       survivors: [{ id: "duke", hp: 500 }],
       fallenIds: ["sara"],
       turns: 2,
@@ -127,7 +127,7 @@ describe("carrying attrition forward", () => {
   });
 
   it("floors carried HP at 1 — a survivor is never handed 0", () => {
-    const run = applyWaveOutcome(start(), {
+    const run = applyFightOutcome(start(), {
       survivors: [{ id: "duke", hp: 0.4 }],
       fallenIds: [],
       turns: 1,
@@ -137,16 +137,16 @@ describe("carrying attrition forward", () => {
     expect(run.carryHp.duke).toBe(1);
   });
 
-  it("accumulates turns and ultimates across waves", () => {
+  it("accumulates turns and ultimates across fights", () => {
     let run = start();
-    run = applyWaveOutcome(run, {
+    run = applyFightOutcome(run, {
       survivors: [{ id: "duke", hp: 10 }],
       fallenIds: [],
       turns: 4,
       ultimates: 1,
       rankUses: { 1: 0, 2: 0, 3: 0 },
     });
-    run = applyWaveOutcome(run, {
+    run = applyFightOutcome(run, {
       survivors: [{ id: "duke", hp: 8 }],
       fallenIds: [],
       turns: 3,
@@ -157,7 +157,7 @@ describe("carrying attrition forward", () => {
     expect(run.ultimatesUsed).toBe(3);
   });
 
-  it("completes only after the last wave", () => {
+  it("completes only after the last fight", () => {
     let run = start();
     const win = (hp: number) => ({
       survivors: [{ id: "duke", hp }],
@@ -166,18 +166,18 @@ describe("carrying attrition forward", () => {
       ultimates: 0,
       rankUses: { 1: 0, 2: 0, 3: 0 },
     });
-    run = applyWaveOutcome(run, win(900));
+    run = applyFightOutcome(run, win(900));
     expect(run.complete).toBe(false);
-    run = applyWaveOutcome(run, win(700));
+    run = applyFightOutcome(run, win(700));
     expect(run.complete).toBe(false);
-    run = applyWaveOutcome(run, win(500));
+    run = applyFightOutcome(run, win(500));
     expect(run.complete).toBe(true);
   });
 });
 
 describe("wipes", () => {
   it("is a wipe when nobody is left to field", () => {
-    const run = applyWaveOutcome(start(), {
+    const run = applyFightOutcome(start(), {
       survivors: [],
       fallenIds: ["duke", "lyra", "sara"],
       turns: 6,
@@ -185,13 +185,13 @@ describe("wipes", () => {
       rankUses: { 1: 0, 2: 0, 3: 0 },
     });
     expect(isWipe(run)).toBe(true);
-    expect(waveTeam(run)).toEqual([]);
+    expect(fightTeam(run)).toEqual([]);
   });
 });
 
 describe("summarising for missions", () => {
   it("reports what the run did, with everyone who started listed as fielded", () => {
-    const run = applyWaveOutcome(start(), {
+    const run = applyFightOutcome(start(), {
       survivors: [{ id: "duke", hp: 100 }],
       fallenIds: ["sara"],
       turns: 9,
@@ -200,8 +200,8 @@ describe("summarising for missions", () => {
     });
     const summary = toSummary(run);
     expect(summary).toMatchObject({
-      wavesCleared: 1,
-      wavesTotal: 3,
+      fightsCleared: 1,
+      fightsTotal: 3,
       turns: 9,
       ultimatesUsed: 2,
       fallen: ["sara"],
@@ -218,8 +218,8 @@ describe("summarising for missions", () => {
   });
 });
 
-describe("the between-waves HUD", () => {
-  it("shows full HP before the first wave, carried HP after, and 0 for the dead", () => {
+describe("the between-fights HUD", () => {
+  it("shows full HP before the first fight, carried HP after, and 0 for the dead", () => {
     const maxOf = () => 2000;
     expect(runHealthBars(start(), maxOf)).toEqual([
       { id: "duke", hp: 2000, max: 2000 },
@@ -227,7 +227,7 @@ describe("the between-waves HUD", () => {
       { id: "sara", hp: 2000, max: 2000 },
     ]);
 
-    const run = applyWaveOutcome(start(), {
+    const run = applyFightOutcome(start(), {
       survivors: [
         { id: "duke", hp: 1200 },
         { id: "lyra", hp: 300 },

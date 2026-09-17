@@ -81,7 +81,7 @@ export interface TeamPickerProps {
 }
 
 const CHIP =
-  "chamfer min-h-11 border px-2.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.14em] transition-colors";
+  "chamfer min-h-11 border px-2.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-label transition-colors";
 const CHIP_OFF =
   "border-edge bg-void/60 text-readout-dim hover:border-edge-strong hover:text-readout";
 const CHIP_ON = "border-signal bg-signal/10 text-signal";
@@ -277,10 +277,10 @@ export default function TeamPicker({
     <>
       <div className="chamfer-lg border border-signal bg-panel">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline px-3 py-2">
-          <h3 className="font-heading text-lg tracking-[0.12em] text-signal">
+          <h3 className="font-heading text-lg tracking-label text-signal">
             {title}
           </h3>
-          <span className="font-body text-[11px] font-bold uppercase tracking-[0.18em] tabular-nums text-readout-muted">
+          <span className="font-body text-[11px] font-bold uppercase tracking-label tabular-nums text-readout-muted">
             {openSlots === 0
               ? `${anchors.length} locked`
               : `${filled} / ${anchors.length + openSlots}`}
@@ -292,7 +292,7 @@ export default function TeamPicker({
 
         {showPresets && openSlots > 0 ? (
           <div className="flex flex-wrap items-center gap-1.5 border-b border-hairline px-3 py-2">
-            <span className="mr-1 font-body text-[9px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+            <span className="mr-1 font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
               Preset
             </span>
             {presets.map((preset) => (
@@ -364,7 +364,7 @@ export default function TeamPicker({
                   className="absolute inset-0 h-full w-full"
                 />
                 <span
-                  className={`absolute left-0 top-0 z-10 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-widest text-void ${lent ? "bg-signal" : "bg-role-ultimate"}`}
+                  className={`absolute left-0 top-0 z-10 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-label text-void ${lent ? "bg-signal" : "bg-role-ultimate"}`}
                 >
                   {lent ? "Trial" : swappable ? "Yours" : lockedNote}
                 </span>
@@ -375,11 +375,11 @@ export default function TeamPicker({
                     ⇄
                   </span>
                 ) : null}
-                <span className="relative z-10 w-full bg-void/75 px-1 py-0.5 text-center font-heading text-xs tracking-[0.06em] text-readout-strong">
+                <span className="relative z-10 w-full bg-void/75 px-1 py-0.5 text-center font-heading text-xs tracking-title text-readout-strong">
                   {character.name}
                 </span>
                 {note ? (
-                  <span className="relative z-10 w-full bg-void/75 px-1 pb-0.5 text-center font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-dim">
+                  <span className="relative z-10 w-full bg-void/75 px-1 pb-0.5 text-center font-body text-[9px] font-bold uppercase tracking-label text-readout-dim">
                     {note}
                   </span>
                 ) : null}
@@ -401,7 +401,7 @@ export default function TeamPicker({
                 >
                   +
                   {benched ? (
-                    <span className="mt-1 font-body text-[9px] font-bold uppercase tracking-[0.16em]">
+                    <span className="mt-1 font-body text-[9px] font-bold uppercase tracking-label">
                       Sub
                     </span>
                   ) : null}
@@ -422,11 +422,11 @@ export default function TeamPicker({
                 {/* The bench is real now that three units take the field, so
                     the fourth slot says so rather than looking identical. */}
                 {benched ? (
-                  <span className="absolute left-0 top-0 z-10 border-b border-r border-edge bg-void/85 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-widest text-readout-dim">
+                  <span className="absolute left-0 top-0 z-10 border-b border-r border-edge bg-void/85 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-label text-readout-dim">
                     Sub
                   </span>
                 ) : null}
-                <span className="relative z-10 w-full bg-void/75 px-1 py-0.5 text-center font-heading text-xs tracking-[0.06em] text-readout-strong">
+                <span className="relative z-10 w-full bg-void/75 px-1 py-0.5 text-center font-heading text-xs tracking-title text-readout-strong">
                   {character.name}
                 </span>
               </button>
@@ -505,10 +505,10 @@ export default function TeamPicker({
                       </span>
                     ) : null}
                     <span className="relative z-10 w-full bg-void/80 px-1.5 py-1">
-                      <span className="block truncate font-heading text-sm tracking-[0.06em] text-readout-strong">
+                      <span className="block truncate font-heading text-sm tracking-title text-readout-strong">
                         {character.name}
                       </span>
-                      <span className="block font-body text-[9px] font-bold uppercase tracking-[0.12em] tabular-nums text-readout-muted">
+                      <span className="block font-body text-[9px] font-bold uppercase tracking-label tabular-nums text-readout-muted">
                         {character.atk} / {character.def} / {character.hp}
                       </span>
                     </span>
@@ -534,10 +534,10 @@ export default function TeamPicker({
               >
                 <PresetFaces ids={preset.memberIds} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-heading text-base tracking-[0.04em] text-readout-strong">
+                  <span className="block truncate font-heading text-base tracking-title text-readout-strong">
                     {preset.name}
                   </span>
-                  <span className="block font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-muted">
+                  <span className="block font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
                     {preset.memberIds.length} units · used {preset.useCount}×
                   </span>
                 </span>

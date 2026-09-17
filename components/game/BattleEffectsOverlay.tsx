@@ -183,7 +183,7 @@ export default function BattleEffectsOverlay({
               animate={{ y: -24, opacity: 1, scale: 1 }}
               exit={{ y: -34, opacity: 0 }}
               transition={{ duration: 0.45 }}
-              className={`absolute rounded border px-3 py-1 font-heading text-2xl tracking-[0.06em] shadow-2xl md:text-3xl ${
+              className={`absolute rounded border px-3 py-1 font-heading text-2xl tracking-title shadow-2xl md:text-3xl ${
                 effect.kind === "damage"
                   ? "border-red-300/70 bg-red-950/70 text-red-200"
                   : "border-emerald-300/70 bg-emerald-950/70 text-emerald-200"
@@ -211,7 +211,7 @@ export default function BattleEffectsOverlay({
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 22, opacity: 0 }}
                 transition={{ duration: 0.25 }}
-                className={`rounded border px-3 py-2 font-body text-xs uppercase tracking-[0.12em] shadow-lg ${
+                className={`rounded border px-3 py-2 font-body text-xs uppercase tracking-label shadow-lg ${
                   effect.kind === "status"
                     ? "border-sky-300/60 bg-sky-900/65 text-sky-100"
                     : "border-edge/70 bg-panel/70 text-readout-strong"

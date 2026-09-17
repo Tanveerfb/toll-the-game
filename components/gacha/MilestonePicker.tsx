@@ -77,11 +77,11 @@ export default function MilestonePicker({
                 ) : null}
               </span>
               <span className="px-1.5 py-1">
-                <span className="block truncate font-heading text-sm leading-tight tracking-[0.04em] text-readout-strong">
+                <span className="block truncate font-heading text-sm leading-tight tracking-title text-readout-strong">
                   {character?.name ?? id}
                 </span>
                 <span
-                  className={`block font-body text-[9px] font-bold uppercase tracking-[0.12em] ${owned ? "text-signal" : "text-el-light"}`}
+                  className={`block font-body text-[9px] font-bold uppercase tracking-label ${owned ? "text-signal" : "text-el-light"}`}
                 >
                   {owned ? `Owned · Ult ${ultLevel}` : "New unit"}
                 </span>
@@ -100,7 +100,7 @@ export default function MilestonePicker({
           type="button"
           disabled={!selected}
           onClick={() => selected && onPick(selected)}
-          className="flex min-h-11 shrink-0 items-center border border-el-light bg-el-light/12 px-5 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-el-light transition-colors hover:bg-el-light/20 disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted"
+          className="flex min-h-11 shrink-0 items-center border border-el-light bg-el-light/12 px-5 font-body text-[11px] font-bold uppercase tracking-label text-el-light transition-colors hover:bg-el-light/20 disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted"
         >
           {chosen ? `Claim ${chosen.name}` : "Pick a unit"}
         </button>

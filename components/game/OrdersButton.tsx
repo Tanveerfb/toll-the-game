@@ -59,10 +59,10 @@ export default function OrdersButton({
             strokeWidth={2}
           />
           <span className="flex min-w-0 flex-col gap-0.5">
-            <span className="font-heading text-lg tracking-[0.05em] text-readout-strong">
+            <span className="font-heading text-lg tracking-title text-readout-strong">
               Bureau Orders
             </span>
-            <span className="font-body text-[11px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+            <span className="font-body text-[11px] font-bold uppercase tracking-label text-readout-muted">
               {state.locked
                 ? "Sign in to claim"
                 : state.ready > 0
@@ -88,7 +88,7 @@ export default function OrdersButton({
           }`}
         >
           <ClipboardList className="h-3 w-3 shrink-0" strokeWidth={2.4} />
-          <span className="font-body text-[10px] font-bold uppercase tracking-[0.12em]">
+          <span className="font-body text-[10px] font-bold uppercase tracking-label">
             Orders
           </span>
           {badge ? (

@@ -23,7 +23,7 @@ export default function GlobalError({
 
   return (
     <div className="flex min-screen-below-nav flex-col items-center justify-center gap-4 bg-void px-6 text-center">
-      <p className="font-heading text-2xl tracking-[0.1em] text-el-red">
+      <p className="font-heading text-2xl tracking-label text-el-red">
         SOMETHING WENT WRONG
       </p>
       <p className="max-w-md font-body text-sm text-readout-dim">

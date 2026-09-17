@@ -51,18 +51,18 @@ function GrowthControls({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between gap-2 chamfer border border-edge bg-panel px-3 py-2">
-        <span className="font-heading text-lg tracking-[0.1em] text-readout-strong">
+        <span className="font-heading text-lg tracking-label text-readout-strong">
           Level {progress.level}
           <span className="font-body text-xs text-readout-muted"> / {maxLevel}</span>
         </span>
-        <span className="font-body text-xs uppercase tracking-[0.14em] text-signal">
+        <span className="font-body text-xs uppercase tracking-label text-signal">
           Ascension {progress.ascension}
         </span>
       </div>
 
       {!atMaxLevel ? (
         <div>
-          <div className="flex items-center justify-between font-body text-xs uppercase tracking-widest text-readout-muted">
+          <div className="flex items-center justify-between font-body text-xs uppercase tracking-label text-readout-muted">
             <span>XP</span>
             <span className="tabular-nums">
               {progress.xp} / {xpNeeded}
@@ -71,7 +71,7 @@ function GrowthControls({
           <Progress value={(progress.xp / xpNeeded) * 100} className="mt-1" />
         </div>
       ) : (
-        <p className="font-body text-xs uppercase tracking-widest text-signal">
+        <p className="font-body text-xs uppercase tracking-label text-signal">
           Max level for this ascension tier — ascend to continue leveling.
         </p>
       )}
@@ -127,7 +127,7 @@ function GrowthControls({
 
       {nextCost ? (
         <div className="border-t border-hairline pt-3">
-          <p className="font-body text-xs uppercase tracking-widest text-readout-muted">
+          <p className="font-body text-xs uppercase tracking-label text-readout-muted">
             Ascend to tier {progress.ascension + 1} (unlocks Lv
             {maxLevelForAscension(progress.ascension + 1)})
           </p>
@@ -173,7 +173,7 @@ function GrowthControls({
           </Button>
         </div>
       ) : (
-        <p className="border-t border-hairline pt-3 font-body text-xs uppercase tracking-widest text-readout-muted">
+        <p className="border-t border-hairline pt-3 font-body text-xs uppercase tracking-label text-readout-muted">
           No further ascension costed yet (bands 4-6 come in a later update).
         </p>
       )}
@@ -247,10 +247,10 @@ function UltimateLevelControls({
   return (
     <div className="border-t border-hairline pt-3">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="font-body text-xs uppercase tracking-widest text-readout-muted">
+        <p className="font-body text-xs uppercase tracking-label text-readout-muted">
           Ultimate level
         </p>
-        <p className="font-heading text-lg leading-none tracking-[0.1em] text-readout-strong">
+        <p className="font-heading text-lg leading-none tracking-label text-readout-strong">
           {current}
           <span className="font-body text-xs text-readout-muted">
             {" "}
@@ -278,7 +278,7 @@ function UltimateLevelControls({
             return (
               <span
                 key={level}
-                className={`chamfer border px-1.5 py-0.5 font-body text-[10px] font-bold tracking-[0.08em] ${
+                className={`chamfer border px-1.5 py-0.5 font-body text-[10px] font-bold tracking-title ${
                   isCurrent
                     ? "border-signal bg-signal/15 text-signal"
                     : isTarget
@@ -294,7 +294,7 @@ function UltimateLevelControls({
       ) : null}
 
       {maxed ? (
-        <p className="mt-2 font-body text-xs uppercase tracking-widest text-role-heal">
+        <p className="mt-2 font-body text-xs uppercase tracking-label text-role-heal">
           Maxed — further copies bank as coins
         </p>
       ) : (
@@ -309,7 +309,7 @@ function UltimateLevelControls({
               onValueChange={([next]) => setTarget(next)}
               aria-label="Target ultimate level"
             />
-            <span className="w-16 shrink-0 text-right font-body text-xs uppercase tracking-[0.14em] text-readout">
+            <span className="w-16 shrink-0 text-right font-body text-xs uppercase tracking-label text-readout">
               UL {clampedTarget}
             </span>
           </div>
@@ -361,7 +361,7 @@ export default function CharacterProgressionPanel({
 
   if (!roster.includes(characterId)) {
     return (
-      <p className="chamfer border border-edge bg-panel px-3 py-2 text-center font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+      <p className="chamfer border border-edge bg-panel px-3 py-2 text-center font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
         Not owned — summon to level up
       </p>
     );
@@ -372,7 +372,7 @@ export default function CharacterProgressionPanel({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="chamfer flex w-full min-h-11 items-center justify-center border border-role-heal/60 bg-role-heal/8 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-role-heal transition-colors hover:bg-role-heal/16"
+        className="chamfer flex w-full min-h-11 items-center justify-center border border-role-heal/60 bg-role-heal/8 font-body text-[11px] font-bold uppercase tracking-label text-role-heal transition-colors hover:bg-role-heal/16"
       >
         Growth — level, ascension & ultimate
       </button>

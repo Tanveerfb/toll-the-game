@@ -44,7 +44,7 @@ export default function ChapterList({
 
   return (
     <div className="mx-auto w-full max-w-md px-3 pt-3 pb-8">
-      <p className="px-1 pb-2 text-[10px] tracking-[0.2em] text-readout-muted uppercase">
+      <p className="px-1 pb-2 text-[10px] tracking-eyebrow text-readout-muted uppercase">
         Arc One — The Grading · {adapted} of {SOURCE_CHAPTERS_WRITTEN} chapters live
       </p>
 
@@ -81,10 +81,10 @@ export default function ChapterList({
                   className="h-4 w-4 shrink-0 text-readout-muted"
                   strokeWidth={2}
                 />
-                <span className="font-heading text-sm tracking-[0.22em] text-readout-muted uppercase">
+                <span className="font-heading text-sm tracking-eyebrow text-readout-muted uppercase">
                   Chapter {number}
                 </span>
-                <span className="ml-auto font-body text-[9px] font-bold tracking-[0.2em] text-readout-muted uppercase">
+                <span className="ml-auto font-body text-[9px] font-bold tracking-eyebrow text-readout-muted uppercase">
                   Sealed
                 </span>
               </div>
@@ -156,7 +156,7 @@ function ChapterCard({
           carry one 10px label would cost the art more than the label is
           worth. */}
       <span
-        className={`absolute top-2 right-2 border bg-void/75 px-2 py-0.5 text-[10px] tracking-[0.18em] uppercase backdrop-blur-[2px] ${
+        className={`absolute top-2 right-2 border bg-void/75 px-2 py-0.5 text-[10px] tracking-label uppercase backdrop-blur-[2px] ${
           complete
             ? "border-edge text-readout-muted"
             : "border-edge-strong text-signal"
@@ -165,17 +165,17 @@ function ChapterCard({
         {complete ? "Complete" : "In progress"}
       </span>
 
-      <span className="relative font-heading text-xs tracking-[0.22em] text-signal">
+      <span className="relative font-heading text-xs tracking-eyebrow text-signal">
         Chapter {chapter.number}
       </span>
-      <span className="relative font-heading text-2xl leading-none tracking-wide text-readout-strong">
+      <span className="relative font-heading text-2xl leading-none tracking-eyebrow text-readout-strong">
         {chapter.title}
       </span>
       <span className="relative pt-0.5 text-[13px] text-readout-dim">
         {chapter.tagline}
       </span>
 
-      <span className="relative flex gap-4 pt-2 text-xs tracking-[0.1em] text-readout">
+      <span className="relative flex gap-4 pt-2 text-xs tracking-label text-readout">
         <span>
           Stages{" "}
           <b className="font-semibold text-readout-strong">{chapter.clearedStages}</b>/

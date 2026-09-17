@@ -25,7 +25,7 @@ import Hint from "@/components/ui/Hint";
 /**
  * Stage brief — the last screen before a stage is entered.
  *
- * The wave rail is the pitch: several fights, **one HP pool**, no heal between.
+ * The fight rail is the pitch: several fights, **one HP pool**, no heal between.
  * That is what makes team-building the decision v1's board only pretended to be,
  * and why the rail leads the screen rather than sitting under the team.
  *
@@ -160,23 +160,23 @@ export default function StageBrief({
   return (
     <div className="mx-auto w-full max-w-md px-3 pt-3 pb-40">
       <header className="pb-3">
-        <p className="text-[11px] tracking-[0.22em] text-signal">
+        <p className="text-[11px] tracking-eyebrow text-signal">
           CHAPTER {chapter.number} · STAGE {label}
         </p>
-        <h1 className="font-heading text-2xl tracking-wide text-readout-strong">
+        <h1 className="font-heading text-2xl tracking-eyebrow text-readout-strong">
           {stage.name}
         </h1>
       </header>
 
-      {stage.waves.length > 0 ? (
+      {stage.fights.length > 0 ? (
         <section className="chamfer mb-2.5 border border-edge bg-panel p-2.5">
-          <h2 className="pb-1.5 text-[10px] tracking-[0.2em] text-readout-muted uppercase">
-            Opposition · {stage.waves.length} wave
-            {stage.waves.length === 1 ? "" : "s"} · HP carries over
+          <h2 className="pb-1.5 text-[10px] tracking-eyebrow text-readout-muted uppercase">
+            Opposition · {stage.fights.length} fight
+            {stage.fights.length === 1 ? "" : "s"} · HP carries over
           </h2>
           <div className="flex items-center gap-1.5">
-            {stage.waves.map((wave, index) => {
-              const last = index === stage.waves.length - 1;
+            {stage.fights.map((fight, index) => {
+              const last = index === stage.fights.length - 1;
               return (
                 <React.Fragment key={index}>
                   {index > 0 ? (
@@ -190,7 +190,7 @@ export default function StageBrief({
                     }`}
                   >
                     <p
-                      className={`text-[9.5px] tracking-[0.16em] ${
+                      className={`text-[9.5px] tracking-label ${
                         last && stage.kind === "boss"
                           ? "text-el-red"
                           : "text-readout-muted"
@@ -199,7 +199,7 @@ export default function StageBrief({
                       WAVE {index + 1}
                     </p>
                     <div className="flex gap-1 pt-1">
-                      {wave.enemies.map((enemy, slot) => (
+                      {fight.enemies.map((enemy, slot) => (
                         <EnemyFace key={slot} id={enemy.id} level={enemy.level} />
                       ))}
                     </div>
@@ -209,11 +209,11 @@ export default function StageBrief({
             })}
           </div>
           <p className="pt-2 text-xs leading-relaxed text-readout-dim">
-            No healing between waves. Units that fall stay down. A wipe restarts the
+            No healing between fights. Units that fall stay down. A wipe restarts the
             stage and charges stamina again.
           </p>
-          {stage.waves
-            .flatMap((wave) => wave.stageEffects ?? [])
+          {stage.fights
+            .flatMap((fight) => fight.stageEffects ?? [])
             .map((effect, index) => (
               <p key={index} className="pt-1 text-xs text-el-light">
                 {describeStageEffect(effect)}
@@ -224,7 +224,7 @@ export default function StageBrief({
 
       {stage.missions.length > 0 ? (
         <section className="chamfer mb-2.5 border border-edge bg-panel p-2.5">
-          <h2 className="pb-1 text-[10px] tracking-[0.2em] text-readout-muted uppercase">
+          <h2 className="pb-1 text-[10px] tracking-eyebrow text-readout-muted uppercase">
             Missions · optional · one-time
           </h2>
           <ul>
@@ -246,7 +246,7 @@ export default function StageBrief({
                   />
                   <span className="min-w-0">{mission.label}</span>
                   <span
-                    className={`ml-auto flex shrink-0 items-center gap-2 text-xs tracking-[0.06em] ${
+                    className={`ml-auto flex shrink-0 items-center gap-2 text-xs tracking-title ${
                       done ? "text-readout-muted" : "text-el-blue"
                     }`}
                   >
@@ -283,13 +283,13 @@ export default function StageBrief({
 
       <section className="chamfer mb-2.5 grid grid-cols-2 gap-2 border border-edge bg-panel p-2.5">
         <div>
-          <p className="text-[9.5px] tracking-[0.18em] text-readout-muted uppercase">
+          <p className="text-[9.5px] tracking-label text-readout-muted uppercase">
             First clear {cleared ? "· banked" : ""}
           </p>
           <RewardRows items={firstClear} banked={cleared} />
         </div>
         <div>
-          <p className="text-[9.5px] tracking-[0.18em] text-readout-muted uppercase">
+          <p className="text-[9.5px] tracking-label text-readout-muted uppercase">
             Farmable
           </p>
           <RewardRows items={farm} />
@@ -321,17 +321,17 @@ export default function StageBrief({
         <div className="mx-auto flex w-full max-w-md items-stretch gap-2">
           <div className="flex-1">
             <Button
-              className="chamfer h-12 w-full font-heading text-xl tracking-[0.09em]"
+              className="chamfer h-12 w-full font-heading text-xl tracking-title"
               disabled={!affordable}
               onClick={() => onStart(picked.map((c) => c.id), false, lentByChoice)}
             >
               {affordable ? "Begin" : "Not enough stamina"}
             </Button>
-            <p className="pt-1 text-center text-[11px] tracking-[0.1em] text-readout-dim">
+            <p className="pt-1 text-center text-[11px] tracking-label text-readout-dim">
               COSTS {stage.stamina} STAMINA · EVERY ATTEMPT
             </p>
           </div>
-          {cleared && stage.waves.length > 0 ? (
+          {cleared && stage.fights.length > 0 ? (
             <Button
               variant="ghost"
               className="chamfer h-12 w-24 text-xs leading-tight"

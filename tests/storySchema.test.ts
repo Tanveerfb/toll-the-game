@@ -31,7 +31,7 @@ function chapter(overrides: Record<string, unknown> = {}): Record<string, unknow
         origin: "filler",
         intro: [],
         outro: [],
-        waves: [{ enemies: [{ id: "wild_beast" }] }],
+        fights: [{ enemies: [{ id: "wild_beast" }] }],
         team: [{ id: "duke" }],
         teamMode: "canon",
         missions: [],
@@ -91,26 +91,26 @@ describe("rejections", () => {
     ).toThrow(/stage numbers must run 1\.\.N/);
   });
 
-  it("refuses a scene stage that carries waves", () => {
+  it("refuses a scene stage that carries fights", () => {
     expect(() =>
       validateStoryChapters([
         chapter({
           stages: [stage({ kind: "story", rewards: { firstClear: {} } })],
         }),
       ]),
-    ).toThrow(/scene stage but authors 1 wave/);
+    ).toThrow(/scene stage but authors 1 fight/);
   });
 
-  it("refuses a battle stage with no waves", () => {
+  it("refuses a battle stage with no fights", () => {
     expect(() =>
-      validateStoryChapters([chapter({ stages: [stage({ waves: [] })] })]),
-    ).toThrow(/battle stage with no waves/);
+      validateStoryChapters([chapter({ stages: [stage({ fights: [] })] })]),
+    ).toThrow(/battle stage with no fights/);
   });
 
   it("refuses a battle stage with no team to fight it", () => {
     expect(() =>
       validateStoryChapters([chapter({ stages: [stage({ team: [] })] })]),
-    ).toThrow(/waves but no authored team/);
+    ).toThrow(/fights but no authored team/);
   });
 
   it("refuses a farm table on a scene stage", () => {
@@ -120,7 +120,7 @@ describe("rejections", () => {
           stages: [
             stage({
               kind: "story",
-              waves: [],
+              fights: [],
               team: [],
               rewards: { firstClear: {}, farm: { coin: { min: 1, max: 1 } } },
             }),
@@ -177,13 +177,13 @@ describe("rejections", () => {
     ).toThrow(/duplicate mission id/);
   });
 
-  it("refuses more than three waves", () => {
+  it("refuses more than three fights", () => {
     expect(() =>
       validateStoryChapters([
         chapter({
           stages: [
             stage({
-              waves: Array.from({ length: 4 }, () => ({
+              fights: Array.from({ length: 4 }, () => ({
                 enemies: [{ id: "wild_beast" }],
               })),
             }),
@@ -196,7 +196,7 @@ describe("rejections", () => {
   it("refuses an unknown enemy id", () => {
     expect(() =>
       validateStoryChapters([
-        chapter({ stages: [stage({ waves: [{ enemies: [{ id: "nope" }] }] })] }),
+        chapter({ stages: [stage({ fights: [{ enemies: [{ id: "nope" }] }] })] }),
       ]),
     ).toThrow(/unknown character "nope"/);
   });

@@ -144,8 +144,8 @@ describe("targetTagBonus conditionStatuses", () => {
 
 describe("useSkillRank mission goal", () => {
   const run = (over: Partial<StageRunSummary> = {}): StageRunSummary => ({
-    wavesCleared: 2,
-    wavesTotal: 2,
+    fightsCleared: 2,
+    fightsTotal: 2,
     turns: 8,
     fielded: ["duke"],
     fallen: [],

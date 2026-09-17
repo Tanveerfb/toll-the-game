@@ -44,7 +44,7 @@ export function getStoryStage(
  *
  * Backgrounds are authored per **scene**, which is right for the scene reader
  * and leaves every other story screen — the brief, the title card, the versus
- * splash, the wave break, the result — sitting on the bare terminal grid, even
+ * splash, the fight break, the result — sitting on the bare terminal grid, even
  * though each of them is about a stage that happens somewhere specific.
  *
  * Derived rather than authored a second time: the stage's **first intro scene**
@@ -177,8 +177,8 @@ export interface StoryIndexStage {
   kind: StoryStage["kind"];
   state: StageState;
   stamina: number;
-  /** Enemy ids per wave, front to back — what the row's wave rail renders. */
-  waves: string[][];
+  /** Enemy ids per fight, front to back — what the row's fight rail renders. */
+  fights: string[][];
   missionsClaimed: number;
   missionsTotal: number;
 }
@@ -223,7 +223,7 @@ export function buildStoryIndex(
         kind: stage.kind,
         state: getStageState(cleared, chapter.id, stage.id),
         stamina: stage.stamina,
-        waves: stage.waves.map((wave) => wave.enemies.map((unit) => unit.id)),
+        fights: stage.fights.map((fight) => fight.enemies.map((unit) => unit.id)),
         missionsClaimed: missions.claimed,
         missionsTotal: missions.total,
       };

@@ -44,6 +44,14 @@ const buttonVariants = cva(
         /** Tertiary — chips, toggles, anything that shouldn't compete. */
         ghost:
           "border-edge bg-transparent text-readout-dim hover:border-edge-strong hover:text-readout",
+        /**
+         * Claiming something owed to you — a reward, a milestone, an order's
+         * payout. `el-light` is the reward hue across the game, and this was
+         * hand-rolled identically in `ClaimSection` and `OrdersBoard` before
+         * it had a name (2026-09-17).
+         */
+        claim:
+          "border-el-light bg-el-light/12 text-el-light hover:bg-el-light/20",
         /** Forfeits, exits, anything the player can't take back. */
         destructive:
           "border-el-red bg-transparent text-el-red hover:bg-el-red/10",
@@ -68,11 +76,11 @@ const buttonVariants = cva(
        * were too small to hit grow.
        */
       size: {
-        xs: "min-h-11 px-2 py-1 font-body text-[10px] font-bold uppercase tracking-[0.14em]",
-        sm: "min-h-11 px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.14em]",
-        default: "min-h-11 px-4 py-2 font-heading text-sm tracking-[0.12em]",
-        lg: "min-h-11 px-5 py-2 font-heading text-base tracking-[0.12em]",
-        xl: "min-h-12 px-6 py-2.5 font-heading text-lg tracking-[0.14em]",
+        xs: "min-h-11 px-2 py-1 font-body text-[10px] font-bold uppercase tracking-label",
+        sm: "min-h-11 px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-label",
+        default: "min-h-11 px-4 py-2 font-heading text-sm tracking-label",
+        lg: "min-h-11 px-5 py-2 font-heading text-base tracking-label",
+        xl: "min-h-12 px-6 py-2.5 font-heading text-lg tracking-label",
         // One icon size, not four. `icon-xs`/`icon-sm`/`icon-lg` were 24/28/44
         // and had zero callers; with a 44px floor the first two would have
         // been `icon` under another name, which is a scale that lies about

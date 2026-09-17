@@ -115,7 +115,7 @@ function PassiveReadoutRow({
       passive.fired ? (
         <span key="progress" className="flex items-center gap-1">
           <CheckCircle2 className="h-3.5 w-3.5 text-role-heal" strokeWidth={2.6} />
-          <span className="font-body text-xs font-bold uppercase tracking-[0.1em] text-role-heal">
+          <span className="font-body text-xs font-bold uppercase tracking-label text-role-heal">
             Active
           </span>
         </span>
@@ -138,7 +138,7 @@ function PassiveReadoutRow({
           <Circle className="h-3.5 w-3.5 text-readout-muted" strokeWidth={2.6} />
         )}
         <span
-          className={`font-body text-xs font-semibold uppercase tracking-[0.1em] ${passive.conditionMet ? "text-role-heal" : "text-readout-muted"}`}
+          className={`font-body text-xs font-semibold uppercase tracking-label ${passive.conditionMet ? "text-role-heal" : "text-readout-muted"}`}
         >
           {passive.conditionMet ? "Active" : "Inactive"}
         </span>
@@ -173,19 +173,19 @@ function PassiveReadoutRow({
     <div
       className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border px-2.5 py-1.5 ${highlight ? "border-role-ultimate/70 bg-role-ultimate/10" : "border-edge bg-inset"}`}
     >
-      <p className="flex min-w-0 items-center gap-1.5 font-heading text-sm tracking-[0.06em] text-readout-strong">
+      <p className="flex min-w-0 items-center gap-1.5 font-heading text-sm tracking-title text-readout-strong">
         <span className="truncate">{passive.label}</span>
         <PassiveActivationTag mode={passive.activationMode} />
       </p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {state}
         {passive.readyMessage ? (
-          <span className="font-body text-xs font-semibold uppercase tracking-[0.1em] text-role-ultimate">
+          <span className="font-body text-xs font-semibold uppercase tracking-label text-role-ultimate">
             {passive.readyMessage}
           </span>
         ) : null}
         {passive.note ? (
-          <span className="font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-muted">
+          <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
             {passive.note}
           </span>
         ) : null}
@@ -209,7 +209,7 @@ function Stat({
   const delta = effective - base;
   return (
     <span className="flex items-baseline gap-1.5">
-      <span className="font-body text-[9px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+      <span className="font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
         {label}
       </span>
       <span className="font-heading text-lg leading-none tabular-nums text-readout-strong">
@@ -433,11 +433,11 @@ export default function UnitDetailPanel({
             <span
               className={`h-2.5 w-2.5 shrink-0 rotate-45 border border-void/40 ${ELEMENT_SWATCH[selected.color]}`}
             />
-            <h2 className="truncate font-heading text-xl leading-none tracking-[0.08em] text-readout-strong">
+            <h2 className="truncate font-heading text-xl leading-none tracking-title text-readout-strong">
               {selected.name}
             </h2>
             <span
-              className={`shrink-0 border px-1 py-px font-body text-[9px] font-bold uppercase tracking-widest ${
+              className={`shrink-0 border px-1 py-px font-body text-[9px] font-bold uppercase tracking-label ${
                 selected.team === "player"
                   ? "border-role-heal/60 text-role-heal"
                   : "border-role-attack/60 text-role-attack"
@@ -473,7 +473,7 @@ export default function UnitDetailPanel({
             </button>
           </div>
 
-          <div className="col-start-2 flex flex-wrap items-center gap-x-1 font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+          <div className="col-start-2 flex flex-wrap items-center gap-x-1 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
             <span>{selected.color}</span>
             {selected.tier === "elite" ? <span>· Elite</span> : null}
             {(selected.tags ?? []).map((tag) => (
@@ -516,7 +516,7 @@ export default function UnitDetailPanel({
 
             <div className="min-w-0">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+                <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
                   HP
                 </span>
                 <span className="font-heading text-xl leading-none tabular-nums text-readout-strong">
@@ -534,7 +534,7 @@ export default function UnitDetailPanel({
               </span>
 
               <div className="mt-1.5 flex items-center gap-1.5">
-                <span className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+                <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
                   Ult
                 </span>
                 <span className="flex flex-1 items-center gap-0.5">
@@ -554,13 +554,13 @@ export default function UnitDetailPanel({
                 <Stat label="Atk" base={selected.atk} effective={effAtk} />
                 <Stat label="Def" base={selected.def} effective={effDef} />
                 <span className="font-body text-[11px] font-semibold tabular-nums text-readout-dim">
-                  <span className="mr-1 text-[9px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+                  <span className="mr-1 text-[9px] font-bold uppercase tracking-label text-readout-muted">
                     Crit
                   </span>
                   {crit}%
                 </span>
                 <span className="font-body text-[11px] font-semibold tabular-nums text-readout-dim">
-                  <span className="mr-1 text-[9px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+                  <span className="mr-1 text-[9px] font-bold uppercase tracking-label text-readout-muted">
                     Evade
                   </span>
                   {evade}%
@@ -576,7 +576,7 @@ export default function UnitDetailPanel({
           <div className="mt-2 flex items-center gap-2">
             <div className="min-w-0 flex-1">
               {counts.buffs === 0 && counts.stances === 0 && counts.debuffs === 0 ? (
-                <span className="font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+                <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
                   No active effects
                 </span>
               ) : (
@@ -587,7 +587,7 @@ export default function UnitDetailPanel({
               type="button"
               onClick={() => setEffectsOpen(true)}
               aria-haspopup="dialog"
-              className="flex min-h-11 shrink-0 items-center gap-1 border border-edge px-3 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
+              className="flex min-h-11 shrink-0 items-center gap-1 border border-edge px-3 font-body text-[10px] font-bold uppercase tracking-label text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
             >
               Detail
             </button>
@@ -619,7 +619,7 @@ export default function UnitDetailPanel({
                       type="button"
                       onClick={() => setActiveTab(i)}
                       aria-pressed={active}
-                      className={`flex min-h-11 shrink-0 items-center gap-1.5 px-2.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.12em] transition-colors ${
+                      className={`flex min-h-11 shrink-0 items-center gap-1.5 px-2.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-label transition-colors ${
                         active
                           ? "bg-signal/10 text-signal shadow-[inset_0_-2px_0_var(--color-signal)]"
                           : "text-readout-dim hover:text-readout"
@@ -746,7 +746,7 @@ function CharacterListOverlay({
   return (
     <DetailOverlay title={`Tag: ${tag}`} onClose={onClose}>
       {matches.length === 0 ? (
-        <p className="py-6 text-center font-body text-sm font-bold uppercase tracking-[0.18em] text-readout-muted">
+        <p className="py-6 text-center font-body text-sm font-bold uppercase tracking-label text-readout-muted">
           No characters found.
         </p>
       ) : (

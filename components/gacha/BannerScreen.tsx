@@ -152,7 +152,7 @@ export default function BannerScreen(): React.JSX.Element {
                   setTab(t);
                   setNotice(null);
                 }}
-                className={`flex items-center gap-1.5 border px-3.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] transition-colors ${
+                className={`flex items-center gap-1.5 border px-3.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-label transition-colors ${
                   tab === t
                     ? "border-signal bg-signal/10 text-signal"
                     : "border-edge text-readout-dim hover:border-edge-strong hover:text-readout"
@@ -205,12 +205,12 @@ export default function BannerScreen(): React.JSX.Element {
               screen already reads this art through two other gradients. */}
           <span className="absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-void via-void/85 to-transparent" />
           <div className="relative flex h-full max-w-[70%] flex-col justify-center gap-1 px-5">
-            <span className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
+            <span className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
               {/* No end date and no "Limited" — the beta roster was always
                   meant to be permanent (Tanveer, 2026-08-13). */}
               Permanent · {isLimited ? "gems" : "tickets"}
             </span>
-            <span className="font-heading text-2xl leading-tight tracking-[0.04em] text-readout-strong md:text-3xl">
+            <span className="font-heading text-2xl leading-tight tracking-title text-readout-strong md:text-3xl">
               {isLimited ? gemBanner.name : "Permanent Banner"}
             </span>
             <span className="font-body text-xs text-readout-dim">
@@ -239,7 +239,7 @@ export default function BannerScreen(): React.JSX.Element {
             className="flex w-full items-center gap-3 border border-hairline bg-panel px-3 py-2.5 text-left transition-colors hover:border-edge-strong"
           >
             <span className="flex min-w-0 flex-col gap-0.5">
-              <span className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+              <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
                 Featured
               </span>
               <span className="font-body text-sm text-readout">
@@ -285,10 +285,10 @@ export default function BannerScreen(): React.JSX.Element {
         {/* MILESTONE TRACK */}
         <div className="border border-hairline bg-panel px-3 py-3">
           <div className="flex items-baseline justify-between">
-            <span className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+            <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
               Milestone
             </span>
-            <span className="font-heading text-lg leading-none tracking-[0.04em] text-readout-strong tabular-nums">
+            <span className="font-heading text-lg leading-none tracking-title text-readout-strong tabular-nums">
               {hasHydrated ? bar.toLocaleString() : "—"}
               <span className="ml-1 font-body text-[10px] font-semibold text-readout-muted">
                 / {finalThreshold.toLocaleString()} {unit} spent
@@ -368,12 +368,12 @@ export default function BannerScreen(): React.JSX.Element {
                 }`}
               >
                 <span
-                  className={`block font-heading text-lg tracking-[0.05em] ${main ? "text-signal" : "text-readout-strong"}`}
+                  className={`block font-heading text-lg tracking-title ${main ? "text-signal" : "text-readout-strong"}`}
                 >
                   Draw ×{count}
                 </span>
                 <span
-                  className={`block font-body text-[10px] font-bold uppercase tracking-[0.1em] ${main ? "text-signal" : "text-readout-muted"}`}
+                  className={`block font-body text-[10px] font-bold uppercase tracking-label ${main ? "text-signal" : "text-readout-muted"}`}
                 >
                   {cost} {unit}
                   {main ? " · one free pull" : ""}
@@ -387,7 +387,7 @@ export default function BannerScreen(): React.JSX.Element {
           <span className="flex items-center gap-1.5 font-body text-sm font-bold tabular-nums text-readout-strong">
             <ItemIcon id={currencyIcon} size={22} alt="" />
             {hasHydrated ? balance.toLocaleString() : "—"}{" "}
-            <span className="font-semibold uppercase tracking-[0.12em] text-readout-muted">
+            <span className="font-semibold uppercase tracking-label text-readout-muted">
               {unit}
             </span>
           </span>
@@ -395,7 +395,7 @@ export default function BannerScreen(): React.JSX.Element {
           <button
             type="button"
             onClick={() => setShowRates(true)}
-            className="flex min-h-11 items-center border border-edge px-3 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
+            className="flex min-h-11 items-center border border-edge px-3 font-body text-[10px] font-bold uppercase tracking-label text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
           >
             Rates &amp; pool
           </button>

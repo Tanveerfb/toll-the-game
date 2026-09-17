@@ -116,7 +116,7 @@ export const GAME_EVENTS: readonly GameEvent[] = [
     kicker: `Trial · Rank ${FIRST_WALL} wall`,
     name: "First Ascension Trial",
     summary: `Three fights, one HP bar. Clear once to lift the rank ${FIRST_WALL} cap and resume gaining ranks.`,
-    // Deliberately null: this trial is a three-wave run, not one opponent, so
+    // Deliberately null: this trial is a three-fight run, not one opponent, so
     // its encounter lives in `trialEncounters.ts` and `hasEncounter` is what
     // decides whether it can be entered (2026-09-16).
     enemyId: null,
@@ -214,7 +214,7 @@ export function eventLockReason(
  * Whether this event has a fight behind it.
  *
  * Two shapes answer yes. A boss names a single `enemyId`. A **trial** names
- * none and instead carries a multi-wave encounter in `trialEncounters.ts`,
+ * none and instead carries a multi-fight encounter in `trialEncounters.ts`,
  * because the First Ascension Trial is three fights on one HP bar rather than
  * one opponent (Tanveer, 2026-09-16). The Second still has neither, and the
  * board keeps saying so.
@@ -223,11 +223,11 @@ export function hasEncounter(event: GameEvent): boolean {
   return event.enemyId !== null || getTrialEncounter(event.id) !== undefined;
 }
 
-/** How many fights entering this event commits you to. 1 for a boss, the wave
+/** How many fights entering this event commits you to. 1 for a boss, the fight
  *  count for a trial, 0 when nothing is authored. */
-export function eventWaveCount(event: GameEvent): number {
+export function eventFightCount(event: GameEvent): number {
   const encounter = getTrialEncounter(event.id);
-  if (encounter) return encounter.waves.length;
+  if (encounter) return encounter.fights.length;
   return event.enemyId ? 1 : 0;
 }
 

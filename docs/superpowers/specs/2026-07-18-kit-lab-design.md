@@ -1,5 +1,14 @@
 # Kit Lab — Design Spec
 
+> **RETIRED 2026-09-17 — the tool no longer exists.** There is no Kit Lab route
+> in `app/`, and its last two support modules were deleted on his call:
+> `lib/game/mechanicTemplates.ts` (per-mechanic descriptions and field
+> skeletons) and `lib/game/balance.ts` (stat-outlier heuristics), together with
+> `tests/balance.test.ts`. They had **zero importers** — audit 2026-09-17,
+> finding M3. Kept as the record of why that code existed; **do not build
+> against this spec** without deciding to revive the tool first. The kit-authoring
+> workflow it was meant to replace is the `kitcheck` and `kitwords` skills.
+
 > 2026-07-18. Approved by Tanveer. Dev-only kit-authoring GUI inside the app.
 > Goal: a GUI replacement for the `newchars.md` workflow that reuses the real
 > engine so the tool and the game never drift.

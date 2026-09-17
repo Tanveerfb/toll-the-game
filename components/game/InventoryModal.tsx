@@ -32,10 +32,10 @@ function Figure({
 }): React.JSX.Element {
   return (
     <div className="flex flex-col gap-0.5 border border-hairline bg-panel px-3 py-2">
-      <span className="font-body text-[9px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+      <span className="font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
         {label}
       </span>
-      <span className="font-heading text-xl leading-none tracking-[0.04em] text-readout-strong tabular-nums">
+      <span className="font-heading text-xl leading-none tracking-title text-readout-strong tabular-nums">
         {value}
       </span>
       {hint ? (
@@ -75,7 +75,7 @@ function Currency({
         <span className="block font-heading text-lg leading-none text-readout-strong tabular-nums">
           {value.toLocaleString()}
         </span>
-        <span className="block font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-muted">
+        <span className="block font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
           {label}
         </span>
       </span>
@@ -85,7 +85,7 @@ function Currency({
 
 function SectionHead({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+    <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
       {children}
     </p>
   );

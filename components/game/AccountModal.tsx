@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -32,7 +33,7 @@ function Row({
 }): React.JSX.Element {
   return (
     <div className="flex items-baseline justify-between gap-3 border-b border-hairline py-2 last:border-b-0">
-      <span className="shrink-0 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+      <span className="shrink-0 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
         {label}
       </span>
       <span className="min-w-0 truncate text-right font-body text-sm text-readout">
@@ -97,7 +98,7 @@ export default function AccountModal({
         <section className="flex items-center gap-3">
           <PlayerAvatar characterId={avatarId} fallback={displayName} size={56} />
           <div className="min-w-0">
-            <p className="truncate font-heading text-xl tracking-[0.06em] text-readout-strong">
+            <p className="truncate font-heading text-xl tracking-title text-readout-strong">
               {displayName}
             </p>
             <p className="truncate font-body text-[11px] text-readout-muted">
@@ -107,7 +108,7 @@ export default function AccountModal({
         </section>
 
         <section>
-          <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+          <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
             Display picture
           </p>
           {/* A portrait picker, not an upload: there's no storage bucket to
@@ -166,7 +167,7 @@ export default function AccountModal({
         </section>
 
         <section>
-          <p className="mb-1 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+          <p className="mb-1 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
             Save
           </p>
           <Row
@@ -193,7 +194,7 @@ export default function AccountModal({
         </section>
 
         <section>
-          <p className="mb-1 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+          <p className="mb-1 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
             Tutorial
           </p>
           <div className="flex items-center justify-between gap-3 py-2">
@@ -204,32 +205,33 @@ export default function AccountModal({
             </span>
             {/* The way back from Skip All. Without it that button is one-way,
                 and a playtester needs to see these more than once. */}
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="xs"
               onClick={resetTutorial}
               disabled={!tutorialDismissed && tutorialSeenCount === 0}
-              className="flex min-h-11 shrink-0 items-center border border-edge px-3 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-signal hover:text-signal disabled:opacity-40"
+              className="shrink-0"
             >
               Show again
-            </button>
+            </Button>
           </div>
         </section>
 
         <section className="flex flex-wrap gap-2 border-t border-hairline pt-4">
           {user ? (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onSignOut}
               disabled={signingOut}
-              className="flex min-h-11 items-center border border-edge px-4 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-readout-dim transition-colors hover:border-el-red hover:text-el-red disabled:opacity-50"
             >
               {signingOut ? "Signing out…" : "Sign out"}
-            </button>
+            </Button>
           ) : (
             <button
               type="button"
               onClick={() => router.push("/login")}
-              className="flex min-h-11 items-center border border-signal bg-signal/10 px-4 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-signal transition-colors hover:bg-signal/20"
+              className="flex min-h-11 items-center border border-signal bg-signal/10 px-4 font-body text-[11px] font-bold uppercase tracking-label text-signal transition-colors hover:bg-signal/20"
             >
               Sign in
             </button>

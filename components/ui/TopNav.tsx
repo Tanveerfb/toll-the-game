@@ -217,7 +217,7 @@ export default function TopNav() {
               ? `Home — ${readyOrders} Bureau order${readyOrders > 1 ? "s" : ""} ready to claim`
               : "Home"
           }
-          className="relative inline-flex min-h-11 shrink-0 items-center font-heading text-xl tracking-[0.2em] text-signal"
+          className="relative inline-flex min-h-11 shrink-0 items-center font-heading text-xl tracking-eyebrow text-signal"
         >
           TOLL
           {/* Orders live on the home screen, so the count rides the one link
@@ -250,7 +250,7 @@ export default function TopNav() {
                 // be a 14px icon in `py-1`: a ~22px target, the smallest in
                 // the app, on the app's primary navigation.
                 aria-label={route.label}
-                className={`flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 border px-2 font-body text-[11px] font-bold uppercase tracking-[0.14em] transition-colors ${
+                className={`flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 border px-2 font-body text-[11px] font-bold uppercase tracking-label transition-colors ${
                   active
                     ? "border-edge-strong bg-signal/10 text-signal"
                     : "border-transparent text-readout-dim hover:border-edge hover:text-readout"
@@ -331,7 +331,7 @@ export default function TopNav() {
             className="flex min-h-11 shrink-0 items-center gap-2 border border-hairline bg-void px-2 transition-colors hover:border-edge-strong"
           >
             <span
-              className={`font-body text-[11px] font-bold tracking-[0.06em] ${ready && !progress ? "text-el-light" : "text-signal"}`}
+              className={`font-body text-[11px] font-bold tracking-title ${ready && !progress ? "text-el-light" : "text-signal"}`}
             >
               {ready ? `R${account.rank}` : "R—"}
             </span>
@@ -345,7 +345,7 @@ export default function TopNav() {
           <Hint
             ariaLabel="World level"
             content="World level — the difficulty everything scales to"
-            className="hidden min-h-11 shrink-0 cursor-help items-center border border-hairline bg-void px-2 font-body text-[10px] font-bold uppercase tracking-[0.12em] text-readout-dim transition-colors hover:border-edge-strong sm:flex"
+            className="hidden min-h-11 shrink-0 cursor-help items-center border border-hairline bg-void px-2 font-body text-[10px] font-bold uppercase tracking-label text-readout-dim transition-colors hover:border-edge-strong sm:flex"
           >
             World {ready ? worldLevel : dash}
           </Hint>
@@ -438,7 +438,7 @@ function BottomTabs({
             }`}
           >
             <Icon className="h-4 w-4" strokeWidth={2.2} />
-            <span className="font-body text-[9px] font-bold uppercase tracking-[0.14em]">
+            <span className="font-body text-[9px] font-bold uppercase tracking-label">
               {tab.label}
             </span>
           </Link>

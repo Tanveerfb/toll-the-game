@@ -74,7 +74,7 @@ export default function CardDetail({
           text={description}
           className="font-body text-sm text-readout"
           glossary={glossary}
-          keywordClassName="inline-flex cursor-help items-center rounded-none border border-edge-strong bg-transparent px-1 py-[1px] font-body text-xs uppercase tracking-[0.06em] text-readout-strong"
+          keywordClassName="inline-flex cursor-help items-center rounded-none border border-edge-strong bg-transparent px-1 py-[1px] font-body text-xs uppercase tracking-title text-readout-strong"
         />
       </p>
 

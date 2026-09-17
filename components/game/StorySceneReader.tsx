@@ -213,7 +213,7 @@ export default function StorySceneReader({
       </AnimatePresence>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between px-4 py-3">
-        <p className="font-heading text-sm tracking-[0.18em] text-readout-muted">
+        <p className="font-heading text-sm tracking-label text-readout-muted">
           {chapterTitle.toUpperCase()}
         </p>
         <span className="pointer-events-auto flex items-center gap-1.5">
@@ -224,7 +224,7 @@ export default function StorySceneReader({
               event.stopPropagation();
               setAuto((v) => !v);
             }}
-            className={`chamfer text-[10px] tracking-[0.16em] ${
+            className={`chamfer text-[10px] tracking-label ${
               auto ? "border-signal bg-signal text-void" : ""
             }`}
           >
@@ -237,7 +237,7 @@ export default function StorySceneReader({
               event.stopPropagation();
               setHistoryOpen(true);
             }}
-            className="chamfer text-[10px] tracking-[0.16em] hover:text-signal"
+            className="chamfer text-[10px] tracking-label hover:text-signal"
           >
             History
           </Button>
@@ -248,7 +248,7 @@ export default function StorySceneReader({
               event.stopPropagation();
               requestSkip();
             }}
-            className="chamfer text-[10px] tracking-[0.16em] hover:text-signal"
+            className="chamfer text-[10px] tracking-label hover:text-signal"
           >
             Skip ▸▸
           </Button>
@@ -284,29 +284,29 @@ export default function StorySceneReader({
         {narration ? (
           // No box, no name plate, no "· · ·" filler — narration reads as the
           // camera talking, not as a character with no name.
-          <p className="text-center font-body text-base italic leading-loose tracking-wide text-readout-dim md:text-lg">
+          <p className="text-center font-body text-base italic leading-loose tracking-eyebrow text-readout-dim md:text-lg">
             <RevealedText text={text} settled={showAll} />
           </p>
         ) : (
           <div className="chamfer-lg border border-edge bg-panel/95 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
             <div className="flex items-center justify-between border-b border-hairline px-5 py-2">
-              <p className="font-heading text-lg tracking-[0.14em] text-signal">
+              <p className="font-heading text-lg tracking-label text-signal">
                 {scene.speaker?.toUpperCase()}
               </p>
-              <p className="font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+              <p className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
                 {index + 1} / {scenes.length}
               </p>
             </div>
             <p className="min-h-20 px-5 py-4 font-body text-sm leading-relaxed text-readout md:text-base">
               <RevealedText text={text} settled={showAll} />
             </p>
-            <p className="border-t border-hairline px-5 py-1.5 text-right font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+            <p className="border-t border-hairline px-5 py-1.5 text-right font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
               {isComplete ? "Tap to continue ▸" : "Tap to reveal"}
             </p>
           </div>
         )}
         {narration ? (
-          <p className="mt-4 text-center font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+          <p className="mt-4 text-center font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
             {index + 1} / {scenes.length} ·{" "}
             {isComplete ? "Tap to continue ▸" : "Tap to reveal"}
           </p>
@@ -446,7 +446,7 @@ function HistoryOverlay({
       className="absolute inset-0 z-40 flex flex-col bg-black/90 backdrop-blur-sm"
     >
       <div className="flex items-center justify-between border-b border-hairline bg-inset px-5 py-3">
-        <p className="font-heading text-lg tracking-[0.14em] text-readout-strong">
+        <p className="font-heading text-lg tracking-label text-readout-strong">
           HISTORY
         </p>
         <Button
@@ -460,7 +460,7 @@ function HistoryOverlay({
       <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
         {scenes.slice(0, upTo + 1).map((scene, i) => (
           <div key={i} className="border-l border-edge pl-3">
-            <p className="font-heading text-xs tracking-[0.14em] text-signal">
+            <p className="font-heading text-xs tracking-label text-signal">
               {scene.speaker?.toUpperCase() ?? "NARRATION"}
             </p>
             <p className="mt-1 font-body text-sm leading-relaxed text-readout-dim">
@@ -485,7 +485,7 @@ function SkipPrompt({
       className="absolute inset-0 z-40 flex items-center justify-center bg-black/85 px-4 backdrop-blur-sm"
     >
       <div className="chamfer-lg w-full max-w-sm border border-signal bg-panel p-5">
-        <p className="font-heading text-xl tracking-[0.12em] text-signal">
+        <p className="font-heading text-xl tracking-label text-signal">
           SKIP THESE SCENES?
         </p>
         <p className="mt-2 font-body text-sm text-readout-dim">

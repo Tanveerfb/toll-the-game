@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import React from "react";
 import { useRouter } from "next/navigation";
 import { Check, ChevronRight, Lock } from "lucide-react";
@@ -148,22 +149,14 @@ function OrderRow({
       ) : null}
 
       {claimable ? (
-        <button
-          type="button"
-          onClick={onClaim}
-          className="flex min-h-11 shrink-0 items-center border border-el-light bg-el-light/12 px-3 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-el-light transition-colors hover:bg-el-light/25"
-        >
+        <Button variant="claim" size="sm" onClick={onClaim} className="shrink-0">
           Claim
-        </button>
+        </Button>
       ) : !claimed && !anyLock ? (
-        <button
-          type="button"
-          onClick={onGo}
-          className="flex min-h-11 shrink-0 items-center gap-0.5 border border-hairline px-2.5 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
-        >
+        <Button variant="ghost" size="sm" onClick={onGo} className="shrink-0 gap-0.5">
           {order.routeLabel}
           <ChevronRight className="h-3 w-3" strokeWidth={2.6} />
-        </button>
+        </Button>
       ) : null}
     </div>
   );
@@ -205,13 +198,9 @@ function LockedOrders({ onSignIn }: { onSignIn: () => void }): React.JSX.Element
           you come back.
         </span>
       </span>
-      <button
-        type="button"
-        onClick={onSignIn}
-        className="flex min-h-11 shrink-0 items-center border border-signal bg-signal/12 px-4 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-signal transition-colors hover:bg-signal/25"
-      >
+      <Button variant="secondary" size="sm" onClick={onSignIn} className="shrink-0">
         Sign in
-      </button>
+      </Button>
     </div>
   );
 }
@@ -381,7 +370,7 @@ export default function OrdersBoard({
               // A locked step is readable, not enterable: seeing what is
               // coming is the point of the tab existing.
               onClick={() => setViewedStep(step)}
-              className={`flex shrink-0 items-center gap-1.5 px-3 py-1.5 font-body text-[10px] font-bold uppercase tracking-[0.16em] transition-colors ${
+              className={`flex shrink-0 items-center gap-1.5 px-3 py-1.5 font-body text-[10px] font-bold uppercase tracking-label transition-colors ${
                 active
                   ? "bg-panel text-signal"
                   : "text-readout-muted hover:text-readout"

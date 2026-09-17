@@ -8,9 +8,9 @@ import type { RunnableEncounter } from "@/lib/game/stageRun";
  * by Tanveer on 2026-09-16: **three fights, one HP bar** — a group, then an
  * elite, then the world boss.
  *
- * It is a `RunnableEncounter`, so it is fought by the same wave runner story
+ * It is a `RunnableEncounter`, so it is fought by the same fight runner story
  * mode uses (`lib/game/stageRun.ts`, ruling #103): **HP carries over between
- * waves and the fallen stay down**. That attrition is the whole test. Three
+ * fights and the fallen stay down**. That attrition is the whole test. Three
  * separate fights with a full heal between them would be three easy fights.
  *
  * ## Why these levels
@@ -24,7 +24,7 @@ import type { RunnableEncounter } from "@/lib/game/stageRun";
  *
  * | Lv20 team | clears |
  * | --- | --- |
- * | balanced — burst, a healer, a tank | **~77%**, ending wave 3 at ~26% HP |
+ * | balanced — burst, a healer, a tank | **~77%**, ending fight 3 at ~26% HP |
  * | all damage, no sustain | ~41% — Molvarr kills them |
  * | mid damage, no healer, no tank | **0%** — cannot finish Molvarr at all |
  * | the same balanced team at **level 1** | **0%** — wipes to Lyra, every run |
@@ -34,16 +34,28 @@ import type { RunnableEncounter } from "@/lib/game/stageRun";
  * for; the numbers are the floor, not the expectation.
  *
  * **Known exception, and it is not fixable here.** A team stacking DEF
- * (Yalina/Mustafa/Gabrist/Lyra) clears at **100%** and finishes wave 3 at 74%
- * HP, at every enemy level tried. `lib/game/damage.ts` mitigates with
- * `Math.max(1, baseDamage - effectiveDefense)` — flat subtraction, so DEF is
- * superlinear and four high-DEF units stop taking meaningful damage. Three
- * levers were measured against it and all three failed: adding Iron's Pierce
- * to wave 1 (no effect, and it made the trial easier for everyone else),
- * fielding all four NPCs 3+1 (no effect), and an enemy ATK stage effect, where
- * **+25% took every archetype from 75/38/100% to 1/3/3%** — there is no window
- * between "the wall survives" and "nobody survives". It is a roster-wide
- * property of the damage formula, not a property of this encounter.
+ * (Yalina/Mustafa/Gabrist/Lyra) clears at **100%** and finishes fight 3 at 74%
+ * HP, at every enemy level tried.
+ *
+ * The cause is **not** raw DEF — at base stats that is worth only ~12% less
+ * damage per hit. It is that **DEF buffs stack multiplicatively**
+ * (`lib/game/stats.ts`) while `lib/game/damage.ts` **subtracts**
+ * (`Math.max(1, baseDamage - effectiveDefense)`), so a buffed unit can pass the
+ * raw hit and take the 1-damage floor. Lyra at Lv20 beside Mustafa (+50%),
+ * Gabrist (+20%) and Ban (+5%), with her own +150% first-action passive,
+ * reaches **1,479 DEF against an 1,188 hit — 1 damage**.
+ *
+ * So no ATK or level dial can reach it: +25% enemy ATK moves that hit to 1,485,
+ * taking her from 1 damage to 6 while killing every other archetype — measured
+ * at **75/38/100% -> 1/3/3%**. Two other levers failed for the same reason:
+ * Iron's Pierce in fight 1 (too small, and it made the trial easier overall) and
+ * fielding all four NPCs 3+1. What works against it is multiplicative DEF
+ * reduction — Pierce, Critical, DEF-down — not bigger numbers.
+ *
+ * Part of it is also **deliberate**: Lyra's passive was raised from 50% to 150%
+ * on purpose, to reward playing her first-action gimmick (Tanveer, 2026-09-16).
+ * The open problem is that a whole team of such characters compounds into
+ * immunity, which is a roster-wide question and not this encounter's.
  */
 
 /** The reference the levels below were tuned against. Stated so a retune can
@@ -56,7 +68,7 @@ export const TRIAL_TUNING_REFERENCE = {
 } as const;
 
 /**
- * Wave 1 fields Frost, Gale and Prism with **Iron benched as a sub**.
+ * Fight 1 fields Frost, Gale and Prism with **Iron benched as a sub**.
  *
  * Field cap is 3, so the fourth is a sub and promotes at turn start once a
  * field unit falls (`lib/game/sub.ts`). That is what makes four bodies harsher
@@ -64,7 +76,7 @@ export const TRIAL_TUNING_REFERENCE = {
  * past the point a trio would have dropped to 2 (`actionsForTurn`).
  *
  * The trio is a shape test, not a stat check. Prism heals **and cleanses**, so
- * a team without enough burst never finishes the wave; Frost's Frost Lance
+ * a team without enough burst never finishes the fight; Frost's Frost Lance
  * lowers DEF and Gale's Gust Flurry is Weakpoint damage, which triples against
  * a debuffed target — Frost into Gale is the anti-tank line, and the enemy AI
  * does not sequence it deliberately.
@@ -75,7 +87,7 @@ export const TRIAL_TUNING_REFERENCE = {
  */
 export const FIRST_ASCENSION_TRIAL: RunnableEncounter = {
   id: "trial-rank-20",
-  waves: [
+  fights: [
     {
       enemies: [
         { id: "frost", level: 15 },
@@ -86,11 +98,11 @@ export const FIRST_ASCENSION_TRIAL: RunnableEncounter = {
     },
     // An elite, non-boss wall. `tier: "elite"` takes the full 3 actions a turn
     // even fighting alone (`actionEconomy.ts`), so a lone Lyra is not a lull —
-    // and 10,800 base HP is the wave that an under-levelled team dies on.
+    // and 10,800 base HP is the fight that an under-levelled team dies on.
     { enemies: [{ id: "lyra_npc", level: 20 }] },
     // Molvarr, both phases, fought to the end — his call over the
     // survive-to-a-threshold option `victoryAtEnemyHpPercent` offers. The
-    // player arrives on whatever waves 1 and 2 left them, which is the point.
+    // player arrives on whatever fights 1 and 2 left them, which is the point.
     { enemies: [{ id: "molvarr", level: 24 }] },
   ],
 };

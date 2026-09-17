@@ -55,7 +55,7 @@ function phaseCount(character: CharacterData): number {
 }
 
 const TOGGLE =
-  "chamfer min-h-11 px-4 py-2 font-heading text-sm tracking-[0.12em] transition-colors";
+  "chamfer min-h-11 px-4 py-2 font-heading text-sm tracking-label transition-colors";
 
 function BossPicker({
   bosses,
@@ -69,10 +69,10 @@ function BossPicker({
   return (
     <div className="chamfer-lg border border-role-attack bg-panel">
       <div className="flex items-center justify-between gap-2 border-b border-hairline px-3 py-2">
-        <h3 className="font-heading text-lg tracking-[0.12em] text-role-attack">
+        <h3 className="font-heading text-lg tracking-label text-role-attack">
           Boss
         </h3>
-        <span className="font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+        <span className="font-body text-[11px] font-bold uppercase tracking-label text-readout-muted">
           {selected ? selected.name : "None picked"}
         </span>
       </div>
@@ -102,11 +102,11 @@ function BossPicker({
                 />
               ) : null}
               {phases > 1 ? (
-                <span className="absolute right-0 top-0 z-10 bg-role-attack px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-widest text-void">
+                <span className="absolute right-0 top-0 z-10 bg-role-attack px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-label text-void">
                   {phases} phases
                 </span>
               ) : null}
-              <span className="relative z-10 w-full bg-void/80 px-1.5 py-1 font-heading text-sm tracking-[0.06em] text-readout-strong">
+              <span className="relative z-10 w-full bg-void/80 px-1.5 py-1 font-heading text-sm tracking-title text-readout-strong">
                 {boss.name}
               </span>
             </button>
@@ -164,10 +164,10 @@ export default function TeamSelect({
     <section className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 md:px-8">
       {/* Masthead — the signal rule every other screen opens on. */}
       <header className="border-l-2 border-signal pl-3">
-        <span className="block font-body text-[10px] font-bold uppercase tracking-[0.34em] text-signal">
+        <span className="block font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
           Practice bench
         </span>
-        <h1 className="font-heading text-4xl leading-none tracking-[0.1em] text-readout-strong">
+        <h1 className="font-heading text-4xl leading-none tracking-label text-readout-strong">
           {isBossMode ? "Boss Battle" : "Team Select"}
         </h1>
         <p className="mt-1.5 max-w-[68ch] font-body text-sm leading-relaxed text-readout-dim">
@@ -249,7 +249,7 @@ export default function TeamSelect({
 
         <div className="flex items-center justify-center py-2 lg:h-full lg:flex-col">
           <span className="hidden flex-1 border-l border-hairline lg:block" />
-          <span className="px-3 py-1 font-heading text-2xl tracking-[0.14em] text-readout-muted">
+          <span className="px-3 py-1 font-heading text-2xl tracking-label text-readout-muted">
             VS
           </span>
           <span className="hidden flex-1 border-l border-hairline lg:block" />
@@ -340,7 +340,7 @@ export default function TeamSelect({
               playerTeam.length === 0 && enemyTeam.length === 0 && boss === null
             }
             onClick={clearAll}
-            className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap px-3 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-readout-muted transition-colors hover:text-el-red disabled:pointer-events-none disabled:opacity-40"
+            className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap px-3 font-body text-[11px] font-bold uppercase tracking-label text-readout-muted transition-colors hover:text-el-red disabled:pointer-events-none disabled:opacity-40"
           >
             Clear all
           </button>
@@ -348,7 +348,7 @@ export default function TeamSelect({
             type="button"
             disabled={!canStart}
             onClick={handleStart}
-            className="chamfer h-11 shrink-0 border border-signal bg-signal px-8 font-heading text-lg tracking-[0.12em] text-void transition-opacity disabled:pointer-events-none disabled:opacity-40"
+            className="chamfer h-11 shrink-0 border border-signal bg-signal px-8 font-heading text-lg tracking-label text-void transition-opacity disabled:pointer-events-none disabled:opacity-40"
           >
             {isBossMode ? "Start boss battle" : "Start battle"}
           </button>
@@ -368,7 +368,7 @@ function Setting({
 }): React.JSX.Element {
   return (
     <span className="flex items-center gap-2">
-      <span className="font-body text-[9px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+      <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
         {label}
       </span>
       <span className="flex gap-1">{children}</span>
@@ -398,7 +398,7 @@ function QuickAction({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="chamfer min-h-11 border border-edge bg-void/60 px-2.5 py-1 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:pointer-events-none disabled:opacity-35"
+      className="chamfer min-h-11 border border-edge bg-void/60 px-2.5 py-1 font-body text-[11px] font-bold uppercase tracking-label text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:pointer-events-none disabled:opacity-35"
     >
       {children}
     </button>

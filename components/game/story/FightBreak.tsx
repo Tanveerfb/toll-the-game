@@ -7,42 +7,42 @@ import { getCharacterArt } from "@/lib/game/characterArt";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 
 /**
- * The beat between two waves.
+ * The beat between two fights.
  *
- * A stage's waves share one HP pool, and the player has to see what the last fight
+ * A stage's fights share one HP pool, and the player has to see what the last fight
  * cost before choosing to walk into the next one — otherwise attrition is a rule
  * they're told about rather than one they feel. This screen is the whole reason the
- * wave model reads as a *run*.
+ * fight model reads as a *run*.
  *
  * There is no heal here and no team edit: those would undo the attrition. The only
  * decision is whether to press on, and the only other exit is abandoning the
  * stage, which costs the stamina already spent.
  */
-export default function WaveBreak({
+export default function FightBreak({
   cleared,
   total,
   bars,
   onContinue,
   onQuit,
 }: {
-  /** Waves won so far. */
+  /** Fights won so far. */
   cleared: number;
   total: number;
-  /** Party state going into the next wave; a fallen unit is `hp: 0`. */
+  /** Party state going into the next fight; a fallen unit is `hp: 0`. */
   bars: { id: string; hp: number; max: number }[];
   onContinue: () => void;
   onQuit: () => void;
 }): React.JSX.Element {
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4">
-      <p className="text-center font-body text-[11px] font-bold tracking-[0.22em] text-readout-muted uppercase">
-        Wave {cleared} of {total} cleared
+      <p className="text-center font-body text-[11px] font-bold tracking-eyebrow text-readout-muted uppercase">
+        Fight {cleared} of {total} cleared
       </p>
-      <h2 className="pt-1 text-center font-heading text-3xl tracking-[0.06em] text-el-light">
-        {cleared >= total ? "Stage clear" : `Wave ${cleared + 1} incoming`}
+      <h2 className="pt-1 text-center font-heading text-3xl tracking-title text-el-light">
+        {cleared >= total ? "Stage clear" : `Fight ${cleared + 1} incoming`}
       </h2>
       <p className="pt-1.5 text-center text-xs leading-relaxed text-readout-dim">
-        No healing between waves. Whoever is standing is who fights next.
+        No healing between fights. Whoever is standing is who fights next.
       </p>
 
       <ul className="mt-5 flex flex-col gap-2">
@@ -101,7 +101,7 @@ export default function WaveBreak({
       <div className="mt-6 flex flex-col gap-2">
         <Button
           size="xl"
-          className="chamfer font-heading tracking-[0.09em]"
+          className="chamfer font-heading tracking-title"
           onClick={onContinue}
         >
           {cleared >= total ? "CONTINUE ▸" : `ENTER WAVE ${cleared + 1} ▸`}

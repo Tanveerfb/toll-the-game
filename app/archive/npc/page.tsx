@@ -26,13 +26,13 @@ export default function NpcArchivePage() {
     <main className="terminal-grid min-screen-below-nav bg-void">
       <section className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-8">
         <header className="border-l-2 border-signal pl-3">
-          <span className="block font-body text-[10px] font-bold uppercase tracking-[0.34em] text-signal">
+          <span className="block font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
             Hostile contact index
           </span>
-          <h1 className="font-heading text-3xl leading-none tracking-[0.1em] text-readout md:text-4xl">
+          <h1 className="font-heading text-3xl leading-none tracking-label text-readout md:text-4xl">
             NPC Archive
           </h1>
-          <p className="mt-1.5 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+          <p className="mt-1.5 font-body text-[11px] font-bold uppercase tracking-label text-readout-muted">
             Story-only enemies — not part of the playable roster
           </p>
         </header>

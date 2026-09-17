@@ -76,7 +76,7 @@ describe("character VFX registry", () => {
         "second-ring",
         "inner-pop",
         "core",
-        "wave",
+        "fight",
       ]).toContain(accent);
     }
   });

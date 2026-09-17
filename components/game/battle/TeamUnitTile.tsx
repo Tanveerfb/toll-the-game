@@ -145,7 +145,7 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
           {ultFull && !isDead ? (
             // Keeps clear of the focus-fire reticle in the same corner.
             <span
-              className={`absolute inset-x-0 top-0 bg-el-light px-1 py-px text-center font-body text-[8px] font-bold uppercase leading-none tracking-[0.16em] text-void ${canTarget ? "pr-10" : ""}`}
+              className={`absolute inset-x-0 top-0 bg-el-light px-1 py-px text-center font-body text-[8px] font-bold uppercase leading-none tracking-label text-void ${canTarget ? "pr-10" : ""}`}
             >
               Ult Ready
             </span>
@@ -154,14 +154,14 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
           {/* Incoming hits sit WITH the brackets, not in the opposite corner:
               "marked" and "already taking two hits" are one fact. */}
           {queuedHits > 0 && isEnemy && !isDead ? (
-            <span className="absolute inset-x-0 bottom-0 bg-el-red/90 px-1 py-px text-center font-body text-[8px] font-bold uppercase leading-none tracking-[0.12em] text-void">
+            <span className="absolute inset-x-0 bottom-0 bg-el-red/90 px-1 py-px text-center font-body text-[8px] font-bold uppercase leading-none tracking-label text-void">
               {queuedHits} incoming
             </span>
           ) : null}
 
           {isDead ? (
             <div className="absolute inset-0 flex items-center justify-center bg-void/55">
-              <span className="font-heading text-sm tracking-[0.2em] text-el-red">
+              <span className="font-heading text-sm tracking-eyebrow text-el-red">
                 DOWN
               </span>
             </div>
@@ -193,7 +193,7 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
               aria-label={`Element: ${unit.color}`}
               className={`h-2 w-2 shrink-0 rotate-45 ${ELEMENT_SWATCH[unit.color]}`}
             />
-            <span className="min-w-0 flex-1 truncate font-heading text-xs tracking-[0.04em] text-readout-strong">
+            <span className="min-w-0 flex-1 truncate font-heading text-xs tracking-title text-readout-strong">
               {unit.name}
             </span>
           </div>

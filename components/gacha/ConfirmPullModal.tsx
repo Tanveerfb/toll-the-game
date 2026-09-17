@@ -49,7 +49,7 @@ function ShiftRow({
   return (
     <div className="flex items-center gap-2 border border-hairline bg-panel px-3 py-2">
       {iconId ? <ItemIcon id={iconId} size={20} alt="" /> : null}
-      <span className="min-w-0 flex-1 truncate font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+      <span className="min-w-0 flex-1 truncate font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
         {label}
       </span>
       <span className="shrink-0 font-body text-sm tabular-nums text-readout-dim">
@@ -67,7 +67,7 @@ function ShiftRow({
         {delta > 0 ? "+" : ""}
         {delta.toLocaleString()}
       </span>
-      <span className="shrink-0 font-body text-[10px] uppercase tracking-[0.12em] text-readout-muted">
+      <span className="shrink-0 font-body text-[10px] uppercase tracking-label text-readout-muted">
         {unit}
       </span>
     </div>

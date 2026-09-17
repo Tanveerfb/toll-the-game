@@ -93,6 +93,38 @@ The single most damaging failure here is a one-directional link. #108 supersedes
 - A ruling that *partially* survives says which half. #94's team-agency modes
   survived #108; its chapter structure did not.
 
+## Your inference is not his ruling — mark the seam
+
+An entry is usually **his words plus your synthesis**: he settles a point, you
+work out what it means for the code and write both down. That is the job. The
+failure is letting the two wear the same authority, because a later session
+reads the whole entry as settled and cannot tell which half to doubt.
+
+**Ruling #137 is the worked example, and it lasted about three hours.** He
+distinguished a *fight* from a *phase*; the entry then added a summary line —
+*"a wave changes how many enemies there are; a phase changes what one enemy
+is"* — which was **Claude's formulation, not his**, and was **wrong**. He
+restated the whole vocabulary later the same day: a phase is *any* transition
+to a new state inside one fight, including a new set of enemies, and "wave"
+is not a term the game uses at all. The quotes in #137 were accurate. The
+sentence that did the damage was the one nobody had said.
+
+**So, inside an entry:**
+
+- Quoted text is his, verbatim, and nothing else goes in quote marks.
+- A conclusion drawn from his words says so — *"so the working reading is…"*,
+  *"which implies…"*, *"flagged to him as an inference"* — and is a separate
+  sentence from the quote it follows.
+- **A crisp aphorism summarising his position is the most dangerous shape of
+  all**, because it is the line that gets quoted onward. If you write one,
+  either get him to confirm it or label it as yours.
+
+**When he corrects an entry, correct it in place and say what it used to
+claim.** #137 now carries its own wrong table under a CORRECTED heading rather
+than a clean replacement — a future session meeting the old distinction
+elsewhere has to be able to recognise it as retired. That is the same rule the
+ledger already applies to superseded entries; it applies within an entry too.
+
 ## Evidence that is not his
 
 A ruling often rests on something outside this project — a reference game, a

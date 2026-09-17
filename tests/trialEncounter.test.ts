@@ -6,17 +6,17 @@ import {
 } from "@/lib/game/trialEncounters";
 import {
   eventLockReason,
-  eventWaveCount,
+  eventFightCount,
   getEvent,
   hasEncounter,
   GAME_EVENTS,
 } from "@/lib/game/events";
 import {
-  applyWaveOutcome,
+  applyFightOutcome,
   beginRun,
   isWipe,
-  waveEnemies,
-  waveTeam,
+  fightEnemies,
+  fightTeam,
 } from "@/lib/game/stageRun";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { FIELD_CAP } from "@/lib/game/format";
@@ -56,16 +56,30 @@ describe("the encounter exists and the board can reach it", () => {
     );
   });
 
+  it("is enterable by the only rule the brief may ask", () => {
+    // The bug this pins, found by opening the page rather than by any test
+    // (2026-09-17): the brief gated its Enter button on `!!event.enemyId`,
+    // which is **null on a trial** — so the fight was unreachable while
+    // `eventLockReason` reported it unlocked. Two conditions answering one
+    // question, and only one of them was updated when trials gained
+    // encounters. `eventLockReason` is now the single source, and this asserts
+    // the property the brief depends on: a trial with an encounter, at its own
+    // rank, with the wall still up, has NO lock reason and NO enemyId.
+    const trial = getEvent("trial-rank-20")!;
+    expect(trial.enemyId).toBeNull();
+    expect(eventLockReason(trial, trial.requiredRank, [])).toBeNull();
+  });
+
   it("reports three fights, where the boss reports one", () => {
-    expect(eventWaveCount(getEvent("trial-rank-20")!)).toBe(3);
-    expect(eventWaveCount(getEvent("molvarr")!)).toBe(1);
-    expect(eventWaveCount(getEvent("trial-rank-40")!)).toBe(0);
+    expect(eventFightCount(getEvent("trial-rank-20")!)).toBe(3);
+    expect(eventFightCount(getEvent("molvarr")!)).toBe(1);
+    expect(eventFightCount(getEvent("trial-rank-40")!)).toBe(0);
   });
 
   it("every authored enemy is a real character", () => {
-    for (const wave of FIRST_ASCENSION_TRIAL.waves) {
-      expect(wave.enemies.length).toBeGreaterThan(0);
-      for (const pick of wave.enemies) {
+    for (const fight of FIRST_ASCENSION_TRIAL.fights) {
+      expect(fight.enemies.length).toBeGreaterThan(0);
+      for (const pick of fight.enemies) {
         expect(getCharacterById(pick.id), `unknown id: ${pick.id}`).toBeDefined();
       }
     }
@@ -73,10 +87,10 @@ describe("the encounter exists and the board can reach it", () => {
 });
 
 describe("the shape he asked for", () => {
-  const [first, second, third] = FIRST_ASCENSION_TRIAL.waves;
+  const [first, second, third] = FIRST_ASCENSION_TRIAL.fights;
 
   it("is three fights", () => {
-    expect(FIRST_ASCENSION_TRIAL.waves).toHaveLength(3);
+    expect(FIRST_ASCENSION_TRIAL.fights).toHaveLength(3);
   });
 
   it("opens on a group of four, one of them benched", () => {
@@ -97,20 +111,20 @@ describe("the shape he asked for", () => {
     expect(second.enemies).toHaveLength(1);
     const lyra = getCharacterById(second.enemies[0].id)!;
     expect(lyra.tier).toBe("elite");
-    // Non-boss: the multi-phase kit is wave 3's job.
+    // Non-boss: the multi-phase kit is fight 3's job.
     expect(lyra.phases ?? []).toHaveLength(0);
   });
 
   it("ends on Molvarr, both phases, fought to the end", () => {
     expect(third.enemies).toEqual([{ id: "molvarr", level: 24 }]);
     expect(getCharacterById("molvarr")!.phases).toHaveLength(2);
-    // He chose the kill over the survive-to-a-threshold option, so the wave
+    // He chose the kill over the survive-to-a-threshold option, so the fight
     // must NOT carry an early-victory condition.
     expect(third.victoryAtEnemyHpPercent).toBeUndefined();
   });
 
-  it("escalates — no wave is easier than the one before", () => {
-    const levels = FIRST_ASCENSION_TRIAL.waves.map((w) =>
+  it("escalates — no fight is easier than the one before", () => {
+    const levels = FIRST_ASCENSION_TRIAL.fights.map((w) =>
       Math.max(...w.enemies.map((e) => e.level ?? 1)),
     );
     for (let i = 1; i < levels.length; i += 1) {
@@ -137,9 +151,9 @@ describe("the run rule: no heal between fights", () => {
   it("carries damage forward and never revives the fallen", () => {
     const team = [{ id: "duke" }, { id: "lyra" }, { id: "seras" }];
     let run = beginRun("trial-rank-20", FIRST_ASCENSION_TRIAL, team);
-    expect(waveEnemies(FIRST_ASCENSION_TRIAL, run)).toHaveLength(4);
+    expect(fightEnemies(FIRST_ASCENSION_TRIAL, run)).toHaveLength(4);
 
-    run = applyWaveOutcome(run, {
+    run = applyFightOutcome(run, {
       survivors: [
         { id: "duke", hp: 900 },
         { id: "lyra", hp: 120 },
@@ -150,13 +164,13 @@ describe("the run rule: no heal between fights", () => {
       rankUses: { 1: 3, 2: 1, 3: 0 },
     });
 
-    // Wave 2 is fought by two units at the HP wave 1 left them.
+    // Fight 2 is fought by two units at the HP fight 1 left them.
     expect(run.carryHp).toEqual({ duke: 900, lyra: 120 });
-    expect(waveTeam(run).map((p) => p.id)).toEqual(["duke", "lyra"]);
+    expect(fightTeam(run).map((p) => p.id)).toEqual(["duke", "lyra"]);
     expect(run.complete).toBe(false);
     expect(isWipe(run)).toBe(false);
 
-    run = applyWaveOutcome(run, {
+    run = applyFightOutcome(run, {
       survivors: [{ id: "duke", hp: 400 }],
       fallenIds: ["lyra"],
       turns: 9,
@@ -167,7 +181,7 @@ describe("the run rule: no heal between fights", () => {
     expect(run.carryHp).toEqual({ duke: 400 });
     expect(run.fallen.sort()).toEqual(["lyra", "seras"]);
 
-    run = applyWaveOutcome(run, {
+    run = applyFightOutcome(run, {
       survivors: [{ id: "duke", hp: 55 }],
       fallenIds: [],
       turns: 11,
@@ -179,7 +193,7 @@ describe("the run rule: no heal between fights", () => {
   });
 
   it("a wipe is losing everyone, not losing a fight", () => {
-    const run = applyWaveOutcome(
+    const run = applyFightOutcome(
       beginRun("trial-rank-20", FIRST_ASCENSION_TRIAL, [{ id: "duke" }]),
       {
         survivors: [],
@@ -207,28 +221,28 @@ describe("difficulty is still where it was tuned", () => {
   it("a level-20 balanced team clears more often than not, but bleeds", async () => {
     const result = await simulateRun(
       playerBand(BALANCED, 20),
-      FIRST_ASCENSION_TRIAL.waves.map((w) => w.enemies),
+      FIRST_ASCENSION_TRIAL.fights.map((w) => w.enemies),
       { runs: 60, seed: 11, maxTurns: 80 },
     );
     const rate = clearRate(result);
     expect(rate).toBeGreaterThan(55);
     expect(rate).toBeLessThan(95);
-    // The climax is wave 3, not wave 1 — if that inverts, the escalation broke.
-    expect(result.wipesByWave[2]).toBeGreaterThanOrEqual(
-      result.wipesByWave[0],
+    // The climax is fight 3, not fight 1 — if that inverts, the escalation broke.
+    expect(result.wipesByFight[2]).toBeGreaterThanOrEqual(
+      result.wipesByFight[0],
     );
   }, 120_000);
 
   it("the same team at level 1 does not clear", async () => {
     const result = await simulateRun(
       playerBand(BALANCED, 1),
-      FIRST_ASCENSION_TRIAL.waves.map((w) => w.enemies),
+      FIRST_ASCENSION_TRIAL.fights.map((w) => w.enemies),
       { runs: 40, seed: 11, maxTurns: 80 },
     );
     expect(clearRate(result)).toBe(0);
     // And it is the elite that stops them, which is what makes the trial a
     // level check rather than a boss check.
-    expect(result.averageWavesCleared).toBeLessThan(2);
+    expect(result.averageFightsCleared).toBeLessThan(2);
   }, 120_000);
 });
 

@@ -59,7 +59,7 @@ export default function DevGrantPanel(): React.JSX.Element | null {
   return (
     <Card className="border-2 border-sky-400 bg-black/50">
       <CardHeader className="px-4 py-2.5">
-        <CardTitle className="text-lg tracking-[0.12em] text-sky-200">
+        <CardTitle className="text-lg tracking-label text-sky-200">
           DEV GRANT PANEL
         </CardTitle>
       </CardHeader>
@@ -68,7 +68,7 @@ export default function DevGrantPanel(): React.JSX.Element | null {
             holding permanent width in a 390px bar. The setting is global; only
             its control lives here. */}
         <div className="flex flex-wrap items-center gap-2 border-b border-hairline pb-3">
-          <span className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+          <span className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
             Enemy AI
           </span>
           <DuelToggle />
@@ -115,7 +115,7 @@ export default function DevGrantPanel(): React.JSX.Element | null {
 
         <div className="flex flex-wrap items-end gap-2 border-t border-hairline pt-3">
           <label className="flex flex-col gap-1">
-            <span className="font-body text-[10px] uppercase tracking-widest text-readout-muted">Character</span>
+            <span className="font-body text-[10px] uppercase tracking-label text-readout-muted">Character</span>
             <select
               value={selectedCharId}
               onChange={(e) => setSelectedCharId(e.target.value)}
@@ -127,11 +127,11 @@ export default function DevGrantPanel(): React.JSX.Element | null {
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="font-body text-[10px] uppercase tracking-widest text-readout-muted">Level</span>
+            <span className="font-body text-[10px] uppercase tracking-label text-readout-muted">Level</span>
             <Input value={levelInput} onChange={(e) => setLevelInput(e.target.value)} className="w-16" />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="font-body text-[10px] uppercase tracking-widest text-readout-muted">Ascension</span>
+            <span className="font-body text-[10px] uppercase tracking-label text-readout-muted">Ascension</span>
             <Input value={ascensionInput} onChange={(e) => setAscensionInput(e.target.value)} className="w-16" />
           </label>
           <Button variant="outline" onClick={setCharacterProgress}>Set</Button>

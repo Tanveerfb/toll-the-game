@@ -128,7 +128,7 @@ function ControlButton({
       } ${className ?? ""}`}
     >
       {children}
-      <span className="font-body text-[8px] font-bold uppercase leading-none tracking-[0.1em]">
+      <span className="font-body text-[8px] font-bold uppercase leading-none tracking-label">
         {label}
       </span>
     </button>
@@ -145,7 +145,7 @@ function SheetStat({
 }): React.JSX.Element {
   return (
     <div className="flex items-baseline justify-between gap-3 border-b border-hairline py-1.5 last:border-b-0">
-      <span className="font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+      <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
         {label}
       </span>
       <span className="min-w-0 truncate text-right font-body text-xs text-readout-strong">
@@ -543,13 +543,13 @@ export default function BattleArena({
     <div className="shrink-0 border-t border-hairline bg-inset px-2 py-1.5">
       {interactionNotice ? (
         <div className="flex min-h-11 items-center justify-between gap-2">
-          <p className="min-w-0 truncate font-body text-xs uppercase tracking-[0.1em] text-el-red">
+          <p className="min-w-0 truncate font-body text-xs uppercase tracking-label text-el-red">
             {interactionNotice}
           </p>
           <button
             type="button"
             onClick={clearInteractionNotice}
-            className="flex min-h-11 shrink-0 cursor-pointer items-center border border-el-red/70 px-3 font-body text-[10px] uppercase tracking-widest text-el-red"
+            className="flex min-h-11 shrink-0 cursor-pointer items-center border border-el-red/70 px-3 font-body text-[10px] uppercase tracking-label text-el-red"
           >
             Dismiss
           </button>
@@ -739,10 +739,10 @@ export default function BattleArena({
                   />
                 ) : null}
                 <div className="min-w-0">
-                  <p className="font-body text-xs uppercase tracking-[0.3em] text-el-light/80">
+                  <p className="font-body text-xs uppercase tracking-eyebrow text-el-light/80">
                     {seq.cutIn.name} — Ultimate
                   </p>
-                  <p className="truncate font-heading text-4xl tracking-[0.1em] text-el-light drop-shadow-[0_0_12px_rgba(232,209,116,0.8)]">
+                  <p className="truncate font-heading text-4xl tracking-label text-el-light drop-shadow-[0_0_12px_rgba(232,209,116,0.8)]">
                     {seq.cutIn.skillName}
                   </p>
                 </div>
@@ -775,10 +775,10 @@ export default function BattleArena({
                 transition={{ duration: 0.38 / battleSpeed, ease: "easeOut" }}
                 className="relative flex flex-col items-center gap-1 border-y-2 border-el-red bg-void/80 px-12 py-5 backdrop-blur-sm"
               >
-                <span className="font-body text-xs uppercase tracking-[0.4em] text-el-red/80">
+                <span className="font-body text-xs uppercase tracking-eyebrow text-el-red/80">
                   {phaseBreak.name}
                 </span>
-                <span className="font-heading text-5xl tracking-[0.16em] text-el-red drop-shadow-[0_0_16px_rgba(255,90,78,0.85)] md:text-6xl">
+                <span className="font-heading text-5xl tracking-label text-el-red drop-shadow-[0_0_16px_rgba(255,90,78,0.85)] md:text-6xl">
                   PHASE {phaseBreak.phase}
                 </span>
               </m.div>
@@ -794,7 +794,7 @@ export default function BattleArena({
               animate={{ opacity: 1, y: -26, scale: 1 }}
               exit={{ opacity: 0, y: -40 }}
               transition={{ duration: 0.5 / battleSpeed, ease: "easeOut" }}
-              className={`absolute -translate-x-1/2 border px-2 py-0.5 font-heading tracking-[0.06em] shadow-xl ${
+              className={`absolute -translate-x-1/2 border px-2 py-0.5 font-heading tracking-title shadow-xl ${
                 floater.kind === "crit"
                   ? "border-el-light bg-void/90 text-2xl text-el-light"
                   : floater.kind === "damage"
@@ -899,7 +899,7 @@ export default function BattleArena({
                     }}
                   />
                 ) : null}
-                {accent === "wave" ? (
+                {accent === "fight" ? (
                   <m.div
                     initial={{ opacity: 0.7, scaleX: 0.2, scaleY: 0.1 }}
                     animate={{ opacity: 0, scaleX: burst.strong ? 3.2 : 2.2, scaleY: 0.28 }}
@@ -954,14 +954,14 @@ export default function BattleArena({
           row used to carry the Speed/Log/Exit cluster, which is what forced
           the enemy roster button down to top-14 to avoid it. */}
       <header className="flex shrink-0 items-center gap-3 border-b border-hairline bg-inset px-3 py-1.5">
-        <span className="shrink-0 font-heading text-base tracking-[0.12em] text-readout-strong">
+        <span className="shrink-0 font-heading text-base tracking-label text-readout-strong">
           TURN {currentTurn + 1}
         </span>
-        <span className="truncate font-body text-xs uppercase tracking-[0.16em] text-signal">
+        <span className="truncate font-body text-xs uppercase tracking-label text-signal">
           {phaseLabel}
         </span>
         {duelMode ? (
-          <span className="hidden shrink-0 border border-violet-400/70 px-1.5 py-0.5 font-body text-[10px] uppercase tracking-[0.14em] text-violet-200 sm:inline">
+          <span className="hidden shrink-0 border border-violet-400/70 px-1.5 py-0.5 font-body text-[10px] uppercase tracking-label text-violet-200 sm:inline">
             Duel
           </span>
         ) : null}
@@ -978,13 +978,13 @@ export default function BattleArena({
         {contextLabel ? (
           <span className="hidden min-w-0 shrink items-center gap-2 sm:flex">
             <span className="h-3 w-px shrink-0 bg-edge" />
-            <span className="truncate font-body text-[11px] uppercase tracking-[0.16em] text-readout-muted">
+            <span className="truncate font-body text-[11px] uppercase tracking-label text-readout-muted">
               {contextLabel}
             </span>
           </span>
         ) : null}
         <span className="flex-1" />
-        <span className="hidden shrink-0 font-body text-[10px] uppercase tracking-[0.12em] text-readout-muted md:inline">
+        <span className="hidden shrink-0 font-body text-[10px] uppercase tracking-label text-readout-muted md:inline">
           Player {playerTurns} • Enemy {enemyTurns}
         </span>
         <div className="h-1.5 w-10 shrink-0 overflow-hidden border border-edge bg-void sm:w-24">
@@ -1014,7 +1014,7 @@ export default function BattleArena({
                   ◎ to focus fire (optional; unmarked attacks pick randomly)")
                   is gone — a permanent tutorial line on a height-starved
                   screen. The reticle carries its own tooltip. */}
-              <p className="min-w-0 truncate font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+              <p className="min-w-0 truncate font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
                 Enemy
               </p>
               {/* Enemy hidden deck (headless 7DS GC model): face-down cards =
@@ -1024,7 +1024,7 @@ export default function BattleArena({
                   className="flex shrink-0 items-center gap-1"
                   aria-label={`Enemy hand: ${enemyDeck.length} card${enemyDeck.length > 1 ? "s" : ""}`}
                 >
-                  <span className="font-body text-[9px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+                  <span className="font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
                     Hand {enemyDeck.length}
                   </span>
                   {enemyDeck.slice(0, 7).map((card, i) => (
@@ -1071,7 +1071,7 @@ export default function BattleArena({
               className={`h-px w-full bg-linear-to-r from-transparent via-edge-strong to-transparent transition-opacity duration-300 ${bigHitFocus ? "opacity-100" : "opacity-60"}`}
             />
             <span
-              className={`absolute bg-void px-2 font-heading text-[10px] tracking-[0.4em] text-readout-muted transition-opacity duration-300 sm:text-xs ${bigHitFocus ? "opacity-100" : "opacity-60"}`}
+              className={`absolute bg-void px-2 font-heading text-[10px] tracking-eyebrow text-readout-muted transition-opacity duration-300 sm:text-xs ${bigHitFocus ? "opacity-100" : "opacity-60"}`}
             >
               VS
             </span>
@@ -1080,7 +1080,7 @@ export default function BattleArena({
           <div
             className={`bighit-recede flex min-h-0 flex-col transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.97] opacity-50" : "scale-100 opacity-100"}`}
           >
-            <p className="mb-1 shrink-0 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+            <p className="mb-1 shrink-0 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
               Your team
             </p>
             <div className="flex min-h-0 flex-1 items-center justify-center gap-2 overflow-hidden">
@@ -1188,7 +1188,7 @@ export default function BattleArena({
                 get an empty box. */}
             {sheetStageEffects.length > 0 ? (
               <div className="mb-3 border border-hairline bg-inset px-3 py-2">
-                <span className="font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+                <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
                   Stage effects
                 </span>
                 <ul className="mt-1.5 flex flex-col gap-1">
@@ -1198,7 +1198,7 @@ export default function BattleArena({
                       className="flex items-baseline gap-2 font-body text-xs text-readout"
                     >
                       <span
-                        className={`shrink-0 font-bold uppercase tracking-[0.14em] text-[9px] ${
+                        className={`shrink-0 font-bold uppercase tracking-label text-[9px] ${
                           entry.side === "Enemy"
                             ? "text-el-red"
                             : entry.side === "You"
@@ -1283,10 +1283,10 @@ export default function BattleArena({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/85 px-4 backdrop-blur-sm">
           <Card className="w-full max-w-sm border-2 border-el-red">
             <CardHeader className="px-6 py-5 text-center">
-              <CardTitle className="font-heading text-3xl tracking-[0.12em] text-el-red">
+              <CardTitle className="font-heading text-3xl tracking-label text-el-red">
                 EXIT BATTLE?
               </CardTitle>
-              <CardDescription className="mt-2 tracking-[0.12em]">
+              <CardDescription className="mt-2 tracking-label">
                 This counts as a loss — your progress in this fight is forfeited.
               </CardDescription>
             </CardHeader>
@@ -1317,7 +1317,7 @@ export default function BattleArena({
           >
             <CardHeader className="px-6 py-6 text-center">
               <CardTitle
-                className={`font-heading text-6xl tracking-[0.16em] ${battlePhase === "victory" ? "text-el-light" : "text-el-red"}`}
+                className={`font-heading text-6xl tracking-label ${battlePhase === "victory" ? "text-el-light" : "text-el-red"}`}
               >
                 {battlePhase === "victory" ? "VICTORY" : "DEFEAT"}
               </CardTitle>
@@ -1379,7 +1379,7 @@ export default function BattleArena({
                     SAVE BATTLE LOG
                   </Button>
                   {logSaveResult ? (
-                    <p className="text-center font-body text-xs uppercase tracking-[0.14em] text-readout-dim">
+                    <p className="text-center font-body text-xs uppercase tracking-label text-readout-dim">
                       {logSaveResult}
                     </p>
                   ) : null}
@@ -1456,10 +1456,10 @@ export default function BattleArena({
                       onClick={() => confirmAllyTarget(ally.instanceId)}
                       className="flex items-center justify-between gap-2 border-2 border-edge bg-inset px-3 py-2 text-left transition-colors hover:border-signal hover:bg-signal/5"
                     >
-                      <span className="min-w-0 truncate font-heading text-sm tracking-[0.06em] text-readout-strong">
+                      <span className="min-w-0 truncate font-heading text-sm tracking-title text-readout-strong">
                         {ally.name}
                       </span>
-                      <span className="shrink-0 font-body text-[10px] uppercase tracking-widest text-readout-muted">
+                      <span className="shrink-0 font-body text-[10px] uppercase tracking-label text-readout-muted">
                         {ally.currentHP}/{ally.hp}
                       </span>
                     </button>

@@ -155,10 +155,10 @@ function ModeButton({
       onClick={onClick}
       className="flex flex-col gap-0.5 border border-hairline bg-inset px-3 py-2.5 text-left transition-colors hover:border-edge-strong"
     >
-      <span className="font-heading text-lg tracking-[0.05em] text-readout-strong">
+      <span className="font-heading text-lg tracking-title text-readout-strong">
         {title}
       </span>
-      <span className="font-body text-[11px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+      <span className="font-body text-[11px] font-bold uppercase tracking-label text-readout-muted">
         {subtitle}
       </span>
     </button>
@@ -273,15 +273,15 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
 
           <span className="relative flex max-w-[64%] flex-col justify-center gap-1 px-5 md:px-7">
             {!storyHydrated ? (
-              <span className="font-body text-xs uppercase tracking-[0.2em] text-readout-muted">
+              <span className="font-body text-xs uppercase tracking-eyebrow text-readout-muted">
                 Loading progress…
               </span>
             ) : nextStage ? (
               <>
-                <span className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
+                <span className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
                   Continue · {nextStage.chapter.title}
                 </span>
-                <span className="font-heading text-2xl leading-tight tracking-[0.04em] text-readout-strong md:text-4xl">
+                <span className="font-heading text-2xl leading-tight tracking-title text-readout-strong md:text-4xl">
                   {stageLabel(nextStage.chapter, nextStage.stage)} · {nextStage.stage.name}
                 </span>
                 <span className="font-body text-sm text-readout-dim">
@@ -291,10 +291,10 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
               </>
             ) : (
               <>
-                <span className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
+                <span className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
                   Main story
                 </span>
-                <span className="font-heading text-2xl leading-tight tracking-[0.04em] text-readout-strong md:text-4xl">
+                <span className="font-heading text-2xl leading-tight tracking-title text-readout-strong md:text-4xl">
                   All chapters cleared
                 </span>
                 <span className="font-body text-sm text-readout-dim">
@@ -302,7 +302,7 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
                 </span>
               </>
             )}
-            <span className="mt-2 flex w-fit items-center gap-1.5 border border-signal bg-signal/10 px-4 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-signal">
+            <span className="mt-2 flex w-fit items-center gap-1.5 border border-signal bg-signal/10 px-4 py-1.5 font-body text-[11px] font-bold uppercase tracking-label text-signal">
               {nextStage ? "Resume" : "Story index"}
               <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.6} />
             </span>

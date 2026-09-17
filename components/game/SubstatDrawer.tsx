@@ -35,7 +35,7 @@ export default function SubstatDrawer({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full min-h-11 items-center justify-between px-3 py-2 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout-dim transition-colors hover:text-signal"
+        className="flex w-full min-h-11 items-center justify-between px-3 py-2 font-body text-[11px] font-bold uppercase tracking-label text-readout-dim transition-colors hover:text-signal"
       >
         <span>Substats</span>
         <ChevronDown
@@ -49,7 +49,7 @@ export default function SubstatDrawer({
               key={row.label}
               className="flex items-center justify-between gap-2"
             >
-              <span className="min-w-0 truncate font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-muted">
+              <span className="min-w-0 truncate font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
                 {row.label}
               </span>
               <span className="shrink-0 font-body text-xs font-semibold tabular-nums text-readout-strong">

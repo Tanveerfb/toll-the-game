@@ -131,10 +131,10 @@ export default function LoginPage(): React.JSX.Element {
 
       <section className="relative z-10 mx-auto flex min-screen-below-nav w-full max-w-md flex-col justify-center gap-5 px-5 py-10">
         <header className="border-l-2 border-signal pl-3">
-          <span className="block font-heading text-2xl tracking-[0.28em] text-signal">
+          <span className="block font-heading text-2xl tracking-eyebrow text-signal">
             TOLL
           </span>
-          <h1 className="mt-1 font-heading text-3xl leading-none tracking-[0.06em] text-readout-strong">
+          <h1 className="mt-1 font-heading text-3xl leading-none tracking-title text-readout-strong">
             Bureau access
           </h1>
           <p className="mt-2 font-body text-sm text-readout-dim">
@@ -199,7 +199,7 @@ export default function LoginPage(): React.JSX.Element {
           <button
             type="button"
             onClick={() => router.push("/")}
-            className="inline-flex min-h-11 items-center px-3 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout-muted transition-colors hover:text-signal"
+            className="inline-flex min-h-11 items-center px-3 font-body text-[11px] font-bold uppercase tracking-label text-readout-muted transition-colors hover:text-signal"
           >
             {firebaseEnabled ? "Play as a guest" : "Back to the menu"}
           </button>

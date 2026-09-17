@@ -53,11 +53,11 @@ function Resource({
 }): React.JSX.Element {
   return (
     <div className="flex min-w-[8rem] flex-1 flex-col gap-1 border border-hairline bg-panel px-3 py-2">
-      <span className="flex items-center gap-1.5 font-body text-[9px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+      <span className="flex items-center gap-1.5 font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
         {iconId ? <ItemIcon id={iconId} size={18} alt="" /> : null}
         {label}
       </span>
-      <span className="font-heading text-xl leading-none tracking-[0.04em] text-readout-strong tabular-nums">
+      <span className="font-heading text-xl leading-none tracking-title text-readout-strong tabular-nums">
         {value}
         {suffix ? (
           <span className="font-body text-xs font-semibold text-readout-muted">
@@ -143,7 +143,7 @@ export default function ProfilePage() {
               makes `flex-wrap` actually wrap. Measured in a browser
               2026-09-01. */}
           <div className="min-w-36 flex-1">
-            <h1 className="truncate font-heading text-2xl leading-none tracking-[0.06em] text-readout-strong md:text-3xl">
+            <h1 className="truncate font-heading text-2xl leading-none tracking-title text-readout-strong md:text-3xl">
               {displayName}
             </h1>
             <p className="mt-1 truncate font-body text-[11px] text-readout-muted">
@@ -152,7 +152,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex flex-col gap-1 border-l border-edge pl-4">
-            <span className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+            <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
               Account rank
             </span>
             <span
@@ -176,7 +176,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex flex-col gap-1 border-l border-edge pl-4">
-            <span className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+            <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
               World level
             </span>
             <span className="font-heading text-3xl leading-none text-readout-strong">
@@ -227,7 +227,7 @@ export default function ProfilePage() {
           >
             <Boxes className="h-5 w-5 shrink-0 text-readout-dim" strokeWidth={2} />
             <span className="min-w-0 flex-1">
-              <span className="block font-heading text-lg tracking-[0.05em] text-readout-strong">
+              <span className="block font-heading text-lg tracking-title text-readout-strong">
                 Inventory
               </span>
               <span className="block font-body text-[11px] text-readout-muted">
@@ -243,7 +243,7 @@ export default function ProfilePage() {
           >
             <UserCog className="h-5 w-5 shrink-0 text-readout-dim" strokeWidth={2} />
             <span className="min-w-0 flex-1">
-              <span className="block font-heading text-lg tracking-[0.05em] text-readout-strong">
+              <span className="block font-heading text-lg tracking-title text-readout-strong">
                 Account
               </span>
               <span className="block font-body text-[11px] text-readout-muted">
@@ -262,7 +262,7 @@ export default function ProfilePage() {
           className="mt-2 flex items-center gap-3 border border-hairline bg-inset px-4 py-3 transition-colors hover:border-edge-strong"
         >
           <span className="min-w-0 flex-1">
-            <span className="block font-heading text-lg tracking-[0.05em] text-readout-strong">
+            <span className="block font-heading text-lg tracking-title text-readout-strong">
               Your characters
             </span>
             <span className="block font-body text-[11px] text-readout-muted">

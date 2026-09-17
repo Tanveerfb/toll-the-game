@@ -83,8 +83,8 @@ export default function SkillDocument({
 
   return (
     <div className="mt-5 first:mt-0">
-      <h3 className="flex flex-wrap items-baseline gap-x-2 border-l border-edge pl-2.5 font-heading text-lg tracking-[0.06em] text-readout-strong">
-        <span className={`font-body text-[10px] font-bold uppercase tracking-[0.16em] ${accent}`}>
+      <h3 className="flex flex-wrap items-baseline gap-x-2 border-l border-edge pl-2.5 font-heading text-lg tracking-title text-readout-strong">
+        <span className={`font-body text-[10px] font-bold uppercase tracking-label ${accent}`}>
           {slot}
         </span>
         {skill.skillName}
@@ -94,7 +94,7 @@ export default function SkillDocument({
           a `debuff` mechanic would otherwise read "Debuff · Debuff", and an
           ultimate's `ultimate` type just restates the ULT slot chip. */}
       {metaParts.length > 0 ? (
-        <p className="mt-0.5 pl-3 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+        <p className="mt-0.5 pl-3 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
           {metaParts.join(" · ")}
         </p>
       ) : null}
@@ -118,7 +118,7 @@ export default function SkillDocument({
                   className={isCurrent ? "bg-signal/10" : undefined}
                 >
                   <td
-                    className={`${PROSE.td} font-body text-[11px] font-bold uppercase tracking-widest ${isCurrent ? "text-signal" : "text-readout-muted"}`}
+                    className={`${PROSE.td} font-body text-[11px] font-bold uppercase tracking-label ${isCurrent ? "text-signal" : "text-readout-muted"}`}
                   >
                     {rowLabel(index)}
                     {isCurrent ? (

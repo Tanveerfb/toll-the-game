@@ -43,7 +43,7 @@ function ShiftRow({
   return (
     <div className="flex items-center gap-2 border border-hairline bg-panel px-3 py-2">
       <ItemIcon id={iconId} size={20} alt="" />
-      <span className="min-w-0 flex-1 truncate font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+      <span className="min-w-0 flex-1 truncate font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
         {label}
       </span>
       <span className="shrink-0 font-body text-sm tabular-nums text-readout-dim">
@@ -60,7 +60,7 @@ function ShiftRow({
       <span className="shrink-0 font-body text-xs tabular-nums text-el-red">
         {delta.toLocaleString()}
       </span>
-      <span className="shrink-0 font-body text-[10px] uppercase tracking-[0.12em] text-readout-muted">
+      <span className="shrink-0 font-body text-[10px] uppercase tracking-label text-readout-muted">
         {unit}
       </span>
     </div>
@@ -110,10 +110,10 @@ export default function AutoClearConfirm({
     >
       <div className="border border-hairline bg-panel px-3 py-3">
         <div className="flex items-baseline justify-between">
-          <span className="font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+          <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
             Runs to skip
           </span>
-          <span className="font-heading text-2xl leading-none tracking-[0.04em] tabular-nums text-signal">
+          <span className="font-heading text-2xl leading-none tracking-title tabular-nums text-signal">
             {safeRuns}
             <span className="ml-1 font-body text-[10px] font-semibold text-readout-muted">
               of {maxRuns} affordable
@@ -160,7 +160,7 @@ export default function AutoClearConfirm({
 
       {dropRows.length > 0 ? (
         <div className="mt-3 border-t border-hairline pt-3">
-          <p className="mb-2 font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+          <p className="mb-2 font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
             Each run rolls from
           </p>
           <div className="flex flex-col gap-1">

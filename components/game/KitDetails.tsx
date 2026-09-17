@@ -69,7 +69,7 @@ export interface KitPassiveView {
 
 const UI = {
   fieldLabel:
-    "font-body text-[10px] font-bold uppercase tracking-[0.2em] text-readout-muted",
+    "font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted",
   textValue: "font-body text-sm text-readout",
 } as const;
 
@@ -151,11 +151,11 @@ export function SkillBlock({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline px-3 py-2">
         <div className="flex items-center gap-2">
           <span
-            className={`px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-widest ${chipClass}`}
+            className={`px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-label ${chipClass}`}
           >
             {tag}
           </span>
-          <p className="font-heading text-lg tracking-[0.05em] text-readout-strong">
+          <p className="font-heading text-lg tracking-title text-readout-strong">
             {skill.skillName}
           </p>
         </div>
@@ -165,7 +165,7 @@ export function SkillBlock({
             <button
               type="button"
               onClick={onDetails}
-              className="flex min-h-11 shrink-0 chamfer items-center border border-edge px-3 font-body text-[10px] uppercase tracking-widest text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+              className="flex min-h-11 shrink-0 chamfer items-center border border-edge px-3 font-body text-[10px] uppercase tracking-label text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
             >
               Details
             </button>
@@ -180,7 +180,7 @@ export function SkillBlock({
               key={`${skill.skillName}-rank-${index + 1}`}
               className="grid grid-cols-[44px_1fr] items-baseline gap-2"
             >
-              <span className="font-body text-[10px] font-bold uppercase tracking-widest text-readout-muted">
+              <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
                 R{index + 1}
               </span>
               <KeyworkHighlighter
@@ -245,7 +245,7 @@ function PanelSection({
   return (
     <section className="border border-hairline bg-inset/60">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-hairline bg-panel-raised/50 px-3 py-2">
-        <h3 className="font-heading text-base tracking-[0.1em] text-readout-strong">
+        <h3 className="font-heading text-base tracking-label text-readout-strong">
           {title}
         </h3>
         {subtitle}
@@ -257,7 +257,7 @@ function PanelSection({
 
 function UncancellableBadge(): React.JSX.Element {
   return (
-    <span className="rounded-sm border border-rose-500/60 px-1 py-px font-body text-[9px] font-bold uppercase tracking-wider text-rose-300">
+    <span className="rounded-sm border border-rose-500/60 px-1 py-px font-body text-[9px] font-bold uppercase tracking-title text-rose-300">
       Uncancellable
     </span>
   );
@@ -295,7 +295,7 @@ export function PassiveProse({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             {showName && passive?.name ? (
-              <p className="font-heading text-sm tracking-[0.08em] text-signal">
+              <p className="font-heading text-sm tracking-title text-signal">
                 {passive.name}
               </p>
             ) : null}
@@ -305,7 +305,7 @@ export function PassiveProse({
             <button
               type="button"
               onClick={onDetails}
-              className="flex min-h-11 shrink-0 chamfer items-center border border-edge px-3 font-body text-[10px] uppercase tracking-widest text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+              className="flex min-h-11 shrink-0 chamfer items-center border border-edge px-3 font-body text-[10px] uppercase tracking-label text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
             >
               Details
             </button>
@@ -318,7 +318,7 @@ export function PassiveProse({
           {parsePassiveMarkup(description).map((section, sIdx) => (
             <div key={`section-${sIdx}`} className="space-y-1">
               {section.heading ? (
-                <p className="font-body text-[11px] font-bold uppercase tracking-[0.14em] text-readout-dim">
+                <p className="font-body text-[11px] font-bold uppercase tracking-label text-readout-dim">
                   {section.heading}
                 </p>
               ) : null}
@@ -435,7 +435,7 @@ export default function KitDetails({
         title={multi ? "Passives" : "Passive"}
         subtitle={
           subtitleName ? (
-            <span className="font-body text-xs uppercase tracking-[0.14em] text-readout-dim">
+            <span className="font-body text-xs uppercase tracking-label text-readout-dim">
               {subtitleName}
             </span>
           ) : undefined
@@ -476,13 +476,13 @@ export function PassiveDetailSections({
   return (
     <div className="space-y-4">
       {passive.name ? (
-        <p className="font-heading text-sm tracking-[0.08em] text-signal">
+        <p className="font-heading text-sm tracking-title text-signal">
           {passive.name}
         </p>
       ) : null}
       {sections.map((section) => (
         <div key={section.header}>
-          <h4 className="mb-1.5 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-readout-dim">
+          <h4 className="mb-1.5 font-body text-[11px] font-bold uppercase tracking-label text-readout-dim">
             {section.header}
           </h4>
           <ul className="space-y-1 border-l border-edge pl-3">

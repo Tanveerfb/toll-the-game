@@ -14,8 +14,8 @@ import type { StoryChapter } from "@/types/story";
  *  - **Stage numbers run 1..N with no gaps**, so `1-4` always means the fourth
  *    stage. Count per chapter is deliberately *not* capped — Tanveer, 2026-08-18:
  *    it depends on what the story and the filler need.
- *  - **A `story` stage has no waves and no farm table**; a `battle`/`boss` stage
- *    has 1–3 waves. A scene with a grind table, or a fight with nothing to
+ *  - **A `story` stage has no fights and no farm table**; a `battle`/`boss` stage
+ *    has 1–3 fights. A scene with a grind table, or a fight with nothing to
  *    fight, is an authoring mistake that would otherwise ship silently.
  *  - **A `boss` stage is the last one**, because clearing it unlocks the next
  *    chapter.
@@ -111,10 +111,10 @@ const stageEffectSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
-const waveSchema = z.object({
+const fightSchema = z.object({
   enemies: z.array(teamPickSchema).min(1).max(4),
   stageEffects: z.array(stageEffectSchema).optional(),
-  /** Early-out threshold, 1–99. Rejecting 100 on purpose: a wave won at full HP
+  /** Early-out threshold, 1–99. Rejecting 100 on purpose: a fight won at full HP
    *  would end before the first action, and 0 is just "kill them", which is
    *  what leaving this out already means. */
   victoryAtEnemyHpPercent: z.number().int().min(1).max(99).optional(),
@@ -136,7 +136,7 @@ const missionGoalSchema = z.discriminatedUnion("type", [
     count: z.number().int().positive(),
   }),
   z.object({ type: z.literal("firstAttempt") }),
-  z.object({ type: z.literal("allWaves") }),
+  z.object({ type: z.literal("allFights") }),
 ]);
 
 const missionSchema = z.object({
@@ -153,7 +153,7 @@ const stageSchema = z.object({
   kind: z.enum(["story", "battle", "boss"]),
   intro: z.array(sceneSchema),
   outro: z.array(sceneSchema),
-  waves: z.array(waveSchema).max(3),
+  fights: z.array(fightSchema).max(3),
   team: z.array(teamPickSchema).max(4),
   teamMode: z.enum(["canon", "anchored", "free"]),
   missions: z.array(missionSchema).max(3),
@@ -195,17 +195,17 @@ function checkChapter(chapter: ParsedChapter): void {
     }
 
     const wants = stage.kind === "story" ? 0 : 1;
-    if (wants === 0 && stage.waves.length > 0) {
-      fail(chapterId, `stage ${stage.number} is a scene stage but authors ${stage.waves.length} wave(s)`);
+    if (wants === 0 && stage.fights.length > 0) {
+      fail(chapterId, `stage ${stage.number} is a scene stage but authors ${stage.fights.length} fight(s)`);
     }
-    if (wants === 1 && stage.waves.length === 0) {
-      fail(chapterId, `stage ${stage.number} is a ${stage.kind} stage with no waves`);
+    if (wants === 1 && stage.fights.length === 0) {
+      fail(chapterId, `stage ${stage.number} is a ${stage.kind} stage with no fights`);
     }
     // A fight needs someone to fight it: `canon` and `anchored` read this team as
     // the fixed lineup, and `free` needs it as the fallback for a player who owns
     // nothing.
     if (wants === 1 && stage.team.length === 0) {
-      fail(chapterId, `stage ${stage.number} has waves but no authored team`);
+      fail(chapterId, `stage ${stage.number} has fights but no authored team`);
     }
     if (wants === 0 && stage.team.length > 0) {
       fail(chapterId, `stage ${stage.number} is a scene stage but authors a team`);
@@ -223,12 +223,12 @@ function checkChapter(chapter: ParsedChapter): void {
       );
     }
 
-    stage.waves.forEach((wave, waveIndex) => {
-      wave.enemies.forEach((pick) => {
+    stage.fights.forEach((fight, fightIndex) => {
+      fight.enemies.forEach((pick) => {
         if (!getCharacterById(pick.id)) {
           fail(
             chapterId,
-            `stage ${stage.number} wave ${waveIndex + 1} references unknown character "${pick.id}"`,
+            `stage ${stage.number} fight ${fightIndex + 1} references unknown character "${pick.id}"`,
           );
         }
       });

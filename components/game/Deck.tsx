@@ -200,12 +200,12 @@ export default function Deck() {
                   <CardTitle>
                     {previewCard.skill.skillName}
                   </CardTitle>
-                  <CardDescription className="tracking-[0.12em]">
+                  <CardDescription className="tracking-label">
                     {previewCard.skill.type} • Rank {previewCard.rank} •{" "}
                     {skillPowerText(previewCard)}
                   </CardDescription>
                 </div>
-                <span className="rounded-none border border-el-light/70 bg-el-light/15 px-2 py-0.5 font-body text-xs uppercase tracking-[0.12em] text-el-light">
+                <span className="rounded-none border border-el-light/70 bg-el-light/15 px-2 py-0.5 font-body text-xs uppercase tracking-label text-el-light">
                   R{previewCard.rank}
                 </span>
               </div>
@@ -334,7 +334,7 @@ export default function Deck() {
               key={`pass-${i}`}
               type="button"
               onClick={() => isPlayerActionPhase && removeNullAction()}
-              className="flex min-h-11 min-w-14 flex-1 items-center justify-center border border-edge bg-panel-raised/60 font-body text-[9px] uppercase tracking-widest text-readout-dim transition-colors hover:border-el-red/70 hover:text-el-red"
+              className="flex min-h-11 min-w-14 flex-1 items-center justify-center border border-edge bg-panel-raised/60 font-body text-[9px] uppercase tracking-label text-readout-dim transition-colors hover:border-el-red/70 hover:text-el-red"
             >
               Pass
             </button>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import React from "react";
 import { createPortal } from "react-dom";
@@ -81,7 +82,7 @@ function Stat({
       >
         {value}
       </b>
-      <span className="font-body text-[10px] font-bold uppercase tracking-[0.12em] text-readout-muted">
+      <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
         {label}
       </span>
     </span>
@@ -167,17 +168,13 @@ export default function PullReveal({
     >
       <div className="chamfer-lg flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden border border-edge-strong bg-panel">
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-hairline bg-inset px-4 py-2.5">
-          <span className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+          <span className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
             Result · {results.length} pull{results.length === 1 ? "" : "s"}
           </span>
           {revealing ? (
-            <button
-              type="button"
-              onClick={skip}
-              className="flex min-h-11 items-center border border-edge px-3 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim transition-colors hover:border-signal hover:text-signal"
-            >
+            <Button variant="ghost" size="xs" onClick={skip}>
               Skip ▸▸
-            </button>
+            </Button>
           ) : null}
         </div>
 
@@ -232,12 +229,12 @@ export default function PullReveal({
                         ) : null}
                       </div>
                       <div className="px-1.5 py-1">
-                        <p className="truncate font-heading text-sm leading-tight tracking-[0.04em] text-readout-strong">
+                        <p className="truncate font-heading text-sm leading-tight tracking-title text-readout-strong">
                           {character?.name ?? outcome.characterId}
                         </p>
                         {/* The thing the old reveal threw away. */}
                         <p
-                          className={`font-body text-[9px] font-bold uppercase tracking-[0.12em] ${outcome.isNew ? "text-el-light" : "text-signal"}`}
+                          className={`font-body text-[9px] font-bold uppercase tracking-label ${outcome.isNew ? "text-el-light" : "text-signal"}`}
                         >
                           {outcome.isNew ? "New" : "+1 Coin"}
                         </p>
@@ -267,7 +264,7 @@ export default function PullReveal({
                             ? "Coin"
                             : materialLabel(outcome.materialId)}
                         </p>
-                        <p className="font-body text-[9px] font-bold uppercase tracking-[0.12em] tabular-nums text-readout-muted">
+                        <p className="font-body text-[9px] font-bold uppercase tracking-label tabular-nums text-readout-muted">
                           ×{outcome.amount.toLocaleString()}
                         </p>
                       </div>
@@ -295,21 +292,18 @@ export default function PullReveal({
         </div>
 
         <div className="flex shrink-0 gap-2 border-t border-hairline bg-inset px-3 py-2.5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-11 flex-1 border border-edge px-4 py-2.5 text-center font-body text-[11px] font-bold uppercase tracking-[0.16em] text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
-          >
+          <Button variant="ghost" size="sm" onClick={onClose} className="flex-1">
             Done
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={onDrawAgain}
             disabled={!canDrawAgain || revealing}
-            className="min-h-11 flex-1 border border-signal bg-signal/12 px-4 py-2.5 text-center font-body text-[11px] font-bold uppercase tracking-[0.16em] text-signal transition-colors hover:bg-signal/20 disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted"
+            className="flex-1"
           >
             {drawLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

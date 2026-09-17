@@ -16,10 +16,10 @@ export default async function NewsPage() {
     <main className="terminal-grid min-screen-below-nav bg-void">
       <div className="mx-auto w-full max-w-2xl px-6 py-8">
         <header className="border-l-2 border-signal pl-3">
-          <span className="block font-body text-[10px] font-bold uppercase tracking-[0.34em] text-signal">
+          <span className="block font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
             Patch notes and service notices
           </span>
-          <h1 className="font-heading text-4xl leading-none tracking-[0.1em] text-readout-strong">
+          <h1 className="font-heading text-4xl leading-none tracking-label text-readout-strong">
             News
           </h1>
         </header>

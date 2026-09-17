@@ -112,10 +112,10 @@ function CoachCard({
       }}
       className="pointer-events-auto z-[71] border border-signal bg-panel px-3 py-2.5 shadow-[0_10px_34px_rgba(0,0,0,0.7)]"
     >
-      <p className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-signal">
+      <p className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-signal">
         Step {index + 1} of {total}
       </p>
-      <p className="mt-0.5 font-heading text-base leading-tight tracking-[0.04em] text-readout-strong">
+      <p className="mt-0.5 font-heading text-base leading-tight tracking-title text-readout-strong">
         {step.title}
       </p>
       <p className="mt-1 font-body text-[11px] leading-snug text-readout-dim">
@@ -128,14 +128,14 @@ function CoachCard({
         <button
           type="button"
           onClick={onSkipAll}
-          className="flex min-h-11 items-center pr-3 font-body text-[9px] font-bold uppercase tracking-[0.14em] text-readout-muted transition-colors hover:text-el-red"
+          className="flex min-h-11 items-center pr-3 font-body text-[9px] font-bold uppercase tracking-label text-readout-muted transition-colors hover:text-el-red"
         >
           Skip all
         </button>
         <button
           type="button"
           onClick={onNext}
-          className="flex min-h-11 items-center border border-signal px-4 font-body text-[9px] font-bold uppercase tracking-[0.14em] text-signal transition-colors hover:bg-signal/20"
+          className="flex min-h-11 items-center border border-signal px-4 font-body text-[9px] font-bold uppercase tracking-label text-signal transition-colors hover:bg-signal/20"
         >
           Got it
         </button>

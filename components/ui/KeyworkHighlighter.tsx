@@ -168,7 +168,7 @@ export default function KeyworkHighlighter({
           }`}
           content={
             <span className="block">
-              <span className="block font-body text-[10px] uppercase tracking-[0.14em] opacity-70">
+              <span className="block font-body text-[10px] uppercase tracking-label opacity-70">
                 {tooltipLabel}
               </span>
               <span className="mt-1 block font-body text-xs">{desc}</span>

@@ -37,7 +37,7 @@ const KIND_TONE: Record<NewsKind, string> = {
 };
 
 const CHIP =
-  "chamfer min-h-11 border px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] transition-colors";
+  "chamfer min-h-11 border px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-label transition-colors";
 const CHIP_OFF =
   "border-edge bg-void/60 text-readout-dim hover:border-edge-strong hover:text-readout";
 const CHIP_ON = "border-signal bg-signal text-void";
@@ -63,7 +63,7 @@ function Row({
       }`}
     >
       <span
-        className={`font-heading text-2xl leading-none tracking-[0.03em] ${
+        className={`font-heading text-2xl leading-none tracking-title ${
           unread ? "text-readout-strong" : "text-readout-muted"
         }`}
       >
@@ -71,16 +71,16 @@ function Row({
       </span>
       <span className="min-w-0">
         <span className="flex flex-wrap items-baseline gap-2">
-          <span className="font-heading text-lg tracking-[0.04em] text-readout-strong">
+          <span className="font-heading text-lg tracking-title text-readout-strong">
             {entry.title}
           </span>
           <span
-            className={`border px-1.5 py-px font-body text-[9px] font-bold uppercase tracking-[0.16em] ${KIND_TONE[entry.kind]}`}
+            className={`border px-1.5 py-px font-body text-[9px] font-bold uppercase tracking-label ${KIND_TONE[entry.kind]}`}
           >
             {KIND_LABEL[entry.kind]}
           </span>
           {unread ? (
-            <span className="bg-signal px-1.5 py-px font-body text-[9px] font-bold uppercase tracking-[0.16em] text-void">
+            <span className="bg-signal px-1.5 py-px font-body text-[9px] font-bold uppercase tracking-label text-void">
               New
             </span>
           ) : null}
@@ -162,7 +162,7 @@ export default function NewsFeed({
             ))}
           </div>
         ) : null}
-        <span className="ml-auto font-body text-[11px] font-bold uppercase tracking-[0.18em] tabular-nums text-readout-muted">
+        <span className="ml-auto font-body text-[11px] font-bold uppercase tracking-label tabular-nums text-readout-muted">
           <b className="font-bold text-signal">{filtered.length}</b>{" "}
           {filtered.length === 1 ? "entry" : "entries"}
           {unreadCount > 0 ? (
@@ -181,7 +181,7 @@ export default function NewsFeed({
       ) : (
         groups.map((group) => (
           <section key={group.key} className="mt-5">
-            <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-[0.28em] text-readout-muted">
+            <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
               {group.label}
             </p>
             <div className="flex flex-col gap-1">

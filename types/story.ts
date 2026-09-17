@@ -8,7 +8,7 @@ import type { StageEffect } from "./stageEffects";
  * numbered `1-1`, `1-2`, … and addressed directly from the stage list — there is
  * no board and no movement, so the stage a player wants to farm is one tap away.
  *
- * A battle stage runs **1–3 waves**: consecutive fights where **HP carries over
+ * A battle stage runs **1–3 fights**: consecutive fights where **HP carries over
  * and the fallen stay down** (his ruling #103, which was decided before v1 and
  * never got built because one fight per board meant nothing survived). That
  * attrition is the mode's decision layer, and it is why heals, DR, cleanses and
@@ -54,7 +54,7 @@ export interface StoryTeamPick {
   isSub?: boolean;
   /**
    * Progression this unit fights at, mirroring `TeamPick` in BattleProvider.
-   * Authored on an enemy to raise a wave's difficulty; filled in at resolve time
+   * Authored on an enemy to raise a fight's difficulty; filled in at resolve time
    * for a story lead the player doesn't own (see `DEFAULT_TRIAL_LEVEL`).
    * Absent means level 1 — the bare catalog statline.
    */
@@ -66,16 +66,16 @@ export interface StoryTeamPick {
 /**
  * One fight inside a stage.
  *
- * Waves are ordered and always fought front to back. The player's side is *not*
- * authored per wave — it is whatever survived the previous one.
+ * Fights are ordered and always fought front to back. The player's side is *not*
+ * authored per fight — it is whatever survived the previous one.
  */
-export interface StoryWave {
+export interface StoryFight {
   enemies: StoryTeamPick[];
-  /** Per-wave encounter modifiers. A later wave may be harsher than an earlier
+  /** Per-fight encounter modifiers. A later fight may be harsher than an earlier
    *  one without touching a kit (ruling #69). */
   stageEffects?: StageEffect[];
   /**
-   * End this wave as a victory once the enemy side falls to this percentage of
+   * End this fight as a victory once the enemy side falls to this percentage of
    * its pooled HP, instead of requiring every enemy dead — for fights the story
    * says you don't win (Chiara conceding, Molvarr being crossed rather than
    * killed). Absent = fight to the end.
@@ -143,7 +143,7 @@ export interface StoryStageRewards {
 }
 
 /**
- * A mission goal, evaluated against a `StageRunSummary` once the last wave is
+ * A mission goal, evaluated against a `StageRunSummary` once the last fight is
  * won (`lib/game/stageMissions.ts`).
  *
  * Tanveer picks which stage carries which, chapter by chapter; the vocabulary is
@@ -152,7 +152,7 @@ export interface StoryStageRewards {
 export type StoryMissionGoal =
   /** Clear with every unit that started still standing. */
   | { type: "noLosses" }
-  /** Clear the stage inside N player turns, counted across every wave. */
+  /** Clear the stage inside N player turns, counted across every fight. */
   | { type: "withinTurns"; turns: number }
   /** Field a specific character (bench counts — a passive works from it). */
   | { type: "fieldCharacter"; characterId: string }
@@ -169,8 +169,8 @@ export type StoryMissionGoal =
   | { type: "useSkillRank"; rank: 1 | 2 | 3; count: number }
   /** Clear on an attempt that wasn't a retry of a lost run. */
   | { type: "firstAttempt" }
-  /** Reach and clear the final wave. Trivial on a 1-wave stage, real on 3. */
-  | { type: "allWaves" };
+  /** Reach and clear the final fight. Trivial on a 1-fight stage, real on 3. */
+  | { type: "allFights" };
 
 /**
  * One optional objective. **Never lost by clearing without it** — an unmet
@@ -179,7 +179,7 @@ export type StoryMissionGoal =
  */
 export interface StoryMission {
   id: string;
-  /** Player-facing line, e.g. "Reach wave 3 with 4 units alive". */
+  /** Player-facing line, e.g. "Reach fight 3 with 4 units alive". */
   label: string;
   goal: StoryMissionGoal;
   /** Fixed, paid once. Gems are the currency here. */
@@ -192,20 +192,20 @@ export interface StoryStage {
   number: number;
   name: string;
   kind: StoryStageKind;
-  /** Plays before the first wave. */
+  /** Plays before the first fight. */
   intro: StoryScene[];
-  /** Plays after the last wave is won. */
+  /** Plays after the last fight is won. */
   outro: StoryScene[];
   /**
    * Ordered fights, 1–3. Empty on a `story` stage and required on the others,
    * which the schema enforces rather than trusting an author to remember.
    */
-  waves: StoryWave[];
+  fights: StoryFight[];
   /**
    * The authored player lineup — the canon team for this stage.
    *
-   * Lives on the stage rather than per wave because the player's side is not
-   * re-authored between waves: it is whatever survived the last one. Read as
+   * Lives on the stage rather than per fight because the player's side is not
+   * re-authored between fights: it is whatever survived the last one. Read as
    * fixed anchors under `canon`/`anchored`, and as a one-tap prefill under
    * `free`. Empty on a `story` stage, which has no team to field.
    */

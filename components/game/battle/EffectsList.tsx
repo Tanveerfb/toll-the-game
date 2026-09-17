@@ -348,7 +348,7 @@ function EffectTable({
 }): React.JSX.Element {
   if (rows.length === 0) {
     return (
-      <p className="py-3 text-center font-body text-xs uppercase tracking-[0.18em] text-readout-muted">
+      <p className="py-3 text-center font-body text-xs uppercase tracking-label text-readout-muted">
         {emptyText}
       </p>
     );
@@ -417,7 +417,7 @@ function EffectTable({
                         aria-hidden
                       />
                     )}
-                    <span className="font-heading tracking-[0.04em] text-readout-strong">
+                    <span className="font-heading tracking-title text-readout-strong">
                       {inGroup ? groupedLabel(effect) : prettyName(effect)}
                     </span>
                   </span>
@@ -459,7 +459,7 @@ function EffectTable({
                     strokeWidth={2.6}
                     aria-hidden
                   />
-                  <span className="font-heading uppercase tracking-[0.1em] text-readout-strong">
+                  <span className="font-heading uppercase tracking-label text-readout-strong">
                     {block.name}
                   </span>
                 </span>
@@ -511,7 +511,7 @@ export function EffectsTables({
   return (
     <div className="space-y-4">
       <section className="space-y-1">
-        <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-el-blue">
+        <h3 className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-el-blue">
           Buffs
         </h3>
         <EffectTable rows={buffs} allUnits={allUnits} emptyText="None active" />
@@ -519,7 +519,7 @@ export function EffectsTables({
 
       {stances.length > 0 ? (
         <section className="space-y-1">
-          <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-el-light">
+          <h3 className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-el-light">
             Stances
           </h3>
           <EffectTable
@@ -531,7 +531,7 @@ export function EffectsTables({
       ) : null}
 
       <section className="space-y-1">
-        <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-role-attack">
+        <h3 className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-role-attack">
           Debuffs
         </h3>
         <EffectTable
@@ -547,7 +547,7 @@ export function EffectsTables({
             type="button"
             onClick={onToggleUncancellable}
             aria-expanded={showUncancellable}
-            className="flex min-h-11 w-full items-center justify-between border border-dashed border-edge px-3 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted transition-colors hover:border-edge-strong hover:text-readout"
+            className="flex min-h-11 w-full items-center justify-between border border-dashed border-edge px-3 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted transition-colors hover:border-edge-strong hover:text-readout"
           >
             <span>
               {grey.length} fixed effect{grey.length === 1 ? "" : "s"}

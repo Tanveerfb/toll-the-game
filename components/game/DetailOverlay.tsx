@@ -78,11 +78,11 @@ export default function DetailOverlay({
       >
         <div className="flex items-center justify-between gap-3 border-b border-hairline bg-inset px-4 py-3">
           <div className="min-w-0">
-            <h2 className="truncate font-heading text-lg tracking-[0.08em] text-readout-strong">
+            <h2 className="truncate font-heading text-lg tracking-title text-readout-strong">
               {title}
             </h2>
             {subtitle ? (
-              <p className="truncate font-body text-[10px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+              <p className="truncate font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
                 {subtitle}
               </p>
             ) : null}

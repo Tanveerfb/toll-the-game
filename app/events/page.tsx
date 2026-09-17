@@ -36,6 +36,7 @@ import {
   type CharacterData,
 } from "@/lib/game/characterCatalog";
 import {
+  eventFightCount,
   eventLockReason,
   eventPhaseCount,
   GAME_EVENTS,
@@ -61,10 +62,10 @@ import TrialRail from "@/components/game/events/TrialRail";
 import {
   beginRun,
   runHealthBars,
-  waveTeam,
+  fightTeam,
   type StageRunState,
 } from "@/lib/game/stageRun";
-import { foldWaveFromBattle } from "@/lib/game/waveDriver";
+import { foldFightFromBattle } from "@/lib/game/fightDriver";
 import { getTrialEncounter } from "@/lib/game/trialEncounters";
 
 type View =
@@ -113,13 +114,14 @@ function TrialMissing({ onBack }: { onBack: () => void }) {
         <p className="font-body text-sm text-readout-dim">
           This trial has no encounter authored.
         </p>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={onBack}
-          className="mt-3 min-h-11 w-full border border-signal bg-signal/12 py-3 text-center font-body text-[11px] font-bold uppercase tracking-[0.18em] text-signal"
+          className="mt-3 w-full"
         >
           Back to events
-        </button>
+        </Button>
       </div>
     </main>
   );
@@ -257,10 +259,10 @@ function AutoClearResults({
     <main className="terminal-grid flex min-screen-below-nav items-center justify-center bg-void px-4 py-6">
       <div className="w-full max-w-lg border border-edge-strong bg-panel">
         <div className="border-b border-hairline bg-inset px-5 py-4">
-          <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
+          <p className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
             {event.name} · auto cleared
           </p>
-          <p className="font-heading text-2xl tracking-[0.08em] text-readout-strong">
+          <p className="font-heading text-2xl tracking-title text-readout-strong">
             {runs.length} run{runs.length === 1 ? "" : "s"}
           </p>
         </div>
@@ -298,7 +300,7 @@ function AutoClearResults({
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell className="uppercase tracking-[0.14em] text-readout-strong">
+              <TableCell className="uppercase tracking-label text-readout-strong">
                 Total
               </TableCell>
               <TableCell className="px-2 text-right tabular-nums text-readout-strong">
@@ -321,13 +323,9 @@ function AutoClearResults({
         </Table>
 
         <div className="px-5 py-4">
-          <button
-            type="button"
-            onClick={onBack}
-            className="w-full border border-edge-strong py-3 text-center font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout transition-colors hover:border-signal hover:text-signal"
-          >
+          <Button variant="outline" size="sm" onClick={onBack} className="w-full">
             Back to events
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -408,10 +406,10 @@ function EventCard({
       </span>
 
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-        <span className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-signal">
+        <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-signal">
           {event.kicker}
         </span>
-        <span className="font-heading text-xl leading-tight tracking-[0.04em] text-readout-strong">
+        <span className="font-heading text-xl leading-tight tracking-title text-readout-strong">
           {event.name}
         </span>
         <span className="font-body text-xs text-readout-dim">
@@ -419,19 +417,19 @@ function EventCard({
         </span>
         <span className="mt-1 flex flex-wrap gap-1.5">
           {locked ? (
-            <span className="border border-hairline px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+            <span className="border border-hairline px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
               {lockReason}
             </span>
           ) : (
             <>
-              <span className="border border-hairline px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+              <span className="border border-hairline px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
                 {event.staminaCost} stamina
               </span>
-              <span className="border border-hairline px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+              <span className="border border-hairline px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
                 {event.repeatable ? "Repeatable" : "One clear"}
               </span>
               {phases > 1 ? (
-                <span className="border border-hairline px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+                <span className="border border-hairline px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
                   {phases} phases
                 </span>
               ) : null}
@@ -465,6 +463,7 @@ export default function EventsPage(): React.JSX.Element {
   const clearedEvents = usePlayerStore((s) => s.clearedEvents);
   const recordManualClear = usePlayerStore((s) => s.recordManualClear);
   const clearRankWall = usePlayerStore((s) => s.clearRankWall);
+  const hasHydrated = usePlayerStore((s) => s.hasHydrated);
   const clearedStages = useStoryStore((s) => s.cleared);
 
   /**
@@ -516,16 +515,16 @@ export default function EventsPage(): React.JSX.Element {
   const rankCap = worldLevelCapForRank(account.rank);
   const difficulties = availableDifficulties({ cap: rankCap });
 
-  /** Starts the wave the run is currently on, carrying HP forward. */
-  const launchWave = React.useCallback(
+  /** Starts the fight the run is currently on, carrying HP forward. */
+  const launchFight = React.useCallback(
     (event: GameEvent, run: StageRunState) => {
       const encounter = getTrialEncounter(event.id);
-      const wave = encounter?.waves[run.waveIndex];
-      if (!wave) return;
-      startCustomBattle(waveTeam(run), wave.enemies, {
-        stageEffects: wave.stageEffects,
-        victoryAtEnemyHpPercent: wave.victoryAtEnemyHpPercent,
-        // Wave 1 passes an empty map and everyone starts full; every later wave
+      const fight = encounter?.fights[run.fightIndex];
+      if (!fight) return;
+      startCustomBattle(fightTeam(run), fight.enemies, {
+        stageEffects: fight.stageEffects,
+        victoryAtEnemyHpPercent: fight.victoryAtEnemyHpPercent,
+        // Fight 1 passes an empty map and everyone starts full; every later fight
         // carries the survivors' HP. No heal between fights — ruling #103, and
         // the whole point of the format.
         carryHp: run.carryHp,
@@ -537,14 +536,14 @@ export default function EventsPage(): React.JSX.Element {
   /**
    * Enter a trial: one stamina charge buys the whole run, not each fight.
    *
-   * Charging per wave would make a three-fight trial cost three times a boss
+   * Charging per fight would make a three-fight trial cost three times a boss
    * run for a single one-off clear, and the `staminaCost` authored on the
    * event is one number describing one attempt.
    */
   const enterTrial = React.useCallback(
     (event: GameEvent) => {
       const encounter = getTrialEncounter(event.id);
-      if (!encounter || encounter.waves.length === 0) return;
+      if (!encounter || encounter.fights.length === 0) return;
       if (!spendStaminaAction(event.staminaCost)) {
         setNotice("Not enough stamina — wait for it to regenerate.");
         return;
@@ -552,15 +551,15 @@ export default function EventsPage(): React.JSX.Element {
       setNotice(null);
       if (team.length > 0) rememberLastTeam(team.map((c) => c.id));
       const run = beginRun(event.id, encounter, toTeamPicks(team));
-      launchWave(event, run);
+      launchFight(event, run);
       setView({ kind: "trialBattle", event, run });
     },
-    [spendStaminaAction, team, rememberLastTeam, launchWave],
+    [spendStaminaAction, team, rememberLastTeam, launchFight],
   );
 
   const enter = React.useCallback(
     (event: GameEvent) => {
-      // A trial is a multi-wave run and takes the other path entirely.
+      // A trial is a multi-fight run and takes the other path entirely.
       if (getTrialEncounter(event.id)) {
         enterTrial(event);
         return;
@@ -648,6 +647,29 @@ export default function EventsPage(): React.JSX.Element {
     [spendAutoClearRun, grantWorldBossRewards, difficulty],
   );
 
+  /**
+   * Nothing renders until the save is in.
+   *
+   * `playerStore` states the rule on `hasHydrated` itself — *"gate any
+   * first-paint read of roster/inventory on this to avoid a flash of the
+   * default starter state"* — and eleven components already do. This page did
+   * not, while reading player state in twenty places, which is the worst
+   * possible combination: the board decides **event visibility**
+   * (`isEventVisible` takes `account.rank`), **lock reasons**
+   * (`eventLockReason`), the **difficulty ladder** (`worldLevelCapForRank`) and
+   * the **stamina cost check** off that state. Before rehydration every one of
+   * those answers is computed against rank 1 and a default stamina bar, so a
+   * cleared trial could flash as locked and the ladder could offer rungs the
+   * player has long passed (audit 2026-09-17, finding Q3).
+   *
+   * Returns the page's own shell rather than `null` or a new spinner: the
+   * grid and background are already what every branch below renders into, so
+   * there is no new visual vocabulary here and nothing to design.
+   */
+  if (!hasHydrated) {
+    return <main className="terminal-grid min-screen-below-nav bg-void" />;
+  }
+
   if (view.kind === "battle") {
     return (
       <main className="terminal-grid screen-below-nav relative flex flex-col overflow-hidden bg-void text-readout">
@@ -734,10 +756,10 @@ export default function EventsPage(): React.JSX.Element {
       <main className="terminal-grid flex min-screen-below-nav items-center justify-center bg-void px-4">
         <div className="w-full max-w-md border border-edge-strong bg-panel">
           <div className="border-b border-hairline bg-inset px-5 py-4">
-            <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
+            <p className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
               {view.event.name} cleared
             </p>
-            <p className="font-heading text-2xl tracking-[0.08em] text-readout-strong">
+            <p className="font-heading text-2xl tracking-title text-readout-strong">
               Rewards
             </p>
           </div>
@@ -759,7 +781,7 @@ export default function EventsPage(): React.JSX.Element {
             <button
               type="button"
               onClick={() => setView({ kind: "board" })}
-              className="mt-3 border border-signal bg-signal/12 py-3 text-center font-body text-[11px] font-bold uppercase tracking-[0.18em] text-signal transition-colors hover:bg-signal/20"
+              className="mt-3 border border-signal bg-signal/12 py-3 text-center font-body text-[11px] font-bold uppercase tracking-label text-signal transition-colors hover:bg-signal/20"
             >
               Back to events
             </button>
@@ -780,10 +802,10 @@ export default function EventsPage(): React.JSX.Element {
     return (
       <main className="terminal-grid screen-below-nav relative flex flex-col overflow-hidden bg-void text-readout">
         <BattleArena
-          contextLabel={`${event.name} · Fight ${run.waveIndex + 1}/${run.waveCount}`}
+          contextLabel={`${event.name} · Fight ${run.fightIndex + 1}/${run.fightCount}`}
           worldBoss={{
             onContinue: () => {
-              const folded = foldWaveFromBattle(run, useGameStore.getState());
+              const folded = foldFightFromBattle(run, useGameStore.getState());
               resetBattle();
               if (!folded.complete) {
                 setView({ kind: "trialBreak", event, run: folded });
@@ -842,11 +864,11 @@ export default function EventsPage(): React.JSX.Element {
     return (
       <main className="terminal-grid min-screen-below-nav bg-void text-readout">
         <TrialRail
-          waves={encounter.waves}
-          cleared={run.waveIndex}
+          fights={encounter.fights}
+          cleared={run.fightIndex}
           bars={runHealthBars(run, maxHpOf)}
           onContinue={() => {
-            launchWave(event, run);
+            launchFight(event, run);
             setView({ kind: "trialBattle", event, run });
           }}
           onQuit={() => setView({ kind: "board" })}
@@ -861,10 +883,10 @@ export default function EventsPage(): React.JSX.Element {
       <main className="terminal-grid flex min-screen-below-nav items-center justify-center bg-void px-4">
         <div className="w-full max-w-md border border-edge-strong bg-panel">
           <div className="border-b border-hairline bg-inset px-5 py-4">
-            <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-signal">
+            <p className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
               {view.event.name} cleared
             </p>
-            <p className="font-heading text-2xl tracking-[0.08em] text-readout-strong">
+            <p className="font-heading text-2xl tracking-title text-readout-strong">
               Rank {view.wall} cap lifted
             </p>
           </div>
@@ -886,13 +908,14 @@ export default function EventsPage(): React.JSX.Element {
                 {gained > 0 ? ` (+${gained})` : ""}
               </span>
             </div>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setView({ kind: "board" })}
-              className="mt-3 border border-signal bg-signal/12 py-3 text-center font-body text-[11px] font-bold uppercase tracking-[0.18em] text-signal transition-colors hover:bg-signal/20"
+              className="mt-3"
             >
               Back to events
-            </button>
+            </Button>
           </div>
         </div>
       </main>
@@ -905,8 +928,25 @@ export default function EventsPage(): React.JSX.Element {
     const art = event.enemyId ? getCharacterArt(event.enemyId) : null;
     const phases = eventPhaseCount(event);
     const enemyLevel = enemyLevelForDifficulty(difficulty);
+    /**
+     * One source of truth for "can this be entered".
+     *
+     * This used to ask `!!event.enemyId`, which is **null on a trial** — a
+     * trial names no single opponent because it is a multi-fight encounter
+     * (`trialEncounters.ts`). So the First Ascension Trial's Enter button was
+     * permanently disabled and the fight was unreachable, while
+     * `eventLockReason` cheerfully reported it as unlocked. Two conditions
+     * answering the same question, and only one of them was updated when
+     * trials gained encounters (found by opening the page, 2026-09-17).
+     *
+     * `eventLockReason` already covers rank, an already-cleared one-off, and
+     * a missing encounter; this adds only what the *brief* knows — that a team
+     * is picked and the stamina is there.
+     */
     const canEnter =
-      team.length > 0 && currentStamina >= event.staminaCost && !!event.enemyId;
+      team.length > 0 &&
+      currentStamina >= event.staminaCost &&
+      eventLockReason(event, account.rank, account.clearedWalls) === null;
 
     const auto = autoClearAvailability({
       eligible: event.autoClearEligible === true,
@@ -927,15 +967,15 @@ export default function EventsPage(): React.JSX.Element {
             <button
               type="button"
               onClick={() => setView({ kind: "board" })}
-              className="flex items-center gap-1 font-body text-[10px] font-bold uppercase tracking-[0.16em] text-signal"
+              className="flex items-center gap-1 font-body text-[10px] font-bold uppercase tracking-label text-signal"
             >
               <ChevronLeft className="h-3.5 w-3.5" strokeWidth={2.6} />
               Events
             </button>
-            <span className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+            <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
               {event.kicker}
             </span>
-            <h1 className="w-full font-heading text-3xl tracking-[0.06em] text-readout-strong">
+            <h1 className="w-full font-heading text-3xl tracking-title text-readout-strong">
               {event.name}
             </h1>
           </div>
@@ -959,10 +999,10 @@ export default function EventsPage(): React.JSX.Element {
                   )}
                 </span>
                 <div className="min-w-0">
-                  <p className="font-heading text-xl tracking-[0.05em] text-readout-strong">
+                  <p className="font-heading text-xl tracking-title text-readout-strong">
                     {enemy?.name ?? event.name}
                   </p>
-                  <p className="font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-muted">
+                  <p className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
                     {enemy?.tier === "elite" ? "Elite" : "Standard"}
                     {phases > 1 ? ` · ${phases} phases` : ""}
                   </p>
@@ -976,7 +1016,7 @@ export default function EventsPage(): React.JSX.Element {
                         ] as const
                       ).map(([label, value]) => (
                         <span key={label}>
-                          <span className="block font-body text-[9px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+                          <span className="block font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
                             {label}
                           </span>
                           <span className="block font-heading text-base tabular-nums text-readout-strong">
@@ -986,14 +1026,27 @@ export default function EventsPage(): React.JSX.Element {
                       ))}
                     </div>
                   ) : null}
-                  <p className="mt-2 font-body text-[10px] font-bold uppercase tracking-[0.12em] text-signal">
-                    Level {enemyLevel} at difficulty {difficulty}
-                  </p>
+                  {event.kind === "boss" ? (
+                    <p className="mt-2 font-body text-[10px] font-bold uppercase tracking-label text-signal">
+                      Level {enemyLevel} at difficulty {difficulty}
+                    </p>
+                  ) : (
+                    // A trial's enemies carry authored levels, so the world
+                    // level dial never reaches them. Say what the run IS.
+                    <p className="mt-2 font-body text-[10px] font-bold uppercase tracking-label text-signal">
+                      {eventFightCount(event)} fights · one HP bar
+                    </p>
+                  )}
                 </div>
               </div>
 
+              {/* World-boss only. The ladder sets the enemy's level, and a
+                  trial's enemies are authored at fixed levels instead — so on
+                  a trial this offered a dial that changed nothing and
+                  described rewards the fight does not pay. */}
+              {event.kind === "boss" ? (
               <div className="border border-hairline bg-panel p-3">
-                <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[9px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+                <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
                   Difficulty
                 </p>
                 <div className="grid grid-cols-4 gap-1.5">
@@ -1017,7 +1070,7 @@ export default function EventsPage(): React.JSX.Element {
                         >
                           {level}
                         </span>
-                        <span className="block font-body text-[9px] font-bold uppercase tracking-[0.08em] text-readout-muted">
+                        <span className="block font-body text-[9px] font-bold uppercase tracking-title text-readout-muted">
                           {/* No multiplier here any more: difficulty pays
                               through its own reward table, not a coefficient
                               (ruling #80). The old "×2.05" was advertising a
@@ -1039,6 +1092,7 @@ export default function EventsPage(): React.JSX.Element {
                   beaten before it can be auto cleared.
                 </p>
               </div>
+              ) : null}
 
               {event.kind === "boss" ? (
                 <div className="border border-hairline bg-panel p-3">
@@ -1047,7 +1101,7 @@ export default function EventsPage(): React.JSX.Element {
                       made the old preview read as "you get this every time". */}
                   {!clearedEvents.includes(tierKey(event.id, difficulty)) ? (
                     <>
-                      <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[9px] font-bold uppercase tracking-[0.22em] text-el-light">
+                      <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[9px] font-bold uppercase tracking-eyebrow text-el-light">
                         First clear · once only
                       </p>
                       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -1058,7 +1112,7 @@ export default function EventsPage(): React.JSX.Element {
                           >
                             <ItemIcon id={id} size={28} alt="" />
                             <span className="min-w-0">
-                              <span className="block font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+                              <span className="block font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
                                 {label}
                               </span>
                               <span className="block font-heading text-base text-readout-strong">
@@ -1071,7 +1125,7 @@ export default function EventsPage(): React.JSX.Element {
                     </>
                   ) : null}
 
-                  <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[9px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+                  <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
                     Every clear
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -1082,7 +1136,7 @@ export default function EventsPage(): React.JSX.Element {
                       >
                         <ItemIcon id={id} size={28} alt="" />
                         <span className="min-w-0">
-                          <span className="block font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+                          <span className="block font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
                             {label}
                           </span>
                           <span className="block font-heading text-base text-readout-strong">
@@ -1112,7 +1166,7 @@ export default function EventsPage(): React.JSX.Element {
 
               <div className="flex items-center gap-3 border border-edge-strong bg-panel p-3">
                 <span>
-                  <span className="block font-body text-[9px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+                  <span className="block font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
                     Cost
                   </span>
                   <span className="font-heading text-2xl text-readout-strong">
@@ -1140,7 +1194,7 @@ export default function EventsPage(): React.JSX.Element {
                             ? "Not enough stamina — Auto Clear still pays the full cost."
                             : `Skip ${autoRuns} run${autoRuns === 1 ? "" : "s"}`
                     }
-                    className="ml-auto border border-edge-strong px-4 py-3 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout transition-colors hover:border-signal hover:text-signal disabled:border-hairline disabled:text-readout-muted"
+                    className="ml-auto border border-edge-strong px-4 py-3 font-body text-[11px] font-bold uppercase tracking-label text-readout transition-colors hover:border-signal hover:text-signal disabled:border-hairline disabled:text-readout-muted"
                   >
                     {/* No ticket count here. It read "Auto clear ×15" and was
                         taken to mean fifteen skips already used (Tanveer,
@@ -1158,7 +1212,7 @@ export default function EventsPage(): React.JSX.Element {
                   type="button"
                   disabled={!canEnter}
                   onClick={() => enter(event)}
-                  className={`${auto.eligible ? "" : "ml-auto "}border border-signal bg-signal/12 px-5 py-3 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-signal transition-colors hover:bg-signal/20 disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted`}
+                  className={`${auto.eligible ? "" : "ml-auto "}border border-signal bg-signal/12 px-5 py-3 font-body text-[11px] font-bold uppercase tracking-label text-signal transition-colors hover:bg-signal/20 disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted`}
                 >
                   Enter battle
                 </button>
@@ -1199,10 +1253,10 @@ export default function EventsPage(): React.JSX.Element {
     <main className="terminal-grid min-screen-below-nav bg-void">
       <section className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 py-6 md:px-8">
         <header className="border-l-2 border-signal pl-3">
-          <span className="block font-body text-[10px] font-bold uppercase tracking-[0.34em] text-signal">
+          <span className="block font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
             Operations board
           </span>
-          <h1 className="font-heading text-3xl leading-none tracking-[0.1em] text-readout md:text-4xl">
+          <h1 className="font-heading text-3xl leading-none tracking-label text-readout md:text-4xl">
             Events
           </h1>
           <p className="mt-1 font-body text-[11px] text-readout-muted">

@@ -727,9 +727,9 @@ export default function Hand({
                 );
               })()}
 
-              <span className="absolute left-0 top-0 bg-void/80 px-1 py-px font-body text-[9px] font-bold leading-none tracking-[0.08em]">
+              <span className="absolute left-0 top-0 bg-void/80 px-1 py-px font-body text-[9px] font-bold leading-none tracking-title">
                 {isUlt ? (
-                  <span className="uppercase tracking-[0.12em] text-el-light">
+                  <span className="uppercase tracking-label text-el-light">
                     Ult
                   </span>
                 ) : (
@@ -751,7 +751,7 @@ export default function Hand({
               })()}
 
               {isMergeTarget ? (
-                <span className="absolute inset-x-0 bottom-0 bg-el-light py-px text-center font-body text-[8px] font-bold uppercase tracking-[0.16em] text-void">
+                <span className="absolute inset-x-0 bottom-0 bg-el-light py-px text-center font-body text-[8px] font-bold uppercase tracking-label text-void">
                   Merge
                 </span>
               ) : null}
@@ -795,7 +795,7 @@ export default function Hand({
                 // with a reason; this is the reason. The card is what would
                 // have to grow, and it can't without the hand scrolling
                 // further than one swipe.
-                className={`absolute bottom-6 right-0.5 h-5 min-h-0 px-1 py-0 text-[9px] tracking-[0.08em] ${
+                className={`absolute bottom-6 right-0.5 h-5 min-h-0 px-1 py-0 text-[9px] tracking-title ${
                   armed === card.id
                     ? "border-el-light bg-el-light text-void"
                     : "bg-void/85"
@@ -808,13 +808,13 @@ export default function Hand({
             {/* The commit target, once a merge is armed. Covers the card so
                 the tap that lands here can't be mistaken for playing it. */}
             {armed !== null && armed !== card.id && isPartner ? (
-              <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-el-light py-px text-center font-body text-[8px] font-bold uppercase tracking-[0.16em] text-void">
+              <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-el-light py-px text-center font-body text-[8px] font-bold uppercase tracking-label text-void">
                 Tap
               </span>
             ) : null}
 
             {isStunned ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-void/40 font-body text-[10px] font-bold uppercase tracking-widest text-readout-strong">
+              <div className="absolute inset-0 flex items-center justify-center bg-void/40 font-body text-[10px] font-bold uppercase tracking-label text-readout-strong">
                 Stunned
               </div>
             ) : null}

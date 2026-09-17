@@ -68,7 +68,7 @@ export default function RatesModal({
       {rate < 1 ? (
         <div className="mt-3 border-t border-hairline pt-3">
           <div className="flex items-baseline justify-between gap-3">
-            <span className="font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+            <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
               Everything else
             </span>
             <span className="font-body text-xs font-bold tabular-nums text-readout-dim">

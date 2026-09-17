@@ -8,11 +8,11 @@ import type { StoryStage, StoryTeamPick } from "@/types/story";
  * Which team a story stage fights with.
  *
  * Ported from the chapter-shaped v1 (a chapter had one battle; a stage has a
- * lineup and 1–3 waves) — the trial-vs-owned rules below are unchanged, because
+ * lineup and 1–3 fights) — the trial-vs-owned rules below are unchanged, because
  * they were his rulings and they were right.
  *
  * The player's side is authored once per stage, on `stage.team`, and is not
- * re-authored per wave: whoever survives wave N starts wave N+1.
+ * re-authored per fight: whoever survives fight N starts fight N+1.
  */
 
 /** Battle team cap, matching the 1–4 rule enforced everywhere else. */
@@ -121,7 +121,7 @@ export function defaultTrialSelection(
 }
 
 /**
- * Builds the team a stage's **first wave** starts with.
+ * Builds the team a stage's **first fight** starts with.
  *
  * `playerPicks` are character ids chosen on the brief screen; they are ignored
  * entirely in `canon` mode. Picks that duplicate an anchor are dropped rather

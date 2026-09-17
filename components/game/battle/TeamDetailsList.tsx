@@ -70,24 +70,24 @@ export default function TeamDetailsList({
                 className={`h-2.5 w-2.5 shrink-0 rotate-45 ${ELEMENT_SWATCH[unit.color]}`}
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-heading text-sm tracking-[0.04em] text-readout-strong">
+                <p className="truncate font-heading text-sm tracking-title text-readout-strong">
                   {unit.name}
                   {unit.isSub ? (
-                    <span className="ml-1.5 font-body text-[9px] uppercase tracking-widest text-signal">
+                    <span className="ml-1.5 font-body text-[9px] uppercase tracking-label text-signal">
                       Sub
                     </span>
                   ) : null}
                   {isDead ? (
-                    <span className="ml-1.5 font-body text-[9px] uppercase tracking-widest text-el-red">
+                    <span className="ml-1.5 font-body text-[9px] uppercase tracking-label text-el-red">
                       Down
                     </span>
                   ) : null}
                 </p>
-                <p className="truncate font-body text-[10px] uppercase tracking-widest text-readout-muted">
+                <p className="truncate font-body text-[10px] uppercase tracking-label text-readout-muted">
                   {signature ?? "—"}
                 </p>
               </div>
-              <div className="shrink-0 text-right font-body text-[10px] uppercase tracking-widest text-readout-dim">
+              <div className="shrink-0 text-right font-body text-[10px] uppercase tracking-label text-readout-dim">
                 <div className="text-readout tabular-nums">
                   {Math.max(0, unit.currentHP)}/{unit.hp}
                 </div>

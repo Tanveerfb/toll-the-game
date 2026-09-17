@@ -11,7 +11,7 @@ import StageList from "@/components/game/story/StageList";
 import StageResult from "@/components/game/story/StageResult";
 import StoryStage from "@/components/game/story/StoryStage";
 import VersusSplash from "@/components/game/story/VersusSplash";
-import WaveBreak from "@/components/game/story/WaveBreak";
+import FightBreak from "@/components/game/story/FightBreak";
 import { useAuth } from "@/hooks/AuthProvider";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import { useScreenMusic } from "@/hooks/useScreenMusic";
@@ -26,8 +26,8 @@ import {
   beginRun,
   runHealthBars,
   toSummary,
-  waveEnemies,
-  waveTeam,
+  fightEnemies,
+  fightTeam,
   type StageRunState,
 } from "@/lib/game/stageRun";
 import {
@@ -43,16 +43,16 @@ import {
 import { rollStageRewards, type StageClearResult } from "@/lib/game/storyRewards";
 import { resolveStoryTeam } from "@/lib/game/storyTeam";
 import { useGameStore } from "@/store/gameStore";
-import { foldWaveFromBattle } from "@/lib/game/waveDriver";
+import { foldFightFromBattle } from "@/lib/game/fightDriver";
 import { usePlayerStore } from "@/store/playerStore";
 import { useStoryStore } from "@/store/storyStore";
 import type { StoryStage as StoryStageData, StoryTeamPick } from "@/types/story";
 
 /**
- * Story mode v2 — **Chapter → Stage**, waves instead of a board.
+ * Story mode v2 — **Chapter → Stage**, fights instead of a board.
  *
  * ```
- * chapters → stages → brief → title → intro → [versus → wave → break] × N → outro → result
+ * chapters → stages → brief → title → intro → [versus → fight → break] × N → outro → result
  *                                  └──────── skipped on a farm run ────────┘
  * ```
  *
@@ -63,7 +63,7 @@ import type { StoryStage as StoryStageData, StoryTeamPick } from "@/types/story"
  */
 
 /** What the player is looking at. `run` rides along on every in-stage view so a
- *  wave, a scene and a break all agree on the same attrition state. */
+ *  fight, a scene and a break all agree on the same attrition state. */
 type View =
   | { kind: "chapters" }
   | { kind: "stages"; chapterId: string }
@@ -116,6 +116,8 @@ export default function StoryPage(): React.JSX.Element {
   const grantStoryRewards = usePlayerStore((s) => s.grantStoryRewards);
   const rememberLastTeam = usePlayerStore((s) => s.rememberLastTeam);
   const claimedOrders = usePlayerStore((s) => s.claimedOrders);
+  const playerHydrated = usePlayerStore((s) => s.hasHydrated);
+  const storyHydrated = useStoryStore((s) => s.hasHydrated);
   const [view, setView] = React.useState<View>({ kind: "chapters" });
 
   useScreenMusic(musicRoleFor(view));
@@ -126,17 +128,17 @@ export default function StoryPage(): React.JSX.Element {
 
   const ownedIds = roster;
 
-  /** Launches the wave the run is currently on, carrying HP forward. */
-  const launchWave = React.useCallback(
+  /** Launches the fight the run is currently on, carrying HP forward. */
+  const launchFight = React.useCallback(
     (run: StageRunState) => {
       const stage = getStoryStage(run.ownerId, run.stageId);
       if (!stage) return;
-      const wave = stage.waves[run.waveIndex];
-      if (!wave) return;
-      startCustomBattle(waveTeam(run), wave.enemies, {
-        stageEffects: wave.stageEffects,
-        victoryAtEnemyHpPercent: wave.victoryAtEnemyHpPercent,
-        // Wave 1 passes an empty map and everyone starts full; every later wave
+      const fight = stage.fights[run.fightIndex];
+      if (!fight) return;
+      startCustomBattle(fightTeam(run), fight.enemies, {
+        stageEffects: fight.stageEffects,
+        victoryAtEnemyHpPercent: fight.victoryAtEnemyHpPercent,
+        // Fight 1 passes an empty map and everyone starts full; every later fight
         // carries the survivors' HP (ruling #103).
         carryHp: run.carryHp,
       });
@@ -145,16 +147,16 @@ export default function StoryPage(): React.JSX.Element {
   );
 
   /**
-   * Reads the wave that just ended off the battle store and folds it into the run.
+   * Reads the fight that just ended off the battle store and folds it into the run.
    *
-   * The logic moved to `lib/game/waveDriver.ts` on 2026-09-16, when the events
-   * board became the second screen to run waves — it reads three separate store
+   * The logic moved to `lib/game/fightDriver.ts` on 2026-09-16, when the events
+   * board became the second screen to run fights — it reads three separate store
    * fields and has to get all three right, so a second copy was the wrong
    * answer. This is now just the store read.
    */
-  const foldWave = React.useCallback(
+  const foldFight = React.useCallback(
     (run: StageRunState): StageRunState =>
-      foldWaveFromBattle(run, useGameStore.getState()),
+      foldFightFromBattle(run, useGameStore.getState()),
     [],
   );
 
@@ -237,7 +239,7 @@ export default function StoryPage(): React.JSX.Element {
       // A scene stage has nothing to fight: the reader *is* the stage, and a
       // farm run of one would be paying stamina to skip everything, so `skip`
       // pays out immediately.
-      if (stage.waves.length === 0) {
+      if (stage.fights.length === 0) {
         if (skipScenes) finishStage(run);
         else setView({ kind: "scene", which: "intro", run, skipScenes });
         return true;
@@ -268,17 +270,17 @@ export default function StoryPage(): React.JSX.Element {
     const stage = getStoryStage(run.ownerId, run.stageId);
     const chapter = getStoryChapter(run.ownerId);
     if (!stage || !chapter) return bounce();
-    const last = run.waveIndex + 1 >= run.waveCount;
+    const last = run.fightIndex + 1 >= run.fightCount;
     return (
       <StoryStage variant="stage" grid>
         <BattleArena
-          contextLabel={`${stageLabel(chapter, stage)} · Wave ${run.waveIndex + 1}/${run.waveCount}`}
+          contextLabel={`${stageLabel(chapter, stage)} · Fight ${run.fightIndex + 1}/${run.fightCount}`}
           story={{
             onContinue: () => {
-              const folded = foldWave(run);
+              const folded = foldFight(run);
               resetBattle();
-              // The break screen carries the attrition into the next wave. On the
-              // final wave it is skipped: the outro (or the payout) is the beat
+              // The break screen carries the attrition into the next fight. On the
+              // final fight it is skipped: the outro (or the payout) is the beat
               // that belongs there.
               if (!last) {
                 setView({ kind: "break", run: folded, skipScenes: view.skipScenes });
@@ -294,7 +296,7 @@ export default function StoryPage(): React.JSX.Element {
                 });
             },
             // A defeat restarts the whole stage and charges again — the same rule
-            // the board had, and what stops a 3-wave stage becoming three free
+            // the board had, and what stops a 3-fight stage becoming three free
             // attempts at the last fight. The retry flag is what `firstAttempt`
             // missions read.
             onRetry: () => {
@@ -331,7 +333,20 @@ export default function StoryPage(): React.JSX.Element {
     );
   }
 
-  // ---- Between waves ----
+  /**
+   * Both stores, for the same reason as the events board (audit finding Q3).
+   *
+   * Story progress and player progress rehydrate independently, and the
+   * chapter list reads both — cleared stages from `storyStore`, claimed
+   * Bureau Orders from `playerStore` (ruling #104 put an order's reward on the
+   * chapter card). Gating on one would still flash the other. `HomeMenu` and
+   * `TopNav` already wait on both; this page did not.
+   */
+  if (!playerHydrated || !storyHydrated) {
+    return <StoryStage variant="page" />;
+  }
+
+  // ---- Between fights ----
   if (view.kind === "break") {
     const { run } = view;
     const stage = getStoryStage(run.ownerId, run.stageId);
@@ -346,9 +361,9 @@ export default function StoryPage(): React.JSX.Element {
         backgroundId={stageBackgroundId(stage, getStoryChapter(run.ownerId))}
         dimBackground
       >
-        <WaveBreak
-          cleared={run.waveIndex}
-          total={run.waveCount}
+        <FightBreak
+          cleared={run.fightIndex}
+          total={run.fightCount}
           bars={runHealthBars(run, maxHpOf)}
           onContinue={() => setView({ kind: "versus", run, skipScenes: view.skipScenes })}
           onQuit={() => setView({ kind: "stages", chapterId: run.ownerId })}
@@ -366,11 +381,11 @@ export default function StoryPage(): React.JSX.Element {
     return (
       <StoryStage variant="stage" backgroundId={stageBackgroundId(stage, chapter)}>
         <VersusSplash
-          playerTeam={waveTeam(run)}
-          enemyTeam={waveEnemies(stage, run)}
-          chapterTitle={`${stage.name} · Wave ${run.waveIndex + 1}`}
+          playerTeam={fightTeam(run)}
+          enemyTeam={fightEnemies(stage, run)}
+          chapterTitle={`${stage.name} · Fight ${run.fightIndex + 1}`}
           onDone={() => {
-            launchWave(run);
+            launchFight(run);
             setView({ kind: "battle", run, skipScenes: view.skipScenes });
           }}
         />
@@ -395,8 +410,8 @@ export default function StoryPage(): React.JSX.Element {
           onFinish={() => {
             if (view.which === "intro") {
               // A scene stage's intro runs straight into its outro; a battle
-              // stage's intro runs into wave 1.
-              if (stage.waves.length === 0) {
+              // stage's intro runs into fight 1.
+              if (stage.fights.length === 0) {
                 setView({ kind: "scene", which: "outro", run, skipScenes: view.skipScenes });
               } else {
                 setView({ kind: "versus", run, skipScenes: view.skipScenes });

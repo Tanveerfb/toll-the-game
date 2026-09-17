@@ -55,10 +55,10 @@ function StepLink({
         direction === "newer" ? "text-right" : ""
       }`}
     >
-      <span className="block font-body text-[10px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+      <span className="block font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
         {direction === "older" ? "← Older" : "Newer →"}
       </span>
-      <span className="mt-0.5 block font-heading text-lg tracking-[0.04em] text-readout-strong transition-colors group-hover:text-signal">
+      <span className="mt-0.5 block font-heading text-lg tracking-title text-readout-strong transition-colors group-hover:text-signal">
         {entry.title}
       </span>
     </Link>
@@ -80,21 +80,21 @@ export default function NewsPostLayout({
       <div className="mx-auto w-full max-w-2xl px-6 py-8">
         <Link
           href="/news"
-          className="chamfer inline-flex min-h-11 items-center border border-edge px-3 font-body text-[11px] font-bold uppercase tracking-[0.2em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+          className="chamfer inline-flex min-h-11 items-center border border-edge px-3 font-body text-[11px] font-bold uppercase tracking-eyebrow text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
         >
           ← News
         </Link>
 
         <header className="mt-4 border-l-2 border-signal pl-3">
           <span
-            className={`inline-block border px-1.5 py-px font-body text-[9px] font-bold uppercase tracking-[0.16em] ${KIND_TONE[kind]}`}
+            className={`inline-block border px-1.5 py-px font-body text-[9px] font-bold uppercase tracking-label ${KIND_TONE[kind]}`}
           >
             {KIND_LABEL[kind]}
           </span>
-          <h1 className="mt-1.5 font-heading text-4xl leading-none tracking-[0.06em] text-readout-strong">
+          <h1 className="mt-1.5 font-heading text-4xl leading-none tracking-title text-readout-strong">
             {title}
           </h1>
-          <p className="mt-1.5 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+          <p className="mt-1.5 font-body text-[11px] font-bold uppercase tracking-label text-readout-muted">
             {formatDate(date)}
             <span className="mx-2 text-edge-strong">·</span>
             {readingMinutes} min read

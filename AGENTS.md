@@ -108,6 +108,8 @@ scripts/sim.ts        Headless balance simulator (npm run sim), ruling #57
 
 **A green guard is not a working guard — prove a new one fails before trusting that it passes.** Reintroduce the bug it exists to catch and watch it go red. On 2026-09-16 this found that **three of the four checks in `tests/kitDescriptionRules.test.ts` had never run**, green since the day they were written: `/\braises\b/` had been authored through a heredoc that turned each `\b` into a literal `0x08` byte, and two more used `` new RegExp(`\b${word}\b`) ``, where a **template literal** turns `\b` into a backspace at runtime. Both spellings match nothing and throw nothing. Write a regex with a `\b` into a file with the Write tool, not a heredoc, and use `\\b` inside a template literal.
 
+**And line endings are mixed, not uniform.** An earlier note here claimed `lib/game/combat.ts` was the only CRLF file in the repo. **It is not** — measured 2026-09-17, **55 of 327 source files are CRLF**, including `store/playerStore.ts`, `hooks/BattleProvider.tsx`, `components/ui/TopNav.tsx` and twenty test files. A patch script that asserts LF, or anchors on LF-only text, fails or silently misses on any of them — the `wave`->`fight` rename died half way through on exactly this. **Read and write with `newline=''` so a file keeps the endings it had**; do not normalise in passing, or the real change drowns in an unreviewable diff.
+
 **Every field added to `playerStore` needs a cloud-sync decision, and the decision has to be written down.** A field persists to localStorage automatically and syncs to Firestore only if it is named in `CLOUD_FIELDS` (`lib/game/cloudSave.ts`), so "not synced" used to be the silent default. `clearedEvents` and `autoClearTickets` were added on 2026-08-13 and missed by the sync pass that same day: a second device re-demanded a manual clear before Auto Clear would unlock **and paid the first-clear bundle a second time** — the identical defect that pass had just fixed for `claimedOrders`. Signing out and back in on one device reproduced it, since `AuthProvider` resets local state on sign-out. Every persisted field must now appear in `CLOUD_FIELDS` or `DEVICE_LOCAL_FIELDS`, and `tests/cloudSave.test.ts` fails the build when one appears in neither.
 
 **`test:browser` is outside `check`, so a shipped number can go stale there unseen.** `hand.browser.test.tsx` asserted the retired 56px hand-card floor and was red on `master` from the commit that changed it to 44 until 2026-09-16, because the checkpoint ran `check` alone. **Run `npm run test:browser` at the point a number it pins actually moves**, not only before shipping pointer-dependent work.
@@ -122,6 +124,69 @@ scripts/sim.ts        Headless balance simulator (npm run sim), ruling #57
   the full 3, so a lone boss still acts three times. Any living unit, any order.
 - Effect durations: duration N survives N−1 turn-start ticks.
 - Sub (bench) units (`BattleCharacter.isSub`): passive active, no cards, untargetable, can't act; promoted to field only at turn start after a teammate died (`lib/game/sub.ts`). Battle format (4v4/3v3) sets the field cap; the 4th unit in 3v3 is the sub automatically.
+
+## How work is judged, and who owns what
+
+**His three engineering values, in his order: consistency, modularization, QOL**
+(ruling #139, 2026-09-17). **"It works" is not the bar.** A change that adds a
+seventh variant of an existing button is a regression against *consistency* even
+though the feature ships; a fix landing in one screen rather than in the shared
+primitive is a regression against *modularization*. **QOL** is specifically the
+affordances that make a feature usable rather than merely functional — *"when you
+create a new table, without QOL you don't add any search field, you don't add any
+filters, sort options, animations"*. `components/game/CharacterBrowser.tsx` is the
+benchmark: search, sort, filter sheet, active-filter count.
+
+**The split, precisely (#139).** Claude owns **site structure and data types** —
+schemas, naming, architecture, what is measurable — and implements his UX
+direction, which is programming rather than design. **He owns UI and UX
+direction**, story, mechanics, kits, numbers and characters. **Claude does not
+originate UX direction**: the mobile rules below are the *record* of his
+direction, not licence to invent more, though pointing out a screen that breaks
+one is measurement and is welcome. One invitation-only carve-out: he may ask for
+**names or kits for low-significance characters** (NPCs), by request only — it
+never loosens #65 and never reaches a character who matters to the story.
+
+**A dominant strategy is a missing counter, not a defect** (ruling #138). The
+game is built on counterplay cycles — *"there will never be a problem that will
+interfere in the game for too long. We will always have a solution in some shape
+or form."* When a measurement shows something dominating, report it as **"X
+currently has no counter"** with the interaction named. **Never propose a nerf**,
+never call it a defect or an exploit, and never tune an encounter to route around
+a kit he can change himself. Naming an unanswered strategy tells him where the
+next mechanic goes.
+
+**A green suite is not a working screen — open the page when he grants a
+browser.** On 2026-09-17, with **1,506 tests passing**, ten minutes of looking
+at `/events` at 390x844 found two defects no test could have caught:
+
+- The First Ascension Trial was **unenterable**. The brief gated its Enter
+  button on `!!event.enemyId`, which is **null on a trial** — while
+  `eventLockReason` reported the same trial as unlocked. **Two conditions
+  answering one question**, and only one was updated when trials gained
+  encounters. A test asserted the lock reason; the screen used the other check.
+- The trial brief was **boss-shaped** — a world-level difficulty ladder over
+  copy about drop tables and auto clear, on a `repeatable: false` event that
+  has none of them.
+
+Both are the same shape: a second code path that quietly disagrees with the one
+under test. **Tests pin what you thought to check; the screen shows what you
+did not.** Browser access is granted per session and never carries over — when
+it is granted, spend some of it looking at the screens that changed, not only
+at the ones you built.
+
+**Verify on a scratch build, never on his server.** `NEXT_DIST_DIR=.next-verify
+npx next build`, then `npx next start -p 3210`; kill by PID from `netstat`,
+remove `.next-verify`, and `git checkout tsconfig.json`. To reach gated content,
+edit `toll-player-storage` in the browser's own localStorage rather than
+touching `data/` — it is that viewer's copy and nothing in the repo changes.
+
+**Plan in detail first, build second.** The mobile pass worked because he
+specified every section — down to card and deck sizes — *before* implementation,
+and it took **four passes** (#107, #118–120, #123–126, plus 2026-09-16
+corrections) rather than one. The ascension trial was built before that
+conversation happened, which is why ruling #136 is marked PROVISIONAL. For a
+feature with any design content, write the plan with him first.
 
 ## Design Ownership
 

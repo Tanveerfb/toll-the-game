@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import React from "react";
 import MilestonePicker from "@/components/gacha/MilestonePicker";
 
@@ -55,15 +56,11 @@ function Row({
         </span>
       </span>
       {claimable ? (
-        <button
-          type="button"
-          onClick={onClaim}
-          className="flex min-h-11 shrink-0 items-center border border-el-light bg-el-light/12 px-4 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-el-light transition-colors hover:bg-el-light/20"
-        >
+        <Button variant="claim" size="sm" onClick={onClaim} className="shrink-0">
           Claim
-        </button>
+        </Button>
       ) : (
-        <span className="shrink-0 font-body text-[10px] font-bold uppercase tracking-[0.16em] text-readout-muted">
+        <span className="shrink-0 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
           {claimed ? "Taken" : "Locked"}
         </span>
       )}

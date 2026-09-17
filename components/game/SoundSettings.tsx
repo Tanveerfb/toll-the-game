@@ -28,7 +28,7 @@ export default function SoundSettings(): React.JSX.Element {
     <section className="border border-edge bg-panel px-4 py-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-heading text-lg tracking-[0.05em] text-readout-strong">
+          <h2 className="font-heading text-lg tracking-title text-readout-strong">
             Sound
           </h2>
           <p className="font-body text-[11px] text-readout-muted">
@@ -39,7 +39,7 @@ export default function SoundSettings(): React.JSX.Element {
           type="button"
           onClick={() => setMuted(!muted)}
           aria-pressed={muted}
-          className={`min-h-11 shrink-0 border px-3 font-body text-[10px] font-bold uppercase tracking-[0.14em] transition-colors ${
+          className={`min-h-11 shrink-0 border px-3 font-body text-[10px] font-bold uppercase tracking-label transition-colors ${
             muted
               ? "border-signal bg-signal/10 text-signal"
               : "border-edge text-readout-dim hover:text-readout-strong"
@@ -50,7 +50,7 @@ export default function SoundSettings(): React.JSX.Element {
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <span className="shrink-0 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+        <span className="shrink-0 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
           Music
         </span>
         {/* The `Slider` primitive rather than a bare range input: that was an

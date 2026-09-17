@@ -135,9 +135,9 @@ export function vfxShapeStyle(shape: VfxShape): CSSProperties {
  * Secondary flourish played alongside the main burst ring, keyed by shape.
  * `ripple` gets a delayed second ring, `flicker` an inner pop that dies fast,
  * `bolt` a hard bright core, `bloom` a slow expanding petal ring, `quake` a
- * flattened ground-wave. Everything else renders the ring alone.
+ * flattened ground-fight. Everything else renders the ring alone.
  */
-export type VfxAccent = "none" | "second-ring" | "inner-pop" | "core" | "wave";
+export type VfxAccent = "none" | "second-ring" | "inner-pop" | "core" | "fight";
 
 export function getVfxAccent(shape: VfxShape): VfxAccent {
   switch (shape) {
@@ -150,7 +150,7 @@ export function getVfxAccent(shape: VfxShape): VfxAccent {
     case "bloom":
       return "second-ring";
     case "quake":
-      return "wave";
+      return "fight";
     default:
       return "none";
   }

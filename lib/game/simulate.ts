@@ -154,7 +154,7 @@ function buildUnit(
   team: "player" | "enemy",
   index: number,
   isSub: boolean,
-  /** HP to start at, for a unit carrying damage in from an earlier wave. */
+  /** HP to start at, for a unit carrying damage in from an earlier fight. */
   startHp?: number,
 ): BattleCharacter {
   const { id, level = 1, ascension = 0, ultLevel = 1 } = toSpec(input);
@@ -184,7 +184,7 @@ function buildTeam(
   inputs: UnitInput[],
   team: "player" | "enemy",
   fieldCap: number,
-  /** Character id → HP, for a wave run. Absent ids start at full. */
+  /** Character id → HP, for a fight run. Absent ids start at full. */
   carryHp: Record<string, number> = {},
   /** The encounter's modifiers, applied to this side (ruling #69). */
   effects?: StageEffect[],
@@ -213,7 +213,7 @@ const living = (team: BattleCharacter[]) =>
 const livingOnField = (team: BattleCharacter[]) =>
   team.filter((u) => u.currentHP > 0 && !u.isSub);
 
-/** How a fight ended, plus what the left side had left — a wave run needs the
+/** How a fight ended, plus what the left side had left — a fight run needs the
  *  second part to build the next fight. */
 interface BattleOutcome {
   winner: "left" | "right" | null;
@@ -260,7 +260,7 @@ async function runOneBattle(
    *
    * A closure rather than five hand-written object literals: the left side's
    * surviving HP has to be captured at every exit, and an exit that forgot it
-   * would silently hand the next wave a full-health team.
+   * would silently hand the next fight a full-health team.
    */
   const finish = (winner: "left" | "right" | null, turns: number): BattleOutcome => ({
     winner,
@@ -414,77 +414,77 @@ export function winRate(result: SimResult): number | null {
 }
 
 /**
- * A multi-wave run — consecutive fights on one HP bar.
+ * A multi-fight run — consecutive fights on one HP bar.
  *
  * Mirrors `lib/game/stageRun.ts`, which is the rule the game actually plays
- * (ruling #103): **HP carries over and the fallen stay down**. A three-wave
+ * (ruling #103): **HP carries over and the fallen stay down**. A three-fight
  * encounter is therefore not three fights, it is a resource problem, and
- * simulating the waves separately would miss the entire difficulty of it —
- * wave 3 against a full team is a different fight from wave 3 against two
+ * simulating the fights separately would miss the entire difficulty of it —
+ * fight 3 against a full team is a different fight from fight 3 against two
  * survivors at a third HP, and the second one is what a player meets.
  *
- * Fresh units are rebuilt each wave from spec plus carried HP, which is what
- * `BattleProvider` does between waves: buffs, debuffs, ult gauge and passive
+ * Fresh units are rebuilt each fight from spec plus carried HP, which is what
+ * `BattleProvider` does between fights: buffs, debuffs, ult gauge and passive
  * state all reset, only HP and death persist.
  */
 export interface RunResult {
   runs: number;
-  /** Runs that cleared every wave. */
+  /** Runs that cleared every fight. */
   clears: number;
-  /** Runs that ended with the whole team down, by the wave that did it —
-   *  `wipesByWave[0]` is wave 1. This is the tuning signal: an encounter that
+  /** Runs that ended with the whole team down, by the fight that did it —
+   *  `wipesByFight[0]` is fight 1. This is the tuning signal: an encounter that
    *  is too hard in the wrong place shows up here rather than in the clear
    *  rate. */
-  wipesByWave: number[];
-  /** Runs that hit the turn cap without resolving, by wave. A draw is not a
-   *  clear, and a stalled wave usually means nothing on the field can finish
+  wipesByFight: number[];
+  /** Runs that hit the turn cap without resolving, by fight. A draw is not a
+   *  clear, and a stalled fight usually means nothing on the field can finish
    *  anything — worth seeing rather than folding into the loss column. */
-  stallsByWave: number[];
-  /** Mean waves cleared across every run, 0..waves.length. */
-  averageWavesCleared: number;
+  stallsByFight: number[];
+  /** Mean fights cleared across every run, 0..fights.length. */
+  averageFightsCleared: number;
   /** Mean units still standing when a run cleared. */
   averageSurvivors: number;
   /**
-   * How healthy the survivors are after each wave, indexed by wave: their HP
-   * over the max HP of **the units that entered that wave**.
+   * How healthy the survivors are after each fight, indexed by fight: their HP
+   * over the max HP of **the units that entered that fight**.
    *
    * So it answers "what condition is the team in going into the next fight",
    * not "how much of the original roster is left" — the denominator shrinks as
-   * units die, and `wipesByWave` / `averageSurvivors` carry the attrition.
-   * Measured against the pool the wave actually started with rather than a
+   * units die, and `wipesByFight` / `averageSurvivors` carry the attrition.
+   * Measured against the pool the fight actually started with rather than a
    * freshly built team, because `scaleMaxHp` lets a buff raise max HP
    * mid-fight; it can still read slightly above 1 while such a buff is live,
    * and that is real rather than a rounding artefact.
    */
-  hpAfterWave: number[];
+  hpAfterFight: number[];
   /** Mean player turns a full clear took. */
   averageTurns: number;
 }
 
 /**
- * One wave of a run. A bare array is enemies with no arena modifiers; the
- * object form carries this wave's `stageEffects`, which is how a later wave
+ * One fight of a run. A bare array is enemies with no arena modifiers; the
+ * object form carries this fight's `stageEffects`, which is how a later fight
  * gets harsher without touching a kit (ruling #69).
  */
-export type WaveInput = UnitInput[] | { enemies: UnitInput[]; stageEffects?: StageEffect[] };
+export type FightInput = UnitInput[] | { enemies: UnitInput[]; stageEffects?: StageEffect[] };
 
-function toWave(input: WaveInput): { enemies: UnitInput[]; stageEffects?: StageEffect[] } {
+function toFight(input: FightInput): { enemies: UnitInput[]; stageEffects?: StageEffect[] } {
   return Array.isArray(input) ? { enemies: input } : input;
 }
 
 export async function simulateRun(
   team: UnitInput[],
-  waves: WaveInput[],
+  fights: FightInput[],
   options: SimOptions = {},
 ): Promise<RunResult> {
   const { runs = 200, maxTurns = 40, fieldCap = FIELD_CAP, seed = 1 } = options;
 
-  const wipesByWave = new Array(waves.length).fill(0);
-  const stallsByWave = new Array(waves.length).fill(0);
-  const hpTotals = new Array(waves.length).fill(0);
-  const hpCounts = new Array(waves.length).fill(0);
+  const wipesByFight = new Array(fights.length).fill(0);
+  const stallsByFight = new Array(fights.length).fill(0);
+  const hpTotals = new Array(fights.length).fill(0);
+  const hpCounts = new Array(fights.length).fill(0);
   let clears = 0;
-  let wavesClearedTotal = 0;
+  let fightsClearedTotal = 0;
   let survivorTotal = 0;
   let turnTotal = 0;
 
@@ -493,30 +493,30 @@ export async function simulateRun(
     let fallen: string[] = [];
     let turns = 0;
 
-    for (let w = 0; w < waves.length; w += 1) {
-      // One stream per WAVE, not per run — otherwise wave 3's rolls shift
-      // whenever wave 1 happens to consume a different number of them, and a
-      // tuning change to wave 1 would silently re-roll the whole encounter.
+    for (let w = 0; w < fights.length; w += 1) {
+      // One stream per WAVE, not per run — otherwise fight 3's rolls shift
+      // whenever fight 1 happens to consume a different number of them, and a
+      // tuning change to fight 1 would silently re-roll the whole encounter.
       const rng = makeRng(seed + i * 7919 + w * 104_729);
       const alive = team.filter((unit) => !fallen.includes(toSpec(unit).id));
-      const wave = toWave(waves[w]);
+      const fight = toFight(fights[w]);
       const outcome = await runOneBattle(
         alive,
-        wave.enemies,
+        fight.enemies,
         fieldCap,
         maxTurns,
         rng,
         carryHp,
-        wave.stageEffects,
+        fight.stageEffects,
       );
       turns += outcome.turns;
 
       if (outcome.winner !== "left") {
         // A stall is not a wipe, and conflating them hides a fight that
         // literally cannot be finished.
-        if (outcome.winner === null) stallsByWave[w] += 1;
-        else wipesByWave[w] += 1;
-        wavesClearedTotal += w;
+        if (outcome.winner === null) stallsByFight[w] += 1;
+        else wipesByFight[w] += 1;
+        fightsClearedTotal += w;
         break;
       }
 
@@ -527,9 +527,9 @@ export async function simulateRun(
         outcome.leftStartPool > 0 ? remaining / outcome.leftStartPool : 0;
       hpCounts[w] += 1;
 
-      if (w === waves.length - 1) {
+      if (w === fights.length - 1) {
         clears += 1;
-        wavesClearedTotal += waves.length;
+        fightsClearedTotal += fights.length;
         survivorTotal += Object.keys(carryHp).length;
         turnTotal += turns;
       }
@@ -539,11 +539,11 @@ export async function simulateRun(
   return {
     runs,
     clears,
-    wipesByWave,
-    stallsByWave,
-    averageWavesCleared: runs > 0 ? wavesClearedTotal / runs : 0,
+    wipesByFight,
+    stallsByFight,
+    averageFightsCleared: runs > 0 ? fightsClearedTotal / runs : 0,
     averageSurvivors: clears > 0 ? survivorTotal / clears : 0,
-    hpAfterWave: hpTotals.map((total, w) =>
+    hpAfterFight: hpTotals.map((total, w) =>
       hpCounts[w] > 0 ? total / hpCounts[w] : 0,
     ),
     averageTurns: clears > 0 ? turnTotal / clears : 0,

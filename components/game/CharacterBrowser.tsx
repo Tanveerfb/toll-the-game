@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import React from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
@@ -85,7 +86,7 @@ function toTitleCase(value: string): string {
 const NO_SUBSCRIBE = () => () => {};
 
 const CHIP_BASE =
-  "chamfer min-h-11 min-w-11 border px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] transition-colors";
+  "chamfer min-h-11 min-w-11 border px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-label transition-colors";
 const CHIP_OFF =
   "border-edge bg-void/60 text-readout-dim hover:border-edge-strong hover:text-readout";
 
@@ -99,7 +100,7 @@ function FilterGroup({
 }): React.JSX.Element {
   return (
     <div className="space-y-1.5">
-      <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+      <p className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
         {label}
       </p>
       <div className="flex flex-wrap gap-1.5">{children}</div>
@@ -153,7 +154,7 @@ function StatBar({
 }): React.JSX.Element {
   return (
     <div className="mt-0.5 grid grid-cols-[22px_1fr_auto] items-center gap-1.5">
-      <span className="font-body text-[9px] font-bold uppercase tracking-[0.1em] text-readout-muted">
+      <span className="font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
         {label}
       </span>
       <span className="block h-[3px] bg-hairline">
@@ -369,7 +370,7 @@ export default function CharacterBrowser({
       </div>
 
       {/* What the toolbar used to say by showing every control at once. */}
-      <div className="flex items-baseline justify-between gap-2 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout-muted">
+      <div className="flex items-baseline justify-between gap-2 font-body text-[11px] font-bold uppercase tracking-label text-readout-muted">
         <span className="tabular-nums">
           <b className="font-bold text-signal">{filtered.length}</b> /{" "}
           {hasHydrated && !showUnowned ? ownedIds.size : characters.length}{" "}
@@ -379,13 +380,9 @@ export default function CharacterBrowser({
             : ""}
         </span>
         {sheetCount > 0 || searchValue ? (
-          <button
-            type="button"
-            onClick={clearAll}
-            className="min-h-11 px-1 font-body text-[11px] font-bold uppercase tracking-[0.18em] text-readout-dim transition-colors hover:text-signal"
-          >
+          <Button variant="link" size="sm" onClick={clearAll}>
             Clear
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -403,13 +400,13 @@ export default function CharacterBrowser({
           <div className="pb-safe max-h-[85dvh] overflow-y-auto border-t border-edge-strong bg-panel px-3 pt-3 shadow-[0_-18px_50px_rgba(0,0,0,0.7)]">
             <span className="mx-auto mb-3 block h-1 w-11 bg-edge-strong" />
             <div className="mb-3 flex items-center justify-between">
-              <p className="font-body text-[10px] font-bold uppercase tracking-[0.22em] text-readout-muted">
+              <p className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
                 Filter &amp; sort
               </p>
               <button
                 type="button"
                 onClick={() => setShowFilters(false)}
-                className="min-h-11 px-2 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-signal"
+                className="min-h-11 px-2 font-body text-[11px] font-bold uppercase tracking-label text-signal"
               >
                 Done
               </button>
@@ -495,7 +492,7 @@ export default function CharacterBrowser({
       {/* Unit grid */}
       {filtered.length === 0 ? (
         <div className="chamfer-lg flex flex-col items-center gap-3 border border-edge bg-panel py-10 text-center">
-          <p className="font-body text-sm font-bold uppercase tracking-[0.2em] text-readout-muted">
+          <p className="font-body text-sm font-bold uppercase tracking-eyebrow text-readout-muted">
             No units match this query.
           </p>
           {/* Without this, an empty grid on a fresh account reads as a bug
@@ -504,7 +501,7 @@ export default function CharacterBrowser({
             <button
               type="button"
               onClick={() => setShowUnowned(true)}
-              className="chamfer border border-edge px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-signal transition-colors hover:border-signal"
+              className="chamfer border border-edge px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-label text-signal transition-colors hover:border-signal"
             >
               {hiddenByOwnership} locked unit
               {hiddenByOwnership === 1 ? " is" : "s are"} hidden — show them
@@ -557,7 +554,7 @@ export default function CharacterBrowser({
                     </span>
                   )}
                   <span
-                    className="absolute left-0 top-0 px-1.5 py-0.5 font-body text-[10px] font-bold tracking-[0.14em] text-void"
+                    className="absolute left-0 top-0 px-1.5 py-0.5 font-body text-[10px] font-bold tracking-label text-void"
                     style={{ backgroundColor: hue }}
                   >
                     {EL_CODE[character.color]}
@@ -572,7 +569,7 @@ export default function CharacterBrowser({
                           ? `Level ${level}${ascension > 0 ? `, ascension ${ascension}` : ""}${ultLevel > 1 ? `, ultimate ${ultLevel}` : ""}`
                           : "Not yet recruited"
                       }
-                      className="absolute bottom-0 right-0 border-l border-t border-edge bg-void/85 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-[0.14em] tabular-nums"
+                      className="absolute bottom-0 right-0 border-l border-t border-edge bg-void/85 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-label tabular-nums"
                       style={{
                         color: owned ? hue : "var(--color-readout-muted)",
                       }}
@@ -585,7 +582,7 @@ export default function CharacterBrowser({
                 </div>
 
                 <div className="border-t border-hairline px-2 py-2">
-                  <p className="truncate font-heading text-lg tracking-[0.06em] text-readout group-hover:text-(--el)">
+                  <p className="truncate font-heading text-lg tracking-title text-readout group-hover:text-(--el)">
                     {character.name}
                   </p>
                   <StatBar

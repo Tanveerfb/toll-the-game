@@ -64,7 +64,7 @@ function TargetRow({
       <span className="text-readout-muted">→</span>
       <span className="min-w-0 flex-1 truncate text-readout-dim">{name}</span>
       {evaded ? (
-        <span className="flex shrink-0 items-center gap-0.5 font-semibold uppercase tracking-widest text-signal">
+        <span className="flex shrink-0 items-center gap-0.5 font-semibold uppercase tracking-label text-signal">
           <Wind className="h-3 w-3" strokeWidth={2.6} />
           Dodged
         </span>
@@ -73,7 +73,7 @@ function TargetRow({
         // Without this the row rendered a bare name: the damage badge is
         // gated on `> 0`, so a fully-absorbed hit said nothing at all and the
         // player was left to guess whether it had even resolved (ruling #71).
-        <span className="flex shrink-0 items-center gap-0.5 font-semibold uppercase tracking-widest text-readout-muted">
+        <span className="flex shrink-0 items-center gap-0.5 font-semibold uppercase tracking-label text-readout-muted">
           <Shield className="h-3 w-3" strokeWidth={2.6} />
           Tanked
         </span>
@@ -90,19 +90,19 @@ function TargetRow({
       ) : null}
       {crit ? (
         <span
-          className="flex shrink-0 items-center gap-0.5 border border-edge-strong bg-readout-strong/10 px-1 font-bold uppercase tracking-widest text-readout-strong"
+          className="flex shrink-0 items-center gap-0.5 border border-edge-strong bg-readout-strong/10 px-1 font-bold uppercase tracking-label text-readout-strong"
         >
           <Zap className="h-2.5 w-2.5" strokeWidth={3} />
           Crit
         </span>
       ) : null}
       {survivedLethal ? (
-        <span className="shrink-0 border border-role-heal/60 bg-role-heal/10 px-1 font-bold uppercase tracking-widest text-role-heal">
+        <span className="shrink-0 border border-role-heal/60 bg-role-heal/10 px-1 font-bold uppercase tracking-label text-role-heal">
           Survived
         </span>
       ) : null}
       {killed ? (
-        <span className="flex shrink-0 items-center gap-0.5 font-bold uppercase tracking-widest text-el-red">
+        <span className="flex shrink-0 items-center gap-0.5 font-bold uppercase tracking-label text-el-red">
           <Skull className="h-3 w-3" strokeWidth={2.6} />
           Down
         </span>
@@ -181,7 +181,7 @@ function ActionEntry({
           ) : null}
         </span>
         <span
-          className={`min-w-0 shrink-0 truncate font-heading text-xs tracking-[0.06em] ${isPlayer ? "text-role-heal" : "text-role-attack"}`}
+          className={`min-w-0 shrink-0 truncate font-heading text-xs tracking-title ${isPlayer ? "text-role-heal" : "text-role-attack"}`}
         >
           {event.sourceName}
         </span>
@@ -189,11 +189,11 @@ function ActionEntry({
           {event.skillName}
         </span>
         {event.isUlt ? (
-          <span className="shrink-0 border border-el-light/70 bg-el-light/15 px-1 font-body text-[9px] font-bold uppercase tracking-widest text-el-light">
+          <span className="shrink-0 border border-el-light/70 bg-el-light/15 px-1 font-body text-[9px] font-bold uppercase tracking-label text-el-light">
             Ult
           </span>
         ) : event.rank ? (
-          <span className="shrink-0 font-body text-[9px] font-bold uppercase tracking-widest text-readout-muted">
+          <span className="shrink-0 font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
             R{event.rank}
           </span>
         ) : null}
@@ -220,7 +220,7 @@ function ActionEntry({
             −{counter.damage.toLocaleString()}
           </span>
           {counter.killedAttacker ? (
-            <span className="flex shrink-0 items-center gap-0.5 font-bold uppercase tracking-widest text-el-red">
+            <span className="flex shrink-0 items-center gap-0.5 font-bold uppercase tracking-label text-el-red">
               <Skull className="h-3 w-3" strokeWidth={2.6} />
               Down
             </span>
@@ -242,7 +242,7 @@ function TickEntry({
         <span className="flex h-5 w-5 shrink-0 items-center justify-center border border-edge bg-inset">
           <Sparkles className="h-3 w-3 text-readout-dim" strokeWidth={2.4} />
         </span>
-        <span className="font-body text-xs uppercase tracking-[0.12em] text-readout-dim">
+        <span className="font-body text-xs uppercase tracking-label text-readout-dim">
           {event.label}
         </span>
       </div>
@@ -264,7 +264,7 @@ function TickEntry({
               {Math.abs(delta).toLocaleString()}
             </span>
             {target.hpAfter <= 0 ? (
-              <span className="flex shrink-0 items-center gap-0.5 font-bold uppercase tracking-widest text-el-red">
+              <span className="flex shrink-0 items-center gap-0.5 font-bold uppercase tracking-label text-el-red">
                 <Skull className="h-3 w-3" strokeWidth={2.6} />
                 Down
               </span>
@@ -346,7 +346,7 @@ export default function BattleLogDrawer({
             className="fixed right-0 top-0 z-50 flex h-dvh w-[360px] max-w-[92vw] flex-col border-l border-edge bg-panel/95 backdrop-blur-md"
           >
             <div className="flex shrink-0 items-center justify-between gap-2 border-b border-hairline px-4 py-3">
-              <p className="font-heading text-lg tracking-[0.12em] text-readout-strong">
+              <p className="font-heading text-lg tracking-label text-readout-strong">
                 BATTLE LOG
               </p>
               <div className="flex items-center gap-2">
@@ -354,14 +354,14 @@ export default function BattleLogDrawer({
                   type="button"
                   onClick={() => setShowRaw((prev) => !prev)}
                   aria-pressed={showRaw}
-                  className={`min-h-11 cursor-pointer border px-2 py-0.5 font-body text-[10px] uppercase tracking-widest transition-colors ${showRaw ? "border-signal bg-signal/10 text-signal" : "border-edge text-readout-dim"}`}
+                  className={`min-h-11 cursor-pointer border px-2 py-0.5 font-body text-[10px] uppercase tracking-label transition-colors ${showRaw ? "border-signal bg-signal/10 text-signal" : "border-edge text-readout-dim"}`}
                 >
                   {showRaw ? "Raw" : "Grouped"}
                 </button>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="min-h-11 cursor-pointer border border-edge px-2 py-0.5 font-body text-[10px] uppercase tracking-widest text-readout hover:border-edge-strong"
+                  className="min-h-11 cursor-pointer border border-edge px-2 py-0.5 font-body text-[10px] uppercase tracking-label text-readout hover:border-edge-strong"
                 >
                   Close
                 </button>
@@ -383,13 +383,13 @@ export default function BattleLogDrawer({
                         </p>
                       ))
                   ) : (
-                    <p className="py-6 text-center uppercase tracking-widest text-readout-muted">
+                    <p className="py-6 text-center uppercase tracking-label text-readout-muted">
                       No battle events yet.
                     </p>
                   )}
                 </div>
               ) : groups.length === 0 ? (
-                <p className="py-6 text-center font-body text-xs uppercase tracking-widest text-readout-muted">
+                <p className="py-6 text-center font-body text-xs uppercase tracking-label text-readout-muted">
                   No battle events yet.
                 </p>
               ) : (
@@ -407,7 +407,7 @@ export default function BattleLogDrawer({
                             }))
                           }
                           aria-expanded={!isCollapsed}
-                          className="flex min-h-11 w-full items-center justify-between gap-2 bg-inset px-2.5 py-1.5 font-body text-[10px] uppercase tracking-[0.16em] text-readout-dim transition-colors hover:text-readout-strong"
+                          className="flex min-h-11 w-full items-center justify-between gap-2 bg-inset px-2.5 py-1.5 font-body text-[10px] uppercase tracking-label text-readout-dim transition-colors hover:text-readout-strong"
                         >
                           <span>Turn {turn + 1}</span>
                           <span className="flex items-center gap-1.5 text-readout-muted">

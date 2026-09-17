@@ -1,15 +1,15 @@
-import { applyWaveOutcome, type StageRunState } from "@/lib/game/stageRun";
+import { applyFightOutcome, type StageRunState } from "@/lib/game/stageRun";
 import type { BattleCharacter } from "@/types/character";
 import type { AnyBattleEvent } from "@/types/battleEvent";
 
 /**
- * Turning a finished battle into a folded wave.
+ * Turning a finished battle into a folded fight.
  *
  * Extracted from `app/story/page.tsx` on 2026-09-16, when the First Ascension
- * Trial became the second screen to run waves. It was a `useCallback` closing
+ * Trial became the second screen to run fights. It was a `useCallback` closing
  * over the battle store; none of it is React and none of it is a combat rule,
  * so a second copy on the events page would have been a straight duplicate of
- * the one piece of wave logic that reads three separate store fields and has
+ * the one piece of fight logic that reads three separate store fields and has
  * to get all three right.
  *
  * Takes the battle snapshot as an argument rather than reaching for the store,
@@ -22,7 +22,7 @@ export interface BattleSnapshot {
   playerTurns: number;
 }
 
-export function foldWaveFromBattle(
+export function foldFightFromBattle(
   run: StageRunState,
   battle: BattleSnapshot,
 ): StageRunState {
@@ -43,7 +43,7 @@ export function foldWaveFromBattle(
     if (event.isUlt) ultimates += 1;
     else rankUses[event.rank ?? 1] += 1;
   }
-  return applyWaveOutcome(run, {
+  return applyFightOutcome(run, {
     survivors,
     fallenIds,
     turns: battle.playerTurns,

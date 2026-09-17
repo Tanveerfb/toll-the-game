@@ -48,7 +48,7 @@ function StatBar({
 }): React.JSX.Element {
   return (
     <div className="mt-1 grid grid-cols-[26px_1fr_auto] items-center gap-2">
-      <span className="font-body text-[9px] font-bold uppercase tracking-[0.12em] text-readout-muted">
+      <span className="font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
         {label}
       </span>
       <span className="block h-1 bg-hairline">
@@ -100,11 +100,11 @@ export default function CharacterStatBars({
   return (
     <>
       <div className="flex items-baseline justify-between gap-2">
-        <p className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+        <p className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
           Against the roster
         </p>
         {progress ? (
-          <p className="font-body text-[9px] font-bold uppercase tracking-[0.14em] text-signal">
+          <p className="font-body text-[9px] font-bold uppercase tracking-label text-signal">
             Lv {progress.level} · A{progress.ascension}
           </p>
         ) : null}

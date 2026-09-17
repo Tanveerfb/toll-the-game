@@ -95,7 +95,7 @@ export default async function CharacterDetailPage({
       <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8">
         <Link
           href="/archive"
-          className="chamfer inline-flex min-h-11 items-center border border-edge px-3 font-body text-[11px] font-bold uppercase tracking-[0.2em] text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+          className="chamfer inline-flex min-h-11 items-center border border-edge px-3 font-body text-[11px] font-bold uppercase tracking-eyebrow text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
         >
           ← Character archive
         </Link>
@@ -131,7 +131,7 @@ export default async function CharacterDetailPage({
                   </span>
                 )}
                 <span
-                  className="absolute left-0 top-0 px-2 py-0.5 font-body text-[11px] font-bold tracking-[0.14em] text-void"
+                  className="absolute left-0 top-0 px-2 py-0.5 font-body text-[11px] font-bold tracking-label text-void"
                   style={{ backgroundColor: hue }}
                 >
                   {EL_CODE[character.color] ?? character.color}
@@ -139,10 +139,10 @@ export default async function CharacterDetailPage({
               </div>
 
               <div className="border-t border-hairline px-3 py-2.5">
-                <h1 className="font-heading text-4xl leading-none tracking-[0.06em] text-readout-strong">
+                <h1 className="font-heading text-4xl leading-none tracking-title text-readout-strong">
                   {character.name}
                 </h1>
-                <p className="mt-0.5 font-body text-[11px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+                <p className="mt-0.5 font-body text-[11px] font-bold uppercase tracking-eyebrow text-readout-muted">
                   {character.id}
                 </p>
                 {Array.isArray(character.tags) && character.tags.length > 0 ? (
@@ -150,7 +150,7 @@ export default async function CharacterDetailPage({
                     {character.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="chamfer border border-edge px-2 py-0.5 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-readout-dim"
+                        className="chamfer border border-edge px-2 py-0.5 font-body text-[10px] font-bold uppercase tracking-label text-readout-dim"
                       >
                         {tag}
                       </span>
@@ -186,7 +186,7 @@ export default async function CharacterDetailPage({
 
             {character.lore ? (
               <div className="chamfer-lg border border-edge bg-panel px-3 py-2.5">
-                <p className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-readout-muted">
+                <p className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
                   Lore
                 </p>
                 <p className="mt-1 font-body text-sm leading-relaxed text-readout-dim">
@@ -252,7 +252,7 @@ export default async function CharacterDetailPage({
                       {rows.map((row) => (
                         <tr key={row.id}>
                           <td
-                            className={`${PROSE.td} font-heading text-sm tracking-wider text-readout-strong`}
+                            className={`${PROSE.td} font-heading text-sm tracking-title text-readout-strong`}
                           >
                             {row.abilityName}
                           </td>

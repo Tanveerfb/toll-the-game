@@ -19,7 +19,7 @@ import type { StoryMission, StoryStage } from "@/types/story";
  */
 
 function run(overrides: Partial<StageRunSummary> = {}): StageRunSummary {
-  return { ...emptyRunSummary(3), wavesCleared: 3, ...overrides };
+  return { ...emptyRunSummary(3), fightsCleared: 3, ...overrides };
 }
 
 function mission(
@@ -39,7 +39,7 @@ function stage(missions: StoryMission[]): StoryStage {
     origin: "filler",
     intro: [],
     outro: [],
-    waves: [{ enemies: [{ id: "wild_beast" }] }],
+    fights: [{ enemies: [{ id: "wild_beast" }] }],
     team: [{ id: "duke" }],
     teamMode: "canon",
     missions,
@@ -49,14 +49,14 @@ function stage(missions: StoryMission[]): StoryStage {
 }
 
 describe("goals", () => {
-  it("noLosses reads the run, not a single wave", () => {
+  it("noLosses reads the run, not a single fight", () => {
     expect(isGoalMet({ type: "noLosses" }, run())).toBe(true);
-    // A unit lost in wave 1 is still lost at the end of wave 3 — that permanence
-    // is the whole point of the wave model (ruling #103).
+    // A unit lost in fight 1 is still lost at the end of fight 3 — that permanence
+    // is the whole point of the fight model (ruling #103).
     expect(isGoalMet({ type: "noLosses" }, run({ fallen: ["duke"] }))).toBe(false);
   });
 
-  it("withinTurns counts every wave, and is inclusive at the bound", () => {
+  it("withinTurns counts every fight, and is inclusive at the bound", () => {
     expect(isGoalMet({ type: "withinTurns", turns: 10 }, run({ turns: 10 }))).toBe(
       true,
     );
@@ -108,9 +108,9 @@ describe("goals", () => {
     expect(isGoalMet({ type: "firstAttempt" }, run({ isRetry: true }))).toBe(false);
   });
 
-  it("allWaves needs the last wave, not just progress", () => {
-    expect(isGoalMet({ type: "allWaves" }, run({ wavesCleared: 2 }))).toBe(false);
-    expect(isGoalMet({ type: "allWaves" }, run({ wavesCleared: 3 }))).toBe(true);
+  it("allFights needs the last fight, not just progress", () => {
+    expect(isGoalMet({ type: "allFights" }, run({ fightsCleared: 2 }))).toBe(false);
+    expect(isGoalMet({ type: "allFights" }, run({ fightsCleared: 3 }))).toBe(true);
   });
 });
 
@@ -120,16 +120,16 @@ describe("clear gate", () => {
   });
 
   it("an abandoned run is not a clear", () => {
-    expect(isCleared(run({ wavesCleared: 1 }))).toBe(false);
+    expect(isCleared(run({ fightsCleared: 1 }))).toBe(false);
   });
 
   it("no mission is met by a run that didn't clear", () => {
-    // The trap this guards: losing wave 3 with everyone alive would otherwise
+    // The trap this guards: losing fight 3 with everyone alive would otherwise
     // satisfy `noLosses`.
     const outcomes = evaluateMissions(
       stage([mission("m1", { type: "noLosses" })]),
       "c1",
-      run({ wavesCleared: 2 }),
+      run({ fightsCleared: 2 }),
       {},
     );
     expect(outcomes[0].met).toBe(false);
@@ -173,7 +173,7 @@ describe("claiming", () => {
   it("counts chapter progress across stages", () => {
     const stages = [
       stage([m]),
-      { ...stage([mission("m2", { type: "allWaves" })]), id: "s2", number: 2 },
+      { ...stage([mission("m2", { type: "allFights" })]), id: "s2", number: 2 },
     ];
     expect(missionProgress(stages, "c1", {})).toEqual({ claimed: 0, total: 2 });
     expect(

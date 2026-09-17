@@ -51,13 +51,13 @@ export default function StageList({
           aria-hidden
           className="absolute inset-0 bg-[linear-gradient(180deg,transparent_18%,rgba(6,9,12,0.92))]"
         />
-        <span className="relative text-[11px] tracking-[0.22em] text-signal">
+        <span className="relative text-[11px] tracking-eyebrow text-signal">
           CHAPTER {index.number}
         </span>
-        <h1 className="relative font-heading text-2xl tracking-wide text-readout-strong">
+        <h1 className="relative font-heading text-2xl tracking-eyebrow text-readout-strong">
           {index.title}
         </h1>
-        <p className="relative text-xs tracking-[0.08em] text-readout-dim">
+        <p className="relative text-xs tracking-title text-readout-dim">
           {index.totalStages} STAGES · {index.missionsClaimed}/{index.missionsTotal}{" "}
           MISSIONS CLAIMED
         </p>
@@ -119,14 +119,14 @@ function StageRow({
   if (sealed) {
     return (
       <div className="chamfer flex min-h-[64px] items-center gap-3 border border-edge border-l-2 border-l-edge bg-inset px-3 py-3">
-        <span className="font-heading text-base tracking-[0.08em] text-readout-muted">
+        <span className="font-heading text-base tracking-title text-readout-muted">
           {stage.label}
         </span>
         <span
           aria-hidden
           className="h-2.5 w-36 bg-[repeating-linear-gradient(90deg,var(--color-hairline)_0_8px,transparent_8px_13px)]"
         />
-        <span className="ml-auto text-[10px] tracking-[0.18em] text-readout-muted uppercase">
+        <span className="ml-auto text-[10px] tracking-label text-readout-muted uppercase">
           Sealed
         </span>
         <span className="sr-only">Stage {stage.number} is not unlocked yet</span>
@@ -141,22 +141,22 @@ function StageRow({
       className={`chamfer w-full border border-edge border-l-[3px] bg-panel px-3 py-2.5 text-left ${KIND_BORDER[stage.kind]}`}
     >
       <span className="flex items-baseline gap-2">
-        <span className="font-heading text-lg tracking-[0.08em] text-signal">
+        <span className="font-heading text-lg tracking-title text-signal">
           {stage.label}
         </span>
         <span className="text-[15px] font-semibold text-readout-strong">
           {stage.name}
         </span>
         <span
-          className={`ml-auto border px-1.5 py-0.5 text-[10px] tracking-[0.16em] uppercase ${chip.className}`}
+          className={`ml-auto border px-1.5 py-0.5 text-[10px] tracking-label uppercase ${chip.className}`}
         >
           {chip.label}
         </span>
       </span>
 
-      <span className="flex items-center gap-2 pt-1.5 text-xs tracking-[0.06em] text-readout-dim">
-        {stage.waves.length > 0 ? (
-          <WaveRail waves={stage.waves} boss={stage.kind === "boss"} />
+      <span className="flex items-center gap-2 pt-1.5 text-xs tracking-title text-readout-dim">
+        {stage.fights.length > 0 ? (
+          <FightRail fights={stage.fights} boss={stage.kind === "boss"} />
         ) : (
           <span>No battle</span>
         )}
@@ -185,7 +185,7 @@ function StageRow({
 
       <span className="mt-2 grid grid-cols-2 gap-2 border-t border-gridline pt-1.5">
         <span className="block">
-          <span className="block text-[9.5px] tracking-[0.18em] text-readout-muted uppercase">
+          <span className="block text-[9.5px] tracking-label text-readout-muted uppercase">
             First clear
           </span>
           <span
@@ -197,7 +197,7 @@ function StageRow({
           </span>
         </span>
         <span className="block">
-          <span className="block text-[9.5px] tracking-[0.18em] text-readout-muted uppercase">
+          <span className="block text-[9.5px] tracking-label text-readout-muted uppercase">
             Farm
           </span>
           <span className="block text-xs text-readout">
@@ -209,19 +209,19 @@ function StageRow({
   );
 }
 
-/** `2 › 2 › 1` — how many enemies each wave brings, boss wave flagged. The rail
+/** `2 › 2 › 1` — how many enemies each fight brings, boss fight flagged. The rail
  *  is the row's whole pitch: a stage is a run of fights, not one fight. */
-function WaveRail({
-  waves,
+function FightRail({
+  fights,
   boss,
 }: {
-  waves: string[][];
+  fights: string[][];
   boss: boolean;
 }): React.JSX.Element {
   return (
     <span className="flex items-center gap-1 text-readout">
-      {waves.map((enemies, i) => {
-        const last = i === waves.length - 1;
+      {fights.map((enemies, i) => {
+        const last = i === fights.length - 1;
         const names = enemies
           .map((id) => getCharacterById(id)?.name ?? id)
           .join(", ");
@@ -234,7 +234,7 @@ function WaveRail({
             ) : null}
             <Hint
               content={names}
-              ariaLabel={`Wave ${i + 1}: ${names}`}
+              ariaLabel={`Fight ${i + 1}: ${names}`}
               className={`grid h-[15px] w-[15px] place-items-center border text-[9.5px] ${
                 boss && last ? "border-el-red text-el-red" : "border-edge-strong"
               }`}
@@ -245,7 +245,7 @@ function WaveRail({
         );
       })}
       <span className="sr-only">
-        {waves.length} wave{waves.length === 1 ? "" : "s"}
+        {fights.length} fight{fights.length === 1 ? "" : "s"}
       </span>
     </span>
   );

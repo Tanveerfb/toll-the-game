@@ -1,4 +1,4 @@
-# Status — 2026-09-16
+# Status — 2026-09-17
 
 Living snapshot. Session history is folded to
 [`docs/archive/STATUS-2026-08.md`](archive/STATUS-2026-08.md) and
@@ -6,28 +6,28 @@ Living snapshot. Session history is folded to
 
 ## Start here
 
-**State:** PVE. The ascension-trial loop was scaffolding — `clearRankWall` had
-no caller, its XP cash-out bailed before its own loop, and every event victory
-ran through the world-boss reward table. All fixed. His cloud-sync bug is fixed
-at the root and guarded. The simulator can measure a player band and run
-multi-wave fights. Rulings through **#136**, which is **PROVISIONAL**. Suite
-**1,485 tests / 117 files**, browser 17, lint clean, build clean. Details in
-the 2026-09-16b session log.
+**State:** His PVE vocabulary is settled and recorded (rulings **#137–#140**,
+long form in `Plans/2026-09-16-pve-structure.md`). A code-quality audit ran and
+its top five findings are fixed — hydration gates, 362 dead lines, the
+`wave`→`fight` rename, tests for two untested engine modules, and the button
+primitive. Letter-spacing is three tokens instead of eighteen values. Suite
+**1,506 tests / 121 files**, browser 17, lint clean, build clean.
 
-**Next:** His. He is designing the ascension-quest structure himself — *"this
-needs more of a personal touch from me"* — so **do not build on #136 or extend
-`trialEncounters.ts`** until he brings the shape back.
+**Next:** The layout system — `Plans/2026-09-17-layout-system.md`, approved in
+principle, tracking values chosen. Start at `Panel` + `Screen`, the two with the
+most call sites. Everything in it is structural except `TeamPicker` search,
+which is UX and therefore his.
 
-**Blocked on:** Him, on the trial structure. Also still waiting: the
-`skill.type` fields on Mustafa and Yalina (measured inert), the `TeamSelect`
-toggles from 2026-09-01, the OST and SFX files, and a Sentry DSN.
+**Blocked on him:** naming Molvarr's second form (blocks steps 5–6 of
+`Plans/2026-09-17-fight-phases.md`), the ascension-trial structure behind
+**PROVISIONAL #136**, and the story adaptation, which is parked until he
+finishes Arc One.
 
-**Don't trust:** Anything about how it **looks** — no browser this session, and
-`TrialRail` has never been rendered. And read the two balance findings in the
-2026-09-16b log before tuning *any* encounter: **DEF stacking beats the content
-outright** (subtractive mitigation makes DEF superlinear) and **+25% enemy ATK
-collapses every archetype at once**. The usable tuning range is much narrower
-than the stat bands imply.
+**Don't trust:** the **battle screen** was deliberately excluded from every
+change — its density is tuned and unreviewable without his eyes. **`TrialRail`
+has still never been rendered.** And the lesson this session paid for twice:
+**a green suite is not a working screen** — 1,506 passing tests missed a trial
+that could not be entered at all, and ten minutes of looking found it.
 
 ## Working (implemented, tested, browser-verified)
 
@@ -378,6 +378,113 @@ than the stat bands imply.
 - **Fixes (2026-07-12/13)** — Mustafa's Earth Stance: Fortress is a team-wide (aoe) DR stance, no ally pick; single-target attacks retarget to a living enemy when their marked target died mid-queue (focus-fire no longer wastes cards on a corpse).
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
 
+## Session log — 2026-09-17: his vocabulary, an audit, and looking at it
+
+A planning session that became a cleanup. He paused the ascension-trial build
+to load his own vision into a document, then opened the scope: *"I am open to
+let you change all other pages other than battle UI."*
+
+**Rulings #137–#140.** Suite **1,506 tests / 121 files**, browser 17, lint
+clean, build clean.
+
+### The vocabulary, twice
+
+`Plans/2026-09-16-pve-structure.md` grew to **20 points**, dictated. The taxonomy
+took two passes and **#137 was wrong for about three hours** — its summary line,
+*"a wave changes how many enemies there are; a phase changes what one enemy
+is"*, was **Claude's formulation, not his**, and he replaced the whole scheme:
+
+| term | means |
+|---|---|
+| **Event** | a folder — a group of stages |
+| **Stage** | an entry to a fight or a story panel |
+| **Fight** | resets everything on start; may hold phases |
+| **Phase** | *any* transition to a new state inside one fight |
+
+**"Wave" is retired as a term.** The `ruling` skill gained a section on marking
+the seam between his words and Claude's synthesis, because the quotes in #137
+were all accurate and the damage was done by the one sentence nobody had said.
+
+His worked examples: **Molvarr is one fight with two phases**; the **trial is
+three fights in one stage**. And a phase preserves everything — *"we'll keep the
+damage, we'll keep all our stat changes… an infinite defense or attack stacker
+would benefit"* — which makes a multi-phase fight reward ramping where a
+multi-fight stage punishes it.
+
+**Power Strike adopted** (#10–12 in the plan): 30% extra damage per 100 enemy
+DEF, reading **effective** defence, on carrier skills with below-standard
+scaling. Rate recorded in `ARCHITECTURE.md`; the old glossary said 5% per 10 and
+had never been implemented.
+
+### The audit, and what the first pass missed
+
+`Plans/2026-09-17-code-quality-audit.md`. **The first version was shallow** —
+eight greps over 42,000 lines — and he asked whether it was really deep. It was
+not. Three of the five worst findings came from the second pass:
+
+- **Q3** — `app/events/page.tsx` read player state **twenty times with no
+  hydration gate**, so the board could paint against rank 1 and default stamina.
+  Both it and `/story` now gate; `tests/hydrationGate.test.ts` guards the class.
+  It caught a third page on its first run — `/profile`, which gates correctly by
+  a different pattern, so the guard accepts both shapes.
+- **M3** — `mechanicTemplates.ts` and `balance.ts`, **362 lines with zero
+  importers**, left behind by the deleted Kit Lab. Removed on his call; the spec
+  is marked RETIRED rather than deleted.
+- **T1** — five `lib/game` modules had no tests. `mechanicQueue` (the passive
+  queue) and `fightDriver` now have 24 between them, all falsified.
+
+Also **C5**, the `wave` → `fight` rename across 34 files plus a data migration
+in `chapter-1.json`; and **C1**, twelve hand-rolled buttons onto the `Button`
+primitive with a new `claim` variant and a guard.
+
+### Two corrections to Claude's own claims
+
+- The audit said some buttons had **no disabled styling**. **Wrong** — an
+  artefact of a regex that stopped at the `>` inside `onClick={() =>`.
+  Re-measured: all 17 disable-able buttons already show it.
+- The `tracking-wide` token **collided with Tailwind's own scale** (0.025em),
+  silently re-spacing four places by **9x**. Renamed `tracking-eyebrow`. The
+  same pass had also left 46 named defaults unmigrated, so five values were in
+  play rather than three.
+
+**L4 is done:** 395 usages across 18 values are now three tokens —
+`tracking-title` 0.08em, `tracking-label` 0.14em, `tracking-eyebrow` 0.22em.
+`tests/typeScale.test.ts` forbids arbitrary values, Tailwind's own steps, and a
+fourth token.
+
+### Then he granted a browser, and it paid immediately
+
+**With 1,506 tests passing**, ten minutes at 390×844 found two defects:
+
+- **The trial was unenterable.** The brief gated Enter on `!!event.enemyId` —
+  **null on a trial** — while `eventLockReason` reported it unlocked. Two
+  conditions, one question, one updated. `eventLockReason` is now the single
+  source and a test pins it.
+- **The trial brief was boss-shaped** — a difficulty ladder over copy about drop
+  tables and auto clear, on an event with none of them. Now reads *"3 fights ·
+  one HP bar"*.
+
+Then verified end to end: board → brief → team → fight one, with Frost 1547 /
+Gale 1361 / Prism 1670 and Iron benched — HP values that confirm level 15 is
+reaching the engine.
+
+### Open, and his
+
+- **The layout system** — `Plans/2026-09-17-layout-system.md`, also published as
+  an artifact for phone reading. Three widths for ten, one `Screen` for eight
+  spellings, `Panel`, `SectionHeader`, `RewardList`, and the QOL items. Only the
+  three tracking values needed his approval and he gave them.
+- **Fight phases** — `Plans/2026-09-17-fight-phases.md`. Steps 1–3 are
+  structural; **5–6 wait on him naming Molvarr's second form.**
+- **Ruling #136 stays PROVISIONAL.** The trial's three fights are settled; the
+  stage-map-node layer he described has no equivalent in the code at all.
+
+### Not verified
+
+The battle screen was deliberately untouched — its density is tuned and only he
+can judge it. `TrialRail` still has never been rendered: reaching it needs a
+fight won, and the trial's structure may change anyway.
+
 ## Session log — 2026-09-16b: PVE, and two findings bigger than the feature
 
 Started as "we'll work on PVE content now", went to the events board, and ended
@@ -461,10 +568,42 @@ is **5.9%**.
 
 **1. Stacking DEF beats the content outright.** A Yalina/Mustafa/Gabrist/Lyra
 team clears the trial **100% of the time at every enemy level tried**, finishing
-the last fight at 74% HP. `lib/game/damage.ts` mitigates with
-`Math.max(1, baseDamage - effectiveDefense)` — flat subtraction, so DEF is
-superlinear rather than diminishing. Raising enemy levels cannot close it:
-enemy ATK and player DEF sit on the same curve.
+the last fight at 74% HP.
+
+**The explanation here was wrong twice before it was measured** — recorded
+because the wrong versions are the tempting ones. It is *not* that raw DEF is
+superlinear: at base stats DEF buys only ~12% less damage per hit, and the
+hits-to-kill gap between a "tank" and a "carry" is mostly **HP**. The real
+mechanism is that **DEF buffs stack multiplicatively** (`lib/game/stats.ts`,
+ruling #36) while mitigation **subtracts** (`Math.max(1, baseDamage -
+effectiveDefense)`), so a buffed unit can pass the raw hit entirely and take the
+**1-damage floor**.
+
+Measured, against Molvarr's Crushing Maw R3 at level 24 (1,188 base damage),
+for Lyra at Lv20/asc1 alongside Mustafa, Gabrist and Ban:
+
+| layer | DEF | through |
+| --- | ---: | ---: |
+| base | 313 | 875 |
+| + Mustafa, Red/Green +50% | 470 | 718 |
+| + Gabrist, all allies +20% | 563 | 625 |
+| + Ban, [Human] basics +5% | 592 | **596 — half the hit** |
+| + her own passive +150% | **1,479** | **1** |
+
+**This is why no ATK or level lever can fix it, and the arithmetic says so
+before the simulator does.** +25% enemy ATK moves the hit to 1,485, which takes
+Lyra from 1 damage to 6 — still immune — while killing every team that is not
+above the line. The levers that *do* work cut DEF multiplicatively rather than
+out-scaling it: **Pierce** (50% of DEF ignored), **Critical** (a % ignored), and
+DEF-down debuffs.
+
+**And it is partly deliberate, so it is not simply a defect.** Tanveer,
+2026-09-16: Lyra's passive *"was only 50% extra defense as first attacker. I
+buffed it to 150% just because I wanted her to have a gimmick, and as long as
+the character is open to playing her gimmick then they get rewarded… It's a very
+niche type of gameplay reward mechanic but it's a unique thing."* The payoff is
+designed. What is open is that a whole **team** of such characters compounds
+into immunity, and that no encounter-side dial answers it.
 
 Three fixes were measured and **all three failed**: Iron's Pierce in wave 1 (no
 effect, and it made the trial *easier* for everyone else, since Iron is a
@@ -510,190 +649,11 @@ No browser this session. `TrialRail` has never been rendered, and neither has
 the trial results screen. Both are pinned by type and by tests; neither has
 been looked at.
 
-## Session log — 2026-09-16: what a stance is, and what a colour means
+## Session log — 2026-09-16 — folded
 
-**Checkpoint commit `0476008`** — "Make a stance a real thing, and give colour a
-meaning", 55 files.
-
-Started as a wording request — *"raises attack by 33%"* should be a recognised
-form — and ended six rulings later having rewritten how a stance exists in the
-engine. Each answer he gave exposed the next thing that was wrong.
-
-**Rulings #130–#135.** Suite **1,454 tests / 115 files**, browser **17**, lint
-0 errors, build 56 pages — all run at this checkpoint.
-
-### #130 — the explicit percentage is the same verb
-
-Bare `raises` still means 30, `greatly` 50, `massively` 100; an off-scale value
-keeps the verb and states its number. The adverb and the number are
-alternatives, never both — he settled that mid-sentence, correcting himself:
-*"greatly raises defense by — not greatly, just raises defense by 59%."*
-
-What made it code rather than a wording allowance: `mechanicGlossary` carries a
-**global** `raises: "Raises the stat by 30%"`, merged under every per-skill
-glossary, so without suppression *"raises DEF by 59%"* renders a pill asserting
-**30%** directly above a sentence saying 59. `keywordStatesItsOwnValue`
-suppresses a tier verb followed by `by N%` **inside its own clause** — the
-clause bound matters, or a verb borrows the next clause's number.
-
-His second half: *"The rank sclaed numbers don't follow tier based words. And
-vice versa."* A ladder spells its number at every rank. That retired #58's
-carve-out, whose only remaining user was Chiara's Marked Card.
-
-### Three dead guards, found by accident
-
-`tests/kitDescriptionRules.test.ts` had four checks. **Three had never run**,
-green since the day they were written, by two different mechanisms:
-
-- `:110` — `/\braises\b|\blowers\b/` with every `\b` a literal **`0x08`
-  byte**, from a heredoc at authoring time. The filter matched nothing and the
-  loop never executed.
-- `:57` and `:71` — `` new RegExp(`\b${word}\b`) ``. Real backslashes in
-  source, but a **template literal** turns `\b` into a backspace at runtime.
-  #65 never checked for unbuilt mechanics either.
-
-`docs/HANDOFF.md` carried the same damage **in the sentence documenting the
-hazard**. All repaired; the moment #58 came alive it caught exactly the four
-kits #130's own migration had just created.
-
-`tests/sourceControlChars.test.ts` now scans every tracked text file byte-wise.
-Proven by planting a `0x08`, which it reported as `tmp_bad.md:1 — 0x08`.
-
-### #131 — a stance is a named group, and a taunt belongs to the taunter
-
-*"These would be displayed separately on the character… it won't say one stance
-effect, it will say three separate effects."* Carried by `groupId`/`groupName`;
-`blocksFor` renders the group. **Scoped to stances** — heading every buff row
-with its skill name would restyle the whole panel for nothing.
-
-Then the engine half: *"Taunt shouldn't be a debuff on enemies in the first
-place."* The marker moved to the taunter's own `buffs` and the redirect reads
-the defending team. Four consequences, all pinned:
-
-- **Ruling #31 became structural.** `clearTauntsAuthoredByTarget` walked both
-  teams hunting markers tagged with the cancelled unit's id. Deleted — the
-  taunt is simply *there* now.
-- **A taunt reaches every enemy**, which is what `mechanicGlossary` has claimed
-  since it was written while `toll_collector`'s taunt pulled only the one enemy
-  it struck. The code and the glossary disagreed; this picks the glossary.
-- **Debuff Immunity no longer blocks a taunt.** It is not a debuff any more.
-- **Precedence needed a field.** Most-recent-wins used to fall out of array
-  position on the victim; `appliedSeq` carries it, derived from the field's
-  current maximum so `executeSkill` stays pure.
-
-**Two display defects, both shipped and unreported.** Meliodas's Full Counter
-rendered a **blank** row for its whole duration — `effectDescription` had no
-branch for `counterDamagePercent`. And a damage-reduction stance printed
-**"+25% damage taken"**, the exact opposite of what it does, because
-`damageReduction` reads as "damage taken" in his battle-log vocabulary, which
-inverts the sign.
-
-**And a live engine bug.** `combat.ts` honours `ranks` only for `aoeRanked`, so
-Chiara's R1 Marked Card applied its DEF debuff while `damagePreview` read the
-same array as "inactive at this rank" and showed the player nothing. That array
-existed only to drive a text conditional the ladder rule deleted.
-
-### #132 — cancelBuffs and cancelStances reach different things
-
-| on the target | `cancelBuffs` | `cancelStances` |
-|---|---|---|
-| a stance, and everything it carries | survives | **removed** |
-| a free-standing buff | **removed** | survives |
-
-Before this, `cancelBuffs` filtered on `uncancellable` alone and swept stances
-too — the two names existed, one behaviour did. Membership is by **group**, so
-a DEF raise authored as a plain `buff` on a stance skill still belongs to that
-stance.
-
-**Three shipped skills would have been silently nerfed.** Leorio's Remote
-Punch, Meliodas's Evil Spirit and Siddiq's Wrath of the Wild all read *"Cancels
-buffs and stances"* while authoring only `cancelBuffs` — correct only because
-`cancelBuffs` swept everything. `cancelStances` added to all three, preserving
-exactly what they did.
-
-**And a mechanic that never ran:** the two cancels were `if` / `else if`, so
-`cancelStances` was unreachable on the one skill authoring both
-(`toll_collector`'s Settle the Account).
-
-### #133 — colour classifies
-
-Effects on a unit: buff **blue**, stance **yellow**, debuff **red**,
-uncancellable **grey**. The colour is #132's cancel rule made visible, and
-classification reuses the same predicate the cancel step uses so the two can
-never disagree.
-
-Skills: attack **red**, attack-debuff **purple**, heal **green**, buff
-**blue**, stance **yellow**. On the **glyph**, not the border — the border is
-the merge-rank ladder. The ultimate gave up gold (the stance colour now) for a
-five-hue gradient; he believed that already existed, and it did not.
-
-**Three maps became one** (`lib/game/skillTypeStyle.ts`). The archive and kit
-document each had their own, where **a buff was green and a debuff purple**.
-Two classification bugs fell out: a **stance mechanic now beats a disagreeing
-`skill.type`** (Fortress is typed `buff`, Attention Drawer `debuff`), and an
-**ultimate is classified by what it does** — Isolde's pure team buff carried a
-sword.
-
-### #134/#135 — the stance card, and one vocabulary per mechanic
-
-He supplied eleven 7DS cards as reference. Stance descriptions now lead with
-the stance and its duration; the parts follow and inherit it. The same pass
-fixed **Full Counter naming its own caster** (*"Meliodas counters with … his
-ATK"*, the only card that did) and **State Your Business saying a bare
-"Taunts"** — the one description #131 actually invalidated.
-
-Then #135, on his approval: damage reduction reads **"reduces … damage taken by
-N%"** everywhere (both phrasings were glossary keys meaning different things;
-the panel prints "damage taken", and the audience rule forbids the "gains" in
-the other form); counter damage uses the corpus's **"damage equal to N% ATK"**;
-and a cancel clause ends in a **semicolon**, not "and".
-
-### What was got wrong, and how
-
-- **#134 was written from one screenshot** and stated as 7DS's rule. Nine cards
-  showed 5 leading / 4 trailing, and the conclusion "the reference is
-  inconsistent" was **worse than the first error** — averaging a mixed sample
-  discarded a real convention. He supplied what separated them: *"gilthunder
-  and allioni are very old units."* The leading form is their current standard.
-  The `ruling` skill now requires an entry to say how much evidence it rests on.
-- **A gap introduced and then found:** grouping was added to the self-buff path
-  only, so Mustafa's ally-facing stance rendered on every ally as a bare row
-  called "Stance". Both ally push sites now group.
-- **My own falsifications were wrong twice** — one injected a name the regex
-  correctly ignores, one targeted an unreachable branch. And the first version
-  of #135's cancel guard flagged **four innocent skills**, because *"cancels
-  buffs **and** stances"* joins two nouns, not two clauses. That false-positive
-  case is now pinned deliberately.
-- **`lib/game/combat.ts` was the only CRLF file in the repo**, which silently
-  broke a patch whose anchors were LF. Normalised; git stores LF either way.
-
-### Deliberately not done
-
-- **`skill.type` is wrong on two kits** — Fortress typed `buff`, Attention
-  Drawer typed `debuff`, both put up stances. **Measured inert** to change, as
-  is dropping Yalina's now-redundant `aoe`. Mustafa's `aoe` is **not** inert:
-  remove it and the stance reaches nobody. Offered three times, not taken.
-- **Meliodas's Full Counter keeps its mechanics.** He floated adding damage
-  reduction as a third effect and then ruled it out — *"don't touch it, display
-  only"*.
-- **Four mechanics the 7DS reference has and this game does not**: ally-triggered
-  stances, damage sharing, reactive gauge drain, stat-family labels. Recorded in
-  `kitwords` as observations so a kit does not get drafted around one by
-  accident. His to invent, or not.
-- **`"damage reduction"` is now dead glossary vocabulary** — nothing matches it.
-  Left in place for a future kit that wants the noun form.
-- **Art request D3** (five skill-class glyphs) is queued and marked
-  low-priority, drawn-not-generated. At **10px** a bespoke glyph is
-  indistinguishable from the lucide fallback; the badge would have to grow
-  first, and that is a layout decision.
-
-### What is not verified
-
-Everything here is measured or tested; **none of it has been looked at**. No
-browser access this session. Specifically unseen: the yellow stance rows and
-the new count token, the rainbow ultimate frame, the tinted skill glyphs, and
-the grouped stance panel. Geometry and behaviour are pinned by tests; **taste
-is not, and that pass is his**.
+**2026-09-16** — what a stance is, and what a colour means: rulings #130–#135,
+the stance group model, the cancel matrix and the colour taxonomy. Moved
+verbatim to [`docs/archive/STATUS-2026-09.md`](archive/STATUS-2026-09.md).
 
 ## Session log — 2026-09-01/16 — folded
 

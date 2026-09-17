@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
  * data, so it can't be a static variant.
  */
 const badgeVariants = cva(
-  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-none border px-1.5 py-0 font-body text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-signal [&>svg]:pointer-events-none [&>svg]:size-3!",
+  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-none border px-1.5 py-0 font-body text-[10px] font-bold uppercase tracking-label whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-signal [&>svg]:pointer-events-none [&>svg]:size-3!",
   {
     variants: {
       variant: {
