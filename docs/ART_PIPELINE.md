@@ -464,7 +464,7 @@ portrait simply predates it.
 | Identity reference | **A HEAD-AND-HAIR-ONLY CROP** of the approved portrait |
 | Pose | **ControlNet `controlnet-openpose-sdxl`**, strength **0.6**, `end_percent` 0.75 |
 | Background | `white background, simple background` — nothing else |
-| Matte | `BiRefNetRMBG`, model `BiRefNet_toonout`, `refine_foreground: true` |
+| Matte | `BiRefNetRMBG`, model `BiRefNet_toonout`, `refine_foreground: true` — **see the 2026-09-21 note below: `BiRefNet_toonout` is no longer selectable** |
 
 Result: **80.1% transparent, all frame edges clean, 1.2% soft edge.**
 
@@ -687,11 +687,27 @@ costs one script rather than three.
 | --- | --- | --- |
 | A | straight up and out, open hand | better, but the hand still floats |
 | **B** | **raised above the head, clenched fist** | **reads as a fight pose in 3 of 4** |
-| C | swept back and down, trailing | fails — the arm hides behind the body and reads as missing |
+| C | swept back and down, trailing | **HIS PICK** — C1, C2 and C4, C4 his favourite |
 
 **Rule: give a raised hand a purpose, or do not raise the arm.** A fist is the
 cheapest purpose available and needs no prop, which matters under #151 where
 the character art carries no weapon.
+
+**CORRECTION, same day — Claude recommended B and Tanveer picked C.** The line
+above originally read *"C fails — the arm hides behind the body and reads as
+missing"*. That was wrong, and wrong in a specific way worth naming: it was
+**taste stated as measurement**. His verdict:
+
+> *"ooo i like some poses from the batch. and those are like usable in official
+> capacity too … Good ones — C1, C2, C4 (my fav)"*
+
+What the swept arm actually does is remove the raised arm as a problem entirely
+rather than solving it, and let the ponytail carry the top of the frame, which
+it was already doing in every render. **Ruling #139 holds: Claude measures, he
+decides UI/UX.** "Reads as missing" was not a measurement — transparency
+percentages and stub-length checks are. A row rejected on Claude's eye alone
+should be shown, not filtered; the two-stage filter exists to remove images with
+*defects*, not images Claude does not personally like.
 
 `scripts/draw_lyra_card_arm_variants.py` carries the generator and the two
 checks worth keeping: a **stub warning** under 100px, and a **reversed-forearm
@@ -704,6 +720,36 @@ boots to 1.2, and negating the three specific wrong garments (`blue skirt`,
 bulk to the negative. One artefact survives at a low rate — a black trim under
 the skirt — and one image came back on a cyan ground despite
 `colored background` being negated.
+
+
+### The matte model in the recipe is gone (2026-09-21)
+
+`BiRefNet_toonout` really was used for the approved A-pose layer — that layer's
+PNG metadata still names it — but **`BiRefNetRMBG` no longer offers it**. The
+current options are `BiRefNet-general`, `BiRefNet_512x512`, `BiRefNet-HR`,
+`BiRefNet-portrait`, `BiRefNet-matting`, `BiRefNet-HR-matting`. The node pack
+must have changed underneath. **The v7 recipe above cannot be run as written.**
+
+Replacement chosen by bake-off on one image rather than by name, measuring three
+things that matter for a compositable layer — transparency, soft-edge fraction,
+and opaque pixels touching the canvas edge (which must be zero, since the figure
+is contained):
+
+| model | transparent | soft edge | frame contact |
+| --- | --- | --- | --- |
+| BiRefNet-HR | 69.8% | 5.63% | 0 |
+| BiRefNet-matting | 69.5% | 7.18% | 0 |
+| **BiRefNet-HR-matting** | **70.0%** | **6.05%** | **0** |
+
+**`BiRefNet-HR-matting` is the replacement.** Note it lands at ~70% where
+toonout hit 80.1% on the A-pose — not a regression, the card pose simply has
+limbs and hair spread across more of the frame.
+
+**A clean bake-off does not mean a clean batch.** The same model on the other
+two approved poses came back **C1 at 20.4% soft edge** and **C2 with 68 opaque
+pixels touching the frame edge**; only C4 was clean at 6.05% and 0. So
+**measure every matte, never just the one you tuned on** — those two need a
+second pass before they are usable.
 
 ### Still open
 
