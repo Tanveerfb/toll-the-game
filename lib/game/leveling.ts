@@ -177,3 +177,77 @@ export function highestReachableLevel(
   const plan = planLevelUp(progress, maxLevel, maxLevel, held, coinHeld);
   return plan?.level ?? progress.level;
 }
+
+/** One "raise to" chip on the level tab. */
+export interface LevelTarget {
+  /** The chip's big label - "+1", "+5", or a bare level number. */
+  label: string;
+  /** The line under it - "Lv 19", "Cap", "All I own". */
+  sub: string;
+  /** Where tapping it lands. */
+  level: number;
+}
+
+/**
+ * The "raise to" chips, one per destination.
+ *
+ * Every preset clamps to the ascension cap, so near the top they collide: at
+ * **Lv 18 against a Lv 20 cap, "+5" and "Cap" are the same button**, and at
+ * **Lv 19 all three are**. Seen in a real save (Tanveer, 2026-09-20) - two
+ * chips, one outcome, on a control whose whole point is that a target is one
+ * tap.
+ *
+ * The guard already existed, for "All I own" and only for it: it earned its
+ * place only where no preset already went there. This generalises that rule
+ * to every chip instead of restating it per chip.
+ *
+ * **When two land on the same level, the more informative label wins** - "Cap"
+ * says why the climb stops where it does, "+1" only says how far - so the
+ * order of precedence is `Cap > +5 > +1 > All I own`. "All I own" staying
+ * lowest is exactly what the old special case did.
+ *
+ * Display order is unchanged: `+1`, `+5`, `Cap`, then `All I own`.
+ */
+export function levelTargets(
+  level: number,
+  maxLevel: number,
+  reachable: number,
+): LevelTarget[] {
+  // At the cap the tab renders its own "ascend to raise this" panel instead.
+  if (level >= maxLevel) return [];
+  // `highestReachableLevel` already clamps, so this only matters to a caller
+  // that computed the ceiling some other way - but a chip offering a level the
+  // ascension band forbids is worse than a missing chip.
+  const owned = Math.min(reachable, maxLevel);
+
+  const candidates: Array<LevelTarget & { rank: number }> = [
+    { label: "+1", sub: `Lv ${level + 1}`, level: level + 1, rank: 1 },
+    {
+      label: "+5",
+      sub: `Lv ${Math.min(level + 5, maxLevel)}`,
+      level: Math.min(level + 5, maxLevel),
+      rank: 2,
+    },
+    { label: String(maxLevel), sub: "Cap", level: maxLevel, rank: 3 },
+  ];
+  if (owned > level) {
+    candidates.push({
+      label: String(owned),
+      sub: "All I own",
+      level: owned,
+      rank: 0,
+    });
+  }
+
+  const bestRank = new Map<number, number>();
+  for (const candidate of candidates) {
+    const seen = bestRank.get(candidate.level);
+    if (seen === undefined || candidate.rank > seen) {
+      bestRank.set(candidate.level, candidate.rank);
+    }
+  }
+
+  return candidates
+    .filter((candidate) => bestRank.get(candidate.level) === candidate.rank)
+    .map(({ label, sub, level: target }) => ({ label, sub, level: target }));
+}

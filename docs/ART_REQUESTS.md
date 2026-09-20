@@ -455,6 +455,36 @@ that lands where the component expects it. What is being requested is the
 
 ## Delivered
 
+### 2026-09-21 — Lyra's recurve bow (drawn, after ComfyUI declined again)
+
+- **Purpose:** her weapon, as a standalone asset. Ruling **#151** adopted
+  Genshin's model — a weapon is its own asset and **character art does not carry
+  it** — so this is not composited into her portrait. It exists for skill
+  artworks, an equipment card, and anywhere the bow needs to be shown.
+- **Specs:** 832×1216 transparent PNG, matching the character-layer canvas so the
+  two compose without rescaling. Whole object contained with margin (the *source*
+  format; a frame-breaking card is derived from it by rotation — see #151).
+- **Design:** mid-tier, market-bought, per his brief — *"not a basic arrow, but
+  not a fancy, not a custom one either. Something on average."* Dark wood back,
+  lighter belly, pale horn laminate stripe, leather grip wrap, arrow shelf,
+  string serving, nocked tips. No ornament, no glow.
+- **Lands at:** `public/props/lyra_bow.png`. **Not registered in code** — nothing
+  renders a weapon asset yet, and inventing a registry for an unused asset is how
+  `gamblers_table` happened. Wire it when a screen needs it.
+- **Generated? No — DRAWN.** `scripts/draw_lyra_bow.py`, alongside
+  `make_app_icon.py` and `logo_candidates.py`. **Two batches, eight images, zero
+  usable bows**: cropped risers, doubled geometry, a stick with hooks, and in
+  every single one a string that was fragmented or attached to nothing. That last
+  defect is the one the shipped portrait already has. A bowstring is a long thin
+  continuous line, which is what diffusion is worst at, and a line between two
+  known points is arithmetic.
+- **Why drawn also wins on the rule:** #151 requires a weapon stay consistent once
+  approved. A script cannot drift — same bow, any angle, any size, string always
+  attached. Every dimension is a named constant, so a tweak is a one-line edit and
+  a one-second re-render.
+- **Status:** `done 2026-09-21` — approved by Tanveer.
+- **Requested:** 2026-09-21, for the Lyra character-art pass.
+
 ### 2026-08-22 — D1, the app icon (drawn, after ComfyUI declined)
 
 `public/icons/app-icon.png` + `app/icon.png`, written by

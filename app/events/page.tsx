@@ -46,6 +46,7 @@ import {
 import { AUTO_CLEAR_IS_NEVER_FIRST_CLEAR } from "@/lib/game/autoClear";
 import {
   beginRun,
+  fightSummaries,
   runHealthBars,
   fightTeam,
   type StageRunState,
@@ -82,6 +83,16 @@ type View =
       wall: number;
       rankBefore: number;
       rankAfter: number;
+      /**
+       * The finished run, for the recap (option E, 2026-09-20). Carried rather
+       * than re-read because `resetBattle()` has already emptied the battle
+       * store by the time this renders.
+       *
+       * Optional because the older single-fight trial route above never builds
+       * a run at all — that path shows the unlock block without a recap rather
+       * than inventing one.
+       */
+      run?: StageRunState;
     }
   /**
    * A trial in progress. Unlike the boss, a trial is a RUN — several fights on
@@ -314,6 +325,8 @@ export default function EventsPage(): React.JSX.Element {
         <BattleArena
           contextLabel={view.event.name}
           worldBoss={{
+            continueLabel: "CLAIM REWARDS",
+            quitLabel: "BACK TO EVENTS",
             onContinue: () => {
               // A trial and a boss resolve differently, and the split is the
               // whole point: `clearsWall` was authored on both trials the day
@@ -390,6 +403,11 @@ export default function EventsPage(): React.JSX.Element {
         <BattleArena
           contextLabel={`${event.name} · Fight ${run.fightIndex + 1}/${run.fightCount}`}
           worldBoss={{
+            // No victory card: the battle road announces the win on top of the
+            // route it already draws (option C, chosen 2026-09-20). Defeat
+            // still stops on the card — losing is a decision point.
+            autoContinueOnVictory: true,
+            quitLabel: "BACK TO EVENTS",
             onContinue: () => {
               const folded = foldFightFromBattle(run, useGameStore.getState());
               resetBattle();
@@ -413,6 +431,7 @@ export default function EventsPage(): React.JSX.Element {
                 wall,
                 rankBefore,
                 rankAfter,
+                run: folded,
               });
             },
             // A defeat costs the whole run and charges again. Retrying the
@@ -438,18 +457,17 @@ export default function EventsPage(): React.JSX.Element {
     const { event, run } = view;
     const encounter = getTrialEncounter(event.id);
     if (!encounter) return <TrialMissing onBack={backToBoard} />;
-    // Max HP comes from the units as they were actually built for the last
-    // fight — levels and stage effects included — rather than the catalog.
-    const maxHpOf = (id: string) =>
-      useGameStore.getState().playerTeam.find((unit) => unit.id === id)?.hp ??
-      run.carryHp[id] ??
-      1;
+    // Max HP rides on the run now. It used to be looked up from the battle
+    // store here, which `resetBattle()` empties one line before this view is
+    // set — so every living bar drew 100%. See `FightOutcome.maxHp`.
+    const summaries = fightSummaries(run);
     return (
       <Screen width="none">
         <TrialRail
           fights={encounter.fights}
           cleared={run.fightIndex}
-          bars={runHealthBars(run, maxHpOf)}
+          bars={runHealthBars(run)}
+          lastFight={summaries[summaries.length - 1]}
           onContinue={() => {
             launchFight(event, run);
             setView({ kind: "trialBattle", event, run });
@@ -488,6 +506,10 @@ export default function EventsPage(): React.JSX.Element {
         wall={view.wall}
         rankBefore={view.rankBefore}
         rankAfter={view.rankAfter}
+        run={view.run}
+        fights={
+          view.run ? getTrialEncounter(view.event.id)?.fights : undefined
+        }
         onBack={backToBoard}
       />
     );

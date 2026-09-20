@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { getCharacterArt } from "@/lib/game/characterArt";
+import type { FightSummary } from "@/lib/game/stageRun";
 import type { StoryTeamPick } from "@/types/story";
 
 /**
@@ -34,8 +35,30 @@ export interface TrialRailProps {
   cleared: number;
   /** The team's carried state between fights. Fallen units read 0. */
   bars: { id: string; hp: number; max: number }[];
+  /**
+   * The fight just won, if this screen followed one.
+   *
+   * **Option C** (Tanveer, 2026-09-20): the win is announced here, on top of
+   * the route this screen already draws, rather than on a card in front of it.
+   * The card it replaces said CLAIM REWARDS on a run that pays nothing, and
+   * its whole body was the turn counter.
+   *
+   * Absent when the road is shown before fight 1 — there is no fight to report.
+   */
+  lastFight?: FightSummary;
   onContinue: () => void;
   onQuit: () => void;
+}
+
+/** What a fight is called on the road. */
+export function fightLabel(enemies: StoryTeamPick[]): string {
+  // One enemy is the name a player repeats to themselves; a group has no name
+  // this component is entitled to invent (`AGENTS.md` — kits and names are
+  // his), so it states the count instead.
+  if (enemies.length === 1) {
+    return getCharacterById(enemies[0].id)?.name ?? enemies[0].id;
+  }
+  return `${enemies.length} enemies`;
 }
 
 function EnemyPip({ pick, dimmed }: { pick: StoryTeamPick; dimmed: boolean }) {
@@ -75,9 +98,12 @@ export default function TrialRail({
   fights,
   cleared,
   bars,
+  lastFight,
   onContinue,
   onQuit,
 }: TrialRailProps) {
+  const next = fights[Math.min(cleared, fights.length - 1)];
+  const nextLabel = next ? fightLabel(next.enemies) : null;
   const pooled = bars.reduce(
     (acc, bar) => ({ hp: acc.hp + bar.hp, max: acc.max + bar.max }),
     { hp: 0, max: 0 },
@@ -86,6 +112,44 @@ export default function TrialRail({
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-6">
+      {lastFight ? (
+        <div className="border border-el-light/70 bg-panel px-3.5 py-3">
+          <div className="flex items-baseline gap-2.5">
+            <span className="font-heading text-2xl leading-none tracking-title text-el-light">
+              VICTORY
+            </span>
+            <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+              Fight {lastFight.index + 1} of {fights.length}
+            </span>
+          </div>
+          {/* The numbers the card in front of this one never carried: it
+              reported the turn counter and nothing else. */}
+          <p className="mt-1.5 font-body text-[12.5px] text-readout-dim">
+            <b className="font-semibold text-readout-strong">
+              {lastFight.turns} turns
+            </b>
+            {" · "}
+            <b className="font-semibold text-el-red">
+              -{Math.round(lastFight.hpLostPercent)}% HP
+            </b>
+            {" · "}
+            {lastFight.ultimates} ultimate
+            {lastFight.ultimates === 1 ? "" : "s"}
+            {lastFight.fallen.length > 0 ? (
+              <>
+                {" · "}
+                <b className="font-semibold text-el-red">
+                  {lastFight.fallen
+                    .map((id) => getCharacterById(id)?.name ?? id)
+                    .join(", ")}{" "}
+                  fell
+                </b>
+              </>
+            ) : null}
+          </p>
+        </div>
+      ) : null}
+
       <div>
         <p className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
           Fight {Math.min(cleared + 1, fights.length)} of {fights.length}
@@ -129,7 +193,11 @@ export default function TrialRail({
                       current ? "text-signal" : "text-readout-dim"
                     }`}
                   >
-                    {done ? "Cleared" : current ? "Next" : `Fight ${index + 1}`}
+                    {done
+                      ? "Cleared"
+                      : current
+                        ? `Next — ${fightLabel(fight.enemies)}`
+                        : `Fight ${index + 1}`}
                   </span>
                   <span className="flex flex-wrap gap-1">
                     {fight.enemies.map((pick, i) => (
@@ -178,7 +246,7 @@ export default function TrialRail({
 
       <div className="flex flex-col gap-2">
         <Button variant="secondary" size="sm" onClick={onContinue}>
-          Next fight
+          {nextLabel ? `Next fight — ${nextLabel}` : "Next fight"}
         </Button>
         <Button variant="outline" size="sm" onClick={onQuit}>
           Abandon run

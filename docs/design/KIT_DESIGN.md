@@ -64,7 +64,7 @@ top DEF. Time-to-kill sits at ~4.3 hits against these numbers.
 
 - **Sara is a DPS** whose damage is a percentage of her 3500 HP, not her ATK.
 - **Lyra is defense** despite the roster's highest defense-role ATK — her
-  identity is First Action: Unbreakable Ice (+150% DEF).
+  identity is Supercooling (+150% DEF).
 - **Ban is a DPS** at 80 DEF, the lowest on the roster, because his kit is
   lifesteal and attrition rather than survivability.
 

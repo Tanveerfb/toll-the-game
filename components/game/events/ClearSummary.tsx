@@ -7,8 +7,13 @@ import { Panel, PanelBody, PanelHeader } from "@/components/ui/Panel";
 import { Screen } from "@/components/ui/Screen";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { RewardList } from "@/components/game/events/RewardList";
+import { fightLabel } from "@/components/game/events/TrialRail";
+import { MAX_ACCOUNT_RANK, RANK_WALLS } from "@/lib/game/accountRank";
+import { getCharacterById } from "@/lib/game/characterCatalog";
+import { fightSummaries, type StageRunState } from "@/lib/game/stageRun";
 import { rewardRows } from "@/lib/game/worldBossPreview";
 import type { WorldBossRewards } from "@/lib/game/worldBossRewards";
+import type { StoryTeamPick } from "@/types/story";
 
 /**
  * The panel a cleared event lands on.
@@ -74,37 +79,148 @@ export function BossClearSummary({
  * out loud, because several ranks arriving in one frame otherwise reads as a
  * glitch.
  */
+/** One line of the "what this opened" block. */
+function UnlockRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}): React.JSX.Element {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border border-hairline bg-inset px-2.5 py-2">
+      <span className="font-body text-[12.5px] text-readout-dim">{label}</span>
+      <span className="font-heading text-base tabular-nums text-el-light">
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export function TrialClearSummary({
   eventName,
   wall,
   rankBefore,
   rankAfter,
+  run,
+  fights,
   onBack,
 }: {
   eventName: string;
   wall: number;
   rankBefore: number;
   rankAfter: number;
+  /** The finished run. Absent on the older single-fight trial route, which
+   *  never builds one — that path shows the unlock block alone. */
+  run?: StageRunState;
+  /** The encounter's fights, for naming each recap row. */
+  fights?: { enemies: StoryTeamPick[] }[];
   onBack: () => void;
 }): React.JSX.Element {
   const gained = rankAfter - rankBefore;
+  const ceiling = RANK_WALLS.find((next) => next > wall) ?? MAX_ACCOUNT_RANK;
+  const summaries = run ? fightSummaries(run) : [];
+  const survivors = run ? run.team.length - run.fallen.length : 0;
+  const ended = summaries.length
+    ? Math.round(summaries[summaries.length - 1].hpLeftPercent)
+    : null;
+
   return (
-    <ClearPanel
-      eventName={eventName}
-      title={`Rank ${wall} cap lifted`}
-    >
-      <p className="font-body text-sm text-readout-dim">
-        {gained > 0
-          ? `Account rank ${rankBefore} → ${rankAfter}. Everything you earned against the wall paid out at once, and stamina is full.`
-          : `Account rank ${rankAfter}. Ranks climb again from here.`}
+    <ClearPanel eventName={eventName} title="Trial cleared">
+      {/* Option E (Tanveer, 2026-09-20): the run first, then what it opened.
+          It was a three-fight commitment on one HP bar, so the recap is what
+          makes the attrition rule (#103) legible in hindsight. */}
+      {summaries.length > 0 ? (
+        <>
+          <p className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+            The run
+          </p>
+          <ol className="flex flex-col gap-1">
+            {summaries.map((fight) => {
+              const enemies = fights?.[fight.index]?.enemies;
+              return (
+                <li
+                  key={fight.index}
+                  className="border-l-2 border-role-heal/50 bg-role-heal/[0.04] px-2.5 py-1.5"
+                >
+                  <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-dim">
+                    Fight {fight.index + 1}
+                    {enemies ? ` — ${fightLabel(enemies)}` : ""}
+                  </span>
+                  <p className="font-body text-[12.5px] text-readout-dim">
+                    <b className="font-semibold text-readout">
+                      {fight.turns} turns
+                    </b>
+                    {" · "}
+                    <b className="font-semibold text-el-red">
+                      -{Math.round(fight.hpLostPercent)}% HP
+                    </b>
+                    {fight.fallen.length > 0 ? (
+                      <>
+                        {" · "}
+                        <b className="font-semibold text-el-red">
+                          {fight.fallen
+                            .map((id) => getCharacterById(id)?.name ?? id)
+                            .join(", ")}{" "}
+                          fell
+                        </b>
+                      </>
+                    ) : null}
+                  </p>
+                </li>
+              );
+            })}
+          </ol>
+
+          <div className="mt-1 border border-hairline bg-inset px-2.5">
+            <div className="flex items-baseline justify-between gap-3 border-b border-hairline py-1.5">
+              <span className="font-body text-[12.5px] text-readout-dim">
+                Total turns
+              </span>
+              <span className="font-heading text-base tabular-nums text-readout-strong">
+                {run ? run.turns : 0}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between gap-3 border-b border-hairline py-1.5">
+              <span className="font-body text-[12.5px] text-readout-dim">
+                Survivors
+              </span>
+              <span className="font-heading text-base tabular-nums text-role-heal">
+                {survivors} of {run ? run.team.length : 0}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between gap-3 py-1.5">
+              <span className="font-body text-[12.5px] text-readout-dim">
+                Ended on
+              </span>
+              <span className="font-heading text-base tabular-nums text-readout-strong">
+                {ended === null ? "—" : `${ended}% HP`}
+              </span>
+            </div>
+          </div>
+        </>
+      ) : null}
+
+      <p className="mt-2 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+        What this opened
       </p>
-      <div className="flex items-center justify-between gap-3 border-b border-hairline pb-1.5">
-        <span className="font-body text-sm text-readout-dim">Account rank</span>
-        <span className="font-heading text-lg tabular-nums text-readout-strong">
-          {rankAfter}
-          {gained > 0 ? ` (+${gained})` : ""}
-        </span>
-      </div>
+      <UnlockRow label="Account rank ceiling" value={`${wall} → ${ceiling}`} />
+      {gained > 0 ? (
+        <>
+          <UnlockRow label="Banked ranks paid out" value={`+${gained}`} />
+          <UnlockRow label="Stamina" value="Refilled" />
+        </>
+      ) : null}
+      {gained > 0 ? (
+        <p className="font-body text-xs leading-relaxed text-readout-muted">
+          Every rank you earned while held at the wall paid out at once, which
+          is why several arrived together.
+        </p>
+      ) : (
+        <p className="font-body text-xs leading-relaxed text-readout-muted">
+          Account rank {rankAfter}. Ranks climb again from here.
+        </p>
+      )}
       <Button variant="secondary" size="sm" onClick={onBack} className="mt-3">
         Back to events
       </Button>

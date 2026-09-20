@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Trial run flow at 390 — what a fight ends on, and what a run ends on</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* Combat Terminal tokens, copied from styles/globals.css @theme so this file
+     stands alone and still reads as the game. */
+  :root {
+    --void: #06090c;
+    --panel: #0d141b;
+    --panel-raised: #111a23;
+    --inset: #080d12;
+    --gridline: #0e1720;
+    --hairline: #16212b;
+    --edge: #1c2a36;
+    --edge-strong: #31596b;
+    --readout-strong: #eaf2f8;
+    --readout: #cbd8e2;
+    --readout-dim: #8ea6b8;
+    --readout-muted: #5d7285;
+    --signal: #4fd3e8;
+    --el-light: #e8d174;
+    --el-red: #ff5a4e;
+    --el-blue: #37a6ff;
+    --el-green: #35d48b;
+    --role-heal: #35d48b;
+    --role-attack: #ff5a4e;
+    --heading: "Bangers", "Impact", cursive;
+    --body: "Rajdhani", "Segoe UI", sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--void);
+    color: var(--readout);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.45;
+    padding: 24px 16px 96px;
+  }
+
+  .page { max-width: 1240px; margin: 0 auto; }
+
+  h1 {
+    font-family: var(--heading);
+    font-size: 30px;
+    letter-spacing: 0.08em;
+    color: var(--readout-strong);
+    margin-bottom: 4px;
+  }
+  .sub { color: var(--readout-muted); font-size: 13px; max-width: 78ch; }
+
+  .note {
+    border-left: 2px solid var(--signal);
+    background: rgba(79, 211, 232, 0.05);
+    padding: 10px 14px;
+    margin: 18px 0 8px;
+    font-size: 13.5px;
+    color: var(--readout-dim);
+    max-width: 88ch;
+  }
+  .note b { color: var(--readout-strong); font-weight: 700; }
+  .note.warn { border-left-color: var(--el-red); background: rgba(255,90,78,0.05); }
+
+  code {
+    font-family: ui-monospace, "Cascadia Mono", monospace;
+    font-size: 12px;
+    color: var(--signal);
+    background: var(--inset);
+    padding: 1px 4px;
+  }
+
+  /* ---- option switcher ------------------------------------------------ */
+  .switch { display: flex; flex-wrap: wrap; gap: 6px; margin: 22px 0 6px; }
+  .switch button {
+    font-family: var(--body);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--readout-dim);
+    background: var(--inset);
+    border: 1px solid var(--edge);
+    padding: 10px 14px;
+    min-height: 44px;
+    cursor: pointer;
+  }
+  .switch button:hover { border-color: var(--edge-strong); color: var(--readout); }
+  .switch button[aria-pressed="true"] {
+    border-color: var(--signal);
+    color: var(--signal);
+    background: rgba(79, 211, 232, 0.10);
+  }
+
+  .option { display: none; }
+  .option.shown { display: block; }
+
+  .verdict {
+    font-size: 13.5px;
+    color: var(--readout-dim);
+    max-width: 88ch;
+    margin: 12px 0 4px;
+  }
+  .verdict b { color: var(--readout-strong); }
+  .taps {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--el-light);
+    border: 1px solid rgba(232,209,116,0.4);
+    padding: 3px 7px;
+    margin-left: 6px;
+  }
+
+  /* ---- phone frames --------------------------------------------------- */
+  .rail { display: flex; flex-wrap: wrap; gap: 26px; margin-top: 18px; align-items: flex-start; }
+  .phone-wrap { width: 390px; }
+  .phone-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--readout-muted);
+    margin-bottom: 6px;
+  }
+  .phone {
+    width: 390px;
+    height: 720px;
+    border: 1px solid var(--edge-strong);
+    background:
+      repeating-linear-gradient(0deg, var(--gridline) 0 1px, transparent 1px 44px),
+      repeating-linear-gradient(90deg, var(--gridline) 0 1px, transparent 1px 44px),
+      var(--void);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .scroll { flex: 1; overflow-y: auto; }
+
+  /* ---- shared game-ish parts ------------------------------------------ */
+  .eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--signal);
+  }
+  .microlabel {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--readout-muted);
+  }
+  .title-lg {
+    font-family: var(--heading);
+    font-size: 26px;
+    letter-spacing: 0.08em;
+    color: var(--readout-strong);
+    line-height: 1;
+  }
+  .title-xl {
+    font-family: var(--heading);
+    font-size: 46px;
+    letter-spacing: 0.1em;
+    line-height: 1;
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 48px;
+    font-family: var(--body);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    border: 1px solid var(--edge-strong);
+    background: var(--panel-raised);
+    color: var(--readout-strong);
+    cursor: pointer;
+  }
+  .btn.primary { border-color: var(--signal); color: var(--signal); background: rgba(79,211,232,0.10); }
+  .btn.ghost { background: transparent; border-color: var(--edge); color: var(--readout-dim); }
+  .btn:hover { border-color: var(--signal); }
+
+  .panel { border: 1px solid var(--edge-strong); background: var(--panel); }
+  .panel-inset { border: 1px solid var(--hairline); background: var(--inset); }
+
+  /* stat rows */
+  .statrow {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--hairline);
+  }
+  .statrow:last-child { border-bottom: 0; }
+  .statrow .k { font-size: 13px; color: var(--readout-dim); }
+  .statrow .v {
+    font-family: var(--heading); font-size: 17px;
+    color: var(--readout-strong); font-variant-numeric: tabular-nums;
+  }
+  .statrow .v.bad { color: var(--el-red); }
+  .statrow .v.good { color: var(--role-heal); }
+
+  /* hp bars */
+  .hprow { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .hprow .who { width: 74px; flex-shrink: 0; font-size: 11.5px; color: var(--readout-dim);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .track { position: relative; height: 6px; flex: 1; background: var(--inset); }
+  .fill { position: absolute; inset: 0 auto 0 0; background: var(--role-heal); }
+  .fill.down { background: rgba(255,90,78,0.4); }
+  .pct { width: 42px; flex-shrink: 0; text-align: right; font-family: var(--heading);
+    font-size: 12px; color: var(--readout-dim); font-variant-numeric: tabular-nums; }
+
+  /* the road */
+  .road { display: flex; flex-direction: column; }
+  .node { display: flex; gap: 12px; align-items: stretch; }
+  .gutter { width: 20px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
+  .pip { width: 12px; height: 12px; transform: rotate(45deg); flex-shrink: 0;
+    border: 1px solid var(--edge-strong); background: var(--inset); }
+  .pip.done { border-color: var(--role-heal); background: rgba(53,212,139,0.6); }
+  .pip.now  { border-color: var(--signal); background: var(--signal); }
+  .thread { width: 1px; flex: 1; background: var(--hairline); }
+  .thread.done { background: rgba(53,212,139,0.5); }
+  .node-body { flex: 1; min-width: 0; padding-bottom: 16px; }
+
+  .pips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .foe {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border: 1px solid var(--edge-strong); background: var(--inset);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--heading); font-size: 15px; color: var(--readout-dim);
+    position: relative;
+  }
+  .foe.dim { border-color: var(--hairline); opacity: 0.4; }
+  .foe .sub {
+    position: absolute; inset: auto 0 0 0; background: rgba(6,9,12,0.8);
+    font-family: var(--body); font-size: 7px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--readout-dim);
+    text-align: center;
+  }
+
+  .recap {
+    margin-top: 6px; padding: 7px 9px;
+    border-left: 2px solid rgba(53,212,139,0.5);
+    background: rgba(53,212,139,0.04);
+    font-size: 12px; color: var(--readout-dim);
+  }
+  .recap b { color: var(--readout); font-weight: 600; }
+
+  .overlay {
+    position: absolute; inset: 0; z-index: 5;
+    background: rgba(6,9,12,0.86);
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 16px;
+  }
+  .overlay[hidden] { display: none; }
+
+  .unlock {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    padding: 9px 10px; border: 1px solid var(--hairline); background: var(--inset);
+    margin-top: 6px;
+  }
+  .unlock .k { font-size: 12.5px; color: var(--readout-dim); }
+  .unlock .v { font-family: var(--heading); font-size: 16px; color: var(--el-light);
+    font-variant-numeric: tabular-nums; }
+
+  .pad { padding: 18px 16px; }
+  .gap6 > * + * { margin-top: 6px; }
+  .gap10 > * + * { margin-top: 10px; }
+  .gap14 > * + * { margin-top: 14px; }
+
+  .flash { animation: flash 900ms ease-out 1; }
+  @keyframes flash { from { background: rgba(79,211,232,0.18); } to { background: transparent; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Trial run flow at 390</h1>
+<div class="note" style="border-left-color:var(--el-green);background:rgba(53,212,139,0.06)">
+  <b>DECIDED AND BUILT, 2026-09-20 — ruling #148.</b> He chose <b>Option C</b>
+  (mid-run) and <b>Option E</b> (completion). This file is kept as the record of
+  what the alternatives were and why C and E beat them; the shipped versions live
+  in <code>TrialRail.tsx</code> and <code>ClearSummary.tsx</code>. The two defects
+  named below are fixed.
+</div>
+<p class="sub">
+  What a <em>fight</em> ends on, and what a <em>run</em> ends on. Drawn against
+  ruling #144 — options, not a proposal — and #146: <b>everything here is
+  clickable</b>. Press the buttons; the flows actually advance.
+</p>
+
+<div class="note">
+  <b>The measurement that prompted this.</b>
+  <code>components/game/BattleArena.tsx:1336</code> reads
+  <code>{story ? "CONTINUE STORY" : "CLAIM REWARDS"}</code> — <b>two branches for
+  three flows</b>. A trial passes the <code>worldBoss</code> prop, so it falls to
+  the else and every trial fight ends on <b>CLAIM REWARDS</b>, including fights 1
+  and 2, where nothing is claimed and the next screen is the battle road.
+  Tanveer, 2026-09-20: <i>"it does show me claim rewards button, which doesn't
+  apply here technically because there are no rewards to be claimed."</i>
+</div>
+
+<div class="note warn">
+  <b>The same defect has a second face nobody has hit yet.</b> Line 1358 is
+  <code>{story ? "BACK TO CHAPTERS" : "BACK TO WORLD BOSS"}</code> — so
+  <b>losing</b> a trial offers to send you back to the world boss. It has not
+  been seen because this run was won. Whichever option is picked has to fix the
+  defeat branch too, or half the bug ships again.
+</div>
+
+<div class="note">
+  <b>What already exists, and is not the problem.</b>
+  <code>TrialRail</code> already draws the road, the enemies ahead and the HP
+  carried forward, and its buttons already read <b>Next fight</b> /
+  <b>Abandon run</b>. The gap is the <i>victory card in front of it</i>, which
+  announces a payout and summarises nothing: its whole body is
+  <code>Turn 6 • 12 player / 9 enemy actions resolved</code>.
+</div>
+
+<div class="note">
+  <b>Real data throughout.</b> Your run: Seras, Chiara, Lyra, Isolde against
+  Frost/Gale/Prism (+Iron benched) at Lv 15, then Lyra at Lv 20, then Molvarr at
+  Lv 24. Chiara falls in fight 2. The wall is
+  <code>RANK_WALLS = [20, 40]</code>, so clearing lifts the ceiling from rank
+  <b>20 to 40</b>.
+</div>
+
+<!-- =================================================================== -->
+<h2 style="font-family:var(--heading);font-size:22px;letter-spacing:0.08em;color:var(--readout-strong);margin:34px 0 0;">
+  Part 1 — how a mid-run fight ends
+</h2>
+<p class="sub">Three positions on one question: <b>is a fight an event, or a step?</b></p>
+
+<div class="switch" role="group" aria-label="Mid-run options">
+  <button type="button" data-opt="A" aria-pressed="true">Option A — road only</button>
+  <button type="button" data-opt="B" aria-pressed="false">Option B — summary card, then road</button>
+  <button type="button" data-opt="C" aria-pressed="false">Option C — one screen</button>
+</div>
+
+<!-- ---------------------------------------------------------------- A -->
+<section class="option shown" data-opt="A">
+  <p class="verdict">
+    <b>A fight is a step, not an event.</b> The victory card is deleted for any
+    fight that is not the last one — the win lands you straight on the road,
+    with the node you just cleared flipped to <b>Cleared</b> and carrying its own
+    one-line result. Nothing new to read; the screen you were going to see
+    anyway now also answers "what just happened".
+    <span class="taps">1 tap to continue</span>
+  </p>
+  <p class="verdict">
+    Costs you the beat. There is no moment of winning — the screen simply
+    changes. On a three-fight run that may be right; on a boss it would not be.
+  </p>
+
+  <div class="rail">
+    <div class="phone-wrap">
+      <div class="phone-label">After fight 1 — straight to the road</div>
+      <div class="phone">
+        <div class="scroll pad gap14" id="A-body"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------------- B -->
+<section class="option" data-opt="B">
+  <p class="verdict">
+    <b>A fight is an event, and the card should earn its place.</b> The VICTORY
+    beat stays, but its body becomes a real summary — turns, HP lost, who fell,
+    ultimates spent — and the button says what actually happens next.
+    Then the road, unchanged.
+    <span class="taps">2 taps to continue</span>
+  </p>
+  <p class="verdict">
+    This is the smallest change to what ships today and the only option that
+    keeps a win feeling like a win. It is also the only one that asks a player
+    to read two screens where one would do.
+  </p>
+
+  <div class="rail">
+    <div class="phone-wrap">
+      <div class="phone-label">Screen 1 — the card (press NEXT FIGHT)</div>
+      <div class="phone">
+        <div class="scroll" id="B-card"></div>
+      </div>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone-label">Screen 2 — the road</div>
+      <div class="phone">
+        <div class="scroll pad gap14" id="B-road"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------------- C -->
+<section class="option" data-opt="C">
+  <p class="verdict">
+    <b>Both questions, one screen.</b> The win is a banner at the top of the
+    road rather than a card in front of it: what just happened and what is ahead
+    are read in one movement, and the run's whole history accumulates down the
+    page as each cleared node keeps its result.
+    <span class="taps">1 tap to continue</span>
+  </p>
+  <p class="verdict">
+    The densest of the three at 390 — press <b>Simulate fight 2</b> to see what
+    it looks like two fights in, which is the case that decides whether this
+    works.
+  </p>
+
+  <div class="rail">
+    <div class="phone-wrap">
+      <div class="phone-label">After a fight — banner over road</div>
+      <div class="phone">
+        <div class="scroll pad gap14" id="C-body"></div>
+      </div>
+      <button class="btn ghost" style="margin-top:8px" id="C-sim">Simulate fight 2 cleared</button>
+    </div>
+  </div>
+</section>
+
+<!-- =================================================================== -->
+<h2 style="font-family:var(--heading);font-size:22px;letter-spacing:0.08em;color:var(--readout-strong);margin:44px 0 0;">
+  Part 2 — how the run ends
+</h2>
+<p class="sub">
+  Two positions on: <b>is the payoff the unlock, or the run you just survived?</b>
+  Today this screen exists and reads <code>Rank 20 cap lifted</code> — accurate,
+  and it never says congratulations or names what opened.
+</p>
+
+<div class="switch" role="group" aria-label="Completion options">
+  <button type="button" data-fin="D" aria-pressed="true">Option D — the unlock</button>
+  <button type="button" data-fin="E" aria-pressed="false">Option E — the run, then the unlock</button>
+</div>
+
+<section class="option shown" data-fin="D">
+  <p class="verdict">
+    <b>The reward is information about your account.</b> Congratulate, then say
+    plainly what changed, in the player's terms — the ceiling, the ranks that
+    were banked against the wall and just paid out, the stamina refill. Short
+    enough to read in one screen with nothing to scroll.
+  </p>
+  <div class="rail">
+    <div class="phone-wrap">
+      <div class="phone-label">Trial complete</div>
+      <div class="phone"><div class="scroll pad gap14" id="D-body"></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="option" data-fin="E">
+  <p class="verdict">
+    <b>It was a three-fight commitment; show the commitment.</b> The run recaps
+    first — each fight, how it went, who was lost — and the unlock block sits
+    under it. Makes the attrition rule (#103) legible in hindsight: you can see
+    where the HP went and where Chiara died.
+  </p>
+  <p class="verdict">
+    Longer, and it scrolls. The question it asks you is whether a player who
+    just won wants to read a report or press one button.
+  </p>
+  <div class="rail">
+    <div class="phone-wrap">
+      <div class="phone-label">Trial complete — with recap</div>
+      <div class="phone"><div class="scroll pad gap14" id="E-body"></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="note" style="margin-top:34px">
+  <b>Ideas beyond what you asked for</b>, since you said you were open to them —
+  each is independent of the choice above:
+  <br /><br />
+  <b>1. The defeat screen needs the same pass.</b> A lost trial currently offers
+  RETRY BATTLE, which re-enters the whole run and charges stamina again, under a
+  button that says BACK TO WORLD BOSS. It should say what it costs.
+  <br /><br />
+  <b>2. Name the fight you are about to enter.</b> The road says "Fight 2 of 3"
+  and shows a portrait; it never says <i>Lyra</i>. The name is the one thing a
+  player repeats to themselves.
+  <br /><br />
+  <b>3. Show the pooled HP as a number you can act on.</b> The road already
+  computes a pooled percentage. Under the no-heal rule that figure is the whole
+  decision — carry on or abandon — so it could lead rather than sit at the
+  bottom.
+  <br /><br />
+  <b>4. A cleared trial should stop looking enterable.</b> Not drawn here, and
+  worth checking on the board: the First Trial is <code>repeatable: false</code>,
+  so once the wall is down the card has nothing left to offer.
+</div>
+
+</div>
+
+<script>
+/* ---------------------------------------------------------------- data --- */
+const RUN = {
+  team: [
+    { id: "seras",  name: "Seras",  hp: 68, max: 100 },
+    { id: "chiara", name: "Chiara", hp: 0,  max: 100 },
+    { id: "lyra",   name: "Lyra",   hp: 91, max: 100 },
+    { id: "isolde", name: "Isolde", hp: 77, max: 100 },
+  ],
+  afterFight1: [
+    { id: "seras",  name: "Seras",  hp: 84, max: 100 },
+    { id: "chiara", name: "Chiara", hp: 61, max: 100 },
+    { id: "lyra",   name: "Lyra",   hp: 98, max: 100 },
+    { id: "isolde", name: "Isolde", hp: 90, max: 100 },
+  ],
+  fights: [
+    { foes: [{ n: "F" }, { n: "G" }, { n: "P" }, { n: "I", sub: true }], label: "Checkpoint squad" },
+    { foes: [{ n: "L" }], label: "Lyra" },
+    { foes: [{ n: "M" }], label: "Molvarr" },
+  ],
+  results: [
+    { turns: 6,  lost: 16, fell: 0, ults: 2 },
+    { turns: 9,  lost: 31, fell: 1, ults: 4 },
+    { turns: 12, lost: 24, fell: 0, ults: 5 },
+  ],
+};
+
+const pooled = (bars) => {
+  const hp = bars.reduce((a, b) => a + b.hp, 0);
+  const max = bars.reduce((a, b) => a + b.max, 0);
+  return max ? Math.round((hp / max) * 100) : 0;
+};
+
+/* ------------------------------------------------------------- fragments -- */
+function foeRow(foes, dim) {
+  return '<span class="pips">' + foes.map((f) =>
+    '<span class="foe' + (dim ? ' dim' : '') + '">' + f.n +
+    (f.sub ? '<span class="sub">Sub</span>' : '') + '</span>'
+  ).join('') + '</span>';
+}
+
+function hpBlock(bars, heading) {
+  return '<div class="panel" style="padding:10px 12px">' +
+    '<div style="display:flex;align-items:baseline;justify-content:space-between">' +
+      '<span class="microlabel">' + heading + '</span>' +
+      '<span style="font-family:var(--heading);font-size:15px;color:var(--readout-strong)">' +
+        pooled(bars) + '%</span>' +
+    '</div>' +
+    bars.map((b) => {
+      const pct = Math.round((b.hp / b.max) * 100);
+      return '<div class="hprow">' +
+        '<span class="who">' + b.name + '</span>' +
+        '<span class="track"><span class="fill' + (b.hp <= 0 ? ' down' : '') +
+          '" style="width:' + Math.max(0, pct) + '%"></span></span>' +
+        '<span class="pct">' + (b.hp <= 0 ? 'DOWN' : pct + '%') + '</span>' +
+      '</div>';
+    }).join('') +
+  '</div>';
+}
+
+/** The road. `cleared` = fights won; `recaps` = show each cleared fight's line. */
+function road(cleared, recaps) {
+  return '<ol class="road">' + RUN.fights.map((f, i) => {
+    const done = i < cleared;
+    const now = i === cleared;
+    const r = RUN.results[i];
+    return '<li class="node">' +
+      '<div class="gutter">' +
+        '<span class="pip ' + (done ? 'done' : now ? 'now' : '') + '"></span>' +
+        (i < RUN.fights.length - 1
+          ? '<span class="thread' + (done ? ' done' : '') + '"></span>' : '') +
+      '</div>' +
+      '<div class="node-body"' + (now ? '' : ' style="opacity:0.8"') + '>' +
+        '<span class="microlabel" style="color:' +
+          (now ? 'var(--signal)' : 'var(--readout-dim)') + '">' +
+          (done ? 'Cleared' : now ? 'Next — ' + f.label : 'Fight ' + (i + 1)) +
+        '</span>' +
+        foeRow(f.foes, done) +
+        (done && recaps
+          ? '<div class="recap"><b>' + r.turns + ' turns</b> · <b>' + r.lost +
+            '% HP</b> lost · ' + (r.fell ? '<b>Chiara</b> fell' : 'no losses') +
+            ' · ' + r.ults + ' ultimates</div>'
+          : '') +
+      '</div>' +
+    '</li>';
+  }).join('') + '</ol>';
+}
+
+function summaryRows(i) {
+  const r = RUN.results[i];
+  return '<div class="panel-inset" style="padding:4px 12px">' +
+    '<div class="statrow"><span class="k">Turns taken</span>' +
+      '<span class="v">' + r.turns + '</span></div>' +
+    '<div class="statrow"><span class="k">Team HP lost</span>' +
+      '<span class="v bad">-' + r.lost + '%</span></div>' +
+    '<div class="statrow"><span class="k">Fallen</span>' +
+      '<span class="v ' + (r.fell ? 'bad' : 'good') + '">' +
+        (r.fell ? 'Chiara' : 'None') + '</span></div>' +
+    '<div class="statrow"><span class="k">Ultimates used</span>' +
+      '<span class="v">' + r.ults + '</span></div>' +
+  '</div>';
+}
+
+/* ------------------------------------------------------------- option A --- */
+function renderA() {
+  document.getElementById('A-body').innerHTML =
+    '<div>' +
+      '<p class="eyebrow">Fight 2 of 3 — First Ascension Trial</p>' +
+      '<p class="title-lg">No healing between fights</p>' +
+    '</div>' +
+    road(1, true) +
+    hpBlock(RUN.afterFight1, 'Carried into the next fight') +
+    '<div class="gap6">' +
+      '<button class="btn primary" data-act="A-next">Next fight — Lyra</button>' +
+      '<button class="btn ghost" data-act="quit">Abandon run</button>' +
+    '</div>';
+}
+
+/* ------------------------------------------------------------- option B --- */
+function renderB() {
+  document.getElementById('B-card').innerHTML =
+    '<div style="position:absolute;inset:0;background:rgba(6,9,12,0.86);' +
+      'display:flex;align-items:center;justify-content:center;padding:0 16px">' +
+      '<div class="panel" style="width:100%;border-width:2px;border-color:var(--el-light)">' +
+        '<div style="padding:20px 18px 14px;text-align:center;' +
+          'border-bottom:1px solid var(--hairline)">' +
+          '<p class="title-xl" style="color:var(--el-light)">VICTORY</p>' +
+          '<p class="microlabel" style="margin-top:8px">' +
+            'Fight 1 of 3 · Checkpoint squad</p>' +
+        '</div>' +
+        '<div style="padding:14px 18px 18px" class="gap10">' +
+          summaryRows(0) +
+          '<button class="btn primary" data-act="B-next">Next fight — Lyra</button>' +
+          '<button class="btn ghost" data-act="quit">Abandon run</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('B-road').innerHTML =
+    '<div>' +
+      '<p class="eyebrow">Fight 2 of 3 — First Ascension Trial</p>' +
+      '<p class="title-lg">No healing between fights</p>' +
+    '</div>' +
+    road(1, false) +
+    hpBlock(RUN.afterFight1, 'Carried into the next fight') +
+    '<div class="gap6">' +
+      '<button class="btn primary" data-act="B-go">Start fight 2</button>' +
+      '<button class="btn ghost" data-act="quit">Abandon run</button>' +
+    '</div>';
+}
+
+/* ------------------------------------------------------------- option C --- */
+let cState = 1;
+function renderC() {
+  const bars = cState === 1 ? RUN.afterFight1 : RUN.team;
+  const i = cState - 1;
+  const r = RUN.results[i];
+  document.getElementById('C-body').innerHTML =
+    '<div class="panel" style="border-color:var(--el-light);padding:12px 14px">' +
+      '<div style="display:flex;align-items:baseline;gap:10px">' +
+        '<span class="title-lg" style="color:var(--el-light);font-size:30px">VICTORY</span>' +
+        '<span class="microlabel">Fight ' + cState + ' of 3</span>' +
+      '</div>' +
+      '<div style="margin-top:8px;font-size:13px;color:var(--readout-dim)">' +
+        '<b style="color:var(--readout-strong)">' + r.turns + ' turns</b> · ' +
+        '<b style="color:var(--el-red)">-' + r.lost + '% HP</b> · ' +
+        r.ults + ' ultimates' +
+        (r.fell ? ' · <b style="color:var(--el-red)">Chiara fell</b>' : '') +
+      '</div>' +
+    '</div>' +
+    road(cState, false) +
+    hpBlock(bars, 'Carried into the next fight') +
+    '<div class="gap6">' +
+      '<button class="btn primary" data-act="C-next">Next fight — ' +
+        (cState === 1 ? 'Lyra' : 'Molvarr') + '</button>' +
+      '<button class="btn ghost" data-act="quit">Abandon run</button>' +
+    '</div>';
+}
+
+/* ------------------------------------------------------------- option D --- */
+const UNLOCKS =
+  '<div class="unlock"><span class="k">Account rank ceiling</span>' +
+    '<span class="v">20 &rarr; 40</span></div>' +
+  '<div class="unlock"><span class="k">Banked ranks paid out</span>' +
+    '<span class="v">+3</span></div>' +
+  '<div class="unlock"><span class="k">Stamina</span>' +
+    '<span class="v">Refilled</span></div>';
+
+function renderD() {
+  document.getElementById('D-body').innerHTML =
+    '<div style="text-align:center;padding-top:18px">' +
+      '<p class="eyebrow">First Ascension Trial</p>' +
+      '<p class="title-xl" style="color:var(--el-light);margin-top:6px">TRIAL<br />CLEARED</p>' +
+    '</div>' +
+    '<p style="font-size:14px;color:var(--readout-dim);text-align:center">' +
+      'Three fights on one HP bar, no healing. The wall is down.</p>' +
+    '<div>' +
+      '<p class="microlabel" style="margin-bottom:4px">What this opened</p>' +
+      UNLOCKS +
+    '</div>' +
+    '<p style="font-size:12.5px;color:var(--readout-muted);line-height:1.5">' +
+      'Every rank you earned while held at the wall paid out at once, which is ' +
+      'why three arrived together.</p>' +
+    '<button class="btn primary" data-act="done">Back to events</button>';
+}
+
+/* ------------------------------------------------------------- option E --- */
+function renderE() {
+  const totalTurns = RUN.results.reduce((a, r) => a + r.turns, 0);
+  document.getElementById('E-body').innerHTML =
+    '<div style="text-align:center">' +
+      '<p class="eyebrow">First Ascension Trial</p>' +
+      '<p class="title-xl" style="color:var(--el-light);margin-top:6px">TRIAL CLEARED</p>' +
+    '</div>' +
+    '<div>' +
+      '<p class="microlabel" style="margin-bottom:4px">The run</p>' +
+      road(3, true) +
+    '</div>' +
+    '<div class="panel-inset" style="padding:4px 12px">' +
+      '<div class="statrow"><span class="k">Total turns</span>' +
+        '<span class="v">' + totalTurns + '</span></div>' +
+      '<div class="statrow"><span class="k">Survivors</span>' +
+        '<span class="v good">3 of 4</span></div>' +
+      '<div class="statrow"><span class="k">Ended on</span>' +
+        '<span class="v">' + pooled(RUN.team) + '% HP</span></div>' +
+    '</div>' +
+    '<div>' +
+      '<p class="microlabel" style="margin-bottom:4px">What this opened</p>' +
+      UNLOCKS +
+    '</div>' +
+    '<button class="btn primary" data-act="done">Back to events</button>';
+}
+
+/* ---------------------------------------------------------------- wiring -- */
+function show(group, key) {
+  const attr = group === 'opt' ? 'data-opt' : 'data-fin';
+  document.querySelectorAll('.switch button[' + attr + ']').forEach((b) => {
+    b.setAttribute('aria-pressed', String(b.getAttribute(attr) === key));
+  });
+  document.querySelectorAll('section.option[' + attr + ']').forEach((s) => {
+    s.classList.toggle('shown', s.getAttribute(attr) === key);
+  });
+}
+
+document.querySelectorAll('.switch button[data-opt]').forEach((b) => {
+  b.addEventListener('click', () => show('opt', b.getAttribute('data-opt')));
+});
+document.querySelectorAll('.switch button[data-fin]').forEach((b) => {
+  b.addEventListener('click', () => show('fin', b.getAttribute('data-fin')));
+});
+
+document.getElementById('C-sim').addEventListener('click', () => {
+  cState = cState === 1 ? 2 : 1;
+  renderC();
+  document.getElementById('C-body').classList.add('flash');
+  setTimeout(() => document.getElementById('C-body').classList.remove('flash'), 900);
+});
+
+// Every in-phone button does something, per #146.
+document.addEventListener('click', (e) => {
+  const act = e.target.closest('[data-act]');
+  if (!act) return;
+  const kind = act.getAttribute('data-act');
+  const phone = act.closest('.phone');
+  if (kind === 'quit') {
+    phone.querySelector('.scroll').innerHTML =
+      '<div class="pad" style="height:100%;display:flex;flex-direction:column;' +
+      'align-items:center;justify-content:center;text-align:center;gap:10px">' +
+      '<p class="title-lg">Run abandoned</p>' +
+      '<p style="font-size:13px;color:var(--readout-muted)">' +
+      'Stamina is spent. Re-entering starts from fight 1.</p></div>';
+    return;
+  }
+  if (kind === 'done') {
+    phone.querySelector('.scroll').innerHTML =
+      '<div class="pad" style="height:100%;display:flex;align-items:center;' +
+      'justify-content:center"><p class="title-lg">&larr; Events board</p></div>';
+    return;
+  }
+  if (kind === 'B-next') { renderB(); document.getElementById('B-card').innerHTML =
+      '<div class="pad" style="height:100%;display:flex;align-items:center;' +
+      'justify-content:center;text-align:center"><p style="font-size:13px;' +
+      'color:var(--readout-muted)">Card dismissed &mdash; the road is on the right.</p></div>';
+    return; }
+  if (kind === 'B-go' || kind === 'A-next' || kind === 'C-next') {
+    phone.querySelector('.scroll').innerHTML =
+      '<div class="pad" style="height:100%;display:flex;flex-direction:column;' +
+      'align-items:center;justify-content:center;text-align:center;gap:8px">' +
+      '<p class="eyebrow">Fight begins</p>' +
+      '<p class="title-lg">Battle screen</p>' +
+      '<p style="font-size:13px;color:var(--readout-muted)">' +
+      'Untouched by any of this &mdash; its density is yours.</p></div>';
+  }
+});
+
+renderA(); renderB(); renderC(); renderD(); renderE();
+</script>
+</body>
+</html>

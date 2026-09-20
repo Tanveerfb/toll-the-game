@@ -12,6 +12,7 @@ import {
   MANUAL_TIER_LABELS,
   XP_PER_MANUAL_TIER,
   highestReachableLevel,
+  levelTargets,
   planLevelUp,
   xpToNext,
   type ManualSpend,
@@ -93,19 +94,11 @@ export default function LevelTab({
     );
   }
 
-  const targets: Array<{ label: string; sub: string; level: number; dim?: boolean }> = [
-    { label: "+1", sub: `Lv ${progress.level + 1}`, level: progress.level + 1 },
-    {
-      label: "+5",
-      sub: `Lv ${Math.min(progress.level + 5, maxLevel)}`,
-      level: Math.min(progress.level + 5, maxLevel),
-    },
-    { label: String(maxLevel), sub: "Cap", level: maxLevel },
-  ];
-  // "All I own" only earns its place when it lands somewhere the presets don't.
-  if (reachable > progress.level && !targets.some((t) => t.level === reachable)) {
-    targets.push({ label: String(reachable), sub: "All I own", level: reachable });
-  }
+  // One chip per destination. The presets all clamp to the cap, so near the
+  // top they collide - "+5" and "Cap" were both Lv 20 at Lv 18 - and the
+  // "lands somewhere the others don't" rule now covers every chip, not just
+  // "All I own". See `levelTargets`.
+  const targets = levelTargets(progress.level, maxLevel, reachable);
 
   const xpNeeded = xpToNext(progress.level);
 
@@ -134,7 +127,7 @@ export default function LevelTab({
       <div className="flex flex-wrap gap-1.5">
         {targets.map((t) => (
           <button
-            key={`${t.label}-${t.sub}`}
+            key={t.level}
             type="button"
             onClick={() => {
               setTarget(t.level);

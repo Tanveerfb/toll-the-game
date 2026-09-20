@@ -50,6 +50,30 @@ export interface FightOutcome {
   ultimates: number;
   /** Player cards played this fight, by rank. Ultimates excluded — no rank. */
   rankUses: Record<1 | 2 | 3, number>;
+  /**
+   * Character id → max HP, as the units were actually built for this fight:
+   * level, ascension and stage effects included.
+   *
+   * It has to be captured here because it exists nowhere else by the time a
+   * break screen renders. `resetBattle()` empties `playerTeam`, and the pages
+   * call it *before* setting the break view - so the `maxHpOf` both of them
+   * used to pass fell through to `carryHp[id]`, making `max` equal `hp` and
+   * **every surviving bar read 100%** however hurt the team was. Under the
+   * no-heal rule (#103) that figure is the whole carry-on-or-abandon decision.
+   */
+  maxHp: Record<string, number>;
+}
+
+/** What one won fight looked like. See `StageRunState.history`. */
+export interface FightRecord {
+  /** Player turns this fight took. */
+  turns: number;
+  /** Player ultimates fired this fight. */
+  ultimates: number;
+  /** Units that fell during **this** fight, not the run so far. */
+  fallen: string[];
+  /** HP as this fight ended — the same snapshot `carryHp` takes. */
+  carryHp: Record<string, number>;
 }
 
 export interface StageRunState {
@@ -72,6 +96,20 @@ export interface StageRunState {
   turns: number;
   ultimatesUsed: number;
   rankUses: Record<1 | 2 | 3, number>;
+  /**
+   * Character id → max HP, accumulated from every fight folded so far.
+   * Merged rather than replaced: a unit that fell in fight 1 is not in fight
+   * 2's team at all, and its bar still has to draw at zero against a real max.
+   */
+  maxHp: Record<string, number>;
+  /**
+   * One record per fight already won, oldest first.
+   *
+   * The totals above answer "how did the run go"; this answers "how did each
+   * fight go", which is what a post-fight banner and an end-of-run recap both
+   * need and neither could reconstruct from a running sum.
+   */
+  history: FightRecord[];
   /** True once this run follows a defeat on the same stage. */
   isRetry: boolean;
   /** Set when the last fight has been won. */
@@ -95,6 +133,8 @@ export function beginRun(
     turns: 0,
     ultimatesUsed: 0,
     rankUses: { 1: 0, 2: 0, 3: 0 },
+    maxHp: {},
+    history: [],
     isRetry,
     complete: stage.fights.length === 0,
   };
@@ -120,10 +160,23 @@ export function applyFightOutcome(
     if (!fallen.includes(id)) fallen.push(id);
   }
   const fightIndex = state.fightIndex + 1;
+  // Merge, never replace: fight 2's team does not contain fight 1's casualty,
+  // so replacing would lose the max its zeroed bar is drawn against.
+  const maxHp = { ...state.maxHp, ...outcome.maxHp };
   return {
     ...state,
     fightIndex,
     carryHp,
+    maxHp,
+    history: [
+      ...state.history,
+      {
+        turns: outcome.turns,
+        ultimates: outcome.ultimates,
+        fallen: outcome.fallenIds,
+        carryHp,
+      },
+    ],
     fallen,
     turns: state.turns + outcome.turns,
     ultimatesUsed: state.ultimatesUsed + outcome.ultimates,
@@ -178,16 +231,72 @@ export function toSummary(state: StageRunState): StageRunSummary {
   };
 }
 
-/** Player HP after the current fight, for the run HUD between fights: id →
- *  `{ hp, max }`, with the fallen at 0. */
+/**
+ * Player HP after the current fight, for the run HUD between fights: id →
+ * `{ hp, max }`, with the fallen at 0.
+ *
+ * **Both maxima come from the run itself** (`state.maxHp`). It used to take a
+ * `maxHpOf` callback, and both callers built one that read `playerTeam` from
+ * the battle store - which `resetBattle()` has already emptied by the time a
+ * break screen renders. The fallback made `max` equal `hp`, so every living
+ * bar drew full. See `FightOutcome.maxHp`.
+ */
 export function runHealthBars(
   state: StageRunState,
-  maxHpOf: (id: string) => number,
 ): { id: string; hp: number; max: number }[] {
   const fallen = new Set(state.fallen);
   return state.team.map((pick) => {
-    const max = maxHpOf(pick.id);
+    // Before the first fold nothing is known and nothing has been lost, so a
+    // unit reads full rather than reading as an error.
+    const max = state.maxHp[pick.id] ?? state.carryHp[pick.id] ?? 1;
     if (fallen.has(pick.id)) return { id: pick.id, hp: 0, max };
     return { id: pick.id, hp: state.carryHp[pick.id] ?? max, max };
+  });
+}
+
+/** One fight, as a post-fight banner or an end-of-run recap reads it. */
+export interface FightSummary {
+  /** 0-based, matching `history`. */
+  index: number;
+  turns: number;
+  ultimates: number;
+  fallen: string[];
+  /** Share of the team's total HP pool lost during this fight, 0–100. */
+  hpLostPercent: number;
+  /** Share of the pool still standing when it ended, 0–100. */
+  hpLeftPercent: number;
+}
+
+/**
+ * Every fought fight, summarised.
+ *
+ * Percentages are of the **whole team's** pool rather than per unit, because
+ * that is the number the no-heal rule makes load-bearing: what the run has
+ * left, not who took it. A fight that kills one unit outright and a fight that
+ * chips everyone read differently, and both read correctly.
+ */
+export function fightSummaries(state: StageRunState): FightSummary[] {
+  const pool = state.team.reduce(
+    (sum, pick) => sum + (state.maxHp[pick.id] ?? 0),
+    0,
+  );
+  const total = (hp: Record<string, number>) =>
+    state.team.reduce((sum, pick) => sum + (hp[pick.id] ?? 0), 0);
+
+  return state.history.map((record, index) => {
+    // Fight 1 starts from a full pool; every later fight starts from whatever
+    // the one before it left.
+    const before = index === 0 ? pool : total(state.history[index - 1].carryHp);
+    const after = total(record.carryHp);
+    const share = (value: number) =>
+      pool > 0 ? Math.max(0, Math.min(100, (value / pool) * 100)) : 0;
+    return {
+      index,
+      turns: record.turns,
+      ultimates: record.ultimates,
+      fallen: record.fallen,
+      hpLostPercent: share(Math.max(0, before - after)),
+      hpLeftPercent: share(after),
+    };
   });
 }

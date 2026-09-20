@@ -1,4 +1,4 @@
-# Status — 2026-09-18
+# Status — 2026-09-21
 
 Living snapshot. Session history is folded to
 [`docs/archive/STATUS-2026-08.md`](archive/STATUS-2026-08.md) and
@@ -6,26 +6,33 @@ Living snapshot. Session history is folded to
 
 ## Start here
 
-**State:** Four screens rebuilt from measurement — events (decomposed), the kit
-table (now **Kit Numbers**), the growth modal (tabs) and news (option B). The
-layout system is **built** for steps 1–4. All 31 kits carry a heading and a card
-number. Suite **1,542 tests / 125 files**, browser 17, build clean. Committed
-as `525e335`.
+**State:** Two sessions of work landing together. The **trial run flow** is
+rebuilt to his picked mockups (option C mid-run, option E completion) and the
+growth modal's duplicate level chip is fixed — both were found by him actually
+playing the First Ascension Trial, not by a test. Lyra's skills are renamed from
+canon (#150), and the **layered art pipeline is real**: her A-pose character
+layer and her drawn bow are approved, and a **card pose** now exists as a second
+skeleton from the same generator. Suite **1,556 tests / 125 files**, typecheck
+and lint clean.
 
-**Next:** Migrate the remaining **10 hand-typed page shells** onto `<Screen>` —
-`tests/layoutSystem.test.ts` ratchets the count and names them on failure. Lower
-the ratchet in the same commit.
+**Next:** Finish Lyra's card render — he picked the **fist** arm variant (B1/B3
+from the 2026-09-21 comparison); run the hand detailer on the pick, matte it,
+and then do the three skill artworks: Shatterburn, Flash Point, Latent Heat.
+Method and every failure are in
+[`docs/ART_PIPELINE.md`](ART_PIPELINE.md) — read its last six sections first.
 
 **Blocked on him:** notices — `content/news/notices/` holds only
-`_placeholder.mdx`, so the news kind filter cannot render until one is written.
-Also still open: Molvarr's second-form naming, **PROVISIONAL #136**, and the
-story adaptation, parked until Arc One is finished.
+`_placeholder.mdx`. Still open: Molvarr's second-form naming, **PROVISIONAL
+#136**, Chapter 11's *"training partners"* line (it still implies a combat
+academy, which #149 says she never attended), and installing `accelerate`,
+which is required before any LoRA training and is unapproved.
 
-**Don't trust:** see **Confidence and gaps** below — it is the only section that
-separates what was checked from what was assumed. The short version: the
-**battle screen** was excluded from every change this session, and **`TrialRail`
-has still never been rendered** (reaching it needs a trial fight actually won;
-this session started one and did not finish it).
+**Don't trust:** the art sections describe what was **generated**, not what is
+**shipped** — no card render is in `public/` yet, and Lyra's approved character
+layer is still only in the session scratchpad. `TrialRail` and `TrialClearSummary`
+are **now rendered and played**, which the previous checkpoint listed as never
+having happened. The **battle screen** remains excluded from the layout
+migration. See **Confidence and gaps**.
 
 ## Working (implemented, tested, browser-verified)
 

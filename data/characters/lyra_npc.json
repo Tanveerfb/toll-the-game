@@ -16,7 +16,7 @@
   "hp": 10800,
   "skills": [
     {
-      "skillName": "Red Ice: Volcanic Frost",
+      "skillName": "Shatterburn",
       "description": "Does damage equal to ATK-scaled to one enemy; applies [decay.stacks] Decay for [decay.duration] turns.",
       "characterId": "lyra_npc",
       "type": "attack",
@@ -40,7 +40,7 @@
       ]
     },
     {
-      "skillName": "Red Ice: Magma Shaft",
+      "skillName": "Flash Point",
       "description": "Does Pierce damage equal to ATK-scaled to one enemy.",
       "characterId": "lyra_npc",
       "type": "attack",
@@ -58,7 +58,7 @@
     }
   ],
   "ultimate": {
-    "skillName": "Red Ice: Absolute Zero Ignition",
+    "skillName": "Latent Heat",
     "description": "Does Pierce damage equal to ATK-scaled to all enemies.",
     "characterId": "lyra_npc",
     "type": "ultimate",
@@ -74,7 +74,7 @@
     ]
   },
   "passive": {
-    "name": "First Action: Unbreakable Ice",
+    "name": "Supercooling",
     "description": "# When performing first in a turn\n- DEF 150% 👆 for 1 turn (Activates once per turn, Unstackable, Uncancellable)\n# Always\n- Immune to ATK 👇",
     "trigger": "onFirstAction",
     "mechanics": [

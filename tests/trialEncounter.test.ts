@@ -147,6 +147,9 @@ describe("the tuning reference is a team the game can produce", () => {
   });
 });
 
+/** Max HP for the trial team below. See `FightOutcome.maxHp`. */
+const TRIAL_MAX = { duke: 2000, lyra: 2000, seras: 2000 };
+
 describe("the run rule: no heal between fights", () => {
   it("carries damage forward and never revives the fallen", () => {
     const team = [{ id: "duke" }, { id: "lyra" }, { id: "seras" }];
@@ -162,6 +165,7 @@ describe("the run rule: no heal between fights", () => {
       turns: 6,
       ultimates: 1,
       rankUses: { 1: 3, 2: 1, 3: 0 },
+      maxHp: TRIAL_MAX,
     });
 
     // Fight 2 is fought by two units at the HP fight 1 left them.
@@ -176,6 +180,7 @@ describe("the run rule: no heal between fights", () => {
       turns: 9,
       ultimates: 0,
       rankUses: { 1: 4, 2: 0, 3: 1 },
+      maxHp: TRIAL_MAX,
     });
     // Still not healed, still not revived.
     expect(run.carryHp).toEqual({ duke: 400 });
@@ -187,6 +192,7 @@ describe("the run rule: no heal between fights", () => {
       turns: 11,
       ultimates: 1,
       rankUses: { 1: 2, 2: 2, 3: 0 },
+      maxHp: TRIAL_MAX,
     });
     expect(run.complete).toBe(true);
     expect(run.turns).toBe(26);
@@ -201,6 +207,7 @@ describe("the run rule: no heal between fights", () => {
         turns: 4,
         ultimates: 0,
         rankUses: { 1: 1, 2: 0, 3: 0 },
+        maxHp: TRIAL_MAX,
       },
     );
     expect(isWipe(run)).toBe(true);

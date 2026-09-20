@@ -4,6 +4,7 @@ import {
   COIN_PER_XP,
   XP_PER_MANUAL_TIER,
   highestReachableLevel,
+  levelTargets,
   planLevelUp,
   xpToNext,
 } from "@/lib/game/leveling";
@@ -157,5 +158,97 @@ describe("the manual tiers themselves", () => {
     expect(XP_PER_MANUAL_TIER.training_manual_advanced).toBeLessThan(
       XP_PER_MANUAL_TIER.training_manual_premium,
     );
+  });
+});
+
+/**
+ * The "raise to" chips.
+ *
+ * Found in a real save, not by reading the code (Tanveer, 2026-09-20): Seras
+ * at **Lv 18 against a Lv 20 cap** rendered `+5 -> LV 20` beside `20 -> CAP`,
+ * two chips landing on one level. The dedupe rule existed already and applied
+ * to "All I own" alone, so the three presets never checked each other.
+ *
+ * **Falsified before being trusted** (`AGENTS.md`): dropping the `bestRank`
+ * filter from `levelTargets` - the state this suite was written against -
+ * turns **five** of these red, including the reported `Lv 18 / cap 20` case
+ * and, notably, `drops All I own when a preset already goes there`, which is
+ * the behaviour that shipped working. That one going red is the proof the
+ * generalisation subsumes the old special case rather than sitting beside it.
+ */
+describe("levelTargets gives one chip per destination", () => {
+  const levels = (level: number, maxLevel: number, reachable: number) =>
+    levelTargets(level, maxLevel, reachable).map((t) => t.level);
+
+  const subs = (level: number, maxLevel: number, reachable: number) =>
+    levelTargets(level, maxLevel, reachable).map((t) => t.sub);
+
+  it("never offers the same level twice", () => {
+    for (let level = 1; level < 60; level += 1) {
+      for (const maxLevel of [10, 20, 30, 40, 50, 60]) {
+        if (level >= maxLevel) continue;
+        for (const reachable of [level, level + 1, level + 3, maxLevel]) {
+          const seen = levels(level, maxLevel, reachable);
+          expect(
+            new Set(seen).size,
+            `Lv ${level} / cap ${maxLevel} / reachable ${reachable} -> ${seen.join(", ")}`,
+          ).toBe(seen.length);
+        }
+      }
+    }
+  });
+
+  it("collapses +5 into Cap at Lv 18 with a 20 cap - the reported case", () => {
+    // Seras's actual save. "+5" would clamp to 20, which is where Cap goes.
+    expect(levels(18, 20, 18)).toEqual([19, 20]);
+    expect(subs(18, 20, 18)).toEqual(["Lv 19", "Cap"]);
+  });
+
+  it("collapses all three into Cap at Lv 19", () => {
+    expect(levels(19, 20, 19)).toEqual([20]);
+    expect(subs(19, 20, 19)).toEqual(["Cap"]);
+  });
+
+  it("keeps the more informative label when two collide", () => {
+    // "Cap" says why the climb stops; "+1" only says how far.
+    expect(subs(19, 20, 19)).not.toContain("Lv 20");
+  });
+
+  it("keeps all four chips when they land apart - Isolde's save", () => {
+    // Lv 11, cap 20, 14 reachable: +1 -> 12, +5 -> 16, Cap -> 20, all -> 14.
+    expect(levels(11, 20, 14)).toEqual([12, 16, 20, 14]);
+    expect(subs(11, 20, 14)).toEqual(["Lv 12", "Lv 16", "Cap", "All I own"]);
+  });
+
+  it("drops All I own when a preset already goes there", () => {
+    // The rule that already existed, kept intact by the generalisation.
+    expect(subs(11, 20, 16)).toEqual(["Lv 12", "Lv 16", "Cap"]);
+    expect(subs(11, 20, 20)).toEqual(["Lv 12", "Lv 16", "Cap"]);
+  });
+
+  it("drops All I own when nothing is affordable", () => {
+    expect(subs(11, 20, 11)).toEqual(["Lv 12", "Lv 16", "Cap"]);
+  });
+
+  it("holds the display order: +1, +5, Cap, then All I own", () => {
+    expect(levelTargets(11, 20, 14).map((t) => t.label)).toEqual([
+      "+1",
+      "+5",
+      "20",
+      "14",
+    ]);
+  });
+
+  it("is empty at the cap, where the tab renders its own panel instead", () => {
+    expect(levelTargets(20, 20, 20)).toEqual([]);
+    expect(levelTargets(21, 20, 21)).toEqual([]);
+  });
+
+  it("never offers a level past the cap", () => {
+    for (const reachable of [25, 60]) {
+      for (const level of levels(18, 20, reachable)) {
+        expect(level).toBeLessThanOrEqual(20);
+      }
+    }
   });
 });

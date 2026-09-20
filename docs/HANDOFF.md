@@ -993,3 +993,157 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 **Known follow-ups, deliberately not done:**
 - ~~The battle log can't show *which buffs/debuffs an action applied*~~ — **done 2026-09-01.** `BattleActionEvent.effects` and `BattleTickEvent.effects`, captured as a before/after diff (`lib/game/effectDiff.ts`) rather than emitted at each of `combat.ts`'s ~24 push sites. See Open Issue #22 in `docs/STATUS.md`.
 - No shared `CharacterGrid` across `CharacterBrowser` / TeamSelect's roster overlay / the gacha pool. They differ in *interaction* (browse vs multi-select-with-order vs read-only rates), so one grid would need a prop per difference. The genuinely shared unit is the character tile.
+
+148. **A fight in a run ends on the road, not on a card; the run ends on its own
+   recap** (2026-09-20, second design chosen under the #144 mockup workflow,
+   governs `components/game/events/TrialRail.tsx` and `ClearSummary.tsx`).
+   He played the First Ascension Trial for the first time and reported what the
+   screen did: *"when I complete each fight in the trial, it does show me claim
+   rewards button, which doesn't apply here technically because there are no
+   rewards to be claimed … so that screen doesn't matter."* His direction for
+   what should replace it: *"when they finish the fight, it could just be like a
+   maybe a summary of the battle and then next fight continue or something"*, and
+   at the end *"congratulations on beating the ascension trial … account levels
+   21 to 40 or whatever is unlocked."*
+
+   Offered three positions on the mid-run screen and two on completion
+   (`docs/design/mockups/trial-run-flow.html`), he chose **C** and **E**.
+   **Those letters are selections from options Claude drew, not prose he wrote**
+   — the sentences describing them are Claude's. What is his is the report above
+   and the direction in it.
+
+   - **C** — no victory card mid-run. The win is announced *on top of* the
+     battle road, which the player was going to see anyway, so the fight's
+     numbers and the route ahead are read in one movement and one tap.
+   - **E** — the completion screen recaps the run fight by fight before naming
+     what opened. A trial is a three-fight commitment on one HP bar (#103), so
+     the recap is what makes the attrition legible in hindsight.
+
+   **The defect under it was two branches for three flows.** `BattleArena` chose
+   its victory and defeat labels with `story ? … : …`, so the trial — which
+   passes the `worldBoss` prop — inherited the boss's words: CLAIM REWARDS on a
+   run that pays no loot table, and, on a loss nobody had hit yet, BACK TO WORLD
+   BOSS. A caller now names its own labels (`continueLabel`, `quitLabel`) instead
+   of the arena inferring them from which prop was used.
+
+   **The ceiling figure is data, not prose:** `RANK_WALLS` in
+   `lib/game/accountRank.ts` is what makes this trial read 20 → 40.
+
+
+149. **The villain is spelled Seris; `seras` stays as her code id** (2026-09-20,
+   applies #143's split to a name rather than a URL). The kit JSON read
+   `"name": "Seras"` while `Master_Context.md` and the Chapter 17 and 19 dialogue
+   tags read **SERIS**. Asked which was canon:
+
+   > *"One and same. I sometimes spell her either way. Seris is canon name tho."*
+
+   So the **display name** is now `Seris` (`data/characters/seras.json`), and the
+   two news posts that named her in prose were corrected with it — there is no
+   player base yet (see the STATUS note), so consistency beat preserving the
+   wording of a shipped patch note.
+
+   **The `id` deliberately did NOT change.** `seras` is the key every save's
+   `roster` holds, exactly as #143 found for `duke` and `batra`, so renaming it
+   would invalidate stored rosters to fix a spelling nobody sees. The filename,
+   the art path `public/characters/seras.png`, `tests/seras.test.ts` and the
+   engine comments keep the old spelling for the same reason: **the id is code,
+   the name is content.** A future session that finds this mismatch should read
+   it as deliberate rather than tidy it up.
+
+   **She has two appearances, and that is an art constraint, not trivia.** Her
+   official Ledger form (silver-white hair, black coat) is what
+   `public/characters/seras.png` shows. Her civilian form is a separate
+   appearance known to almost nobody, glimpsed in Ch10, and the beat sheet
+   requires it to stay **unidentifiable** — so it is a second portrait whose job
+   is to not read as the same person.
+
+
+150. **A character's skills are named from a theme, not from their mechanics**
+   (2026-09-20, corrects how every existing kit was named, governs
+   `data/characters/*.json`). Asked to re-name Lyra's skills from canon, he
+   explained why the shipped ones were wrong — they had been derived backwards
+   from what each skill *does*:
+
+   > *"I didn't fix these names myself. It was actually done by you, well, not
+   > this version of you … he based the attack names around what they do. So
+   > like, this skill does decay debuff, then yeah this would be the name. But
+   > no, that's not how it needs to go."*
+
+   **The model he gave is JoJo and Dragon Ball:** *"some authors tie in certain
+   elements or certain themes with their character attacks — for example how
+   JoJo stands were first based on tarot cards and then bands and singers, same
+   with Dragon Ball Z where Saiyan names are basically vegetables."*
+
+   **This is not a Lyra-only rule.** *"We don't have to do it with just one
+   character, we can do it with all of the characters, or most of them if not
+   all."*
+
+   **Lyra's theme is temperature science** — melting point, flash point, thermal
+   shock, supercooling, latent heat, absolute zero. It was chosen because it is
+   thematically true rather than a wink: her whole character is a phase
+   transition she cannot control yet (`Master_Context.md`: *"freeze-to-burn
+   transition currently reactive, not on command — controlling it deliberately
+   is her untapped ceiling"*).
+
+   **What this means in practice.** The shipped names read as a fire character
+   — *Volcanic Frost*, *Magma Shaft*, *Absolute Zero Ignition* — when her
+   element is **Ice (mutated red)** and the heat is only what happens when the
+   ice breaks. That inversion is the tell of mechanic-first naming, and it is
+   what to look for when auditing the rest of the roster.
+
+   **Renaming a skill breaks its art.** `getSkillArt` keys on
+   `<id>__<slug(skillName)>`, so the moment a name changes the card silently
+   falls back to the character portrait. Rename the files in the same commit.
+
+   Theme assignment for every other character is **his**, one at a time, and
+   nothing is renamed without him — #65 is untouched by this.
+
+
+151. **A weapon is its own asset; character art does not carry it** (2026-09-21,
+   adopted from Genshin after comparing it against Dokkan, governs
+   `docs/ART_PIPELINE.md` and every future character render). Researching how
+   other games handle a weapon on a character card, he settled the route:
+
+   > *"Since we are not professional artists and can't really spend too much
+   > time, I think the Genshin route is the best one for our game for now,
+   > simply because we don't have to do a lot of manual work."*
+
+   **What the reference actually showed** (HoYoWiki, read 2026-09-21). A Genshin
+   weapon ships as **two** assets, not one:
+
+   - a **source**: the whole weapon *inside* the frame, plain flat ground, no
+     effects, no gradient — and
+   - a **card**: that same art cropped, rotated onto a diagonal, **breaking the
+     frame**, on a rarity-tinted radial gradient.
+
+   One master, one derived presentation. The same principle the Dokkan layering
+   already gave us (#see the character-layer pipeline), arrived at independently.
+
+   **Most bow users' character art shows no bow at all** — Gorou is the
+   exception, not the rule.
+
+   **Why this is the right call for us and not just the cheap one.** The
+   hand-on-prop relationship is this project's hardest recurring failure: Lyra's
+   original portrait has no hand on the bow and a string attached to nothing, and
+   ControlNet's hand keypoints are too coarse to fix it. Taking the weapon out of
+   the character render **deletes that failure mode** rather than fighting it.
+
+   **Claude's caveat, recorded because it is a real cost:** a bow-less card
+   weakens an archer's identity. The resolution is that **skill artworks still
+   show the weapon** — Shatterburn and Flash Point are meaningless without it —
+   while the neutral character layer does not.
+
+   **A weapon design is LOCKED once approved.** His words: *"once we decide on
+   something then it is official, and then we have to make sure any future
+   generations of said weapon will be consistent."* Lyra's bow is **drawn, not
+   generated** (`scratchpad` script, to be promoted into the repo), which makes
+   that guarantee free: the same script always produces the same bow, at any
+   angle, with the string exactly attached. A generated weapon could not promise
+   it.
+
+   **Amended the same day:** her mid-tier bow covers **all of Arc One**, not just
+   chapters 1–17. The signature bow is **Arc Two** — *"maybe not in arc one, but
+   in arc two"* — so it is not an asset anyone should be planning for yet. Bow
+   approved and shipped: `public/props/lyra_bow.png`, drawn by
+   `scripts/draw_lyra_bow.py`.
+

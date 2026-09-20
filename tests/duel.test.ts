@@ -3,8 +3,6 @@ import { parseDuelMove } from "@/lib/duel/parseMove";
 import { serializeDuelState } from "@/lib/duel/serializeState";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { executeSkill } from "@/lib/game/combat";
-import { registerCharacterPassives } from "@/lib/game/passive";
-import { getEffectiveAttack, getEffectiveDefense } from "@/lib/game/stats";
 import type { BattleCharacter } from "@/types/character";
 import type { ActionCard } from "@/types/action";
 
@@ -198,7 +196,16 @@ describe("serializeDuelState", () => {
   it("includes the kit, not just the stat line — you can't pilot what you can't read", () => {
     const text = state();
     expect(text).toContain("Kit:");
-    expect(text).toMatch(/Red Ice/); // Lyra's skills by name
+    // Lyra's skills by name. Read the names out of the catalog rather than
+    // hardcoding one: this line used to assert /Red Ice/, which was her old
+    // shared prefix, and it broke the day the kit was renamed under ruling
+    // #150 — a test of "is the kit here at all" should not fail because the
+    // kit's wording changed.
+    const lyraSkills = getCharacterById("lyra")?.skills ?? [];
+    expect(lyraSkills.length).toBeGreaterThan(0);
+    for (const skill of lyraSkills) {
+      expect(text).toContain(skill.skillName);
+    }
   });
 
   it("surfaces scheduled automatic behaviour", () => {

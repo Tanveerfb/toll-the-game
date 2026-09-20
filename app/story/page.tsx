@@ -276,6 +276,8 @@ export default function StoryPage(): React.JSX.Element {
         <BattleArena
           contextLabel={`${stageLabel(chapter, stage)} · Fight ${run.fightIndex + 1}/${run.fightCount}`}
           story={{
+            continueLabel: "CONTINUE STORY",
+            quitLabel: "BACK TO CHAPTERS",
             onContinue: () => {
               const folded = foldFight(run);
               resetBattle();
@@ -351,10 +353,10 @@ export default function StoryPage(): React.JSX.Element {
     const { run } = view;
     const stage = getStoryStage(run.ownerId, run.stageId);
     if (!stage) return bounce();
-    const maxHpOf = (id: string) =>
-      useGameStore.getState().playerTeam.find((unit) => unit.id === id)?.hp ??
-      run.carryHp[id] ??
-      1;
+    // The `maxHpOf` that used to be built here read `playerTeam` from the
+    // battle store — which `resetBattle()` empties before this view is set, so
+    // `max` fell back to `hp` and every living bar drew full. The run carries
+    // its own maxima now (`FightOutcome.maxHp`); story had the identical bug.
     return (
       <StoryStage
         variant="stage"
@@ -364,7 +366,7 @@ export default function StoryPage(): React.JSX.Element {
         <FightBreak
           cleared={run.fightIndex}
           total={run.fightCount}
-          bars={runHealthBars(run, maxHpOf)}
+          bars={runHealthBars(run)}
           onContinue={() => setView({ kind: "versus", run, skipScenes: view.skipScenes })}
           onQuit={() => setView({ kind: "stages", chapterId: run.ownerId })}
         />

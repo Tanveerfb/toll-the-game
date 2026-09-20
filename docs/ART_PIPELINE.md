@@ -427,3 +427,291 @@ So the composite-and-blend recipe splits in two: a **hard-edged subject on smoot
 - Never change the checkpoint or the style block without regenerating the whole set.
 - Keep 1024×1024 — UI crops with `object-cover object-top`.
 - Backgrounds stay dark + element-tinted so cards read on the dark UI.
+---
+
+## Character-layer pipeline (2026-09-20) — the Dokkan-style layered method
+
+**This supersedes the one-image-per-character approach above for any NEW
+character art.** The 31 shipped portraits stay as they are; they are finished
+art and they become *reference*, not source.
+
+### Why
+
+Tanveer adopted Dokkan's production model after reading a card's asset list
+(`dokkandb.com/cards/1034001`, 33 files). Every card is composited from **three
+source layers** — `_bg`, `_character` (transparent), `_effect` — and the same
+`_character` layer also produces the thumb and the circle. **That is how their
+characters look identical everywhere: one render, reused by construction.**
+
+Ours needs a fourth: **the weapon is its own layer.** Lyra's shipped portrait
+has no actual hand on the bow and a bowstring attached to nothing, because a
+long thin continuous line is what diffusion is worst at. Drawn once, composited,
+correct forever — same reasoning as the coin frames and the app icon.
+
+**You cannot retrofit this onto the existing portraits.** Measured: BiRefNet on
+`lyra.png` left **23% transparent**, keeping the painted glow and petals as
+foreground. The standing rule further up this file already predicted that — her
+portrait simply predates it.
+
+### The recipe that worked (Lyra, run v7, approved 2026-09-20)
+
+| | |
+| --- | --- |
+| Checkpoint | `animagineXL40_v4Opt.safetensors` |
+| Size | **832×1216** (portrait bucket) |
+| Sampler | `euler_ancestral` / `normal`, **30 steps, CFG 6** |
+| Identity | **IP-Adapter `PLUS FACE (portraits)`**, weight **0.6**, `end_at` 0.75 |
+| Identity reference | **A HEAD-AND-HAIR-ONLY CROP** of the approved portrait |
+| Pose | **ControlNet `controlnet-openpose-sdxl`**, strength **0.6**, `end_percent` 0.75 |
+| Background | `white background, simple background` — nothing else |
+| Matte | `BiRefNetRMBG`, model `BiRefNet_toonout`, `refine_foreground: true` |
+
+Result: **80.1% transparent, all frame edges clean, 1.2% soft edge.**
+
+### Five failures and their causes — read this before changing anything
+
+1. **Costume colour bleeds everywhere.** The white pleated skirt kept coming out
+   as a long red one. **Cause: the IP-Adapter reference contained her red top.**
+   IP-Adapter reads a global colour signal, not "this is her shirt". **Crop the
+   reference to head and hair only.** This is the single highest-value rule here.
+2. **The reference's background gets copied in.** At PLUS/0.75 on a full-image
+   reference, her portrait's petals and swirls came back verbatim and overrode
+   `white background`. Face crop + PLUS FACE + lower weight fixes it.
+3. **She renders as a child.** Animagine skews young. Lyra is 25; prompting "25"
+   produced a teenager. **Aim at `late 20s` / `28 years old` to land on 25**, and
+   negative `child, loli, teenager, chibi, baby face`.
+4. **Pose cannot be prompted.** `standing at ease` was ignored every time — the
+   model wants a hero shot, and drifted into hip-thrust/low-angle cheesecake that
+   contradicts her characterisation. **ControlNet is not optional for a neutral
+   layer.**
+5. **Over-conditioning destroys the image.** ~30 negative terms at 1.4–1.5 plus
+   ControlNet 0.85 plus IP-Adapter 0.65 at CFG 7 produced rainbow edge halos and
+   blown-out colour. **Subtract, don't add:** keep the negative short, cap weights
+   at ~1.2, ControlNet ~0.6.
+
+### The pose skeleton is DRAWN, not sourced
+
+A character layer needs an exact, boring A-pose — that is arithmetic. Script kept
+at `Plans/` scale in the session transcript; regenerate with PIL, COCO-18 layout,
+832×1216 canvas, black ground, standard OpenPose limb colours, joints at:
+
+```
+nose(416,300) neck(416,375) Rsho(338,390) Lsho(494,390)
+Relb(304,530) Lelb(528,530) Rwri(278,668) Lwri(554,668)
+Rhip(364,690) Lhip(468,690) Rkne(360,870) Lkne(472,870)
+Rank(358,980) Lank(474,980) Reye(392,285) Leye(440,285)
+Rear(370,296) Lear(462,296)
+```
+
+Knees sit at y=832. **These are the corrected numbers** — the first version put
+ankles at 1048 and knees at 870, which ran the boots off the bottom edge and
+clipped the cutout there. At 980/832 the finished layer has ~20px clearance
+under the boots and the silhouette survives matting intact.
+
+
+### The hand pass (2026-09-21) — wired and working
+
+At full-body resolution each hand is ~40px, which is why they render as mittens.
+The fix is to detect them and re-render each one at 512px.
+
+```
+UltralyticsDetectorProvider(model_name="bbox/hand_yolov8s.pt")
+  -> BboxDetectorSEGS(image, threshold 0.35, dilation 16, crop_factor 3.0, drop_size 8)
+  -> DetailerForEach(image, segs, model/clip/vae from the CHECKPOINT,
+       guide_size 512, max_size 1024, steps 24, cfg 6,
+       euler_ancestral/normal, denoise 0.55, feather 8,
+       force_inpaint true, noise_mask_feather 20)
+```
+
+Hand prompt is its own pair, not the character prompt: *"a detailed human hand,
+five fingers, relaxed open fingers, dark red fingerless glove, gold bracer at the
+wrist, clean thick lineart, cel shading, anime"* against *"bad hand, extra
+fingers, fused fingers, mitten, blob, clenched fist, deformed"*.
+
+**Use the plain checkpoint model, not the IP-Adapter-patched one** — the face
+reference has no business conditioning a hand.
+
+Three constraints learned by hitting them:
+
+1. **`BboxDetectorSEGS` rejects image batches outright** (`does not allow image
+   batches`). So the pipeline shape is fixed: **generate a batch → pick one →
+   detail the pick.** That is the right shape anyway, since only one image per
+   character gets approved.
+2. **Detail before matting, never after.** The detailer works in RGB; running it
+   on a transparent layer fights the alpha.
+3. **denoise 0.55 corrects anatomy but will not re-pose.** It turns a mitten into
+   readable fingers; it does not open a closed fist, whatever the negative says.
+   If a shot needs open hands, pose them in the skeleton rather than hoping the
+   detailer opens them.
+
+Verified on Lyra 2026-09-21: both hands went from unreadable pink shapes to
+articulated fingers with clean glove edges, and the matte was unaffected —
+**80.0% transparent, zero contaminated edges, full silhouette intact.**
+
+
+### Pose rules for a card render (2026-09-21) — from six references he chose
+
+Read end to end: five Dokkan character layers (Videl 1029620, Android 18
+1017840 and 1030920, Caulifla 1013410 and 1020390) and one Genshin splash
+(Collei, entry/2268). The Dokkan layers were pulled straight from
+`api.dokkandb.com/assets/character/card/<id>_folder/card_<id>_character.png` —
+the transparent pose layer, which is the useful one. (The site's ASSETS button
+also works but takes 5–10s to populate.)
+
+**Six rules every one of them obeys:**
+
+1. **Never symmetrical.** Body on a diagonal, shoulders and hips counter-rotated.
+2. **One OPEN HAND toward the viewer**, fingers visible and usually foreshortened.
+   All six have it, always on the non-weapon side. It is the most consistent
+   single element in the set.
+3. **Asymmetric arms** — one extended or raised high, the other cocked back or
+   tucked. Never matching.
+4. **Feet off the ground.** All five Dokkan cards are mid-air; Collei has one leg
+   raised.
+5. **Face turned to camera and readable**, however far the body is twisted away.
+6. **Mass at the top of the frame** — flared hair (Caulifla, 18) or a weapon held
+   upright (Collei).
+
+**Format, and the two families differ:**
+
+- **Dokkan character layer: 426×568, figure CONTAINED**, filling the frame but not
+  breaking the edges. That is the right shape for a compositable source and
+  vindicates the contained framing used for Lyra's layer.
+- **Genshin splash: figure BREAKS the frame** at the bottom, over a flat
+  element-tinted gradient, with the effect layer as element-coloured swooshes,
+  sparkles and a large motif shape behind the figure.
+
+**Correction to #151's premise.** Claude told him Genshin bow users mostly do not
+show the bow. **Both bow users he sent hold one** — Collei and Gorou. The premise
+was weaker than stated; the *decision* stands, because it was made on effort
+grounds, not on what Genshin does.
+
+**But Collei shows a middle path #151 did not consider: the bow is HELD, not
+USED.** Carried vertically beside the body in a relaxed grip, undrawn, unaimed.
+That reads as "archer" instantly while avoiding the drawn-string-and-gripping-
+fingers pose that has broken every previous attempt.
+
+**The finding that matters most: Lyra's approved character layer breaks all six
+rules.** Symmetrical, both arms down, both feet planted, square to camera, no open
+hand, nothing at the top of the frame. That is **correct for a source** — neutral
+for matting, ideal as LoRA training data, composites into anything — and it can
+never be the card. His own reaction on seeing it: *"it doesn't look action packed
+to me."*
+
+So a character needs **two poses**: the neutral A-pose source, and a card pose
+built to the six rules above. Both come from the same skeleton generator; only the
+joint coordinates change.
+
+
+### Building the card pose (2026-09-21) — what the first two batches cost
+
+Twelve images, two kept. The generator is the same script as the A-pose
+skeleton with different joint coordinates, exactly as claimed — but the first
+batch was a total loss and both causes were authoring mistakes, not bad rolls.
+
+**v1: every image came back with a hand bigger than her head, and one grew a
+second head.** Two things caused it and they reinforced each other:
+
+1. **The skeleton had stub arms.** To "signal" an arm coming at the viewer, the
+   upper arm was drawn at 87px and the forearm at 75px against a 166px thigh.
+2. **The prompt asked for it too** — `(open palm, spread fingers:1.2)` plus
+   `foreshortening`.
+
+A short arm plus an emphasised spread hand plus the word *foreshortening* reads
+to the model as **a hand pressed against the lens**, and it obliges. This is
+failure #5 of the five above (*"subtract, don't add"*) arriving from a new
+direction: the over-conditioning was not in the negative, it was an emphasis
+weight on a positive clause.
+
+**The rule that falls out: foreshortening is the PROMPT's job, and a gentle
+one. The skeleton supplies a real limb.** `make_pose_card.py` now prints a
+limb-length table and flags anything under **100px** as a stub, with the one
+deliberately foreshortened limb named in the script so it is declared rather
+than discovered in the render. That check is cheap and it would have caught the
+whole batch before the GPU ran.
+
+**ControlNet 0.6 is a NEUTRAL-pose number. A dynamic pose needs ~0.78.** At
+0.6 the raised arm was ignored in five of six — both arms went reaching,
+because the prompt's own language beat the conditioning. The A-pose tolerates
+0.6 because a neutral standing pose is what the model wants to draw anyway; an
+asymmetric one has to **overcome** the model's instincts. At **strength 0.78 /
+`end_percent` 0.85** the raised arm took in six of six. Nothing else moved:
+CFG 6, 30 steps, PLUS FACE 0.6, same head-and-hair reference.
+
+**Costume drift is the new failure mode at this pose strength.** Three of six in
+the good batch broke the outfit — a white top instead of crimson, a blue skirt
+instead of white, thigh-high boots instead of crimson ankle boots. A neutral
+A-pose never did this. The working theory is that the dynamic-pose clauses eat
+prompt weight the costume clauses used to hold; **QC every card render against
+the approved A-pose layer side by side**, which is what the survivor sheet does.
+
+**Rule 2 is still unsolved.** *One open hand toward the viewer* is the most
+consistent element in all six references and neither survivor has it: the
+skeleton puts the reaching wrist in front of the hip, which renders as an arm
+held out to the SIDE. The version that genuinely points at the camera is the
+one that blew up in v1. Untried middle ground: a full-length arm angled ACROSS
+the body with the palm rotated to camera — near-normal limb lengths, no
+emphasis weight, the turn carried by the wrist rather than by scale.
+
+**No weapon in the card after all.** Tanveer, mid-batch: *"you don't have to
+generate her artwork with the bow in the frame or in her hands, it can be just
+her doing a pose."* This puts the card back inside **#151** — character art
+carries no weapon — and retires the scaffolding idea that batch 1 was built
+around (grip a plain rod, composite `lyra_bow.png` over it). Worth keeping in
+mind only if a future shot needs a held weapon: **the render supplies the grip,
+never the weapon**, because #151 locks the design and a diffused bow cannot
+promise consistency.
+
+
+### A raised hand needs a JOB (2026-09-21) — the arm-variant comparison
+
+He accepted the pose structure and rejected the same arm in both survivors:
+
+> *"the right hand is fine in both instances but the left one is just awkward
+> … that's not like a fight pose slash picture pose kind of standard."*
+
+**Cause: the raised hand was open and empty, so it was doing nothing.** Every
+reference has a reason for what is up there — Collei's bow, a Dokkan fist, a
+charge, flared hair. An open splayed hand held in the air is not a pose, it is
+a hand. A second, smaller cause was geometric: the old arm put the **elbow
+further out than the wrist**, so the forearm reversed direction at the top.
+
+**Method — change ONE joint pair and freeze everything else.** Three skeletons
+were built from one frozen body (legs, torso, counter-rotation, head turn and
+the reaching arm byte-identical), differing only in joints 6 and 7, and run at
+the **same seed**. Then a row per variant. When the only variable is the arm,
+the comparison answers the question instead of inviting taste to wander, and it
+costs one script rather than three.
+
+| | arm | result |
+| --- | --- | --- |
+| A | straight up and out, open hand | better, but the hand still floats |
+| **B** | **raised above the head, clenched fist** | **reads as a fight pose in 3 of 4** |
+| C | swept back and down, trailing | fails — the arm hides behind the body and reads as missing |
+
+**Rule: give a raised hand a purpose, or do not raise the arm.** A fist is the
+cheapest purpose available and needs no prop, which matters under #151 where
+the character art carries no weapon.
+
+`scripts/draw_lyra_card_arm_variants.py` carries the generator and the two
+checks worth keeping: a **stub warning** under 100px, and a **reversed-forearm
+warning** when the elbow sits outside the wrist. Both fired on a first draft
+here and both were real.
+
+**The costume corrections held.** Naming the frilled collar, weighting the
+boots to 1.2, and negating the three specific wrong garments (`blue skirt`,
+`white shirt`, `thigh-high boots`) fixed the drift noted above without adding
+bulk to the negative. One artefact survives at a low rate — a black trim under
+the skirt — and one image came back on a cyan ground despite
+`colored background` being negated.
+
+### Still open
+
+- **Face identity is the remaining gap** — see below.
+- **Face identity is "plausibly her", not locked.** IP-Adapter gets the
+  neighbourhood; a **per-character LoRA** is what holds a face across the ~4
+  artworks each character needs (1 character layer + 2 skills + 1 ultimate =
+  **86 skill/ult artworks across the roster**, 50 of which exist and drifted).
+  Training needs the `accelerate` package installed — **not yet approved.**
+- **Every training image needs his approval before it enters the dataset.** An
+  earlier Duke LoRA was trained on unapproved images and came out inconsistent.

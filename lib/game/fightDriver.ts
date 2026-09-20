@@ -43,11 +43,18 @@ export function foldFightFromBattle(
     if (event.isUlt) ultimates += 1;
     else rankUses[event.rank ?? 1] += 1;
   }
+  // Captured here or nowhere: this is the last moment the built units exist.
+  // The caller resets the battle immediately after folding, and a break or
+  // results screen rendering afterwards has no way back to `unit.hp`.
+  const maxHp: Record<string, number> = {};
+  for (const unit of battle.playerTeam) maxHp[unit.id] = unit.hp;
+
   return applyFightOutcome(run, {
     survivors,
     fallenIds,
     turns: battle.playerTurns,
     ultimates,
     rankUses,
+    maxHp,
   });
 }

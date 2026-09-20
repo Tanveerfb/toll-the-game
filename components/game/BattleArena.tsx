@@ -213,6 +213,29 @@ export interface BattleEndHandlers {
   onChangeTeam?: () => void;
   /** Defeat → abandon (story: back to chapter list; world-boss: back to select) */
   onQuit: () => void;
+  /**
+   * What the victory button says.
+   *
+   * **A caller names its own words.** These labels were `story ? "CONTINUE
+   * STORY" : "CLAIM REWARDS"` and `story ? "BACK TO CHAPTERS" : "BACK TO WORLD
+   * BOSS"` — two branches for three flows, so the ascension trial (which
+   * passes `worldBoss`) ended every fight on **CLAIM REWARDS** when a trial
+   * pays no loot table at all, and offered a defeated player a way **BACK TO
+   * WORLD BOSS**. Tanveer hit the first on 2026-09-20; the second had never
+   * been seen because the run was won.
+   */
+  continueLabel?: string;
+  /** What the defeat screen's abandon button says. See `continueLabel`. */
+  quitLabel?: string;
+  /**
+   * Skip the victory card and run `onContinue` as soon as the fight is won.
+   *
+   * For a flow that shows its own post-fight screen — the trial's battle road
+   * announces the win on top of the route it is already drawing (option C,
+   * 2026-09-20), so a card in front of it is a tap that adds nothing.
+   * Defeat still stops on the card: losing is a decision point.
+   */
+  autoContinueOnVictory?: boolean;
 }
 
 export default function BattleArena({
@@ -290,7 +313,22 @@ export default function BattleArena({
   const { view: seq, skip: skipPlayback } = useBattleSequencer(arenaRef);
   const isBattleOver = battlePhase === "victory" || battlePhase === "defeat";
   // Hold the result screen until the cinematic finishes (skip jumps ahead)
-  const showBattleOver = isBattleOver && !seq.active;
+  const autoContinue =
+    battlePhase === "victory" && battleEnd?.autoContinueOnVictory === true;
+  const showBattleOver = isBattleOver && !seq.active && !autoContinue;
+
+  // A flow that draws its own post-fight screen skips this one. Still gated on
+  // the sequencer, so the cinematic plays out exactly as it does otherwise —
+  // what changes is where it lands, not how long it runs. The ref is what
+  // keeps a re-render between the phase flipping and the parent swapping views
+  // from firing `onContinue` twice.
+  const autoContinuedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (!autoContinue || seq.active) return;
+    if (autoContinuedRef.current) return;
+    autoContinuedRef.current = true;
+    battleEnd?.onContinue();
+  }, [autoContinue, seq.active, battleEnd]);
 
   const cutInArt = seq.cutIn
     ? (getSkillArt(seq.cutIn.characterId, seq.cutIn.skillName) ??
@@ -1333,7 +1371,7 @@ export default function BattleArena({
                   size="xl"
                   onClick={battleEnd.onContinue}
                 >
-                  {story ? "CONTINUE STORY" : "CLAIM REWARDS"}
+                  {battleEnd.continueLabel ?? "CONTINUE"}
                 </Button>
               ) : null}
               {battleEnd && battlePhase === "defeat" ? (
@@ -1355,7 +1393,7 @@ export default function BattleArena({
                     </Button>
                   ) : null}
                   <Button variant="outline" size="xl" onClick={battleEnd.onQuit}>
-                    {story ? "BACK TO CHAPTERS" : "BACK TO WORLD BOSS"}
+                    {battleEnd.quitLabel ?? "QUIT"}
                   </Button>
                 </>
               ) : null}

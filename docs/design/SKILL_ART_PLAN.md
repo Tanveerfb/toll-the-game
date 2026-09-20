@@ -100,7 +100,7 @@ Order: prove the recipe on **Gon** (canon tag, easy consistency) → review with
 - [ ] **gon** — Jajanken: Rock · Jajanken: Round 2 · Jajanken Combo (ult)  ← recipe proof
 - [ ] **killua** — Lightning Palm · Thunderbolt · Speed of Lightning (ult)
 - [ ] **leorio** — Member of the Zodiac · Switchblade Attack · Remote Punch (ult)
-- [ ] **lyra** — Red Ice: Volcanic Frost · Red Ice: Magma Shaft · Red Ice: Absolute Zero Ignition (ult)
+- [ ] **lyra** — Shatterburn · Flash Point · Latent Heat (ult)
 - [ ] **master_tao** — Flaming Palm · Inferno Consumption · Wrath of the Fire Sage (ult)
 - [ ] **meliodas** — Triple Strike · Full Counter · Evil Spirit (ult)
 - [ ] **mustafa** — Earth Stance: Fortress · Earth Shatter · Tea Time Tremor (ult)
