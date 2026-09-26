@@ -23,6 +23,14 @@ import {
 } from "@/lib/game/damagePreview";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { Screen } from "@/components/ui/Screen";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { panelVariants } from "@/components/ui/Panel";
+import { cn } from "@/lib/utils";
+
+/** Every block on this page that holds text is a paper panel (ruling #154):
+ *  the identity rail, the lore and the kit document. */
+const PAPER = panelVariants({ surface: "paper", density: "none", lift: "slab" });
 
 interface CharacterPageProps {
   /**
@@ -100,7 +108,7 @@ export default async function CharacterDetailPage({
     <Screen width="app">
         <Link
           href="/archive"
-          className="chamfer inline-flex min-h-11 items-center border border-edge px-3 font-body text-[11px] font-bold uppercase tracking-eyebrow text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "self-start")}
         >
           ← Character archive
         </Link>
@@ -119,8 +127,8 @@ export default async function CharacterDetailPage({
           {/* Identity rail. Sticky so the statline stays beside whatever
               multiplier you're reading further down a long kit. */}
           <aside className="flex flex-col gap-2.5 lg:sticky lg:top-4 lg:self-start">
-            <div className="chamfer-lg border border-edge bg-panel">
-              <div className="relative aspect-square overflow-hidden bg-inset">
+            <div className={PAPER}>
+              <div className="relative aspect-square overflow-hidden border-b-2 border-border bg-muted">
                 {art ? (
                   <Image
                     src={art}
@@ -131,47 +139,44 @@ export default async function CharacterDetailPage({
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center font-heading text-8xl text-readout-dim">
+                  <span className="flex h-full w-full items-center justify-center font-heading text-8xl text-muted-foreground">
                     {character.name.charAt(0)}
                   </span>
                 )}
                 <span
-                  className="absolute left-0 top-0 px-2 py-0.5 font-body text-[11px] font-bold tracking-label text-void"
+                  className="absolute left-0 top-0 border-b-2 border-r-2 border-border px-2 py-0.5 font-body text-caption font-bold tracking-label text-card-foreground"
                   style={{ backgroundColor: hue }}
                 >
                   {EL_CODE[character.color] ?? character.color}
                 </span>
               </div>
 
-              <div className="border-t border-hairline px-3 py-2.5">
+              <div className="px-3 py-2.5">
                 {/* Heading above the name, the way ruling #141 describes it:
                     every version of a character keeps the same NAME and is
                     told apart by the heading. Tanveer confirmed the archive
                     entry page as a place it belongs (2026-09-17) and ruled it
                     out of the battle UI. */}
                 {character.heading ? (
-                  <p className="font-body text-[11px] font-bold uppercase tracking-eyebrow text-signal">
+                  <p className="font-body text-caption font-bold uppercase tracking-eyebrow text-muted-foreground">
                     {character.heading}
                   </p>
                 ) : null}
-                <h1 className="font-heading text-4xl leading-none tracking-title text-readout-strong">
+                <h1 className="font-heading text-4xl leading-none tracking-title">
                   {character.name}
                 </h1>
                 {/* The card number, not `id`. `id` is a name (`duke`,
                     `batra`), and printing it here put the thing the URL was
                     just changed to hide back on the page. */}
-                <p className="mt-0.5 font-body text-[11px] font-bold uppercase tracking-eyebrow text-readout-muted tabular-nums">
+                <p className="mt-0.5 font-body text-caption font-bold uppercase tracking-eyebrow text-muted-foreground tabular-nums">
                   No. {character.cardNumber}
                 </p>
                 {Array.isArray(character.tags) && character.tags.length > 0 ? (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {character.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="chamfer border border-edge px-2 py-0.5 font-body text-[10px] font-bold uppercase tracking-label text-readout-dim"
-                      >
+                      <Badge key={tag} variant="outline">
                         {tag}
-                      </span>
+                      </Badge>
                     ))}
                   </div>
                 ) : null}
@@ -179,7 +184,7 @@ export default async function CharacterDetailPage({
 
               {/* Client island: the numbers carry the player's own level and
                   ascension, which this statically-generated page can't see. */}
-              <div className="border-t border-hairline px-3 py-2.5">
+              <div className="border-t border-rule px-3 py-2.5">
                 <CharacterStatBars
                   characterId={character.id}
                   base={{
@@ -203,11 +208,11 @@ export default async function CharacterDetailPage({
             />
 
             {character.lore ? (
-              <div className="chamfer-lg border border-edge bg-panel px-3 py-2.5">
-                <p className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
+              <div className={cn(PAPER, "px-3 py-2.5")}>
+                <p className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
                   Lore
                 </p>
-                <p className="mt-1 font-body text-sm leading-relaxed text-readout-dim">
+                <p className="mt-1 font-body text-sm leading-relaxed">
                   {character.lore}
                 </p>
               </div>
@@ -215,8 +220,9 @@ export default async function CharacterDetailPage({
           </aside>
 
           {/* Kit details — a document, not a stack of cards. Same typography
-              as /news via components/ui/prose.tsx. */}
-          <div className="chamfer-lg border border-edge bg-panel px-4 pb-5 pt-1 md:px-6">
+              as /news via components/ui/prose.tsx. One paper sheet: the kit's
+              keyword marker is drawn for paper (his pick, 2026-09-26). */}
+          <div className={cn(PAPER, "px-4 pb-5 pt-1 md:px-6")}>
             {isMultiPhase ? (
               <ProseSection title="Kit">
                 <KitPhases character={character} variant="document" />
@@ -241,7 +247,7 @@ export default async function CharacterDetailPage({
                 </ProseSection>
 
                 <ProseSection title="Passive" note={passive?.name}>
-                  <PassiveProse passive={passive} showName={false} />
+                  <PassiveProse passive={passive} showName={false} bare />
                 </ProseSection>
               </>
             )}

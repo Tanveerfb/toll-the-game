@@ -5,27 +5,30 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 /**
- * Combat Terminal badge (retheme, 2026-08-13).
+ * Shōnen Ink badge (ruling #154; was Combat Terminal, #84).
  *
- * Both existing usages wanted the same thing — a square, body-font, uppercase
- * micro-label — and both had to say so themselves because the stock variants
- * shipped `rounded-4xl` and `bg-primary`. That shape is the default now.
+ * A square, body-font, uppercase micro-label at the type floor
+ * (`text-label`, 10px). `ink` is the motif's own: white lettering on a black
+ * slab, skewed, the way a manga labels a panel. `outline` and `ghost` print
+ * in whatever colour their surface does, so one variant serves the dark
+ * ground and paper alike.
  *
- * Element-coloured badges (the unit name chips in the battle detail panel)
- * still pass their hue as a className: `ELEMENT_SWATCH` is keyed off character
- * data, so it can't be a static variant.
+ * Element-coloured badges still pass their hue as a className: the hue is
+ * keyed off character data, so it cannot be a static variant. On paper an
+ * element hue is a fill or a frame, never the text (docs/design-system.md).
  */
 const badgeVariants = cva(
-  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-none border px-1.5 py-0 font-body text-[10px] font-bold uppercase tracking-label whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-signal [&>svg]:pointer-events-none [&>svg]:size-3!",
+  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-none border px-1.5 py-0 font-body text-label font-bold uppercase tracking-label whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-ring [&>svg]:pointer-events-none [&>svg]:size-3!",
   {
     variants: {
       variant: {
-        default: "border-signal bg-signal text-void",
-        secondary: "border-edge bg-panel-raised text-readout-strong",
-        outline: "border-edge bg-transparent text-readout",
-        destructive: "border-el-red bg-el-red/10 text-el-red",
-        ghost: "border-transparent bg-transparent text-readout-dim",
-        link: "border-transparent text-signal underline-offset-4 hover:underline",
+        default: "border-border bg-primary text-primary-foreground",
+        secondary: "border-border bg-secondary text-secondary-foreground",
+        outline: "border-current bg-transparent",
+        ink: "ink-skew border-card-foreground bg-card-foreground text-card",
+        destructive: "border-border bg-destructive text-card-foreground",
+        ghost: "border-transparent bg-transparent",
+        link: "border-transparent underline-offset-4 hover:underline",
       },
     },
     defaultVariants: {

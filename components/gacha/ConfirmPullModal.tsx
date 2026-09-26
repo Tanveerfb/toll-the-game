@@ -2,7 +2,10 @@
 
 import React from "react";
 import { ArrowRight } from "lucide-react";
-import DetailOverlay from "@/components/game/DetailOverlay";
+import MountedDialog from "@/components/ui/MountedDialog";
+import { Alert } from "@/components/ui/alert";
+import { INK_TONE } from "@/components/ui/inkTone";
+import { cn } from "@/lib/utils";
 import ItemIcon from "@/components/game/ItemIcon";
 import { Button } from "@/components/ui/button";
 
@@ -40,34 +43,31 @@ function ShiftRow({
   tone?: "default" | "spend" | "gain";
 }): React.JSX.Element {
   const delta = after - before;
+  // A fill, not coloured text (ruling #154): this sits on paper.
   const deltaTone =
-    tone === "spend"
-      ? "text-el-red"
-      : tone === "gain"
-        ? "text-role-heal"
-        : "text-readout-dim";
+    tone === "spend" ? INK_TONE.loss : tone === "gain" ? INK_TONE.gain : "";
   return (
-    <div className="flex items-center gap-2 border border-hairline bg-panel px-3 py-2">
+    <div className="flex items-center gap-2 border border-rule bg-muted px-3 py-2">
       {iconId ? <ItemIcon id={iconId} size={20} alt="" /> : null}
-      <span className="min-w-0 flex-1 truncate font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+      <span className="min-w-0 flex-1 truncate font-body text-label font-bold uppercase tracking-label text-muted-foreground">
         {label}
       </span>
-      <span className="shrink-0 font-body text-sm tabular-nums text-readout-dim">
+      <span className="shrink-0 font-body text-sm tabular-nums text-muted-foreground">
         {before.toLocaleString()}
       </span>
       <ArrowRight
-        className="h-3 w-3 shrink-0 text-readout-muted"
+        className="h-3 w-3 shrink-0 text-muted-foreground"
         strokeWidth={2.4}
         aria-hidden
       />
-      <span className="shrink-0 font-body text-sm font-bold tabular-nums text-readout-strong">
+      <span className="shrink-0 font-body text-sm font-bold tabular-nums">
         {after.toLocaleString()}
       </span>
-      <span className={`shrink-0 font-body text-xs tabular-nums ${deltaTone}`}>
+      <span className={cn("shrink-0 font-body text-xs font-bold tabular-nums", deltaTone)}>
         {delta > 0 ? "+" : ""}
         {delta.toLocaleString()}
       </span>
-      <span className="shrink-0 font-body text-[10px] uppercase tracking-label text-readout-muted">
+      <span className="shrink-0 font-body text-label uppercase tracking-label text-muted-foreground">
         {unit}
       </span>
     </div>
@@ -112,11 +112,7 @@ export default function ConfirmPullModal({
     nextThreshold !== null ? Math.max(0, nextThreshold - barAfter) : 0;
 
   return (
-    <DetailOverlay
-      title={`Summon ×${count}`}
-      subtitle={bannerName}
-      onClose={onCancel}
-    >
+    <MountedDialog title={`Summon ×${count}`} description={bannerName} onClose={onCancel}>
       <div className="flex flex-col gap-1.5">
         <ShiftRow
           label={unit}
@@ -136,31 +132,31 @@ export default function ConfirmPullModal({
       </div>
 
       {crossesMilestone ? (
-        <p className="mt-3 border-l-2 border-el-light bg-el-light/5 px-3 py-2 font-body text-xs text-el-light">
+        <Alert variant="info">
           This draw reaches the {nextThreshold?.toLocaleString()} milestone —
           its reward will be claimable straight after.
-        </p>
+        </Alert>
       ) : nextThreshold !== null ? (
-        <p className="mt-3 font-body text-[11px] leading-snug text-readout-muted">
+        <p className="font-body text-caption leading-snug text-muted-foreground">
           {stillNeeded.toLocaleString()} more {unit} to the{" "}
           {nextThreshold.toLocaleString()} milestone after this draw.
         </p>
       ) : null}
 
       {count > 1 ? (
-        <p className="mt-1 font-body text-[11px] leading-snug text-readout-muted">
+        <p className="font-body text-caption leading-snug text-muted-foreground">
           {count} pulls for the price of {count - 1} — the last one is free.
         </p>
       ) : null}
 
-      <div className="mt-4 flex gap-2">
-        <Button variant="ghost" size="lg" className="flex-1" onClick={onCancel}>
+      <div className="flex gap-2">
+        <Button variant="secondary" size="lg" className="flex-1" onClick={onCancel}>
           Cancel
         </Button>
         <Button size="lg" className="flex-1" onClick={onConfirm}>
           Summon ×{count}
         </Button>
       </div>
-    </DetailOverlay>
+    </MountedDialog>
   );
 }

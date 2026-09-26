@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Toggle } from "@/components/ui/toggle";
 import { useSettingsStore } from "@/store/settingsStore";
 
 /**
@@ -32,22 +33,18 @@ export default function DuelToggle(): React.JSX.Element | null {
   if (process.env.NODE_ENV === "production") return null;
 
   return (
-    <button
-      type="button"
-      onClick={() => setDuelMode(!duelMode)}
+    <Toggle
+      variant="outline"
+      size="sm"
+      pressed={duelMode}
+      onPressedChange={setDuelMode}
       aria-label={
         duelMode
           ? "Claude is playing the enemy side — switch back to the scripted AI"
           : "Let Claude play the enemy side of the next battle"
       }
-      aria-pressed={duelMode}
-      className={`flex min-h-11 shrink-0 items-center border px-2 font-body text-[10px] uppercase tracking-label transition-colors ${
-        duelMode
-          ? "border-violet-400 text-violet-200"
-          : "border-hairline text-readout-muted hover:text-readout-dim"
-      }`}
     >
       {duelMode ? "Claude ON" : "Claude"}
-    </button>
+    </Toggle>
   );
 }

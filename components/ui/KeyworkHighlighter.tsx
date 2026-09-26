@@ -13,21 +13,46 @@ import {
 const ARROW_CATEGORIES = { ...keywordCategories, ...passiveStatVerbCategories };
 
 // Description highlighter, 7DS-style (Tanveer 2026-07-20): mechanic keywords
-// render as signal text with a hover tooltip; every number (damage %,
+// render marked, and open a hint on tap (#120); every number (damage %,
 // durations, stacks, gauge counts) renders bright; multi-word parenthetical
 // limiter notes — "(Resets upon taking damage)", "(max 5 stacks,
 // uncancellable)" — render dimmed. No category pills. A `keywordClassName`
 // override keeps the deck-preview chip look.
 //
-// Numbers used to be amber. Under the Combat Terminal palette they're
-// achromatic instead (`readout-strong`): a skill line already carries a
-// keyword hue and sits under a skill-type accent, so a third colour on every
-// digit was noise. Bright-on-dim separates them without competing.
+// Numbers used to be amber, then achromatic bright text under Combat
+// Terminal.
+//
+// **Shōnen Ink (2026-09-26): kit text is read on paper.** He picked the
+// highlighter from three drawn options
+// (`docs/design/mockups/kit-document-on-paper.html`, option B): a tappable
+// keyword wears the `ink-marker`, yellow because yellow means "you can act on
+// this" and a keyword opens a hint. The marker is paper-only, so every host of
+// the default keyword class is a paper card. Numbers and limiter notes take
+// their surface's colour (weight and opacity, not hue), so they read on any
+// surface; a host that passes its own `keywordClassName` (the battle card
+// preview) is unaffected by the marker.
 
-const KEYWORD_CLASS =
-  "cursor-help font-semibold text-signal underline decoration-dotted decoration-signal/40 underline-offset-2";
-const NUMBER_CLASS = "font-semibold text-readout-strong";
-const PAREN_CLASS = "text-readout-muted";
+const KEYWORD_CLASS = "ink-marker cursor-help px-0.5 font-bold";
+const NUMBER_CLASS = "font-extrabold";
+const PAREN_CLASS = "opacity-70";
+
+/**
+ * A stat arrow as a small fill with an ink glyph — green up, red down. The
+ * hues are role colours used as a FILL, so the arrow reads on paper, where
+ * the old coloured glyph alone was too faint.
+ */
+function StatArrow({ direction }: { direction: "up" | "down" }): React.JSX.Element {
+  const Icon = direction === "up" ? ArrowUp : ArrowDown;
+  return (
+    <span
+      className={`mx-0.5 inline-flex size-3.5 items-center justify-center border border-border align-middle text-card-foreground ${
+        direction === "up" ? "bg-role-heal" : "bg-role-attack"
+      }`}
+    >
+      <Icon className="size-2.5" strokeWidth={3} />
+    </span>
+  );
+}
 
 // A standalone number, optionally a percentage (180%, 2, 2.5).
 const NUMBER_SRC = "\\d+(?:\\.\\d+)?%?";
@@ -44,8 +69,9 @@ interface KeyworkHighlighterProps {
   className?: string;
   glossary?: Record<string, string>;
   keywordClassName?: string;
-  /** Override for numbers — heal skills pass a green class so their recovery
-   *  amount reads green (7DS). Defaults to amber. */
+  /** Override for numbers — heal skills pass a green fill so their recovery
+   *  amount reads green (7DS). Defaults to heavy weight in the surface's own
+   *  colour. */
   numberClassName?: string;
   /** Dokkan-style stat-change arrows: a green up-arrow after any keyword
    *  whose `keywordCategories` entry is "buff", a red down-arrow for
@@ -114,21 +140,9 @@ export default function KeyworkHighlighter({
     const numMatch = groups.num;
 
     if (emojiMatch === "👇") {
-      nodes.push(
-        <ArrowDown
-          key={`e-${i}`}
-          className="inline h-3.5 w-3.5 text-role-attack"
-          strokeWidth={3}
-        />,
-      );
+      nodes.push(<StatArrow key={`e-${i}`} direction="down" />);
     } else if (emojiMatch === "👆") {
-      nodes.push(
-        <ArrowUp
-          key={`e-${i}`}
-          className="inline h-3.5 w-3.5 text-role-heal"
-          strokeWidth={3}
-        />,
-      );
+      nodes.push(<StatArrow key={`e-${i}`} direction="up" />);
     } else if (parenMatch) {
       nodes.push(
         <span key={`p-${i}`} className={PAREN_CLASS}>
@@ -168,7 +182,7 @@ export default function KeyworkHighlighter({
           }`}
           content={
             <span className="block">
-              <span className="block font-body text-[10px] uppercase tracking-label opacity-70">
+              <span className="block font-body text-label uppercase tracking-label opacity-70">
                 {tooltipLabel}
               </span>
               <span className="mt-1 block font-body text-xs">{desc}</span>
@@ -176,15 +190,9 @@ export default function KeyworkHighlighter({
           }
         >
           {arrow === "up" ? (
-            <ArrowUp
-              className="inline h-3.5 w-3.5 text-role-heal"
-              strokeWidth={3}
-            />
+            <StatArrow direction="up" />
           ) : arrow === "down" ? (
-            <ArrowDown
-              className="inline h-3.5 w-3.5 text-role-attack"
-              strokeWidth={3}
-            />
+            <StatArrow direction="down" />
           ) : (
             kwMatch
           )}

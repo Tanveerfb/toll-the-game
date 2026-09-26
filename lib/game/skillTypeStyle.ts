@@ -122,7 +122,11 @@ export function skillTypeCategory(skill: SkillLike): SkillTypeCategory {
   }
 }
 
-/** Text colour per class. */
+/**
+ * Text colour per class. **For the dark ground only**: on paper these hues
+ * fail as text (docs/design-system.md), so a paper surface uses
+ * `SKILL_TYPE_CHIP`, the same hue as a fill with ink on it.
+ */
 export const SKILL_TYPE_TEXT: Record<SkillTypeCategory, string> = {
   attack: "text-role-attack",
   attackDebuff: "text-el-dark",
@@ -131,13 +135,21 @@ export const SKILL_TYPE_TEXT: Record<SkillTypeCategory, string> = {
   stance: "text-el-light",
 };
 
-/** Solid chip per class — the archive's type badge. */
+/**
+ * A heal skill's recovery amount (the 7DS convention: heal numbers read
+ * green). A green FILL behind the number, since green text does not read on
+ * paper (ruling #154). Shared by `SkillBlock` and `SkillDocument`.
+ */
+export const HEAL_NUMBER_CLASS = "bg-role-heal/45 px-0.5 font-extrabold";
+
+/** Solid chip per class — the archive's type badge. Ink on the hue, so it
+ *  reads on the ground and on paper alike (ruling #154). */
 export const SKILL_TYPE_CHIP: Record<SkillTypeCategory, string> = {
-  attack: "bg-role-attack text-void",
-  attackDebuff: "bg-el-dark text-void",
-  heal: "bg-role-heal text-void",
-  buff: "bg-el-blue text-void",
-  stance: "bg-el-light text-void",
+  attack: "bg-role-attack text-card-foreground",
+  attackDebuff: "bg-el-dark text-card-foreground",
+  heal: "bg-role-heal text-card-foreground",
+  buff: "bg-el-blue text-card-foreground",
+  stance: "bg-el-light text-card-foreground",
 };
 
 /** The glyph a card carries. Shape and colour say the same thing, so the

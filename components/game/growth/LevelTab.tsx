@@ -2,6 +2,10 @@
 
 import React from "react";
 
+import { GROWTH } from "@/components/game/growth/growthStyle";
+import { Alert } from "@/components/ui/alert";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import ItemIcon from "@/components/game/ItemIcon";
@@ -82,14 +86,14 @@ export default function LevelTab({
     return (
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="font-heading text-2xl tracking-title text-readout-strong">
+          <span className={GROWTH.big}>
             Lv {progress.level}
-            <span className="font-body text-xs text-readout-muted"> / {maxLevel} cap</span>
+            <span className={GROWTH.quiet}> / {maxLevel} cap</span>
           </span>
         </div>
-        <p className="border-l-2 border-signal bg-signal/5 px-3 py-2 font-body text-xs text-readout-dim">
+        <Alert variant="info">
           Max level for ascension {progress.ascension}. Ascend to raise the cap.
-        </p>
+        </Alert>
       </div>
     );
   }
@@ -105,53 +109,54 @@ export default function LevelTab({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="font-heading text-2xl tracking-title text-readout-strong">
+        <span className={GROWTH.big}>
           Lv {progress.level}
           {plan && plan.level > progress.level ? (
             <>
-              <span className="font-body text-sm text-readout-muted"> → </span>
-              <span className="text-role-heal">{plan.level}</span>
+              <span className={GROWTH.quiet}> → </span>
+              <span className={GROWTH.gain}>{plan.level}</span>
             </>
           ) : null}
-          <span className="font-body text-xs text-readout-muted"> / {maxLevel} cap</span>
+          <span className={GROWTH.quiet}> / {maxLevel} cap</span>
         </span>
-        <span className="font-body text-[10px] font-bold uppercase tracking-label tabular-nums text-readout-muted">
+        <span className={`${GROWTH.label} tabular-nums`}>
           XP {progress.xp} / {xpNeeded}
         </span>
       </div>
       <Progress value={(progress.xp / xpNeeded) * 100} />
 
-      <p className="mt-1 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
-        Raise to
-      </p>
-      <div className="flex flex-wrap gap-1.5">
+      <p className={`mt-1 ${GROWTH.label}`}>Raise to</p>
+      {/* One destination out of several: the shadcn toggle group
+          (ruling #154), not a hand-built row of buttons. */}
+      <ToggleGroup
+        type="single"
+        variant="outline"
+        value={String(goal)}
+        onValueChange={(value) => {
+          if (!value) return;
+          setTarget(Number(value));
+          setPinned({});
+        }}
+        className="w-full flex-wrap"
+        aria-label="Raise to"
+      >
         {targets.map((t) => (
-          <button
+          <ToggleGroupItem
             key={t.level}
-            type="button"
-            onClick={() => {
-              setTarget(t.level);
-              setPinned({});
-            }}
-            className={`flex min-h-11 flex-1 shrink-0 flex-col items-center justify-center border px-2.5 py-1 transition-colors ${
-              goal === t.level
-                ? "border-signal bg-signal/12 text-signal"
-                : "border-edge bg-inset text-readout-dim hover:border-edge-strong"
-            }`}
+            value={String(t.level)}
+            className="flex-1 flex-col gap-0 px-2.5 py-1"
           >
             <span className="font-heading text-base leading-none tracking-title">
               {t.label}
             </span>
-            <span className="font-body text-[9px] font-bold uppercase tracking-label">
+            <span className="font-body text-label font-bold uppercase tracking-label">
               {t.sub}
             </span>
-          </button>
+          </ToggleGroupItem>
         ))}
-      </div>
+      </ToggleGroup>
 
-      <p className="mt-1.5 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
-        Spends
-      </p>
+      <p className={`mt-1.5 ${GROWTH.label}`}>Spends</p>
       <div className="flex flex-col gap-1">
         {TIERS.map((tier) => {
           const held = inventory[tier] ?? 0;
@@ -160,18 +165,18 @@ export default function LevelTab({
           return (
             <div
               key={tier}
-              className="grid min-h-11 grid-cols-[1.75rem_1fr_auto_auto] items-center gap-2 border border-hairline bg-inset px-2 py-1.5"
+              className="grid min-h-11 grid-cols-[1.75rem_1fr_auto_auto] items-center gap-2 border border-rule bg-muted px-2 py-1.5"
             >
               <ItemIcon id={tier} size={24} alt="" />
               <span className="min-w-0">
-                <span className="block truncate font-body text-[12.5px] text-readout">
+                <span className="block truncate font-body text-xs">
                   {MANUAL_TIER_LABELS[tier]}
                 </span>
-                <span className="block font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+                <span className={`block ${GROWTH.label}`}>
                   {XP_PER_MANUAL_TIER[tier]} xp
                 </span>
               </span>
-              <span className="font-body text-[13px] tabular-nums text-readout-strong">
+              <span className="font-body text-sm font-bold tabular-nums">
                 {using} / {held}
               </span>
               <Button
@@ -193,9 +198,9 @@ export default function LevelTab({
           );
         })}
       </div>
-      <p className="font-body text-[11px] leading-snug text-readout-muted">
+      <p className={GROWTH.hint}>
         Auto spends the cheapest manuals first and keeps the rare ones.{" "}
-        <b className="text-readout-dim">Use all</b> pins a stack and the rest
+        <b className="text-card-foreground">Use all</b> pins a stack and the rest
         re-solve around it.
       </p>
 
@@ -205,11 +210,11 @@ export default function LevelTab({
             <CostChip id="coin" label="Coin" cost={plan.coinCost} owned={coin} />
           </div>
           {!plan.reachesTarget ? (
-            <p className="font-body text-[11px] text-el-red">
+            <Alert variant="destructive">
               {plan.coinCost >= coin - COIN_SLACK
                 ? "Coin is what stops you here, not manuals."
                 : "Not enough manuals to reach that level."}
-            </p>
+            </Alert>
           ) : null}
           {after ? <StatDelta from={before} to={after} /> : null}
           <Button
@@ -227,10 +232,10 @@ export default function LevelTab({
           </Button>
         </>
       ) : (
-        <p className="mt-1 border-l-2 border-edge-strong bg-inset px-3 py-2 font-body text-xs text-readout-dim">
+        <Alert className="mt-1">
           No manuals to feed — they drop from the world boss and from summon
           misses.
-        </p>
+        </Alert>
       )}
     </div>
   );

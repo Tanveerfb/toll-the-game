@@ -9,13 +9,17 @@ import { firebaseEnabled } from "@/lib/firebase";
 import { getStarterOrders, summariseRewards } from "@/lib/game/orders";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { Screen } from "@/components/ui/Screen";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { panelVariants } from "@/components/ui/Panel";
 
 /**
  * Sign-in.
  *
- * Rebuilt 2026-08-13 on the Combat Terminal palette — it was one of the last
- * two screens still on the pre-token zinc/amber utilities — and cut to
- * **Google only** at Tanveer's direction.
+ * Rebuilt 2026-08-13 on the Combat Terminal palette and cut to **Google
+ * only** at Tanveer's direction; moved onto Shōnen Ink 2026-09-26 (ruling
+ * #154).
  *
  * Shaped like a game's sign-in rather than a form: key art behind, one
  * unmistakable button, and the reason to press it stated in rewards rather
@@ -61,14 +65,14 @@ function Perk({
 }): React.JSX.Element {
   return (
     <li className="flex items-start gap-3">
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center border border-edge bg-inset text-signal">
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border bg-primary text-primary-foreground">
         <Icon className="h-3.5 w-3.5" strokeWidth={2.2} />
       </span>
       <span className="flex min-w-0 flex-col">
-        <span className="font-body text-sm font-semibold text-readout-strong">
+        <span className="font-body text-sm font-bold">
           {title}
         </span>
-        <span className="font-body text-xs leading-snug text-readout-muted">
+        <span className="font-body text-xs leading-snug text-muted-foreground">
           {detail}
         </span>
       </span>
@@ -132,22 +136,16 @@ export default function LoginPage(): React.JSX.Element {
         sizes="100vw"
         className="pointer-events-none object-cover object-top opacity-25"
       />
-      <span className="pointer-events-none absolute inset-0 bg-linear-to-b from-void/70 via-void/85 to-void" />
+      <span className="pointer-events-none absolute inset-0 bg-linear-to-b from-background/70 via-background/85 to-background" />
 
       <section className="relative z-10 mx-auto flex min-screen-below-nav w-full max-w-panel flex-col justify-center gap-5 px-5 py-10">
-        <header className="border-l-2 border-signal pl-3">
-          <span className="block font-heading text-2xl tracking-eyebrow text-signal">
-            TOLL
-          </span>
-          <h1 className="mt-1 font-heading text-3xl leading-none tracking-title text-readout-strong">
-            Bureau access
-          </h1>
-          <p className="mt-2 font-body text-sm text-readout-dim">
+        <SectionHeader eyebrow="Toll" title="Bureau access">
+          <p className="mt-2 font-body text-sm text-ground-dim">
             Sign in to bank your progress and claim what you&apos;ve earned.
           </p>
-        </header>
+        </SectionHeader>
 
-        <div className="chamfer-lg border border-edge-strong bg-panel/90 px-4 py-4 backdrop-blur-sm">
+        <div className={panelVariants({ surface: "paper", density: "roomy", lift: "slab" })}>
           {firebaseEnabled ? (
             <>
               <ul className="flex flex-col gap-3">
@@ -172,27 +170,27 @@ export default function LoginPage(): React.JSX.Element {
                 />
               </ul>
 
-              <button
-                type="button"
+              {/* Google's own button shape, not the game's: white, its mark,
+                  sentence case. Their branding rules ask for it, and a
+                  third-party sign-in should look like the third party. */}
+              <Button
+                variant="secondary"
                 onClick={signIn}
                 disabled={busy}
-                className="mt-5 flex min-h-12 w-full items-center justify-center gap-3 border border-edge-strong bg-readout-strong px-4 font-body text-sm font-semibold text-void transition-colors hover:bg-white disabled:opacity-60"
+                className="mt-5 min-h-12 w-full bg-white font-body text-sm font-bold normal-case hover:bg-white/90"
               >
                 <GoogleMark />
                 {busy ? "Opening Google…" : "Continue with Google"}
-              </button>
+              </Button>
 
               {error ? (
-                <p
-                  role="alert"
-                  className="mt-3 border-l-2 border-el-red bg-el-red/5 px-3 py-2 font-body text-xs text-el-red"
-                >
+                <Alert variant="destructive" className="mt-3">
                   {error}
-                </p>
+                </Alert>
               ) : null}
             </>
           ) : (
-            <p className="font-body text-sm leading-relaxed text-readout-dim">
+            <p className="font-body text-sm leading-relaxed">
               Accounts aren&apos;t configured on this build, so Bureau Orders
               stay open and progress is saved on this device only. Everything
               else plays exactly as it should.
@@ -201,15 +199,11 @@ export default function LoginPage(): React.JSX.Element {
         </div>
 
         <div className="flex flex-col items-center gap-2">
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="inline-flex min-h-11 items-center px-3 font-body text-[11px] font-bold uppercase tracking-label text-readout-muted transition-colors hover:text-signal"
-          >
+          <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
             {firebaseEnabled ? "Play as a guest" : "Back to the menu"}
-          </button>
+          </Button>
           {firebaseEnabled ? (
-            <p className="max-w-xs text-center font-body text-[11px] leading-snug text-readout-muted">
+            <p className="max-w-xs text-center font-body text-caption leading-snug text-ground-dim">
               Guest progress lives in this browser and is lost if you clear
               site data. You can sign in later and keep playing.
             </p>

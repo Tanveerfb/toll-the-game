@@ -15,8 +15,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import DetailOverlay from "@/components/game/DetailOverlay";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { RewardList } from "@/components/game/events/RewardList";
+import { useReturnFocus } from "@/hooks/useReturnFocus";
 import { rewardRows } from "@/lib/game/worldBossPreview";
 import type { WorldBossRewards } from "@/lib/game/worldBossRewards";
 
@@ -52,6 +59,13 @@ export default function AutoClearResults({
   // `null` = closed. A run id or "total" names which breakdown is open, so one
   // modal serves every row instead of one per run.
   const [open, setOpen] = React.useState<string | null>(null);
+  // One dialog serves every row, so there is no single trigger for radix to
+  // return focus to; the row that opened it is remembered instead.
+  const returnFocus = useReturnFocus();
+  const show = (key: string, opener: HTMLElement): void => {
+    returnFocus.remember(opener);
+    setOpen(key);
+  };
   const openRun = runs.find((run) => run.id === open);
   const openRewards = open === "total" ? totals : openRun?.rewards;
   const totalStamina = runs.reduce((sum, run) => sum + run.staminaUsed, 0);
@@ -60,7 +74,7 @@ export default function AutoClearResults({
     <Screen variant="center" width="none" className="px-4 py-6">
       {/* Wider than `max-w-panel`: this one carries a four-column table, and
           the table sets its own `min-w` and scrolls inside itself. */}
-      <Panel density="none" className="w-full max-w-lg">
+      <Panel surface="paper" lift="slab" density="none" className="w-full max-w-lg">
         <PanelHeader>
           <SectionHeader
             size="panel"
@@ -82,18 +96,14 @@ export default function AutoClearResults({
             {runs.map((run) => (
               <TableRow key={run.id}>
                 <TableCell className="font-mono">{run.id}</TableCell>
-                <TableCell className="px-2 text-right tabular-nums text-readout-dim">
+                <TableCell className="px-2 text-right tabular-nums text-muted-foreground">
                   −{run.staminaUsed}
                 </TableCell>
-                <TableCell className="px-2 text-right tabular-nums text-readout-dim">
+                <TableCell className="px-2 text-right tabular-nums text-muted-foreground">
                   {run.staminaAfter}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    onClick={() => setOpen(run.id)}
-                  >
+                  <Button variant="ghost" size="xs" onClick={(event) => show(run.id, event.currentTarget)}>
                     View
                   </Button>
                 </TableCell>
@@ -102,21 +112,17 @@ export default function AutoClearResults({
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell className="uppercase tracking-label text-readout-strong">
+              <TableCell className="uppercase tracking-label">
                 Total
               </TableCell>
-              <TableCell className="px-2 text-right tabular-nums text-readout-strong">
+              <TableCell className="px-2 text-right tabular-nums">
                 −{totalStamina}
               </TableCell>
-              <TableCell className="px-2 text-right tabular-nums text-readout-muted">
+              <TableCell className="px-2 text-right tabular-nums text-muted-foreground">
                 {runs[runs.length - 1]?.staminaAfter ?? 0}
               </TableCell>
               <TableCell className="text-right">
-                <Button
-                  variant="secondary"
-                  size="xs"
-                  onClick={() => setOpen("total")}
-                >
+                <Button variant="secondary" size="xs" onClick={(event) => show("total", event.currentTarget)}>
                   View all
                 </Button>
               </TableCell>
@@ -125,28 +131,34 @@ export default function AutoClearResults({
         </Table>
 
         <PanelBody>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onBack}
-            className="w-full"
-          >
+          <Button onClick={onBack} className="w-full">
             Back to events
           </Button>
         </PanelBody>
       </Panel>
 
-      {openRewards ? (
-        <DetailOverlay
-          title={open === "total" ? "All rewards" : "Run rewards"}
-          subtitle={
-            open === "total" ? `${runs.length} runs combined` : (open ?? "")
-          }
-          onClose={() => setOpen(null)}
-        >
-          <RewardList rows={rewardRows(openRewards)} />
-        </DetailOverlay>
-      ) : null}
+      <Dialog
+        open={openRewards !== undefined}
+        onOpenChange={(next) => {
+          if (!next) setOpen(null);
+        }}
+      >
+        {openRewards ? (
+          <DialogContent
+            onCloseAutoFocus={returnFocus.onCloseAutoFocus}
+          >
+            <DialogHeader>
+              <DialogTitle>
+                {open === "total" ? "All rewards" : "Run rewards"}
+              </DialogTitle>
+              <DialogDescription className="text-caption font-bold uppercase tracking-eyebrow">
+                {open === "total" ? `${runs.length} runs combined` : open}
+              </DialogDescription>
+            </DialogHeader>
+            <RewardList rows={rewardRows(openRewards)} />
+          </DialogContent>
+        ) : null}
+      </Dialog>
     </Screen>
   );
 }

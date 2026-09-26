@@ -2,7 +2,18 @@
 
 import React from "react";
 
-import DetailOverlay from "@/components/game/DetailOverlay";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { panelVariants } from "@/components/ui/Panel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import LevelTab from "@/components/game/growth/LevelTab";
 import AscendTab from "@/components/game/growth/AscendTab";
 import UltimateTab from "@/components/game/growth/UltimateTab";
@@ -29,6 +40,9 @@ type TabId = "level" | "ascend" | "ultimate";
  *
  * The tab strip carries each axis's current value, so the modal answers
  * *where am I* before you open anything.
+ *
+ * **The shadcn `Tabs` since 2026-09-26** (ruling #154, `line` because they sit
+ * in the paper dialog). This was the game's one hand-built tab set.
  */
 function GrowthTabs({
   characterId,
@@ -63,49 +77,31 @@ function GrowthTabs({
   const shown = tabs.filter((t) => t.show);
 
   return (
-    <div>
-      <div
-        role="tablist"
-        aria-label="Growth"
-        className="grid border-b border-hairline"
-        style={{ gridTemplateColumns: `repeat(${shown.length}, minmax(0, 1fr))` }}
-      >
-        {shown.map((t) => {
-          const active = t.id === tab;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setTab(t.id)}
-              className={`flex min-h-11 flex-col items-center justify-center border-r border-hairline px-2 py-1 transition-colors last:border-r-0 ${
-                active
-                  ? "bg-panel text-signal shadow-[inset_0_-2px_0_var(--color-signal)]"
-                  : "bg-inset text-readout-muted hover:text-readout-dim"
-              }`}
-            >
-              <span className="font-body text-[10px] font-bold uppercase tracking-label">
-                {t.label}
-              </span>
-              <span
-                className={`font-heading text-[15px] leading-none tracking-title ${
-                  active ? "text-readout-strong" : "text-readout-dim"
-                }`}
-              >
-                {t.value}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="pt-3">
-        {tab === "level" ? <LevelTab character={character} /> : null}
-        {tab === "ascend" ? <AscendTab character={character} /> : null}
-        {tab === "ultimate" ? <UltimateTab character={character} /> : null}
-      </div>
-    </div>
+    <Tabs value={tab} onValueChange={(value) => setTab(value as TabId)}>
+      <TabsList variant="line" aria-label="Growth">
+        {shown.map((t) => (
+          <TabsTrigger key={t.id} value={t.id} className="flex-col gap-0 py-1">
+            <span className="font-body text-label font-bold uppercase tracking-label">
+              {t.label}
+            </span>
+            <span className="font-heading text-base leading-none tracking-title">
+              {t.value}
+            </span>
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      <TabsContent value="level" className="pt-1">
+        <LevelTab character={character} />
+      </TabsContent>
+      <TabsContent value="ascend" className="pt-1">
+        <AscendTab character={character} />
+      </TabsContent>
+      {character.ultimate ? (
+        <TabsContent value="ultimate" className="pt-1">
+          <UltimateTab character={character} />
+        </TabsContent>
+      ) : null}
+    </Tabs>
   );
 }
 
@@ -115,8 +111,8 @@ function GrowthTabs({
  * Was an always-expanded card that ate most of the sidebar and rendered for
  * EVERY character — unowned ones and story-only NPCs included, offering to
  * level things the player has no claim to. Now it's a single button that only
- * appears for a character the player owns, opening the tabs in the shared
- * DetailOverlay modal.
+ * appears for a character the player owns, opening the tabs in the shadcn
+ * `Dialog` (the shared `DetailOverlay` until 2026-09-26).
  *
  * Ownership is read after `hasHydrated` so the server render and the first
  * client render agree (the roster lives in localStorage).
@@ -139,7 +135,12 @@ export default function CharacterProgressionPanel({
 
   if (!roster.includes(characterId)) {
     return (
-      <p className="chamfer border border-edge bg-panel px-3 py-2 text-center font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+      <p
+        className={cn(
+          panelVariants({ surface: "paper", density: "tight" }),
+          "text-center font-body text-label font-bold uppercase tracking-label text-muted-foreground",
+        )}
+      >
         Not owned — summon to level up
       </p>
     );
@@ -148,26 +149,24 @@ export default function CharacterProgressionPanel({
   const progress = progressFromMap(characters, characterId);
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="chamfer flex w-full min-h-11 items-center justify-center gap-2 border border-role-heal/60 bg-role-heal/8 font-body text-[11px] font-bold uppercase tracking-label text-role-heal transition-colors hover:bg-role-heal/16"
-      >
-        {/* The button states where the character stands, so the modal is worth
-            opening rather than being the only way to find out. */}
-        Growth · Lv {progress.level} · A{progress.ascension} · UL
-        {progress.ultLevel}
-      </button>
-      {open ? (
-        <DetailOverlay
-          title="Growth"
-          subtitle={`Max ult level ${MAX_ULT_LEVEL}`}
-          onClose={() => setOpen(false)}
-        >
-          <GrowthTabs characterId={characterId} />
-        </DetailOverlay>
-      ) : null}
-    </>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="secondary" size="sm" className="w-full">
+          {/* The button states where the character stands, so the modal is
+              worth opening rather than being the only way to find out. */}
+          Growth · Lv {progress.level} · A{progress.ascension} · UL
+          {progress.ultLevel}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Growth</DialogTitle>
+          <DialogDescription className="text-caption font-bold uppercase tracking-eyebrow">
+            Max ult level {MAX_ULT_LEVEL}
+          </DialogDescription>
+        </DialogHeader>
+        <GrowthTabs characterId={characterId} />
+      </DialogContent>
+    </Dialog>
   );
 }

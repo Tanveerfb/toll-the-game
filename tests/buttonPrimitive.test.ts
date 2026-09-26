@@ -44,9 +44,11 @@ const ALLOWED = new Set<string>([
   // `chamfer` buttons carry their own focus treatment from globals.css, which
   // is unlayered specifically so it beats the primitive's ring. Migrating them
   // means deciding what wins; not a mechanical change.
-  "components/game/KitDetails.tsx",
-  "components/game/TeamSelect.tsx",
-  "components/game/PreviewButton.tsx",
+  // KitDetails, PreviewButton, CharacterBrowser, CharacterProgressionPanel,
+  // KitPhases, OrdersBoard, TeamSelect, the login page, AccountModal,
+  // SoundSettings, BannerScreen and MilestonePicker left this list on
+  // 2026-09-26: the Shonen Ink pass (ruling #154) moved their buttons onto
+  // the primitive.
 
   // ---------------------------------------------------------------------
   // Uncovered until 2026-09-17, when the arrow bug above was fixed.
@@ -60,16 +62,7 @@ const ALLOWED = new Set<string>([
   //
   // **This block is debt and must shrink.** Nothing new belongs in it: a
   // button written today has no excuse, because the guard now sees it.
-  "app/login/page.tsx",
-  "components/gacha/BannerScreen.tsx",
-  "components/gacha/MilestonePicker.tsx",
-  "components/game/AccountModal.tsx",
-  "components/game/CharacterBrowser.tsx",
-  "components/game/CharacterProgressionPanel.tsx",
   "components/game/Deck.tsx",
-  "components/game/KitPhases.tsx",
-  "components/game/OrdersBoard.tsx",
-  "components/game/SoundSettings.tsx",
   "components/game/SubstatDrawer.tsx",
   "components/game/battle/UnitDetailPanel.tsx",
 ]);

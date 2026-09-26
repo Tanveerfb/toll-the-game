@@ -2,6 +2,8 @@
 
 import React from "react";
 
+import { GROWTH } from "@/components/game/growth/growthStyle";
+
 import { Button } from "@/components/ui/button";
 import CostChip from "@/components/game/growth/CostChip";
 import { usePlayerStore, progressFromMap } from "@/store/playerStore";
@@ -54,24 +56,24 @@ export default function UltimateTab({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="font-heading text-2xl tracking-title text-readout-strong">
+        <span className={GROWTH.big}>
           UL {current}
           {goal > current ? (
             <>
-              <span className="font-body text-sm text-readout-muted"> → </span>
-              <span className="text-role-heal">{goal}</span>
+              <span className={GROWTH.quiet}> → </span>
+              <span className={GROWTH.gain}>{goal}</span>
             </>
           ) : null}
-          <span className="font-body text-xs text-readout-muted"> / {MAX_ULT_LEVEL}</span>
+          <span className={GROWTH.quiet}> / {MAX_ULT_LEVEL}</span>
         </span>
-        <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+        <span className={GROWTH.label}>
           {materialLabel(coinId)} · {held} held
         </span>
       </div>
 
       {ladder ? (
         <>
-          <p className="mt-1 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+          <p className={`mt-1 ${GROWTH.label}`}>
             {maxed ? "The ladder" : "Tap where to stop"}
           </p>
           <div className="flex flex-wrap gap-1">
@@ -86,42 +88,22 @@ export default function UltimateTab({
                   type="button"
                   disabled={maxed || level <= current || !reachable}
                   onClick={() => setTarget(level)}
-                  className={`flex min-h-11 flex-1 shrink-0 flex-col items-center justify-center border px-1.5 py-1 transition-colors ${
-                    isNow
-                      ? "border-signal bg-signal/14"
-                      : isBuying
-                        ? "border-role-heal/60 bg-role-heal/8"
-                        : "border-edge bg-inset"
+                  className={`${GROWTH.tile} transition-colors ${
+                    isNow ? GROWTH.tileNow : isBuying ? GROWTH.tileNext : GROWTH.tileIdle
                   } ${!reachable && !isNow ? "opacity-40" : ""}`}
                 >
-                  <span
-                    className={`font-body text-[9px] font-bold uppercase tracking-label ${
-                      isNow
-                        ? "text-signal"
-                        : isBuying
-                          ? "text-role-heal"
-                          : "text-readout-muted"
-                    }`}
-                  >
+                  <span className={GROWTH.tileLabel}>
                     UL{level}
                     {isNow ? " · now" : ""}
                   </span>
-                  <span
-                    className={`font-heading text-[15px] leading-none tracking-title ${
-                      isNow
-                        ? "text-signal"
-                        : isBuying
-                          ? "text-role-heal"
-                          : "text-readout-dim"
-                    }`}
-                  >
+                  <span className={GROWTH.tileValue}>
                     {value}%
                   </span>
                 </button>
               );
             })}
           </div>
-          <p className="font-body text-[11px] leading-snug text-readout-muted">
+          <p className={GROWTH.hint}>
             {maxed
               ? "Maxed — further copies bank as coins."
               : ceiling <= current
@@ -142,15 +124,13 @@ export default function UltimateTab({
             />
           </div>
           {ladder ? (
-            <div className="mt-2.5 border border-hairline bg-inset px-2.5 py-2">
-              <div className="grid grid-cols-[2.5rem_1fr_auto] items-baseline gap-2 font-body text-[13px] tabular-nums">
-                <span className="text-[10px] font-bold uppercase tracking-label text-readout-muted">
-                  ULT
-                </span>
-                <span className="text-readout-muted">
+            <div className="mt-2.5 border border-rule bg-muted px-2.5 py-2">
+              <div className="grid grid-cols-[2.5rem_1fr_auto] items-baseline gap-2 font-body text-sm tabular-nums">
+                <span className={GROWTH.label}>ULT</span>
+                <span className="text-muted-foreground">
                   {ladder[current - 1]}% →
                 </span>
-                <span className="font-bold text-role-heal">
+                <span className={`font-bold ${GROWTH.gain}`}>
                   {ladder[goal - 1]}%
                 </span>
               </div>

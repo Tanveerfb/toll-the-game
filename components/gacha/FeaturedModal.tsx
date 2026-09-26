@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import React from "react";
-import DetailOverlay from "@/components/game/DetailOverlay";
+import MountedDialog from "@/components/ui/MountedDialog";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import type { Color } from "@/types/color";
@@ -20,8 +20,9 @@ import type { Color } from "@/types/color";
  * actually scans, and a column of the same three words is scannable in a way
  * that twelve differently-dimmed portraits are not.
  *
- * Element hues match `CharacterBrowser` deliberately — same units, same code,
- * and system chrome stays `signal` cyan.
+ * Element hues match `CharacterBrowser` deliberately — same units, same
+ * code. On paper the code is a fill with ink on it (ruling #154), and
+ * "Owned" is the action yellow, the game's "yours" everywhere else.
  */
 const EL_HUE: Record<Color, string> = {
   light: "var(--color-el-light)",
@@ -57,9 +58,9 @@ export default function FeaturedModal({
   const ownedCount = rows.filter((row) => row.owned).length;
 
   return (
-    <DetailOverlay
+    <MountedDialog
       title="Featured units"
-      subtitle={
+      description={
         hasHydrated
           ? `${ownedCount} of ${rows.length} owned`
           : `${rows.length} units`
@@ -71,17 +72,17 @@ export default function FeaturedModal({
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-hairline">
+            <tr className="border-b-2 border-border">
               <th
                 scope="col"
-                className="py-1.5 pr-2 text-left font-body text-[9px] font-bold uppercase tracking-label text-readout-muted"
+                className="py-1.5 pr-2 text-left font-body text-label font-bold uppercase tracking-label text-muted-foreground"
                 colSpan={2}
               >
                 Unit
               </th>
               <th
                 scope="col"
-                className="py-1.5 text-right font-body text-[9px] font-bold uppercase tracking-label text-readout-muted"
+                className="py-1.5 text-right font-body text-label font-bold uppercase tracking-label text-muted-foreground"
               >
                 Status
               </th>
@@ -93,13 +94,13 @@ export default function FeaturedModal({
               const art = getCharacterArt(row.id);
               const color = character?.color;
               return (
-                <tr key={row.id} className="border-b border-hairline/60">
+                <tr key={row.id} className="border-b border-rule">
                   <td className="w-9 py-1.5 pr-2">
                     <span
-                      className={`relative block h-9 w-9 overflow-hidden border bg-inset ${
+                      className={`relative block h-9 w-9 overflow-hidden border bg-muted ${
                         row.owned && hasHydrated
-                          ? "border-edge-strong"
-                          : "border-hairline opacity-45"
+                          ? "border-border"
+                          : "border-rule opacity-45"
                       }`}
                     >
                       {art ? (
@@ -115,16 +116,13 @@ export default function FeaturedModal({
                   </td>
                   <td className="py-1.5 pr-2">
                     <span className="flex items-center gap-2">
-                      <span className="truncate font-body text-sm text-readout">
+                      <span className="truncate font-body text-sm">
                         {character?.name ?? row.id}
                       </span>
                       {color ? (
                         <span
-                          className="shrink-0 border px-1 font-body text-[8px] font-bold tracking-label"
-                          style={{
-                            color: EL_HUE[color],
-                            borderColor: EL_HUE[color],
-                          }}
+                          className="shrink-0 border border-border px-1 font-body text-label font-bold tracking-label text-card-foreground"
+                          style={{ backgroundColor: EL_HUE[color] }}
                         >
                           {EL_CODE[color]}
                         </span>
@@ -133,11 +131,11 @@ export default function FeaturedModal({
                   </td>
                   <td className="py-1.5 text-right">
                     {!hasHydrated ? (
-                      <span className="font-body text-[11px] text-readout-muted">
+                      <span className="font-body text-caption text-muted-foreground">
                         —
                       </span>
                     ) : row.owned ? (
-                      <span className="font-body text-[11px] font-bold uppercase tracking-label text-signal">
+                      <span className="bg-primary px-1 font-body text-caption font-bold uppercase tracking-label text-primary-foreground">
                         Owned
                         {row.ultLevel > 1 ? (
                           <span className="ml-1 tabular-nums">
@@ -146,7 +144,7 @@ export default function FeaturedModal({
                         ) : null}
                       </span>
                     ) : (
-                      <span className="font-body text-[11px] font-bold uppercase tracking-label text-readout-muted">
+                      <span className="font-body text-caption font-bold uppercase tracking-label text-muted-foreground">
                         Not owned
                       </span>
                     )}
@@ -157,6 +155,6 @@ export default function FeaturedModal({
           </tbody>
         </table>
       </div>
-    </DetailOverlay>
+    </MountedDialog>
   );
 }

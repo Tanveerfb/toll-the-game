@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bangers, Rajdhani } from "next/font/google";
+import { Bangers, M_PLUS_1p } from "next/font/google";
 import "../styles/globals.css";
 
 const bangers = Bangers({
@@ -8,10 +8,12 @@ const bangers = Bangers({
   weight: "400",
 });
 
-const rajdhani = Rajdhani({
+// Shōnen Ink's body face (ruling #154), replacing Rajdhani. It has no 600,
+// so `font-semibold` resolves to the nearest weight the browser has.
+const body = M_PLUS_1p({
   variable: "--font-body",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -49,7 +51,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("dark font-sans", bangers.variable, rajdhani.variable)}
+      className={cn("font-sans", bangers.variable, body.variable)}
     >
       <body>
         {/* `TooltipProvider` used to wrap all of this. Every tooltip in the

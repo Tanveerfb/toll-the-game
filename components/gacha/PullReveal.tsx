@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import React from "react";
-import { createPortal } from "react-dom";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Coins, ScrollText } from "lucide-react";
@@ -13,12 +12,16 @@ import { getCharacterById } from "@/lib/game/characterCatalog";
 import ItemIcon from "@/components/game/ItemIcon";
 import { materialLabel } from "@/lib/game/materials";
 import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useFocusBackToOpener } from "@/hooks/useReturnFocus";
+import { cn } from "@/lib/utils";
 
 gsap.registerPlugin(useGSAP);
-
-// Never resubscribes — it exists only so the server snapshot and the client
-// snapshot differ, which is what makes the portal hydration-safe.
-const NO_SUBSCRIBE = () => () => {};
 
 /**
  * Pull results.
@@ -31,6 +34,12 @@ const NO_SUBSCRIBE = () => () => {};
  * It also says what you got. Materials were rendering their raw ids (literally
  * `training_manual`), and characters gave no sign whether a pull was a first
  * copy or a fourth even though the store had already resolved exactly that.
+ *
+ * **The shadcn `Dialog` since 2026-09-26** (ruling #154), in place of a
+ * hand-built portal. Two rules carry over deliberately: it cannot be closed
+ * while the cards are still flipping (Escape and the backdrop both wait), and
+ * the backdrop never closes it at all, because a stray tap on the scrim of a
+ * reveal is not a player meaning to leave it.
  */
 
 const EL_HUE: Record<string, string> = {
@@ -73,16 +82,19 @@ function Stat({
 }: {
   value: string;
   label: string;
-  tone?: "signal";
+  tone?: "reward";
 }): React.JSX.Element {
   return (
     <span className="flex items-baseline gap-1.5">
       <b
-        className={`font-heading text-xl leading-none tabular-nums ${tone === "signal" ? "text-signal" : "text-readout-strong"}`}
+        className={cn(
+          "font-heading text-xl leading-none tabular-nums",
+          tone === "reward" && "bg-el-light/55 px-1",
+        )}
       >
         {value}
       </b>
-      <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+      <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
         {label}
       </span>
     </span>
@@ -106,11 +118,7 @@ export default function PullReveal({
   const containerRef = React.useRef<HTMLDivElement>(null);
   const cardRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const [revealing, setRevealing] = React.useState(true);
-  const mounted = React.useSyncExternalStore(
-    NO_SUBSCRIBE,
-    () => true,
-    () => false,
-  );
+  const onCloseAutoFocus = useFocusBackToOpener();
 
   const summary = summarise(results);
 
@@ -148,29 +156,30 @@ export default function PullReveal({
     setRevealing(false);
   };
 
-  React.useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !revealing) onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose, revealing]);
-
-  if (!mounted) return null;
-
-  return createPortal(
-    <div
-      ref={containerRef}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Pull results"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-void/90 px-3 py-4 backdrop-blur-sm"
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !revealing) onClose();
+      }}
     >
-      <div className="chamfer-lg flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden border border-edge-strong bg-panel">
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-hairline bg-inset px-4 py-2.5">
-          <span className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
+      <DialogContent
+        showCloseButton={false}
+        onEscapeKeyDown={(event) => {
+          if (revealing) event.preventDefault();
+        }}
+        onPointerDownOutside={(event) => event.preventDefault()}
+        onCloseAutoFocus={onCloseAutoFocus}
+        className="flex flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
+      >
+      <div ref={containerRef} className="flex min-h-0 flex-1 flex-col">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b-2 border-border bg-muted px-4 py-2.5">
+          <DialogTitle className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
             Result · {results.length} pull{results.length === 1 ? "" : "s"}
-          </span>
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            What this summon gave you.
+          </DialogDescription>
           {revealing ? (
             <Button variant="ghost" size="xs" onClick={skip}>
               Skip ▸▸
@@ -201,13 +210,16 @@ export default function PullReveal({
                     backfaceVisibility: "hidden",
                     ...(hue ? { borderTopColor: hue } : {}),
                   }}
-                  className={`flex flex-col overflow-hidden border border-hairline bg-inset ${
-                    isCharacterHit(outcome) ? "border-t-2" : ""
-                  } ${isCharacterHit(outcome) && outcome.isNew ? "shadow-[inset_0_0_0_1px_var(--color-el-light)]" : ""}`}
+                  // A new unit is lifted on the reward gold; a repeat is not.
+                  className={cn(
+                    "flex flex-col overflow-hidden border-2 border-rule bg-muted",
+                    isCharacterHit(outcome) && "border-t-4",
+                    isCharacterHit(outcome) && outcome.isNew && "border-border ink-slab-reward",
+                  )}
                 >
                   {isCharacterHit(outcome) ? (
                     <>
-                      <div className="relative aspect-square overflow-hidden bg-void">
+                      <div className="relative aspect-square overflow-hidden bg-card-foreground">
                         {art ? (
                           <Image
                             src={art}
@@ -218,7 +230,7 @@ export default function PullReveal({
                             className="object-cover object-top"
                           />
                         ) : (
-                          <span className="flex h-full w-full items-center justify-center font-heading text-3xl text-readout-dim">
+                          <span className="flex h-full w-full items-center justify-center font-heading text-3xl text-ground-dim">
                             {(character?.name ?? "?").charAt(0)}
                           </span>
                         )}
@@ -234,16 +246,19 @@ export default function PullReveal({
                             status line below - so it truncates rather than
                             wraps. */}
                         {character?.heading ? (
-                          <p className="truncate font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+                          <p className="truncate font-body text-micro font-bold uppercase tracking-label text-muted-foreground">
                             {character.heading}
                           </p>
                         ) : null}
-                        <p className="truncate font-heading text-sm leading-tight tracking-title text-readout-strong">
+                        <p className="truncate font-heading text-sm leading-tight tracking-title">
                           {character?.name ?? outcome.characterId}
                         </p>
                         {/* The thing the old reveal threw away. */}
                         <p
-                          className={`font-body text-[9px] font-bold uppercase tracking-label ${outcome.isNew ? "text-el-light" : "text-signal"}`}
+                          className={cn(
+                            "inline-block font-body text-micro font-bold uppercase tracking-label",
+                            outcome.isNew ? "bg-el-light/55 px-1" : "text-muted-foreground",
+                          )}
                         >
                           {outcome.isNew ? "New" : "+1 Coin"}
                         </p>
@@ -251,7 +266,7 @@ export default function PullReveal({
                     </>
                   ) : (
                     <>
-                      <div className="flex aspect-square items-center justify-center bg-void text-readout-muted">
+                      <div className="flex aspect-square items-center justify-center border-b border-rule bg-card text-muted-foreground">
                         <ItemIcon
                           id={
                             outcome.kind === "coin" ? "coin" : outcome.materialId
@@ -268,12 +283,12 @@ export default function PullReveal({
                         />
                       </div>
                       <div className="px-1.5 py-1">
-                        <p className="truncate font-body text-[10px] font-semibold leading-tight text-readout">
+                        <p className="truncate font-body text-label font-bold leading-tight">
                           {outcome.kind === "coin"
                             ? "Coin"
                             : materialLabel(outcome.materialId)}
                         </p>
-                        <p className="font-body text-[9px] font-bold uppercase tracking-label tabular-nums text-readout-muted">
+                        <p className="font-body text-micro font-bold uppercase tracking-label tabular-nums text-muted-foreground">
                           ×{outcome.amount.toLocaleString()}
                         </p>
                       </div>
@@ -285,11 +300,11 @@ export default function PullReveal({
           </div>
 
           {/* "What did that actually get me", without counting cards. */}
-          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-hairline pt-3">
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-rule pt-3">
             <Stat
               value={`${summary.newUnits}`}
               label={summary.newUnits === 1 ? "new unit" : "new units"}
-              tone={summary.newUnits > 0 ? "signal" : undefined}
+              tone={summary.newUnits > 0 ? "reward" : undefined}
             />
             <Stat
               value={`${summary.ultRanks}`}
@@ -300,12 +315,13 @@ export default function PullReveal({
           </div>
         </div>
 
-        <div className="flex shrink-0 gap-2 border-t border-hairline bg-inset px-3 py-2.5">
-          <Button variant="ghost" size="sm" onClick={onClose} className="flex-1">
+        <div className="flex shrink-0 gap-2 border-t-2 border-border bg-muted px-3 py-2.5">
+          <Button variant="secondary" size="sm" onClick={onClose} className="flex-1">
             Done
           </Button>
+          {/* Draw again is the loop this screen exists to serve, so it is the
+              primary action (ruling #154). */}
           <Button
-            variant="secondary"
             size="sm"
             onClick={onDrawAgain}
             disabled={!canDrawAgain || revealing}
@@ -315,7 +331,7 @@ export default function PullReveal({
           </Button>
         </div>
       </div>
-    </div>,
-    document.body,
+      </DialogContent>
+    </Dialog>
   );
 }

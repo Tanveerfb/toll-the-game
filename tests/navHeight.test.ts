@@ -55,7 +55,10 @@ describe("nav height is declared once, not repeated", () => {
     const users = files.filter((rel) =>
       source(rel).includes("screen-below-nav"),
     );
-    expect(users.length).toBeGreaterThanOrEqual(3);
+    // 2, not 3, since 2026-09-26: the error page moved onto `Screen`, which is
+    // the point of `Screen`, so the direct users are `Screen` itself and the
+    // login page's full-bleed column. Zero is still the failure this catches.
+    expect(users.length).toBeGreaterThanOrEqual(2);
   });
 
   it("globals.css defines the variable and the class that reads it", () => {

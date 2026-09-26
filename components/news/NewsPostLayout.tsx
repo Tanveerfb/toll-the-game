@@ -1,7 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import NewsKindBadge from "@/components/news/NewsKindBadge";
+import { buttonVariants } from "@/components/ui/button";
+import { panelVariants } from "@/components/ui/Panel";
 import { Screen } from "@/components/ui/Screen";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 import type { NewsFeedEntry, NewsKind } from "@/lib/news/feed";
+import { cn } from "@/lib/utils";
 
 interface NewsPostLayoutProps {
   title: string;
@@ -16,15 +21,6 @@ interface NewsPostLayoutProps {
   newer?: NewsFeedEntry | null;
   children: ReactNode;
 }
-
-const KIND_LABEL: Record<NewsKind, string> = {
-  update: "Update",
-  notice: "Notice",
-};
-const KIND_TONE: Record<NewsKind, string> = {
-  update: "border-el-blue/45 text-el-blue",
-  notice: "border-role-ultimate/45 text-role-ultimate",
-};
 
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -52,14 +48,16 @@ function StepLink({
   return (
     <Link
       href={entry.href}
-      className={`chamfer group block border border-edge bg-panel px-3 py-2.5 transition-colors hover:border-edge-strong ${
-        direction === "newer" ? "text-right" : ""
-      }`}
+      className={cn(
+        panelVariants({ surface: "paper", density: "tight", press: true }),
+        "block",
+        direction === "newer" && "text-right",
+      )}
     >
-      <span className="block font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
+      <span className="block font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
         {direction === "older" ? "← Older" : "Newer →"}
       </span>
-      <span className="mt-0.5 block font-heading text-lg tracking-title text-readout-strong transition-colors group-hover:text-signal">
+      <span className="mt-0.5 block font-heading text-lg tracking-title">
         {entry.title}
       </span>
     </Link>
@@ -86,42 +84,46 @@ export default function NewsPostLayout({
     <Screen width="read" contentClassName="gap-0">
       <Link
         href="/news"
-        className="chamfer inline-flex min-h-11 items-center border border-edge px-3 font-body text-[11px] font-bold uppercase tracking-eyebrow text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+        className={cn(buttonVariants({ variant: "outline", size: "sm" }), "self-start")}
       >
         ← News
       </Link>
 
-      <header className="mt-4 border-l-2 border-signal pl-3">
-        <span
-          className={`inline-block border px-1.5 py-px font-body text-[9px] font-bold uppercase tracking-label ${KIND_TONE[kind]}`}
-        >
-          {KIND_LABEL[kind]}
-        </span>
-        <h1 className="mt-1.5 font-heading text-4xl leading-none tracking-title text-readout-strong">
-          {title}
-        </h1>
-        <p className="mt-1.5 font-body text-[11px] font-bold uppercase tracking-label text-readout-muted">
-          {formatDate(date)}
-          <span className="mx-2 text-edge-strong">·</span>
-          {readingMinutes} min read
-        </p>
+      <header className="mt-4 flex flex-col items-start gap-2">
+        <NewsKindBadge kind={kind} />
+        <SectionHeader title={title}>
+          <p className="mt-2 font-body text-caption font-bold uppercase tracking-label text-ground-dim">
+            {formatDate(date)}
+            <span className="mx-2">·</span>
+            {readingMinutes} min read
+          </p>
+        </SectionHeader>
       </header>
 
-      {/* The summary already exists in frontmatter and was only ever shown on
-          the feed. Set at reading size here, the post opens by saying what
-          it's about instead of starting mid-argument. */}
-      {summary ? (
-        <p className="mt-4 border-b border-hairline pb-4 font-body text-[17px] leading-relaxed text-readout">
-          {summary}
-        </p>
-      ) : null}
+      {/* The post is read on one paper sheet, like the archive's kit
+          document (ruling #154); `prose.tsx` takes the sheet's ink. */}
+      <article
+        className={cn(
+          panelVariants({ surface: "paper", density: "none", lift: "slab" }),
+          "mt-5 px-4 pb-5 pt-4 md:px-6",
+        )}
+      >
+        {/* The summary already exists in frontmatter and was only ever shown
+            on the feed. Set at reading size here, the post opens by saying
+            what it's about instead of starting mid-argument. */}
+        {summary ? (
+          <p className="border-b border-rule pb-4 font-body text-lg leading-relaxed">
+            {summary}
+          </p>
+        ) : null}
 
-      <div className="mt-2">{children}</div>
+        <div className="mt-2">{children}</div>
+      </article>
 
       {older || newer ? (
         <nav
           aria-label="Nearby posts"
-          className="mt-8 grid grid-cols-1 gap-2.5 border-t border-hairline pt-4 sm:grid-cols-2"
+          className="mt-8 grid grid-cols-1 gap-2.5 border-t-2 border-ground-line pt-4 sm:grid-cols-2"
         >
           {older ? <StepLink entry={older} direction="older" /> : <span />}
           {newer ? <StepLink entry={newer} direction="newer" /> : null}

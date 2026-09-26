@@ -3,7 +3,12 @@
 import React from "react";
 import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { panelVariants } from "@/components/ui/Panel";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { cn } from "@/lib/utils";
 import {
+  HEAL_NUMBER_CLASS,
   SKILL_TYPE_CHIP,
   skillTypeCategory,
 } from "@/lib/game/skillTypeStyle";
@@ -69,9 +74,18 @@ export interface KitPassiveView {
 
 const UI = {
   fieldLabel:
-    "font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted",
-  textValue: "font-body text-sm text-readout",
+    "font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground",
+  textValue: "font-body text-sm",
 } as const;
+
+/**
+ * **Kit text always sits on paper** (Shōnen Ink, ruling #154). The keyword
+ * marker (`ink-marker`, his pick on 2026-09-26) is drawn for paper and is
+ * unreadable on the dark ground, and these blocks render in the archive AND
+ * inside the battle's detail panel, which is still dark until phase 4. So each
+ * block owns its own paper card rather than trusting its host to provide one.
+ */
+const KIT_CARD = panelVariants({ surface: "paper", density: "none" });
 
 // Colours come from `lib/game/skillTypeStyle.ts` since ruling #133 — one
 // taxonomy for the card, the archive and the kit document. The map that used
@@ -125,9 +139,8 @@ export function SkillBlock({
       ? null
       : buildRankedSkillDescriptions(skill);
   const chipClass = SKILL_TYPE_CHIP[skillTypeCategory(skill)];
-  // Heal skills show their recovery amount in green (7DS convention).
   const numberClassName =
-    skill.type === "heal" ? "font-semibold text-emerald-400" : undefined;
+    skill.type === "heal" ? HEAL_NUMBER_CLASS : undefined;
 
   // Keyword footnotes (spec §5): one glossary line per highlighted term,
   // computed across every rank's wording (a term can appear at only one
@@ -147,28 +160,24 @@ export function SkillBlock({
   const footnotes = extractKeywordFootnotes(footnoteText, footnoteGlossary);
 
   return (
-    <div className="border border-hairline bg-inset/60">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline px-3 py-2">
+    <div className={KIT_CARD}>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rule px-3 py-2">
         <div className="flex items-center gap-2">
           <span
-            className={`px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-label ${chipClass}`}
+            className={`border border-border px-1.5 py-0.5 font-body text-label font-bold uppercase tracking-label ${chipClass}`}
           >
             {tag}
           </span>
-          <p className="font-heading text-lg tracking-title text-readout-strong">
+          <p className="font-heading text-lg tracking-title">
             {skill.skillName}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <MechanicsTags skill={skill} />
           {onDetails ? (
-            <button
-              type="button"
-              onClick={onDetails}
-              className="flex min-h-11 shrink-0 chamfer items-center border border-edge px-3 font-body text-[10px] uppercase tracking-label text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
-            >
+            <Button variant="outline" size="xs" onClick={onDetails}>
               Details
-            </button>
+            </Button>
           ) : null}
         </div>
       </div>
@@ -180,7 +189,7 @@ export function SkillBlock({
               key={`${skill.skillName}-rank-${index + 1}`}
               className="grid grid-cols-[44px_1fr] items-baseline gap-2"
             >
-              <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+              <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
                 R{index + 1}
               </span>
               <KeyworkHighlighter
@@ -219,14 +228,16 @@ function FootnoteList({
 }): React.ReactNode {
   if (footnotes.length === 0) return null;
   return (
-    <div className="mt-1.5 space-y-0.5 border-t border-hairline pt-1.5">
+    <div className="mt-1.5 space-y-0.5 border-t border-rule pt-1.5">
       {footnotes.map((entry) => (
-        <p key={entry.keyword} className="font-body text-xs text-readout-dim">
-          <span className="mr-1 text-readout-muted">※</span>
-          <span className="font-semibold text-sky-300">
+        <p key={entry.keyword} className="font-body text-xs text-muted-foreground">
+          <span className="mr-1">※</span>
+          {/* The term wears the keyword's marker, so the footnote visibly
+              explains the word marked in the text above it. */}
+          <span className="ink-marker px-0.5 font-bold">
             {formatFootnoteLabel(entry.keyword)}
           </span>
-          <span className="text-readout-dim"> — {entry.meaning}</span>
+          <span> — {entry.meaning}</span>
         </p>
       ))}
     </div>
@@ -243,24 +254,20 @@ function PanelSection({
   children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <section className="border border-hairline bg-inset/60">
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-hairline bg-panel-raised/50 px-3 py-2">
-        <h3 className="font-heading text-base tracking-label text-readout-strong">
-          {title}
-        </h3>
+    // The section title is on the ground (the skewed paper label); the
+    // blocks under it are paper cards of their own.
+    <section className="flex flex-col gap-2.5">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <SectionHeader size="section" title={title} />
         {subtitle}
       </div>
-      <div className="p-3">{children}</div>
+      {children}
     </section>
   );
 }
 
 function UncancellableBadge(): React.JSX.Element {
-  return (
-    <span className="rounded-sm border border-rose-500/60 px-1 py-px font-body text-[9px] font-bold uppercase tracking-title text-rose-300">
-      Uncancellable
-    </span>
-  );
+  return <Badge variant="ink">Uncancellable</Badge>;
 }
 
 /**
@@ -275,9 +282,13 @@ export function PassiveProse({
   passive,
   showName,
   onDetails,
+  bare = false,
 }: {
   passive?: KitPassiveView;
   showName: boolean;
+  /** The host is already a paper sheet (the archive's kit document), so the
+   *  block drops its own card rather than nesting paper in paper. */
+  bare?: boolean;
   /** Opens the shared DetailOverlay's categorized Passive Details view
    *  (spec §5). Omitted everywhere else — no behavior change there. */
   onDetails?: () => void;
@@ -290,25 +301,21 @@ export function PassiveProse({
     .filter(Boolean);
 
   return (
-    <div className="space-y-2">
+    <div className={bare ? "space-y-2" : cn(KIT_CARD, "space-y-2 p-3")}>
       {(showName && passive?.name) || uncancellable || onDetails ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             {showName && passive?.name ? (
-              <p className="font-heading text-sm tracking-title text-signal">
+              <p className="font-heading text-base tracking-title">
                 {passive.name}
               </p>
             ) : null}
             {uncancellable ? <UncancellableBadge /> : null}
           </div>
           {onDetails ? (
-            <button
-              type="button"
-              onClick={onDetails}
-              className="flex min-h-11 shrink-0 chamfer items-center border border-edge px-3 font-body text-[10px] uppercase tracking-label text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
-            >
+            <Button variant="outline" size="xs" onClick={onDetails}>
               Details
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
@@ -318,11 +325,11 @@ export function PassiveProse({
           {parsePassiveMarkup(description).map((section, sIdx) => (
             <div key={`section-${sIdx}`} className="space-y-1">
               {section.heading ? (
-                <p className="font-body text-[11px] font-bold uppercase tracking-label text-readout-dim">
+                <p className="font-body text-caption font-bold uppercase tracking-label text-muted-foreground">
                   {section.heading}
                 </p>
               ) : null}
-              <ul className="space-y-1.5 border-l border-edge pl-3">
+              <ul className="space-y-1.5 border-l-2 border-muted-foreground/40 pl-3">
                 {section.bullets.map((bullet, bIdx) => (
                   <li key={`bullet-${bIdx}`} className="list-none">
                     <KeyworkHighlighter
@@ -335,7 +342,7 @@ export function PassiveProse({
                       <KeyworkHighlighter
                         key={`comment-${cIdx}`}
                         text={comment}
-                        className="mt-0.5 block pl-3 font-body text-xs italic text-readout-muted"
+                        className="mt-0.5 block pl-3 font-body text-xs italic text-muted-foreground"
                         glossary={passiveGlossary}
                         showStatArrows
                       />
@@ -351,7 +358,7 @@ export function PassiveProse({
           para.startsWith("※") ? (
             <p
               key={`para-${index}`}
-              className="font-body text-xs italic text-readout-muted"
+              className="font-body text-xs italic text-muted-foreground"
             >
               {para}
             </p>
@@ -435,7 +442,7 @@ export default function KitDetails({
         title={multi ? "Passives" : "Passive"}
         subtitle={
           subtitleName ? (
-            <span className="font-body text-xs uppercase tracking-label text-readout-dim">
+            <span className="font-body text-xs uppercase tracking-label text-ground-dim">
               {subtitleName}
             </span>
           ) : undefined
@@ -474,18 +481,18 @@ export function PassiveDetailSections({
 }): React.JSX.Element {
   const sections = buildPassiveDetailSections(passive);
   return (
-    <div className="space-y-4">
+    <div className={cn(KIT_CARD, "space-y-4 p-3")}>
       {passive.name ? (
-        <p className="font-heading text-sm tracking-title text-signal">
+        <p className="font-heading text-base tracking-title">
           {passive.name}
         </p>
       ) : null}
       {sections.map((section) => (
         <div key={section.header}>
-          <h4 className="mb-1.5 font-body text-[11px] font-bold uppercase tracking-label text-readout-dim">
+          <h4 className="mb-1.5 font-body text-caption font-bold uppercase tracking-label text-muted-foreground">
             {section.header}
           </h4>
-          <ul className="space-y-1 border-l border-edge pl-3">
+          <ul className="space-y-1 border-l-2 border-muted-foreground/40 pl-3">
             {section.bullets.map((bullet, index) => (
               <li key={index} className="list-none">
                 <KeyworkHighlighter

@@ -2,7 +2,20 @@
 
 import React from "react";
 import Image from "next/image";
-import DetailOverlay from "@/components/game/DetailOverlay";
+import PresetNameDialog from "@/components/game/PresetNameDialog";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { panelVariants } from "@/components/ui/Panel";
+import { Toggle } from "@/components/ui/toggle";
+import { useReturnFocus } from "@/hooks/useReturnFocus";
+import { cn } from "@/lib/utils";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import {
   getPlayableCharacters,
@@ -31,6 +44,11 @@ import { usePlayerStore } from "@/store/playerStore";
  *
  * It picks ONE team. The practice bench composes two of them — picking your
  * side and the opposing side are the same job with different sources.
+ *
+ * **Shōnen Ink (ruling #154):** the picker is its own paper panel, so it reads
+ * on any screen that hosts it (the practice bench and the event brief both
+ * sit on the ground). Its two overlays are the shadcn `Dialog`, the preset
+ * chips are the shadcn `Toggle`, and every other control is a `Button`.
  */
 
 export interface TeamPickerProps {
@@ -58,12 +76,6 @@ export interface TeamPickerProps {
   side?: "player" | "enemy";
 }
 
-const CHIP =
-  "chamfer min-h-11 border px-2.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-label transition-colors";
-const CHIP_OFF =
-  "border-edge bg-void/60 text-readout-dim hover:border-edge-strong hover:text-readout";
-const CHIP_ON = "border-signal bg-signal/10 text-signal";
-
 function Portrait({
   character,
   className = "",
@@ -75,7 +87,7 @@ function Portrait({
   if (!art) {
     return (
       <span
-        className={`flex items-center justify-center bg-inset font-heading text-2xl text-readout-dim ${className}`}
+        className={`flex items-center justify-center bg-muted font-heading text-2xl text-muted-foreground ${className}`}
       >
         {character.name.charAt(0)}
       </span>
@@ -104,7 +116,7 @@ function PresetFaces({ ids }: { ids: string[] }): React.JSX.Element {
         return (
           <span
             key={`${id}-${i}`}
-            className="block h-[18px] w-[18px] overflow-hidden border border-hairline bg-inset"
+            className="block size-[18px] overflow-hidden border border-border bg-muted"
           >
             {art ? (
               <Image
@@ -115,7 +127,7 @@ function PresetFaces({ ids }: { ids: string[] }): React.JSX.Element {
                 className="h-full w-full object-cover object-top"
               />
             ) : (
-              <span className="block text-center text-[9px] text-readout-muted">
+              <span className="block text-center text-micro text-muted-foreground">
                 {character?.name.charAt(0) ?? "?"}
               </span>
             )}
@@ -138,6 +150,19 @@ export default function TeamPicker({
 }: TeamPickerProps): React.JSX.Element {
   const [rosterOpen, setRosterOpen] = React.useState(false);
   const [manageOpen, setManageOpen] = React.useState(false);
+  /** Which naming the name dialog is doing, if any. */
+  const [naming, setNaming] = React.useState<
+    { kind: "save" } | { kind: "rename"; preset: TeamPreset } | null
+  >(null);
+  // Four slot buttons open the roster, so there is no single trigger for
+  // radix to return focus to.
+  const returnFocus = useReturnFocus();
+  // The name dialog opens from "+ Save current" or from a Rename button.
+  const nameFocus = useReturnFocus();
+  const openRoster = (event: React.MouseEvent<HTMLElement>) => {
+    returnFocus.remember(event.currentTarget);
+    setRosterOpen(true);
+  };
   const [issues, setIssues] = React.useState<PresetIssue[]>([]);
   const [activePresetId, setActivePresetId] = React.useState<string | null>(
     null,
@@ -229,78 +254,86 @@ export default function TeamPicker({
     noteTeamPresetUsed(preset.id);
   };
 
-  const saveCurrent = () => {
+  const saveCurrent = (event: React.MouseEvent<HTMLElement>) => {
     if (team.length === 0) return;
-    const name = window.prompt("Name this preset", `Team ${presets.length + 1}`);
-    if (name === null) return;
+    nameFocus.remember(event.currentTarget);
+    setNaming({ kind: "save" });
+  };
+
+  /** Returns an error to show in the name dialog, or null when it worked. */
+  const submitName = (name: string): string | null => {
+    if (!naming) return null;
+    if (naming.kind === "rename") {
+      renameTeamPreset(naming.preset.id, name);
+      return null;
+    }
     const ok = saveTeamPreset(
       name,
       team.map((c) => c.id),
     );
-    if (!ok) {
-      window.alert(
-        `You already have ${MAX_PRESETS} presets. Delete one to save another.`,
-      );
-    }
+    return ok
+      ? null
+      : `You already have ${MAX_PRESETS} presets. Delete one to save another.`;
   };
 
 
   return (
     <>
-      <div className="chamfer-lg border border-signal bg-panel">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline px-3 py-2">
-          <h3 className="font-heading text-lg tracking-label text-signal">
-            {title}
-          </h3>
-          <span className="font-body text-[11px] font-bold uppercase tracking-label tabular-nums text-readout-muted">
+      <div className={panelVariants({ surface: "paper", density: "none", lift: "slab" })}>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-border px-3 py-2">
+          <h3 className="font-heading text-lg tracking-label">{title}</h3>
+          <span className="font-body text-caption font-bold uppercase tracking-label tabular-nums">
             {`${team.length} / ${TEAM_CAP}`}
-            <span className="ml-2 text-readout-dim">
+            <span className="ml-2 text-muted-foreground">
               {fieldCap} on field
             </span>
           </span>
         </div>
 
         {showPresets ? (
-          <div className="flex flex-wrap items-center gap-1.5 border-b border-hairline px-3 py-2">
-            <span className="mr-1 font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
+          <div className="flex flex-wrap items-center gap-1.5 border-b border-rule px-3 py-2">
+            <span className="mr-1 font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
               Preset
             </span>
             {presets.map((preset) => (
-              <button
+              <Toggle
                 key={preset.id}
-                type="button"
-                onClick={() => applyPreset(preset)}
-                className={`${CHIP} flex items-center gap-2 ${activePresetId === preset.id ? CHIP_ON : CHIP_OFF}`}
+                variant="outline"
+                size="sm"
+                pressed={activePresetId === preset.id}
+                onPressedChange={() => applyPreset(preset)}
+                className="gap-2"
               >
                 <PresetFaces ids={preset.memberIds} />
                 {preset.name}
-              </button>
+              </Toggle>
             ))}
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={saveCurrent}
               disabled={team.length === 0}
-              className={`${CHIP} border-dashed ${CHIP_OFF} disabled:pointer-events-none disabled:opacity-40`}
+              className="border-dashed"
             >
               + Save current
-            </button>
+            </Button>
             {/* With nothing saved, the row was a bare label and a dashed `+`,
                 which reads as a missing feature rather than an empty one
                 (Tanveer, 2026-08-13). Say what a preset is for instead. */}
             {presets.length === 0 ? (
-              <span className="font-body text-[11px] text-readout-muted">
+              <span className="font-body text-caption text-muted-foreground">
                 Save a team here to load it in any battle.
               </span>
             ) : null}
             {presets.length > 0 ? (
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={() => setManageOpen(true)}
                 aria-label="Manage presets"
-                className={`${CHIP} ${CHIP_OFF}`}
               >
                 ⋯
-              </button>
+              </Button>
             ) : null}
           </div>
         ) : null}
@@ -314,12 +347,12 @@ export default function TeamPicker({
                 <button
                   key={`empty-${index}`}
                   type="button"
-                  onClick={() => setRosterOpen(true)}
-                  className="flex h-24 flex-col items-center justify-center border border-dashed border-edge text-3xl leading-none text-readout-muted transition-colors hover:border-signal hover:text-signal"
+                  onClick={openRoster}
+                  className="flex h-24 flex-col items-center justify-center border-2 border-dashed border-muted-foreground text-3xl leading-none text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-card-foreground"
                 >
                   +
                   {benched ? (
-                    <span className="mt-1 font-body text-[9px] font-bold uppercase tracking-label">
+                    <span className="mt-1 font-body text-micro font-bold uppercase tracking-label">
                       Sub
                     </span>
                   ) : null}
@@ -330,8 +363,8 @@ export default function TeamPicker({
               <button
                 key={`${character.id}-${index}`}
                 type="button"
-                onClick={() => setRosterOpen(true)}
-                className={`relative flex h-24 flex-col justify-end overflow-hidden border bg-inset ${benched ? "border-edge" : "border-signal/60"}`}
+                onClick={openRoster}
+                className={`relative flex h-24 flex-col justify-end overflow-hidden border-2 bg-muted ${benched ? "border-rule" : "border-border"}`}
               >
                 <Portrait
                   character={character}
@@ -340,11 +373,13 @@ export default function TeamPicker({
                 {/* The bench is real now that three units take the field, so
                     the fourth slot says so rather than looking identical. */}
                 {benched ? (
-                  <span className="absolute left-0 top-0 z-10 border-b border-r border-edge bg-void/85 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-label text-readout-dim">
+                  <span className="absolute left-0 top-0 z-10 bg-card-foreground/85 px-1.5 py-0.5 font-body text-micro font-bold uppercase tracking-label text-card">
                     Sub
                   </span>
                 ) : null}
-                <span className="relative z-10 w-full bg-void/75 px-1 py-0.5 text-center font-heading text-xs tracking-title text-readout-strong">
+                {/* An ink strip lettered in paper: it sits on the portrait,
+                    not on the panel. */}
+                <span className="relative z-10 w-full bg-card-foreground/80 px-1 py-0.5 text-center font-heading text-xs tracking-title text-card">
                   {character.name}
                 </span>
               </button>
@@ -353,7 +388,7 @@ export default function TeamPicker({
         </div>
 
         {issues.length > 0 ? (
-          <p className="border-t border-hairline px-3 py-2 font-body text-[11px] leading-relaxed text-role-ultimate">
+          <Alert variant="info" className="mx-3 mb-3 w-auto">
             {issues.map((issue) => {
               const name =
                 catalog.find((c) => c.id === issue.characterId)?.name ??
@@ -361,19 +396,25 @@ export default function TeamPicker({
               return `${name} isn't on your roster. `;
             })}
             Those slots were left open — the preset itself is unchanged.
-          </p>
+          </Alert>
         ) : null}
       </div>
 
-      {rosterOpen ? (
-        <DetailOverlay
-          title={source === "catalog" ? "All characters" : "Your roster"}
-          subtitle={`Tap to add or remove · ${team.length}/${TEAM_CAP} picked`}
-          size="wide"
-          onClose={() => setRosterOpen(false)}
+      <Dialog open={rosterOpen} onOpenChange={setRosterOpen}>
+        <DialogContent
+          className="sm:max-w-2xl"
+          onCloseAutoFocus={returnFocus.onCloseAutoFocus}
         >
+          <DialogHeader>
+            <DialogTitle>
+              {source === "catalog" ? "All characters" : "Your roster"}
+            </DialogTitle>
+            <DialogDescription className="text-caption font-bold uppercase tracking-eyebrow">
+              Tap to add or remove · {team.length}/{TEAM_CAP} picked
+            </DialogDescription>
+          </DialogHeader>
           {selectable.length === 0 ? (
-            <p className="py-8 text-center font-body text-sm text-readout-muted">
+            <p className="py-8 text-center font-body text-sm text-muted-foreground">
               No characters available yet.
             </p>
           ) : (
@@ -388,37 +429,41 @@ export default function TeamPicker({
                     key={character.id}
                     type="button"
                     disabled={disabled}
+                    aria-pressed={isPicked}
                     onClick={() => toggle(character)}
-                    className={`relative flex h-32 flex-col justify-end overflow-hidden border bg-inset text-left transition-colors ${
+                    // Picked is the action yellow, the same as every other
+                    // "selected" in the game.
+                    className={cn(
+                      "relative flex h-32 flex-col justify-end overflow-hidden border-2 bg-muted text-left transition-colors",
                       isPicked
-                        ? "border-signal"
+                        ? "border-border ink-slab-primary"
                         : disabled
-                          ? "cursor-not-allowed border-hairline opacity-40"
-                          : "border-edge hover:border-edge-strong"
-                    }`}
+                          ? "cursor-not-allowed border-rule opacity-40"
+                          : "border-rule hover:border-border",
+                    )}
                   >
                     <Portrait
                       character={character}
                       className="absolute inset-0 h-full w-full"
                     />
                     {isPicked ? (
-                      <span className="absolute right-0 top-0 z-10 bg-signal px-1.5 py-0.5 font-body text-[10px] font-bold tabular-nums text-void">
+                      <span className="absolute right-0 top-0 z-10 border-b-2 border-l-2 border-border bg-primary px-1.5 py-0.5 font-body text-label font-bold tabular-nums text-primary-foreground">
                         {pickIndex + 1}
                       </span>
                     ) : null}
-                    <span className="relative z-10 w-full bg-void/80 px-1.5 py-1">
+                    <span className="relative z-10 w-full bg-card-foreground/85 px-1.5 py-1 text-card">
                       {/* Heading above the name (#141). The roster picker's
                           tile already carries a stat line, so this is a third
                           line on a small tile - flagged for his eye. */}
                       {character.heading ? (
-                        <span className="block truncate font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+                        <span className="block truncate font-body text-micro font-bold uppercase tracking-label opacity-70">
                           {character.heading}
                         </span>
                       ) : null}
-                      <span className="block truncate font-heading text-sm tracking-title text-readout-strong">
+                      <span className="block truncate font-heading text-sm tracking-title">
                         {character.name}
                       </span>
-                      <span className="block font-body text-[9px] font-bold uppercase tracking-label tabular-nums text-readout-muted">
+                      <span className="block font-body text-micro font-bold uppercase tracking-label tabular-nums opacity-80">
                         {stats.atk} / {stats.def} / {stats.hp}
                       </span>
                     </span>
@@ -427,52 +472,77 @@ export default function TeamPicker({
               })}
             </div>
           )}
-        </DetailOverlay>
-      ) : null}
+        </DialogContent>
+      </Dialog>
 
-      {manageOpen ? (
-        <DetailOverlay
-          title="Team presets"
-          subtitle={`${presets.length} of ${MAX_PRESETS} saved`}
-          onClose={() => setManageOpen(false)}
-        >
+      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Team presets</DialogTitle>
+            <DialogDescription className="text-caption font-bold uppercase tracking-eyebrow">
+              {presets.length} of {MAX_PRESETS} saved
+            </DialogDescription>
+          </DialogHeader>
           <div className="flex flex-col">
             {presets.map((preset) => (
               <div
                 key={preset.id}
-                className="flex items-center gap-3 border-b border-hairline py-2"
+                className="flex items-center gap-3 border-b border-rule py-2 last:border-b-0"
               >
                 <PresetFaces ids={preset.memberIds} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-heading text-base tracking-title text-readout-strong">
+                  <span className="block truncate font-heading text-base tracking-title">
                     {preset.name}
                   </span>
-                  <span className="block font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+                  <span className="block font-body text-label font-bold uppercase tracking-label text-muted-foreground">
                     {preset.memberIds.length} units · used {preset.useCount}×
                   </span>
                 </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const name = window.prompt("Rename preset", preset.name);
-                    if (name !== null) renameTeamPreset(preset.id, name);
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(event) => {
+                    nameFocus.remember(event.currentTarget);
+                    setNaming({ kind: "rename", preset });
                   }}
-                  className={`${CHIP} ${CHIP_OFF}`}
                 >
                   Rename
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
                   onClick={() => deleteTeamPreset(preset.id)}
-                  className={`${CHIP} border-edge text-readout-dim hover:border-role-attack hover:text-role-attack`}
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             ))}
           </div>
-        </DetailOverlay>
-      ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* The browser's own prompt until 2026-09-26: unthemed, no 44px floor,
+          and a system sheet on some phones (his pick: an in-game dialog). */}
+      <PresetNameDialog
+        open={naming !== null}
+        onOpenChange={(open) => {
+          if (!open) setNaming(null);
+        }}
+        title={naming?.kind === "rename" ? "Rename preset" : "Save preset"}
+        description={
+          naming?.kind === "rename"
+            ? undefined
+            : "Saves this team so you can load it in any battle."
+        }
+        initialName={
+          naming?.kind === "rename"
+            ? naming.preset.name
+            : `Team ${presets.length + 1}`
+        }
+        submitLabel={naming?.kind === "rename" ? "Rename" : "Save"}
+        onSubmit={submitName}
+        onCloseAutoFocus={nameFocus.onCloseAutoFocus}
+      />
     </>
   );
 }

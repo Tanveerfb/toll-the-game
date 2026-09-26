@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
 import { PROSE, ProseTable } from "@/components/ui/prose";
 import {
-  SKILL_TYPE_TEXT,
+  HEAL_NUMBER_CLASS,
+  SKILL_TYPE_CHIP,
   skillTypeCategory,
 } from "@/lib/game/skillTypeStyle";
 import type { CharacterSkillData } from "@/lib/game/characterCatalog";
@@ -76,15 +77,18 @@ export default function SkillDocument({
   const metaParts = [...new Set([skill.type, ...getMechanicTypes(skill)])]
     .filter((part) => !(isUlt && part === "ultimate"))
     .map(toTitleCase);
-  const accent = SKILL_TYPE_TEXT[skillTypeCategory(skill)];
-  // Heal amounts read green, the 7DS convention.
+  // The slot as a chip in the class's hue with ink on it (ruling #154): this
+  // renders on the archive's paper sheet, where the hue as text would not read.
+  const chip = SKILL_TYPE_CHIP[skillTypeCategory(skill)];
   const numberClassName =
-    skill.type === "heal" ? "font-semibold text-role-heal" : undefined;
+    skill.type === "heal" ? HEAL_NUMBER_CLASS : undefined;
 
   return (
     <div className="mt-5 first:mt-0">
-      <h3 className="flex flex-wrap items-baseline gap-x-2 border-l border-edge pl-2.5 font-heading text-lg tracking-title text-readout-strong">
-        <span className={`font-body text-[10px] font-bold uppercase tracking-label ${accent}`}>
+      <h3 className="flex flex-wrap items-center gap-x-2 font-heading text-lg tracking-title">
+        <span
+          className={`border border-border px-1.5 py-0.5 font-body text-label font-bold uppercase tracking-label ${chip}`}
+        >
           {slot}
         </span>
         {skill.skillName}
@@ -94,12 +98,12 @@ export default function SkillDocument({
           a `debuff` mechanic would otherwise read "Debuff · Debuff", and an
           ultimate's `ultimate` type just restates the ULT slot chip. */}
       {metaParts.length > 0 ? (
-        <p className="mt-0.5 pl-3 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+        <p className="mt-0.5 font-body text-label font-bold uppercase tracking-label text-muted-foreground">
           {metaParts.join(" · ")}
         </p>
       ) : null}
 
-      <div className="mt-1.5 pl-3">
+      <div className="mt-1.5">
         {lines ? (
           <ProseTable>
             <thead>
@@ -115,14 +119,14 @@ export default function SkillDocument({
                 return (
                 <tr
                   key={`${skill.skillName}-rank-${index + 1}`}
-                  className={isCurrent ? "bg-signal/10" : undefined}
+                  className={isCurrent ? "bg-primary/35" : undefined}
                 >
                   <td
-                    className={`${PROSE.td} font-body text-[11px] font-bold uppercase tracking-label ${isCurrent ? "text-signal" : "text-readout-muted"}`}
+                    className={`${PROSE.td} font-body text-caption font-bold uppercase tracking-label ${isCurrent ? "" : "text-muted-foreground"}`}
                   >
                     {rowLabel(index)}
                     {isCurrent ? (
-                      <span className="ml-1 text-signal" aria-label="current level">
+                      <span className="ml-1" aria-label="current level">
                         ◄
                       </span>
                     ) : null}
@@ -130,7 +134,7 @@ export default function SkillDocument({
                   <td className={PROSE.td}>
                     <KeyworkHighlighter
                       text={line}
-                      className="font-body text-[13px] leading-relaxed text-readout"
+                      className="font-body text-sm leading-relaxed"
                       numberClassName={numberClassName}
                       glossary={{
                         ...mechanicGlossary,
@@ -146,7 +150,7 @@ export default function SkillDocument({
         ) : (
           <KeyworkHighlighter
             text={buildSingleDescription(skill)}
-            className="font-body text-sm leading-relaxed text-readout"
+            className="font-body text-sm leading-relaxed"
             numberClassName={numberClassName}
             glossary={{
               ...mechanicGlossary,

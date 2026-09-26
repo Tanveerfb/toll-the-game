@@ -3,7 +3,15 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { panelVariants } from "@/components/ui/Panel";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import {
   LIMITED_MILESTONE_FINAL,
   LIMITED_MILESTONE_FIRST,
@@ -57,18 +65,18 @@ export default function DevGrantPanel(): React.JSX.Element | null {
   };
 
   return (
-    <Card className="border-2 border-sky-400 bg-black/50">
-      <CardHeader className="px-4 py-2.5">
-        <CardTitle className="text-lg tracking-label text-sky-200">
-          DEV GRANT PANEL
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3 p-4">
+    // Paper with a dashed ink edge: the one panel on the page that is not
+    // part of the game, and says so without a colour of its own.
+    <section className={cn(panelVariants({ surface: "paper", density: "none" }), "border-dashed")}>
+      <div className="border-b-2 border-border px-4 py-2.5">
+        <h2 className="font-heading text-lg tracking-label">Dev grant panel</h2>
+      </div>
+      <div className="flex flex-col gap-3 p-4">
         {/* Moved off TopNav 2026-09-01 (Tanveer) — developer tooling was
             holding permanent width in a 390px bar. The setting is global; only
             its control lives here. */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-hairline pb-3">
-          <span className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
+        <div className="flex flex-wrap items-center gap-2 border-b border-rule pb-3">
+          <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
             Enemy AI
           </span>
           <DuelToggle />
@@ -113,25 +121,29 @@ export default function DevGrantPanel(): React.JSX.Element | null {
           <Button variant="outline" onClick={() => spendStaminaAction(40)}>Simulate a run (-40 stamina)</Button>
         </div>
 
-        <div className="flex flex-wrap items-end gap-2 border-t border-hairline pt-3">
+        <div className="flex flex-wrap items-end gap-2 border-t border-rule pt-3">
+          <div className="flex flex-col gap-1">
+            <span className="font-body text-label uppercase tracking-label text-muted-foreground">Character</span>
+            {/* The shadcn select (ruling #154), not a native one. */}
+            <Select value={selectedCharId} onValueChange={setSelectedCharId}>
+              <SelectTrigger aria-label="Character" className="min-w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {getPlayableCharacters().map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <label className="flex flex-col gap-1">
-            <span className="font-body text-[10px] uppercase tracking-label text-readout-muted">Character</span>
-            <select
-              value={selectedCharId}
-              onChange={(e) => setSelectedCharId(e.target.value)}
-              className="border border-edge bg-inset px-2 py-1 text-sm text-readout-strong"
-            >
-              {getPlayableCharacters().map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="font-body text-[10px] uppercase tracking-label text-readout-muted">Level</span>
+            <span className="font-body text-label uppercase tracking-label text-muted-foreground">Level</span>
             <Input value={levelInput} onChange={(e) => setLevelInput(e.target.value)} className="w-16" />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="font-body text-[10px] uppercase tracking-label text-readout-muted">Ascension</span>
+            <span className="font-body text-label uppercase tracking-label text-muted-foreground">Ascension</span>
             <Input value={ascensionInput} onChange={(e) => setAscensionInput(e.target.value)} className="w-16" />
           </label>
           <Button variant="outline" onClick={setCharacterProgress}>Set</Button>
@@ -144,10 +156,10 @@ export default function DevGrantPanel(): React.JSX.Element | null {
           </Button>
         </div>
 
-        <p className="font-body text-xs text-readout-muted">
+        <p className="font-body text-xs text-muted-foreground">
           Gems {currencies.gems} • Coin {currencies.coin} • Roster: {roster.join(", ")}
         </p>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

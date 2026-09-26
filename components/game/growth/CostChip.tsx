@@ -10,8 +10,10 @@ import ItemIcon from "@/components/game/ItemIcon";
  * way — a count inside a button's label, and a bare "N owned" line — so the
  * same question got three answers in one modal (audit 2026-09-17).
  *
- * Short lands in `el-red`, because the question a player asks at a bill is
- * *which of these am I missing*, and that has to survive a glance.
+ * Short lands in red, because the question a player asks at a bill is
+ * *which of these am I missing*, and that has to survive a glance. A red FILL
+ * with ink on it since Shōnen Ink (ruling #154): red text does not read on
+ * paper.
  */
 export default function CostChip({
   id,
@@ -28,14 +30,14 @@ export default function CostChip({
   const short = owned < cost;
   return (
     <span
-      className={`flex items-center gap-1.5 border px-2 py-1 font-body text-xs tabular-nums ${
-        short ? "border-el-red/60 text-el-red" : "border-hairline text-readout"
+      className={`flex items-center gap-1.5 border-2 px-2 py-1 font-body text-xs tabular-nums ${
+        short ? "border-destructive bg-destructive/20" : "border-rule"
       }`}
     >
       <ItemIcon id={id} size={20} alt="" />
       <span className="font-bold">{cost.toLocaleString()}</span>
-      <span className={short ? "" : "text-readout-muted"}>{label}</span>
-      <span className={short ? "" : "text-readout-muted"}>
+      <span className={short ? "" : "text-muted-foreground"}>{label}</span>
+      <span className={short ? "font-bold" : "text-muted-foreground"}>
         ({owned.toLocaleString()})
       </span>
     </span>

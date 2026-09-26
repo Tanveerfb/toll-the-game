@@ -3,6 +3,9 @@
 import React from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { INK_TONE } from "@/components/ui/inkTone";
+import { panelVariants } from "@/components/ui/Panel";
+import { cn } from "@/lib/utils";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import type { FightSummary } from "@/lib/game/fightRun";
@@ -66,9 +69,10 @@ function EnemyPip({ pick, dimmed }: { pick: TeamPick; dimmed: boolean }) {
   const art = getCharacterArt(pick.id);
   return (
     <span
-      className={`relative block size-9 shrink-0 overflow-hidden border ${
-        dimmed ? "border-hairline opacity-40" : "border-edge-strong"
-      } bg-inset`}
+      // On the ground, so its edge is `ground-line`: ink is invisible there.
+      className={`relative block size-9 shrink-0 overflow-hidden border-2 ${
+        dimmed ? "border-ground-line opacity-40" : "border-foreground"
+      } bg-ground-raised`}
     >
       {art ? (
         <Image
@@ -81,12 +85,12 @@ function EnemyPip({ pick, dimmed }: { pick: TeamPick; dimmed: boolean }) {
       ) : (
         // No art registered is not a blocker — the initial reads fine at 36px
         // and the request is queued (docs/ART_REQUESTS.md).
-        <span className="flex size-full items-center justify-center font-heading text-sm text-readout-dim">
+        <span className="flex size-full items-center justify-center font-heading text-sm text-ground-dim">
           {(character?.name ?? pick.id).slice(0, 1).toUpperCase()}
         </span>
       )}
       {pick.isSub ? (
-        <span className="absolute inset-x-0 bottom-0 bg-void/80 text-center font-body text-[7px] font-bold uppercase tracking-label text-readout-dim">
+        <span className="absolute inset-x-0 bottom-0 bg-card-foreground/85 text-center font-body text-micro font-bold uppercase tracking-label text-ground-dim">
           Sub
         </span>
       ) : null}
@@ -113,23 +117,28 @@ export default function TrialRail({
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-6">
       {lastFight ? (
-        <div className="border border-el-light/70 bg-panel px-3.5 py-3">
+        <div
+          className={cn(
+            panelVariants({ surface: "paper", density: "none", lift: "primary" }),
+            "px-3.5 py-3",
+          )}
+        >
           <div className="flex items-baseline gap-2.5">
-            <span className="font-heading text-2xl leading-none tracking-title text-el-light">
+            <span className={cn("font-heading text-2xl leading-none tracking-title", INK_TONE.reward)}>
               VICTORY
             </span>
-            <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+            <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
               Fight {lastFight.index + 1} of {fights.length}
             </span>
           </div>
           {/* The numbers the card in front of this one never carried: it
               reported the turn counter and nothing else. */}
-          <p className="mt-1.5 font-body text-[12.5px] text-readout-dim">
-            <b className="font-semibold text-readout-strong">
+          <p className="mt-1.5 font-body text-xs text-muted-foreground">
+            <b className="font-bold text-card-foreground">
               {lastFight.turns} turns
             </b>
             {" · "}
-            <b className="font-semibold text-el-red">
+            <b className={cn("font-bold text-card-foreground", INK_TONE.loss)}>
               -{Math.round(lastFight.hpLostPercent)}% HP
             </b>
             {" · "}
@@ -138,7 +147,7 @@ export default function TrialRail({
             {lastFight.fallen.length > 0 ? (
               <>
                 {" · "}
-                <b className="font-semibold text-el-red">
+                <b className={cn("font-bold text-card-foreground", INK_TONE.loss)}>
                   {lastFight.fallen
                     .map((id) => getCharacterById(id)?.name ?? id)
                     .join(", ")}{" "}
@@ -151,10 +160,10 @@ export default function TrialRail({
       ) : null}
 
       <div>
-        <p className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
+        <p className="font-body text-label font-bold uppercase tracking-eyebrow text-primary">
           Fight {Math.min(cleared + 1, fights.length)} of {fights.length}
         </p>
-        <p className="font-heading text-2xl tracking-title text-readout-strong">
+        <p className="font-heading text-2xl tracking-title">
           No healing between fights
         </p>
       </div>
@@ -172,13 +181,13 @@ export default function TrialRail({
                     done
                       ? "border-role-heal bg-role-heal/60"
                       : current
-                        ? "border-signal bg-signal"
-                        : "border-edge-strong bg-inset"
+                        ? "border-primary bg-primary"
+                        : "border-ground-line bg-ground-raised"
                   }`}
                 />
                 {index < fights.length - 1 ? (
                   <span
-                    className={`w-px flex-1 ${done ? "bg-role-heal/50" : "bg-hairline"}`}
+                    className={`w-px flex-1 ${done ? "bg-role-heal/50" : "bg-ground-line"}`}
                   />
                 ) : null}
               </div>
@@ -189,8 +198,8 @@ export default function TrialRail({
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <span
-                    className={`font-body text-[10px] font-bold uppercase tracking-label ${
-                      current ? "text-signal" : "text-readout-dim"
+                    className={`font-body text-label font-bold uppercase tracking-label ${
+                      current ? "text-primary" : "text-ground-dim"
                     }`}
                   >
                     {done
@@ -211,12 +220,12 @@ export default function TrialRail({
         })}
       </ol>
 
-      <div className="flex flex-col gap-2 border border-edge-strong bg-panel p-3">
+      <div className={cn(panelVariants({ surface: "paper", density: "default" }), "flex flex-col gap-2")}>
         <div className="flex items-baseline justify-between">
-          <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-dim">
+          <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
             Carried into the next fight
           </span>
-          <span className="font-heading text-sm tabular-nums text-readout-strong">
+          <span className="font-heading text-sm tabular-nums">
             {Math.round(pooledPercent)}%
           </span>
         </div>
@@ -225,10 +234,10 @@ export default function TrialRail({
           const character = getCharacterById(bar.id);
           return (
             <div key={bar.id} className="flex items-center gap-2">
-              <span className="w-20 shrink-0 truncate font-body text-[11px] text-readout-dim">
+              <span className="w-20 shrink-0 truncate font-body text-caption">
                 {character?.name ?? bar.id}
               </span>
-              <span className="relative h-1.5 flex-1 bg-inset">
+              <span className="relative h-2 flex-1 border border-border bg-muted">
                 <span
                   className={`absolute inset-y-0 left-0 ${
                     bar.hp <= 0 ? "bg-role-attack/40" : "bg-role-heal"
@@ -236,7 +245,7 @@ export default function TrialRail({
                   style={{ width: `${Math.max(0, percent)}%` }}
                 />
               </span>
-              <span className="w-10 shrink-0 text-right font-heading text-[11px] tabular-nums text-readout-dim">
+              <span className="w-10 shrink-0 text-right font-heading text-caption tabular-nums text-muted-foreground">
                 {bar.hp <= 0 ? "DOWN" : `${Math.round(percent)}%`}
               </span>
             </div>
@@ -245,7 +254,8 @@ export default function TrialRail({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Button variant="secondary" size="sm" onClick={onContinue}>
+        {/* The road's one primary action (ruling #154). */}
+        <Button onClick={onContinue}>
           {nextLabel ? `Next fight — ${nextLabel}` : "Next fight"}
         </Button>
         <Button variant="outline" size="sm" onClick={onQuit}>

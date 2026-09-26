@@ -22,7 +22,7 @@ export default function Practice() {
 
   if (!ownBattle) {
     return (
-      <Screen className="relative text-readout" width="none">
+      <Screen className="relative" width="none">
         <TeamSelect onStart={startCustomBattle} />
       </Screen>
     );
@@ -35,8 +35,8 @@ export default function Practice() {
   // This used to paint an amber radial over a hand-written gradient
   // (`rgba(245,158,11,…)`, `#09090b`, `#111827`) plus its own grid overlay —
   // the pre-token palette written as inline styles, which is why the class
-  // sweep on 2026-08-13 walked straight past it. `.terminal-grid` is the same
-  // 44px ground every other screen stands on.
+  // sweep on 2026-08-13 walked straight past it. `Screen` paints the same
+  // ground every other screen stands on (the halftone since ruling #154).
   return (
     <Screen variant="fixed" width="none">
       <BattleArena />

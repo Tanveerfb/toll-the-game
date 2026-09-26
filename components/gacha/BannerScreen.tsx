@@ -28,6 +28,11 @@ import {
   PERMANENT_TICKET_COST,
 } from "@/lib/gacha/cost";
 import { Screen } from "@/components/ui/Screen";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { panelVariants } from "@/components/ui/Panel";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 type Tab = "limited" | "permanent";
 
@@ -143,34 +148,33 @@ export default function BannerScreen(): React.JSX.Element {
   return (
     <Screen width="app">
         {ticketBannerAvailable ? (
-          <div className="flex gap-1.5 border-b border-edge pb-2">
-            {(["limited", "permanent"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => {
-                  setTab(t);
-                  setNotice(null);
-                }}
-                className={`flex items-center gap-1.5 border px-3.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-label transition-colors ${
-                  tab === t
-                    ? "border-signal bg-signal/10 text-signal"
-                    : "border-edge text-readout-dim hover:border-edge-strong hover:text-readout"
-                }`}
-              >
-                <ItemIcon
-                  id={t === "limited" ? "gems" : "permanent_ticket"}
-                  size={18}
-                  alt=""
-                />
-                {t === "limited" ? "Gems" : "Tickets"}
-              </button>
-            ))}
-          </div>
+          // The shadcn tabs (ruling #154), on the ground.
+          <Tabs
+            value={tab}
+            onValueChange={(value) => {
+              setTab(value as Tab);
+              setNotice(null);
+            }}
+          >
+            <TabsList>
+              {(["limited", "permanent"] as const).map((t) => (
+                <TabsTrigger key={t} value={t} className="uppercase tracking-label">
+                  <ItemIcon
+                    id={t === "limited" ? "gems" : "permanent_ticket"}
+                    size={18}
+                    alt=""
+                  />
+                  {t === "limited" ? "Gems" : "Tickets"}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         ) : null}
 
         {/* BANNER */}
-        <div className="relative h-40 overflow-hidden border border-edge-strong bg-panel md:h-48">
+        {/* The banner is a hero image, so it gets the motif's speed lines
+            (docs/design-system.md: behind a hero, never behind text). */}
+        <div className="relative h-40 overflow-hidden border-2 border-ground-line bg-ground-raised ink-slab md:h-48">
           <Image
             src={
               isLimited
@@ -197,23 +201,24 @@ export default function BannerScreen(): React.JSX.Element {
             // 28px into the band. Hence the scrim below as well.
             className="object-cover object-top opacity-55"
           />
-          <span className="absolute inset-0 bg-linear-to-r from-void via-void/70 to-transparent" />
+          <span className="absolute inset-0 speed-lines" />
+          <span className="absolute inset-0 bg-linear-to-r from-background via-background/70 to-transparent" />
           {/* Buries whatever of the wordmark the crop leaves. Deliberately
               generous: the exact overlap moves with the container's width, and
               a scrim that is too tall costs nothing here — the plate's own
               composition puts its characters in the upper two thirds, and the
               screen already reads this art through two other gradients. */}
-          <span className="absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-void via-void/85 to-transparent" />
+          <span className="absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-background via-background/85 to-transparent" />
           <div className="relative flex h-full max-w-[70%] flex-col justify-center gap-1 px-5">
-            <span className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
+            <span className="font-body text-label font-bold uppercase tracking-eyebrow text-primary">
               {/* No end date and no "Limited" — the beta roster was always
                   meant to be permanent (Tanveer, 2026-08-13). */}
               Permanent · {isLimited ? "gems" : "tickets"}
             </span>
-            <span className="font-heading text-2xl leading-tight tracking-title text-readout-strong md:text-3xl">
+            <span className="font-heading text-2xl leading-tight tracking-title md:text-3xl">
               {isLimited ? gemBanner.name : "Permanent Banner"}
             </span>
-            <span className="font-body text-xs text-readout-dim">
+            <span className="font-body text-xs text-ground-dim">
               {isLimited
                 ? `${(gemBanner.rate * 100).toFixed(0)}% featured · ${featured.length} units`
                 : poolEmpty
@@ -236,13 +241,16 @@ export default function BannerScreen(): React.JSX.Element {
           <button
             type="button"
             onClick={() => setShowFeatured(true)}
-            className="flex w-full items-center gap-3 border border-hairline bg-panel px-3 py-2.5 text-left transition-colors hover:border-edge-strong"
+            className={cn(
+              panelVariants({ surface: "paper", density: "tight", press: true }),
+              "flex w-full items-center gap-3",
+            )}
           >
             <span className="flex min-w-0 flex-col gap-0.5">
-              <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
+              <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
                 Featured
               </span>
-              <span className="font-body text-sm text-readout">
+              <span className="font-body text-sm">
                 {hasHydrated
                   ? `${ownedFeatured} of ${featured.length} owned`
                   : `${featured.length} units`}
@@ -258,8 +266,8 @@ export default function BannerScreen(): React.JSX.Element {
                 return (
                   <span
                     key={id}
-                    className={`relative h-9 w-9 overflow-hidden border bg-inset ${
-                      owned ? "border-edge-strong" : "border-hairline opacity-45"
+                    className={`relative h-9 w-9 overflow-hidden border-2 bg-muted ${
+                      owned ? "border-border" : "border-rule opacity-45"
                     }`}
                   >
                     {art ? (
@@ -276,42 +284,42 @@ export default function BannerScreen(): React.JSX.Element {
               })}
             </span>
             <ChevronRight
-              className="h-4 w-4 shrink-0 text-readout-muted"
+              className="h-4 w-4 shrink-0 text-muted-foreground"
               strokeWidth={2}
             />
           </button>
         ) : null}
 
         {/* MILESTONE TRACK */}
-        <div className="border border-hairline bg-panel px-3 py-3">
+        <div className={panelVariants({ surface: "paper", density: "default" })}>
           <div className="flex items-baseline justify-between">
-            <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
+            <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
               Milestone
             </span>
-            <span className="font-heading text-lg leading-none tracking-title text-readout-strong tabular-nums">
+            <span className="font-heading text-lg leading-none tracking-title tabular-nums">
               {hasHydrated ? bar.toLocaleString() : "—"}
-              <span className="ml-1 font-body text-[10px] font-semibold text-readout-muted">
+              <span className="ml-1 font-body text-label font-bold text-muted-foreground">
                 / {finalThreshold.toLocaleString()} {unit} spent
               </span>
             </span>
           </div>
-          <div className="relative mt-2 mb-5 h-2.5 border border-hairline bg-void">
+          <div className="relative mt-2 mb-5 h-2.5 border border-border bg-muted">
             <span
-              className="block h-full bg-signal transition-[width] duration-500"
+              className="block h-full bg-primary transition-[width] duration-500"
               style={{ width: hasHydrated ? `${barPercent}%` : "0%" }}
             />
             {firstThreshold !== null ? (
               <span
-                className="absolute -top-1 h-4.5 w-0.5 bg-edge-strong"
+                className="absolute -top-1 h-4.5 w-0.5 bg-border"
                 style={{ left: `${markerAt(firstThreshold, finalThreshold)}%` }}
               >
-                <span className="absolute left-1/2 top-5 -translate-x-1/2 font-body text-[9px] font-bold tabular-nums text-readout-muted">
+                <span className="absolute left-1/2 top-5 -translate-x-1/2 font-body text-label font-bold tabular-nums text-muted-foreground">
                   {firstThreshold}
                 </span>
               </span>
             ) : null}
-            <span className="absolute -top-1 right-0 h-4.5 w-0.5 bg-el-light">
-              <span className="absolute left-1/2 top-5 -translate-x-1/2 font-body text-[9px] font-bold tabular-nums text-readout-muted">
+            <span className="absolute -top-1 right-0 h-4.5 w-1 border border-border bg-el-light">
+              <span className="absolute left-1/2 top-5 -translate-x-1/2 font-body text-label font-bold tabular-nums text-muted-foreground">
                 {finalThreshold}
               </span>
             </span>
@@ -344,9 +352,7 @@ export default function BannerScreen(): React.JSX.Element {
         </div>
 
         {notice ? (
-          <p className="border-l-2 border-el-red bg-el-red/5 px-3 py-2 font-body text-xs text-el-red">
-            {notice}
-          </p>
+          <Alert variant="destructive">{notice}</Alert>
         ) : null}
 
         {/* DRAW — the cost is on the button. It used to be discovered by
@@ -355,50 +361,39 @@ export default function BannerScreen(): React.JSX.Element {
           {([1, MULTI_PULL_COUNT] as const).map((count) => {
             const cost = count === 1 ? singleCost : multiCost;
             const main = count !== 1;
+            // The multi-draw is the screen's primary action (the slanted
+            // yellow button); the single draw is the paper one beside it.
             return (
-              <button
+              <Button
                 key={count}
-                type="button"
+                variant={main ? "default" : "secondary"}
+                size="xl"
                 disabled={!canAfford(cost)}
                 onClick={() => setPendingDraw(count === 1 ? 1 : 11)}
-                className={`flex-1 border px-3 py-3 text-center transition-colors disabled:border-hairline disabled:bg-transparent disabled:opacity-50 ${
-                  main
-                    ? "border-signal bg-signal/12 hover:bg-signal/20"
-                    : "border-edge bg-inset hover:border-edge-strong"
-                }`}
+                className="h-auto flex-1 flex-col gap-0 py-2.5"
               >
-                <span
-                  className={`block font-heading text-lg tracking-title ${main ? "text-signal" : "text-readout-strong"}`}
-                >
-                  Draw ×{count}
-                </span>
-                <span
-                  className={`block font-body text-[10px] font-bold uppercase tracking-label ${main ? "text-signal" : "text-readout-muted"}`}
-                >
+                <span className="block">Draw ×{count}</span>
+                <span className="block font-body text-label font-bold uppercase tracking-label">
                   {cost} {unit}
                   {main ? " · one free pull" : ""}
                 </span>
-              </button>
+              </Button>
             );
           })}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="flex items-center gap-1.5 font-body text-sm font-bold tabular-nums text-readout-strong">
+          <span className="flex items-center gap-1.5 font-body text-sm font-bold tabular-nums">
             <ItemIcon id={currencyIcon} size={22} alt="" />
             {hasHydrated ? balance.toLocaleString() : "—"}{" "}
-            <span className="font-semibold uppercase tracking-label text-readout-muted">
+            <span className="font-bold uppercase tracking-label text-ground-dim">
               {unit}
             </span>
           </span>
           <span className="flex-1" />
-          <button
-            type="button"
-            onClick={() => setShowRates(true)}
-            className="flex min-h-11 items-center border border-edge px-3 font-body text-[10px] font-bold uppercase tracking-label text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
-          >
+          <Button variant="outline" size="xs" onClick={() => setShowRates(true)}>
             Rates &amp; pool
-          </button>
+          </Button>
         </div>
 
       {showFeatured ? (

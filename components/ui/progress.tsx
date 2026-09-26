@@ -14,7 +14,10 @@ function Progress({
     <ProgressPrimitive.Root
       data-slot="progress"
       className={cn(
-        "relative flex h-1 w-full items-center overflow-x-hidden rounded-full bg-muted",
+        // Shōnen Ink (#154): square, a paper track outlined in ink, yellow
+        // fill. The outline is what makes it read on paper: yellow against
+        // the paper track alone is too faint to see where the fill stops.
+        "relative flex h-2 w-full items-center overflow-x-hidden rounded-none border border-border bg-muted",
         className
       )}
       {...props}

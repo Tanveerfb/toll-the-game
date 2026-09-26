@@ -6,23 +6,21 @@ Living snapshot. Session history is folded to
 
 ## Start here
 
-**State:** **Story mode is removed** (ruling #152), restorable from `2f6b016`.
-**Every unit in every fight is built by one builder through one stat
-pipeline** (`lib/game/buildUnit.ts`, `battleStats.ts`), so a boss's later
-phase scales with difficulty. **A battle cannot be walked away from** (#153).
-`project-rules.md` v2.4.0 is in the repo root, and a hook blocks heredocs.
-Suite **1,461 unit + 1 parked / 122 files**, **17 browser / 3 files**, `next
-build` clean. See the newest session log.
+**State:** The game has a design motif. **Shōnen Ink** (ruling #154) is live
+on every screen **except battle**, which still paints the retired Combat
+Terminal look, a mixed look in production by his choice. Every control is a
+customised shadcn primitive. The rules are in `docs/design-system.md`, and the
+order of work is `Plans/2026-09-26-shonen-ink-foundation.md` (phases 1–3 of 5
+done). Story mode stays removed (#152), and a battle stays locked (#153).
 
-**Next:** his **Molvarr playtest**: the world boss at difficulty 2+, and the
-First Ascension Trial, whose clear rate fell from ~77% to 2.2% once the fix
-scaled Molvarr's second phase. **He sets the trial's Molvarr level**, then
-un-skip the parked test in `tests/trialEncounter.test.ts`. After that, the
-foundation audit one section at a time (`Plans/2026-09-26-foundation-audit.md`,
-progress table at its top).
+**Next:** **Phase 4, battle mockups first** (#144). He wants to be at his PC
+for it. Draw 2–3 options in `docs/design/mockups/` for how paper and ground
+split the arena, then build the one he picks.
 
 **Blocked on him:**
-- The trial's Molvarr level (after his playtest).
+- Picking a battle mockup.
+- **His Molvarr playtest** → the trial's Molvarr level, then un-skip the parked
+  test in `tests/trialEncounter.test.ts`.
 - What fills the fifth bottom tab, and what leads the home hub now the story
   card is gone.
 - Bureau Order steps are 8 against his "10 per step" rule.
@@ -36,9 +34,10 @@ progress table at its top).
   - installing `accelerate`
   - retiring `author_notes.md`
 
-**Don't trust:** **no screen was opened in a browser this session.** That
-covers the battle lock, the resume after a reload, the hidden nav links, and
-the brief's and picker's new stats. See **Confidence and gaps**.
+**Don't trust:** the **taste** of any restyled screen, which is his to judge
+and hasn't been judged. Geometry and behaviour were checked at 390px. Also
+unverified: the **signed-in** profile page, its dialogs, and the dev grant
+panel. See **Confidence and gaps**.
 
 ## Working (implemented, tested, browser-verified)
 
@@ -389,6 +388,86 @@ the brief's and picker's new stats. See **Confidence and gaps**.
 - **Fixes (2026-07-12/13)** — Mustafa's Earth Stance: Fortress is a team-wide (aoe) DR stance, no ally pick; single-target attacks retarget to a living enemy when their marked target died mid-queue (focus-fire no longer wastes cards on a corpse).
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
 
+## Session log — 2026-09-26d: Shōnen Ink, and shadcn for every control
+
+**Asked for:** *"we are working on keeping the css and component foundation
+right. only work with shadcn, customize them and use them for the project
+purposes. and also we need a design motif for the game too."*
+
+**The motif.** Four were drawn, live, at 390px
+(`docs/design/mockups/motif-options.html`). He picked **B · Shōnen Ink**, a
+selection recorded as **ruling #154**, which retires Combat Terminal. The look:
+- a dark halftone **ground**, and white **paper** panels in heavy ink;
+- action yellow for system chrome only;
+- element hues for units only, and on paper only as fills, never as text.
+
+Everything else is in `docs/design-system.md`, written this session: tokens,
+type scale, shape, and what is excluded.
+
+**His other picks, all selections of options I wrote:**
+- **Type floor:** 10px, with 9px (`text-micro`) allowed on cards and tiles only.
+- **A dev-only gallery:** `/dev/ui`.
+- **Hand-card names:** two lines, hyphenated, rather than truncated.
+- **Kit text:** the **marker** highlight, recorded as **ruling #155**. It was
+  drawn against two alternatives in `kit-document-on-paper.html`.
+- **Preset naming:** an in-game dialog (`PresetNameDialog`), replacing
+  `window.prompt`.
+- **Screen order:** home hub → archive → events → team select → profile &
+  login → gacha → news.
+
+**Built.** Phases 1–3 of `Plans/2026-09-26-shonen-ink-foundation.md`:
+- **Phase 1, tokens:** shadcn's own tokens now carry the palette, which had
+  been stock greyscale and unused.
+- **Phase 1, primitives:** fifteen are customised: `button`, `badge`, `input`,
+  `select`, `slider`, `progress`, `tabs`, `switch`, `toggle`, `toggle-group`,
+  `dialog`, `sheet`, `popover`, `alert`, `table`.
+- **Phase 1, shared pieces:**
+  - `MountedDialog`
+  - `useReturnFocus`
+  - `inkTone.ts`
+  - `navChip.ts`
+  - `growthStyle.ts`
+  - `NewsKindBadge`
+- **Phase 2, the shell:** the nav, the tab bar and `Screen`.
+- **Phase 3, the screens:** every non-battle screen, restyled one at a time in
+  his order.
+- **Retired:** `ModalShell` was **deleted**. Every overlay is now a shadcn
+  `Dialog` or `Sheet`.
+- **The scale of it:** old-theme uses fell from **1,294 in 76 files** to about
+  **345 in 17**, which is battle plus `DetailOverlay`, `card` and `Panel`'s
+  legacy surfaces.
+
+**What broke, and the fix that holds it:**
+- **The shadcn CLI.** It twice wrote `import { cn } from "cn"` and installed
+  an unrelated npm package called `cn`. Fixed both times, and
+  `tests/uiTokens.test.ts` now fails if that package or import reappears.
+- **`tailwind-merge`.** It treated the custom `text-micro`, `text-label` and
+  `text-caption` as colours and **silently dropped** the real colour class
+  beside them. Fixed with `extendTailwindMerge` in `lib/utils.ts`; the fix in
+  `tests/cn.test.ts` was proven red, then green.
+- **Arbitrary-value colours.** `bg-(--tint)` paints nothing, because Tailwind
+  can't tell the variable is a colour. Write `bg-(color:--tint)`.
+- **Dialogs opened without a trigger** dropped focus to `<body>` when they
+  closed. Fixed with `useReturnFocus` / `useFocusBackToOpener`.
+
+**Guards moved, each with its reason written beside it:**
+- `overlayStacking`'s floor went to 4 and `navHeight`'s to 2. Both fell because
+  the migration *centralised* the thing they count.
+- `buttonPrimitive`'s allowlist shrank.
+- `layoutSystem` now expects the halftone shell.
+
+**The browser pane was granted**, and every restyled screen was opened at
+390px. Three of its quirks cost time, and they are now in `AGENTS.md`:
+- It doesn't advance CSS transitions.
+- A click at coordinates can miss.
+- Screenshots crop the viewport.
+
+**Deliberately not done:**
+- **Battle** is untouched. The arena is where ground versus paper is a real
+  design question, so it gets mockups first (#144, phase 4).
+- The legacy tokens can't be deleted (phase 5) until battle moves.
+- The rest of the foundation audit waits for him to pick a section.
+
 ## Session log — 2026-09-26c: foundation audit, story removed, one stat pipeline, the battle lock
 
 **Asked for:** *"if we develop the game without reworking or improving the
@@ -526,86 +605,9 @@ three were exercised. The first sync compared bytes and reported a fresh
 Windows clone as stale (CRLF checkout vs LF generator). Fixed to compare text
 modulo line endings, and proved both ways.
 
-## Session log — 2026-09-21/26: the card pose, and the last hand-typed shell
+## Session log — 2026-09-21/26 — folded
 
-**Two threads.** The art thread finished Lyra's card pose; the code thread
-finished the layout system.
-
-**Lyra's card pose.** A second COCO-18 skeleton from the same generator as the
-A-pose — `scripts/draw_lyra_card_pose.py`, then
-`scripts/draw_lyra_card_arm_variants.py`. **Twelve images were generated before
-one was worth showing.** Both causes of the first failure were authoring
-mistakes, not bad rolls, and both are written up in `docs/ART_PIPELINE.md`:
-a skeleton drawn with **stub arms** (87px upper arm against a 166px thigh) to
-"signal" foreshortening, plus `(spread fingers:1.2)` and the word
-`foreshortening` in the prompt, produced hands bigger than her head in five of
-six and one image with two heads. ControlNet **0.6 is a neutral-pose number**;
-the dynamic pose needed **0.78**, after which the raised arm took in six of six.
-
-**He overruled the recommendation, and the record was wrong.** Claude
-recommended the fist row and wrote the swept row off in `ART_PIPELINE` as
-*"fails — the arm hides behind the body and reads as missing"*. He picked the
-swept row: *"Good ones — C1, C2, C4 (my fav)."* That claim is corrected in
-place, with the reason it was wrong named: **taste stated as measurement.**
-Transparency percentages and limb lengths are measurements; "reads as missing"
-is an opinion, and #139 puts that with him. The two-stage QC filter removes
-images with **defects**, not images Claude dislikes. Session memory updated.
-
-**The matte recipe had rotted.** `BiRefNet_toonout` is named in the v7 recipe
-and the approved A-pose layer's PNG metadata still carries it — but
-`BiRefNetRMBG` **no longer offers it**, so the recipe could not be run as
-written. Replacement chosen by bake-off rather than by name, measuring
-transparency, soft edge and opaque pixels on the canvas border:
-**`BiRefNet-HR-matting`**, 70.0% / 6.05% / 0. A clean bake-off did not mean a
-clean batch — the same model left C1 at a 20.4% soft edge and C2 with 68
-pixels on the frame edge, so **every matte gets measured, not just the one it
-was tuned on**.
-
-**The layout system is finished.** Nine hand-typed shells migrated onto
-`Screen`: practice, both archives, the kit page, profile, login, `HomeMenu`
-(which carried two), `BannerScreen`, and `StoryStage` — the last being the
-**precedent `Screen` was generalised from**, which had kept its own copy of
-both shells ever since. Six screens changed desktop width as the ten ad-hoc
-widths collapsed onto the three tokens.
-
-**Three guards were wrong, and finishing the work is what exposed them.**
-
-1. **The layout ratchet over-counted.** It matched `terminal-grid` anywhere in
-   a file and allowed 11. Three of the files it counted were not shells at all
-   — `StoryBackdrop` paints that class on a decorative `absolute inset-0` div
-   and can never be migrated, and two others only named it in a comment. Part
-   of the allowance was budget for the guard's own noise. Now matched per
-   string literal on `terminal-grid` + `screen-below-nav`, allowed **0**.
-2. **`navHeight` and `viewportUnits` failed, correctly.** They asserted floors
-   of ≥8 and ≥10 files carrying the shell classes — "proof this isn't passing
-   by absence". Centralising into `Screen` dropped the real counts to 3 and 4.
-   Their own comments record the same thing happening on 2026-09-01 (*"dropped
-   from 15 to 1 and that was the fix, not a regression"*), so rather than lower
-   the floors a second time, both now assert **`Screen` itself** carries the
-   class. Strictly stronger: a floor of 8 can be met by any eight files while
-   the one that matters is gutted.
-
-**All three were falsified before being trusted**, and one falsification was
-itself wrong first time: `viewportUnits` appeared to survive having the class
-removed, because its regex also accepts the bare `screen-below-nav` that the
-`fixed` variant carries and the mutation only replaced the `min-` form. Both
-spellings removed, it fails correctly.
-
-**A deviation from the plan, flagged rather than buried.**
-`Plans/2026-09-17-layout-system.md` files kit pages under `read` (42rem). That
-screen gained a 290px stat sidebar *after* the plan was written; at 42rem its
-main column resolves to **368px, narrower than a 390px phone's content area**.
-It ships on `app` with the arithmetic in a comment at the call site.
-
-**This checkpoint's own near-miss, recorded because it nearly shipped.** The
-first sweep script sliced this document with
-`s.index('## Confidence and gaps')`. That phrase occurs **five** times and the
-first is a cross-reference 600 lines above the heading, so the slice deleted
-both session logs: **786 → 222 lines**. Every `replace()` in that script
-asserted its anchor; the two `index()` calls did not. Caught by the line count,
-reverted from git, and the rewrite asserts every anchor, matches headings as
-`\n## Heading\n`, and refuses to write if the document shrinks or loses a
-section.
+Lyra's card pose, and the last hand-typed shell — [`archive/STATUS-2026-09.md`](archive/STATUS-2026-09.md).
 
 ## Session log — 2026-09-17/18 — folded
 
@@ -669,66 +671,75 @@ on 2026-08-20. Each line below is one section in that file.
 ## Confidence and gaps
 
 Rewritten every checkpoint. **This section is what stops the rest of the
-document being read as uniformly solid.** Rewritten 2026-09-26c; the previous
-version listed `storyTeam.ts` and `storyBackgrounds.ts` as untested, both of
-which were deleted with story mode.
+document being read as uniformly solid.** Rewritten 2026-09-26d. The previous
+version said no screen had been opened in a browser, which is no longer true
+for any screen except battle.
 
 ### Verified in this session, by running it
 
-- `npm run check` — **1,461 passed, 1 skipped / 122 files**, typecheck and
+- `npm run check` — **1,521 passed, 1 skipped / 124 files**, typecheck and
   lint clean. The skip is the trial tuning test, parked on purpose (below).
-- `npm run test:browser` — **17 / 3 files**.
-- `NEXT_DIST_DIR=.next-verify npx next build` — clean, **55 static pages, no
-  `/story`**. `.next-verify` removed, `tsconfig.json` restored, his `:3000`
-  never touched.
-- **Guards falsified, not assumed:**
-  - `tests/battleStats.test.ts` was red against the old code, failing for
-    exactly his bug: *"difficulty 2: expected 10000 to be greater than
-    12102"*.
-  - Removing the level stamp from the builder turned 8 of its tests red.
-  - Disabling the lock rule turned 3 of `tests/battleLock.test.ts` red.
-- **The heredoc hook is live.** A harmless `cat <<<` probe was refused by
-  the harness.
-- **Measured, 180 runs per row, Lv20 balanced team:** the trial's clear rate
-  against Molvarr's level is Lv1 96.1%, Lv6 79.4%, Lv10 52.8%, Lv14 24.4%,
-  Lv18 12.2%, Lv24 (authored) 2.2%.
+- `npm run test:browser` — **17 / 3 files**, run after the hand-card name
+  change, which is the geometry `hand.browser.test.tsx` pins.
+- **Every restyled screen opened in the browser pane at 390px**, on a scratch
+  dev server on `:3210` (`verify-dev` in `.claude/launch.json`), never his
+  `:3000`. Covered:
+  - the home hub
+  - the archive, a kit page and the NPC page
+  - the events board, the brief and the trial rail
+  - team select, including preset naming
+  - login
+  - gacha: the confirm dialog, the rates and featured dialogs, the milestone
+    picker and a pull reveal
+  - news
+  - the error page
+
+  Checked: geometry, overflow, focus return and 44px targets.
+- **One battle** was entered from practice and left through the lock's own
+  forfeit (*Exit battle → Exit — take the loss*), as he instructed.
+- **Guards falsified, not assumed:** `tests/cn.test.ts` was red before the
+  `extendTailwindMerge` fix, and green after.
+- **Carried from 2026-09-26c, still true:** the trial's clear rate against
+  Molvarr's level, 180 runs a row with a Lv20 balanced team:
+
+  | Molvarr level | Clear rate |
+  | --- | --- |
+  | Lv1 | 96.1% |
+  | Lv6 | 79.4% |
+  | Lv10 | 52.8% |
+  | Lv14 | 24.4% |
+  | Lv18 | 12.2% |
+  | Lv24 (authored) | 2.2% |
 
 ### Believed but NOT verified
 
-- **Every screen touched this session is unopened in a browser:**
-  - the battle lock bouncing a nav or back-button route
-  - a reload resuming a boss fight on its own screen, or on its reward card
-  - the top nav hiding its links mid-fight
-  - the brief's scaled stats
-  - the picker's leveled stats
-  - the home hub without its hero card
-  - the four-tab bottom bar
-
-  The rules underneath the lock and resume are unit-tested. The screens are
-  not.
-- **`toll-kits` has never run in a real web session** (unchanged since the
-  last checkpoint).
-- **Lyra's C1/C2 poses and the six width-changed screens** from the layout
-  migration are still unjudged.
+- **Taste.** Every restyled screen is geometry-checked, and **none has been
+  judged by him.** That pass is his, per #139.
+- **The signed-in profile page**, its account and inventory dialogs, and
+  `DevGrantPanel`. The pane had no signed-in session, so none of these were
+  opened.
+- **Desktop width** was checked only for the shell (1280px), not per screen.
+- From 2026-09-26c, still open:
+  - a reload resuming a boss fight, or its reward card
+  - the back button bouncing off the lock
+  - `toll-kits` in a real web session
+  - Lyra's C1/C2 poses
 
 ### Untested by anything
 
-- **A reload *between* two trial fights still loses the run.** The break
-  screen is not a battle, so nothing persists it. This is a gap in #153's
-  coverage, recorded in the ruling.
+- **A reload *between* two trial fights still loses the run** (a gap in #153).
 - **Two `lib/game` modules have no test:** `worldBossPreview.ts`, `immunity.ts`.
-- **No screen flow is tested**: audit finding S2, the reason F1 and F2
-  shipped. Still open.
-- **No card art is wired into any screen** (unchanged).
+- **No screen flow is tested** (audit finding S2).
+- **No card art is wired into any screen.**
 
 ### What I would check first coming back cold
 
-1. Play one Molvarr fight at difficulty 2, reload mid-fight, and try the back
-   button. That is the whole of #153 plus F2 in one run.
-2. Open the events brief at each difficulty. HP should rise with the level
-   line beside it.
-3. Re-read the progress table at the top of
-   `Plans/2026-09-26-foundation-audit.md` before starting any open finding.
+1. Open `/dev/ui` on a scratch server. Every primitive in the Shōnen Ink look
+   is on one page, and a broken token shows there first.
+2. Grep for the legacy tokens (`bg-panel`, `text-readout`, `border-edge`,
+   `chamfer`) outside `components/game/battle/`. Anything found is a straggler
+   that phase 3 missed.
+3. Read `docs/design-system.md` before touching any screen.
 
 ## Open Issues
 

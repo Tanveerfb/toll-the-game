@@ -2,9 +2,11 @@
 
 import React from "react";
 import { ArrowRight } from "lucide-react";
-import DetailOverlay from "@/components/game/DetailOverlay";
 import ItemIcon from "@/components/game/ItemIcon";
 import { Button } from "@/components/ui/button";
+import MountedDialog from "@/components/ui/MountedDialog";
+import { INK_TONE } from "@/components/ui/inkTone";
+import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 
 /**
@@ -23,6 +25,10 @@ import { Slider } from "@/components/ui/slider";
  * The reward side is a *table of what drops*, never a predicted amount:
  * every run rolls independently, and printing an expected haul would be
  * inventing a number the engine does not promise.
+ *
+ * **The shadcn `Dialog` since 2026-09-26** (ruling #154), via
+ * `MountedDialog`: the caller mounts it only while open, and focus goes back
+ * to the Auto clear button that opened it.
  */
 
 function ShiftRow({
@@ -41,26 +47,26 @@ function ShiftRow({
 }): React.JSX.Element {
   const delta = after - before;
   return (
-    <div className="flex items-center gap-2 border border-hairline bg-panel px-3 py-2">
+    <div className="flex items-center gap-2 border border-rule bg-muted px-3 py-2">
       <ItemIcon id={iconId} size={20} alt="" />
-      <span className="min-w-0 flex-1 truncate font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+      <span className="min-w-0 flex-1 truncate font-body text-label font-bold uppercase tracking-label text-muted-foreground">
         {label}
       </span>
-      <span className="shrink-0 font-body text-sm tabular-nums text-readout-dim">
+      <span className="shrink-0 font-body text-sm tabular-nums text-muted-foreground">
         {before.toLocaleString()}
       </span>
       <ArrowRight
-        className="h-3 w-3 shrink-0 text-readout-muted"
+        className="h-3 w-3 shrink-0 text-muted-foreground"
         strokeWidth={2.4}
         aria-hidden
       />
-      <span className="shrink-0 font-body text-sm font-bold tabular-nums text-readout-strong">
+      <span className="shrink-0 font-body text-sm font-bold tabular-nums">
         {after.toLocaleString()}
       </span>
-      <span className="shrink-0 font-body text-xs tabular-nums text-el-red">
+      <span className={cn("shrink-0 font-body text-xs font-bold tabular-nums", INK_TONE.loss)}>
         {delta.toLocaleString()}
       </span>
-      <span className="shrink-0 font-body text-[10px] uppercase tracking-label text-readout-muted">
+      <span className="shrink-0 font-body text-label uppercase tracking-label text-muted-foreground">
         {unit}
       </span>
     </div>
@@ -103,19 +109,19 @@ export default function AutoClearConfirm({
   const staminaSpent = safeRuns * staminaCost;
 
   return (
-    <DetailOverlay
+    <MountedDialog
       title="Auto Clear"
-      subtitle={`${eventName} · difficulty ${difficulty}`}
+      description={`${eventName} · difficulty ${difficulty}`}
       onClose={onCancel}
     >
-      <div className="border border-hairline bg-panel px-3 py-3">
+      <div className="border border-rule bg-muted px-3 py-3">
         <div className="flex items-baseline justify-between">
-          <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+          <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
             Runs to skip
           </span>
-          <span className="font-heading text-2xl leading-none tracking-title tabular-nums text-signal">
+          <span className="font-heading text-2xl leading-none tracking-title tabular-nums">
             {safeRuns}
-            <span className="ml-1 font-body text-[10px] font-semibold text-readout-muted">
+            <span className="ml-1 font-body text-label font-bold text-muted-foreground">
               of {maxRuns} affordable
             </span>
           </span>
@@ -153,41 +159,41 @@ export default function AutoClearConfirm({
         />
       </div>
 
-      <p className="mt-2 font-body text-[11px] leading-snug text-readout-muted">
+      <p className="font-body text-caption leading-snug text-muted-foreground">
         A ticket skips the fight, never the stamina — {staminaCost} per run, the
         same as entering it yourself.
       </p>
 
       {dropRows.length > 0 ? (
-        <div className="mt-3 border-t border-hairline pt-3">
-          <p className="mb-2 font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
+        <div className="border-t border-rule pt-3">
+          <p className="mb-2 font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
             Each run rolls from
           </p>
           <div className="flex flex-col gap-1">
             {dropRows.map(([id, label, chance]) => (
               <div
                 key={label}
-                className="flex items-center justify-between gap-3 font-body text-[11px]"
+                className="flex items-center justify-between gap-3 font-body text-caption"
               >
-                <span className="flex min-w-0 items-center gap-1.5 truncate text-readout">
+                <span className="flex min-w-0 items-center gap-1.5 truncate">
                   <ItemIcon id={id} size={20} alt="" />
                   {label}
                 </span>
-                <span className="shrink-0 tabular-nums text-readout-muted">
+                <span className="shrink-0 tabular-nums text-muted-foreground">
                   {chance}
                 </span>
               </div>
             ))}
           </div>
-          <p className="mt-2 font-body text-[10px] leading-snug text-readout-muted">
+          <p className="mt-2 font-body text-label leading-snug text-muted-foreground">
             Rolled independently per run — no first-clear bundle, and never
             gems.
           </p>
         </div>
       ) : null}
 
-      <div className="mt-4 flex gap-2">
-        <Button variant="ghost" size="lg" className="flex-1" onClick={onCancel}>
+      <div className="flex gap-2">
+        <Button variant="secondary" size="lg" className="flex-1" onClick={onCancel}>
           Cancel
         </Button>
         <Button
@@ -199,6 +205,6 @@ export default function AutoClearConfirm({
           Skip ×{safeRuns}
         </Button>
       </div>
-    </DetailOverlay>
+    </MountedDialog>
   );
 }

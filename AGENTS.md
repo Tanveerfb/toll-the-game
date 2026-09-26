@@ -43,7 +43,7 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 | Zustand             | Global game state management                     |
 | Vitest              | Unit tests (`tests/*.test.ts`) + component tests in real Chromium (`tests/*.browser.test.tsx`) |
 
-UI primitives live in `components/ui/` (shadcn) and already default to the Combat Terminal look — add new ones with `npx shadcn@latest add <component>`, and don't restate the theme at the usage (ruling #84).
+**The motif is Shōnen Ink, and every control is a customised shadcn component** (ruling #154, 2026-09-26, which retired Combat Terminal). His words: *"only work with shadcn, customize them and use them for the project purposes."* A control comes from `npx shadcn@latest add <component>` and is customised once in `components/ui/`; a screen never hand-rolls a dialog, sheet, tab set or toggle, and never restates the theme at the usage (#84). Tokens, type scale and the motif's rules are in `docs/design-system.md`: **read it before any UI work**. The loud parts of the motif (the slant, the yellow) go on headers and primary actions only; reading panels stay plain.
 
 **Mobile first, desktop second (Tanveer, 2026-08-18).** Most players willing to try the game arrive on a phone, so a phone is the primary target and desktop is the secondary one — not the other way round. Concretely: design canvas **390×844** (9:16 portrait); desktop renders the same column centred at a capped width, never a re-laid-out wide variant; **`dvh`, never `vh`** (Tailwind 4 compiles `screen` to `100vh`, the largest viewport); touch targets **≥44px** with primaries in the thumb-reachable lower third; no affordance that exists only on hover; one vertical scroll per screen, with wide content scrolling inside its own container. **Verify phone width before desktop** — a break at 390px is a blocker, a break at 1440px is a bug. Ruling #107 in `docs/HANDOFF.md`.
 
@@ -66,7 +66,8 @@ Two corrections to the above, both from measuring it (2026-09-01). **Hand cards 
 app/                  Next.js App Router — /, /practice, /events (world boss + trials),
                       /gacha,
                       /archive, /archive/character/[cardNumber], /archive/npc,
-                      /news, /login, /profile
+                      /news, /login, /profile,
+                      /dev/ui (development only: the Shōnen Ink kit, 404 in production)
 components/
   ui/                 shadcn primitives + KeyworkHighlighter + prose.tsx (document
                       typography, shared with mdx-components.tsx)
@@ -195,7 +196,22 @@ at the ones you built.
 
 **Verify on a scratch build, never on his server.** `NEXT_DIST_DIR=.next-verify
 npx next build`, then `npx next start -p 3210`; kill by PID from `netstat`,
-remove `.next-verify`, and `git checkout tsconfig.json`. To reach gated content,
+remove `.next-verify`, and `git checkout tsconfig.json`. For dev-only pages
+(`/dev/ui`), `preview_start` the `verify-dev` entry in `.claude/launch.json`:
+`next dev` on 3210 with its own dist dir.
+
+**The browser pane lies in two known ways** (measured 2026-09-26):
+- **It does not advance CSS transitions.** A computed colour read after a
+  state change is the value from BEFORE it, so a selected chip reads
+  unselected and a closed sheet stays mounted. Inject
+  `*{transition:none!important;animation:none!important}` before measuring,
+  and read `data-state` rather than trusting what is still in the DOM.
+- **At an emulated 390px, a coordinate click can miss** the element the tool
+  reported: it hit the header above a button. Drive interactions with
+  `element.click()` in `javascript_tool` and measure the result in-page.
+
+Its screenshots also crop the emulated viewport, so text that fits can look
+clipped. **Measure geometry in the page, not in a screenshot.** To reach gated content,
 edit `toll-player-storage` in the browser's own localStorage rather than
 touching `data/` — it is that viewer's copy and nothing in the repo changes.
 

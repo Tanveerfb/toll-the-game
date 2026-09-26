@@ -1,5 +1,7 @@
 import React from "react";
 
+import { GROWTH } from "@/components/game/growth/growthStyle";
+
 import type { CoreStats } from "@/lib/game/progression";
 
 /**
@@ -41,17 +43,15 @@ export default function StatDelta({
   if (all.length === 0) return null;
 
   return (
-    <div className="mt-2.5 border border-hairline bg-inset px-2.5 py-2">
+    <div className="mt-2.5 border border-rule bg-muted px-2.5 py-2">
       {all.map((row) => (
         <div
           key={row.label}
-          className="grid grid-cols-[2.5rem_1fr_auto] items-baseline gap-2 font-body text-[13px] tabular-nums"
+          className="grid grid-cols-[2.5rem_1fr_auto] items-baseline gap-2 font-body text-sm tabular-nums"
         >
-          <span className="font-bold uppercase tracking-label text-[10px] text-readout-muted">
-            {row.label}
-          </span>
-          <span className="text-readout-muted">{row.from} →</span>
-          <span className="font-bold text-role-heal">{row.to}</span>
+          <span className={GROWTH.label}>{row.label}</span>
+          <span className="text-muted-foreground">{row.from} →</span>
+          <span className={`font-bold ${GROWTH.gain}`}>{row.to}</span>
         </div>
       ))}
     </div>

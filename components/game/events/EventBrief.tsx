@@ -4,8 +4,11 @@ import React from "react";
 import Image from "next/image";
 import { ChevronLeft } from "lucide-react";
 
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/Panel";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Screen } from "@/components/ui/Screen";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import AutoClearConfirm from "@/components/game/AutoClearConfirm";
@@ -73,8 +76,8 @@ function EnemyCard({
       })
     : null;
   return (
-    <Panel className="flex gap-3">
-      <span className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden border border-edge bg-inset">
+    <Panel surface="paper" lift="slab" className="flex gap-3">
+      <span className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden border-2 border-border bg-muted">
         {art ? (
           <Image
             src={art}
@@ -84,11 +87,11 @@ function EnemyCard({
             className="object-cover object-top"
           />
         ) : (
-          <span className="font-heading text-4xl text-readout-muted">☠</span>
+          <span className="font-heading text-4xl text-muted-foreground">☠</span>
         )}
       </span>
       <div className="min-w-0">
-        <p className="font-heading text-xl tracking-title text-readout-strong">
+        <p className="font-heading text-xl tracking-title">
           {enemy?.name ?? event.name}
         </p>
         {/**
@@ -101,7 +104,7 @@ function EnemyCard({
          * fact about the fight (browser check, 2026-09-17).
          */}
         {enemy ? (
-          <p className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+          <p className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
             {enemy.tier === "elite" ? "Elite" : "Standard"}
             {phases > 1 ? ` · ${phases} phases` : ""}
           </p>
@@ -116,10 +119,10 @@ function EnemyCard({
               ] as const
             ).map(([label, value]) => (
               <span key={label}>
-                <span className="block font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+                <span className="block font-body text-label font-bold uppercase tracking-label text-muted-foreground">
                   {label}
                 </span>
-                <span className="block font-heading text-base tabular-nums text-readout-strong">
+                <span className="block font-heading text-base tabular-nums">
                   {value.toLocaleString()}
                 </span>
               </span>
@@ -127,16 +130,18 @@ function EnemyCard({
           </div>
         ) : null}
         {event.kind === "boss" ? (
-          <p className="mt-2 font-body text-[10px] font-bold uppercase tracking-label text-signal">
+          // The yellow badge: this line moves when the difficulty toggle
+          // does, so it wears the same colour as the selected toggle.
+          <Badge className="mt-2">
             Level {enemyLevelForDifficulty(difficulty)} at difficulty{" "}
             {difficulty}
-          </p>
+          </Badge>
         ) : (
           // A trial's enemies carry authored levels, so the world level dial
           // never reaches them. Say what the run IS.
-          <p className="mt-2 font-body text-[10px] font-bold uppercase tracking-label text-signal">
+          <Badge className="mt-2">
             {eventFightCount(event)} fights · one HP bar
-          </p>
+          </Badge>
         )}
       </div>
     </Panel>
@@ -168,30 +173,31 @@ function DifficultyLadder({
   onPick: (level: number) => void;
 }): React.JSX.Element {
   return (
-    <Panel surface="quiet">
+    <Panel surface="paper">
       <SectionHeader size="block" eyebrow="Difficulty" rule />
-      <div className="grid grid-cols-4 gap-1.5">
+      {/* One difficulty out of four: the shadcn toggle group (ruling #154),
+          the mockup's segmented row. */}
+      <ToggleGroup
+        type="single"
+        variant="outline"
+        value={String(difficulty)}
+        onValueChange={(value) => {
+          if (value) onPick(Number(value));
+        }}
+        className="grid w-full grid-cols-4 gap-1.5"
+        aria-label="Difficulty"
+      >
         {[1, 2, 3, 4].map((level) => {
           const allowed = difficulties.includes(level);
-          const active = difficulty === level;
           return (
-            <button
+            <ToggleGroupItem
               key={level}
-              type="button"
+              value={String(level)}
               disabled={!allowed}
-              onClick={() => onPick(level)}
-              className={`border px-2 py-2 text-center transition-colors ${
-                active
-                  ? "border-signal bg-signal/10"
-                  : "border-edge bg-inset hover:border-edge-strong"
-              } disabled:opacity-40`}
+              className="flex-col gap-0 px-2 py-2"
             >
-              <span
-                className={`block font-heading text-lg ${active ? "text-signal" : "text-readout-strong"}`}
-              >
-                {level}
-              </span>
-              <span className="block font-body text-[9px] font-bold uppercase tracking-title text-readout-muted">
+              <span className="block font-heading text-lg">{level}</span>
+              <span className="block font-body text-label font-bold uppercase tracking-title">
                 {/* No multiplier here any more: difficulty pays through its
                     own reward table, not a coefficient (ruling #80). The old
                     "×2.05" advertised a bonus the code never applied. */}
@@ -201,11 +207,11 @@ function DifficultyLadder({
                     ? "Cleared"
                     : "New"}
               </span>
-            </button>
+            </ToggleGroupItem>
           );
         })}
-      </div>
-      <p className="mt-2 font-body text-[11px] leading-snug text-readout-muted">
+      </ToggleGroup>
+      <p className="mt-2 font-body text-caption leading-snug text-muted-foreground">
         World level {rankCap} is your cap at account rank {accountRank}. Each
         difficulty is its own fight with its own one-off bundle and its own drop
         table — and each has to be beaten before it can be auto cleared.
@@ -232,7 +238,7 @@ function RewardPreview({
 }): React.JSX.Element {
   const alreadyCleared = clearedEvents.includes(tierKey(event.id, difficulty));
   return (
-    <Panel surface="quiet">
+    <Panel surface="paper">
       {!alreadyCleared ? (
         <>
           <SectionHeader
@@ -251,7 +257,7 @@ function RewardPreview({
 
       <SectionHeader size="block" eyebrow="Every clear" rule />
       <RewardChips rows={farmablePreview(difficulty)} />
-      <p className="mt-2 font-body text-[11px] leading-snug text-readout-muted">
+      <p className="mt-2 font-body text-caption leading-snug text-muted-foreground">
         {alreadyCleared
           ? "Ranges, not promises — the roll happens on victory. This difficulty's first-clear bundle is already paid."
           : "The bundle above is fixed and pays once, for this difficulty. Everything below rolls, every time."}
@@ -351,13 +357,8 @@ export default function EventBrief({
           <ChevronLeft className="h-3.5 w-3.5" strokeWidth={2.6} />
           Events
         </Button>
-        <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
-          {event.kicker}
-        </span>
-        <h1 className="w-full font-heading text-3xl tracking-title text-readout-strong">
-          {event.name}
-        </h1>
       </div>
+      <SectionHeader eyebrow={event.kicker} title={event.name} />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_20rem]">
         <div className="flex flex-col gap-3">
@@ -387,20 +388,18 @@ export default function EventBrief({
           <TeamPicker ownedIds={roster} team={team} onChange={onPickTeam} />
 
           {notice ? (
-            <p className="border-l-2 border-el-red bg-el-red/5 px-3 py-2 font-body text-xs text-el-red">
-              {notice}
-            </p>
+            <Alert variant="destructive">{notice}</Alert>
           ) : null}
 
-          <Panel className="flex items-center gap-3">
+          <Panel surface="paper" lift="slab" className="flex items-center gap-3">
             <span>
-              <span className="block font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+              <span className="block font-body text-label font-bold uppercase tracking-label text-muted-foreground">
                 Cost
               </span>
-              <span className="font-heading text-2xl text-readout-strong">
+              <span className="font-heading text-2xl">
                 {event.staminaCost}
               </span>
-              <span className="ml-1.5 font-body text-[10px] text-readout-muted">
+              <span className="ml-1.5 font-body text-label text-muted-foreground">
                 of {currentStamina} stamina
               </span>
             </span>
@@ -426,8 +425,9 @@ export default function EventBrief({
                 Auto clear
               </Button>
             ) : null}
+            {/* The screen's one primary action, so the one slanted yellow
+                button (the mockup's Enter, ruling #154). */}
             <Button
-              variant="secondary"
               disabled={!canEnter}
               onClick={onEnter}
               className={auto.eligible ? undefined : "ml-auto"}
@@ -452,13 +452,13 @@ export default function EventBrief({
            * explanation.
            */}
           {auto.eligible && auto.blocker ? (
-            <p className="border-l-2 border-edge-strong bg-inset px-3 py-2 font-body text-xs text-readout-dim">
+            <Alert>
               {auto.blocker === "locked"
                 ? `Beat ${event.name} once yourself to unlock Auto Clear. A ticket skips the fight — it never skips the stamina.`
                 : auto.blocker === "no-tickets"
                   ? "No Auto Clear Tickets. They arrive with account ranks."
                   : "Not enough stamina — Auto Clear still pays the full cost of every run it skips."}
-            </p>
+            </Alert>
           ) : null}
         </div>
       </div>

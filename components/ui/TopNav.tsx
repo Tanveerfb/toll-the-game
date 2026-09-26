@@ -20,6 +20,7 @@ import AudioControl from "@/components/ui/AudioControl";
 import ItemIcon from "@/components/game/ItemIcon";
 import OrdersButton from "@/components/game/OrdersButton";
 import Hint from "@/components/ui/Hint";
+import { NAV_CHIP } from "@/components/ui/navChip";
 import { GAME_ROUTES, isRouteActive } from "@/lib/nav/routes";
 import { useAuth } from "@/hooks/AuthProvider";
 import { useGameStore } from "@/store/gameStore";
@@ -28,6 +29,8 @@ import { getCurrentStamina, STAMINA_CAP } from "@/lib/game/stamina";
 import { rankProgress } from "@/lib/game/accountRank";
 import { claimableCount, evaluateOrders } from "@/lib/game/orders";
 import { firebaseEnabled } from "@/lib/firebase";
+import { cn } from "@/lib/utils";
+
 
 /** Never resubscribes — it exists only so the server snapshot and the client
  *  snapshot differ, which is how a client-only branch stays hydration-safe. */
@@ -62,6 +65,11 @@ const ROUTE_ICON: Record<string, React.ElementType> = {
  *  a visual call, so it is left as it was. */
 const ARCHIVE_ICON = Coins;
 
+/** The wordmark: a skewed paper label with a yellow slab, the mockup's
+ *  (`docs/design/mockups/motif-options.html`). */
+const WORDMARK =
+  "ink-skew inline-flex min-h-11 shrink-0 items-center bg-card px-2 font-heading text-xl tracking-title text-card-foreground ink-slab-primary";
+
 /**
  * One counter on the resource strip.
  *
@@ -88,7 +96,7 @@ function Resource({
   title: string;
 }): React.JSX.Element {
   const glyph = (
-    <Icon className="h-3 w-3 shrink-0 text-readout-muted" strokeWidth={2.4} />
+    <Icon className="h-3 w-3 shrink-0 text-muted-foreground" strokeWidth={2.4} />
   );
   return (
     <Hint
@@ -98,17 +106,17 @@ function Resource({
       // hint is the only thing that says what the number *is* — which made a
       // hover-only tooltip the wrong container for it on a phone. `min-h-11`
       // because this row is a row of controls, not a readout.
-      className="flex min-h-11 shrink-0 cursor-help items-center gap-1.5 border border-hairline bg-void px-2 transition-colors hover:border-edge-strong"
+      className={cn(NAV_CHIP, "cursor-help")}
     >
       {iconId ? (
         <ItemIcon id={iconId} size={16} alt="" fallback={glyph} />
       ) : (
         glyph
       )}
-      <span className="font-body text-[11px] font-bold tabular-nums text-readout-strong">
+      <span className="tabular-nums">
         {value}
         {suffix ? (
-          <span className="font-semibold text-readout-muted">{suffix}</span>
+          <span className="font-medium text-muted-foreground">{suffix}</span>
         ) : null}
       </span>
     </Hint>
@@ -193,7 +201,7 @@ export default function TopNav() {
       // `--nav-h` is derived from this attribute (styles/globals.css), and
       // `.screen-below-nav` is what every full-height screen measures against.
       data-nav-rows={rows}
-      className="sticky top-0 z-50 border-b border-edge bg-void/90 backdrop-blur-sm"
+      className="sticky top-0 z-50 border-b-2 border-ground-line bg-background"
     >
       {/* Row 1 — identity and routes. Fixed height; the battle shell's maths
           survives on this row alone. */}
@@ -212,9 +220,7 @@ export default function TopNav() {
             and `BattleLock` would bounce the click straight back — a link
             that goes nowhere is worse than none. */}
         {inBattle ? (
-          <span className="inline-flex min-h-11 shrink-0 items-center font-heading text-xl tracking-eyebrow text-signal">
-            TOLL
-          </span>
+          <span className={WORDMARK}>TOLL</span>
         ) : (
         <Link
           href="/"
@@ -223,14 +229,14 @@ export default function TopNav() {
               ? `Home — ${readyOrders} Bureau order${readyOrders > 1 ? "s" : ""} ready to claim`
               : "Home"
           }
-          className="relative inline-flex min-h-11 shrink-0 items-center font-heading text-xl tracking-eyebrow text-signal"
+          className={cn(WORDMARK, "relative")}
         >
           TOLL
           {/* Orders live on the home screen, so the count rides the one link
               that goes there. Without it a claimable reward is invisible from
               every other screen. */}
           {readyOrders > 0 ? (
-            <span className="absolute -right-2 -top-1 flex h-3.5 min-w-3.5 items-center justify-center bg-el-light px-1 font-body text-[9px] font-bold tabular-nums leading-none text-void">
+            <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center border border-border bg-el-light px-1 font-body text-label font-bold tabular-nums leading-none text-card-foreground">
               {readyOrders}
             </span>
           ) : null}
@@ -262,11 +268,12 @@ export default function TopNav() {
                 // be a 14px icon in `py-1`: a ~22px target, the smallest in
                 // the app, on the app's primary navigation.
                 aria-label={route.label}
-                className={`flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 border px-2 font-body text-[11px] font-bold uppercase tracking-label transition-colors ${
+                className={cn(
+                  "flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 border-2 px-2 font-body text-caption font-bold uppercase tracking-label transition-colors",
                   active
-                    ? "border-edge-strong bg-signal/10 text-signal"
-                    : "border-transparent text-readout-dim hover:border-edge hover:text-readout"
-                }`}
+                    ? "ink-skew border-border bg-card text-card-foreground ink-slab-primary"
+                    : "border-transparent text-ground-dim hover:text-foreground",
+                )}
               >
                 <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
                 <span className="hidden sm:inline">
@@ -301,7 +308,7 @@ export default function TopNav() {
       {/* Row 2 — what you have. Lived only on the home screen before, which
           meant no gem count on the gacha page and no stamina on the boss page. */}
       {rows === 2 ? (
-        <div className="mx-auto hidden h-12 w-full max-w-6xl items-center gap-1.5 border-t border-hairline px-4 sm:flex md:px-8">
+        <div className="mx-auto hidden h-12 w-full max-w-6xl items-center gap-1.5 border-t-2 border-ground-line px-4 sm:flex md:px-8">
           {/* The counters scroll and the account chrome does not — the same
               split `Deck.tsx` makes with End Turn. Four 44px counters plus a
               rank chip and an avatar do not fit in 390px, and the half you
@@ -340,16 +347,17 @@ export default function TopNav() {
           <Link
             href="/profile"
             aria-label="Account rank"
-            className="flex min-h-11 shrink-0 items-center gap-2 border border-hairline bg-void px-2 transition-colors hover:border-edge-strong"
+            className={cn(NAV_CHIP, "gap-2")}
           >
-            <span
-              className={`font-body text-[11px] font-bold tracking-title ${ready && !progress ? "text-el-light" : "text-signal"}`}
-            >
+            <span className="tracking-title">
               {ready ? `R${account.rank}` : "R—"}
             </span>
-            <span className="block h-1 w-10 overflow-hidden border border-hairline bg-void sm:w-14">
+            {/* Walled (XP banking, rank capped until the trial) fills gold
+                rather than yellow, so a full bar that never moves reads as
+                a state, not a bug. */}
+            <span className="block h-2 w-10 overflow-hidden border border-border bg-muted sm:w-14">
               <span
-                className={`block h-full transition-[width] duration-500 ${ready && !progress ? "bg-el-light" : "bg-signal"}`}
+                className={`block h-full transition-[width] duration-500 ${ready && !progress ? "bg-el-light" : "bg-primary"}`}
                 style={{ width: ready ? `${rankPercent}%` : "0%" }}
               />
             </span>
@@ -357,14 +365,14 @@ export default function TopNav() {
           <Hint
             ariaLabel="World level"
             content="World level — the difficulty everything scales to"
-            className="hidden min-h-11 shrink-0 cursor-help items-center border border-hairline bg-void px-2 font-body text-[10px] font-bold uppercase tracking-label text-readout-dim transition-colors hover:border-edge-strong sm:flex"
+            className={cn(NAV_CHIP, "hidden cursor-help sm:flex")}
           >
             World {ready ? worldLevel : dash}
           </Hint>
           <Link
             href={user ? "/profile" : "/login"}
             aria-label={user ? "Profile" : "Sign in"}
-            className="flex h-11 w-11 shrink-0 items-center justify-center border border-edge-strong bg-panel font-heading text-sm text-readout-strong transition-colors hover:border-signal hover:text-signal"
+            className={cn(NAV_CHIP, "w-11 px-0 font-heading text-sm")}
           >
             {(user?.displayName || user?.email || "G").charAt(0).toUpperCase()}
           </Link>
@@ -385,7 +393,11 @@ export default function TopNav() {
           nav it was supposed to replace. (Sticky alone would not have done
           this — it creates a stacking context, not a containing block. The
           blur is the culprit, which is the same family of bug
-          `tests/overlayStacking.test.ts` was written for.) */}
+          `tests/overlayStacking.test.ts` was written for.)
+
+          Shonen Ink dropped the blur (2026-09-26: glass is excluded from the
+          motif). The portal stays anyway: the next filter or transform
+          added to the nav would bring the bug straight back. */}
       {mounted
         ? createPortal(
             <BottomTabs pathname={pathname} signedIn={!!user} />,
@@ -437,7 +449,7 @@ function BottomTabs({
       // `fixed`, not `sticky`: the nav it lives in is itself sticky at the top,
       // and a sticky child cannot escape to the other edge of the viewport.
       // `body` reserves the space through `--tabbar-h` (styles/globals.css).
-      className="app-tabbar pb-safe fixed inset-x-0 bottom-0 z-50 flex border-t border-edge bg-void/95 backdrop-blur-sm sm:hidden"
+      className="app-tabbar pb-safe fixed inset-x-0 bottom-0 z-50 flex border-t-2 border-border bg-card text-card-foreground sm:hidden"
     >
       {tabs.map((tab) => {
         const active = isRouteActive(tab.href, pathname);
@@ -447,12 +459,15 @@ function BottomTabs({
             key={tab.label}
             href={tab.href}
             aria-current={active ? "page" : undefined}
-            className={`flex min-h-13 flex-1 flex-col items-center justify-center gap-0.5 pt-1.5 transition-colors ${
-              active ? "text-signal" : "text-readout-muted"
-            }`}
+            className={cn(
+              "flex min-h-13 flex-1 flex-col items-center justify-center gap-0.5 pt-1.5 transition-colors",
+              active
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-card-foreground",
+            )}
           >
             <Icon className="h-4 w-4" strokeWidth={2.2} />
-            <span className="font-body text-[9px] font-bold uppercase tracking-label">
+            <span className="font-body text-label font-bold uppercase tracking-label">
               {tab.label}
             </span>
           </Link>

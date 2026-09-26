@@ -1,6 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from "react";
 import { useRouter } from "next/navigation";
 import { Check, ChevronRight, Lock } from "lucide-react";
@@ -34,6 +36,10 @@ import { getCharacterById } from "@/lib/game/characterCatalog";
  *
  * Presentational on purpose: every rule lives in the evaluator, and claiming
  * re-checks in the store. This decides only what a row looks like.
+ *
+ * **Drawn on paper** (Shōnen Ink, ruling #154): it renders inside the Orders
+ * `Dialog`. So the text is ink, and every element hue is a FILL with ink on
+ * it rather than coloured text, which on paper would not read.
  */
 
 /** One reward, split so the row can draw it. `iconId` is empty for the parts
@@ -83,14 +89,14 @@ function OrderRow({
   const showBar = required > 1 && !claimed;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 border-b border-hairline px-3 py-2 last:border-b-0">
+    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 border-b border-rule px-1 py-2 last:border-b-0">
       <span
         className={`flex h-4 w-4 shrink-0 items-center justify-center border ${
           claimed
-            ? "border-el-green text-el-green"
+            ? "border-border bg-el-green"
             : anyLock
-              ? "border-hairline text-readout-muted"
-              : "border-edge text-readout-muted"
+              ? "border-muted-foreground text-muted-foreground"
+              : "border-border"
         }`}
       >
         {claimed ? (
@@ -105,11 +111,11 @@ function OrderRow({
           surrounding UI applied to prose (Tanveer, 2026-08-13). */}
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span
-          className={`font-body text-sm ${claimed ? "text-readout-muted line-through" : "text-readout"}`}
+          className={`font-body text-sm ${claimed ? "text-muted-foreground line-through" : ""}`}
         >
           {order.title}
         </span>
-        <span className="font-body text-xs leading-snug text-readout-muted">
+        <span className="font-body text-xs leading-snug text-muted-foreground">
           {claimed
             ? "Claimed"
             : lockedBy
@@ -118,13 +124,8 @@ function OrderRow({
         </span>
         {showBar ? (
           <span className="mt-1 flex items-center gap-1.5">
-            <span className="block h-[3px] w-full max-w-40 bg-inset">
-              <span
-                className="block h-full bg-signal transition-[width] duration-500"
-                style={{ width: `${percent}%` }}
-              />
-            </span>
-            <span className="font-body text-[11px] tabular-nums text-readout-muted">
+            <Progress value={percent} className="max-w-40" />
+            <span className="font-body text-caption tabular-nums text-muted-foreground">
               {current}/{required}
             </span>
           </span>
@@ -135,7 +136,7 @@ function OrderRow({
           what to do and never what for. It wraps to its own line instead now;
           the row is `flex-wrap` for exactly this. */}
       {!claimed ? (
-        <span className="order-last flex w-full shrink-0 items-center gap-2.5 pl-6 font-body text-xs tabular-nums text-el-light sm:order-none sm:w-auto sm:pl-0">
+        <span className="order-last flex w-full shrink-0 items-center gap-2.5 pl-6 font-body text-xs font-bold tabular-nums sm:order-none sm:w-auto sm:pl-0">
           {rewardParts(order.reward).map((part) => (
             <span key={part.text} className="flex items-center gap-1.5">
               {part.iconId ? (
@@ -185,14 +186,16 @@ function LockedOrders({ onSignIn }: { onSignIn: () => void }): React.JSX.Element
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-3">
       <span className="flex min-w-[14rem] flex-1 flex-col gap-1">
-        <span className="font-body text-sm text-readout">
+        <span className="font-body text-sm">
           Create an account or log in to access Bureau Orders.
         </span>
-        <span className="font-body text-xs leading-snug text-readout-muted">
+        <span className="font-body text-xs leading-snug text-muted-foreground">
           Waiting to be claimed:{" "}
-          <span className="text-el-light">{prizes.join(" · ")}</span>
+          <span className="font-bold text-card-foreground">
+            {prizes.join(" · ")}
+          </span>
         </span>
-        <span className="font-body text-xs leading-snug text-readout-muted">
+        <span className="font-body text-xs leading-snug text-muted-foreground">
           You keep making progress while signed out — it&apos;s all here when
           you come back.
         </span>
@@ -336,40 +339,44 @@ export default function OrdersBoard({
       {/* One tab per step. Shown even when only one step is authored — it
           tells the player the board continues, which a bare list of ten does
           not (Tanveer, 2026-08-13). */}
-      <div className="hud-scroll -mx-1 mb-2 flex gap-px overflow-x-auto border-b border-hairline bg-inset">
-        {ORDER_STEPS.map((step) => {
-          const unlocked = isStepUnlocked(step, claimedOrders);
-          const active = step === activeStep;
-          const stepReady = claimableCount(
-            wholeBoard.filter((e) => e.order.step === step),
-          );
-          return (
-            <button
-              key={step}
-              type="button"
+      {/* The shadcn tabs (ruling #154), `line` because they sit inside a
+          paper dialog. The rows below are the active step's, so there is no
+          `TabsContent` per step: the list is one panel whose contents the
+          tab selects. The triggers are 44px now; they were ~28px. */}
+      <Tabs
+        value={String(activeStep)}
+        onValueChange={(value) => setViewedStep(Number(value))}
+        className="mb-2"
+      >
+        <TabsList variant="line" className="hud-scroll overflow-x-auto">
+          {ORDER_STEPS.map((step) => {
+            const unlocked = isStepUnlocked(step, claimedOrders);
+            const stepReady = claimableCount(
+              wholeBoard.filter((e) => e.order.step === step),
+            );
+            return (
               // A locked step is readable, not enterable: seeing what is
               // coming is the point of the tab existing.
-              onClick={() => setViewedStep(step)}
-              className={`flex shrink-0 items-center gap-1.5 px-3 py-1.5 font-body text-[10px] font-bold uppercase tracking-label transition-colors ${
-                active
-                  ? "bg-panel text-signal"
-                  : "text-readout-muted hover:text-readout"
-              }`}
-            >
-              {!unlocked ? <Lock className="h-3 w-3" strokeWidth={2.4} /> : null}
-              Step {step}
-              {stepReady > 0 ? (
-                <span className="border border-el-light px-1 text-el-light tabular-nums">
-                  {stepReady}
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+              <TabsTrigger
+                key={step}
+                value={String(step)}
+                className="flex-none text-label uppercase tracking-label"
+              >
+                {!unlocked ? <Lock className="h-3 w-3" strokeWidth={2.4} /> : null}
+                Step {step}
+                {stepReady > 0 ? (
+                  <span className="border border-border bg-el-light px-1 tabular-nums text-card-foreground">
+                    {stepReady}
+                  </span>
+                ) : null}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
 
       {!isStepUnlocked(activeStep, claimedOrders) ? (
-        <p className="mb-2 border-b border-hairline pb-2 font-body text-xs text-readout-dim">
+        <p className="mb-2 border-b border-rule pb-2 font-body text-xs text-muted-foreground">
           Claim every order in step {activeStep - 1} to open this one. Progress
           you make early still counts — it just waits here.
         </p>

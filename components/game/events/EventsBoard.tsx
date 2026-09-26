@@ -4,6 +4,8 @@ import React from "react";
 
 import { Screen } from "@/components/ui/Screen";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import { panelVariants } from "@/components/ui/Panel";
+import { cn } from "@/lib/utils";
 import EventCard from "@/components/game/events/EventCard";
 import { STAMINA_CAP } from "@/lib/game/stamina";
 import type { GameEvent } from "@/lib/game/events";
@@ -33,7 +35,7 @@ export default function EventsBoard({
   return (
     <Screen width="app">
       <SectionHeader eyebrow="Operations board" title="Events">
-        <p className="mt-1 font-body text-[11px] text-readout-muted">
+        <p className="mt-2 font-body text-caption text-ground-dim">
           Stamina {stamina} / {STAMINA_CAP} · account rank {accountRank} · world
           level {worldLevel}
         </p>
@@ -46,7 +48,12 @@ export default function EventsBoard({
          * visible from rank 1 — but a future gated event set could empty this
          * board, and an empty page with a header reads as a bug.
          */
-        <p className="border border-hairline bg-panel px-3 py-6 text-center font-body text-xs text-readout-muted">
+        <p
+          className={cn(
+            panelVariants({ surface: "paper", density: "none" }),
+            "px-3 py-6 text-center font-body text-xs text-muted-foreground",
+          )}
+        >
           No events are open to you yet. Climb account ranks to open them.
         </p>
       ) : (

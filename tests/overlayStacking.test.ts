@@ -24,10 +24,6 @@ describe("full-viewport overlays escape their stacking context", () => {
 
   /** Overlays that legitimately render in place, and why. */
   const ROOTED: Record<string, string> = {
-    "components/gacha/ModalShell.tsx":
-      "Mounted at the gacha page root — no sticky/transformed ancestor.",
-    "components/gacha/PullReveal.tsx":
-      "Mounted at the gacha page root — no sticky/transformed ancestor.",
     "components/game/BattleArena.tsx":
       "The arena's own result/confirm modals; the arena wrapper is plain `relative`.",
   };
@@ -57,7 +53,13 @@ describe("full-viewport overlays escape their stacking context", () => {
     // TeamSelect's hand-rolled roster overlay moved onto DetailOverlay, which
     // portals. A FALL below this floor is the signal worth catching — either
     // the regex broke, or an overlay quietly stopped being one.
-    expect(overlays.length).toBeGreaterThanOrEqual(6);
+    //
+    // Dropped from 6 to 4 on 2026-09-26, and on purpose: the Shonen Ink pass
+    // (ruling #154) moved the hand-built overlays onto the shadcn `Dialog` and
+    // `Sheet`, which portal through radix. `ModalShell` was deleted and
+    // `PullReveal` and `CharacterBrowser` stopped painting their own. What is
+    // left is battle's three and `DetailOverlay`, which move in phase 4.
+    expect(overlays.length).toBeGreaterThanOrEqual(4);
   });
 
   it("either portals or is a documented root-level overlay", () => {

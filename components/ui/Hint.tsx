@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Popover as PopoverPrimitive } from "radix-ui";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 /**
  * A definition the player can actually reach.
@@ -35,10 +41,10 @@ import { Popover as PopoverPrimitive } from "radix-ui";
  * `cursor-help` still marks the word as explanatory.
  */
 
-/** Same surface as `TooltipContent` — this replaces those, so it must not
- *  look like a new kind of thing. */
-const CONTENT_CLASS =
-  "z-50 inline-flex w-fit max-w-xs origin-(--radix-popover-content-transform-origin) items-center gap-1.5 rounded-none border border-edge-strong bg-panel-raised px-3 py-1.5 font-body text-xs text-readout shadow-[0_10px_30px_rgba(0,0,0,0.55)] data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95";
+/** A hint is the shadcn `PopoverContent` (paper, ink outline, slab; ruling
+ *  #154) at a readout's size: as wide as its words and no wider than
+ *  `max-w-xs`, rather than the popover's fixed `w-72` panel. */
+const CONTENT_CLASS = "inline-flex w-fit max-w-xs flex-row items-center gap-1.5 px-3 py-1.5 text-xs";
 
 export default function Hint({
   children,
@@ -65,8 +71,8 @@ export default function Hint({
   const [open, setOpen] = React.useState(false);
 
   return (
-    <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
-      <PopoverPrimitive.Trigger
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
         type="button"
         aria-label={ariaLabel}
         className={className}
@@ -85,21 +91,19 @@ export default function Hint({
         }}
       >
         {children}
-      </PopoverPrimitive.Trigger>
-      <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Content
-          side={side}
-          align={align}
-          sideOffset={4}
-          collisionPadding={8}
-          // A hint is a readout, not a dialogue. Taking focus would strand a
-          // keyboard user inside it and, on a phone, scroll the page to it.
-          onOpenAutoFocus={(event) => event.preventDefault()}
-          className={`${CONTENT_CLASS} ${contentClassName ?? ""}`}
-        >
-          {content}
-        </PopoverPrimitive.Content>
-      </PopoverPrimitive.Portal>
-    </PopoverPrimitive.Root>
+      </PopoverTrigger>
+      <PopoverContent
+        side={side}
+        align={align}
+        sideOffset={4}
+        collisionPadding={8}
+        // A hint is a readout, not a dialogue. Taking focus would strand a
+        // keyboard user inside it and, on a phone, scroll the page to it.
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        className={cn(CONTENT_CLASS, contentClassName)}
+      >
+        {content}
+      </PopoverContent>
+    </Popover>
   );
 }

@@ -5,10 +5,9 @@ import { Slider as SliderPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 
-// Combat Terminal defaults (ruling #84): the game has no rounded geometry, so
-// the track and thumb are squared off here rather than at every usage. The
-// colour tokens are already remapped globally, so only the shape and the
-// hardcoded white thumb needed changing.
+// Shōnen Ink (ruling #154; was Combat Terminal, #84): square geometry, a
+// paper track outlined in ink, and the action yellow for the filled range and
+// thumb. Semantic tokens only, so it reads on the ground and on paper alike.
 
 function Slider({
   className,
@@ -46,11 +45,11 @@ function Slider({
     >
       <SliderPrimitive.Track
         data-slot="slider-track"
-        className="relative grow overflow-hidden rounded-none bg-inset data-horizontal:h-1 data-horizontal:w-full data-vertical:h-full data-vertical:w-1"
+        className="relative grow overflow-hidden rounded-none border border-border bg-muted data-horizontal:h-2 data-horizontal:w-full data-vertical:h-full data-vertical:w-2"
       >
         <SliderPrimitive.Range
           data-slot="slider-range"
-          className="absolute bg-signal select-none data-horizontal:h-full data-vertical:w-full"
+          className="absolute bg-primary select-none data-horizontal:h-full data-vertical:w-full"
         />
       </SliderPrimitive.Track>
       {Array.from({ length: _values.length }, (_, index) => (
@@ -63,7 +62,7 @@ function Slider({
           // mouse, not for a thumb on a phone (ruling #107). Keeping the two
           // sizes separate is the point; a 44px visible block would swamp a
           // 4px track.
-          className="relative block size-3 shrink-0 rounded-none border border-signal bg-signal ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-4 hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden active:ring-3 disabled:pointer-events-none disabled:opacity-50"
+          className="relative block size-3 shrink-0 rounded-none border border-border bg-primary ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-4hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden active:ring-3 disabled:pointer-events-none disabled:opacity-50"
         />
       ))}
     </SliderPrimitive.Root>

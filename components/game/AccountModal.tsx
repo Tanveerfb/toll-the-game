@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import DetailOverlay from "@/components/game/DetailOverlay";
+import MountedDialog from "@/components/ui/MountedDialog";
+import { cn } from "@/lib/utils";
 import PlayerAvatar from "@/components/game/PlayerAvatar";
 import { useAuth } from "@/hooks/AuthProvider";
 import { usePlayerStore } from "@/store/playerStore";
@@ -32,11 +33,11 @@ function Row({
   value: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-hairline py-2 last:border-b-0">
-      <span className="shrink-0 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+    <div className="flex items-baseline justify-between gap-3 border-b border-rule py-2 last:border-b-0">
+      <span className="shrink-0 font-body text-label font-bold uppercase tracking-label text-muted-foreground">
         {label}
       </span>
-      <span className="min-w-0 truncate text-right font-body text-sm text-readout">
+      <span className="min-w-0 truncate text-right font-body text-sm">
         {value}
       </span>
     </div>
@@ -89,26 +90,26 @@ export default function AccountModal({
   };
 
   return (
-    <DetailOverlay
+    <MountedDialog
       title="Account"
-      subtitle={user ? "Signed in" : "Playing as a guest"}
+      description={user ? "Signed in" : "Playing as a guest"}
       onClose={onClose}
     >
       <div className="space-y-5">
         <section className="flex items-center gap-3">
           <PlayerAvatar characterId={avatarId} fallback={displayName} size={56} />
           <div className="min-w-0">
-            <p className="truncate font-heading text-xl tracking-title text-readout-strong">
+            <p className="truncate font-heading text-xl tracking-title">
               {displayName}
             </p>
-            <p className="truncate font-body text-[11px] text-readout-muted">
+            <p className="truncate font-body text-caption text-muted-foreground">
               {user?.email ?? "Progress is stored on this device only"}
             </p>
           </div>
         </section>
 
         <section>
-          <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
+          <p className="mb-2 border-b border-rule pb-1.5 font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
             Display picture
           </p>
           {/* A portrait picker, not an upload: there's no storage bucket to
@@ -119,11 +120,13 @@ export default function AccountModal({
               onClick={() => setAvatarId(null)}
               aria-pressed={avatarId === null}
               aria-label="Use the initial instead"
-              className={`flex h-12 w-12 items-center justify-center border font-heading text-lg transition-colors ${
+              // Picked is the action yellow, as everywhere else.
+              className={cn(
+                "flex h-12 w-12 items-center justify-center border-2 font-heading text-lg transition-colors",
                 avatarId === null
-                  ? "border-signal bg-signal/10 text-signal"
-                  : "border-edge text-readout-dim hover:border-edge-strong"
-              }`}
+                  ? "border-border bg-primary text-primary-foreground"
+                  : "border-rule text-muted-foreground hover:border-border",
+              )}
             >
               {displayName.charAt(0).toUpperCase()}
             </button>
@@ -138,11 +141,12 @@ export default function AccountModal({
                   onClick={() => setAvatarId(id)}
                   aria-pressed={active}
                   aria-label={name}
-                  className={`relative h-12 w-12 overflow-hidden border transition-colors ${
+                  className={cn(
+                    "relative h-12 w-12 overflow-hidden border-2 transition-colors",
                     active
-                      ? "border-signal"
-                      : "border-edge hover:border-edge-strong"
-                  }`}
+                      ? "border-border ink-slab-primary"
+                      : "border-rule hover:border-border",
+                  )}
                 >
                   {art ? (
                     <Image
@@ -153,7 +157,7 @@ export default function AccountModal({
                       className="object-cover object-top"
                     />
                   ) : (
-                    <span className="flex h-full w-full items-center justify-center font-heading text-lg text-readout-dim">
+                    <span className="flex h-full w-full items-center justify-center font-heading text-lg text-muted-foreground">
                       {name.charAt(0)}
                     </span>
                   )}
@@ -161,13 +165,13 @@ export default function AccountModal({
               );
             })}
           </div>
-          <p className="mt-2 font-body text-[11px] text-readout-muted">
+          <p className="mt-2 font-body text-caption text-muted-foreground">
             Chosen from characters you own. Stored on this device.
           </p>
         </section>
 
         <section>
-          <p className="mb-1 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
+          <p className="mb-1 border-b border-rule pb-1.5 font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
             Save
           </p>
           <Row
@@ -185,7 +189,7 @@ export default function AccountModal({
             <Row
               label="Account id"
               value={
-                <span className="font-mono text-[11px]">
+                <span className="font-mono text-caption">
                   {user.uid.slice(0, 12)}…
                 </span>
               }
@@ -194,11 +198,11 @@ export default function AccountModal({
         </section>
 
         <section>
-          <p className="mb-1 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
+          <p className="mb-1 border-b border-rule pb-1.5 font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
             Tutorial
           </p>
           <div className="flex items-center justify-between gap-3 py-2">
-            <span className="min-w-0 font-body text-[11px] leading-snug text-readout-muted">
+            <span className="min-w-0 font-body text-caption leading-snug text-muted-foreground">
               {tutorialDismissed
                 ? "Battle hints are turned off."
                 : `${tutorialSeenCount} of ${TUTORIAL_STEPS.length} battle hints seen.`}
@@ -217,7 +221,7 @@ export default function AccountModal({
           </div>
         </section>
 
-        <section className="flex flex-wrap gap-2 border-t border-hairline pt-4">
+        <section className="flex flex-wrap gap-2 border-t-2 border-border pt-4">
           {user ? (
             <Button
               variant="ghost"
@@ -228,22 +232,18 @@ export default function AccountModal({
               {signingOut ? "Signing out…" : "Sign out"}
             </Button>
           ) : (
-            <button
-              type="button"
-              onClick={() => router.push("/login")}
-              className="flex min-h-11 items-center border border-signal bg-signal/10 px-4 font-body text-[11px] font-bold uppercase tracking-label text-signal transition-colors hover:bg-signal/20"
-            >
+            <Button size="sm" onClick={() => router.push("/login")}>
               Sign in
-            </button>
+            </Button>
           )}
           <span className="flex-1" />
-          <p className="max-w-[26ch] font-body text-[10px] leading-snug text-readout-muted">
+          <p className="max-w-[26ch] font-body text-label leading-snug text-muted-foreground">
             {user
               ? "Signing out clears local progress on this device; your cloud save keeps it."
               : "Guest progress lives in this browser and is lost if you clear site data."}
           </p>
         </section>
       </div>
-    </DetailOverlay>
+    </MountedDialog>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Screen } from "@/components/ui/Screen";
 
 /**
  * Route-level fallback (Next.js app/error.tsx convention) — catches any
@@ -22,16 +23,20 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <div className="flex min-screen-below-nav flex-col items-center justify-center gap-4 bg-void px-6 text-center">
-      <p className="font-heading text-2xl tracking-label text-el-red">
+    // `Screen` paints the Shonen Ink ground (ruling #154); red is
+    // `destructive`, the system's "something is wrong", not the red element
+    // hue.
+    <Screen variant="center" width="none">
+    <div className="flex flex-col items-center gap-4 px-6 text-center">
+      <p className="font-heading text-2xl tracking-label text-destructive">
         SOMETHING WENT WRONG
       </p>
-      <p className="max-w-md font-body text-sm text-readout-dim">
+      <p className="max-w-md font-body text-sm text-ground-dim">
         The battle hit an unexpected error. Your progress up to this point is
         saved — you can try again or head back to the menu.
       </p>
       <div className="flex gap-3">
-        <Button variant="outline" onClick={reset}>
+        <Button onClick={reset}>
           TRY AGAIN
         </Button>
         <Button
@@ -44,5 +49,6 @@ export default function GlobalError({
         </Button>
       </div>
     </div>
+    </Screen>
   );
 }

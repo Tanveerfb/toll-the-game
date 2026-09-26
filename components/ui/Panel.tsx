@@ -22,9 +22,19 @@ import { cn } from "@/lib/utils";
  */
 const panelVariants = cva("border", {
   variants: {
-    /** Which surface, from strongest edge to weakest. */
+    /**
+     * Which surface.
+     *
+     * **`paper` is Shōnen Ink's (ruling #154)**: ink on paper, a 2px ink
+     * outline. Screens move onto it one pass at a time
+     * (`Plans/2026-09-26-shonen-ink-foundation.md`, phase 3), so the four
+     * Combat Terminal surfaces below stay until their last caller has moved,
+     * and are deleted in phase 5. Never pick one of them for new work.
+     */
     surface: {
-      /** The default: a panel the eye should land on. */
+      /** Shōnen Ink: the panel content is read on. */
+      paper: "border-2 border-border bg-card text-card-foreground",
+      /** LEGACY (Combat Terminal). The default: a panel the eye should land on. */
       panel: "border-edge-strong bg-panel",
       /** A quieter block inside or beside a `panel`. */
       quiet: "border-hairline bg-panel",
@@ -43,8 +53,32 @@ const panelVariants = cva("border", {
       /** No padding: the panel is a frame for something that pads itself. */
       none: "",
     },
+    /**
+     * Lifted off the ground by a slab (Shōnen Ink). `primary` is the yellow
+     * slab, which means "act on this": a thing that is ready, not a thing
+     * that is merely there.
+     */
+    lift: {
+      none: "",
+      slab: "ink-slab",
+      primary: "ink-slab-primary",
+    },
+    /**
+     * A panel you press: a tile that is really a button (the home hub's
+     * alerts, modes and Orders row). Apply the variant to the `<button>` via
+     * `panelVariants`, since `Panel` itself renders a `div`.
+     */
+    press: {
+      false: "",
+      true: "text-left transition-colors hover:bg-muted",
+    },
   },
-  defaultVariants: { surface: "panel", density: "default" },
+  defaultVariants: {
+    surface: "panel",
+    density: "default",
+    lift: "none",
+    press: false,
+  },
 });
 
 export interface PanelProps
@@ -54,12 +88,14 @@ export interface PanelProps
 export function Panel({
   surface,
   density,
+  lift,
+  press,
   className,
   ...props
 }: PanelProps): React.JSX.Element {
   return (
     <div
-      className={cn(panelVariants({ surface, density }), className)}
+      className={cn(panelVariants({ surface, density, lift, press }), className)}
       {...props}
     />
   );
@@ -79,7 +115,9 @@ export function PanelHeader({
   return (
     <div
       className={cn(
-        "border-b border-hairline bg-inset px-5 py-4",
+        // Paper (ruling #154). Both callers (the clear summaries) are paper
+        // panels; the legacy surfaces never had a header.
+        "border-b-2 border-border bg-muted px-5 py-4",
         className,
       )}
       {...props}

@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useSettingsStore } from "@/store/settingsStore";
 
 /**
@@ -33,21 +35,18 @@ export default function AudioControl(): React.JSX.Element {
   const silent = muted || volume === 0;
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="outline"
+      size="icon"
       onClick={() => setMuted(!muted)}
       aria-pressed={muted}
       aria-label={muted ? "Unmute music" : "Mute music"}
-      // Migrated to the Combat Terminal tokens 2026-08-13. `signal` is the
-      // correct accent here and amber was not: this is nav chrome, and the
-      // palette reserves cyan for exactly that (element hues belong to units).
-      className={`flex h-11 w-11 shrink-0 items-center justify-center border text-base transition-colors ${
-        silent
-          ? "border-hairline text-readout-muted hover:text-readout-dim"
-          : "border-edge text-signal hover:border-signal"
-      }`}
+      // The outline button (ruling #154) prints in its surface's colour, which
+      // on the nav's ground is light; silence dims it rather than recolouring
+      // it, so no hue is spent on a toggle.
+      className={cn("text-base", silent && "text-ground-dim")}
     >
       {silent ? "♪̸" : "♪"}
-    </button>
+    </Button>
   );
 }

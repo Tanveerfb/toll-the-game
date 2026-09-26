@@ -758,7 +758,15 @@ export default function Hand({
             </div>
 
             <div className="shrink-0 border-t border-hairline bg-inset px-1 py-0.5">
-              <p className="truncate font-body text-[9px] font-semibold leading-tight text-readout-strong">
+              {/* Two lines, then an ellipsis (Tanveer's pick, 2026-09-26).
+                  Shōnen Ink's body face is ~25% wider than Rajdhani at this
+                  size, so a single truncated line cut even short names like
+                  "Shatterburn". The strip grows by a line and the art above
+                  it, which flexes, gives up the height. `hyphens-auto`
+                  because a single word can still be wider than the card
+                  (Shatterburn: 55px on 53), and a hyphen reads better than
+                  a word split at an arbitrary letter. */}
+              <p className="line-clamp-2 hyphens-auto break-words font-body text-[9px] font-semibold leading-tight text-readout-strong">
                 {card.skill.skillName}
               </p>
               <p className="truncate font-body text-[8px] font-bold leading-tight tabular-nums text-readout-muted">

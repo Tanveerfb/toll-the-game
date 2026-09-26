@@ -2,6 +2,9 @@
 
 import React from "react";
 
+import { GROWTH } from "@/components/game/growth/growthStyle";
+import { Alert } from "@/components/ui/alert";
+
 import { Button } from "@/components/ui/button";
 import CostChip from "@/components/game/growth/CostChip";
 import StatDelta from "@/components/game/growth/StatDelta";
@@ -55,21 +58,21 @@ export default function AscendTab({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="font-heading text-2xl tracking-title text-readout-strong">
+        <span className={GROWTH.big}>
           A{progress.ascension}
           {cost ? (
             <>
-              <span className="font-body text-sm text-readout-muted"> → </span>
-              <span className="text-role-heal">A{next}</span>
+              <span className={GROWTH.quiet}> → </span>
+              <span className={GROWTH.gain}>A{next}</span>
             </>
           ) : null}
         </span>
-        <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+        <span className={GROWTH.label}>
           Cap {maxLevelForAscension(progress.ascension)}
           {cost ? (
             <>
               {" → "}
-              <b className="text-role-heal">{maxLevelForAscension(next)}</b>
+              <b className={`text-card-foreground ${GROWTH.gain}`}>{maxLevelForAscension(next)}</b>
             </>
           ) : null}
         </span>
@@ -90,42 +93,28 @@ export default function AscendTab({
           return (
             <span
               key={tier}
-              className={`flex min-h-11 flex-1 shrink-0 flex-col items-center justify-center border px-1.5 py-1 ${
-                isNow
-                  ? "border-signal bg-signal/14"
-                  : isNext
-                    ? "border-role-heal/60 bg-role-heal/8"
-                    : "border-edge bg-inset"
+              className={`${GROWTH.tile} ${
+                isNow ? GROWTH.tileNow : isNext ? GROWTH.tileNext : GROWTH.tileIdle
               } ${!costed && !isNow && !isNext ? "opacity-40" : ""}`}
             >
-              <span
-                className={`font-body text-[9px] font-bold uppercase tracking-label ${
-                  isNow ? "text-signal" : isNext ? "text-role-heal" : "text-readout-muted"
-                }`}
-              >
+              <span className={GROWTH.tileLabel}>
                 A{tier}
                 {isNow ? " · now" : ""}
               </span>
-              <span
-                className={`font-heading text-[15px] leading-none tracking-title ${
-                  isNow ? "text-signal" : isNext ? "text-role-heal" : "text-readout-dim"
-                }`}
-              >
+              <span className={GROWTH.tileValue}>
                 {costed ? maxLevelForAscension(tier) : "—"}
               </span>
             </span>
           );
         })}
       </div>
-      <p className="font-body text-[11px] leading-snug text-readout-muted">
+      <p className={GROWTH.hint}>
         Each tier raises the level cap. Dimmed tiers are not costed yet.
       </p>
 
       {cost ? (
         <>
-          <p className="mt-1 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
-            Costs
-          </p>
+          <p className={`mt-1 ${GROWTH.label}`}>Costs</p>
           <div className="flex flex-wrap gap-1.5">
             <CostChip
               id="sea_monster_eye"
@@ -143,10 +132,10 @@ export default function AscendTab({
           </div>
 
           {blocker === "level" ? (
-            <p className="font-body text-[11px] text-el-light">
+            <Alert variant="destructive">
               Reach level {levelNeeded} first — this character is{" "}
               {progress.level}.
-            </p>
+            </Alert>
           ) : null}
 
           <StatDelta
@@ -174,9 +163,9 @@ export default function AscendTab({
           </Button>
         </>
       ) : (
-        <p className="mt-1 border-l-2 border-edge-strong bg-inset px-3 py-2 font-body text-xs text-readout-dim">
+        <Alert className="mt-1">
           No further ascension costed yet — bands 4–6 come in a later update.
-        </p>
+        </Alert>
       )}
     </div>
   );

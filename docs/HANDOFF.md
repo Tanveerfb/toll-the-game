@@ -49,7 +49,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 6. Teams: any 1–4 units. Format 4v4 = all field; 3v3 = 4th member is the sub **automatically**. Lone sub auto-converts to field.
 7. Subs: passive active from bench; no cards; untargetable; enter the field **only at the start of a new turn** after a teammate died.
 8. Deck: loads field units' cards at battle start; **never resets**; refills one random card at a time with **auto-merge on adjacent identical cards** (+1 gauge per merge) until full; no deck interaction outside the player's turn; a gauge filled mid-refill guarantees the ult **next turn**, never the same refill.
-9. UI stack is **shadcn/ui + Tailwind 4**. Primitives live in `components/ui/` and default to the Combat Terminal look (#84); add new ones with `npx shadcn@latest add`.
+9. UI stack is **shadcn/ui + Tailwind 4**. Primitives live in `components/ui/` and carry the game's look (#84), which is **Shōnen Ink** since #154 (Combat Terminal before it); add new ones with `npx shadcn@latest add`, never hand-roll a control.
 
     *The HeroUI ban was retired 2026-08-19.* It read "never reintroduce" for a year after the 2026-07-06 migration finished. Tanveer: *"moved from heroui to shadcn long ago. useless so end it."* Nothing imports it, nothing is tempted to, and a standing prohibition against a library nobody remembers is noise in a ledger that has to stay trustworthy.
 
@@ -262,7 +262,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
 83. **Don't deprecate what you can delete** (2026-08-13). Offered a `@deprecated` flag on four symbols with zero callers: *"bruh if nothing's changed then flag is useless lol. if ifs not much to remove then do it right now."* A deprecation marker is a migration plan for code someone still depends on. On dead code it is a comment pretending to be a plan, and it leaves the next reader to re-derive that it was safe to remove. **If removal is cheap and nothing calls it, remove it in the same breath as noticing it.**
 
-84. **The primitives speak Combat Terminal; usages don't re-say it** (2026-08-13). `components/ui/` shipped shadcn's greyscale defaults while the game paints from the Combat Terminal tokens, so every `<Button>` set `variant="outline"` on one line and contradicted it on the next — 16 of 36 usages carried a className restating radius, border, background, font, tracking and colour. The primitives now default to the game's look, and **a className on a primitive should add something the variant cannot know** — a width, a chamfer, a grid position, a type size. If you find yourself writing `rounded-none border-edge font-heading` at a usage, the variant is wrong, not the usage.
+84. **Amended by #154 (2026-09-26):** the look is Shōnen Ink now, and the rule below stands unchanged. **The primitives speak Combat Terminal; usages don't re-say it** (2026-08-13). `components/ui/` shipped shadcn's greyscale defaults while the game paints from the Combat Terminal tokens, so every `<Button>` set `variant="outline"` on one line and contradicted it on the next — 16 of 36 usages carried a className restating radius, border, background, font, tracking and colour. The primitives now default to the game's look, and **a className on a primitive should add something the variant cannot know** — a width, a chamfer, a grid position, a type size. If you find yourself writing `rounded-none border-edge font-heading` at a usage, the variant is wrong, not the usage.
 
     Corollary, learned the same day: **an override that looks complete can still leak.** Four result-screen buttons and the Ascend button rendered near-white for weeks because their classNames set text and border but not background, so shadcn's `bg-primary` showed through. Nobody reported it; it was invisible in review.
 
@@ -1226,3 +1226,72 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 
    **Not covered, and open:** the break between two trial fights is not a
    battle, so a reload there still loses the run.
+
+154. **The game's motif is Shōnen Ink, and every control is a customised shadcn
+   component** (2026-09-26, amends #84, retires the Combat Terminal palette).
+   He opened the foundation work on the UI rather than on the audit's code
+   findings:
+
+   > *"we are working on keeping the css and component foundation right. only
+   > work with shadcn, customize them and use them for the project purposes.
+   > and also we need a design motif for the game too. e.g. cyberpunk,
+   > claymorphism etc. etc. suggest me one."*
+
+   **The motif was a selection.** Four were drawn on one live World Boss
+   screen in `docs/design/mockups/motif-options.html`: A Combat Terminal
+   (today's look), B Shōnen Ink, C Gilded Relic, D Prism Glass. He chose
+   **"B · Shōnen Ink (Recommended)"**. **That phrasing is an option label he
+   selected, not prose he wrote**, and the recommendation was Claude's, made
+   because he asked for one. The case made for it: the card art is anime,
+   Bangers is already a comic face, and Dokkan's angled UI is one of his two
+   references; it needs no drawn frames and no blur, so it stays cheap on a
+   phone.
+
+   **What it changes.**
+   - The Combat Terminal palette (his, 2026-08-11, the `@theme` block in
+     `styles/globals.css`) is retired. #84 named it; **#84's rule survives**:
+     the primitives carry the look and a usage never restates it.
+   - The values live in `docs/design-system.md` and `styles/globals.css`, not
+     here. **The mockup's values are Claude's**; what he picked is the picture.
+   - The five element hues are unchanged. They were identical in all four
+     options.
+   - *"only work with shadcn"*: a control comes from `npx shadcn@latest add`
+     and is customised in `components/ui/`, never hand-rolled in a screen.
+     Measured the same day: 11 shadcn primitives installed, against 9
+     hand-built overlays, 1 hand-built tab set and 11 hand-built toggles.
+
+   **Claude's readings, flagged as such:**
+   - "Only shadcn" is read as *shadcn is the source of every primitive*.
+     Project compositions built **from** primitives (`Screen`, `Panel`,
+     `Hint`) are still allowed.
+   - The motif's restraint rule is Claude's proposal from the mockup, not his
+     words: **the slant and the yellow go on headers and primary actions only;
+     kit text and reading panels stay plain.** It is there because the motif
+     is loud and the kit document is dense.
+
+   **In `AGENTS.md`:** both halves, because they govern how every screen is
+   built.
+
+155. **Kit text is read on paper, and a tappable keyword wears a yellow
+   highlighter mark** (2026-09-26, amends #154's restraint rule). Moving the
+   archive onto Shōnen Ink broke the kit document's highlighting: cyan
+   keywords, sky-blue footnote terms, emerald heal numbers and pink
+   "Uncancellable" all work on a dark panel and fail as text on paper.
+
+   **A selection.** Three options were drawn on Meliodas's real card text in
+   `docs/design/mockups/kit-document-on-paper.html`: A ink only, B marker,
+   C black ink panels. He chose **"B · Marker (Recommended)"**. **That phrasing
+   is an option label he selected, not prose he wrote**, and the
+   recommendation was Claude's. Its case: yellow already means "you can act on
+   this", and a keyword opens a hint.
+
+   **What it changes.**
+   - Keywords get the `ink-marker` utility, footnote terms wear the same
+     mark, numbers are heavy ink, and stat arrows and heal amounts are fills
+     with ink on them. `components/ui/KeyworkHighlighter.tsx` holds the rule.
+   - **The mark is paper-only**, so every kit block (`SkillBlock`,
+     `PassiveProse`, `PassiveDetailSections`) owns a paper card. They render
+     readably inside the still-dark battle detail panel as well.
+   - **It bends #154's restraint rule**, which kept yellow out of reading
+     panels. That rule was Claude's proposal; this is its one exception, and
+     it is his pick.

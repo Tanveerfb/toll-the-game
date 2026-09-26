@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import KitDetails, {
   PassiveProse,
   type KitPassiveView,
@@ -19,7 +20,7 @@ import {
 // phase. A single-phase character renders the plain kit with no tabs.
 
 const STAT_LABEL =
-  "font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted";
+  "font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground";
 
 /**
  * `compact` is the boxed renderer used in battle overlays; `document` matches
@@ -66,7 +67,7 @@ function PhaseKit({
           <h3 className={PROSE.h3}>
             {passive.name ? `Passive — ${passive.name}` : "Passive"}
           </h3>
-          <PassiveProse passive={passive} showName={false} />
+          <PassiveProse passive={passive} showName={false} bare />
         </div>
       ))}
     </div>
@@ -96,25 +97,21 @@ export default function KitPhases({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex flex-wrap gap-1.5">
-          {Array.from({ length: phaseCount }).map((_, i) => {
-            const active = phase === i;
-            return (
-              <button
+        {/* The shadcn tabs, `line` because the phases sit on the archive's
+            paper sheet (ruling #154). */}
+        <Tabs value={String(phase)} onValueChange={(value) => setPhase(Number(value))}>
+          <TabsList variant="line">
+            {Array.from({ length: phaseCount }).map((_, i) => (
+              <TabsTrigger
                 key={i}
-                type="button"
-                onClick={() => setPhase(i)}
-                className={`chamfer min-h-11 border px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-label transition-colors ${
-                  active
-                    ? "border-signal bg-signal text-void"
-                    : "border-edge bg-void/60 text-readout-dim hover:border-edge-strong hover:text-readout"
-                }`}
+                value={String(i)}
+                className="flex-none text-caption uppercase tracking-label"
               >
                 {tabLabel(i)}
-              </button>
-            );
-          })}
-        </div>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
         <div className="ml-auto flex gap-3">
           {(
             [
@@ -125,7 +122,7 @@ export default function KitPhases({
           ).map(([label, value]) => (
             <span key={label} className={STAT_LABEL}>
               {label}{" "}
-              <span className="font-heading text-sm text-readout-strong">
+              <span className="font-heading text-sm text-card-foreground">
                 {value}
               </span>
             </span>

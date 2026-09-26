@@ -36,7 +36,12 @@ import { cn } from "@/lib/utils";
  * story since story mode v2, with `variant="page" | "stage"`. This generalises
  * that rather than inventing it.
  */
-const screenVariants = cva("terminal-grid bg-void", {
+/**
+ * The ground: Shōnen Ink's dark halftone (ruling #154), in place of the
+ * Combat Terminal grid. Swapping it before the screens migrate is safe
+ * because both grounds are dark, so every screen's light text still reads.
+ */
+const screenVariants = cva("ground-halftone", {
   variants: {
     variant: {
       scroll: "min-screen-below-nav",
@@ -46,7 +51,7 @@ const screenVariants = cva("terminal-grid bg-void", {
        * itself never scrolls and any overflow scrolls inside a child.
        */
       fixed:
-        "screen-below-nav relative flex flex-col overflow-hidden text-readout",
+        "screen-below-nav relative flex flex-col overflow-hidden text-foreground",
     },
   },
   defaultVariants: { variant: "scroll" },

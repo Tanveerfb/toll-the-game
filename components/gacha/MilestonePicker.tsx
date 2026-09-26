@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import React from "react";
-import DetailOverlay from "@/components/game/DetailOverlay";
+import MountedDialog from "@/components/ui/MountedDialog";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { usePlayerStore } from "@/store/playerStore";
@@ -31,11 +33,11 @@ export default function MilestonePicker({
   const chosen = selected ? getCharacterById(selected) : null;
 
   return (
-    <DetailOverlay
+    <MountedDialog
       title="Choose your reward"
-      subtitle="Milestone reached — any featured unit"
-      size="wide"
+      description="Milestone reached — any featured unit"
       onClose={onClose}
+      className="sm:max-w-2xl"
     >
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
         {characterIds.map((id) => {
@@ -50,13 +52,13 @@ export default function MilestonePicker({
               type="button"
               onClick={() => setSelected(id)}
               aria-pressed={active}
-              className={`flex flex-col overflow-hidden border bg-inset text-left transition-colors ${
-                active
-                  ? "border-signal shadow-[inset_0_0_0_1px_var(--color-signal)]"
-                  : "border-hairline hover:border-edge-strong"
-              }`}
+              // Picked is the action yellow, as everywhere else.
+              className={cn(
+                "flex flex-col overflow-hidden border-2 bg-muted text-left transition-colors",
+                active ? "border-border ink-slab-primary" : "border-rule hover:border-border",
+              )}
             >
-              <span className="relative block aspect-square overflow-hidden bg-void">
+              <span className="relative block aspect-square overflow-hidden border-b-2 border-border bg-card">
                 {art ? (
                   <Image
                     src={art}
@@ -66,7 +68,7 @@ export default function MilestonePicker({
                     className="object-cover object-top"
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center font-heading text-2xl text-readout-dim">
+                  <span className="flex h-full w-full items-center justify-center font-heading text-2xl text-muted-foreground">
                     {(character?.name ?? id).charAt(0)}
                   </span>
                 )}
@@ -77,11 +79,16 @@ export default function MilestonePicker({
                 ) : null}
               </span>
               <span className="px-1.5 py-1">
-                <span className="block truncate font-heading text-sm leading-tight tracking-title text-readout-strong">
+                <span className="block truncate font-heading text-sm leading-tight tracking-title">
                   {character?.name ?? id}
                 </span>
+                {/* A new unit is the reward gold, an owned one plain: fills,
+                    not coloured text, on paper. */}
                 <span
-                  className={`block font-body text-[9px] font-bold uppercase tracking-label ${owned ? "text-signal" : "text-el-light"}`}
+                  className={cn(
+                    "inline-block font-body text-label font-bold uppercase tracking-label",
+                    owned ? "text-muted-foreground" : "bg-el-light/55 px-1",
+                  )}
                 >
                   {owned ? `Owned · Ult ${ultLevel}` : "New unit"}
                 </span>
@@ -91,20 +98,21 @@ export default function MilestonePicker({
         })}
       </div>
 
-      <div className="mt-4 flex items-center gap-3 border-t border-hairline pt-3">
-        <p className="min-w-0 flex-1 font-body text-[11px] leading-snug text-readout-muted">
+      <div className="flex items-center gap-3 border-t-2 border-border pt-3">
+        <p className="min-w-0 flex-1 font-body text-caption leading-snug text-muted-foreground">
           Taking this only wraps the lap once every other reward on it has been
           claimed too.
         </p>
-        <button
-          type="button"
+        <Button
+          variant="claim"
+          size="sm"
           disabled={!selected}
           onClick={() => selected && onPick(selected)}
-          className="flex min-h-11 shrink-0 items-center border border-el-light bg-el-light/12 px-5 font-body text-[11px] font-bold uppercase tracking-label text-el-light transition-colors hover:bg-el-light/20 disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted"
+          className="shrink-0"
         >
           {chosen ? `Claim ${chosen.name}` : "Pick a unit"}
-        </button>
+        </Button>
       </div>
-    </DetailOverlay>
+    </MountedDialog>
   );
 }

@@ -8,38 +8,47 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Shonen Ink (ruling #154, 2026-09-26). shadcn's own names carry the motif,
+     so every primitive paints from these and a motif is one token set. The
+     jobs of each are in docs/design-system.md; read it before adding one.
+
+     Two grounds, and every text colour belongs to one of them: light on the
+     dark ground, ink on paper. Never ink on the ground, never light on
+     paper. */
+
+  /* The ground: the dark halftone page. */
+  --background: #0d0d10;
+  --foreground: #f7f7f2;
+  --ground-dim: #b9b9b2;
+  --ground-raised: #1c1c21;
+  --ground-line: #33333a;
+  --halftone: #25252c;
+  --slab: #2b2b33;
+
+  /* Paper: the panel content is read on. */
+  --card: #f5f5f0;
+  --card-foreground: #111114;
+  --popover: #f5f5f0;
+  --popover-foreground: #111114;
+  --muted: #e7e7df;
+  --muted-foreground: #5d5d63;
+  --accent: #e7e7df;
+  --accent-foreground: #111114;
+  --border: #111114;
+  --input: #111114;
+
+  /* Action yellow: system chrome only, never identity (what cyan `signal`
+     was in Combat Terminal). */
+  --primary: #ffd400;
+  --primary-foreground: #111114;
+  --secondary: #f5f5f0;
+  --secondary-foreground: #111114;
+  --ring: #ffd400;
+  /* The red element hue, which is what destructive actions already used. */
+  --destructive: #ff5a4e;
+
+  /* Square corners everywhere. `rounded-full` still draws circles. */
+  --radius: 0rem;
 }
 
 body {
@@ -61,20 +70,14 @@ h6 {
   --font-heading: var(--font-heading), cursive;
   --font-body: var(--font-body), sans-serif;
   --font-sans: var(--font-body), sans-serif;
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
+  --color-ground-dim: var(--ground-dim);
+  --color-ground-raised: var(--ground-raised);
+  --color-ground-line: var(--ground-line);
+  --color-halftone: var(--halftone);
+  --color-slab: var(--slab);
+  /* A hairline divider on paper: rows in a list, a header's underline. */
+  --color-rule: color-mix(in srgb, var(--muted-foreground) 30%, transparent);
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
@@ -101,41 +104,18 @@ h6 {
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
+/* ── LEGACY: Combat Terminal (Tanveer, 2026-08-11; retired by #154) ────────
+   Everything from `--color-void` down to `--color-signal-dim` below belongs
+   to the retired motif. Screens still painting in it are mid-migration
+   (Plans/2026-09-26-shonen-ink-foundation.md); phase 5 deletes these. Never
+   use one in new work, and never in `components/ui/`: tests/uiTokens.test.ts
+   fails the build if a migrated primitive does.
 
-/* ── Game tokens — "Combat Terminal" (Tanveer, 2026-08-11) ─────────────────
+   The tracking, container and element tokens in this block are NOT legacy;
+   they carry over to Shonen Ink unchanged.
+
+   Original note follows.
+
    The archive is the pilot screen for this palette; every other screen still
    runs on hardcoded zinc/amber utilities until its own turn in the UI pass.
    Two rules keep the palette legible: `signal` cyan is system chrome only
@@ -159,6 +139,17 @@ h6 {
      (0.025em), and defining it here silently re-spaced the four places
      already using `tracking-wide` by 9x. Named for its job instead. */
   --tracking-eyebrow: 0.22em; /* the rare eyebrow above a page title */
+
+  /* Type scale below Tailwind's `text-xs` (Tanveer, 2026-09-26: 10px floor,
+     9px on fixed-width cards only). Measured before it existed: 304
+     hard-coded sizes in 61 files, nine distinct values from 7px to 17px.
+     From 12px up, Tailwind's own steps. docs/design-system.md has the jobs. */
+  --text-micro: 0.5625rem; /* 9px: the 47px hand card and unit tiles ONLY */
+  --text-micro--line-height: 1.15;
+  --text-label: 0.625rem; /* 10px: uppercase micro-labels, badges. The floor */
+  --text-label--line-height: 1.2;
+  --text-caption: 0.6875rem; /* 11px: secondary lines, small print */
+  --text-caption--line-height: 1.35;
 
   /* Content widths, as three kinds of screen rather than ten numbers.
      Measured 2026-09-17: ten distinct `max-w-*` values across the app
@@ -347,7 +338,68 @@ body {
   -webkit-touch-callout: none;
 }
 
-/* The faint 44px ground the terminal reads on. */
+/* ── Shonen Ink treatments (#154) ──────────────────────────────────────────
+   The motif's loud parts, defined once. docs/design-system.md says where each
+   may go: headers and primary actions, never text that is read. */
+
+/* The ground's dot screen. */
+@utility ground-halftone {
+  background-color: var(--background);
+  background-image: radial-gradient(var(--halftone) 1.1px, transparent 1.5px);
+  background-size: 7px 7px;
+}
+
+/* A paper panel lifted off the ground. */
+@utility ink-slab {
+  box-shadow: 5px 5px 0 var(--slab);
+}
+/* The same, at a control's size: the primary button. */
+@utility ink-slab-sm {
+  box-shadow: 3px 3px 0 var(--slab);
+}
+/* The active tab's mark: a yellow slab rather than an underline. */
+@utility ink-slab-primary {
+  box-shadow: 3px 3px 0 var(--primary);
+}
+/* The same slab in the reward gold: a new unit in the pull reveal. */
+@utility ink-slab-reward {
+  box-shadow: 3px 3px 0 var(--color-el-light);
+}
+
+/* The motif's slant: the primary button, the active tab, a section header, a
+   badge. One angle, defined once. It skews the label with the box, which
+   reads as the manga lettering it is meant to be; `clip-path` would have
+   clipped the focus ring and the slab. */
+@utility ink-skew {
+  transform: skewX(-8deg);
+}
+
+/* The highlighter pen: a tappable keyword in kit text (his pick, 2026-09-26,
+   docs/design/mockups/kit-document-on-paper.html option B). Yellow because
+   it means "you can act on this" everywhere else, and a keyword opens a
+   hint. PAPER ONLY: the mark covers the lower half of the letters, so on the
+   dark ground the top half would be ink on black. Kit text always sits on a
+   paper card for this reason. */
+@utility ink-marker {
+  color: var(--primary-foreground);
+  background-image: linear-gradient(
+    transparent 45%,
+    var(--primary) 45%,
+    var(--primary) 92%,
+    transparent 92%
+  );
+}
+
+/* Speed lines behind a hero image. Never behind text. */
+@utility speed-lines {
+  background-image: repeating-conic-gradient(
+    from 0deg at 50% 45%,
+    transparent 0 3deg,
+    color-mix(in srgb, var(--foreground) 7%, transparent) 3deg 4deg
+  );
+}
+
+/* LEGACY (Combat Terminal). The faint 44px ground the terminal reads on. */
 .terminal-grid {
   background-image:
     linear-gradient(var(--color-gridline) 1px, transparent 1px),

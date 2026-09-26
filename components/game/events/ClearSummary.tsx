@@ -3,6 +3,8 @@
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
+import { INK_TONE } from "@/components/ui/inkTone";
+import { cn } from "@/lib/utils";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/Panel";
 import { Screen } from "@/components/ui/Screen";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -36,7 +38,7 @@ function ClearPanel({
 }): React.JSX.Element {
   return (
     <Screen variant="center" width="none" className="px-4">
-      <Panel density="none" className="w-full max-w-panel">
+      <Panel surface="paper" lift="slab" density="none" className="w-full max-w-panel">
         <PanelHeader>
           <SectionHeader
             size="panel"
@@ -63,7 +65,7 @@ export function BossClearSummary({
   return (
     <ClearPanel eventName={eventName} title="Rewards">
       <RewardList rows={rewardRows(rewards)} />
-      <Button variant="secondary" size="sm" onClick={onBack} className="mt-3">
+      <Button onClick={onBack} className="mt-3">
         Back to events
       </Button>
     </ClearPanel>
@@ -88,9 +90,9 @@ function UnlockRow({
   value: string;
 }): React.JSX.Element {
   return (
-    <div className="flex items-baseline justify-between gap-3 border border-hairline bg-inset px-2.5 py-2">
-      <span className="font-body text-[12.5px] text-readout-dim">{label}</span>
-      <span className="font-heading text-base tabular-nums text-el-light">
+    <div className="flex items-baseline justify-between gap-3 border border-rule bg-muted px-2.5 py-2">
+      <span className="font-body text-xs">{label}</span>
+      <span className={cn("font-heading text-base tabular-nums", INK_TONE.reward)}>
         {value}
       </span>
     </div>
@@ -132,7 +134,7 @@ export function TrialClearSummary({
           makes the attrition rule (#103) legible in hindsight. */}
       {summaries.length > 0 ? (
         <>
-          <p className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+          <p className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
             The run
           </p>
           <ol className="flex flex-col gap-1">
@@ -141,24 +143,24 @@ export function TrialClearSummary({
               return (
                 <li
                   key={fight.index}
-                  className="border-l-2 border-role-heal/50 bg-role-heal/[0.04] px-2.5 py-1.5"
+                  className="border-l-4 border-role-heal bg-muted px-2.5 py-1.5"
                 >
-                  <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-dim">
+                  <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
                     Fight {fight.index + 1}
                     {enemies ? ` — ${fightLabel(enemies)}` : ""}
                   </span>
-                  <p className="font-body text-[12.5px] text-readout-dim">
-                    <b className="font-semibold text-readout">
+                  <p className="font-body text-xs text-muted-foreground">
+                    <b className="font-bold text-card-foreground">
                       {fight.turns} turns
                     </b>
                     {" · "}
-                    <b className="font-semibold text-el-red">
+                    <b className={cn("font-bold text-card-foreground", INK_TONE.loss)}>
                       -{Math.round(fight.hpLostPercent)}% HP
                     </b>
                     {fight.fallen.length > 0 ? (
                       <>
                         {" · "}
-                        <b className="font-semibold text-el-red">
+                        <b className={cn("font-bold text-card-foreground", INK_TONE.loss)}>
                           {fight.fallen
                             .map((id) => getCharacterById(id)?.name ?? id)
                             .join(", ")}{" "}
@@ -172,28 +174,28 @@ export function TrialClearSummary({
             })}
           </ol>
 
-          <div className="mt-1 border border-hairline bg-inset px-2.5">
-            <div className="flex items-baseline justify-between gap-3 border-b border-hairline py-1.5">
-              <span className="font-body text-[12.5px] text-readout-dim">
+          <div className="mt-1 border border-rule bg-muted px-2.5">
+            <div className="flex items-baseline justify-between gap-3 border-b border-rule py-1.5">
+              <span className="font-body text-xs">
                 Total turns
               </span>
-              <span className="font-heading text-base tabular-nums text-readout-strong">
+              <span className="font-heading text-base tabular-nums">
                 {run ? run.turns : 0}
               </span>
             </div>
-            <div className="flex items-baseline justify-between gap-3 border-b border-hairline py-1.5">
-              <span className="font-body text-[12.5px] text-readout-dim">
+            <div className="flex items-baseline justify-between gap-3 border-b border-rule py-1.5">
+              <span className="font-body text-xs">
                 Survivors
               </span>
-              <span className="font-heading text-base tabular-nums text-role-heal">
+              <span className={cn("font-heading text-base tabular-nums", INK_TONE.gain)}>
                 {survivors} of {run ? run.team.length : 0}
               </span>
             </div>
             <div className="flex items-baseline justify-between gap-3 py-1.5">
-              <span className="font-body text-[12.5px] text-readout-dim">
+              <span className="font-body text-xs">
                 Ended on
               </span>
-              <span className="font-heading text-base tabular-nums text-readout-strong">
+              <span className="font-heading text-base tabular-nums">
                 {ended === null ? "—" : `${ended}% HP`}
               </span>
             </div>
@@ -201,7 +203,7 @@ export function TrialClearSummary({
         </>
       ) : null}
 
-      <p className="mt-2 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+      <p className="mt-2 font-body text-label font-bold uppercase tracking-label text-muted-foreground">
         What this opened
       </p>
       <UnlockRow label="Account rank ceiling" value={`${wall} → ${ceiling}`} />
@@ -212,16 +214,16 @@ export function TrialClearSummary({
         </>
       ) : null}
       {gained > 0 ? (
-        <p className="font-body text-xs leading-relaxed text-readout-muted">
+        <p className="font-body text-xs leading-relaxed text-muted-foreground">
           Every rank you earned while held at the wall paid out at once, which
           is why several arrived together.
         </p>
       ) : (
-        <p className="font-body text-xs leading-relaxed text-readout-muted">
+        <p className="font-body text-xs leading-relaxed text-muted-foreground">
           Account rank {rankAfter}. Ranks climb again from here.
         </p>
       )}
-      <Button variant="secondary" size="sm" onClick={onBack} className="mt-3">
+      <Button onClick={onBack} className="mt-3">
         Back to events
       </Button>
     </ClearPanel>
@@ -239,8 +241,8 @@ export function TrialMissing({
 }): React.JSX.Element {
   return (
     <Screen variant="center" width="none" className="px-4">
-      <Panel density="roomy" className="w-full max-w-panel">
-        <p className="font-body text-sm text-readout-dim">
+      <Panel surface="paper" density="roomy" className="w-full max-w-panel">
+        <p className="font-body text-sm">
           This trial has no encounter authored.
         </p>
         <Button

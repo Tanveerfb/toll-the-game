@@ -17,7 +17,16 @@ import {
   hasUnreadNews,
   subscribeToNewsReadState,
 } from "@/lib/news/readTracking";
+import { panelVariants } from "@/components/ui/Panel";
 import { Screen } from "@/components/ui/Screen";
+import { cn } from "@/lib/utils";
+
+/**
+ * Every hub tile is a paper panel you can press (ruling #154). The Orders
+ * tile (`OrdersButton`) makes the same `panelVariants` call, so the three
+ * kinds of tile cannot drift apart.
+ */
+const HUB_TILE = panelVariants({ surface: "paper", density: "tight", press: true });
 
 interface HomeMenuProps {
   latestNewsDate: string | null;
@@ -73,12 +82,16 @@ function Alert({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex min-w-[11rem] flex-1 flex-col gap-0.5 border bg-panel px-3 py-2 text-left transition-colors hover:border-edge-strong ${
-        tone === "quiet" ? "border-hairline" : "border-edge-strong"
-      }`}
+      // "Ready" is something to act on, so it takes the yellow slab: yellow
+      // is the action colour, and the tile is the action.
+      className={cn(
+        HUB_TILE,
+        "relative flex min-w-[11rem] flex-1 flex-col gap-0.5",
+        tone === "ready" && "ink-slab-primary",
+      )}
     >
       {tone === "new" ? (
-        <span className="absolute inset-y-0 left-0 w-0.5 bg-signal" />
+        <span className="absolute inset-y-0 left-0 w-1 bg-primary" />
       ) : null}
       {iconId ? (
         <span className="absolute right-2 top-2">
@@ -88,7 +101,7 @@ function Alert({
             alt=""
             fallback={
               <Icon
-                className={`h-3.5 w-3.5 ${tone === "quiet" ? "text-readout-muted" : "text-signal"}`}
+                className={`h-3.5 w-3.5 ${tone === "quiet" ? "text-muted-foreground" : "text-card-foreground"}`}
                 strokeWidth={2.2}
               />
             }
@@ -96,14 +109,12 @@ function Alert({
         </span>
       ) : (
         <Icon
-          className={`absolute right-2.5 top-2.5 h-3.5 w-3.5 ${tone === "quiet" ? "text-readout-muted" : "text-signal"}`}
+          className={`absolute right-2.5 top-2.5 h-3.5 w-3.5 ${tone === "quiet" ? "text-muted-foreground" : "text-card-foreground"}`}
           strokeWidth={2.2}
         />
       )}
-      <span className="pr-6 font-body text-sm font-semibold text-readout-strong">
-        {title}
-      </span>
-      <span className="font-body text-xs text-readout-muted">{detail}</span>
+      <span className="pr-6 font-body text-sm font-bold">{title}</span>
+      <span className="font-body text-xs text-muted-foreground">{detail}</span>
     </button>
   );
 }
@@ -122,12 +133,10 @@ function ModeButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col gap-0.5 border border-hairline bg-inset px-3 py-2.5 text-left transition-colors hover:border-edge-strong"
+      className={cn(HUB_TILE, "flex flex-col gap-0.5")}
     >
-      <span className="font-heading text-lg tracking-title text-readout-strong">
-        {title}
-      </span>
-      <span className="font-body text-[11px] font-bold uppercase tracking-label text-readout-muted">
+      <span className="font-heading text-lg tracking-title">{title}</span>
+      <span className="font-body text-caption font-bold uppercase tracking-label text-muted-foreground">
         {subtitle}
       </span>
     </button>

@@ -5,7 +5,11 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 /**
- * Combat Terminal table (retheme + first adoption, 2026-08-13).
+ * Shōnen Ink table (ruling #154; first adopted 2026-08-13 under Combat
+ * Terminal). **Surface-agnostic**: rules are drawn in `currentColor` and
+ * secondary text is the surface's colour at reduced opacity, because its two
+ * callers sit on different surfaces (the Auto Clear results on paper, the
+ * battle's effects list on the still-dark arena).
  *
  * This primitive shipped with the project and had zero importers, so both
  * tables in the app — the Auto Clear results grid and the effects modal — were
@@ -43,7 +47,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      className={cn("[&_tr]:border-b [&_tr]:border-edge", className)}
+      className={cn("[&_tr]:border-b-2 [&_tr]:border-current/40", className)}
       {...props}
     />
   )
@@ -66,7 +70,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
     <tfoot
       data-slot="table-footer"
       className={cn(
-        "border-t-2 border-edge-strong bg-inset font-bold [&>tr]:last:border-b-0",
+        "border-t-2 border-current/40 bg-current/5 font-bold [&>tr]:last:border-b-0",
         className
       )}
       {...props}
@@ -78,7 +82,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   return (
     <tr
       data-slot="table-row"
-      className={cn("border-b border-hairline transition-colors", className)}
+      className={cn("border-b border-current/15 transition-colors", className)}
       {...props}
     />
   )
@@ -89,7 +93,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "px-4 py-2 text-left align-middle font-bold uppercase tracking-label whitespace-nowrap text-readout-muted",
+        "px-4 py-2 text-left align-middle font-bold uppercase tracking-label whitespace-nowrap opacity-70",
         className
       )}
       {...props}
@@ -101,7 +105,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
   return (
     <td
       data-slot="table-cell"
-      className={cn("px-4 py-2 align-middle text-readout", className)}
+      className={cn("px-4 py-2 align-middle", className)}
       {...props}
     />
   )
@@ -114,7 +118,7 @@ function TableCaption({
   return (
     <caption
       data-slot="table-caption"
-      className={cn("mt-3 text-xs text-readout-muted", className)}
+      className={cn("mt-3 text-xs opacity-70", className)}
       {...props}
     />
   )

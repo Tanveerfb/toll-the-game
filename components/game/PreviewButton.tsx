@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import {
   registerPracticeDummy,
@@ -31,14 +32,15 @@ export default function PreviewButton({
   };
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="secondary"
+      size="sm"
       onClick={launch}
       // Wraps rather than clipping: the label is long and this sits in a
       // 300px sidebar that becomes full-width on mobile.
-      className="chamfer flex w-full min-h-11 items-center justify-center border border-signal-dim bg-signal/8 px-3 py-2 text-center font-body text-[11px] font-bold uppercase leading-tight tracking-label text-signal transition-colors hover:bg-signal/16"
+      className="w-full whitespace-normal text-center leading-tight"
     >
       Preview — full rank &amp; ultimate set vs. a training dummy
-    </button>
+    </Button>
   );
 }

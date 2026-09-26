@@ -28,7 +28,7 @@ export default function PlayerAvatar({
   const art = characterId ? getCharacterArt(characterId) : null;
   return (
     <span
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-edge-strong bg-panel ${className}`}
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden border-2 border-border bg-muted ${className}`}
       style={{ width: size, height: size }}
     >
       {art ? (
@@ -41,7 +41,7 @@ export default function PlayerAvatar({
         />
       ) : (
         <span
-          className="font-heading text-readout-strong"
+          className="font-heading text-card-foreground"
           style={{ fontSize: Math.round(size * 0.48) }}
         >
           {(fallback.trim().charAt(0) || "G").toUpperCase()}

@@ -108,8 +108,13 @@ describe("the page shell comes from Screen", () => {
     const LITERAL = /"[^"\n]*"/g;
     const handTyped = files.filter((rel) => {
       if (rel === "components/ui/Screen.tsx") return false;
+      // Either ground: Combat Terminal's grid, or Shōnen Ink's halftone
+      // (ruling #154). Checking only the old one would have gone blind the
+      // day `Screen` switched, which is exactly when a copy is likeliest.
       return (read(rel).match(LITERAL) ?? []).some(
-        (s) => s.includes("terminal-grid") && s.includes("screen-below-nav"),
+        (s) =>
+          (s.includes("terminal-grid") || s.includes("ground-halftone")) &&
+          s.includes("screen-below-nav"),
       );
     });
     expect(

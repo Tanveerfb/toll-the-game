@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Coins, Gem, Ticket } from "lucide-react";
-import DetailOverlay from "@/components/game/DetailOverlay";
+import MountedDialog from "@/components/ui/MountedDialog";
 import ItemIcon from "@/components/game/ItemIcon";
 import { usePlayerStore } from "@/store/playerStore";
 import { getCharacterById } from "@/lib/game/characterCatalog";
@@ -31,15 +31,15 @@ function Figure({
   hint?: string;
 }): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-0.5 border border-hairline bg-panel px-3 py-2">
-      <span className="font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+    <div className="flex flex-col gap-0.5 border border-rule bg-muted px-3 py-2">
+      <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
         {label}
       </span>
-      <span className="font-heading text-xl leading-none tracking-title text-readout-strong tabular-nums">
+      <span className="font-heading text-xl leading-none tracking-title tabular-nums">
         {value}
       </span>
       {hint ? (
-        <span className="font-body text-[10px] text-readout-muted">{hint}</span>
+        <span className="font-body text-label text-muted-foreground">{hint}</span>
       ) : null}
     </div>
   );
@@ -59,23 +59,23 @@ function Currency({
   value: number;
 }): React.JSX.Element {
   return (
-    <div className="flex items-center gap-2 border border-hairline bg-panel px-3 py-2">
+    <div className="flex items-center gap-2 border border-rule bg-muted px-3 py-2">
       <ItemIcon
         id={id}
         size={28}
         alt=""
         fallback={
           <Fallback
-            className="h-4 w-4 shrink-0 text-readout-muted"
+            className="h-4 w-4 shrink-0 text-muted-foreground"
             strokeWidth={2.2}
           />
         }
       />
       <span className="min-w-0">
-        <span className="block font-heading text-lg leading-none text-readout-strong tabular-nums">
+        <span className="block font-heading text-lg leading-none tabular-nums">
           {value.toLocaleString()}
         </span>
-        <span className="block font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+        <span className="block font-body text-label font-bold uppercase tracking-label text-muted-foreground">
           {label}
         </span>
       </span>
@@ -85,7 +85,7 @@ function Currency({
 
 function SectionHead({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-2 border-b border-hairline pb-1.5 font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
+    <p className="mb-2 border-b border-rule pb-1.5 font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
       {children}
     </p>
   );
@@ -132,7 +132,12 @@ export default function InventoryModal({
     : null;
 
   return (
-    <DetailOverlay title="Inventory" subtitle="Everything this account holds" size="wide" onClose={onClose}>
+    <MountedDialog
+      title="Inventory"
+      description="Everything this account holds"
+      onClose={onClose}
+      className="sm:max-w-2xl"
+    >
       <div className="space-y-5">
         <section>
           <SectionHead>Currencies</SectionHead>
@@ -161,7 +166,7 @@ export default function InventoryModal({
         <section>
           <SectionHead>Materials</SectionHead>
           {held.length === 0 ? (
-            <p className="border border-dashed border-edge px-3 py-4 text-center font-body text-xs text-readout-muted">
+            <p className="border-2 border-dashed border-muted-foreground px-3 py-4 text-center font-body text-xs text-muted-foreground">
               Nothing held yet — World Boss runs and story clears drop these.
             </p>
           ) : (
@@ -169,13 +174,13 @@ export default function InventoryModal({
               {held.map((id) => (
                 <div
                   key={id}
-                  className="flex items-center gap-2 border border-hairline bg-panel px-3 py-2"
+                  className="flex items-center gap-2 border border-rule bg-muted px-3 py-2"
                 >
                   <ItemIcon id={id} size={28} alt="" />
-                  <span className="min-w-0 flex-1 truncate font-body text-xs text-readout-dim">
+                  <span className="min-w-0 flex-1 truncate font-body text-xs">
                     {materialLabel(id)}
                   </span>
-                  <span className="shrink-0 font-heading text-lg leading-none text-readout-strong tabular-nums">
+                  <span className="shrink-0 font-heading text-lg leading-none tabular-nums">
                     {inventory[id]}
                   </span>
                 </div>
@@ -183,7 +188,7 @@ export default function InventoryModal({
             </div>
           )}
           {unheld > 0 ? (
-            <p className="mt-2 font-body text-[11px] text-readout-muted">
+            <p className="mt-2 font-body text-caption text-muted-foreground">
               {unheld} further material {unheld === 1 ? "kind" : "kinds"} exist
               and aren&rsquo;t held yet.
             </p>
@@ -234,6 +239,6 @@ export default function InventoryModal({
           </div>
         </section>
       </div>
-    </DetailOverlay>
+    </MountedDialog>
   );
 }

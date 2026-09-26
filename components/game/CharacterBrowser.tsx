@@ -2,16 +2,27 @@
 
 import { Button } from "@/components/ui/button";
 import React from "react";
-import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { panelVariants } from "@/components/ui/Panel";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Toggle } from "@/components/ui/toggle";
+import { cn } from "@/lib/utils";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { archiveHref } from "@/lib/game/characterCatalog";
 import { usePlayerStore } from "@/store/playerStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { progressedStats } from "@/lib/game/progression";
-import { useEscapeKey, scrimProps } from "@/hooks/useEscapeKey";
 
 type CharacterColor = "light" | "red" | "blue" | "green" | "dark";
 
@@ -60,7 +71,7 @@ const SORT_FIELDS: Array<{ id: Exclude<SortField, "none">; label: string }> = [
 ];
 
 // One hue per element, and nothing else in the UI is allowed to use them —
-// system chrome is `signal` cyan. The 3-letter codes ride in the tile corner
+// system chrome is the action yellow (ruling #154). The 3-letter codes ride in the tile corner
 // where the word wouldn't fit at a 5-column density.
 const EL_HUE: Record<CharacterColor, string> = {
   light: "var(--color-el-light)",
@@ -86,14 +97,7 @@ function toTitleCase(value: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-/** Never resubscribes — it exists only so the server snapshot and the client
- *  snapshot differ, which is how a client-only branch stays hydration-safe. */
-const NO_SUBSCRIBE = () => () => {};
 
-const CHIP_BASE =
-  "chamfer min-h-11 min-w-11 border px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-label transition-colors";
-const CHIP_OFF =
-  "border-edge bg-void/60 text-readout-dim hover:border-edge-strong hover:text-readout";
 
 /** One labelled row of chips inside the filter sheet. */
 function FilterGroup({
@@ -105,7 +109,7 @@ function FilterGroup({
 }): React.JSX.Element {
   return (
     <div className="space-y-1.5">
-      <p className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
+      <p className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
         {label}
       </p>
       <div className="flex flex-wrap gap-1.5">{children}</div>
@@ -113,7 +117,12 @@ function FilterGroup({
   );
 }
 
-function Toggle({
+/**
+ * One filter chip: the shadcn `Toggle` (ruling #154). On, it is the action
+ * yellow; an element chip is on in its own hue instead, which is a fill with
+ * ink on it and so reads on the paper sheet it sits in.
+ */
+function FilterChip({
   active,
   hue,
   onClick,
@@ -124,19 +133,19 @@ function Toggle({
   onClick: () => void;
   children: React.ReactNode;
 }): React.JSX.Element {
-  const tint = hue ?? "var(--color-signal)";
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`${CHIP_BASE} ${active ? "text-void" : CHIP_OFF}`}
-      style={
-        active ? { backgroundColor: tint, borderColor: tint } : undefined
-      }
+    <Toggle
+      variant="outline"
+      size="sm"
+      pressed={active}
+      onPressedChange={onClick}
+      // `color:` is required: without the hint `bg-(--tint)` is ambiguous
+      // between a colour and an image, and emitted nothing that painted.
+      className={hue ? "data-[state=on]:bg-(color:--tint)" : undefined}
+      style={hue ? ({ "--tint": hue } as React.CSSProperties) : undefined}
     >
       {children}
-    </button>
+    </Toggle>
   );
 }
 
@@ -158,11 +167,13 @@ function StatBar({
   hue: string;
 }): React.JSX.Element {
   return (
-    <div className="mt-0.5 grid grid-cols-[22px_1fr_auto] items-center gap-1.5">
-      <span className="font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+    // 26px, the same label column `CharacterStatBars` uses: "ATK" at the
+    // 10px floor is 24px wide and clipped the old 22px column.
+    <div className="mt-0.5 grid grid-cols-[26px_1fr_auto] items-center gap-1.5">
+      <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
         {label}
       </span>
-      <span className="block h-[3px] bg-hairline">
+      <span className="block h-1 bg-muted">
         <span
           className="block h-full"
           style={{
@@ -171,7 +182,7 @@ function StatBar({
           }}
         />
       </span>
-      <span className="font-body text-[11px] font-semibold tabular-nums text-readout-dim">
+      <span className="font-body text-caption font-bold tabular-nums">
         {value.toLocaleString()}
       </span>
     </div>
@@ -194,17 +205,10 @@ export default function CharacterBrowser({
   const [selectedMechs, setSelectedMechs] = React.useState<Set<string>>(
     new Set(),
   );
+  // The filter sheet is the shadcn `Sheet` (2026-09-26, ruling #154). It
+  // portals to <body> itself, which is what `tests/overlayStacking` exists
+  // for, and brings Escape, the backdrop, the focus trap and focus return.
   const [showFilters, setShowFilters] = React.useState(false);
-  // Portalled to <body> rather than rendered in place: `tests/overlayStacking`
-  // exists because the Growth modal once rendered *behind* the kit document,
-  // trapped by an `lg:sticky` ancestor that established a containing block.
-  // Nothing failed then either — it just looked broken.
-  const mountedInDom = React.useSyncExternalStore(
-    NO_SUBSCRIBE,
-    () => true,
-    () => false,
-  );
-  useEscapeKey(() => setShowFilters(false), showFilters);
 
   const roster = usePlayerStore((s) => s.roster);
   const characterProgress = usePlayerStore((s) => s.characters);
@@ -356,28 +360,111 @@ export default function CharacterBrowser({
           exactly this reason (ruling #118), so this is reuse rather than a new
           idea. */}
       <div className="flex items-center gap-2">
-        {/* `dark:bg-input/30` ships inside the shadcn Input and the app is
-            permanently in dark mode, so the panel fill has to be restated as a
-            dark: variant or the plain utility loses the merge. */}
         <Input
           value={searchValue}
           onChange={(event) => setSearchValue(event.target.value)}
           placeholder="Query name, id, tag"
           aria-label="Search characters"
-          className="chamfer h-11 min-w-0 flex-1 rounded-none border border-edge bg-panel font-body text-readout placeholder:text-readout-muted focus-visible:border-signal focus-visible:ring-0 dark:bg-panel"
+          className="min-w-0 flex-1"
         />
-        <Toggle
-          active={sheetCount > 0}
-          onClick={() => setShowFilters(true)}
-        >
-          Filters{sheetCount > 0 ? ` (${sheetCount})` : ""}
-        </Toggle>
+        <Sheet open={showFilters} onOpenChange={setShowFilters}>
+          <SheetTrigger asChild>
+            {/* The count rides a yellow badge while any filter is on, so a
+                filtered grid never passes for the whole roster. */}
+            <Button variant="secondary" size="sm" className="shrink-0">
+              Filters
+              {sheetCount > 0 ? <Badge>{sheetCount}</Badge> : null}
+            </Button>
+          </SheetTrigger>
+          <SheetContent aria-describedby={undefined}>
+            <SheetHeader>
+              <SheetTitle>Filter &amp; sort</SheetTitle>
+            </SheetHeader>
+            <div className="space-y-3 px-4">
+              <FilterGroup label="Element">
+                {COLOR_OPTIONS.map((option) => (
+                  <FilterChip
+                    key={option.id}
+                    active={selectedColor === option.id}
+                    hue={option.id === "all" ? undefined : EL_HUE[option.id]}
+                    onClick={() => setSelectedColor(option.id)}
+                  >
+                    {option.label}
+                  </FilterChip>
+                ))}
+              </FilterGroup>
+
+              <FilterGroup label="Sort">
+                {SORT_FIELDS.map((f) => (
+                  <FilterChip
+                    key={f.id}
+                    active={sortField === f.id}
+                    onClick={() => onSort(f.id)}
+                  >
+                    {f.label}
+                    {sortField === f.id ? (sortDir === "asc" ? " ↑" : " ↓") : ""}
+                  </FilterChip>
+                ))}
+              </FilterGroup>
+
+              {/* Owned-only is the default view, so the control that changes it
+                  says what it would reveal rather than what it currently is.
+                  Absent entirely where nothing can be owned. */}
+              {ownership ? (
+                <FilterGroup label="Show">
+                  <FilterChip
+                    active={showUnowned}
+                    onClick={() => setShowUnowned(!showUnowned)}
+                  >
+                    {showUnowned
+                      ? "Owned only"
+                      : `Locked units${hiddenByOwnership > 0 ? ` (${hiddenByOwnership})` : ""}`}
+                  </FilterChip>
+                </FilterGroup>
+              ) : null}
+
+              {allTags.length > 0 ? (
+                <FilterGroup label="Tags">
+                  {allTags.map((tag) => (
+                    <FilterChip
+                      key={tag}
+                      active={selectedTags.has(tag)}
+                      onClick={() => toggleIn(selectedTags, setSelectedTags, tag)}
+                    >
+                      {tag}
+                    </FilterChip>
+                  ))}
+                </FilterGroup>
+              ) : null}
+
+              {allMechs.length > 0 ? (
+                <FilterGroup label="Mechanics">
+                  {allMechs.map((mech) => (
+                    <FilterChip
+                      key={mech}
+                      active={selectedMechs.has(mech)}
+                      onClick={() => toggleIn(selectedMechs, setSelectedMechs, mech)}
+                    >
+                      {toTitleCase(mech)}
+                    </FilterChip>
+                  ))}
+                </FilterGroup>
+              ) : null}
+            </div>
+            {/* Done in the thumb third, not only the corner X. */}
+            <SheetFooter>
+              <SheetClose asChild>
+                <Button variant="secondary">Done</Button>
+              </SheetClose>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
       </div>
 
       {/* What the toolbar used to say by showing every control at once. */}
-      <div className="flex items-baseline justify-between gap-2 font-body text-[11px] font-bold uppercase tracking-label text-readout-muted">
+      <div className="flex items-baseline justify-between gap-2 font-body text-caption font-bold uppercase tracking-label text-ground-dim">
         <span className="tabular-nums">
-          <b className="font-bold text-signal">{filtered.length}</b> /{" "}
+          <b className="font-bold text-primary">{filtered.length}</b> /{" "}
           {hasHydrated && !showUnowned ? ownedIds.size : characters.length}{" "}
           units
           {sortField !== "none"
@@ -391,126 +478,29 @@ export default function CharacterBrowser({
         ) : null}
       </div>
 
-      {/* The sheet. Bottom-anchored for the same reason battle's is: every
-          control in it is one a thumb has to reach. */}
-      {showFilters && mountedInDom
-        ? createPortal(
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Filter and sort"
-          className="fixed inset-0 z-50 flex flex-col justify-end bg-void/70 backdrop-blur-sm"
-          {...scrimProps(() => setShowFilters(false))}
-        >
-          <div className="pb-safe max-h-[85dvh] overflow-y-auto border-t border-edge-strong bg-panel px-3 pt-3 shadow-[0_-18px_50px_rgba(0,0,0,0.7)]">
-            <span className="mx-auto mb-3 block h-1 w-11 bg-edge-strong" />
-            <div className="mb-3 flex items-center justify-between">
-              <p className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-readout-muted">
-                Filter &amp; sort
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowFilters(false)}
-                className="min-h-11 px-2 font-body text-[11px] font-bold uppercase tracking-label text-signal"
-              >
-                Done
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <FilterGroup label="Element">
-                {COLOR_OPTIONS.map((option) => (
-                  <Toggle
-                    key={option.id}
-                    active={selectedColor === option.id}
-                    hue={option.id === "all" ? undefined : EL_HUE[option.id]}
-                    onClick={() => setSelectedColor(option.id)}
-                  >
-                    {option.label}
-                  </Toggle>
-                ))}
-              </FilterGroup>
-
-              <FilterGroup label="Sort">
-                {SORT_FIELDS.map((f) => (
-                  <Toggle
-                    key={f.id}
-                    active={sortField === f.id}
-                    onClick={() => onSort(f.id)}
-                  >
-                    {f.label}
-                    {sortField === f.id ? (sortDir === "asc" ? " ↑" : " ↓") : ""}
-                  </Toggle>
-                ))}
-              </FilterGroup>
-
-              {/* Owned-only is the default view, so the control that changes it
-                  says what it would reveal rather than what it currently is.
-                  Absent entirely where nothing can be owned. */}
-              {ownership ? (
-                <FilterGroup label="Show">
-                  <Toggle
-                    active={showUnowned}
-                    onClick={() => setShowUnowned(!showUnowned)}
-                  >
-                    {showUnowned
-                      ? "Owned only"
-                      : `Locked units${hiddenByOwnership > 0 ? ` (${hiddenByOwnership})` : ""}`}
-                  </Toggle>
-                </FilterGroup>
-              ) : null}
-
-              {allTags.length > 0 ? (
-                <FilterGroup label="Tags">
-                  {allTags.map((tag) => (
-                    <Toggle
-                      key={tag}
-                      active={selectedTags.has(tag)}
-                      onClick={() => toggleIn(selectedTags, setSelectedTags, tag)}
-                    >
-                      {tag}
-                    </Toggle>
-                  ))}
-                </FilterGroup>
-              ) : null}
-
-              {allMechs.length > 0 ? (
-                <FilterGroup label="Mechanics">
-                  {allMechs.map((mech) => (
-                    <Toggle
-                      key={mech}
-                      active={selectedMechs.has(mech)}
-                      onClick={() => toggleIn(selectedMechs, setSelectedMechs, mech)}
-                    >
-                      {toTitleCase(mech)}
-                    </Toggle>
-                  ))}
-                </FilterGroup>
-              ) : null}
-            </div>
-          </div>
-        </div>,
-            document.body,
-          )
-        : null}
 
       {/* Unit grid */}
       {filtered.length === 0 ? (
-        <div className="chamfer-lg flex flex-col items-center gap-3 border border-edge bg-panel py-10 text-center">
-          <p className="font-body text-sm font-bold uppercase tracking-eyebrow text-readout-muted">
+        <div
+          className={cn(
+            panelVariants({ surface: "paper", density: "none" }),
+            "flex flex-col items-center gap-3 py-10 text-center",
+          )}
+        >
+          <p className="font-body text-sm font-bold uppercase tracking-eyebrow text-muted-foreground">
             No units match this query.
           </p>
           {/* Without this, an empty grid on a fresh account reads as a bug
               rather than as "you own one character and it's filtered out". */}
           {hiddenByOwnership > 0 ? (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setShowUnowned(true)}
-              className="chamfer border border-edge px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-label text-signal transition-colors hover:border-signal"
             >
               {hiddenByOwnership} locked unit
               {hiddenByOwnership === 1 ? " is" : "s are"} hidden — show them
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : (
@@ -539,10 +529,13 @@ export default function CharacterBrowser({
               <Link
                 key={character.id}
                 href={archiveHref(character)}
-                className="chamfer-lg group flex flex-col border border-edge bg-panel transition-colors hover:border-(color:--el)"
+                className={cn(
+                  panelVariants({ surface: "paper", density: "none", press: true }),
+                  "group flex flex-col hover:border-(color:--el)",
+                )}
                 style={{ "--el": hue } as React.CSSProperties}
               >
-                <div className="relative aspect-square overflow-hidden bg-inset">
+                <div className="relative aspect-square overflow-hidden border-b-2 border-border bg-muted">
                   {art ? (
                     <Image
                       src={art}
@@ -554,12 +547,12 @@ export default function CharacterBrowser({
                       }`}
                     />
                   ) : (
-                    <span className="flex h-full w-full items-center justify-center font-heading text-6xl text-readout-dim">
+                    <span className="flex h-full w-full items-center justify-center font-heading text-6xl text-muted-foreground">
                       {character.name.charAt(0)}
                     </span>
                   )}
                   <span
-                    className="absolute left-0 top-0 px-1.5 py-0.5 font-body text-[10px] font-bold tracking-label text-void"
+                    className="absolute left-0 top-0 border-b-2 border-r-2 border-border px-1.5 py-0.5 font-body text-label font-bold tracking-label text-card-foreground"
                     style={{ backgroundColor: hue }}
                   >
                     {EL_CODE[character.color]}
@@ -574,9 +567,12 @@ export default function CharacterBrowser({
                           ? `Level ${level}${ascension > 0 ? `, ascension ${ascension}` : ""}${ultLevel > 1 ? `, ultimate ${ultLevel}` : ""}`
                           : "Not yet recruited"
                       }
-                      className="absolute bottom-0 right-0 border-l border-t border-edge bg-void/85 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-label tabular-nums"
+                      // An ink label on the art, lettered in the element's
+                      // hue: it sits on the picture, not on paper, so the hue
+                      // reads as text here.
+                      className="absolute bottom-0 right-0 border-l-2 border-t-2 border-border bg-card-foreground/90 px-1.5 py-0.5 font-body text-label font-bold uppercase tracking-label tabular-nums"
                       style={{
-                        color: owned ? hue : "var(--color-readout-muted)",
+                        color: owned ? hue : "var(--ground-dim)",
                       }}
                     >
                       {owned
@@ -586,16 +582,16 @@ export default function CharacterBrowser({
                   ) : null}
                 </div>
 
-                <div className="border-t border-hairline px-2 py-2">
+                <div className="px-2 py-2">
                   {/* Heading above the name (#141). This tile has a dedicated
                       text block under the art, so the line costs ~10px and
                       crowds nothing. */}
                   {character.heading ? (
-                    <p className="truncate font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+                    <p className="truncate font-body text-label font-bold uppercase tracking-label text-muted-foreground">
                       {character.heading}
                     </p>
                   ) : null}
-                  <p className="truncate font-heading text-lg tracking-title text-readout group-hover:text-(--el)">
+                  <p className="truncate font-heading text-lg tracking-title">
                     {character.name}
                   </p>
                   <StatBar

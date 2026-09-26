@@ -1,6 +1,8 @@
 "use client";
 
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import React from "react";
 import MilestonePicker from "@/components/gacha/MilestonePicker";
 
@@ -36,18 +38,18 @@ function Row({
   const remaining = Math.max(0, threshold - bar);
   return (
     <div
-      className={`flex items-center gap-3 border px-3 py-2.5 ${
-        claimable ? "border-el-light bg-el-light/8" : "border-hairline bg-panel"
-      }`}
+      // Claimable wears the reward gold as a wash; the rest is a quiet row.
+      className={cn(
+        "flex items-center gap-3 border-2 px-3 py-2.5",
+        claimable ? "border-border bg-el-light/35" : "border-rule bg-muted",
+      )}
     >
-      <span className="w-12 shrink-0 font-heading text-xl leading-none tabular-nums text-readout-strong">
+      <span className="w-12 shrink-0 font-heading text-xl leading-none tabular-nums">
         {threshold}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-body text-sm font-semibold text-readout-strong">
-          {title}
-        </span>
-        <span className="block font-body text-[11px] text-readout-muted">
+        <span className="block font-body text-sm font-bold">{title}</span>
+        <span className="block font-body text-caption text-muted-foreground">
           {claimed
             ? "Claimed this lap"
             : remaining > 0
@@ -60,7 +62,7 @@ function Row({
           Claim
         </Button>
       ) : (
-        <span className="shrink-0 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+        <span className="shrink-0 font-body text-label font-bold uppercase tracking-label text-muted-foreground">
           {claimed ? "Taken" : "Locked"}
         </span>
       )}
@@ -127,10 +129,10 @@ export default function ClaimSection({
           onClaim={() => setShowPicker(true)}
         />
         {heldOpen ? (
-          <p className="border-l-2 border-signal bg-signal/5 px-3 py-2 font-body text-[11px] leading-snug text-readout-dim">
+          <Alert variant="info">
             The bar keeps running until every reward on this lap is taken —
             claiming the last one first can&rsquo;t cost you the other.
-          </p>
+          </Alert>
         ) : null}
       </div>
 

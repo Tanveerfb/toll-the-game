@@ -3,6 +3,11 @@
 import React from "react";
 import Image from "next/image";
 import TeamPicker from "@/components/game/TeamPicker";
+import { Button } from "@/components/ui/button";
+import { panelVariants } from "@/components/ui/Panel";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cn } from "@/lib/utils";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import {
   getBossCharacters,
@@ -54,9 +59,6 @@ function phaseCount(character: CharacterData): number {
   return Array.isArray(phases) ? phases.length : 1;
 }
 
-const TOGGLE =
-  "chamfer min-h-11 px-4 py-2 font-heading text-sm tracking-label transition-colors";
-
 function BossPicker({
   bosses,
   selected,
@@ -67,12 +69,10 @@ function BossPicker({
   onSelect: (character: CharacterData) => void;
 }): React.JSX.Element {
   return (
-    <div className="chamfer-lg border border-role-attack bg-panel">
-      <div className="flex items-center justify-between gap-2 border-b border-hairline px-3 py-2">
-        <h3 className="font-heading text-lg tracking-label text-role-attack">
-          Boss
-        </h3>
-        <span className="font-body text-[11px] font-bold uppercase tracking-label text-readout-muted">
+    <div className={panelVariants({ surface: "paper", density: "none", lift: "slab" })}>
+      <div className="flex items-center justify-between gap-2 border-b-2 border-border px-3 py-2">
+        <h3 className="font-heading text-lg tracking-label">Boss</h3>
+        <span className="font-body text-caption font-bold uppercase tracking-label text-muted-foreground">
           {selected ? selected.name : "None picked"}
         </span>
       </div>
@@ -86,11 +86,12 @@ function BossPicker({
               key={boss.id}
               type="button"
               onClick={() => onSelect(boss)}
-              className={`relative flex h-28 flex-col justify-end overflow-hidden border bg-inset text-left transition-colors ${
-                active
-                  ? "border-role-attack"
-                  : "border-edge hover:border-edge-strong"
-              }`}
+              aria-pressed={active}
+              // Selected is the action yellow, as everywhere else.
+              className={cn(
+                "relative flex h-28 flex-col justify-end overflow-hidden border-2 bg-muted text-left transition-colors",
+                active ? "border-border ink-slab-primary" : "border-rule hover:border-border",
+              )}
             >
               {art ? (
                 <Image
@@ -102,11 +103,11 @@ function BossPicker({
                 />
               ) : null}
               {phases > 1 ? (
-                <span className="absolute right-0 top-0 z-10 bg-role-attack px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-label text-void">
+                <span className="absolute right-0 top-0 z-10 border-b-2 border-l-2 border-border bg-role-attack px-1.5 py-0.5 font-body text-micro font-bold uppercase tracking-label text-card-foreground">
                   {phases} phases
                 </span>
               ) : null}
-              <span className="relative z-10 w-full bg-void/80 px-1.5 py-1 font-heading text-sm tracking-title text-readout-strong">
+              <span className="relative z-10 w-full bg-card-foreground/85 px-1.5 py-1 font-heading text-sm tracking-title text-card">
                 {boss.name}
               </span>
             </button>
@@ -162,60 +163,65 @@ export default function TeamSelect({
 
   return (
     <section className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 md:px-8">
-      {/* Masthead — the signal rule every other screen opens on. */}
-      <header className="border-l-2 border-signal pl-3">
-        <span className="block font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
-          Practice bench
-        </span>
-        <h1 className="font-heading text-4xl leading-none tracking-label text-readout-strong">
-          {isBossMode ? "Boss Battle" : "Team Select"}
-        </h1>
-        <p className="mt-1.5 max-w-[68ch] font-body text-sm leading-relaxed text-readout-dim">
+      {/* Masthead — the page header every other screen opens on. */}
+      <SectionHeader
+        eyebrow="Practice bench"
+        title={isBossMode ? "Boss Battle" : "Team Select"}
+      >
+        <p className="mt-2 max-w-[68ch] font-body text-sm leading-relaxed text-ground-dim">
           {isBossMode
             ? "Build a team, then pick one boss. Bosses act three times a turn."
             : "Any character in the game, owned or not. Nothing here touches your save."}
         </p>
-      </header>
+      </SectionHeader>
 
       {/* Setup strip. Mode and format are settings, not actions — they used to
           sit in one undifferentiated row alongside Clear and Start, so four
           different kinds of control wore the same chip. */}
-      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-hairline bg-inset/50 px-3 py-2">
+      <div
+        className={cn(
+          panelVariants({ surface: "paper", density: "tight" }),
+          "mt-4 flex flex-wrap items-center gap-x-5 gap-y-2",
+        )}
+      >
+        {/* Settings, not actions: each is one choice out of two, which is the
+            shadcn toggle group (ruling #154). */}
         <Setting label="Mode">
-          {(["sandbox", "boss"] as Mode[]).map((key) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setMode(key)}
-              className={`${TOGGLE} border ${
-                mode === key
-                  ? "border-role-attack bg-role-attack/15 text-role-attack"
-                  : "border-edge text-readout-dim hover:text-readout"
-              }`}
-            >
-              {key === "sandbox" ? "Sandbox" : "Boss"}
-            </button>
-          ))}
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            spacing={0}
+            value={mode}
+            onValueChange={(value) => {
+              if (value) setMode(value as Mode);
+            }}
+            aria-label="Mode"
+          >
+            <ToggleGroupItem value="sandbox">Sandbox</ToggleGroupItem>
+            <ToggleGroupItem value="boss">Boss</ToggleGroupItem>
+          </ToggleGroup>
         </Setting>
 
         <Setting label="Format">
-          {(Object.keys(FORMATS) as BattleFormat[]).map((key) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setFormat(key)}
-              className={`${TOGGLE} border ${
-                format === key
-                  ? "border-signal bg-signal/15 text-signal"
-                  : "border-edge text-readout-dim hover:text-readout"
-              }`}
-            >
-              {FORMATS[key].label}
-            </button>
-          ))}
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            spacing={0}
+            value={format}
+            onValueChange={(value) => {
+              if (value) setFormat(value as BattleFormat);
+            }}
+            aria-label="Format"
+          >
+            {(Object.keys(FORMATS) as BattleFormat[]).map((key) => (
+              <ToggleGroupItem key={key} value={key}>
+                {FORMATS[key].label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
         </Setting>
 
-        <p className="min-w-[18rem] flex-1 font-body text-[11px] leading-snug text-readout-muted">
+        <p className="min-w-[18rem] flex-1 font-body text-caption leading-snug text-muted-foreground">
           {FORMATS[format].hint}. A sub&apos;s passive works from the bench; it
           enters at the start of a new turn after a teammate falls.
         </p>
@@ -248,11 +254,12 @@ export default function TeamSelect({
         </div>
 
         <div className="flex items-center justify-center py-2 lg:h-full lg:flex-col">
-          <span className="hidden flex-1 border-l border-hairline lg:block" />
-          <span className="px-3 py-1 font-heading text-2xl tracking-label text-readout-muted">
+          <span className="hidden flex-1 border-l-2 border-ground-line lg:block" />
+          {/* The manga's versus burst: the one loud mark between the teams. */}
+          <span className="ink-skew bg-primary px-3 py-1 font-heading text-2xl tracking-label text-primary-foreground ink-slab-sm">
             VS
           </span>
-          <span className="hidden flex-1 border-l border-hairline lg:block" />
+          <span className="hidden flex-1 border-l-2 border-ground-line lg:block" />
         </div>
 
         {isBossMode ? (
@@ -314,17 +321,17 @@ export default function TeamSelect({
           select is a screen you may well want to leave, and #123 hides the bar
           only for `[data-battle-active]`. `--tabbar-h` is `0rem` at `sm` and
           up, so this is `bottom-0` on desktop with no breakpoint of its own. */}
-      <div className="fixed inset-x-0 bottom-[var(--tabbar-h)] z-40 border-t border-edge bg-void/95 backdrop-blur-sm">
+      <div className="fixed inset-x-0 bottom-[var(--tabbar-h)] z-40 border-t-2 border-border bg-card text-card-foreground">
         {/* `pb-safe` replaces the bottom half of `py-3`: this bar is pinned to
             the screen edge, and START would otherwise sit under the iOS home
             indicator. */}
         <div className="pb-safe mx-auto flex w-full max-w-6xl items-center gap-3 px-4 pt-3 md:px-8">
-          <span className="min-w-0 font-body text-[11px] leading-snug text-readout-muted">
+          <span className="min-w-0 font-body text-caption leading-snug text-muted-foreground">
             {canStart ? (
               <>
-                <span className="text-readout-strong">{playerTeam.length}</span>{" "}
+                <span className="font-bold text-card-foreground">{playerTeam.length}</span>{" "}
                 vs{" "}
-                <span className="text-readout-strong">
+                <span className="font-bold text-card-foreground">
                   {isBossMode ? boss?.name : enemyTeam.length}
                 </span>
                 {" · "}
@@ -335,24 +342,19 @@ export default function TeamSelect({
             )}
           </span>
           <span className="flex-1" />
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             disabled={
               playerTeam.length === 0 && enemyTeam.length === 0 && boss === null
             }
             onClick={clearAll}
-            className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap px-3 font-body text-[11px] font-bold uppercase tracking-label text-readout-muted transition-colors hover:text-el-red disabled:pointer-events-none disabled:opacity-40"
           >
             Clear all
-          </button>
-          <button
-            type="button"
-            disabled={!canStart}
-            onClick={handleStart}
-            className="chamfer h-11 shrink-0 border border-signal bg-signal px-8 font-heading text-lg tracking-label text-void transition-opacity disabled:pointer-events-none disabled:opacity-40"
-          >
+          </Button>
+          <Button size="lg" disabled={!canStart} onClick={handleStart} className="px-8">
             {isBossMode ? "Start boss battle" : "Start battle"}
-          </button>
+          </Button>
         </div>
       </div>
     </section>
@@ -369,10 +371,10 @@ function Setting({
 }): React.JSX.Element {
   return (
     <span className="flex items-center gap-2">
-      <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
+      <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
         {label}
       </span>
-      <span className="flex gap-1">{children}</span>
+      {children}
     </span>
   );
 }
@@ -395,14 +397,10 @@ function QuickAction({
   children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="chamfer min-h-11 border border-edge bg-void/60 px-2.5 py-1 font-body text-[11px] font-bold uppercase tracking-label text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:pointer-events-none disabled:opacity-35"
-    >
+    // On the ground, so the outline prints light.
+    <Button variant="outline" size="sm" onClick={onClick} disabled={disabled}>
       {children}
-    </button>
+    </Button>
   );
 }
 

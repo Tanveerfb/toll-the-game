@@ -53,7 +53,7 @@ describe("viewport units are dynamic (ruling #107)", () => {
 
   /**
    * The check above only ever matched `100vh` and `h-screen`, and that is
-   * exactly how `ModalShell`'s `max-h-[80vh]` and `DetailOverlay`'s
+   * exactly how `ModalShell`'s (deleted 2026-09-26) `max-h-[80vh]` and `DetailOverlay`'s
    * `max-h-[85vh]` survived the 2026-08-19 sweep — a static viewport unit
    * inside an arbitrary-value class, in the two shells that sit behind every
    * modal and every battle detail panel. Any `vh` in a *height* is the bug;

@@ -19,6 +19,12 @@ import AccountModal from "@/components/game/AccountModal";
 import DevGrantPanel from "@/components/game/DevGrantPanel";
 import SoundSettings from "@/components/game/SoundSettings";
 import { Screen } from "@/components/ui/Screen";
+import { panelVariants } from "@/components/ui/Panel";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+
+/** A tile on this page that goes somewhere (ruling #154). */
+const PROFILE_TILE = panelVariants({ surface: "paper", density: "none", press: true });
 
 const PLAYABLE_COUNT = getPlayableCharacters().length;
 
@@ -53,27 +59,25 @@ function Resource({
   percent?: number;
 }): React.JSX.Element {
   return (
-    <div className="flex min-w-[8rem] flex-1 flex-col gap-1 border border-hairline bg-panel px-3 py-2">
-      <span className="flex items-center gap-1.5 font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+    <div
+      className={cn(
+        panelVariants({ surface: "paper", density: "tight" }),
+        "flex min-w-[8rem] flex-1 flex-col gap-1",
+      )}
+    >
+      <span className="flex items-center gap-1.5 font-body text-label font-bold uppercase tracking-label text-muted-foreground">
         {iconId ? <ItemIcon id={iconId} size={18} alt="" /> : null}
         {label}
       </span>
-      <span className="font-heading text-xl leading-none tracking-title text-readout-strong tabular-nums">
+      <span className="font-heading text-xl leading-none tracking-title tabular-nums">
         {value}
         {suffix ? (
-          <span className="font-body text-xs font-semibold text-readout-muted">
+          <span className="font-body text-xs font-bold text-muted-foreground">
             {suffix}
           </span>
         ) : null}
       </span>
-      {percent !== undefined ? (
-        <span className="block h-1 overflow-hidden border border-hairline bg-void">
-          <span
-            className="block h-full bg-readout transition-[width] duration-500"
-            style={{ width: `${percent}%` }}
-          />
-        </span>
-      ) : null}
+      {percent !== undefined ? <Progress value={percent} /> : null}
     </div>
   );
 }
@@ -129,7 +133,12 @@ export default function ProfilePage() {
         {/* The page opens with what it's about. It used to open with a Stamina
             card, and the account itself was a line of email text near the
             bottom above the logout button. */}
-        <header className="flex flex-wrap items-center gap-4 border border-edge bg-inset px-4 py-4">
+        <header
+          className={cn(
+            panelVariants({ surface: "paper", density: "roomy", lift: "slab" }),
+            "flex flex-wrap items-center gap-4",
+          )}
+        >
           <PlayerAvatar
             characterId={avatarId}
             fallback={displayName}
@@ -143,30 +152,31 @@ export default function ProfilePage() {
               makes `flex-wrap` actually wrap. Measured in a browser
               2026-09-01. */}
           <div className="min-w-36 flex-1">
-            <h1 className="truncate font-heading text-2xl leading-none tracking-title text-readout-strong md:text-3xl">
+            <h1 className="truncate font-heading text-2xl leading-none tracking-title md:text-3xl">
               {displayName}
             </h1>
-            <p className="mt-1 truncate font-body text-[11px] text-readout-muted">
+            <p className="mt-1 truncate font-body text-caption text-muted-foreground">
               {user?.email ?? user?.uid ?? "Guest"}
             </p>
           </div>
 
-          <div className="flex flex-col gap-1 border-l border-edge pl-4">
-            <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
+          <div className="flex flex-col gap-1 border-l-2 border-rule pl-4">
+            <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
               Account rank
             </span>
-            <span
-              className={`font-heading text-3xl leading-none ${progress ? "text-signal" : "text-el-light"}`}
-            >
+            <span className="font-heading text-3xl leading-none">
               {ready ? account.rank : dash}
             </span>
-            <span className="block h-1 w-36 overflow-hidden border border-hairline bg-void">
+            {/* Walled (XP banking, rank capped until the trial) fills gold
+                rather than yellow: a full bar that never moves reads as a
+                state, not a bug. */}
+            <span className="block h-2 w-36 overflow-hidden border border-border bg-muted">
               <span
-                className={`block h-full transition-[width] duration-500 ${progress ? "bg-signal" : "bg-el-light"}`}
+                className={`block h-full transition-[width] duration-500 ${progress ? "bg-primary" : "bg-el-light"}`}
                 style={{ width: ready ? `${rankPercent}%` : "0%" }}
               />
             </span>
-            <span className="font-body text-[10px] font-semibold text-readout-muted">
+            <span className="font-body text-label font-bold text-muted-foreground">
               {!ready
                 ? " "
                 : progress
@@ -175,14 +185,14 @@ export default function ProfilePage() {
             </span>
           </div>
 
-          <div className="flex flex-col gap-1 border-l border-edge pl-4">
-            <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
+          <div className="flex flex-col gap-1 border-l-2 border-rule pl-4">
+            <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
               World level
             </span>
-            <span className="font-heading text-3xl leading-none text-readout-strong">
+            <span className="font-heading text-3xl leading-none">
               {ready ? worldLevel : dash}
             </span>
-            <span className="max-w-[16ch] font-body text-[10px] font-semibold leading-snug text-readout-muted">
+            <span className="max-w-[16ch] font-body text-label font-bold leading-snug text-muted-foreground">
               {!ready
                 ? " "
                 : cap >= MAX_WORLD_LEVEL
@@ -223,34 +233,34 @@ export default function ProfilePage() {
           <button
             type="button"
             onClick={() => setShowInventory(true)}
-            className="flex items-center gap-3 border border-hairline bg-panel px-4 py-3 text-left transition-colors hover:border-edge-strong"
+            className={cn(PROFILE_TILE, "flex items-center gap-3 px-4 py-3")}
           >
-            <Boxes className="h-5 w-5 shrink-0 text-readout-dim" strokeWidth={2} />
+            <Boxes className="h-5 w-5 shrink-0" strokeWidth={2} />
             <span className="min-w-0 flex-1">
-              <span className="block font-heading text-lg tracking-title text-readout-strong">
+              <span className="block font-heading text-lg tracking-title">
                 Inventory
               </span>
-              <span className="block font-body text-[11px] text-readout-muted">
+              <span className="block font-body text-caption text-muted-foreground">
                 Currencies, materials and what you&rsquo;ve invested
               </span>
             </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-readout-muted" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
           <button
             type="button"
             onClick={() => setShowAccount(true)}
-            className="flex items-center gap-3 border border-hairline bg-panel px-4 py-3 text-left transition-colors hover:border-edge-strong"
+            className={cn(PROFILE_TILE, "flex items-center gap-3 px-4 py-3")}
           >
-            <UserCog className="h-5 w-5 shrink-0 text-readout-dim" strokeWidth={2} />
+            <UserCog className="h-5 w-5 shrink-0" strokeWidth={2} />
             <span className="min-w-0 flex-1">
-              <span className="block font-heading text-lg tracking-title text-readout-strong">
+              <span className="block font-heading text-lg tracking-title">
                 Account
               </span>
-              <span className="block font-body text-[11px] text-readout-muted">
+              <span className="block font-body text-caption text-muted-foreground">
                 Sign-in, cloud save and display picture
               </span>
             </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-readout-muted" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
         </div>
 
@@ -259,19 +269,19 @@ export default function ProfilePage() {
             2026-08-11). This is the pointer, not a second copy of it. */}
         <Link
           href="/archive"
-          className="mt-2 flex items-center gap-3 border border-hairline bg-inset px-4 py-3 transition-colors hover:border-edge-strong"
+          className={cn(PROFILE_TILE, "mt-2 flex items-center gap-3 px-4 py-3")}
         >
           <span className="min-w-0 flex-1">
-            <span className="block font-heading text-lg tracking-title text-readout-strong">
+            <span className="block font-heading text-lg tracking-title">
               Your characters
             </span>
-            <span className="block font-body text-[11px] text-readout-muted">
+            <span className="block font-body text-caption text-muted-foreground">
               {ready
                 ? `${roster.length} recruited — levels, ascension and kits in the archive`
                 : "Levels, ascension and kits in the archive"}
             </span>
           </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-readout-muted" />
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         </Link>
 
         <div className="mt-4">
@@ -281,9 +291,9 @@ export default function ProfilePage() {
         <div className="mt-4">
           <DevGrantPanel />
         </div>
-      {/* Both overlays portal to <body> with `fixed inset-0`
-          (`components/game/DetailOverlay.tsx`), so sitting inside the column
-          rather than beside it does not change where they render. */}
+      {/* Both overlays are the shadcn `Dialog`, which portals to <body>, so
+          sitting inside the column rather than beside it does not change
+          where they render. */}
       {showInventory ? (
         <InventoryModal onClose={() => setShowInventory(false)} />
       ) : null}

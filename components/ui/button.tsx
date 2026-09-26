@@ -5,86 +5,77 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 /**
- * Combat Terminal button (retheme, 2026-08-13).
+ * Shōnen Ink button (ruling #154, 2026-09-26; was Combat Terminal, #84).
  *
- * This used to ship shadcn's stock variants — `rounded-lg`, `bg-primary`,
- * `bg-muted` — which paint from the greyscale token set. The game paints from
- * the Combat Terminal set (`--color-panel`, `--color-edge`, `--color-signal`,
- * the element hues), so every single usage overrode its own variant on the
- * next line: `variant="outline"` followed by a className restating border,
- * background, radius, font, tracking and colour. Sixteen of thirty-six usages
- * carried such a className.
+ * The variants ARE the game's look, so a usage only adds what a variant
+ * cannot know — a width, a grid position — and never restates colour, border,
+ * radius or font (#84). Every colour here is a semantic token from
+ * `styles/globals.css`; a Combat Terminal name (`signal`, `edge`, `readout`…)
+ * in this file fails `tests/uiTokens.test.ts`.
  *
- * The variants below ARE the game's look, so a usage only needs a className
- * when it wants something the variant genuinely can't know — a width, a grid
- * position, an absolute offset.
+ * **Two grounds.** A button may sit on the dark ground or on a paper panel.
+ * The filled variants (`default`, `secondary`, `claim`, `destructive`) carry
+ * their own fill and ink, so they read on both. `outline`, `ghost` and `link`
+ * take their colour from the surface they sit on (`currentColor`), which is
+ * light on the ground and ink on paper — the same variant is right in both
+ * places without a second name.
  *
- * Two buttons rendered near-white before this change (`bg-primary` showing
- * through a className that overrode text and border but not background): the
- * victory screen's CLAIM REWARDS / RETRY / REMATCH, and the Ascend button in
- * the progression panel. Both were unintended; both read as `signal` now.
+ * **Only the primary action slants** (docs/design-system.md): `default` is
+ * skewed; nothing else is. A screen with two skewed buttons has two primary
+ * actions, which is a design problem, not a styling one.
  *
- * Chamfered buttons keep their own focus treatment — `.chamfer:focus-visible`
- * in globals.css is unlayered, so its inset ring beats the layered utility
- * ring below rather than fighting it.
+ * Kept from the Combat Terminal version: two buttons once rendered near-white
+ * because a className overrode text and border but not background, letting
+ * the variant's fill show through. Setting all three in the variant is what
+ * stops that recurring.
  */
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center gap-2 rounded-none border bg-clip-padding whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-signal disabled:pointer-events-none disabled:border-hairline disabled:bg-transparent disabled:text-readout-muted [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center gap-2 rounded-none border-2 bg-clip-padding whitespace-nowrap transition-[color,background-color,box-shadow] outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
         /** Primary action — the one thing the screen wants you to press. */
-        default: "border-signal bg-signal text-void hover:bg-signal/85",
-        /** Same intent, lower weight: signal as outline rather than fill. */
+        default:
+          "ink-skew border-border bg-primary text-primary-foreground ink-slab-sm hover:bg-primary/90",
+        /** A second action beside the primary one: a paper button. */
         secondary:
-          "border-signal bg-signal/10 text-signal hover:bg-signal/20",
-        /** Neutral action standing beside a primary one. */
+          "border-border bg-secondary text-secondary-foreground hover:bg-muted",
+        /** Neutral, outlined in whatever colour its surface prints in. */
         outline:
-          "border-edge-strong bg-transparent text-readout-strong hover:border-signal-dim hover:text-signal",
+          "border-current bg-transparent hover:bg-current/10",
         /** Tertiary — chips, toggles, anything that shouldn't compete. */
         ghost:
-          "border-edge bg-transparent text-readout-dim hover:border-edge-strong hover:text-readout",
+          "border-transparent bg-transparent hover:bg-current/10",
         /**
          * Claiming something owed to you — a reward, a milestone, an order's
-         * payout. `el-light` is the reward hue across the game, and this was
-         * hand-rolled identically in `ClaimSection` and `OrdersBoard` before
-         * it had a name (2026-09-17).
+         * payout. `el-light` is the reward hue across the game (2026-09-17),
+         * used as a fill with ink on it: an element hue is never text on
+         * paper (docs/design-system.md).
          */
         claim:
-          "border-el-light bg-el-light/12 text-el-light hover:bg-el-light/20",
+          "border-border bg-el-light text-card-foreground hover:bg-el-light/85",
         /** Forfeits, exits, anything the player can't take back. */
         destructive:
-          "border-el-red bg-transparent text-el-red hover:bg-el-red/10",
-        link: "border-transparent text-signal underline-offset-4 hover:underline",
+          "border-border bg-destructive text-card-foreground hover:bg-destructive/85",
+        link: "border-transparent underline-offset-4 hover:underline",
       },
       /**
        * Size carries the typeface too, because the two always travelled
-       * together: small controls are body-font uppercase readouts, large ones
-       * are heading-font display text. Splitting them into separate props
-       * would just mean every usage setting both.
+       * together: small controls are body-font uppercase labels, large ones
+       * are heading-font display text.
        *
-       * **Every size is at least 44px tall (2026-08-21, ruling #107.)** Five of
-       * the nine used to sit under it — `default` at 36px worst of all, since
-       * 20 of the 51 call sites take it implicitly and never state a size at
-       * all. That is why hand-fixing screens didn't work: a screen authored
-       * mobile-first still got a 36px button, and `components/game/story/`,
-       * the calibration set, shipped two of them.
-       *
-       * The **type scale is untouched** — a small control still reads small.
-       * What changed is the box, via `min-h`/`min-w` floors rather than bigger
-       * `h-*`, so a row of controls keeps its rhythm and only the ones that
-       * were too small to hit grow.
+       * **Every size is at least 44px tall** (ruling #107, 2026-08-21), via
+       * `min-h`/`min-w` floors rather than bigger `h-*`, so a row of controls
+       * keeps its rhythm. `tests/touchTargets.test.ts` holds it.
        */
       size: {
-        xs: "min-h-11 px-2 py-1 font-body text-[10px] font-bold uppercase tracking-label",
-        sm: "min-h-11 px-3 py-1.5 font-body text-[11px] font-bold uppercase tracking-label",
+        xs: "min-h-11 px-2 py-1 font-body text-label font-bold uppercase tracking-label",
+        sm: "min-h-11 px-3 py-1.5 font-body text-caption font-bold uppercase tracking-label",
         default: "min-h-11 px-4 py-2 font-heading text-sm tracking-label",
         lg: "min-h-11 px-5 py-2 font-heading text-base tracking-label",
         xl: "min-h-12 px-6 py-2.5 font-heading text-lg tracking-label",
-        // One icon size, not four. `icon-xs`/`icon-sm`/`icon-lg` were 24/28/44
-        // and had zero callers; with a 44px floor the first two would have
-        // been `icon` under another name, which is a scale that lies about
-        // what it offers.
+        // One icon size, not four: with a 44px floor, smaller icon sizes
+        // would have been `icon` under another name.
         icon: "size-11",
       },
     },

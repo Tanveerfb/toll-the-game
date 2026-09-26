@@ -2,6 +2,8 @@
 
 import React from "react";
 import { Slider } from "@/components/ui/slider";
+import { panelVariants } from "@/components/ui/Panel";
+import { Toggle } from "@/components/ui/toggle";
 import { useSettingsStore } from "@/store/settingsStore";
 
 /**
@@ -25,32 +27,27 @@ export default function SoundSettings(): React.JSX.Element {
   const setMuted = useSettingsStore((s) => s.setMusicMuted);
 
   return (
-    <section className="border border-edge bg-panel px-4 py-4">
+    <section className={panelVariants({ surface: "paper", density: "roomy" })}>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-heading text-lg tracking-title text-readout-strong">
-            Sound
-          </h2>
-          <p className="font-body text-[11px] text-readout-muted">
+          <h2 className="font-heading text-lg tracking-title">Sound</h2>
+          <p className="font-body text-caption text-muted-foreground">
             Mute is in the top bar on every screen.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setMuted(!muted)}
-          aria-pressed={muted}
-          className={`min-h-11 shrink-0 border px-3 font-body text-[10px] font-bold uppercase tracking-label transition-colors ${
-            muted
-              ? "border-signal bg-signal/10 text-signal"
-              : "border-edge text-readout-dim hover:text-readout-strong"
-          }`}
+        <Toggle
+          variant="outline"
+          size="sm"
+          pressed={muted}
+          onPressedChange={setMuted}
+          className="shrink-0"
         >
           {muted ? "Muted" : "Mute"}
-        </button>
+        </Toggle>
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <span className="shrink-0 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+        <span className="shrink-0 font-body text-label font-bold uppercase tracking-label text-muted-foreground">
           Music
         </span>
         {/* The `Slider` primitive rather than a bare range input: that was an
@@ -65,7 +62,7 @@ export default function SoundSettings(): React.JSX.Element {
           aria-label="Music volume"
           disabled={muted}
         />
-        <span className="w-10 shrink-0 text-right font-body text-[11px] font-semibold tabular-nums text-readout-dim">
+        <span className="w-10 shrink-0 text-right font-body text-caption font-bold tabular-nums">
           {Math.round(volume * 100)}%
         </span>
       </div>

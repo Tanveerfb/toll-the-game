@@ -36,13 +36,13 @@ export function RewardList({
       {rows.map(([id, label, value]) => (
         <div
           key={label}
-          className="flex items-center justify-between gap-3 border-b border-hairline pb-1.5 last:border-b-0"
+          className="flex items-center justify-between gap-3 border-b border-rule pb-1.5 last:border-b-0"
         >
-          <span className="flex min-w-0 items-center gap-2 font-body text-sm text-readout-dim">
+          <span className="flex min-w-0 items-center gap-2 font-body text-sm">
             <ItemIcon id={id} size={26} alt="" />
             {label}
           </span>
-          <span className="font-heading text-lg tabular-nums text-readout-strong">
+          <span className="font-heading text-lg tabular-nums">
             +{value.toLocaleString()}
           </span>
         </div>
@@ -57,7 +57,7 @@ export function RewardList({
  * Used by the brief, where the figure is often a range rather than a number —
  * which is why it takes `PreviewRow` and formats nothing itself.
  *
- * `tone="highlight"` is the one-off first-clear bundle, drawn in `el-light` so
+ * `tone="highlight"` is the one-off first-clear bundle, on the reward gold so
  * it reads as separate from the farm below it. Showing the two merged is what
  * made the old preview read as *"you get this every time"*.
  */
@@ -80,16 +80,16 @@ export function RewardChips({
             // leaving a ragged tail, and wrap instead of shrinking to slivers.
             "flex min-w-[7rem] flex-1 items-center gap-2 px-2.5 py-1.5",
             tone === "highlight"
-              ? "border border-el-light/40 bg-el-light/5"
-              : "border border-hairline bg-inset",
+              ? "border-2 border-border bg-el-light/45"
+              : "border border-rule bg-muted",
           )}
         >
           <ItemIcon id={id} size={28} alt="" />
           <span className="min-w-0">
-            <span className="block font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+            <span className="block font-body text-label font-bold uppercase tracking-label text-muted-foreground">
               {label}
             </span>
-            <span className="block font-heading text-base text-readout-strong">
+            <span className="block font-heading text-base">
               {amount}
             </span>
           </span>

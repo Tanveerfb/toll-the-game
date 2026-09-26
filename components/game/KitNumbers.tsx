@@ -3,7 +3,16 @@
 import React from "react";
 
 import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
-import DetailOverlay from "@/components/game/DetailOverlay";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { panelVariants } from "@/components/ui/Panel";
+import { useReturnFocus } from "@/hooks/useReturnFocus";
+import { cn } from "@/lib/utils";
 import type { DamagePreviewRow } from "@/lib/game/damagePreview";
 
 /**
@@ -22,6 +31,11 @@ import type { DamagePreviewRow } from "@/lib/game/damagePreview";
  * fixed baseline, so the figures are comparable across abilities and across
  * characters. The passive is deliberately excluded: *"the passive doesn't need
  * to be there — it's only the skills and ultimates."*
+ *
+ * **Shōnen Ink (ruling #154):** the rows are paper tiles on the archive's
+ * sheet, and the numbers open in the shadcn `Dialog`. One dialog serves every
+ * row, so there is no single `DialogTrigger`; `useReturnFocus` hands focus
+ * back to the row that opened it.
  */
 export default function KitNumbers({
   rows,
@@ -51,6 +65,7 @@ export default function KitNumbers({
 
   const [openKey, setOpenKey] = React.useState<string | null>(null);
   const open = abilities.find((ability) => ability.key === openKey);
+  const returnFocus = useReturnFocus();
 
   if (abilities.length === 0) return null;
 
@@ -70,24 +85,30 @@ export default function KitNumbers({
             <button
               key={ability.key}
               type="button"
-              onClick={() => setOpenKey(ability.key)}
-              className="flex min-h-11 w-full items-center justify-between gap-3 border border-hairline bg-panel px-3 py-2 text-left transition-colors hover:border-edge-strong"
+              onClick={(event) => {
+                returnFocus.remember(event.currentTarget);
+                setOpenKey(ability.key);
+              }}
+              className={cn(
+                panelVariants({ surface: "paper", density: "tight", press: true }),
+                "flex min-h-11 w-full items-center justify-between gap-3",
+              )}
             >
               <span className="min-w-0">
                 {ability.phaseLabel ? (
-                  <span className="block font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+                  <span className="block font-body text-label font-bold uppercase tracking-label text-muted-foreground">
                     {ability.phaseLabel}
                   </span>
                 ) : null}
-                <span className="block truncate font-heading text-base tracking-title text-readout-strong">
+                <span className="block truncate font-heading text-base tracking-title">
                   {ability.name}
                 </span>
-                <span className="block font-body text-[10px] uppercase tracking-label text-readout-muted">
+                <span className="block font-body text-label uppercase tracking-label text-muted-foreground">
                   {ability.rows.length} step
                   {ability.rows.length === 1 ? "" : "s"}
                 </span>
               </span>
-              <span className="shrink-0 text-right font-heading text-sm tabular-nums text-signal">
+              <span className="shrink-0 text-right font-heading text-sm tabular-nums">
                 {span}
               </span>
             </button>
@@ -95,30 +116,38 @@ export default function KitNumbers({
         })}
       </div>
 
-      {open ? (
-        <DetailOverlay
-          title={open.name}
-          subtitle={
-            open.phaseLabel
-              ? `${open.phaseLabel} · vs a training dummy`
-              : "vs a training dummy"
-          }
-          onClose={() => setOpenKey(null)}
+      <Dialog
+        open={open !== undefined}
+        onOpenChange={(next) => {
+          if (!next) setOpenKey(null);
+        }}
+      >
+        {open ? (
+        <DialogContent
+          onCloseAutoFocus={returnFocus.onCloseAutoFocus}
         >
+          <DialogHeader>
+            <DialogTitle>{open.name}</DialogTitle>
+            <DialogDescription className="text-caption font-bold uppercase tracking-eyebrow">
+              {open.phaseLabel
+                ? `${open.phaseLabel} · vs a training dummy`
+                : "vs a training dummy"}
+            </DialogDescription>
+          </DialogHeader>
           <div className="flex flex-col gap-2">
             {open.rows.map((row) => (
               <div
                 key={row.id}
-                className="border border-hairline bg-inset px-3 py-2"
+                className="border border-rule bg-muted px-3 py-2"
               >
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+                  <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
                     {row.rankLabel}
                     {row.multiplierLabel === "—"
                       ? ""
                       : ` · ${row.multiplierLabel}`}
                   </span>
-                  <span className="font-heading text-lg tabular-nums text-readout-strong">
+                  <span className="font-heading text-lg tabular-nums">
                     {row.resultLabel}
                   </span>
                 </div>
@@ -134,14 +163,15 @@ export default function KitNumbers({
                   // section without anything failing.
                   <KeyworkHighlighter
                     text={row.notes}
-                    className="mt-1 block font-body text-[11px] leading-snug text-readout-dim"
+                    className="mt-1 block font-body text-caption leading-snug"
                   />
                 ) : null}
               </div>
             ))}
           </div>
-        </DetailOverlay>
-      ) : null}
+        </DialogContent>
+        ) : null}
+      </Dialog>
     </>
   );
 }

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import React from "react";
-import DetailOverlay from "@/components/game/DetailOverlay";
+import MountedDialog from "@/components/ui/MountedDialog";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { getCharacterArt } from "@/lib/game/characterArt";
 
@@ -29,9 +29,9 @@ export default function RatesModal({
   const missPercent = ((1 - rate) * 100).toFixed(2);
 
   return (
-    <DetailOverlay
+    <MountedDialog
       title="Rates & pool"
-      subtitle={`${(rate * 100).toFixed(2)}% for a featured unit`}
+      description={`${(rate * 100).toFixed(2)}% for a featured unit`}
       onClose={onClose}
     >
       <div className="flex flex-col gap-1.5">
@@ -41,9 +41,9 @@ export default function RatesModal({
           return (
             <div
               key={id}
-              className="flex items-center gap-2.5 border border-hairline bg-panel px-2.5 py-1.5"
+              className="flex items-center gap-2.5 border border-rule bg-muted px-2.5 py-1.5"
             >
-              <span className="relative h-8 w-8 shrink-0 overflow-hidden border border-edge bg-inset">
+              <span className="relative h-8 w-8 shrink-0 overflow-hidden border border-border bg-card">
                 {art ? (
                   <Image
                     src={art}
@@ -54,10 +54,10 @@ export default function RatesModal({
                   />
                 ) : null}
               </span>
-              <span className="min-w-0 flex-1 truncate font-body text-sm text-readout">
+              <span className="min-w-0 flex-1 truncate font-body text-sm">
                 {character?.name ?? id}
               </span>
-              <span className="shrink-0 font-body text-xs font-bold tabular-nums text-readout-strong">
+              <span className="shrink-0 font-body text-xs font-bold tabular-nums">
                 {perUnitPercent}%
               </span>
             </div>
@@ -66,21 +66,21 @@ export default function RatesModal({
       </div>
 
       {rate < 1 ? (
-        <div className="mt-3 border-t border-hairline pt-3">
+        <div className="border-t border-rule pt-3">
           <div className="flex items-baseline justify-between gap-3">
-            <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+            <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
               Everything else
             </span>
-            <span className="font-body text-xs font-bold tabular-nums text-readout-dim">
+            <span className="font-body text-xs font-bold tabular-nums">
               {missPercent}%
             </span>
           </div>
-          <p className="mt-1 font-body text-[11px] leading-snug text-readout-muted">
+          <p className="mt-1 font-body text-caption leading-snug text-muted-foreground">
             {missNote ??
               "Split evenly across coin, levelling manuals and local-specialty materials."}
           </p>
         </div>
       ) : null}
-    </DetailOverlay>
+    </MountedDialog>
   );
 }
