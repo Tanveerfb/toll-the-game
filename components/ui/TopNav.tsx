@@ -24,7 +24,6 @@ import { GAME_ROUTES, isRouteActive } from "@/lib/nav/routes";
 import { useAuth } from "@/hooks/AuthProvider";
 import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
-import { useStoryStore } from "@/store/storyStore";
 import { getCurrentStamina, STAMINA_CAP } from "@/lib/game/stamina";
 import { rankProgress } from "@/lib/game/accountRank";
 import { claimableCount, evaluateOrders } from "@/lib/game/orders";
@@ -50,7 +49,6 @@ function getServerClockSnapshot(): number {
 }
 
 const ROUTE_ICON: Record<string, React.ElementType> = {
-  "/story": BookOpen,
   "/events": Skull,
   "/gacha": Sparkles,
   "/archive": BookOpen,
@@ -59,7 +57,9 @@ const ROUTE_ICON: Record<string, React.ElementType> = {
   "/profile": UserIcon,
 };
 
-/** Archive and story would otherwise share `BookOpen`. */
+/** Chosen when Archive and Story would otherwise both have been `BookOpen`.
+ *  Story was removed on 2026-09-26; whether Archive takes `BookOpen` back is
+ *  a visual call, so it is left as it was. */
 const ARCHIVE_ICON = Coins;
 
 /**
@@ -138,13 +138,10 @@ export default function TopNav() {
   const roster = usePlayerStore((s) => s.roster);
   const characters = usePlayerStore((s) => s.characters);
   const claimedOrders = usePlayerStore((s) => s.claimedOrders);
-  const cleared = useStoryStore((s) => s.cleared);
-  const storyHydrated = useStoryStore((s) => s.hasHydrated);
 
   const orderBoard = React.useMemo(
     () =>
       evaluateOrders({
-        clearedStages: cleared,
         pulls: stats.pulls,
         bossClears: stats.bossClears,
         presetsSaved: presets.length,
@@ -153,7 +150,7 @@ export default function TopNav() {
         characters,
         claimed: claimedOrders,
       }),
-    [cleared, stats, presets.length, roster.length, account.rank, characters, claimedOrders],
+    [stats, presets.length, roster.length, account.rank, characters, claimedOrders],
   );
 
   const now = React.useSyncExternalStore(
@@ -177,8 +174,8 @@ export default function TopNav() {
   // moves would read as a bug, so the walled case gets its own marker.
   const progress = rankProgress(account, account.clearedWalls);
 
-  // Gated on `ready` for the same reason as the resource strip: both stores
-  // rehydrate from localStorage, and a badge that appears and then vanishes
+  // Gated on `ready` for the same reason as the resource strip: the store
+  // rehydrates from localStorage, and a badge that appears and then vanishes
   // reads as a bug.
   //
   // Also gated on being signed in: claiming needs an account, and a count on
@@ -186,7 +183,7 @@ export default function TopNav() {
   // pitch belongs on the home panel, once.
   const canClaimOrders = !firebaseEnabled || !!user;
   const readyOrders =
-    ready && storyHydrated && canClaimOrders ? claimableCount(orderBoard) : 0;
+    ready && canClaimOrders ? claimableCount(orderBoard) : 0;
   const rankPercent = progress
     ? Math.min(100, (progress.current / progress.required) * 100)
     : 100;
@@ -210,6 +207,15 @@ export default function TopNav() {
             string it carried was the only place the badge's count was ever
             spelled out. A phone gets no hover, so that reading lived nowhere.
             Found by reading the rendered DOM, 2026-09-01. */}
+        {/* In a battle the wordmark is not a link. Leaving is not allowed
+            until the battle is finished or forfeited (Tanveer, 2026-09-26),
+            and `BattleLock` would bounce the click straight back — a link
+            that goes nowhere is worse than none. */}
+        {inBattle ? (
+          <span className="inline-flex min-h-11 shrink-0 items-center font-heading text-xl tracking-eyebrow text-signal">
+            TOLL
+          </span>
+        ) : (
         <Link
           href="/"
           aria-label={
@@ -229,10 +235,16 @@ export default function TopNav() {
             </span>
           ) : null}
         </Link>
+        )}
         {/* Desktop only. Below `sm` these five live in the bottom tab bar —
             the strip was 234px holding 332px, so two of the seven routes never
-            rendered at rest and nothing said the row scrolled. */}
-        <div className="hud-scroll hidden min-w-0 items-center gap-1 overflow-x-auto sm:flex">
+            rendered at rest and nothing said the row scrolled. Gone during a
+            battle, for the same reason as the wordmark above: the bottom tab
+            bar already stood down for fights, and this row did not, so on a
+            desktop every other screen stayed one click away mid-fight. */}
+        <div
+          className={`hud-scroll hidden min-w-0 items-center gap-1 overflow-x-auto ${inBattle ? "" : "sm:flex"}`}
+        >
           {GAME_ROUTES.filter((route) => route.href !== "/").map((route) => {
             const active = isRouteActive(route.href, pathname);
             const Icon =
@@ -398,6 +410,9 @@ export default function TopNav() {
  * **Archive, Practice and News do not get a slot.** Five is the number that
  * fits at 390 without the labels shrinking below legibility, and those three
  * are already tiles on the hub — which is what `Menu` opens.
+ *
+ * **Four since 2026-09-26**, when story mode was removed and took its tab
+ * with it. What, if anything, fills the fifth slot is his call.
  */
 function BottomTabs({
   pathname,
@@ -408,7 +423,6 @@ function BottomTabs({
 }): React.JSX.Element {
   const tabs = [
     { href: "/", label: "Menu", icon: Home },
-    { href: "/story", label: "Story", icon: BookOpen },
     { href: "/events", label: "Events", icon: Skull },
     { href: "/gacha", label: "Gacha", icon: Sparkles },
     {

@@ -21,6 +21,22 @@ The foundation (combat, kits, story P1-2, archive, art, auth) is solid enough to
 4c. **BUILT 2026-08-09.** **Story presentation overhaul + music layer** — Tanveer's verdict on the story experience was "it's not good right now"; he confirmed *scenes look cheap*, *no pacing or weight* and *battle handoff is flat*, and dismissed the navigation-depth complaint. Delivered: typewriter reveal with the VN tap contract, AUTO/HISTORY/skip-confirm, narration visually separated from dialogue, portraits reframed with the previous speaker retained, chapter title card, **VS splash**, chapter context in the battle status strip, CHAPTER COMPLETE on first clear, and a full **music layer** (role-keyed manifest, two-deck crossfade, autoplay gate, missing-file tolerance, volume/mute in a TopNav popover). Spec: `docs/superpowers/specs/2026-08-09-story-presentation-and-music-design.md`. Ships with `content/news/updates/2026-08-09-story-presentation.mdx`.
    **Two things are Tanveer's:** environment **backgrounds are deferred** by his call (they're the biggest remaining lever on "cheap"), and **the OST itself** — `public/audio/` is empty and the game is silent until he adds the files listed in `docs/AUDIO.md`. **No SFX system exists and none is planned.** This closes the audio half of item 2 below at the system level; FTUE remains, and the mobile pass shipped 2026-08-21.
 
+4d. **NEXT (2026-09-26) — Foundation pass, before any new feature.** His
+   call: *"if we develop the game without reworking or improving the
+   foundation, then it's not gonna go well."* The full findings and order are
+   in `Plans/2026-09-26-foundation-audit.md`. Two items he raised himself:
+   - **World-boss difficulty must scale the whole fight.** **Fixed 2026-09-26,
+     awaiting his playtest.** One unit builder and one stat pipeline now serve
+     every fight and every boss phase (`lib/game/buildUnit.ts`,
+     `battleStats.ts`). The simulator, the boss brief and the team picker use
+     them too.
+     - It made the First Ascension Trial far harder: its tuning was measured
+       on the bug. He is judging that in play.
+   - **Story mode** — **removed instead of fixed** (ruling #152). He chose to
+     build PvE, characters and mechanics first.
+   - **A battle cannot be walked away from** (ruling #153) — built the same
+     day.
+
 5. **BUILT 2026-08-01.** **Patch-notes system + first patch notes** — `/news` route, MDX-based, Updates/Notices tabs, localStorage unread badge. Standing rule since: every player-facing change ships with a news post going forward.
 6. **Monetization + game promotion** — commerce (payment, packs, battle pass), compliance, marketing.
 

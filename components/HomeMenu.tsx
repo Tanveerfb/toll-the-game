@@ -1,29 +1,17 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Newspaper, Skull, Sparkles } from "lucide-react";
+import { Newspaper, Skull, Sparkles } from "lucide-react";
 import ItemIcon from "@/components/game/ItemIcon";
 import OrdersButton from "@/components/game/OrdersButton";
 import { useAuth } from "@/hooks/AuthProvider";
 import { useScreenMusic } from "@/hooks/useScreenMusic";
-import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
-import { useStoryStore } from "@/store/storyStore";
-import BattleArena from "@/components/game/BattleArena";
-import Deck from "@/components/game/Deck";
-import { getCharacterArt } from "@/lib/game/characterArt";
 import { getPlayableCharacters } from "@/lib/game/characterCatalog";
 import { getGemBanner } from "@/lib/gacha/banners";
 import { LIMITED_MILESTONE_FIRST } from "@/lib/gacha/milestone";
 import { getCurrentStamina } from "@/lib/game/stamina";
-import {
-  getStoryChapters,
-  stageKey,
-  stageLabel,
-  isStageUnlocked,
-} from "@/lib/game/storyCatalog";
 import {
   getLastViewedNewsDate,
   hasUnreadNews,
@@ -39,8 +27,6 @@ interface HomeMenuProps {
 // engine uses, so the hub can't advertise a roster or banner that doesn't exist.
 const PLAYABLE_COUNT = getPlayableCharacters().length;
 const GEM_BANNER = getGemBanner();
-
-const STORY_ART = getCharacterArt("duke");
 
 /** Stamina a single World Boss run costs. Mirrors the Molvarr entry in `lib/game/events.ts`;
  *  the hub only reads it to answer "can I afford a run right now". */
@@ -58,24 +44,6 @@ function getClockSnapshot(): number {
 }
 function getServerClockSnapshot(): number {
   return 0;
-}
-
-/**
- * First unlocked-but-uncleared chapter — the "continue from here" pointer,
- * using the same sequential-unlock rule the story screen enforces. Kept as a
- * plain function rather than an in-component `useMemo`: the early returns
- * inside nested loops defeat React Compiler's memoization preservation, and
- * this walks ~6 chapters.
- */
-function findNextStage(cleared: Record<string, boolean>) {
-  for (const chapter of getStoryChapters()) {
-    for (const stage of chapter.stages) {
-      if (cleared[stageKey(chapter.id, stage.id)]) continue;
-      if (!isStageUnlocked(cleared, chapter.id, stage.id)) return null;
-      return { chapter, stage };
-    }
-  }
-  return null;
 }
 
 /**
@@ -168,22 +136,11 @@ function ModeButton({
 
 export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
   const { user } = useAuth();
-  const battlePhase = useGameStore((s) => s.battlePhase);
   const router = useRouter();
 
-  // HomeMenu also hosts a practice battle inline — "initializing" is the
-  // no-battle state (see the render branch below), so the hub's theme gives
-  // way to the battle track rather than playing under a fight.
-  useScreenMusic(
-    battlePhase === "initializing"
-      ? "menu"
-      : battlePhase === "victory"
-        ? "victory"
-        : "battle",
-  );
-
-  const cleared = useStoryStore((s) => s.cleared);
-  const storyHydrated = useStoryStore((s) => s.hasHydrated);
+  // The hub no longer hosts a battle (see the note where it used to, below),
+  // so it only ever plays its own theme.
+  useScreenMusic("menu");
 
   const playerHydrated = usePlayerStore((s) => s.hasHydrated);
   const stamina = usePlayerStore((s) => s.stamina);
@@ -206,13 +163,6 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
     () => false,
   );
 
-  const nextStage = findNextStage(cleared);
-  const clearedInChapter = nextStage
-    ? nextStage.chapter.stages.filter(
-        (stage) => cleared[stageKey(nextStage.chapter.id, stage.id)],
-      ).length
-    : 0;
-
   // Everything below needs both the persisted store and a real clock; until
   // then the alerts row renders nothing rather than a wrong number.
   const ready = playerHydrated && now !== 0;
@@ -230,84 +180,15 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
   const milestoneInReach =
     ready && gemsToMilestone !== null && !pity.limited.claimedFirst;
 
-  if (battlePhase !== "initializing") {
-    // The same composition `/practice` uses, and it has to be: `BattleArena`
-    // is the board, `Deck` is the hand and End Turn. Rendering the arena
-    // alone gave a battle resumed from here no way to *play* it — you could
-    // read the field and reach Exit through the controls sheet, and nothing
-    // else. Reachable before through the TOLL wordmark; the bottom tab bar
-    // (ruling #123) turned it into a one-tap route, which is how it surfaced.
-    return (
-      <Screen variant="fixed" width="none">
-        <BattleArena />
-        <Deck />
-      </Screen>
-    );
-  }
-
+  // This used to render any live battle inline, making the hub a second
+  // screen a battle could appear on — with no owner's handlers, so a boss won
+  // here paid nothing. `BattleLock` now routes a live battle back to the
+  // screen that owns it, and the hub never sees one (2026-09-26).
   return (
     <Screen width="app">
-        {/* HERO — the one thing to do next, derived from progress rather than
-            fixed. The menu this replaced gave MAIN STORY and LOGIN the same
-            rectangle, so nothing said what to do first. */}
-        <button
-          type="button"
-          onClick={() => router.push("/story")}
-          className="group relative flex h-44 w-full overflow-hidden border border-edge-strong bg-panel text-left md:h-52"
-        >
-          {STORY_ART ? (
-            <>
-              <Image
-                src={STORY_ART}
-                alt=""
-                fill
-                priority
-                sizes="(max-width: 768px) 100vw, 900px"
-                className="object-cover object-[64%_12%] opacity-55 transition-transform duration-500 group-hover:scale-105"
-              />
-              {/* Art is masked back to the left so the title always lands on
-                  solid ground, whatever the crop. */}
-              <span className="absolute inset-0 bg-linear-to-r from-void via-void/75 to-transparent" />
-            </>
-          ) : null}
-
-          <span className="relative flex max-w-[64%] flex-col justify-center gap-1 px-5 md:px-7">
-            {!storyHydrated ? (
-              <span className="font-body text-xs uppercase tracking-eyebrow text-readout-muted">
-                Loading progress…
-              </span>
-            ) : nextStage ? (
-              <>
-                <span className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
-                  Continue · {nextStage.chapter.title}
-                </span>
-                <span className="font-heading text-2xl leading-tight tracking-title text-readout-strong md:text-4xl">
-                  {stageLabel(nextStage.chapter, nextStage.stage)} · {nextStage.stage.name}
-                </span>
-                <span className="font-body text-sm text-readout-dim">
-                  {clearedInChapter} of {nextStage.chapter.stages.length} stages
-                  cleared in this part
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-signal">
-                  Main story
-                </span>
-                <span className="font-heading text-2xl leading-tight tracking-title text-readout-strong md:text-4xl">
-                  All chapters cleared
-                </span>
-                <span className="font-body text-sm text-readout-dim">
-                  Replay any chapter from the story index
-                </span>
-              </>
-            )}
-            <span className="mt-2 flex w-fit items-center gap-1.5 border border-signal bg-signal/10 px-4 py-1.5 font-body text-[11px] font-bold uppercase tracking-label text-signal">
-              {nextStage ? "Resume" : "Story index"}
-              <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.6} />
-            </span>
-          </span>
-        </button>
+        {/* The hero card that sat here was story mode's "continue" pointer,
+            removed with story on 2026-09-26. What leads the hub now is his
+            call; until then Orders does. */}
 
         {/* ORDERS — the "what do I do next" answer, directly under the "what
             do I do now" one. Retires itself once every order is claimed.

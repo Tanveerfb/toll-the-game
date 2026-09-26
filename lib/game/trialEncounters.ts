@@ -1,4 +1,4 @@
-import type { RunnableEncounter } from "@/lib/game/stageRun";
+import type { RunnableEncounter } from "@/lib/game/fightRun";
 
 /**
  * Ascension trial encounters — the fights behind the rank walls.
@@ -8,8 +8,8 @@ import type { RunnableEncounter } from "@/lib/game/stageRun";
  * by Tanveer on 2026-09-16: **three fights, one HP bar** — a group, then an
  * elite, then the world boss.
  *
- * It is a `RunnableEncounter`, so it is fought by the same fight runner story
- * mode uses (`lib/game/stageRun.ts`, ruling #103): **HP carries over between
+ * It is a `RunnableEncounter`, fought by the fight runner
+ * (`lib/game/fightRun.ts`, ruling #103): **HP carries over between
  * fights and the fallen stay down**. That attrition is the whole test. Three
  * separate fights with a full heal between them would be three easy fights.
  *

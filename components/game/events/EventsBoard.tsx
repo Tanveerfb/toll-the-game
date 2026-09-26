@@ -43,13 +43,11 @@ export default function EventsBoard({
         /**
          * QOL, his definition: a list screen states why it is empty rather
          * than rendering nothing. Not currently reachable — the world boss is
-         * visible from rank 1 — but a future event set gated behind story
-         * could empty this board, and an empty page with a header reads as a
-         * bug.
+         * visible from rank 1 — but a future gated event set could empty this
+         * board, and an empty page with a header reads as a bug.
          */
         <p className="border border-hairline bg-panel px-3 py-6 text-center font-body text-xs text-readout-muted">
-          No events are open to you yet. Clear story stages and climb account
-          ranks to open them.
+          No events are open to you yet. Climb account ranks to open them.
         </p>
       ) : (
         <div className="flex flex-col gap-2">

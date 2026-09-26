@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { foldFightFromBattle, type BattleSnapshot } from "@/lib/game/fightDriver";
-import { beginRun, type RunnableEncounter } from "@/lib/game/stageRun";
+import { beginRun, type RunnableEncounter } from "@/lib/game/fightRun";
 import type { BattleCharacter } from "@/types/character";
 import type { AnyBattleEvent } from "@/types/battleEvent";
 
 /**
  * Folding a finished battle into a run.
  *
- * Extracted from `app/story/page.tsx` on 2026-09-16 so the events board and the
+ * Extracted from the story page on 2026-09-16 so the events board and the
  * story page would share one copy — and then **shipped without a test**, which
  * the 2026-09-17 audit caught as finding T1. It reads three separate store
  * fields and has to get all three right; a second screen now depends on it.
@@ -48,7 +48,7 @@ function snapshot(over: Partial<BattleSnapshot> = {}): BattleSnapshot {
   };
 }
 
-const run = () => beginRun("test-stage", ENCOUNTER, TEAM);
+const run = () => beginRun(ENCOUNTER, TEAM);
 
 describe("who survived", () => {
   it("carries survivors' HP and records the fallen separately", () => {

@@ -17,7 +17,7 @@ import {
   isWipe,
   fightEnemies,
   fightTeam,
-} from "@/lib/game/stageRun";
+} from "@/lib/game/fightRun";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { FIELD_CAP } from "@/lib/game/format";
 import { levelMultiplier, ascensionMultiplier } from "@/lib/game/progression";
@@ -30,7 +30,7 @@ import { simulateRun, clearRate, playerBand } from "@/lib/game/simulate";
  * will lead to next one. The hp of chars stay. And there is no heal in
  * between."*
  *
- * The behavioural half is `stageRun.ts`, already pinned by `stageRun.test.ts`.
+ * The behavioural half is `fightRun.ts`, already pinned by `fightRun.test.ts`.
  * What is new here is the ENCOUNTER: that it exists, that it is shaped the way
  * he specified, and that its levels still produce the difficulty they were
  * tuned to.
@@ -153,7 +153,7 @@ const TRIAL_MAX = { duke: 2000, lyra: 2000, seras: 2000 };
 describe("the run rule: no heal between fights", () => {
   it("carries damage forward and never revives the fallen", () => {
     const team = [{ id: "duke" }, { id: "lyra" }, { id: "seras" }];
-    let run = beginRun("trial-rank-20", FIRST_ASCENSION_TRIAL, team);
+    let run = beginRun(FIRST_ASCENSION_TRIAL, team);
     expect(fightEnemies(FIRST_ASCENSION_TRIAL, run)).toHaveLength(4);
 
     run = applyFightOutcome(run, {
@@ -200,7 +200,7 @@ describe("the run rule: no heal between fights", () => {
 
   it("a wipe is losing everyone, not losing a fight", () => {
     const run = applyFightOutcome(
-      beginRun("trial-rank-20", FIRST_ASCENSION_TRIAL, [{ id: "duke" }]),
+      beginRun(FIRST_ASCENSION_TRIAL, [{ id: "duke" }]),
       {
         survivors: [],
         fallenIds: ["duke"],
@@ -225,7 +225,22 @@ describe("the run rule: no heal between fights", () => {
 describe("difficulty is still where it was tuned", () => {
   const BALANCED = ["meliodas", "seras", "leorio", "mustafa"];
 
-  it("a level-20 balanced team clears more often than not, but bleeds", async () => {
+  /**
+   * PARKED 2026-09-26, pending his playtest.
+   *
+   * This clear rate (~77%) was measured while Molvarr's second phase ignored
+   * his level (`enterBossPhase` copied raw JSON). With the stat pipeline fixed
+   * (`tests/battleStats.test.ts`) the same team clears **2.2%** at his
+   * authored level 24. Measured, Lv20 balanced team, 180 runs:
+   *
+   *   Molvarr Lv1 96.1% · Lv6 79.4% · Lv10 52.8% · Lv14 24.4% · Lv18 12.2% ·
+   *   Lv24 2.2%
+   *
+   * Tanveer, 2026-09-26: *"let me judge if the molvarr fight is too difficult
+   * or not. i will play test it and get back to you"*. The level is his call;
+   * un-skip this with whatever band his answer implies.
+   */
+  it.skip("a level-20 balanced team clears more often than not, but bleeds", async () => {
     const result = await simulateRun(
       playerBand(BALANCED, 20),
       FIRST_ASCENSION_TRIAL.fights.map((w) => w.enemies),

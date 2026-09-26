@@ -24,6 +24,7 @@ import {
 } from "@/lib/game/events";
 import { autoClearAvailability, maxBatchSize } from "@/lib/game/autoClear";
 import { enemyLevelForDifficulty } from "@/lib/game/worldLevel";
+import { battleStats } from "@/lib/game/battleStats";
 import { tierKey } from "@/lib/game/worldBossRewards";
 import { farmablePreview, firstClearPreview } from "@/lib/game/worldBossPreview";
 
@@ -55,6 +56,22 @@ function EnemyCard({
   const enemy = event.enemyId ? getCharacterById(event.enemyId) : null;
   const art = event.enemyId ? getCharacterArt(event.enemyId) : null;
   const phases = eventPhaseCount(event);
+  /**
+   * What the enemy actually fights at on this difficulty, from the same
+   * pipeline the battle builds him through. This printed the catalog
+   * statline beside "Level 26 at difficulty 2", so the brief said the level
+   * rose and showed stats that did not (Tanveer, 2026-09-26). First phase
+   * only — the phases line says there are more.
+   */
+  const stats = enemy
+    ? battleStats(enemy, {
+        progression: {
+          level: event.kind === "boss" ? enemyLevelForDifficulty(difficulty) : 1,
+          ascension: 0,
+        },
+        side: "enemy",
+      })
+    : null;
   return (
     <Panel className="flex gap-3">
       <span className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden border border-edge bg-inset">
@@ -89,13 +106,13 @@ function EnemyCard({
             {phases > 1 ? ` · ${phases} phases` : ""}
           </p>
         ) : null}
-        {enemy ? (
+        {stats ? (
           <div className="mt-2 flex gap-4">
             {(
               [
-                ["HP", enemy.hp],
-                ["ATK", enemy.atk],
-                ["DEF", enemy.def],
+                ["HP", stats.hp],
+                ["ATK", stats.atk],
+                ["DEF", stats.def],
               ] as const
             ).map(([label, value]) => (
               <span key={label}>

@@ -136,13 +136,11 @@ describe("full-viewport overlays escape their stacking context", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("the two bars that were buried now compose through the variable", () => {
+  it("the bar that was buried now composes through the variable", () => {
     // Named explicitly: a generic scan passes just as well when a file is
-    // deleted, and these are the two screens whose primary action it was.
-    for (const rel of [
-      "components/game/TeamSelect.tsx",
-      "components/game/story/StageBrief.tsx",
-    ]) {
+    // deleted. There were two; `StageBrief` went with story mode on
+    // 2026-09-26.
+    for (const rel of ["components/game/TeamSelect.tsx"]) {
       const src = fs.readFileSync(rel, "utf8");
       expect(src, rel).toContain("bottom-[var(--tabbar-h)]");
     }

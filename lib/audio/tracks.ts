@@ -11,12 +11,7 @@
  * 2026-08-09 note that used to sit here) and it lives *beside* this module in
  * `lib/audio/cues.ts` + `lib/audio/sfx.ts`, exactly as that note asked.
  */
-export type MusicRole =
-  | "menu"
-  | "story"
-  | "storyScene"
-  | "battle"
-  | "victory";
+export type MusicRole = "menu" | "battle" | "victory";
 
 export interface MusicTrack {
   src: string;
@@ -28,8 +23,7 @@ export interface MusicTrack {
 
 export const MUSIC_TRACKS: Record<MusicRole, MusicTrack> = {
   menu: { src: "/audio/menu.ogg", gain: 0.9, loop: true },
-  story: { src: "/audio/story.ogg", gain: 0.9, loop: true },
-  storyScene: { src: "/audio/story-scene.ogg", gain: 0.85, loop: true },
+  // `story` and `storyScene` went with story mode on 2026-09-26.
   battle: { src: "/audio/battle.ogg", gain: 1, loop: true },
   // Not looped: a completion sting should land once and get out of the way.
   victory: { src: "/audio/victory.ogg", gain: 1, loop: false },

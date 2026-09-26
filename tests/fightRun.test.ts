@@ -5,49 +5,33 @@ import {
   fightSummaries,
   isWipe,
   runHealthBars,
-  toSummary,
   fightEnemies,
   fightTeam,
-} from "@/lib/game/stageRun";
-import type { StoryStage } from "@/types/story";
+  type RunnableEncounter,
+} from "@/lib/game/fightRun";
+import type { TeamPick } from "@/types/teamPick";
 
 /**
- * The fight loop (story mode v2, 2026-08-18) — his ruling #103 made real.
+ * The fight loop — his ruling #103 made real.
  *
  * Two properties carry the whole design: **HP carries between fights** and **the
- * fallen stay down**. If either leaks, a 3-fight stage collapses into three
- * independent fights and every mission and reward tuned against attrition is
- * wrong.
+ * fallen stay down**. If either leaks, a 3-fight run collapses into three
+ * independent fights and everything tuned against attrition is wrong.
+ *
+ * Ported from `tests/stageRun.test.ts` when story mode was removed
+ * (2026-09-26). The mission-summary tests went with story's missions.
  */
 
-const STAGE: StoryStage = {
-  id: "s5",
-  number: 5,
-  name: "Where the Traffic Thins",
-  kind: "boss",
-  origin: "filler",
-  intro: [],
-  outro: [],
+const ENCOUNTER: RunnableEncounter = {
+  id: "test-run",
   fights: [
     { enemies: [{ id: "road_bandit" }, { id: "road_bandit" }] },
     { enemies: [{ id: "raider" }] },
     { enemies: [{ id: "road_bandit", level: 12 }] },
   ],
-  team: [{ id: "duke" }, { id: "lyra" }, { id: "sara" }],
-  teamMode: "anchored",
-  missions: [],
-  rewards: { firstClear: {} },
-  stamina: 9,
 };
 
-const SCENE_STAGE: StoryStage = {
-  ...STAGE,
-  id: "s1",
-  number: 1,
-  kind: "story",
-  fights: [],
-  team: [],
-};
+const TEAM: TeamPick[] = [{ id: "duke" }, { id: "lyra" }, { id: "sara" }];
 
 /** Max HP as the units were built for the fight. `FightOutcome` requires it:
  *  it is the field whose absence made every living bar on both break screens
@@ -55,7 +39,7 @@ const SCENE_STAGE: StoryStage = {
 const MAX = { duke: 2000, lyra: 2000, sara: 2000 };
 
 function start() {
-  return beginRun("c1", STAGE, STAGE.team);
+  return beginRun(ENCOUNTER, TEAM);
 }
 
 describe("beginning a run", () => {
@@ -68,8 +52,8 @@ describe("beginning a run", () => {
     expect(run.complete).toBe(false);
   });
 
-  it("treats a scene stage as already complete", () => {
-    expect(beginRun("c1", SCENE_STAGE, []).complete).toBe(true);
+  it("treats an encounter with no fights as already complete", () => {
+    expect(beginRun({ id: "empty", fights: [] }, []).complete).toBe(true);
   });
 });
 
@@ -90,7 +74,7 @@ describe("carrying attrition forward", () => {
     expect(run.fightIndex).toBe(1);
     expect(run.carryHp).toEqual({ duke: 1800, lyra: 640 });
     expect(fightTeam(run).map((p) => p.id)).toEqual(["duke", "lyra"]);
-    expect(fightEnemies(STAGE, run).map((e) => e.id)).toEqual(["raider"]);
+    expect(fightEnemies(ENCOUNTER, run).map((e) => e.id)).toEqual(["raider"]);
   });
 
   it("never revives a unit that fell in an earlier fight", () => {
@@ -202,36 +186,6 @@ describe("wipes", () => {
     });
     expect(isWipe(run)).toBe(true);
     expect(fightTeam(run)).toEqual([]);
-  });
-});
-
-describe("summarising for missions", () => {
-  it("reports what the run did, with everyone who started listed as fielded", () => {
-    const run = applyFightOutcome(start(), {
-      survivors: [{ id: "duke", hp: 100 }],
-      fallenIds: ["sara"],
-      turns: 9,
-      ultimates: 2,
-      rankUses: { 1: 0, 2: 0, 3: 0 },
-      maxHp: MAX,
-    });
-    const summary = toSummary(run);
-    expect(summary).toMatchObject({
-      fightsCleared: 1,
-      fightsTotal: 3,
-      turns: 9,
-      ultimatesUsed: 2,
-      fallen: ["sara"],
-      isRetry: false,
-    });
-    // `fielded` is who *started*, not who survived — that's what a
-    // `fieldCharacter` mission asks about.
-    expect(summary.fielded).toEqual(["duke", "lyra", "sara"]);
-  });
-
-  it("carries the retry flag through, since firstAttempt reads it", () => {
-    const retried = beginRun("c1", STAGE, STAGE.team, true);
-    expect(toSummary(retried).isRetry).toBe(true);
   });
 });
 

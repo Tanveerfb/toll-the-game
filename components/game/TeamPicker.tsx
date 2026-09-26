@@ -8,6 +8,7 @@ import {
   getPlayableCharacters,
   type CharacterData,
 } from "@/lib/game/characterCatalog";
+import { battleStats } from "@/lib/game/battleStats";
 import { FIELD_CAP, TEAM_CAP } from "@/lib/game/format";
 import {
   MAX_PRESETS,
@@ -36,14 +37,6 @@ export interface TeamPickerProps {
   team: CharacterData[];
   onChange: (team: CharacterData[]) => void;
   /**
-   * Units the mode fixes in place: they lead the team, can't be removed, and
-   * **bypass the ownership check** — a story lead has to be playable by an
-   * account that never pulled them.
-   */
-  anchors?: CharacterData[];
-  /** Slots the player may fill. Defaults to whatever the anchors leave. */
-  openSlots?: number;
-  /**
    * Which characters may be chosen. `roster` respects ownership; `catalog`
    * ignores it, which is the practice bench — testing a kit you haven't pulled
    * is the point of that screen.
@@ -56,28 +49,13 @@ export interface TeamPickerProps {
   showPresets?: boolean;
   /** Total units on the field before the rest bench. */
   fieldCap?: number;
-  lockedNote?: string;
   /**
-   * Anchors the player doesn't own, lent for this battle only. Rendered as
-   * Trial rather than Required, with a line saying what that means — the
-   * behaviour has always existed (anchors bypass ownership) but nothing told
-   * the player, so a character they never pulled just appeared.
+   * Which side this team fights on, which decides the stats a tile shows.
+   * The player's side fights at the save's progression and an enemy at the
+   * bare statline — the same rule `startCustomBattle` applies — so a tile
+   * shows exactly what the unit will field.
    */
-  trialIds?: string[];
-  /**
-   * Anchors the player owns AND is currently fielding as the lent version.
-   *
-   * Distinct from `trialIds`, which is "no other copy exists". These are a
-   * choice, so their tile is a button — owning a lead must never be worse than
-   * not owning one (Tanveer, 2026-08-14).
-   */
-  lentByChoiceIds?: string[];
-  /** Toggles an owned anchor between the player's copy and the lent one.
-   *  Omit to render anchors as static tiles, which is what every non-story
-   *  caller wants. */
-  onToggleLent?: (characterId: string) => void;
-  /** Per-anchor caption under the toggle, e.g. "Lv40" vs "Yours Lv12". */
-  anchorNote?: (characterId: string, lent: boolean) => string | null;
+  side?: "player" | "enemy";
 }
 
 const CHIP =
@@ -151,18 +129,12 @@ function PresetFaces({ ids }: { ids: string[] }): React.JSX.Element {
 export default function TeamPicker({
   team,
   onChange,
-  anchors = [],
-  openSlots: openSlotsProp,
   source = "roster",
   ownedIds = [],
   title = "Your team",
   showPresets = true,
   fieldCap = FIELD_CAP,
-  lockedNote = "Required",
-  trialIds = [],
-  lentByChoiceIds = [],
-  onToggleLent,
-  anchorNote,
+  side = "player",
 }: TeamPickerProps): React.JSX.Element {
   const [rosterOpen, setRosterOpen] = React.useState(false);
   const [manageOpen, setManageOpen] = React.useState(false);
@@ -178,27 +150,32 @@ export default function TeamPicker({
   const deleteTeamPreset = usePlayerStore((s) => s.deleteTeamPreset);
   const renameTeamPreset = usePlayerStore((s) => s.renameTeamPreset);
   const noteTeamPresetUsed = usePlayerStore((s) => s.noteTeamPresetUsed);
+  const progress = usePlayerStore((s) => s.characters);
 
-  const openSlots = Math.max(
-    0,
-    Math.min(
-      openSlotsProp ?? TEAM_CAP - anchors.length,
-      TEAM_CAP - anchors.length,
-    ),
-  );
-  const anchoredIds = React.useMemo(
-    () => anchors.map((c) => c.id),
-    [anchors],
-  );
 
   const catalog = React.useMemo(() => getPlayableCharacters(), []);
-  const selectable = React.useMemo(() => {
-    const pool =
+  const selectable = React.useMemo(
+    () =>
       source === "catalog"
         ? catalog
-        : catalog.filter((c) => ownedIds.includes(c.id));
-    return pool.filter((c) => !anchoredIds.includes(c.id));
-  }, [catalog, source, ownedIds, anchoredIds]);
+        : catalog.filter((c) => ownedIds.includes(c.id)),
+    [catalog, source, ownedIds],
+  );
+
+  /**
+   * The stats a unit will actually field, through the battle's own pipeline.
+   * This printed the catalog statline, so a Lv30 unit read the same as a
+   * fresh pull on the one screen used to choose between them (2026-09-26).
+   */
+  const fightStats = (character: CharacterData) => {
+    const saved = side === "player" ? progress[character.id] : undefined;
+    return battleStats(character, {
+      progression: saved
+        ? { level: saved.level, ascension: saved.ascension }
+        : undefined,
+      side,
+    });
+  };
 
   const byId = React.useCallback(
     (ids: string[]) =>
@@ -216,19 +193,16 @@ export default function TeamPicker({
   React.useEffect(() => {
     if (seeded.current || !hasHydrated) return;
     seeded.current = true;
-    if (team.length > 0 || openSlots === 0 || lastTeam.length === 0) return;
+    if (team.length > 0 || lastTeam.length === 0) return;
     const ids = resolveLastTeam(lastTeam, {
-      anchoredIds,
       ownedIds: source === "catalog" ? null : ownedIds,
-      openSlots,
+      openSlots: TEAM_CAP,
     });
     if (ids.length > 0) onChange(byId(ids));
   }, [
     hasHydrated,
     team.length,
-    openSlots,
     lastTeam,
-    anchoredIds,
     ownedIds,
     source,
     byId,
@@ -239,16 +213,15 @@ export default function TeamPicker({
     setActivePresetId(null);
     if (team.some((c) => c.id === character.id)) {
       onChange(team.filter((c) => c.id !== character.id));
-    } else if (team.length < openSlots) {
+    } else if (team.length < TEAM_CAP) {
       onChange([...team, character]);
     }
   };
 
   const applyPreset = (preset: TeamPreset) => {
     const resolved = resolvePreset(preset, {
-      anchoredIds,
       ownedIds: source === "catalog" ? null : ownedIds,
-      openSlots,
+      openSlots: TEAM_CAP,
     });
     onChange(byId(resolved.memberIds));
     setIssues(resolved.issues);
@@ -271,7 +244,6 @@ export default function TeamPicker({
     }
   };
 
-  const filled = anchors.length + team.length;
 
   return (
     <>
@@ -281,16 +253,14 @@ export default function TeamPicker({
             {title}
           </h3>
           <span className="font-body text-[11px] font-bold uppercase tracking-label tabular-nums text-readout-muted">
-            {openSlots === 0
-              ? `${anchors.length} locked`
-              : `${filled} / ${anchors.length + openSlots}`}
+            {`${team.length} / ${TEAM_CAP}`}
             <span className="ml-2 text-readout-dim">
               {fieldCap} on field
             </span>
           </span>
         </div>
 
-        {showPresets && openSlots > 0 ? (
+        {showPresets ? (
           <div className="flex flex-wrap items-center gap-1.5 border-b border-hairline px-3 py-2">
             <span className="mr-1 font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
               Preset
@@ -336,61 +306,9 @@ export default function TeamPicker({
         ) : null}
 
         <div className="grid grid-cols-4 gap-2 p-3">
-          {anchors.map((character, index) => {
-            const unowned = trialIds.includes(character.id);
-            const lentByChoice = lentByChoiceIds.includes(character.id);
-            const lent = unowned || lentByChoice;
-            // Only an owned anchor can swap: an unowned one has no second copy.
-            const swappable = Boolean(onToggleLent) && !unowned;
-            const note = anchorNote?.(character.id, lent) ?? null;
-            const Tile = swappable ? "button" : "div";
-            return (
-              <Tile
-                key={`anchor-${character.id}-${index}`}
-                {...(swappable
-                  ? {
-                      type: "button" as const,
-                      onClick: () => onToggleLent?.(character.id),
-                      "aria-pressed": lent,
-                      title: lent
-                        ? `Using the story's ${character.name} — tap to use yours`
-                        : `Using your ${character.name} — tap to use the story's`,
-                    }
-                  : {})}
-                className={`relative flex h-24 w-full flex-col justify-end overflow-hidden border bg-inset text-left ${lent ? "border-signal" : "border-role-ultimate"} ${swappable ? "transition-colors hover:border-signal-strong" : ""}`}
-              >
-                <Portrait
-                  character={character}
-                  className="absolute inset-0 h-full w-full"
-                />
-                <span
-                  className={`absolute left-0 top-0 z-10 px-1.5 py-0.5 font-body text-[9px] font-bold uppercase tracking-label text-void ${lent ? "bg-signal" : "bg-role-ultimate"}`}
-                >
-                  {lent ? "Trial" : swappable ? "Yours" : lockedNote}
-                </span>
-                {/* The swap affordance has to be visible without a hover —
-                    this screen is played on touch as much as on desktop. */}
-                {swappable ? (
-                  <span className="absolute right-0 top-0 z-10 bg-void/85 px-1 py-0.5 font-body text-[10px] leading-none text-signal">
-                    ⇄
-                  </span>
-                ) : null}
-                <span className="relative z-10 w-full bg-void/75 px-1 py-0.5 text-center font-heading text-xs tracking-title text-readout-strong">
-                  {character.name}
-                </span>
-                {note ? (
-                  <span className="relative z-10 w-full bg-void/75 px-1 pb-0.5 text-center font-body text-[9px] font-bold uppercase tracking-label text-readout-dim">
-                    {note}
-                  </span>
-                ) : null}
-              </Tile>
-            );
-          })}
-
-          {Array.from({ length: openSlots }).map((_, index) => {
+          {Array.from({ length: TEAM_CAP }).map((_, index) => {
             const character = team[index];
-            const slotIndex = anchors.length + index;
-            const benched = slotIndex >= fieldCap;
+            const benched = index >= fieldCap;
             if (!character) {
               return (
                 <button
@@ -434,30 +352,13 @@ export default function TeamPicker({
           })}
         </div>
 
-        {trialIds.length > 0 ? (
-          <p className="border-t border-hairline px-3 py-2 font-body text-[11px] leading-relaxed text-readout-dim">
-            <span className="font-semibold text-signal">
-              {anchors
-                .filter((c) => trialIds.includes(c.id))
-                .map((c) => c.name)
-                .join(", ")}
-            </span>{" "}
-            {trialIds.length === 1 ? "leads" : "lead"} this chapter and{" "}
-            {trialIds.length === 1 ? "isn't" : "aren't"} on your roster. A story
-            version is lent for this battle only — not added to your roster, and
-            nothing they earn is kept.
-          </p>
-        ) : null}
-
         {issues.length > 0 ? (
           <p className="border-t border-hairline px-3 py-2 font-body text-[11px] leading-relaxed text-role-ultimate">
             {issues.map((issue) => {
               const name =
                 catalog.find((c) => c.id === issue.characterId)?.name ??
                 issue.characterId;
-              return issue.reason === "anchored"
-                ? `${name} already leads this battle. `
-                : `${name} isn't on your roster. `;
+              return `${name} isn't on your roster. `;
             })}
             Those slots were left open — the preset itself is unchanged.
           </p>
@@ -467,7 +368,7 @@ export default function TeamPicker({
       {rosterOpen ? (
         <DetailOverlay
           title={source === "catalog" ? "All characters" : "Your roster"}
-          subtitle={`Tap to add or remove · ${team.length}/${openSlots} picked`}
+          subtitle={`Tap to add or remove · ${team.length}/${TEAM_CAP} picked`}
           size="wide"
           onClose={() => setRosterOpen(false)}
         >
@@ -480,7 +381,8 @@ export default function TeamPicker({
               {selectable.map((character) => {
                 const pickIndex = team.findIndex((c) => c.id === character.id);
                 const isPicked = pickIndex !== -1;
-                const disabled = !isPicked && team.length >= openSlots;
+                const disabled = !isPicked && team.length >= TEAM_CAP;
+                const stats = fightStats(character);
                 return (
                   <button
                     key={character.id}
@@ -501,7 +403,7 @@ export default function TeamPicker({
                     />
                     {isPicked ? (
                       <span className="absolute right-0 top-0 z-10 bg-signal px-1.5 py-0.5 font-body text-[10px] font-bold tabular-nums text-void">
-                        {anchors.length + pickIndex + 1}
+                        {pickIndex + 1}
                       </span>
                     ) : null}
                     <span className="relative z-10 w-full bg-void/80 px-1.5 py-1">
@@ -517,7 +419,7 @@ export default function TeamPicker({
                         {character.name}
                       </span>
                       <span className="block font-body text-[9px] font-bold uppercase tracking-label tabular-nums text-readout-muted">
-                        {character.atk} / {character.def} / {character.hp}
+                        {stats.atk} / {stats.def} / {stats.hp}
                       </span>
                     </span>
                   </button>

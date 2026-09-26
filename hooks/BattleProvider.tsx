@@ -27,17 +27,13 @@ import { syncExtortLinks } from "@/lib/game/effects";
 import { ensureFieldUnit, promoteSubs } from "@/lib/game/sub";
 import { applyFieldCap, FIELD_CAP } from "@/lib/game/format";
 import { getCharacterById } from "@/lib/game/characterCatalog";
-import {
-  BASE_PROGRESSION,
-  progressedStats,
-} from "@/lib/game/progression";
+import { buildBattleUnit } from "@/lib/game/buildUnit";
 import { getCharacterProgress, usePlayerStore } from "@/store/playerStore";
-import {
-  bonusActionsFor,
-  stageAdjustedStats,
-} from "@/lib/game/stageEffects";
+import { bonusActionsFor } from "@/lib/game/stageEffects";
 import type { StageEffect } from "@/types/stageEffects";
 import type { AnyBattleEvent } from "@/types/battleEvent";
+import type { TeamPick } from "@/types/teamPick";
+import type { BattleOwner } from "@/types/battleOwner";
 import {
   snapshotEffects,
   diffEffectIdentities,
@@ -89,22 +85,34 @@ function emitHpTicks(
   }
 }
 
-export interface TeamPick {
-  id: string;
-  /** Bench slot: passive active, no cards, enters field when a teammate dies */
-  isSub?: boolean;
+/** Everything a screen may say about the battle it launches. */
+export interface BattleLaunchOptions {
+  preview?: boolean;
+  stageEffects?: StageEffect[];
+  /** Overrides the default 3-on-field rule — practice bench only. */
+  fieldCap?: number;
+  /** End the fight as a win once the enemy side falls to this percentage of
+   *  its pooled HP, instead of requiring every enemy dead. See
+   *  lib/game/victoryCondition.ts. */
+  victoryAtEnemyHpPercent?: number;
   /**
-   * Progression this unit fights at. Omitted means level 1 / ascension 0 —
-   * exactly the catalog statline, which is what every enemy and every
-   * unspecified unit gets.
+   * Player HP to start at, per character id — how a multi-fight run carries
+   * attrition (his ruling #103: HP persists between fights, the fallen stay
+   * down).
    *
-   * Set explicitly for a story trial character (a fixed level, regardless of
-   * whether the player owns them) or an authored enemy level. For the player's
-   * own units it is filled in from `playerStore` at battle start.
+   * Only the player side, and only HP: gauges, buffs and debuffs reset, so a
+   * fight is a fresh fight fought by a worn team. Clamped to the unit's max,
+   * which matters because a later fight may carry different stage effects and
+   * therefore a different max HP. A unit absent from the map starts full,
+   * which makes this safe to pass on fight 1.
    */
-  level?: number;
-  ascension?: number;
-  ultLevel?: number;
+  carryHp?: Record<string, number>;
+  /**
+   * The screen this battle belongs to. Persisted with the battle, so a reload
+   * returns to it and no other screen may render it (`lib/game/battleLock.ts`).
+   * Absent means practice, the bench that renders any battle it is given.
+   */
+  owner?: BattleOwner;
 }
 
 interface BattleContextType {
@@ -114,19 +122,7 @@ interface BattleContextType {
   startCustomBattle: (
     playerPicks: TeamPick[],
     enemyPicks: TeamPick[],
-    options?: {
-      preview?: boolean;
-      stageEffects?: StageEffect[];
-      /** Overrides the default 3-on-field rule — practice bench only. */
-      fieldCap?: number;
-      /** End the fight as a win once the enemy side falls to this percentage
-       *  of its pooled HP — for authored battles the story says you don't win.
-       *  See lib/game/victoryCondition.ts. */
-      victoryAtEnemyHpPercent?: number;
-      /** Player HP per character id, so a story stage's fights carry attrition
-       *  (ruling #103). Absent unit = starts full. */
-      carryHp?: Record<string, number>;
-    },
+    options?: BattleLaunchOptions,
   ) => void;
   lastBattleConfig: { playerPicks: TeamPick[]; enemyPicks: TeamPick[] } | null;
   resolveplayerTurnWrapper: () => void;
@@ -463,7 +459,10 @@ export default function BattleProvider({
 
         // Multi-phase boss: transition a boss whose bar emptied (e.g. from a
         // DoT tick) before deciding victory; redraw its hand next enemy turn.
-        const phaseStep = transitionBossPhases(updatedTeams.enemyTeam);
+        const phaseStep = transitionBossPhases(
+          updatedTeams.enemyTeam,
+          useGameStore.getState().stageEffects,
+        );
         if (phaseStep.transitions.length > 0) {
           updatedTeams.enemyTeam = phaseStep.team;
           phaseStep.transitions.forEach((t) =>
@@ -642,7 +641,10 @@ export default function BattleProvider({
       // enemy turn redraws from the new phase's skills. Deliberately AFTER the
       // await: the killing blow has to land on screen before the boss's HP
       // jumps to its next phase and the PHASE banner fires.
-      const phaseStep = transitionBossPhases(currentTeams.enemyTeam);
+      const phaseStep = transitionBossPhases(
+        currentTeams.enemyTeam,
+        useGameStore.getState().stageEffects,
+      );
       if (phaseStep.transitions.length > 0) {
         currentTeams.enemyTeam = phaseStep.team;
         phaseStep.transitions.forEach((t) => addToBattleLog(`[System] ${t}`));
@@ -902,27 +904,7 @@ export default function BattleProvider({
   const startCustomBattle = (
     rawPlayerPicks: TeamPick[],
     rawEnemyPicks: TeamPick[],
-    options?: {
-      preview?: boolean;
-      stageEffects?: StageEffect[];
-      fieldCap?: number;
-      /** End the fight as a win once the enemy side falls to this percentage of
-       *  its pooled HP — for authored battles the story says you do not win.
-       *  See lib/game/victoryCondition.ts. */
-      victoryAtEnemyHpPercent?: number;
-      /**
-       * Player HP to start at, per character id — how a story stage's fights
-       * carry attrition (his ruling #103: HP persists between fights, the
-       * fallen stay down).
-       *
-       * Only the player side, and only HP: gauges, buffs and debuffs reset, so a
-       * fight is a fresh fight fought by a worn team. Clamped to the unit's max,
-       * which matters because a later fight may carry different stage effects and
-       * therefore a different max HP. A unit absent from the map starts full,
-       * which makes this safe to pass on fight 1.
-       */
-      carryHp?: Record<string, number>;
-    },
+    options?: BattleLaunchOptions,
   ) => {
     const preview = options?.preview === true;
     const stageEffects = options?.stageEffects ?? [];
@@ -939,104 +921,49 @@ export default function BattleProvider({
 
     resetBattle();
     clearQueue();
+    useGameStore
+      .getState()
+      .setBattleOwner(options?.owner ?? { route: "/practice" });
     setStageEffects(stageEffects);
     setVictoryAtEnemyHpPercent(options?.victoryAtEnemyHpPercent);
     setPreviewMode(preview);
     skipEnemyTurnRef.current = false;
 
-    // Single boundary cast: kit JSON is loose CharacterData, validated by
-    // the Zod schema at load (incl. mechanic types + passive triggers) —
-    // beyond this point everything is strictly typed.
-    // Stage effects are baked into BASE stats here, not applied as buffs:
-    // a stage is not something `cancelBuffs` may strip, nor something Rupture
-    // should count as a buff to punish (Tanveer, 2026-08-10).
-    const stageStats = (
-      team: "player" | "enemy",
-      raw: { atk: number; def: number; hp: number },
-    ) => stageAdjustedStats(raw, stageEffects, team);
-
-    // Catalog base → progression → stage effects, in that order. Progression
-    // is intrinsic to the unit; a stage effect is the encounter modifying
-    // whatever the unit turned up as.
-    const buildBattleChar = (
-      raw: ReturnType<typeof getCharacterById>,
-      team: "player" | "enemy",
-      instanceId: string,
-      isSub: boolean,
-      pick: TeamPick,
-    ): BattleCharacter => {
-      // A player unit fights at whatever the save says, unless the pick names
-      // a level explicitly — which is how a story trial character gets a fixed
-      // level regardless of whether the player owns them. Read once, here: the
-      // team's progression must not shift mid-battle if the store changes.
-      const saved =
-        team === "player" && pick.level === undefined
-          ? getCharacterProgress(usePlayerStore.getState(), pick.id)
-          : null;
-      const progressed = progressedStats(
-        { hp: raw!.hp, atk: raw!.atk, def: raw!.def },
-        {
-          level: pick.level ?? saved?.level ?? BASE_PROGRESSION.level,
-          ascension:
-            pick.ascension ?? saved?.ascension ?? BASE_PROGRESSION.ascension,
-        },
-      );
-      const staged = stageStats(team, progressed);
-      const carried =
-        team === "player" ? options?.carryHp?.[pick.id] : undefined;
-      const startingHp =
-        carried === undefined
-          ? staged.hp
-          : Math.max(1, Math.min(staged.hp, Math.round(carried)));
-      return {
-        ...(raw as unknown as Omit<
-          BattleCharacter,
-          | "instanceId"
-          | "currentAttack"
-          | "currentDefense"
-          | "currentHP"
-          | "ultGauge"
-          | "ultLevel"
-          | "buffs"
-          | "debuffs"
-          | "passiveState"
-          | "team"
-          | "isSub"
-        >),
-        instanceId,
-        ...staged,
-        currentAttack: staged.atk,
-        currentDefense: staged.def,
-        currentHP: startingHp,
-        ultGauge: 0,
-        // Carried onto the unit so combat can scale the ultimate and the info
-        // panel can show it, rather than re-reading the store mid-battle.
-        ultLevel: pick.ultLevel ?? saved?.ultLevel ?? 1,
-        buffs: [],
-        debuffs: [],
-        passiveState: {},
-        team,
-        isSub,
-      };
-    };
-
+    // One builder for every unit, shared with the simulator
+    // (`lib/game/buildUnit.ts`): catalog → progression → stage effects, with
+    // the progression stamped on the unit so a boss's later phase scales too.
+    // Stage effects are baked into BASE stats, not applied as buffs: a stage
+    // is not something `cancelBuffs` may strip, nor something Rupture should
+    // count as a buff to punish (Tanveer, 2026-08-10).
+    //
+    // A player unit fights at whatever the save says, unless the pick names a
+    // level explicitly. Read once, here: the team's progression must not shift
+    // mid-battle if the store changes.
+    const playerState = usePlayerStore.getState();
     const players = playerPicks.map((pick, i) =>
-      buildBattleChar(
-        loadChar(pick.id),
-        "player",
-        `p${i + 1}_${pick.id}`,
-        pick.isSub === true,
+      buildBattleUnit({
+        raw: loadChar(pick.id),
         pick,
-      ),
+        team: "player",
+        instanceId: `p${i + 1}_${pick.id}`,
+        isSub: pick.isSub === true,
+        saved:
+          pick.level === undefined
+            ? getCharacterProgress(playerState, pick.id)
+            : null,
+        stageEffects,
+        carriedHp: options?.carryHp?.[pick.id],
+      }),
     );
     const enemies = enemyPicks.map((pick, i) =>
-      buildBattleChar(
-        loadChar(pick.id),
-        "enemy",
-        `e${i + 1}_${pick.id}`,
-        pick.isSub === true,
+      buildBattleUnit({
+        raw: loadChar(pick.id),
         pick,
-      ),
+        team: "enemy",
+        instanceId: `e${i + 1}_${pick.id}`,
+        isSub: pick.isSub === true,
+        stageEffects,
+      }),
     );
 
     // Passives register for subs too — they work from the bench

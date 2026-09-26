@@ -75,6 +75,17 @@ export interface BattleCharacter extends Character {
    * level 1, which is a no-op on the curve.
    */
   ultLevel?: number;
+  /**
+   * The progression this unit was built at — carried so its stats can be
+   * rebuilt mid-fight through the same pipeline (`lib/game/battleStats.ts`),
+   * which is what a boss entering its next phase needs. Before 2026-09-26 a
+   * later phase fought at its raw JSON stats, ignoring difficulty entirely.
+   *
+   * Optional like `ultLevel`: absent means level 1 / ascension 0, the bare
+   * catalog statline.
+   */
+  level?: number;
+  ascension?: number;
   buffs: StatusEffect[];
   debuffs: StatusEffect[];
   passiveState: Record<string, unknown>;

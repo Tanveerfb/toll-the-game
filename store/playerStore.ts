@@ -34,7 +34,7 @@ import {
 } from "@/lib/gacha/dupes";
 import { characterCoinId } from "@/lib/game/materials";
 import { getCharacterById } from "@/lib/game/characterCatalog";
-import type { StoryPayout } from "@/lib/game/storyRewards";
+import type { Payout } from "@/lib/game/payout";
 import { evaluateOrder, getOrder } from "@/lib/game/orders";
 import { firebaseEnabled } from "@/lib/firebase";
 import { grantAccountXp } from "@/lib/game/accountRank";
@@ -176,7 +176,7 @@ export interface PlayerState {
    */
   levelUpUltimate: (characterId: string, targetLevel: number) => boolean;
   grantWorldBossRewards: (rewards: WorldBossRewards) => void;
-  grantStoryRewards: (payout: StoryPayout) => void;
+  grantPayout: (payout: Payout) => void;
   saveTeamPreset: (name: string, memberIds: string[]) => boolean;
   renameTeamPreset: (id: string, name: string) => void;
   deleteTeamPreset: (id: string) => void;
@@ -193,14 +193,10 @@ export interface PlayerState {
   /**
    * Collect a Bureau Order's reward.
    *
-   * Takes the cleared-chapter map because story progress lives in
-   * `storyStore`, and the check is re-run here rather than trusted from the
-   * panel — the button being visible is a UI fact, not a permission.
+   * The check is re-run here rather than trusted from the panel — the button
+   * being visible is a UI fact, not a permission.
    */
-  claimOrder: (
-    orderId: string,
-    clearedStages: Record<string, boolean>,
-  ) => boolean;
+  claimOrder: (orderId: string) => boolean;
 }
 
 /** What `migratePlayerState` actually produces — plain persisted data, none
@@ -219,7 +215,7 @@ export type PersistedPlayerData = Omit<
   | "spendStaminaAction"
   | "ascendCharacter"
   | "grantWorldBossRewards"
-  | "grantStoryRewards"
+  | "grantPayout"
   | "saveTeamPreset"
   | "renameTeamPreset"
   | "deleteTeamPreset"
@@ -705,10 +701,10 @@ export const usePlayerStore = create<PlayerState>()(
         if (accountXp) get().grantAccountXpAction(accountXp);
       },
 
-      /** Story clear payout. Same split as the world boss above, but the
-       *  materials arrive as an open map rather than fixed keys — story
-       *  chapters author their own drop table in `data/story/*.json`. */
-      grantStoryRewards: (payout) => {
+      /** A general payout (see `lib/game/payout.ts`). Same split as the world
+       *  boss above, but the materials arrive as an open map rather than fixed
+       *  keys. */
+      grantPayout: (payout) => {
         const { coin, gems, permanentTicket, materials, accountXp } = payout;
         if (Object.keys(materials).length > 0) get().grantMaterials(materials);
         if (coin || gems || permanentTicket) get().grantCurrency({ coin, gems, permanentTicket });
@@ -995,7 +991,7 @@ export const usePlayerStore = create<PlayerState>()(
         return { kind: "character", characterId, ...resolution };
       },
 
-      claimOrder: (orderId, clearedStages) => {
+      claimOrder: (orderId) => {
         const state = get();
         const order = getOrder(orderId);
         if (!order) return false;
@@ -1011,7 +1007,6 @@ export const usePlayerStore = create<PlayerState>()(
         // Re-checked here, not trusted from the panel. The button appearing is
         // a rendering decision; this is the only place the reward is real.
         const progress = evaluateOrder(order, {
-          clearedStages,
           pulls: state.stats.pulls,
           bossClears: state.stats.bossClears,
           presetsSaved: state.presets.length,
@@ -1022,15 +1017,14 @@ export const usePlayerStore = create<PlayerState>()(
         });
         if (!progress.claimable) return false;
 
-        // Marked before the payout: `grantStoryRewards` fans out into three
+        // Marked before the payout: `grantPayout` fans out into three
         // more `set` calls, and claiming has to be recorded even if one of
         // those is ever made to fail.
         set({ claimedOrders: { ...state.claimedOrders, [orderId]: true } });
 
         // A character reward runs through the same resolution a pull does, so
         // a player who already owns them gets the dupe's ult rank rather than
-        // nothing at all (Lyra is reachable from the banner before Part 2 is
-        // finished).
+        // nothing at all.
         if (order.reward.character) {
           const characterId = order.reward.character;
           const resolution = resolvePullResult(characterId, state.roster);
@@ -1051,7 +1045,7 @@ export const usePlayerStore = create<PlayerState>()(
           get().grantAutoClearTickets(order.reward.autoClearTickets);
         }
 
-        get().grantStoryRewards({
+        get().grantPayout({
           gems: order.reward.gems ?? 0,
           coin: order.reward.coin ?? 0,
           permanentTicket: order.reward.permanentTicket ?? 0,

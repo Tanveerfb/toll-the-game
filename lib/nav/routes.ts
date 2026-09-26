@@ -19,7 +19,8 @@ export interface GameRoute {
 // `navLabel` as an optional field on every entry, not per-literal.
 export const GAME_ROUTES: readonly GameRoute[] = [
   { href: "/", label: "Main Menu", navLabel: "Menu" },
-  { href: "/story", label: "Main Story", navLabel: "Story" },
+  // Main Story was removed on 2026-09-26 (story mode parked; restorable
+  // from commit `2f6b016`).
   { href: "/events", label: "Events", navLabel: "Events" },
   { href: "/gacha", label: "Gacha" },
   { href: "/archive", label: "Character Archive", navLabel: "Archive" },

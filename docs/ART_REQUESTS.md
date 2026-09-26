@@ -39,6 +39,12 @@ a record of what exists is as useful as a record of what doesn't.
 
 ## Category A — Story scene backgrounds
 
+> **PARKED 2026-09-26 — do not generate anything in this category.** Story mode
+> was removed from the game (ruling #152). The 18 delivered plates were deleted
+> from `public/backgrounds/` with it and are **restorable from commit
+> `2f6b016`**, along with `lib/game/storyBackgrounds.ts`, which registered them.
+> Everything below is the record for when story returns.
+
 **Status: delivered 2026-08-20** for everything chapter 1 references — all four slugs are
 shipped and wired. The remaining ten registered slugs are **not** requested; no authored
 scene references them yet. See the corrected list below.

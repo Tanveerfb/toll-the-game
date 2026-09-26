@@ -370,7 +370,9 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
     **Pinned 2026-08-19** by `tests/viewportUnits.test.ts`. Verified against the installed toolchain rather than assumed: Tailwind 4.3.2 compiles `min-h-screen` to `min-height: 100vh`. The fifteen occurrences across eleven files were swapped to `min-h-dvh` the same day.
 
-108. **Story mode is Chapter → Stage, and v1 was deleted rather than refactored** (2026-08-18). One day after the carousel/board rebuild shipped, Tanveer: *"assume our existing story mode doesn't exist at all. i am not planning to recycle anything. its trash for me. it hurts me but that's the truth."* So this ruling replaces the v1 story structure. **Corrected 2026-08-19:** it originally claimed to supersede **#94** and **#98–#105** *wholesale*, and that range was too wide — four of those rulings govern code that survived the rebuild and a session discarding them would be wrong. What it actually retires is **#94, #98, #101, #102** (and #96, from the same design), now tombstoned. **Still live:** **#99** (a chapter appears only once the previous one is clear — reworded from parts to chapters, pinned by `tests/storyCatalog.test.ts`), **#100** (every attempt costs stamina), **#103** (HP persists between waves — this rebuild is where it finally got built, pinned by `tests/stageRun.test.ts`), **#104** (a Bureau Order naming a stage still renders on it — `ordersForStage`, read at `app/story/page.tsx:459`), and the surviving half of **#105**. What follows is the shape he specified, with the decisions he made when asked.
+108. **Parked by #152 (2026-09-26): story mode was removed from the game, v2 included.** This entry and every story ruling stand as the design to return to, not as live code.
+
+    **Story mode is Chapter → Stage, and v1 was deleted rather than refactored** (2026-08-18). One day after the carousel/board rebuild shipped, Tanveer: *"assume our existing story mode doesn't exist at all. i am not planning to recycle anything. its trash for me. it hurts me but that's the truth."* So this ruling replaces the v1 story structure. **Corrected 2026-08-19:** it originally claimed to supersede **#94** and **#98–#105** *wholesale*, and that range was too wide — four of those rulings govern code that survived the rebuild and a session discarding them would be wrong. What it actually retires is **#94, #98, #101, #102** (and #96, from the same design), now tombstoned. **Still live:** **#99** (a chapter appears only once the previous one is clear — reworded from parts to chapters, pinned by `tests/storyCatalog.test.ts`), **#100** (every attempt costs stamina), **#103** (HP persists between waves — this rebuild is where it finally got built, pinned by `tests/stageRun.test.ts`), **#104** (a Bureau Order naming a stage still renders on it — `ordersForStage`, read at `app/story/page.tsx:459`), and the surviving half of **#105**. What follows is the shape he specified, with the decisions he made when asked.
 
     - **Chapter = one webtoon chapter** (1:1 with `Chapter N.md`), **Stage = one playable unit** inside it (`1-1`, `1-2`, …). The Part → Chapter naming is gone: it made the unit a player calls a chapter into a *beat*, so nothing on screen matched the source.
     - **Stage count per chapter is not fixed** — *"depends on story and filler content"*. The schema enforces contiguous numbering only.
@@ -641,6 +643,8 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 
 123. **Navigation moves to a bottom tab bar on a phone** (2026-09-01, sharpens #107). Shown a browser audit of the live build at 390×844 — the route strip was a **234px scroller holding 332px**, so News and Profile never rendered at rest, beside a second scroller holding the resource chips with Bureau Orders clipped — and offered two fixes in `docs/design/mockups/shell-mobile.html`: un-hide the short labels, or move navigation to a bottom tab bar. He chose the tab bar: *"Option B — bottom tabs (recommended)."* **That phrasing is an option label he selected, not prose he wrote.**
 
+    **Amended by #152 (2026-09-26): four destinations** — Story went with story mode. What fills the fifth slot, if anything, is his call.
+
     Five destinations below `sm` — Menu · Story · Events · Gacha · You. Archive, Practice and News keep their hub tiles instead of a slot; Coin leaves the bar (it is a spend-screen figure, not a live one) and the resource chips that remain fold into row 1. Desktop is untouched: above `sm` the route strip and the two-row nav render exactly as before.
 
     Two things this cost, both found in a browser and neither visible to any test:
@@ -675,6 +679,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 
     So the three shapes are all different, and none of them is the old behaviour:
 
+    - **Parked by #152 (2026-09-26):** the chapter-9 gate below was removed with story mode. It was inert (chapter 9 was never adapted), so nothing on screen changed; it returns with story.
     - **Molvarr** — visibility *and* unlock both gated on a story chapter clear. Asked which chapter: *"Its chapter 9. so molvarr unlocks after completing chapter 9."* Authored as `visibleWhen: { clearedChapter: "c9" }`. **Chapter 9 is not adapted — one of twelve is — so the gate is inert today and begins biting the day `c9` lands in `data/story/`.** That is a deliberate property of the mechanism, not a deferral: a chapter absent from the story catalog cannot gate anything, because "clear a chapter that does not exist" is unsatisfiable and would hide the event *permanently* rather than until the chapter ships. Molvarr is the game's only repeatable fight and the source of half of Bureau Orders, so writing the real id and letting it activate itself is the only shape that is both faithful to the ruling and shippable.
     - **First Ascension Trial** — visible from rank 1, locked until rank 20. The *only* event whose visibility is deliberately wider than its unlock, and the reason both trials were authored at all: the rank 20 wall is otherwise invisible, and a player simply stops gaining ranks with no explanation anywhere in the game.
     - **Second Ascension Trial** — withheld until **rank 21+ and the first trial cleared**; unlocks at 40. Both clauses, not either.
@@ -1147,3 +1152,77 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    approved and shipped: `public/props/lyra_bow.png`, drawn by
    `scripts/draw_lyra_bow.py`.
 
+152. **Story mode is removed from the game, for now** (2026-09-26, parks #108 and
+   every story ruling; amends #123 and #127). After an audit found story's
+   scene-only stages ending on a blank screen that soft-locked chapter 1:
+
+   > *"I would rather focus on the game build on it build the PvE content build
+   > characters build mechanics before we try to implement the story so get rid
+   > of the story that's one first thing"*
+
+   **What went:**
+   - `/story` and its screens, the scene reader, `data/story/`,
+     `storyStore`, and the story catalog, rewards, missions, team modes and
+     backgrounds (18 plates in `public/backgrounds/`).
+   - Story's music roles, `Filler/`, the `FillerAssist` skill, the story
+     design drafts, specs, mockups and reference images.
+   - The home screen's story hero card and the Story nav tab. The bottom bar
+     is four tabs now; what fills the fifth slot, if anything, is his call.
+
+   **All of it is restorable from commit `2f6b016`.**
+
+   **What stayed, because it is PvE engine rather than story:**
+   - The multi-fight runner, renamed `lib/game/fightRun.ts`, since "stage"
+     was story vocabulary. Trials use it.
+   - Stage effects and the win-at-HP-threshold condition.
+   - `storyOnly` kits: they are characters, and the flag is kit schema.
+
+   **Bureau Orders**, two selections (option labels he picked, not his words):
+   - He picked **"Delete story ones"**: the four story orders
+     (`first-chapter`, `lyra-joins`, `s2-story-five`, `s2-part-four`) and the
+     `stagesCleared` / `stageCleared` goal types went.
+   - The two preset orders now point at Events.
+   - **Each step is eight orders now, not ten** — his own "keep it with 10
+     missions" rule, left open for him.
+   - Lyra stays obtainable from the debut banner.
+
+   He also picked **"Delete, note the commit"** for the non-code material.
+
+   **Parked, not overruled:** Molvarr's chapter-9 visibility gate (#127)
+   returns with story. So does the filler approval process (#108's
+   companion rules): its canon source, `E:\Toll - Web toon`, is untouched.
+
+   **In `AGENTS.md`:** do not rebuild story or add story hooks to new work
+   until he says it is back.
+
+153. **A battle cannot be walked away from; it is finished or forfeited** (2026-09-26).
+   The audit found a battle outliving its screen. A reload came back on the
+   events board with the fight still live in the store, and `/practice`
+   rendered any live battle it found, so a world boss won there paid nothing.
+   His rule, dictated:
+
+   > *"it should not happen if a uh, reload happens or if uh, or if the page
+   > tries to navigate to another page"* … *"the battle should just continue"*
+   > … *"they should not be allowed to go anywhere else and ignore the battle"*
+
+   **Built:**
+   - Every battle carries a `BattleOwner` (`types/battleOwner.ts`): the
+     screen that started it, plus enough to rebuild that screen (the boss and
+     its difficulty, or a trial's whole run). It is persisted with the battle.
+   - `BattleLock` (root layout) sends any other route back to the owner.
+     The rule itself is `battleLockRoute` (`lib/game/battleLock.ts`, tested).
+   - The top nav's links and wordmark stand down during a fight. The bottom
+     tab bar already did.
+   - A reload resumes the fight on its own screen.
+   - A finished boss or trial fight resumes **on its victory card**, because
+     the rewards are paid from that card's button. Resetting it to nothing,
+     as the store used to, walked away from them.
+   - Practice and the hub no longer render other screens' battles.
+
+   **"Unresolved" is Claude's reading, flagged as one:** the lock holds from
+   the first turn until the owning screen resets the battle, so it covers
+   the victory and defeat cards too. Forfeit is the existing Exit Battle
+   control.
+
+   **Not covered, and open:** the break between two trial fights is not a
+   battle, so a reload there still loses the run.

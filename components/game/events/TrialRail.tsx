@@ -5,8 +5,8 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { getCharacterArt } from "@/lib/game/characterArt";
-import type { FightSummary } from "@/lib/game/stageRun";
-import type { StoryTeamPick } from "@/types/story";
+import type { FightSummary } from "@/lib/game/fightRun";
+import type { TeamPick } from "@/types/teamPick";
 
 /**
  * The battle road — where you are in a multi-fight run, and what is ahead.
@@ -14,7 +14,7 @@ import type { StoryTeamPick } from "@/types/story";
  * Tanveer's structure, 2026-09-16, from Dokkan's Super/Extreme Battle Road:
  * *"Clearing one fight will lead to next one. The hp of chars stay. And there
  * is no heal in between."* That rule is ruling #103 and was already what
- * `lib/game/stageRun.ts` does; what the reference adds is **seeing the route**,
+ * `lib/game/fightRun.ts` does; what the reference adds is **seeing the route**,
  * so a player can read the whole commitment before spending the HP.
  *
  * This is the compact form of it — a vertical rail, one node per fight, the
@@ -30,7 +30,7 @@ import type { StoryTeamPick } from "@/types/story";
 
 export interface TrialRailProps {
   /** Every fight in the run, front to back. */
-  fights: { enemies: StoryTeamPick[] }[];
+  fights: { enemies: TeamPick[] }[];
   /** Fights already won. Equals the index of the one coming up. */
   cleared: number;
   /** The team's carried state between fights. Fallen units read 0. */
@@ -51,7 +51,7 @@ export interface TrialRailProps {
 }
 
 /** What a fight is called on the road. */
-export function fightLabel(enemies: StoryTeamPick[]): string {
+export function fightLabel(enemies: TeamPick[]): string {
   // One enemy is the name a player repeats to themselves; a group has no name
   // this component is entitled to invent (`AGENTS.md` — kits and names are
   // his), so it states the count instead.
@@ -61,7 +61,7 @@ export function fightLabel(enemies: StoryTeamPick[]): string {
   return `${enemies.length} enemies`;
 }
 
-function EnemyPip({ pick, dimmed }: { pick: StoryTeamPick; dimmed: boolean }) {
+function EnemyPip({ pick, dimmed }: { pick: TeamPick; dimmed: boolean }) {
   const character = getCharacterById(pick.id);
   const art = getCharacterArt(pick.id);
   return (

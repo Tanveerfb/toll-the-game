@@ -487,11 +487,31 @@ export default function BattleArena({
   );
   // Clear the save receipt when a new battle starts (adjust-during-render
   // pattern — the overlay component persists across rematches)
+  //
+  // The same transition resets everything else this arena holds about ONE
+  // battle (audit findings L2/L3, 2026-09-26). A retry re-launches into the
+  // same view, so React keeps this instance and its state: the detail panel,
+  // roster list, log drawer, exit confirm and controls sheet all carried over
+  // into the new fight.
   const [wasBattleOver, setWasBattleOver] = React.useState(isBattleOver);
   if (wasBattleOver !== isBattleOver) {
     setWasBattleOver(isBattleOver);
-    if (!isBattleOver) setLogSaveResult(null);
+    if (!isBattleOver) {
+      setLogSaveResult(null);
+      setDetailUnitId(null);
+      setRosterSide(null);
+      setIsLogOpen(false);
+      setIsExitConfirmOpen(false);
+      setIsControlsOpen(false);
+    }
   }
+  // A ref cannot be written during render, so the auto-continue latch resets
+  // in an effect on the same transition. It was set once and never cleared,
+  // which was safe only while every flow happened to remount the arena
+  // between two victories.
+  React.useEffect(() => {
+    if (!isBattleOver) autoContinuedRef.current = false;
+  }, [isBattleOver]);
   const saveBattleLog = async () => {
     const now = new Date();
     const stamp = now.toISOString().replace(/[:T]/g, "-").slice(0, 19);
@@ -1220,7 +1240,7 @@ export default function BattleArena({
             </div>
 
             {/* Stage effects have never been visible once a fight starts —
-                `StageBrief` shows them beforehand and then they are gone, even
+                a brief shows them beforehand and then they are gone, even
                 though they are modifying the battle in front of you. Rendered
                 only when the encounter has any, so an ordinary fight does not
                 get an empty box. */}

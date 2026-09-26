@@ -3,14 +3,15 @@ import { describe, expect, it } from "vitest";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { calculateDamage } from "@/lib/game/damage";
 import { applyDefeatPassives } from "@/lib/game/onDefeat";
-import { isGoalMet, type StageRunSummary } from "@/lib/game/stageMissions";
 import type { BattleCharacter } from "@/types/character";
 
 /**
  * The chapter 1 checkpoint fight (2026-08-21) landed four kits and four engine
  * capabilities they needed. These cover the capabilities; the kits themselves
  * are covered by the catalog/art/schema guards that already run over the whole
- * roster.
+ * roster. (The fight itself went with story mode on 2026-09-26; the kits and
+ * the engine capabilities stayed, as did the `useSkillRank` mission goal's
+ * removal from this file along with the missions.)
  */
 
 function unit(over: Partial<BattleCharacter> = {}): BattleCharacter {
@@ -139,32 +140,6 @@ describe("targetTagBonus conditionStatuses", () => {
     const tagged = unit({ instanceId: "t3", team: "player", tags: ["bleed"] });
     const clean = unit({ instanceId: "t4", team: "player" });
     expect(hit(tagged)).toBe(hit(clean));
-  });
-});
-
-describe("useSkillRank mission goal", () => {
-  const run = (over: Partial<StageRunSummary> = {}): StageRunSummary => ({
-    fightsCleared: 2,
-    fightsTotal: 2,
-    turns: 8,
-    fielded: ["duke"],
-    fallen: [],
-    ultimatesUsed: 0,
-    rankUses: { 1: 0, 2: 0, 3: 0 },
-    isRetry: false,
-    ...over,
-  });
-
-  it("counts plays of exactly that rank", () => {
-    const r = run({ rankUses: { 1: 9, 2: 5, 3: 1 } });
-    expect(isGoalMet({ type: "useSkillRank", rank: 2, count: 5 }, r)).toBe(true);
-    expect(isGoalMet({ type: "useSkillRank", rank: 2, count: 6 }, r)).toBe(false);
-  });
-
-  it("does not let a lower rank satisfy a higher one", () => {
-    // Nine rank-1 plays are not three rank-3 plays, however many there are.
-    const r = run({ rankUses: { 1: 9, 2: 0, 3: 0 } });
-    expect(isGoalMet({ type: "useSkillRank", rank: 3, count: 3 }, r)).toBe(false);
   });
 });
 

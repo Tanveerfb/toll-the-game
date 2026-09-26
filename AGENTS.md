@@ -20,7 +20,6 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 
 | Skill | Use it when |
 | --- | --- |
-| `FillerAssist` | Authoring or reworking a story chapter — canon read, filler under his approval, then `data/story/chapter-N.json` |
 | `kitwords` | Writing the player-facing text for a kit — skill and passive descriptions, in the game's voice |
 | `kitcheck` | Before shipping any edit to `data/characters/*.json`. Audits wording and structure; **never** touches a number |
 | `mobilecheck` | Before shipping a screen, or when reworking one built before 2026-08-18. One screen per run |
@@ -59,12 +58,12 @@ Two of those rules are **enforced in code, so don't re-implement them per screen
 
 Two corrections to the above, both from measuring it (2026-09-01). **Hand cards floor at 44px, not 56** — 56 was the fix for cards shrinking to 43px slivers, and it then hid two of a full hand of eight off the edge of a 370px scroller. Eight is the hard maximum (4v4) and the arithmetic is fixed: full-bleed 390px, 2px gaps, **47px a card**. And **it is browser-verified now** — geometry and behaviour are, at 390×844 against a live 4v4. Taste still is not, and never is; that pass is his.
 
-**Anything pinned to the bottom edge clears the tab bar** via `bottom-[var(--tabbar-h)]`, which is `0rem` wherever that bar does not render. A plain `bottom-0` sits *under* it: that is how `TeamSelect`'s START and `StageBrief`'s launch bar were both covered outright the day #123 shipped, leaving practice and the world boss unstartable on a phone. Pinned by `tests/overlayStacking.test.ts`.
+**Anything pinned to the bottom edge clears the tab bar** via `bottom-[var(--tabbar-h)]`, which is `0rem` wherever that bar does not render. A plain `bottom-0` sits *under* it: that is how `TeamSelect`'s START and story's launch bar (since removed) were both covered outright the day #123 shipped, leaving practice and the world boss unstartable on a phone. Pinned by `tests/overlayStacking.test.ts`.
 
 ## Folder Structure
 
 ```
-app/                  Next.js App Router — /, /practice, /story, /events (world boss),
+app/                  Next.js App Router — /, /practice, /events (world boss + trials),
                       /gacha,
                       /archive, /archive/character/[cardNumber], /archive/npc,
                       /news, /login, /profile
@@ -73,8 +72,8 @@ components/
                       typography, shared with mdx-components.tsx)
   game/               Deck, CharacterBrowser, KitDetails, SkillDocument, TeamSelect,
                       PlayerHud, BattleArena (arena shell only)
-  game/story/         Story mode v2 screens: ChapterList, StageList, StageBrief,
-                      WaveBreak, StageResult, StoryBackdrop, StoryStage
+  game/events/        Events screens: EventsBoard, EventBrief, TrialRail,
+                      ClearSummary, RewardList
   game/battle/        Battle overlays split out of BattleArena: TeamUnitTile,
                       UnitDetailPanel, TeamDetailsList, BattleLogDrawer, EffectsList
   gacha/              BannerScreen, PullReveal, RatesModal, MilestonePicker,
@@ -86,16 +85,18 @@ hooks/                BattleProvider (phase engine), MechanicProvider (phase que
 lib/
   firebase.ts         Optional Firebase init (null exports without env)
   game/               combat.ts, damage.ts, ai.ts, passive.ts, tick.ts, phases.ts,
+                      buildUnit.ts + battleStats.ts (the ONE unit builder and stat
+                      pipeline), fightRun.ts (multi-fight runs), battleLock.ts,
                       damagePreview.ts (kit preview), descriptionTranslator.ts,
                       characterCatalog.ts, characterVfx.ts, battleReport.ts,
                       effectDiff.ts
   gacha/  news/       Banner + pull logic; MDX post loading
   nav/routes.ts       GAME_ROUTES — single source of truth for what modes exist
-store/                gameStore.ts (battle + deck), playerStore.ts, storyStore.ts,
+store/                gameStore.ts (battle + deck + battle owner), playerStore.ts,
                       settingsStore.ts
 content/news/         MDX patch notes (updates/ + notices/)
 data/characters/      Character kit JSON (source of truth for kits)
-data/story/           Story chapters (chapter-N.json); data/banners/ gacha banners
+data/banners/         Gacha banners; data/orders/ Bureau Orders
 types/                Shared TypeScript contracts
 tests/                Unit tests (engine, stores, gacha, previews), plus
                       *.browser.test.tsx — component tests in real Chromium
@@ -108,7 +109,7 @@ scripts/sim.ts        Headless balance simulator (npm run sim), ruling #57
 - `npm run test:browser` — component tests in real Chromium. **Separate from `test` on purpose**: a browser launch is not what you want in a tight loop, and `check` runs the unit suite only. Run it before shipping anything whose behaviour is timing- or pointer-dependent, because that is the half a simulated DOM cannot judge.
 - `npm run sim -- <left> <right>` — headless balance simulation across all four formats (ruling #57). `npm run sim -- --roster <id>` sweeps one kit against the whole roster. **Read the limits at the top of `lib/game/simulate.ts` before quoting a number**: no card draw, AI plays both sides. **"Base stats only" stopped being true on 2026-09-16** — a unit may carry `level`/`ascension`/`ultLevel` and a bare id still means the catalog statline, so kit comparisons are unchanged while an *encounter* can be tuned against a real player band (`playerBand`). `simulateRun` fights multi-wave runs on one HP bar. The AI plays the PLAYER side too, so a clear rate is a floor, not a prediction.
 
-**A green guard is not a working guard — prove a new one fails before trusting that it passes.** Reintroduce the bug it exists to catch and watch it go red. On 2026-09-16 this found that **three of the four checks in `tests/kitDescriptionRules.test.ts` had never run**, green since the day they were written: `/\braises\b/` had been authored through a heredoc that turned each `\b` into a literal `0x08` byte, and two more used `` new RegExp(`\b${word}\b`) ``, where a **template literal** turns `\b` into a backspace at runtime. Both spellings match nothing and throw nothing. Write a regex with a `\b` into a file with the Write tool, not a heredoc, and use `\\b` inside a template literal.
+**A green guard is not a working guard — prove a new one fails before trusting that it passes.** Reintroduce the bug it exists to catch and watch it go red. On 2026-09-16 this found that **three of the four checks in `tests/kitDescriptionRules.test.ts` had never run**, green since the day they were written: `/\braises\b/` had been authored through a heredoc that turned each `\b` into a literal `0x08` byte, and two more used `` new RegExp(`\b${word}\b`) ``, where a **template literal** turns `\b` into a backspace at runtime. Both spellings match nothing and throw nothing. Write a regex with a `\b` into a file with the Write tool, not a heredoc, and use `\\b` inside a template literal. **Heredocs are now blocked mechanically** (2026-09-26, his choice after ~10 slips in one day): `.claude/hooks/block-heredoc.mjs`, wired in `.claude/settings.json`, refuses any Bash command containing `<<`. File content goes through Write/Edit; a scripted change is a scratchpad `.py`/`.mjs` that gets run. Proved live by a probe the hook refused.
 
 **And line endings are mixed, not uniform.** An earlier note here claimed `lib/game/combat.ts` was the only CRLF file in the repo. **It is not** — measured 2026-09-17, **55 of 327 source files are CRLF**, including `store/playerStore.ts`, `hooks/BattleProvider.tsx`, `components/ui/TopNav.tsx` and twenty test files. A patch script that asserts LF, or anchors on LF-only text, fails or silently misses on any of them — the `wave`->`fight` rename died half way through on exactly this. **Read and write with `newline=''` so a file keeps the endings it had**; do not normalise in passing, or the real change drowns in an unreviewable diff.
 
@@ -125,12 +126,27 @@ scripts/sim.ts        Headless balance simulator (npm run sim), ruling #57
   (`lib/game/actionEconomy.ts`). A side with `tier: "elite"` present always gets
   the full 3, so a lone boss still acts three times. Any living unit, any order.
 - Effect durations: duration N survives N−1 turn-start ticks.
+- **Every unit is built by `buildBattleUnit` (`lib/game/buildUnit.ts`) and every
+  stat goes through `battleStats`: catalog (or phase) → progression → stage
+  effects.** The battle, the simulator, a boss's phase change, the boss brief
+  and the team picker all use it. A second path is how Molvarr's second phase
+  ignored difficulty for weeks (2026-09-26); never build combat stats any other
+  way.
+- **A battle belongs to the screen that started it** (ruling #153;
+  `BattleOwner`, persisted with the battle). `BattleLock` holds the player on that screen until the
+  battle is resolved, reload included — his rule: *"they should not be allowed
+  to go anywhere else and ignore the battle."* A new screen that launches
+  fights passes `owner` to `startCustomBattle` and rebuilds its view from it.
 - Sub (bench) units (`BattleCharacter.isSub`): passive active, no cards, untargetable, can't act; promoted to field only at turn start after a teammate died (`lib/game/sub.ts`). Battle format (4v4/3v3) sets the field cap; the 4th unit in 3v3 is the sub automatically.
 
 ## How work is judged, and who owns what
 
-**His three engineering values, in his order: consistency, modularization, QOL**
-(ruling #139, 2026-09-17). **"It works" is not the bar.** A change that adds a
+**His three values, in his order: consistency, modularization, QOL**
+(ruling #139, 2026-09-17). **Keep all three in mind on every change.** He
+restated them on 2026-09-26 as the things we *"should always must keep in
+mind"*. **Consistency covers design as well as code**: one look, one
+interaction and one component for one job, just as much as one implementation.
+**"It works" is not the bar.** A change that adds a
 seventh variant of an existing button is a regression against *consistency* even
 though the feature ships; a fix landing in one screen rather than in the shared
 primitive is a regression against *modularization*. **QOL** is specifically the
@@ -211,7 +227,7 @@ feature with any design content, write the plan with him first.
 
 Tanveer owns skill names, mechanical effects, damage multipliers, and character-kit JSON decisions. Do not invent or rebalance mechanics unprompted — ask. **He also picks which characters get drafted** — never self-select one.
 
-**Filler story content is allowed since 2026-08-18 (ruling #108), under approval.** Claude may draft filler stages, scenes and NPCs so story mode has enough to play — but **nothing enters the game unapproved**, filler must never contradict or resolve canon (source: `E:\Toll - Web toon`), and **NPC kit numbers stay his**: draft the role, personality and combat concept, then ask. Approved content is recorded in `Filler/Approved_chapter_N.md`, proposals and rejects in `Filler/Drafts.md`, and every filler stage and scene carries `origin: "filler"` in the JSON.
+**Story mode was removed on 2026-09-26, by his call** (ruling #152): *"I would rather focus on the game build on it build the PvE content build characters build mechanics before we try to implement the story."* Screens, chapter data, story store, filler drafts, the `FillerAssist` skill, backgrounds and story docs are all gone, restorable from commit `2f6b016`. **Do not rebuild any of it, or add story hooks to new work, until he says story is back.** The filler rules (ruling #108) and the webtoon canon source (`E:\Toll - Web toon`) stand for when it returns.
 
 **Kits are workshopped in a separate repo: `toll-kits`** (2026-09-26,
 `github.com/Tanveerfb/toll-kits`, private, cloned at `E:\Projects\toll-kits`).

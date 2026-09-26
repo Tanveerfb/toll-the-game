@@ -9,8 +9,8 @@ import { transitionBossPhases } from "@/lib/game/phases";
 import { promoteSubs } from "@/lib/game/sub";
 import { tickTeamBuffs, tickTeamDebuffs } from "@/lib/game/tick";
 import { FIELD_CAP, TEAM_CAP } from "@/lib/game/format";
-import { progressedStats } from "@/lib/game/progression";
-import { bonusActionsFor, stageAdjustedStats } from "@/lib/game/stageEffects";
+import { buildBattleUnit } from "@/lib/game/buildUnit";
+import { bonusActionsFor } from "@/lib/game/stageEffects";
 import type { StageEffect } from "@/types/stageEffects";
 import type { BattleCharacter } from "@/types/character";
 
@@ -149,37 +149,12 @@ function makeRng(seed: number): () => number {
   };
 }
 
-function buildUnit(
-  input: UnitInput,
-  team: "player" | "enemy",
-  index: number,
-  isSub: boolean,
-  /** HP to start at, for a unit carrying damage in from an earlier fight. */
-  startHp?: number,
-): BattleCharacter {
-  const { id, level = 1, ascension = 0, ultLevel = 1 } = toSpec(input);
-  const raw = getCharacterById(id);
-  if (!raw) throw new Error(`Unknown character id: ${id}`);
-  // Same call `BattleProvider` makes, so a simulated unit and a played one are
-  // the same statline. `raw` is untouched — it is the shared catalog object.
-  const stats = progressedStats(raw, { level, ascension });
-  return {
-    ...(raw as unknown as BattleCharacter),
-    ...stats,
-    instanceId: `${team[0]}${index + 1}_${id}`,
-    currentAttack: stats.atk,
-    currentDefense: stats.def,
-    currentHP: startHp === undefined ? stats.hp : Math.min(startHp, stats.hp),
-    ultGauge: 0,
-    ultLevel,
-    buffs: [],
-    debuffs: [],
-    passiveState: {},
-    team,
-    isSub,
-  };
-}
-
+/**
+ * A side, built by the same `buildBattleUnit` the battle uses — so a
+ * simulated unit and a played one are the same unit, progression and stage
+ * effects included. This file had its own copy until 2026-09-26, and it had
+ * already drifted (it let carried HP reach 0; the battle floors it at 1).
+ */
 function buildTeam(
   inputs: UnitInput[],
   team: "player" | "enemy",
@@ -190,21 +165,18 @@ function buildTeam(
   effects?: StageEffect[],
 ): BattleCharacter[] {
   return inputs.slice(0, TEAM_CAP).map((input, i) => {
-    const unit = buildUnit(input, team, i, i >= fieldCap, carryHp[toSpec(input).id]);
-    if (!effects?.length) return unit;
-    // Same helper the battle uses, so a simulated arena and a played one
-    // cannot drift. Baked into base stats, not applied as a buff — which is
-    // why it is done here rather than pushed onto `buffs`.
-    const adjusted = stageAdjustedStats(unit, effects, team);
-    return {
-      ...unit,
-      ...adjusted,
-      currentAttack: adjusted.atk,
-      currentDefense: adjusted.def,
-      // An HP boost raises the ceiling; a unit carrying damage in keeps its
-      // damage rather than being topped up by the arena.
-      currentHP: Math.min(unit.currentHP === unit.hp ? adjusted.hp : unit.currentHP, adjusted.hp),
-    };
+    const pick = toSpec(input);
+    const raw = getCharacterById(pick.id);
+    if (!raw) throw new Error(`Unknown character id: ${pick.id}`);
+    return buildBattleUnit({
+      raw,
+      pick,
+      team,
+      instanceId: `${team[0]}${i + 1}_${pick.id}`,
+      isSub: i >= fieldCap,
+      stageEffects: effects,
+      carriedHp: carryHp[pick.id],
+    });
   });
 }
 
@@ -339,7 +311,7 @@ async function runOneBattle(
       applyDefeatPassives(teams, noop);
       teams = await queue.process(endPhase, teams, noop);
 
-      const phaseStep = transitionBossPhases(teams.enemyTeam);
+      const phaseStep = transitionBossPhases(teams.enemyTeam, effects);
       teams = { ...teams, enemyTeam: phaseStep.team };
 
       if (livingOnField(teams.playerTeam).length === 0) {
@@ -416,7 +388,7 @@ export function winRate(result: SimResult): number | null {
 /**
  * A multi-fight run — consecutive fights on one HP bar.
  *
- * Mirrors `lib/game/stageRun.ts`, which is the rule the game actually plays
+ * Mirrors `lib/game/fightRun.ts`, which is the rule the game actually plays
  * (ruling #103): **HP carries over and the fallen stay down**. A three-fight
  * encounter is therefore not three fights, it is a resource problem, and
  * simulating the fights separately would miss the entire difficulty of it —

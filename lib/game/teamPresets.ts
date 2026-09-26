@@ -4,11 +4,11 @@ import { TEAM_CAP } from "@/lib/game/format";
  * Saved team loadouts, shared by every mode.
  *
  * One global list rather than per-mode lists (Tanveer, 2026-08-11) — at this
- * roster size, separate story/practice/world-boss lists would mostly hold the
- * same three teams under three names.
+ * roster size, separate per-mode lists would mostly hold the same three teams
+ * under three names.
  *
- * A preset is an ordered list of ids, so it rots: a member can get anchored by
- * a story chapter, or leave the roster entirely. Resolving one therefore
+ * A preset is an ordered list of ids, so it rots: a member can leave the
+ * roster entirely. Resolving one therefore
  * *reports* what it couldn't place instead of silently dropping units or
  * refusing to load, and never edits the stored preset behind the player's
  * back — updating it is a deliberate action.
@@ -30,7 +30,10 @@ export interface TeamPreset {
   useCount: number;
 }
 
-export type PresetIssueReason = "anchored" | "unowned";
+/** Why a preset member could not be placed. Story mode also had
+ *  `"anchored"` (a unit the chapter fixed in place); it went with story mode
+ *  on 2026-09-26. */
+export type PresetIssueReason = "unowned";
 
 export interface PresetIssue {
   characterId: string;
@@ -47,25 +50,19 @@ export interface ResolvedPreset {
 /**
  * Works out what a preset can contribute to the current picker.
  *
- * `anchoredIds` are units the mode has already fixed in place — a preset
- * naming one is not an error, the unit is simply already present and can't
- * occupy two slots. `ownedIds` gates the rest; pass `null` when the picker
- * runs off the full catalog (the practice bench), where ownership is
- * irrelevant.
+ * `ownedIds` gates membership; pass `null` when the picker runs off the full
+ * catalog (the practice bench), where ownership is irrelevant.
  */
 export function resolvePreset(
   preset: Pick<TeamPreset, "memberIds">,
   {
-    anchoredIds = [],
     ownedIds,
     openSlots,
   }: {
-    anchoredIds?: string[];
     ownedIds: string[] | null;
     openSlots: number;
   },
 ): ResolvedPreset {
-  const anchored = new Set(anchoredIds);
   const owned = ownedIds === null ? null : new Set(ownedIds);
   const memberIds: string[] = [];
   const issues: PresetIssue[] = [];
@@ -74,17 +71,13 @@ export function resolvePreset(
   for (const id of preset.memberIds) {
     if (seen.has(id)) continue;
     seen.add(id);
-    if (anchored.has(id)) {
-      issues.push({ characterId: id, reason: "anchored" });
-      continue;
-    }
     if (owned !== null && !owned.has(id)) {
       issues.push({ characterId: id, reason: "unowned" });
       continue;
     }
-    // Silently stopping at the cap is right: a 4-unit preset loaded into a
-    // chapter with one anchor genuinely has one member too many, and that
-    // isn't a problem worth a warning.
+    // Silently stopping at the cap is right: a preset longer than the open
+    // slots genuinely has members too many, and that isn't a problem worth a
+    // warning.
     if (memberIds.length >= Math.max(0, openSlots)) continue;
     memberIds.push(id);
   }
@@ -92,8 +85,7 @@ export function resolvePreset(
   return { memberIds, issues };
 }
 
-/** A preset built from what's currently picked. Anchors are excluded — they
- *  belong to the chapter, not to the player's loadout. */
+/** A preset built from what's currently picked. */
 export function presetFromTeam(
   name: string,
   memberIds: string[],
@@ -152,7 +144,6 @@ export function notePresetUsed(
 export function resolveLastTeam(
   lastTeam: string[],
   options: {
-    anchoredIds?: string[];
     ownedIds: string[] | null;
     openSlots: number;
   },

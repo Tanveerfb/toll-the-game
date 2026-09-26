@@ -27,10 +27,8 @@ or a console warning storm.
 | File | Role | Plays on | Loop |
 |---|---|---|---|
 | `menu.ogg` | `menu` | Home hub, archive, news, profile, gacha | yes |
-| `story.ogg` | `story` | Part select, chapter list, chapter brief | yes |
-| `story-scene.ogg` | `storyScene` | Intro and outro scene reader | yes |
 | `battle.ogg` | `battle` | VS splash and every battle | yes |
-| `victory.ogg` | `victory` | Chapter complete and the rewards screen | **no** |
+| `victory.ogg` | `victory` | The rewards screens | **no** |
 
 ## Sound effects
 

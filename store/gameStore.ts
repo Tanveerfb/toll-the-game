@@ -23,6 +23,7 @@ import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { actionsForTurn } from "@/lib/game/actionEconomy";
 import { bonusActionsFor } from "@/lib/game/stageEffects";
 import type { StageEffect } from "@/types/stageEffects";
+import type { BattleOwner } from "@/types/battleOwner";
 import { useSettingsStore } from "./settingsStore";
 
 export type SequencedBattleEvent = AnyBattleEvent & {
@@ -53,6 +54,13 @@ export function isSingleAllyTarget(card: ActionCard): boolean {
 }
 
 interface BattleState {
+  /**
+   * The screen this battle belongs to, persisted with it so a reload lands
+   * back on that screen and nothing else may render it. See
+   * `types/battleOwner.ts` and `lib/game/battleLock.ts`. Null when no battle.
+   */
+  battleOwner: BattleOwner | null;
+  setBattleOwner: (owner: BattleOwner | null) => void;
   playerTeam: BattleCharacter[];
   enemyTeam: BattleCharacter[];
   /** Encounter-level modifiers for this battle (stage effects). Empty = a
@@ -312,6 +320,8 @@ const NOOP_STORAGE: StateStorage = {
 export const useGameStore = create<BattleState>()(
   persist(
     (set, get) => ({
+  battleOwner: null,
+  setBattleOwner: (owner) => set({ battleOwner: owner }),
   playerTeam: [],
   enemyTeam: [],
   stageEffects: [],
@@ -428,6 +438,7 @@ export const useGameStore = create<BattleState>()(
 
   resetBattle: () =>
     set({
+      battleOwner: null,
       playerTeam: [],
       enemyTeam: [],
       stageEffects: [],
@@ -970,6 +981,13 @@ export const useGameStore = create<BattleState>()(
           : NOOP_STORAGE,
       ),
       partialize: (state) => ({
+        // The owner, the arena and the win condition have to survive a
+        // reload with the battle, or it resumes as a different fight: no
+        // screen to return to, and — before 2026-09-26 — no stage effects,
+        // so a boss's arena buffs silently vanished on reload.
+        battleOwner: state.battleOwner,
+        stageEffects: state.stageEffects,
+        victoryAtEnemyHpPercent: state.victoryAtEnemyHpPercent,
         playerTeam: state.playerTeam,
         enemyTeam: state.enemyTeam,
         currentTurn: state.currentTurn,
@@ -996,9 +1014,13 @@ export const useGameStore = create<BattleState>()(
       onRehydrateStorage: () => (state) => {
         if (!state) return;
         const phase = state.battlePhase;
-        // A finished battle (victory/defeat) must not resume as a stale results
-        // screen — reset to team select instead.
-        if (phase === "victory" || phase === "defeat") {
+        // A finished practice battle has nothing left to resolve, so it resets
+        // to team select rather than resuming as a stale results card. Any
+        // other owner keeps its card: the world boss pays out from the victory
+        // card's button, and resetting here dropped a won fight's rewards.
+        const practice = (state.battleOwner?.route ?? "/practice") === "/practice";
+        if ((phase === "victory" || phase === "defeat") && practice) {
+          state.battleOwner = null;
           state.battlePhase = "initializing";
           state.playerTeam = [];
           state.enemyTeam = [];
@@ -1010,7 +1032,9 @@ export const useGameStore = create<BattleState>()(
         }
         // An in-progress battle reloaded mid-automated-phase snaps back to the
         // player's action (Option A); one idle on the player's turn resumes as-is.
-        if (phase !== "initializing" && phase !== "PlayerAction") {
+        // A finished one kept above stays finished — it resumes on its card.
+        const finished = phase === "victory" || phase === "defeat";
+        if (phase !== "initializing" && phase !== "PlayerAction" && !finished) {
           state.battlePhase = "PlayerAction";
           state.actionQueue = [];
           state.queuedNullCount = 0;

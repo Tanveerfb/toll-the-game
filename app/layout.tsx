@@ -35,6 +35,7 @@ import MechanicProvider from "@/hooks/MechanicProvider";
 import { AuthProvider } from "@/hooks/AuthProvider";
 import { cn } from "@/lib/utils";
 import TopNav from "@/components/ui/TopNav";
+import BattleLock from "@/components/game/BattleLock";
 import MotionProvider from "@/components/providers/MotionProvider";
 import ServiceWorkerRegistration from "@/components/providers/ServiceWorkerRegistration";
 import { Analytics } from "@vercel/analytics/next";
@@ -59,6 +60,7 @@ export default function RootLayout({
           <MechanicProvider>
             <BattleProvider>
               <MotionProvider>
+                <BattleLock />
                 <TopNav />
                 {children}
               </MotionProvider>

@@ -30,18 +30,6 @@ describe("resolvePreset", () => {
     expect(result.memberIds).toEqual(["c", "a", "b"]);
   });
 
-  it("reports an anchored member instead of duplicating them", () => {
-    const result = resolvePreset(preset(["duke", "sara"]), {
-      anchoredIds: ["duke"],
-      ownedIds: ["duke", "sara"],
-      openSlots: 3,
-    });
-    expect(result.memberIds).toEqual(["sara"]);
-    expect(result.issues).toEqual([
-      { characterId: "duke", reason: "anchored" },
-    ]);
-  });
-
   it("reports a member who has left the roster", () => {
     const result = resolvePreset(preset(["duke", "seras"]), {
       ownedIds: ["duke"],
@@ -65,10 +53,9 @@ describe("resolvePreset", () => {
   });
 
   it("stops at the open-slot count without calling it a problem", () => {
-    // A 4-unit preset loaded into a chapter with one anchor genuinely has one
-    // member too many. That isn't worth a warning.
+    // A 4-unit preset loaded into three open slots genuinely has one member
+    // too many. That isn't worth a warning.
     const result = resolvePreset(preset(["a", "b", "c", "d"]), {
-      anchoredIds: ["lead"],
       ownedIds: ["a", "b", "c", "d"],
       openSlots: 3,
     });
@@ -104,11 +91,10 @@ describe("resolveLastTeam", () => {
   it("drops members the current context can't place", () => {
     expect(
       resolveLastTeam(["duke", "sara", "seras"], {
-        anchoredIds: ["duke"],
         ownedIds: ["duke", "sara"],
         openSlots: 3,
       }),
-    ).toEqual(["sara"]);
+    ).toEqual(["duke", "sara"]);
   });
 
   it("returns nothing for an empty history rather than throwing", () => {

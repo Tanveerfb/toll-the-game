@@ -9,12 +9,18 @@ import TeamSelect from "@/components/game/TeamSelect";
 import { Screen } from "@/components/ui/Screen";
 
 export default function Practice() {
-  const { battlePhase } = useGameStore();
+  const battlePhase = useGameStore((s) => s.battlePhase);
+  const ownerRoute = useGameStore((s) => s.battleOwner?.route ?? "/practice");
   const { startCustomBattle } = useBattleContext();
 
-  const isInitializing = battlePhase === "initializing";
+  // Only practice's own battle renders here. This used to render ANY live
+  // battle it found, so a world boss fight resumed on this screen with no
+  // boss handlers — winning it paid nothing (audit finding F5, 2026-09-26).
+  // Another screen's battle is `BattleLock`'s to route back; until it does,
+  // this shows the bench rather than someone else's fight.
+  const ownBattle = battlePhase !== "initializing" && ownerRoute === "/practice";
 
-  if (isInitializing) {
+  if (!ownBattle) {
     return (
       <Screen className="relative text-readout" width="none">
         <TeamSelect onStart={startCustomBattle} />

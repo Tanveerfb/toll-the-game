@@ -7,7 +7,6 @@ import { Check, ChevronRight, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/AuthProvider";
 import { firebaseEnabled } from "@/lib/firebase";
 import { usePlayerStore } from "@/store/playerStore";
-import { useStoryStore } from "@/store/storyStore";
 import {
   allOrdersClaimed,
   claimableCount,
@@ -232,10 +231,8 @@ export interface OrdersState {
   activeStep: number;
   setViewedStep: (step: number) => void;
   claimedOrders: Record<string, boolean>;
-  /** Cleared story stages, keyed `chapterId:stageId` — passed straight back into
-   *  `claimOrder`, which re-checks the goal before paying. */
-  cleared: Record<string, boolean>;
-  claimOrder: (orderId: string, clearedStages: Record<string, boolean>) => boolean;
+  /** Re-checks the goal before paying — see `playerStore.claimOrder`. */
+  claimOrder: (orderId: string) => boolean;
 }
 
 export function useOrdersState(): OrdersState {
@@ -250,12 +247,8 @@ export function useOrdersState(): OrdersState {
   const claimedOrders = usePlayerStore((s) => s.claimedOrders);
   const claimOrder = usePlayerStore((s) => s.claimOrder);
 
-  const cleared = useStoryStore((s) => s.cleared);
-  const storyHydrated = useStoryStore((s) => s.hasHydrated);
-
   const context: OrderContext = React.useMemo(
     () => ({
-      clearedStages: cleared,
       pulls: stats.pulls,
       bossClears: stats.bossClears,
       presetsSaved: presets.length,
@@ -264,15 +257,7 @@ export function useOrdersState(): OrdersState {
       characters,
       claimed: claimedOrders,
     }),
-    [
-      cleared,
-      stats,
-      presets.length,
-      roster.length,
-      account.rank,
-      characters,
-      claimedOrders,
-    ],
+    [stats, presets.length, roster.length, account.rank, characters, claimedOrders],
   );
 
   const stepOpen = React.useMemo(() => currentStep(context), [context]);
@@ -295,15 +280,12 @@ export function useOrdersState(): OrdersState {
   // unreachable rather than enticing.
   const locked = firebaseEnabled && !user;
 
-  // Both stores are localStorage-backed, so anything rendered before they
-  // rehydrate would be a wrong answer that then visibly corrects itself. The
+  // The store is localStorage-backed, so anything rendered before it
+  // rehydrates would be a wrong answer that then visibly corrects itself. The
   // board also retires once it's finished — a permanently ticked checklist is
   // clutter, and daily missions will want the space. A signed-out player never
   // reaches that state, so the check follows the gate.
-  const hidden =
-    !hasHydrated ||
-    !storyHydrated ||
-    (!locked && allOrdersClaimed(wholeBoard));
+  const hidden = !hasHydrated || (!locked && allOrdersClaimed(wholeBoard));
 
   const { claimed, total } = orderCompletion(board);
 
@@ -318,7 +300,6 @@ export function useOrdersState(): OrdersState {
     activeStep,
     setViewedStep,
     claimedOrders,
-    cleared,
     claimOrder,
   };
 }
@@ -343,7 +324,6 @@ export default function OrdersBoard({
     activeStep,
     setViewedStep,
     claimedOrders,
-    cleared,
     claimOrder,
   } = state;
 
@@ -400,7 +380,7 @@ export default function OrdersBoard({
           <OrderRow
             key={entry.order.id}
             entry={entry}
-            onClaim={() => claimOrder(entry.order.id, cleared)}
+            onClaim={() => claimOrder(entry.order.id)}
             onGo={() => router.push(entry.order.route)}
           />
         ))}

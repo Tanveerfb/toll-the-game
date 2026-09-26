@@ -21,7 +21,6 @@ import { useBattleContext } from "@/hooks/BattleProvider";
 import { useScreenMusic } from "@/hooks/useScreenMusic";
 import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
-import { useStoryStore } from "@/store/storyStore";
 import { getCurrentStamina } from "@/lib/game/stamina";
 import {
   addRewards,
@@ -37,7 +36,6 @@ import {
   isEventVisible,
   type GameEvent,
 } from "@/lib/game/events";
-import { clearedChapterMap } from "@/lib/game/storyCatalog";
 import {
   availableDifficulties,
   enemyLevelForDifficulty,
@@ -49,10 +47,11 @@ import {
   fightSummaries,
   runHealthBars,
   fightTeam,
-  type StageRunState,
-} from "@/lib/game/stageRun";
+  type FightRunState,
+} from "@/lib/game/fightRun";
 import { foldFightFromBattle } from "@/lib/game/fightDriver";
 import { getTrialEncounter } from "@/lib/game/trialEncounters";
+import { resumedEventBattle } from "@/lib/game/battleLock";
 
 /**
  * The events screen.
@@ -92,16 +91,16 @@ type View =
        * a run at all — that path shows the unlock block without a recap rather
        * than inventing one.
        */
-      run?: StageRunState;
+      run?: FightRunState;
     }
   /**
    * A trial in progress. Unlike the boss, a trial is a RUN — several fights on
    * one HP bar — so the screen has to hold the run between them; the battle
    * store only ever knows about the fight it is in.
    */
-  | { kind: "trialBattle"; event: GameEvent; run: StageRunState }
+  | { kind: "trialBattle"; event: GameEvent; run: FightRunState }
   /** The battle road between two fights (Tanveer, 2026-09-16). */
-  | { kind: "trialBreak"; event: GameEvent; run: StageRunState }
+  | { kind: "trialBreak"; event: GameEvent; run: FightRunState }
   /** Auto Clear's per-run breakdown plus the combined haul. Separate from
    *  `results` because it reports many runs and never came from a battle. */
   | {
@@ -114,6 +113,8 @@ type View =
 export default function EventsPage(): React.JSX.Element {
   const { startCustomBattle } = useBattleContext();
   const resetBattle = useGameStore((s) => s.resetBattle);
+  const battlePhase = useGameStore((s) => s.battlePhase);
+  const battleOwner = useGameStore((s) => s.battleOwner);
   const roster = usePlayerStore((s) => s.roster);
   const stamina = usePlayerStore((s) => s.stamina);
   const account = usePlayerStore((s) => s.account);
@@ -127,7 +128,6 @@ export default function EventsPage(): React.JSX.Element {
   const clearRankWall = usePlayerStore((s) => s.clearRankWall);
   const hasHydrated = usePlayerStore((s) => s.hasHydrated);
   const spendAutoClearRun = usePlayerStore((s) => s.spendAutoClearRun);
-  const clearedStages = useStoryStore((s) => s.cleared);
 
   /**
    * The board lists what the player may *see*; `eventLockReason` then decides
@@ -135,16 +135,16 @@ export default function EventsPage(): React.JSX.Element {
    * the first trial is visible at rank 1 and locked until 20, while the second
    * is withheld until the first is behind you (ruling #127).
    */
-  const visibleEvents = React.useMemo(() => {
-    const clearedChapters = clearedChapterMap(clearedStages);
-    return GAME_EVENTS.filter((event) =>
-      isEventVisible(event, {
-        accountRank: account.rank,
-        clearedWalls: account.clearedWalls,
-        clearedChapters,
-      }),
-    );
-  }, [clearedStages, account.rank, account.clearedWalls]);
+  const visibleEvents = React.useMemo(
+    () =>
+      GAME_EVENTS.filter((event) =>
+        isEventVisible(event, {
+          accountRank: account.rank,
+          clearedWalls: account.clearedWalls,
+        }),
+      ),
+    [account.rank, account.clearedWalls],
+  );
 
   const [view, setView] = React.useState<View>({ kind: "board" });
   const [team, setTeam] = React.useState<CharacterData[]>([]);
@@ -168,7 +168,7 @@ export default function EventsPage(): React.JSX.Element {
 
   /** Starts the fight the run is currently on, carrying HP forward. */
   const launchFight = React.useCallback(
-    (event: GameEvent, run: StageRunState) => {
+    (event: GameEvent, run: FightRunState) => {
       const encounter = getTrialEncounter(event.id);
       const fight = encounter?.fights[run.fightIndex];
       if (!fight) return;
@@ -179,6 +179,12 @@ export default function EventsPage(): React.JSX.Element {
         // fight carries the survivors' HP. No heal between fights — ruling
         // #103, and the whole point of the format.
         carryHp: run.carryHp,
+        // The run rides with the battle, so a reload mid-fight resumes this
+        // fight of this run rather than dropping the run on the floor.
+        owner: {
+          route: "/events",
+          view: { kind: "trial", eventId: event.id, run },
+        },
       });
     },
     [startCustomBattle],
@@ -201,7 +207,7 @@ export default function EventsPage(): React.JSX.Element {
       }
       setNotice(null);
       if (team.length > 0) rememberLastTeam(team.map((c) => c.id));
-      const run = beginRun(event.id, encounter, toTeamPicks(team));
+      const run = beginRun(encounter, toTeamPicks(team));
       launchFight(event, run);
       setView({ kind: "trialBattle", event, run });
     },
@@ -227,7 +233,14 @@ export default function EventsPage(): React.JSX.Element {
         // Difficulty finally reaches the engine: `enemyLevelForDifficulty` and
         // `worldLevel` have existed since 2026-08-11 and drove nothing.
         { id: event.enemyId, level: enemyLevelForDifficulty(difficulty) },
-      ]);
+      ], {
+        // Difficulty rides with the battle: the victory card pays out at the
+        // difficulty in state, and a reload would otherwise reset it.
+        owner: {
+          route: "/events",
+          view: { kind: "boss", eventId: event.id, difficulty },
+        },
+      });
       setView({ kind: "battle", event });
     },
     [
@@ -318,6 +331,21 @@ export default function EventsPage(): React.JSX.Element {
    * vocabulary here and nothing to design.
    */
   if (!hasHydrated) return <Screen width="none" />;
+
+  // A live battle this page owns (a reload, or `BattleLock` sending the
+  // player back): rebuild its view during render so the board never paints
+  // over it. `view.kind` keeps this from looping. See `resumedEventBattle`.
+  const resumed =
+    view.kind === "board" ? resumedEventBattle(battlePhase, battleOwner) : null;
+  if (resumed) {
+    if (resumed.kind === "boss") setDifficulty(resumed.difficulty);
+    setView(
+      resumed.kind === "boss"
+        ? { kind: "battle", event: resumed.event }
+        : { kind: "trialBattle", event: resumed.event, run: resumed.run },
+    );
+    return <Screen width="none" />;
+  }
 
   if (view.kind === "battle") {
     return (

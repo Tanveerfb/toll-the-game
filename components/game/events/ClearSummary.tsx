@@ -10,10 +10,10 @@ import { RewardList } from "@/components/game/events/RewardList";
 import { fightLabel } from "@/components/game/events/TrialRail";
 import { MAX_ACCOUNT_RANK, RANK_WALLS } from "@/lib/game/accountRank";
 import { getCharacterById } from "@/lib/game/characterCatalog";
-import { fightSummaries, type StageRunState } from "@/lib/game/stageRun";
+import { fightSummaries, type FightRunState } from "@/lib/game/fightRun";
 import { rewardRows } from "@/lib/game/worldBossPreview";
 import type { WorldBossRewards } from "@/lib/game/worldBossRewards";
-import type { StoryTeamPick } from "@/types/story";
+import type { TeamPick } from "@/types/teamPick";
 
 /**
  * The panel a cleared event lands on.
@@ -112,9 +112,9 @@ export function TrialClearSummary({
   rankAfter: number;
   /** The finished run. Absent on the older single-fight trial route, which
    *  never builds one — that path shows the unlock block alone. */
-  run?: StageRunState;
+  run?: FightRunState;
   /** The encounter's fights, for naming each recap row. */
-  fights?: { enemies: StoryTeamPick[] }[];
+  fights?: { enemies: TeamPick[] }[];
   onBack: () => void;
 }): React.JSX.Element {
   const gained = rankAfter - rankBefore;

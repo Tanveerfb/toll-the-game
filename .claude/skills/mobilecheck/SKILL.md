@@ -34,7 +34,9 @@ usually the wrong fix.
   failure*, not an audit finding, and reporting it as a finding wastes his time.
 - `docs/design/mockups/battle-mobile.html` — the open layout questions in battle.
 
-**On the calibration set.** This skill used to say story mode was the only
+**On the calibration set.** (Story mode was removed on 2026-09-26; its
+screens are gone, and so is the calibration set this paragraph names. The
+lesson stands.) This skill used to say story mode was the only
 surface built under #107 and *"if a check fires there, suspect the check"*. Both
 halves are now wrong: the 2026-08-21 sweep took every screen, and the check that
 fired on story mode was **right** — `StageBrief` and `StageList` had 36px

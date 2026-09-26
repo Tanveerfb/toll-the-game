@@ -53,8 +53,7 @@ export interface GameEvent {
    * it existed, and `requiredRank` only decided whether the row was tappable.
    * That is right for the first trial and wrong for the other two — a rank-1
    * player was being shown a rank-40 trial gated behind a fight they had never
-   * heard of, and Molvarr was on the board before the story that introduces
-   * him.
+   * heard of.
    *
    * Omitted = visible from the start, which is the first trial's rule and the
    * default for anything with nothing to hide.
@@ -74,19 +73,6 @@ export interface EventVisibility {
   minRank?: number;
   /** Every one of these walls must already be cleared. */
   clearedWalls?: number[];
-  /**
-   * Story chapter id that must be fully cleared — `c1`, `c9`, matching
-   * `data/story/chapter-N.json`.
-   *
-   * **A chapter that is not authored yet cannot gate anything.** Arc One is 12
-   * chapters and one is adapted, so a gate naming `c9` today would hide its
-   * event *forever* rather than until chapter 9 — "clear a chapter that does
-   * not exist" is unsatisfiable, and Molvarr is the World Boss, the game's only
-   * repeatable fight and the source of half of Bureau Orders. So the gate
-   * activates when the chapter lands, and until then the event behaves as
-   * ungated. Write the real chapter id; do not wait for it to exist.
-   */
-  clearedChapter?: string;
 }
 
 const [FIRST_WALL, SECOND_WALL] = RANK_WALLS;
@@ -103,12 +89,10 @@ export const GAME_EVENTS: readonly GameEvent[] = [
     requiredRank: 1,
     repeatable: true,
     autoClearEligible: true,
-    // Tanveer, 2026-09-01: "Its chapter 9. so molvarr unlocks after completing
-    // chapter 9." Chapter 9 is written but not adapted — 1 of 12 chapters is
-    // live — so this gate is inert today and starts biting the day `c9` lands
-    // in `data/story/`. That is deliberate; see `clearedChapter` above for why
-    // an unauthored chapter must not gate.
-    visibleWhen: { clearedChapter: "c9" },
+    // No `visibleWhen`. Tanveer, 2026-09-01: "Its chapter 9. so molvarr
+    // unlocks after completing chapter 9." That gate was inert (chapter 9 was
+    // never adapted) and was removed with story mode on 2026-09-26. It is
+    // parked, not overruled: when story returns, the gate comes back with it.
   },
   {
     id: "trial-rank-20",
@@ -169,8 +153,6 @@ export function isEventVisible(
   ctx: {
     accountRank: number;
     clearedWalls: number[];
-    /** `chapterId -> fully cleared`. */
-    clearedChapters: Record<string, boolean>;
   },
 ): boolean {
   const gate = event.visibleWhen;
@@ -178,15 +160,6 @@ export function isEventVisible(
   if (gate.minRank !== undefined && ctx.accountRank < gate.minRank) return false;
   if (gate.clearedWalls?.some((wall) => !ctx.clearedWalls.includes(wall))) {
     return false;
-  }
-  if (gate.clearedChapter) {
-    // Absent from the map = the chapter is not adapted yet, and an
-    // unsatisfiable gate hides its event permanently rather than temporarily.
-    // Present and false = adapted and unfinished, which is the real gate.
-    // `clearedChapterMap` builds the map from the story catalog, so membership
-    // is exactly "this chapter exists".
-    const authored = gate.clearedChapter in ctx.clearedChapters;
-    if (authored && !ctx.clearedChapters[gate.clearedChapter]) return false;
   }
   return true;
 }

@@ -23,9 +23,8 @@ function visible(
   event: GameEvent,
   accountRank: number,
   clearedWalls: number[] = [],
-  clearedChapters: Record<string, boolean> = {},
 ): boolean {
-  return isEventVisible(event, { accountRank, clearedWalls, clearedChapters });
+  return isEventVisible(event, { accountRank, clearedWalls });
 }
 
 describe("event visibility is separate from event unlock", () => {
@@ -66,33 +65,12 @@ describe("event visibility is separate from event unlock", () => {
     expect(visible(second, SECOND_WALL, [])).toBe(false);
   });
 
-  it("a chapter gate withholds until that chapter is fully cleared", () => {
-    const gated: GameEvent = { ...boss, visibleWhen: { clearedChapter: "c1" } };
-    expect(visible(gated, 1, [], { c1: false })).toBe(false);
-    expect(visible(gated, 1, [], { c1: true })).toBe(true);
-    // Rank cannot substitute for the chapter.
-    expect(visible(gated, 99, [], { c1: false })).toBe(false);
-  });
-
-  it("a gate naming an unwritten chapter does not hide the event", () => {
-    // The map is built from the story catalog, so a missing key means the
-    // chapter is not adapted yet. "Clear a chapter that does not exist" is
-    // unsatisfiable, and treating it as a gate hides the event *permanently*
-    // rather than until that chapter lands. Molvarr is the live case: gated on
-    // `c9` while one of twelve chapters is adapted (ruling #127).
-    const gated: GameEvent = { ...boss, visibleWhen: { clearedChapter: "c9" } };
-    expect(visible(gated, 1, [], { c1: false })).toBe(true);
-    expect(visible(gated, 1, [], {})).toBe(true);
-  });
-
-  it("Molvarr is on the board today and gated on chapter 9", () => {
-    // Both halves matter. The id is the ruling; the visibility is the promise
-    // that authoring it did not remove the game's only repeatable fight.
-    expect(boss.visibleWhen?.clearedChapter).toBe("c9");
-    expect(visible(boss, 1, [], { c1: false })).toBe(true);
-    // And it does gate, once chapter 9 exists.
-    expect(visible(boss, 99, [], { c1: true, c9: false })).toBe(false);
-    expect(visible(boss, 1, [], { c9: true })).toBe(true);
+  it("Molvarr is on the board from rank 1", () => {
+    // The game's only repeatable fight. Its chapter-9 gate (Tanveer,
+    // 2026-09-01) was parked with story mode on 2026-09-26, so nothing may
+    // hide it now.
+    expect(boss.visibleWhen).toBeUndefined();
+    expect(visible(boss, 1)).toBe(true);
   });
 
   it("every authored event is reachable by some player state", () => {

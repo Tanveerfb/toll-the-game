@@ -73,29 +73,29 @@ describe("role switching", () => {
   it("starts a role once unlocked", async () => {
     const { controller, created } = makeController();
     controller.unlock();
-    controller.play("story");
+    controller.play("menu");
     await Promise.resolve();
-    expect(controller.currentRole).toBe("story");
-    expect(created.some((a) => a.src === MUSIC_TRACKS.story.src)).toBe(true);
+    expect(controller.currentRole).toBe("menu");
+    expect(created.some((a) => a.src === MUSIC_TRACKS.menu.src)).toBe(true);
   });
 
   it("is a no-op when the same role is requested again", async () => {
     const { controller, created } = makeController();
     controller.unlock();
-    controller.play("story");
+    controller.play("menu");
     await Promise.resolve();
     const callsAfterFirst = created.reduce((sum, a) => sum + a.playCalls, 0);
 
-    controller.play("story");
+    controller.play("menu");
     await Promise.resolve();
-    // Walking parts → chapters → brief must not restart the theme.
+    // Moving between menu screens must not restart the theme.
     expect(created.reduce((sum, a) => sum + a.playCalls, 0)).toBe(callsAfterFirst);
   });
 
   it("switches decks for a different role", async () => {
     const { controller } = makeController();
     controller.unlock();
-    controller.play("story");
+    controller.play("menu");
     await Promise.resolve();
     controller.play("battle");
     await Promise.resolve();
@@ -106,7 +106,7 @@ describe("role switching", () => {
 describe("autoplay gate", () => {
   it("does not start before a user gesture", async () => {
     const { controller, created } = makeController();
-    controller.play("story");
+    controller.play("menu");
     await Promise.resolve();
     expect(controller.isUnlocked).toBe(false);
     expect(created.every((a) => a.playCalls === 0)).toBe(true);
@@ -114,11 +114,11 @@ describe("autoplay gate", () => {
 
   it("plays whatever was pending on the first gesture", async () => {
     const { controller, created } = makeController();
-    controller.play("story");
+    controller.play("menu");
     controller.unlock();
     await Promise.resolve();
     expect(controller.isUnlocked).toBe(true);
-    expect(created.some((a) => a.src === MUSIC_TRACKS.story.src)).toBe(true);
+    expect(created.some((a) => a.src === MUSIC_TRACKS.menu.src)).toBe(true);
   });
 });
 
@@ -133,7 +133,7 @@ describe("missing files", () => {
     await Promise.resolve();
     expect(controller.isDeadSource(MUSIC_TRACKS.battle.src)).toBe(true);
 
-    controller.play("story");
+    controller.play("menu");
     await Promise.resolve();
     controller.play("battle");
     await Promise.resolve();
@@ -154,11 +154,11 @@ describe("missing files", () => {
     controller.play("battle");
     await Promise.resolve();
     await Promise.resolve();
-    controller.play("story");
+    controller.play("menu");
     await Promise.resolve();
 
-    expect(controller.currentRole).toBe("story");
-    expect(FakeAudio.attempts).toContain(MUSIC_TRACKS.story.src);
+    expect(controller.currentRole).toBe("menu");
+    expect(FakeAudio.attempts).toContain(MUSIC_TRACKS.menu.src);
   });
 });
 
@@ -208,7 +208,7 @@ describe("stop", () => {
   it("pauses every deck and clears the current role", async () => {
     const { controller, created } = makeController();
     controller.unlock();
-    controller.play("story");
+    controller.play("menu");
     await Promise.resolve();
     controller.stop();
     expect(controller.currentRole).toBeNull();
@@ -222,7 +222,7 @@ describe("manifest", () => {
   });
 
   it("keeps every other role looping", () => {
-    const looping = (["menu", "story", "storyScene", "battle"] as const).every(
+    const looping = (["menu", "battle"] as const).every(
       (role) => MUSIC_TRACKS[role].loop,
     );
     expect(looping).toBe(true);

@@ -1,36 +1,5 @@
 [
   {
-    "id": "first-chapter",
-    "title": "Clear your first stage",
-    "hint": "The story is where everything starts.",
-    "route": "/story",
-    "routeLabel": "Story",
-    "goal": {
-      "type": "stagesCleared",
-      "count": 1
-    },
-    "reward": {
-      "gems": 50
-    },
-    "step": 1
-  },
-  {
-    "id": "lyra-joins",
-    "title": "See Chapter 1 through to the end",
-    "hint": "Duke walks out of his village alone. He won't be alone on the road for long.",
-    "route": "/story",
-    "routeLabel": "Story",
-    "goal": {
-      "type": "stageCleared",
-      "chapterId": "c1",
-      "stageId": "s5"
-    },
-    "reward": {
-      "character": "lyra"
-    },
-    "step": 1
-  },
-  {
     "id": "first-summon",
     "title": "Summon eleven times",
     "hint": "A multi is eleven pulls for the price of ten.",
@@ -67,7 +36,7 @@
     "id": "first-preset",
     "title": "Save a team preset",
     "hint": "Build a team once, load it anywhere.",
-    "route": "/story",
+    "route": "/events",
     "routeLabel": "Team picker",
     "goal": {
       "type": "presetsSaved",
@@ -136,7 +105,7 @@
   {
     "id": "roster-six",
     "title": "Field a roster of six",
-    "hint": "Summons and story rewards both add characters. Six gives you a bench.",
+    "hint": "Summons add characters. Six gives you a bench.",
     "route": "/gacha",
     "routeLabel": "Summon",
     "goal": {

@@ -1,39 +1,30 @@
-import { emptyRunSummary, type StageRunSummary } from "@/lib/game/stageMissions";
-import type { StoryTeamPick } from "@/types/story";
 import type { StageEffect } from "@/types/stageEffects";
+import type { TeamPick } from "@/types/teamPick";
 
 /**
- * A stage run in progress — the fight loop's state, kept pure.
+ * A fight run in progress — several fights on one HP bar, kept pure.
  *
- * A stage is 1–3 fights fought back to back. **HP carries over and the fallen stay
- * down** (his ruling #103), so the run — not the battle — owns who is still
- * standing and at what. `BattleProvider` builds each fight from `carryHp`, which
- * is exactly what this produces.
+ * A run is 1–N fights fought back to back. **HP carries over and the fallen
+ * stay down** (his ruling #103), so the run — not the battle — owns who is
+ * still standing and at what. `BattleProvider` builds each fight from
+ * `carryHp`, which is exactly what this produces.
  *
- * Deliberately not in the store and not in React: the interesting rules here are
- * arithmetic (who survived, what the run is worth, whether the stage is done) and
- * they are worth testing without mounting a provider. The screen holds one of
- * these in state and hands it back on every fight result.
+ * Deliberately not in the store and not in React: the interesting rules here
+ * are arithmetic (who survived, whether the run is done) and they are worth
+ * testing without mounting a provider. The screen holds one of these in state
+ * and hands it back on every fight result.
  *
- * **Not story-specific.** It was, until the First Ascension Trial needed the
- * same three-fights-one-HP-bar rule from the events board (2026-09-16). What it
- * actually needs is an id and a list of fights, so that is what it asks for —
- * `RunnableEncounter`, which `StoryStage` satisfies structurally without
- * changing. The alternative was authoring a trial as a fake story stage, which
- * would have dragged scenes, missions, chapter rewards and an origin tag along
- * with it, none of which a trial has.
+ * **History.** This was `lib/game/stageRun.ts`, built for story mode's stages
+ * and shared with the First Ascension Trial from 2026-09-16. Story mode was
+ * removed on 2026-09-26; the mission summary and retry flag it carried for
+ * story went with it, and the "stage" vocabulary became "fight run".
  */
 
-/**
- * The minimum a thing needs to be fought as a run.
- *
- * `StoryStage` matches this already. An events-board encounter provides the
- * same two fields and nothing else.
- */
+/** The minimum a thing needs to be fought as a run: an id and its fights. */
 export interface RunnableEncounter {
   id: string;
   fights: {
-    enemies: StoryTeamPick[];
+    enemies: TeamPick[];
     stageEffects?: StageEffect[];
     victoryAtEnemyHpPercent?: number;
   }[];
@@ -56,15 +47,15 @@ export interface FightOutcome {
    *
    * It has to be captured here because it exists nowhere else by the time a
    * break screen renders. `resetBattle()` empties `playerTeam`, and the pages
-   * call it *before* setting the break view - so the `maxHpOf` both of them
-   * used to pass fell through to `carryHp[id]`, making `max` equal `hp` and
-   * **every surviving bar read 100%** however hurt the team was. Under the
-   * no-heal rule (#103) that figure is the whole carry-on-or-abandon decision.
+   * call it *before* setting the break view - so a `maxHpOf` read from the
+   * store fell through to `carryHp[id]`, making `max` equal `hp` and **every
+   * surviving bar read 100%** however hurt the team was. Under the no-heal
+   * rule (#103) that figure is the whole carry-on-or-abandon decision.
    */
   maxHp: Record<string, number>;
 }
 
-/** What one won fight looked like. See `StageRunState.history`. */
+/** What one won fight looked like. See `FightRunState.history`. */
 export interface FightRecord {
   /** Player turns this fight took. */
   turns: number;
@@ -76,19 +67,14 @@ export interface FightRecord {
   carryHp: Record<string, number>;
 }
 
-export interface StageRunState {
-  /**
-   * Who owns this encounter — a chapter id for story, the event id for a
-   * trial. Named neutrally because the runner is shared; it was `chapterId`
-   * until the trial started using it.
-   */
-  ownerId: string;
-  stageId: string;
+export interface FightRunState {
+  /** The encounter being fought — an event id for a trial. */
+  encounterId: string;
   /** Which fight is being fought, 0-based. */
   fightIndex: number;
   fightCount: number;
   /** The lineup the run started with, resolved once on the brief. */
-  team: StoryTeamPick[];
+  team: TeamPick[];
   /** Character id → HP going into the next fight. A unit missing from here is
    *  either untouched (fight 1) or dead — `fallen` disambiguates. */
   carryHp: Record<string, number>;
@@ -110,23 +96,18 @@ export interface StageRunState {
    * need and neither could reconstruct from a running sum.
    */
   history: FightRecord[];
-  /** True once this run follows a defeat on the same stage. */
-  isRetry: boolean;
   /** Set when the last fight has been won. */
   complete: boolean;
 }
 
 export function beginRun(
-  ownerId: string,
-  stage: RunnableEncounter,
-  team: StoryTeamPick[],
-  isRetry = false,
-): StageRunState {
+  encounter: RunnableEncounter,
+  team: TeamPick[],
+): FightRunState {
   return {
-    ownerId,
-    stageId: stage.id,
+    encounterId: encounter.id,
     fightIndex: 0,
-    fightCount: stage.fights.length,
+    fightCount: encounter.fights.length,
     team,
     carryHp: {},
     fallen: [],
@@ -135,22 +116,21 @@ export function beginRun(
     rankUses: { 1: 0, 2: 0, 3: 0 },
     maxHp: {},
     history: [],
-    isRetry,
-    complete: stage.fights.length === 0,
+    complete: encounter.fights.length === 0,
   };
 }
 
 /**
  * Folds a won fight into the run.
  *
- * Fallen units accumulate across fights and are never revived — that permanence is
- * what makes `noLosses` mean something and what makes a 3-fight stage a resource
- * problem rather than three fights.
+ * Fallen units accumulate across fights and are never revived — that
+ * permanence is what makes a multi-fight run a resource problem rather than
+ * several separate fights.
  */
 export function applyFightOutcome(
-  state: StageRunState,
+  state: FightRunState,
   outcome: FightOutcome,
-): StageRunState {
+): FightRunState {
   const carryHp: Record<string, number> = {};
   for (const survivor of outcome.survivors) {
     carryHp[survivor.id] = Math.max(1, Math.round(survivor.hp));
@@ -192,43 +172,28 @@ export function applyFightOutcome(
 /**
  * The picks for the fight about to start: the run's lineup minus the fallen.
  *
- * Dropping the dead rather than sending them in at 0 HP keeps the rule visible in
- * the battle itself — a three-unit team really is a two-unit team in fight 2, with
- * the action economy that implies (`actionsForTurn`, ruling #59), which is most of
- * why losing a unit early hurts.
+ * Dropping the dead rather than sending them in at 0 HP keeps the rule visible
+ * in the battle itself — a three-unit team really is a two-unit team in fight
+ * 2, with the action economy that implies (`actionsForTurn`, ruling #59),
+ * which is most of why losing a unit early hurts.
  */
-export function fightTeam(state: StageRunState): StoryTeamPick[] {
+export function fightTeam(state: FightRunState): TeamPick[] {
   const fallen = new Set(state.fallen);
   return state.team.filter((pick) => !fallen.has(pick.id));
 }
 
 /** The current fight's authored enemies. */
 export function fightEnemies(
-  stage: RunnableEncounter,
-  state: StageRunState,
-): StoryTeamPick[] {
-  return stage.fights[state.fightIndex]?.enemies ?? [];
+  encounter: RunnableEncounter,
+  state: FightRunState,
+): TeamPick[] {
+  return encounter.fights[state.fightIndex]?.enemies ?? [];
 }
 
-/** True when every unit that started the run has fallen — the run is lost, and a
- *  retry restarts the stage and charges stamina again. */
-export function isWipe(state: StageRunState): boolean {
+/** True when every unit that started the run has fallen — the run is lost, and
+ *  a retry restarts it and charges stamina again. */
+export function isWipe(state: FightRunState): boolean {
   return fightTeam(state).length === 0;
-}
-
-/** What the missions are judged against once the last fight is won. */
-export function toSummary(state: StageRunState): StageRunSummary {
-  return {
-    ...emptyRunSummary(state.fightCount),
-    fightsCleared: state.fightIndex,
-    fightsTotal: state.fightCount,
-    turns: state.turns,
-    fielded: state.team.map((pick) => pick.id),
-    fallen: state.fallen,
-    ultimatesUsed: state.ultimatesUsed,
-    rankUses: state.rankUses,
-    isRetry: state.isRetry,
-  };
 }
 
 /**
@@ -242,7 +207,7 @@ export function toSummary(state: StageRunState): StageRunSummary {
  * bar drew full. See `FightOutcome.maxHp`.
  */
 export function runHealthBars(
-  state: StageRunState,
+  state: FightRunState,
 ): { id: string; hp: number; max: number }[] {
   const fallen = new Set(state.fallen);
   return state.team.map((pick) => {
@@ -275,7 +240,7 @@ export interface FightSummary {
  * left, not who took it. A fight that kills one unit outright and a fight that
  * chips everyone read differently, and both read correctly.
  */
-export function fightSummaries(state: StageRunState): FightSummary[] {
+export function fightSummaries(state: FightRunState): FightSummary[] {
   const pool = state.team.reduce(
     (sum, pick) => sum + (state.maxHp[pick.id] ?? 0),
     0,

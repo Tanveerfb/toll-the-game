@@ -1,19 +1,18 @@
-import { applyFightOutcome, type StageRunState } from "@/lib/game/stageRun";
+import { applyFightOutcome, type FightRunState } from "@/lib/game/fightRun";
 import type { BattleCharacter } from "@/types/character";
 import type { AnyBattleEvent } from "@/types/battleEvent";
 
 /**
  * Turning a finished battle into a folded fight.
  *
- * Extracted from `app/story/page.tsx` on 2026-09-16, when the First Ascension
- * Trial became the second screen to run fights. It was a `useCallback` closing
- * over the battle store; none of it is React and none of it is a combat rule,
- * so a second copy on the events page would have been a straight duplicate of
- * the one piece of fight logic that reads three separate store fields and has
- * to get all three right.
+ * Extracted from the story page on 2026-09-16, when the First Ascension Trial
+ * became the second screen to run fights. It reads three separate battle store
+ * fields and has to get all three right, which is why one copy is shared
+ * rather than one per screen. (Story mode was removed on 2026-09-26; the
+ * events board is its only caller now.)
  *
  * Takes the battle snapshot as an argument rather than reaching for the store,
- * which keeps it pure and testable — `lib/game/stageRun.ts` documents the same
+ * which keeps it pure and testable — `lib/game/fightRun.ts` documents the same
  * choice and the same reason.
  */
 export interface BattleSnapshot {
@@ -23,9 +22,9 @@ export interface BattleSnapshot {
 }
 
 export function foldFightFromBattle(
-  run: StageRunState,
+  run: FightRunState,
   battle: BattleSnapshot,
-): StageRunState {
+): FightRunState {
   const survivors = battle.playerTeam
     .filter((unit) => unit.currentHP > 0)
     .map((unit) => ({ id: unit.id, hp: unit.currentHP }));

@@ -2,16 +2,19 @@ import { z } from "zod";
 import step1Orders from "@/data/orders/step-1.json";
 import step2Orders from "@/data/orders/step-2.json";
 import { getCharacterById } from "@/lib/game/characterCatalog";
-import { materialLabel } from "@/lib/game/materials";
 
 /**
  * Bureau Orders — the starter objective list.
  *
  * The FTUE gap was two separate problems (`docs/STATUS.md`): *how do I take a
  * turn*, which coach marks answer, and *what do I do next*, which nothing
- * answered at all. A new account cleared chapter 1 and the game went quiet,
- * with 1,000 unmentioned gems in the wallet and a stamina bar whose purpose
- * was never stated.
+ * answered at all. A new account finished its first fights and the game went
+ * quiet, with 1,000 unmentioned gems in the wallet and a stamina bar whose
+ * purpose was never stated.
+ *
+ * Story mode was removed on 2026-09-26, and its four orders and the
+ * `stagesCleared` / `stageCleared` goal types went with it (restorable from
+ * commit `2f6b016`). That left each step at eight orders rather than ten.
  *
  * An order names a destination, a reason to go there, and pays for arriving.
  * It teaches a system by making you use it once, which beats a paragraph
@@ -24,12 +27,6 @@ import { materialLabel } from "@/lib/game/materials";
  */
 
 const goalSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("stagesCleared"), count: z.number().int().positive() }),
-  z.object({
-    type: z.literal("stageCleared"),
-    chapterId: z.string().min(1),
-    stageId: z.string().min(1),
-  }),
   z.object({ type: z.literal("pulls"), count: z.number().int().positive() }),
   z.object({ type: z.literal("characterLevel"), level: z.number().int().positive() }),
   z.object({
@@ -93,8 +90,8 @@ export type OrderGoal = z.infer<typeof goalSchema>;
 export type OrderReward = z.infer<typeof rewardSchema>;
 export type Order = z.infer<typeof orderSchema>;
 
-/** Fail loudly at load time on malformed order JSON — same policy as kits and
- *  story parts. A silently dropped order is a reward nobody can ever claim. */
+/** Fail loudly at load time on malformed order JSON — same policy as kits. A
+ *  silently dropped order is a reward nobody can ever claim. */
 const ORDERS: Order[] = z
   .array(orderSchema)
   .parse([...step1Orders, ...step2Orders]);
@@ -106,50 +103,6 @@ export const ORDER_STEPS: readonly number[] = [
 
 export function getStarterOrders(): Order[] {
   return ORDERS;
-}
-
-/**
- * The orders a specific stage satisfies.
- *
- * Story mode advertises these on the stage row and confirms them on the clear
- * summary, so a reward tied to a stage is visible *at* that stage. Before this,
- * `lyra-joins` — a free character for finishing a chapter — existed only inside
- * the Orders modal in the nav, and nothing on the stage that grants her said so
- * (ruling #104).
- *
- * Only `stageCleared` goals qualify. `stagesCleared` counts progress across the
- * whole arc, so it belongs to no single stage and pinning it to one would promise
- * the same reward on every stage the player opens.
- *
- * A goal may name a chapter that isn't adapted yet: it simply stays unmet until
- * that chapter ships, which is what keeps his authored intent intact while the
- * story is written one chapter at a time.
- */
-export function ordersForStage(chapterId: string, stageId: string): Order[] {
-  return ORDERS.filter(
-    (order) =>
-      order.goal.type === "stageCleared" &&
-      order.goal.chapterId === chapterId &&
-      order.goal.stageId === stageId,
-  );
-}
-
-/**
- * An order's reward in as few words as a ribbon allows — "Lyra", "125 Gems".
- *
- * A character is named alone even when the order also pays currency: the
- * character is the reason anyone cares, and a ribbon has room for one idea.
- */
-export function describeOrderReward(reward: OrderReward): string {
-  if (reward.character) {
-    return getCharacterById(reward.character)?.name ?? reward.character;
-  }
-  if (reward.gems) return `${reward.gems} Gems`;
-  if (reward.coin) return `${reward.coin} Coin`;
-  if (reward.permanentTicket) return `${reward.permanentTicket} Ticket`;
-  if (reward.autoClearTickets) return `${reward.autoClearTickets} Auto-Clear`;
-  const first = Object.entries(reward.materials ?? {})[0];
-  return first ? `${first[1]} ${materialLabel(first[0])}` : "Reward";
 }
 
 export function getOrdersForStep(step: number): Order[] {
@@ -185,14 +138,6 @@ export function isStepUnlocked(
  * flat shape is what makes these rules testable.
  */
 export interface OrderContext {
-  /**
-   * Cleared story stages, keyed `chapterId:stageId` — the same shape
-   * `storyStore.cleared` holds.
-   *
-   * The map rather than a count, because an order can name a *specific* stage:
-   * Lyra is given for finishing a chapter, not for clearing any N of them.
-   */
-  clearedStages: Record<string, boolean>;
   pulls: number;
   bossClears: number;
   presetsSaved: number;
@@ -229,29 +174,9 @@ function bestCharacterStat(
   return values.length > 0 ? Math.max(...values) : 0;
 }
 
-/**
- * How `storyStore` keys a cleared stage.
- *
- * Mirrors `stageKey` in `lib/game/storyCatalog.ts` rather than importing it: that
- * module validates every story JSON at load, and this one is pulled in by
- * `playerStore`, which half the app imports. `tests/orders.test.ts` asserts the
- * two formats agree, so the copy can't drift.
- */
-function stageProgressKey(chapterId: string, stageId: string): string {
-  return `${chapterId}:${stageId}`;
-}
-
 /** Raw progress toward a goal, before any capping. */
 export function measureGoal(goal: OrderGoal, context: OrderContext): number {
   switch (goal.type) {
-    case "stagesCleared":
-      return Object.values(context.clearedStages).filter(Boolean).length;
-    case "stageCleared":
-      return context.clearedStages[
-        stageProgressKey(goal.chapterId, goal.stageId)
-      ]
-        ? 1
-        : 0;
     case "pulls":
       return context.pulls;
     case "characterLevel":
@@ -279,9 +204,6 @@ function requirementOf(goal: OrderGoal): number {
       return goal.ascension;
     case "accountRank":
       return goal.rank;
-    case "stageCleared":
-      // A named stage is done or it isn't; there is no progress to show.
-      return 1;
     default:
       return goal.count;
   }

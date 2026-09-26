@@ -10,7 +10,7 @@ import {
   type CharacterData,
 } from "@/lib/game/characterCatalog";
 import { FIELD_CAP, TEAM_CAP } from "@/lib/game/format";
-import type { TeamPick } from "@/hooks/BattleProvider";
+import type { TeamPick } from "@/types/teamPick";
 
 /**
  * The practice bench.
@@ -270,6 +270,7 @@ export default function TeamSelect({
               onChange={setEnemyTeam}
               source="catalog"
               title="Opposing team"
+              side="enemy"
               showPresets={false}
               fieldCap={fieldCap}
             />

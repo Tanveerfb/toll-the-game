@@ -15,7 +15,7 @@ same as not having a ledger.
 - `docs/HANDOFF.md` — the ledger itself, under `## Design Rulings Ledger`.
   **Highest number as of 2026-08-19 is 108.** Read the actual tail before
   numbering; don't trust that figure.
-- `data/characters/*.json`, `data/story/*.json` — the **numbers**. The ledger
+- `data/characters/*.json` — the **numbers**. The ledger
   does not own them and must not restate them (see the guard below).
 - `AGENTS.md` — auto-loaded by every session. Where a working-style rule goes if
   it must survive a session that never opens `HANDOFF.md`.
