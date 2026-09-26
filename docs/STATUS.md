@@ -10,7 +10,9 @@ Living snapshot. Session history is folded to
 `components/ui/Screen.tsx` and `tests/layoutSystem.test.ts` allows **zero**
 hand-typed shells. Lyra has an approved card pose and an approved bow. Suite
 **1,556 unit / 125 files**, **17 browser / 3 files**, `next build` clean.
-Committed as `77b437a`.
+Committed as `77b437a`. **Kits are now designed in a separate private repo,
+`toll-kits`** (see the newest session log and `AGENTS.md` → Design
+Ownership) — imports and pending rulings arrive here from it.
 
 **Next:** `TeamPicker` (582 lines) filters but has **no search and no sort**,
 while `CharacterBrowser` next door has all three — the QOL benchmark ruling
@@ -19,8 +21,9 @@ needs no decision from him. See **Open items**.
 
 **Blocked on him:** notices (`content/news/notices/` holds only
 `_placeholder.mdx`), Lyra's C4 collar colour, PROVISIONAL #136, Molvarr's
-second-form naming, Chapter 11's *"training partners"* line, and installing
-`accelerate`.
+second-form naming, Chapter 11's *"training partners"* line, installing
+`accelerate`, and whether to retire this repo's `author_notes.md` now that
+`toll-kits` holds the live copy.
 
 **Don't trust:** **Confidence and gaps** is the only section separating checked
 from assumed. Short version: **no screen was opened in a browser this session**
@@ -376,6 +379,63 @@ eight findings in `Plans/2026-09-17-code-quality-audit.md` were not re-measured.
 - **Fixes (2026-07-12/13)** — Mustafa's Earth Stance: Fortress is a team-wide (aoe) DR stance, no ally pick; single-target attacks retarget to a living enemy when their marked target died mid-queue (focus-fire no longer wastes cards on a corpse).
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
 
+## Session log — 2026-09-26b: the kit workshop repo
+
+**Asked for:** somewhere to design kits from his phone, *"even when my PC is
+not remotely connected"*, holding **only** kit material, as its own GitHub
+repo. Built as **`github.com/Tanveerfb/toll-kits`**, private, cloned at
+`E:\Projects\toll-kits`, commits `fb0403a`, `92a0729`, `04fe38f` there.
+This repo changed by one `AGENTS.md` section only.
+
+**Why a separate repo, not a folder here:** `master` here deploys to
+production. A phone brainstorm should never be one push away from players. He
+leaned that way himself and picked the two remaining options when offered
+them: **private**, and **link the game repo for testing** rather than a
+paper-only workshop. Both are selections, not quotes.
+
+**What it holds.** It *mirrors* this repo, refreshed at session start from a
+disposable clone in its `.game/`: the 31 kits, `KIT_DESIGN.md`, the
+`kitwords`/`kitcheck` skills, the design sheets, and **88 of the 151 rulings**
+(the kit ones, extracted by `tools/sync.mjs`, checked byte-for-byte against
+`HANDOFF.md`). It *owns* the kits that are not official yet, **sorted by
+stage at his request**: `drafts/` (being made playable), `planned/` (Knuckle,
+Netero), `brainstorm/` (the DBZ set). They come from `author_notes.md`, split
+along his own labels and verified to concatenate to the original. Its
+`CLAUDE.md` carries the kit rules that used to live only in the PC's session
+memory. **A kit rule learned here must be copied there too**, or web sessions
+never see it.
+
+**Its tools drive the real engine, not a copy.** `audit` validates a draft
+against the schema, prints each skill as a player reads it, then runs **this
+repo's whole unit suite** with the draft injected. Two things were measured
+before that was trusted:
+
+- **Which tests a new kit fails by merely existing.** Exactly 3 of 1,559, all
+  art/VFX registration, so those two files are excluded. A hand-picked list of
+  six "kit tests" was written first and replaced once the measurement showed
+  the whole suite was usable.
+- **Falsified.** A 55% buff under "Greatly raises" fails the tier-word test by
+  name. And a blind spot turned up: `characterCatalog` **drops a
+  schema-invalid kit silently**, so with a schema failure every rule test
+  passed without seeing the draft. `audit` now refuses to run the tests in that
+  case and says why.
+
+**Observed, not investigated:** a mirror 1v1 (a copy of Gon against Gon) went
+**50–0 to the left side** in `npm run sim`. Side order decides a duel,
+another reason #57 forbids reading one format. Recorded in its `CLAUDE.md`.
+
+**Deferred, his call:** a web session **transferring** a kit here. The safe
+shape is a branch plus a pull request, never `master`, with a Vercel preview
+to playtest on the phone. Whether a session opened on one repo may push to
+another is unverified. He said the stage folders were enough *"for now"*.
+Until then, imports run from the PC per `AGENTS.md`.
+
+**Slips.** Three small config files in `toll-kits` were written through a
+shell heredoc against the standing rule; none contain a backslash and all
+three were exercised. The first sync compared bytes and reported a fresh
+Windows clone as stale (CRLF checkout vs LF generator). Fixed to compare text
+modulo line endings, and proved both ways.
+
 ## Session log — 2026-09-21/26: the card pose, and the last hand-typed shell
 
 **Two threads.** The art thread finished Lyra's card pose; the code thread
@@ -457,164 +517,9 @@ reverted from git, and the rewrite asserts every anchor, matches headings as
 `\n## Heading\n`, and refuses to write if the document shrinks or loses a
 section.
 
-## Session log — 2026-09-17/18: four screens, and three guards that never ran
+## Session log — 2026-09-17/18 — folded
 
-The longest session so far. Two threads ran through it: **screens got rebuilt
-from measurement**, and **three enforcement tests turned out to have been
-passing without ever checking anything.** The second thread is the one worth
-reading.
-
-### The three dead guards
-
-Each was green, each had a doc comment explaining what it caught, and each was
-blind. **Two of the three were found by accident** while doing something else,
-which is the part to take seriously.
-
-1. **`tests/touchTargets.test.ts`'s `title=` check skipped the events page.**
-   It walks back from the attribute to its tag with `lastIndexOf("<")` — and
-   `disabled={autoRuns < 1}` one line above put a `<` in the way, so the tag
-   regex failed and the loop `continue`d past a real offender. That offender
-   was Auto Clear's "why is this greyed out" message, **hover-only, invisible
-   on a phone** — exactly what ruling #125 exists to prevent. Guard now walks
-   back over candidate `<` positions until one actually opens a tag.
-
-2. **`tests/buttonPrimitive.test.ts` was flagging NOTHING, repo-wide.** Its
-   pattern `<button\b[\s\S]*?>` is non-greedy and stops at the first `>` —
-   which `onClick={() => ...}` supplies before the className on most buttons in
-   this codebase. It caught the events breadcrumb earlier the same day **only**
-   because that one passed `onClick={onBack}` with no arrow, and that single
-   hit is what made the guard look alive. Stripping arrows first takes the
-   count **from 0 to 15 across 12 files**, all now listed in `ALLOWED` as dated
-   debt. `touchTargets` documents this exact trap and strips `=>` in its own
-   walk-back; the sibling never did.
-
-3. **A blind spot still open, recorded rather than bodged.** The button guard
-   reads the className written *at the tag*, so a file holding its classes in a
-   constant (`const CHIP = "... uppercase tracking-label"`) shows the scanner
-   nothing. `components/news/NewsFeed.tsx` hid five buttons that way. Catching
-   it needs the constants resolved, not a wider regex.
-
-**The lesson is sharper than "write tests".** All three were written *because*
-someone had already been bitten, and all three were verified by watching them
-pass. `AGENTS.md` already says to prove a new guard fails before trusting that
-it passes; what this session adds is that **an old guard can stop working when
-the code around it changes shape**, and nothing announces that.
-
-### Headings and card numbers (rulings #141, #143)
-
-All **31 kits** now carry a `heading` — the title above the name — and a
-`cardNumber`, verified **100001–100031, all unique**. He named them; the drafting
-and the two rounds of rejection are in `Plans/2026-09-17-character-headings.md`,
-including the register correction that reset the first draft: *"we don't need to
-have their lore inside … it's more like a title, a nickname."*
-
-**The URL change has a finding under it.** He asked for *"the url would show the
-char id, not the names"* — but `id` **is** a name (`duke`, `batra`) and is the
-key every save's `roster` holds, so renumbering it would have invalidated stored
-rosters. `cardNumber` is a second, immutable, display-only identifier, the same
-split Dokkan's `/cards/<number>` uses. `/archive/[id]` →
-**`/archive/character/[cardNumber]`**; `archiveHref()` is the only place that
-path is spelled.
-
-The six generic enemies share **Common Foe**. The faction set offered first
-(Checkpoint / Bandit / Raider / Wilds) was dropped on inspection because it
-stutters against the names it sits above — *Raider* over **Raider**.
-
-### The layout system, built (`Plans/2026-09-17-layout-system.md` steps 1–4)
-
-`Screen` (3 variants), `Panel` + `PanelHeader`/`PanelBody`, `SectionHeader`, and
-three `--container-*` width tokens. **Eight spellings of three page shells**
-collapse to one component; **ten content widths** collapse to three.
-`tests/layoutSystem.test.ts` ratcheted hand-typed shells **13 → 11** as screens
-migrated and reached **0 on 2026-09-26**, when its measure was also tightened.
-It had matched the substring `terminal-grid` anywhere in a file, which counted a
-decorative div and two comments as shells; it now matches per **string literal**
-on `terminal-grid` + `screen-below-nav`. Falsified both ways — a real shell
-fails and names the file, the same classes in a comment do not.
-
-### Four screens
-
-- **Events** — `app/events/page.tsx` **1,289 → 539 lines**, now the state
-  machine only; markup lives in `components/game/events/` (6 new files).
-  Reward builders moved to `lib/game/worldBossPreview.ts`, killing the C6
-  duplication with `StageBrief`.
-- **Kit Preview → Kit Numbers** — see the amended entry above. The defect that
-  justified keeping it: **the ultimate rendered one row** because `buildKitRows`
-  never looped ult levels and `getDamageMultiplier` never read
-  `damageByUltLevel`. `damagePreview.ts` **1,413 → 1,195 lines** with the
-  per-character `switch` deleted.
-- **Growth modal** — rebuilt as tabs from mockups he chose between.
-  **One tap now takes a character Lv 1 → 20; that was 190 taps.**
-- **News** — rebuilt as option B, "new since your last visit" then archive,
-  with search added.
-
-### The growth modal, in detail
-
-`components/game/growth/` — `LevelTab`, `AscendTab`, `UltimateTab`, plus shared
-`CostChip` and `StatDelta`. Underneath: **`planLevelUp`** (17 tests) and the
-store action **`levelCharacterTo`**.
-
-- **The measurement that drove it:** `xpToNext = 100 × level`, manuals are
-  100/400/1000 XP, **one per tap** — so Lv 1→20 was **190 presses** on basics,
-  on the level the First Ascension Trial requires. The ultimate control in the
-  same modal had already solved this with a slider, its own comment saying five
-  confirmations were too many.
-- **Cheapest tier first**, because of ruling **#145**. Verified live: Lv 1→20
-  spent 120 basics and 18 advanced and **left all 31 premiums untouched**.
-- **The slider is gone.** The ladder is the control now — tap UL5, see
-  385% → 520%. He asked for this: *"it was better than before, but it's not the
-  best thing."*
-- **Two functions retired**: `feedManualToCharacter` and the pure `feedManual`
-  had zero callers once the UI went target-first, and both walked XP into
-  levels. Keeping them would have left two ways to level a character — the
-  inconsistency the rework had just removed from the UI. Single-manual
-  behaviour is still reachable by pinning one.
-- **Selectors, not `usePlayerStore()`**: the old panel held **2 of the app's 3
-  whole-store subscriptions** against 88 selectors elsewhere.
-
-### The news page (ruling #147)
-
-Option **B** of three drawn. **Two features on that page had never rendered**:
-the kind filter needs both kinds and there are **zero notices**
-(`notices/_placeholder.mdx` is excluded by `posts.ts`), and pagination needs
-more than `NEWS_PAGE_SIZE = 15` against **nine** posts. Both kept, both now
-attached to the archive.
-
-`searchFeed` is pure and tested (8 tests), title and summary only. Both news
-files moved onto `<Screen width="read">` — `--container-read` is 42rem, exactly
-the `max-w-2xl` they already used, so **no width moved**; what went is a
-hand-typed shell and the app's only `px-6` gutter.
-
-**A first-visit defect I introduced and caught in the browser:** with nothing
-stored, `hasUnreadNews(date, null)` is true for everything, so all nine posts
-landed under *"New since your last visit"* and the archive read "Nothing here
-yet". There was no last visit, so nothing is new since it.
-
-### Browser findings (things no test would have caught)
-
-- The events brief announced a **trial as "Standard" tier** —
-  `enemy?.tier === "elite" ? "Elite" : "Standard"` on an event that resolves no
-  enemy, while its last fight is Molvarr, who is elite.
-- The ascension ladder drew **A3 40, A4 40, A5 40** — `maxLevelForAscension`
-  clamps unknown bands to 40, and `ascension.ts` says in its own comment that a
-  lookup miss should read as "not costed yet". Uncosted tiers show `—` now.
-- The news first-visit split, above.
-
-### Rulings added
-
-**#142** map is not difficulty · **#143** card number in public, `id` in code ·
-**#144** redesigns start with several mockups · **#145** players are conservative
-with resources · **#146** mockups must be clickable · **#147** news answers
-"what changed while I was away". **#144 and #146 also went into `AGENTS.md`**,
-because they govern how work is done.
-
-### Verified at the end of this session
-
-`npm run check` — **1,542 tests / 125 files**, 3 pre-existing eslint warnings in
-`tests/duel.test.ts`. `npm run test:browser` — **17 tests / 3 files**.
-`NEXT_DIST_DIR=.next-verify npx next build` — clean, `.next-verify` removed,
-`tsconfig.json` reverted. **Committed as `525e335`.** His `:3000` was never touched; every browser check ran
-on a scratch build on `:3210`, killed by PID afterwards.
+Four screens, and three guards that never ran — [`archive/STATUS-2026-09.md`](archive/STATUS-2026-09.md).
 
 ## Session log — 2026-09-17 — folded
 
@@ -697,6 +602,12 @@ made untrue by the two sessions since.
 
 ### Believed but NOT verified
 
+- **`toll-kits` has never run in a real web session.** Everything was
+  tested on his PC and from a fresh clone there: the sync, the offline hook,
+  `audit` and `sim`. Not tested: whether claude.ai/code runs its
+  `SessionStart` hook, whether the cloud can reach github.com and the npm
+  registry, and whether he has to grant the Claude GitHub app access to the
+  new private repo first.
 - **Every visual judgement in the layout migration.** Nine screens changed
   shells and **six changed desktop width** (archive / NPC / kit page
   72→56rem, home 64→56, profile 48→56, gacha banner 42→56). Only the

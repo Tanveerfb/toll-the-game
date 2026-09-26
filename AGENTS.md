@@ -213,6 +213,35 @@ Tanveer owns skill names, mechanical effects, damage multipliers, and character-
 
 **Filler story content is allowed since 2026-08-18 (ruling #108), under approval.** Claude may draft filler stages, scenes and NPCs so story mode has enough to play — but **nothing enters the game unapproved**, filler must never contradict or resolve canon (source: `E:\Toll - Web toon`), and **NPC kit numbers stay his**: draft the role, personality and combat concept, then ask. Approved content is recorded in `Filler/Approved_chapter_N.md`, proposals and rejects in `Filler/Drafts.md`, and every filler stage and scene carries `origin: "filler"` in the JSON.
 
+**Kits are workshopped in a separate repo: `toll-kits`** (2026-09-26,
+`github.com/Tanveerfb/toll-kits`, private, cloned at `E:\Projects\toll-kits`).
+He designs kits there from his phone in Claude Code web sessions, kept apart
+from this repo because a push here is a production deploy. It **mirrors**
+this repo's kits, `KIT_DESIGN.md`, the kit rulings and the `kitwords` /
+`kitcheck` skills, and **owns** only its folders for kits that are not official
+yet (`drafts/`, `planned/`, `brainstorm/`), `practice/` and
+`decisions/PENDING.md`. Two jobs land here from it:
+
+- **Importing a kit.** Only a draft whose `draft.md` says **APPROVED FOR
+  IMPORT**. Copy `drafts/<id>/kit.json` into `data/characters/`, register it
+  in `lib/game/characterCatalog.ts`, give it the next free `cardNumber` (a
+  999xxx number there is a sim placeholder), add art and VFX registrations or
+  fallbacks, then run `kitcheck` and `npm run check`. Its `audit` tool has
+  already run this repo's unit suite against the draft, minus
+  `characterArt` / `characterVfx` - which are exactly the tests import work
+  fixes.
+- **Filing a ruling.** Each entry in its `decisions/PENDING.md` goes into the
+  ledger with the `ruling` skill, then is deleted there. **Also add the new
+  number to `KIT_RULINGS` in its `tools/sync.mjs`** - its `rules/RULINGS.md`
+  copies only listed or cited rulings, so an unlisted one never reaches the
+  sessions that asked for it.
+
+Changing a mirrored file here changes it there on the next session start, so
+nothing in this repo needs to know about the sync. **`author_notes.md` was
+copied there verbatim**, split by stage into `planned/` (Knuckle, Netero) and
+`brainstorm/` (the DBZ set), and those copies are meant to be the live ones; retiring
+this repo's copy is his call and has not been made.
+
 **Before drafting or rebalancing any kit, read `docs/design/KIT_DESIGN.md`.** It carries the stat bands, the wording rules, and the constraints that are easy to get wrong: buffs multiply so magnitudes stay small (self-buff 25/50/75, team-wide 20/30/50), one scaling stat per kit including heals, skill ranks never exceed 3, and inflating a stat silently buffs anything that scales off it.
 
 **A new event needs two answers, not one** (ruling #127, 2026-09-01). *When may it be seen* and *when may it be entered* are separate questions, and the events on the board answer them differently — the First Ascension Trial is visible at rank 1 and locked until 20, the Second is withheld entirely until the First is cleared. **Ask him for both before authoring an event**, and expect to ask: he said to log this so the question gets put to him if he forgets to volunteer it. `GameEvent.visibleWhen` carries the first; `requiredRank` and `eventLockReason` carry the second.
