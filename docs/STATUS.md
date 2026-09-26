@@ -1,4 +1,4 @@
-# Status — 2026-09-26
+# Status — 2026-09-27
 
 Living snapshot. Session history is folded to
 [`docs/archive/STATUS-2026-08.md`](archive/STATUS-2026-08.md) and
@@ -6,38 +6,37 @@ Living snapshot. Session history is folded to
 
 ## Start here
 
-**State:** The game has a design motif. **Shōnen Ink** (ruling #154) is live
-on every screen **except battle**, which still paints the retired Combat
-Terminal look, a mixed look in production by his choice. Every control is a
-customised shadcn primitive. The rules are in `docs/design-system.md`, and the
-order of work is `Plans/2026-09-26-shonen-ink-foundation.md` (phases 1–3 of 5
-done). Story mode stays removed (#152), and a battle stays locked (#153).
+**State:** **Shōnen Ink is on every screen, battle included.** The arena is a
+split page (#156): the enemy on the ground, you on paper. The character page
+leads with a card row, and Growth is its primary (#157). No code uses a
+Combat Terminal token. Every modal is a shadcn `Dialog` or `Sheet`. Story
+mode stays removed (#152), and a battle stays locked (#153).
 
-**Next:** **Phase 4, battle mockups first** (#144). He wants to be at his PC
-for it. Draw 2–3 options in `docs/design/mockups/` for how paper and ground
-split the arena, then build the one he picks.
+**Next:** **His phone playtest.** He is testing on his own phone and will
+report what is amiss. Fix that before anything else.
 
 **Blocked on him:**
-- Picking a battle mockup.
-- **His Molvarr playtest** → the trial's Molvarr level, then un-skip the parked
-  test in `tests/trialEncounter.test.ts`.
-- What fills the fifth bottom tab, and what leads the home hub now the story
-  card is gone.
-- Bureau Order steps are 8 against his "10 per step" rule.
-- A news post for the story removal.
-- Whether toll-kits gets the heredoc hook too.
-- Older, unchanged:
+- His phone-playtest findings.
+- Whether to do **phase 5**, which is now small: delete the Combat Terminal
+  tokens and classes from `globals.css`, and add the guards
+  (`Plans/2026-09-26-shonen-ink-foundation.md`).
+- **His Molvarr playtest**, which sets the trial's Molvarr level. Then
+  un-skip the parked test in `tests/trialEncounter.test.ts`.
+- Unchanged:
+  - what fills the fifth tab, and what leads the home hub
+  - order steps (8 vs 10)
+  - a news post for the story removal
+  - the toll-kits heredoc hook
   - notices
   - Lyra's C4 collar colour
   - PROVISIONAL #136
   - Molvarr's second-form naming
-  - installing `accelerate`
-  - retiring `author_notes.md`
+  - `accelerate`
+  - `author_notes.md`
 
-**Don't trust:** the **taste** of any restyled screen, which is his to judge
-and hasn't been judged. Geometry and behaviour were checked at 390px. Also
-unverified: the **signed-in** profile page, its dialogs, and the dev grant
-panel. See **Confidence and gaps**.
+**Don't trust:** taste on any screen, which is his. Also unverified: the
+ultimate cut-in, the phase-break banner and the Victory card, which were
+restyled but not seen on screen. See **Confidence and gaps**.
 
 ## Working (implemented, tested, browser-verified)
 
@@ -388,6 +387,53 @@ panel. See **Confidence and gaps**.
 - **Fixes (2026-07-12/13)** — Mustafa's Earth Stance: Fortress is a team-wide (aoe) DR stance, no ally pick; single-target attacks retarget to a living enemy when their marked target died mid-queue (focus-fire no longer wastes cards on a corpse).
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
 
+## Session log — 2026-09-27: the battle in ink, and the character page's header
+
+**Phase 4, the battle.** Three options were drawn on one live fight
+(`docs/design/mockups/battle-ink.html`). He picked **C · split page**,
+ruling #156, in his words: *"Ownership reads without a label, which is good
+because uh, we don't want to keep the labels if it's obvious."* He also
+closed the flipped-arena cost himself: *"nothing planned that will put the
+user team on top so don't worry about that."* The build is recorded under
+"Phase 4 as built" in `Plans/2026-09-26-shonen-ink-foundation.md`.
+
+**What it retired:**
+- `DetailOverlay`, `card.tsx`, and `Panel`'s four Combat Terminal surfaces.
+  Every modal is now the shadcn `Dialog` or `Sheet`.
+- `overlayStacking`'s hand-built-portal checks. It now bans hand-built
+  overlays outright, and was proven red first.
+
+**Three layout bugs the browser found, not the suite:**
+- **The 4v4 field ran off the right edge.** A grid's `auto` column grew to the
+  tiles' min width: 381px in a 366px gutter.
+- **The same bug in the `Dialog` primitive.** A 384px table widened every
+  dialog past the phone. Fixed once, in `components/ui/dialog.tsx`.
+- **One queued action hid the other two slots.** The 2026-09-01 finding came
+  back through filled slots, which were `max-w-44` rather than `flex-1`.
+
+**The character page (#157).** His read: the portrait was *"too big
+especially on the phone"*, and Growth and Preview should be *"more like
+attention heavy ... Especially the growth one."* Three headers were drawn
+beside today's, measured live
+(`docs/design/mockups/character-header.html`). He chose **B · Card row**,
+the option label, over the recommended A.
+- A 3:4 thumbnail beside the name, and the stats in one row.
+- **Growth** is the yellow primary. **Preview** uses a new `Button` variant,
+  `ink`.
+- Growth's bottom edge moved from 772px (the fold) to 409px at 390×844. The kit
+  now starts on the first screen.
+
+**Slips, recorded so they are not repeated:**
+- `grep -c $'\r'` reported 0 for five CRLF files. Two patch scripts then
+  failed their anchors, which is now in `AGENTS.md`.
+- Two `python -` calls waited on stdin and hung. Always pass `</dev/null`, or
+  a script path.
+- `git rm` staged two deletions without a trigger. They were unstaged at once.
+
+**Asked for:** this checkpoint, as `git checkpoint`, *"after the adjustment
+i asked"*: the header.
+
+
 ## Session log — 2026-09-26d: Shōnen Ink, and shadcn for every control
 
 **Asked for:** *"we are working on keeping the css and component foundation
@@ -548,62 +594,9 @@ toll-kits.
 - A news post for the removal.
 - Archive's nav icon, which could take back `BookOpen` now story's gone.
 
-## Session log — 2026-09-26b: the kit workshop repo
+## Session log — 2026-09-26b — folded
 
-**Asked for:** somewhere to design kits from his phone, *"even when my PC is
-not remotely connected"*, holding **only** kit material, as its own GitHub
-repo. Built as **`github.com/Tanveerfb/toll-kits`**, private, cloned at
-`E:\Projects\toll-kits`, commits `fb0403a`, `92a0729`, `04fe38f` there.
-This repo changed by one `AGENTS.md` section only.
-
-**Why a separate repo, not a folder here:** `master` here deploys to
-production. A phone brainstorm should never be one push away from players. He
-leaned that way himself and picked the two remaining options when offered
-them: **private**, and **link the game repo for testing** rather than a
-paper-only workshop. Both are selections, not quotes.
-
-**What it holds.** It *mirrors* this repo, refreshed at session start from a
-disposable clone in its `.game/`: the 31 kits, `KIT_DESIGN.md`, the
-`kitwords`/`kitcheck` skills, the design sheets, and **88 of the 151 rulings**
-(the kit ones, extracted by `tools/sync.mjs`, checked byte-for-byte against
-`HANDOFF.md`). It *owns* the kits that are not official yet, **sorted by
-stage at his request**: `drafts/` (being made playable), `planned/` (Knuckle,
-Netero), `brainstorm/` (the DBZ set). They come from `author_notes.md`, split
-along his own labels and verified to concatenate to the original. Its
-`CLAUDE.md` carries the kit rules that used to live only in the PC's session
-memory. **A kit rule learned here must be copied there too**, or web sessions
-never see it.
-
-**Its tools drive the real engine, not a copy.** `audit` validates a draft
-against the schema, prints each skill as a player reads it, then runs **this
-repo's whole unit suite** with the draft injected. Two things were measured
-before that was trusted:
-
-- **Which tests a new kit fails by merely existing.** Exactly 3 of 1,559, all
-  art/VFX registration, so those two files are excluded. A hand-picked list of
-  six "kit tests" was written first and replaced once the measurement showed
-  the whole suite was usable.
-- **Falsified.** A 55% buff under "Greatly raises" fails the tier-word test by
-  name. And a blind spot turned up: `characterCatalog` **drops a
-  schema-invalid kit silently**, so with a schema failure every rule test
-  passed without seeing the draft. `audit` now refuses to run the tests in that
-  case and says why.
-
-**Observed, not investigated:** a mirror 1v1 (a copy of Gon against Gon) went
-**50–0 to the left side** in `npm run sim`. Side order decides a duel,
-another reason #57 forbids reading one format. Recorded in its `CLAUDE.md`.
-
-**Deferred, his call:** a web session **transferring** a kit here. The safe
-shape is a branch plus a pull request, never `master`, with a Vercel preview
-to playtest on the phone. Whether a session opened on one repo may push to
-another is unverified. He said the stage folders were enough *"for now"*.
-Until then, imports run from the PC per `AGENTS.md`.
-
-**Slips.** Three small config files in `toll-kits` were written through a
-shell heredoc against the standing rule; none contain a backslash and all
-three were exercised. The first sync compared bytes and reported a fresh
-Windows clone as stale (CRLF checkout vs LF generator). Fixed to compare text
-modulo line endings, and proved both ways.
+The kit workshop repo, toll-kits — [`archive/STATUS-2026-09.md`](archive/STATUS-2026-09.md).
 
 ## Session log — 2026-09-21/26 — folded
 
@@ -671,58 +664,43 @@ on 2026-08-20. Each line below is one section in that file.
 ## Confidence and gaps
 
 Rewritten every checkpoint. **This section is what stops the rest of the
-document being read as uniformly solid.** Rewritten 2026-09-26d. The previous
-version said no screen had been opened in a browser, which is no longer true
-for any screen except battle.
+document being read as uniformly solid.** Rewritten 2026-09-27. The previous
+version listed battle as unconverted.
 
 ### Verified in this session, by running it
 
 - `npm run check` — **1,521 passed, 1 skipped / 124 files**, typecheck and
-  lint clean. The skip is the trial tuning test, parked on purpose (below).
-- `npm run test:browser` — **17 / 3 files**, run after the hand-card name
-  change, which is the geometry `hand.browser.test.tsx` pins.
-- **Every restyled screen opened in the browser pane at 390px**, on a scratch
-  dev server on `:3210` (`verify-dev` in `.claude/launch.json`), never his
-  `:3000`. Covered:
-  - the home hub
-  - the archive, a kit page and the NPC page
-  - the events board, the brief and the trial rail
-  - team select, including preset naming
-  - login
-  - gacha: the confirm dialog, the rates and featured dialogs, the milestone
-    picker and a pull reveal
-  - news
-  - the error page
-
-  Checked: geometry, overflow, focus return and 44px targets.
-- **One battle** was entered from practice and left through the lock's own
-  forfeit (*Exit battle → Exit — take the loss*), as he instructed.
-- **Guards falsified, not assumed:** `tests/cn.test.ts` was red before the
-  `extendTailwindMerge` fix, and green after.
-- **Carried from 2026-09-26c, still true:** the trial's clear rate against
-  Molvarr's level, 180 runs a row with a Lv20 balanced team:
-
-  | Molvarr level | Clear rate |
-  | --- | --- |
-  | Lv1 | 96.1% |
-  | Lv6 | 79.4% |
-  | Lv10 | 52.8% |
-  | Lv14 | 24.4% |
-  | Lv18 | 12.2% |
-  | Lv24 (authored) | 2.2% |
+  lint clean. The skip is the trial tuning test, parked on purpose.
+- `npm run test:browser` — **17 / 3 files**, run after the hand, log drawer,
+  deck and dialog changes.
+- **A live 4v4 at 390×844 on the scratch server (`:3210`):**
+  - The field holds its geometry: both rows sit at 12–378px, with 47px cards.
+  - Tested: focus fire ("2 incoming"), queueing, End, and a red damage chip.
+  - Opened: the controls sheet, the log drawer, the unit panel and its effects
+    dialog, and a card held for 1.5s.
+  - Left the permitted way (#153): Exit → take the loss → Defeat → Main menu.
+- **The character page at 390 and 1280**, owned and not owned (this browser's
+  own roster was edited, then restored). No overflow at either width, and the
+  Growth dialog opens.
+- **Guards falsified:** `overlayStacking` went red on an injected
+  `fixed inset-0` overlay.
+- **Carried, still true:** the trial's clear rate against Molvarr's level (180
+  runs a row, Lv20 team) is Lv1 96.1%, Lv6 79.4%, Lv10 52.8%, Lv14 24.4%,
+  Lv18 12.2%, and Lv24 (authored) 2.2%.
 
 ### Believed but NOT verified
 
-- **Taste.** Every restyled screen is geometry-checked, and **none has been
-  judged by him.** That pass is his, per #139.
-- **The signed-in profile page**, its account and inventory dialogs, and
-  `DevGrantPanel`. The pane had no signed-in session, so none of these were
-  opened.
-- **Desktop width** was checked only for the shell (1280px), not per screen.
-- From 2026-09-26c, still open:
-  - a reload resuming a boss fight, or its reward card
-  - the back button bouncing off the lock
-  - `toll-kits` in a real web session
+- **Taste**, on every screen. That pass is his (#139); he is doing it on his
+  phone next.
+- **Not seen on screen:** the ultimate cut-in, the phase-break banner and a
+  Victory card. The pane does not run CSS animations, and the fight was
+  forfeited.
+- **Not opened:** the signed-in profile page, its dialogs, and
+  `DevGrantPanel`.
+- **Open since 2026-09-26c:**
+  - a reload resuming a boss fight
+  - the back button against the lock
+  - `toll-kits` in a web session
   - Lyra's C1/C2 poses
 
 ### Untested by anything
@@ -730,15 +708,14 @@ for any screen except battle.
 - **A reload *between* two trial fights still loses the run** (a gap in #153).
 - **Two `lib/game` modules have no test:** `worldBossPreview.ts`, `immunity.ts`.
 - **No screen flow is tested** (audit finding S2).
-- **No card art is wired into any screen.**
+- **The audio SFX files do not exist**: `/audio/sfx/hit.ogg` 404s in battle.
+  They were never supplied.
 
 ### What I would check first coming back cold
 
-1. Open `/dev/ui` on a scratch server. Every primitive in the Shōnen Ink look
-   is on one page, and a broken token shows there first.
-2. Grep for the legacy tokens (`bg-panel`, `text-readout`, `border-edge`,
-   `chamfer`) outside `components/game/battle/`. Anything found is a straggler
-   that phase 3 missed.
+1. Read his phone-playtest notes, if he has sent them.
+2. Grep for Combat Terminal token names in `app`, `components`, `hooks` and
+   `lib`. Anything found outside a comment is a regression.
 3. Read `docs/design-system.md` before touching any screen.
 
 ## Open Issues

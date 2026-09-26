@@ -9,6 +9,10 @@
  * tile's ULT READY flag and on the queue chip. So the merge ladder is one
  * achromatic ramp (dim -> strong -> bright readout) and gold belongs solely
  * to the ultimate, which is a separate tier, not "beyond R3".
+ *
+ * **On paper since 2026-09-27** (ruling #156 put the hand on the player's
+ * paper sheet): the ramp is now ink, grey -> ink -> heavy ink with an ink
+ * bar. Border widths are unchanged, so the 47px card's geometry is too.
  */
 
 export type CardFrameTier = "r1" | "r2" | "r3" | "ultimate";
@@ -25,18 +29,18 @@ export interface CardFrameStyle {
 
 const R1_STYLE: Omit<CardFrameStyle, "starCount"> = {
   tier: "r1",
-  borderClass: "border border-edge",
+  borderClass: "border border-muted-foreground",
 };
 
 const R2_STYLE: Omit<CardFrameStyle, "starCount"> = {
   tier: "r2",
-  borderClass: "border border-edge-strong",
+  borderClass: "border border-border",
 };
 
 const R3_STYLE: Omit<CardFrameStyle, "starCount"> = {
   tier: "r3",
-  borderClass: "border-2 border-readout",
-  accentBarClass: "bg-readout",
+  borderClass: "border-2 border-border",
+  accentBarClass: "bg-card-foreground",
 };
 
 /**

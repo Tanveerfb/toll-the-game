@@ -554,11 +554,15 @@ body {
  * The ramp runs the five element hues in palette order, so the ultimate reads
  * as "all of them" rather than as a sixth colour competing with the five that
  * already mean something.
+ *
+ * The inside is `--frame-fill`, paper by default (every ultimate the player
+ * holds sits on their paper, #156). A caller with another fill sets the
+ * variable rather than restating the whole frame: the queued slot is yellow.
  */
 .frame-ultimate {
   border-color: transparent;
   background-image:
-    linear-gradient(var(--color-panel), var(--color-panel)),
+    linear-gradient(var(--frame-fill, var(--card)), var(--frame-fill, var(--card))),
     linear-gradient(
       90deg,
       var(--color-el-red),

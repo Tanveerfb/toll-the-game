@@ -26,13 +26,13 @@ export default function DuelWaitingOverlay(): React.JSX.Element | null {
           a colour the palette doesn't otherwise use — it should never be
           mistakable for normal play. Surfaces are on tokens; the violet
           accent stays as the tell. */}
-      <div className="pointer-events-auto flex items-center gap-3 border-2 border-violet-400/70 bg-panel/95 px-4 py-2.5 shadow-[0_18px_50px_rgba(0,0,0,0.6)] backdrop-blur-sm">
-        <span className="h-2 w-2 animate-pulse bg-violet-300" />
+      <div className="pointer-events-auto flex items-center gap-3 border-2 border-violet-400 bg-card px-4 py-2.5 text-card-foreground ink-slab">
+        <span className="h-2 w-2 animate-pulse bg-violet-400" />
         <div className="min-w-0">
-          <p className="font-heading text-sm tracking-label text-violet-200">
+          <p className="font-heading text-sm tracking-label">
             CLAUDE IS THINKING
           </p>
-          <p className="truncate font-body text-[10px] uppercase tracking-label text-readout-muted">
+          <p className="truncate font-body text-label uppercase tracking-label text-muted-foreground">
             {status || "Waiting for a move…"}
           </p>
         </div>

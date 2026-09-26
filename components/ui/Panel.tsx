@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 /**
- * A bordered surface sitting on the void.
+ * A bordered surface sitting on the ground: paper (Shōnen Ink, ruling #154).
  *
  * Measured 2026-09-17 (audit finding C3): `border border-edge-strong bg-panel`
  * typed by hand **15 times**, plus four one-off surface spellings around it.
@@ -23,25 +23,13 @@ import { cn } from "@/lib/utils";
 const panelVariants = cva("border", {
   variants: {
     /**
-     * Which surface.
-     *
-     * **`paper` is Shōnen Ink's (ruling #154)**: ink on paper, a 2px ink
-     * outline. Screens move onto it one pass at a time
-     * (`Plans/2026-09-26-shonen-ink-foundation.md`, phase 3), so the four
-     * Combat Terminal surfaces below stay until their last caller has moved,
-     * and are deleted in phase 5. Never pick one of them for new work.
+     * Which surface. One, now: ink on paper with a 2px ink outline. The four
+     * Combat Terminal surfaces (`panel`, `quiet`, `inset`, `raised`) were
+     * deleted on 2026-09-27 when the battle, their last screen, moved over
+     * (ruling #156). Kept as a variant so a second surface is a data change.
      */
     surface: {
-      /** Shōnen Ink: the panel content is read on. */
       paper: "border-2 border-border bg-card text-card-foreground",
-      /** LEGACY (Combat Terminal). The default: a panel the eye should land on. */
-      panel: "border-edge-strong bg-panel",
-      /** A quieter block inside or beside a `panel`. */
-      quiet: "border-hairline bg-panel",
-      /** Recessed — inputs, wells, the ground under a grid of tiles. */
-      inset: "border-edge bg-inset",
-      /** Lifted, for the one thing on the screen that outranks the rest. */
-      raised: "border-edge-strong bg-panel-raised",
     },
     density: {
       /** List rows and chips. */
@@ -74,7 +62,7 @@ const panelVariants = cva("border", {
     },
   },
   defaultVariants: {
-    surface: "panel",
+    surface: "paper",
     density: "default",
     lift: "none",
     press: false,
@@ -115,8 +103,7 @@ export function PanelHeader({
   return (
     <div
       className={cn(
-        // Paper (ruling #154). Both callers (the clear summaries) are paper
-        // panels; the legacy surfaces never had a header.
+        // Paper (ruling #154), like every panel.
         "border-b-2 border-border bg-muted px-5 py-4",
         className,
       )}

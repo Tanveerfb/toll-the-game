@@ -2,7 +2,8 @@
 
 import React from "react";
 import Image from "next/image";
-import DetailOverlay from "@/components/game/DetailOverlay";
+import { Badge } from "@/components/ui/badge";
+import MountedDialog from "@/components/ui/MountedDialog";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { getCharacterById, getCharacterKit } from "@/lib/game/characterCatalog";
 import { ELEMENT_SWATCH } from "@/lib/game/elementSwatch";
@@ -33,7 +34,7 @@ export default function TeamDetailsList({
   onClose: () => void;
 }): React.JSX.Element {
   return (
-    <DetailOverlay title={title} onClose={onClose}>
+    <MountedDialog title={title} onClose={onClose} className="sm:max-w-lg">
       <div className="space-y-2">
         {team.map((unit) => {
           const art = getCharacterArt(unit.id);
@@ -48,9 +49,9 @@ export default function TeamDetailsList({
               key={unit.instanceId}
               type="button"
               onClick={() => onSelectUnit(unit)}
-              className={`flex w-full items-center gap-3 border border-hairline bg-inset/40 px-3 py-2 text-left transition-colors hover:border-edge-strong ${isDead ? "opacity-50" : ""}`}
+              className={`flex min-h-11 w-full items-center gap-3 border-2 border-border bg-card px-3 py-2 text-left transition-colors hover:bg-muted ${isDead ? "opacity-50" : ""}`}
             >
-              <div className="relative h-12 w-12 shrink-0 overflow-hidden border border-edge">
+              <div className="relative h-12 w-12 shrink-0 overflow-hidden border-2 border-border bg-muted">
                 {art ? (
                   <Image
                     src={art}
@@ -60,7 +61,7 @@ export default function TeamDetailsList({
                     className={`object-cover object-top ${isDead ? "grayscale" : ""}`}
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center font-heading text-lg text-readout-strong/80">
+                  <span className="flex h-full w-full items-center justify-center font-heading text-lg">
                     {unit.name.charAt(0)}
                   </span>
                 )}
@@ -70,25 +71,17 @@ export default function TeamDetailsList({
                 className={`h-2.5 w-2.5 shrink-0 rotate-45 ${ELEMENT_SWATCH[unit.color]}`}
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-heading text-sm tracking-title text-readout-strong">
-                  {unit.name}
-                  {unit.isSub ? (
-                    <span className="ml-1.5 font-body text-[9px] uppercase tracking-label text-signal">
-                      Sub
-                    </span>
-                  ) : null}
-                  {isDead ? (
-                    <span className="ml-1.5 font-body text-[9px] uppercase tracking-label text-el-red">
-                      Down
-                    </span>
-                  ) : null}
+                <p className="flex min-w-0 items-center gap-1.5 font-heading text-sm tracking-title">
+                  <span className="truncate">{unit.name}</span>
+                  {unit.isSub ? <Badge variant="secondary">Sub</Badge> : null}
+                  {isDead ? <Badge variant="destructive">Down</Badge> : null}
                 </p>
-                <p className="truncate font-body text-[10px] uppercase tracking-label text-readout-muted">
+                <p className="truncate font-body text-label uppercase tracking-label text-muted-foreground">
                   {signature ?? "—"}
                 </p>
               </div>
-              <div className="shrink-0 text-right font-body text-[10px] uppercase tracking-label text-readout-dim">
-                <div className="text-readout tabular-nums">
+              <div className="shrink-0 text-right font-body text-label uppercase tracking-label text-muted-foreground">
+                <div className="font-bold text-card-foreground tabular-nums">
                   {Math.max(0, unit.currentHP)}/{unit.hp}
                 </div>
                 <div className="tabular-nums">
@@ -99,6 +92,6 @@ export default function TeamDetailsList({
           );
         })}
       </div>
-    </DetailOverlay>
+    </MountedDialog>
   );
 }

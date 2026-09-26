@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Battle in Ink</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet" />
+<style>
+  /* Shonen Ink tokens, copied from styles/globals.css so this file stands
+     alone and reads as the game (docs/design-system.md). */
+  :root {
+    --bg: #0d0d10;
+    --fg: #f7f7f2;
+    --ground-dim: #b9b9b2;
+    --ground-raised: #1c1c21;
+    --ground-line: #33333a;
+    --halftone: #25252c;
+    --slab: #2b2b33;
+    --paper: #f5f5f0;
+    --paper-2: #e7e7df;
+    --ink: #111114;
+    --ink-2: #5d5d63;
+    --rule: rgba(93, 93, 99, 0.3);
+    --primary: #ffd400;
+    --destructive: #ff5a4e;
+    --el-light: #e8d174;
+    --el-red: #ff5a4e;
+    --el-blue: #37a6ff;
+    --el-green: #35d48b;
+    --el-dark: #a874ff;
+    --heading: "Bangers", Impact, "Arial Black", sans-serif;
+    --body: "M PLUS 1p", "Segoe UI", system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+  body {
+    background-color: var(--bg);
+    background-image: radial-gradient(var(--halftone) 1.1px, transparent 1.5px);
+    background-size: 7px 7px;
+    color: var(--fg);
+    font-family: var(--body);
+    line-height: 1.5;
+    padding-inline: 16px;
+    padding-block: 28px 80px;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+
+  /* ── page chrome (the document around the phones) ───────────────── */
+  .eyebrow {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--ground-dim);
+  }
+  h1 {
+    display: inline-block; margin-top: 8px;
+    font-family: var(--heading); font-weight: 400;
+    font-size: clamp(34px, 6vw, 52px); letter-spacing: 0.04em; line-height: 1;
+    color: var(--ink); background: var(--paper);
+    padding: 6px 16px 2px; transform: skewX(-8deg);
+    box-shadow: 5px 5px 0 var(--primary);
+  }
+  .lede { max-width: 68ch; margin-top: 18px; color: var(--ground-dim); font-size: 15px; }
+  .lede b { color: var(--fg); }
+
+  .picker {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; align-items: center;
+  }
+  .opt-tab {
+    min-height: 44px; padding: 0 16px;
+    font-family: var(--heading); font-size: 20px; letter-spacing: 0.06em;
+    background: var(--ground-raised); color: var(--ground-dim);
+    border: 2px solid var(--ground-line);
+  }
+  .opt-tab[aria-selected="true"] {
+    background: var(--paper); color: var(--ink); border-color: var(--ink);
+    transform: skewX(-8deg); box-shadow: 3px 3px 0 var(--primary);
+  }
+  .seg { display: flex; margin-left: auto; }
+  .seg button {
+    min-height: 44px; min-width: 56px; padding: 0 12px;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    border: 2px solid var(--ground-line); color: var(--ground-dim); background: var(--ground-raised);
+  }
+  .seg button + button { border-left: 0; }
+  .seg button[aria-pressed="true"] { background: var(--primary); color: var(--ink); border-color: var(--primary); }
+
+  .stage { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 20px; align-items: flex-start; }
+  .notes {
+    flex: 1 1 340px; min-width: 0;
+    background: var(--paper); color: var(--ink);
+    border: 2px solid var(--ink); box-shadow: 5px 5px 0 var(--slab);
+    padding: 18px 20px 20px;
+  }
+  .notes h2 {
+    font-family: var(--heading); font-weight: 400; font-size: 30px; letter-spacing: 0.04em; line-height: 1.05;
+  }
+  .notes .pos { margin-top: 6px; font-size: 15px; font-weight: 700; }
+  .notes h3 {
+    margin-top: 16px; padding-bottom: 3px; border-bottom: 1px solid var(--rule);
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2);
+  }
+  .notes ul { margin: 8px 0 0 18px; font-size: 14px; }
+  .notes li { margin-bottom: 5px; }
+  .notes p { margin-top: 8px; font-size: 14px; }
+  .meter { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin-top: 8px; font-size: 14px; }
+  .meter dt { color: var(--ink-2); }
+  .meter dd { font-weight: 800; font-variant-numeric: tabular-nums; }
+  .meter dd .bar { display: inline-block; vertical-align: middle; margin-left: 8px; width: 110px; height: 10px; border: 2px solid var(--ink); background: var(--paper-2); }
+  .meter dd .bar i { display: block; height: 100%; background: var(--ink); }
+  .how {
+    margin-top: 14px; padding: 8px 12px; border-left: 8px solid var(--primary);
+    background: var(--paper-2); font-size: 13px;
+  }
+  .compare { margin-top: 44px; }
+  .compare h2 {
+    display: inline-block; font-family: var(--heading); font-weight: 400; font-size: 28px; letter-spacing: 0.04em;
+    color: var(--ink); background: var(--paper); padding: 4px 12px 0; transform: skewX(-8deg);
+    box-shadow: 4px 4px 0 var(--primary);
+  }
+  .scroll-x { overflow-x: auto; margin-top: 16px; }
+  table { border-collapse: collapse; min-width: 640px; width: 100%; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+  td.n { font-variant-numeric: tabular-nums; font-weight: 800; }
+  .kept { margin-top: 28px; max-width: 72ch; color: var(--ground-dim); font-size: 14px; }
+  .kept b { color: var(--fg); }
+  .kept ul { margin: 8px 0 0 18px; }
+
+  /* ── the phone: 390x844, ruling #107 ───────────────────────────── */
+  .phone {
+    position: relative; flex: 0 0 auto;
+    width: 390px; max-width: 100%; height: 844px;
+    display: flex; flex-direction: column; overflow: hidden;
+    border: 2px solid var(--ground-line);
+    background-color: var(--bg);
+    background-image: radial-gradient(var(--halftone) 1.1px, transparent 1.5px);
+    background-size: 7px 7px;
+    user-select: none; -webkit-user-select: none; touch-action: manipulation;
+  }
+
+  .nav {
+    flex: 0 0 44px; display: flex; align-items: center; gap: 10px; padding: 0 12px;
+    border-bottom: 1px solid var(--ground-line); background: var(--bg);
+  }
+  .nav .logo { font-family: var(--heading); font-size: 22px; letter-spacing: 0.06em; }
+  .nav .locked { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ground-dim); }
+
+  .status {
+    flex: 0 0 34px; display: flex; align-items: center; gap: 10px; padding: 0 12px;
+  }
+  .status .turn { font-family: var(--heading); font-size: 18px; letter-spacing: 0.08em; }
+  .phase-badge {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 2px 8px; transform: skewX(-8deg);
+    background: var(--primary); color: var(--ink);
+  }
+  .phase-badge.enemy { background: var(--destructive); }
+  .status .prog { margin-left: auto; width: 64px; height: 6px; border: 1px solid var(--ground-line); background: var(--bg); }
+  .status .prog i { display: block; height: 100%; background: var(--primary); transition: width 250ms ease-out; }
+
+  .field { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 4px 8px 6px; gap: 2px; }
+  .side { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  .side-head {
+    flex: 0 0 20px; display: flex; align-items: center; justify-content: space-between;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ground-dim);
+  }
+  .ehand { display: flex; align-items: center; gap: 3px; }
+  .ehand i { width: 9px; height: 13px; border: 1px solid var(--ground-line); background: var(--ground-raised); }
+  .row { flex: 1 1 auto; min-height: 0; display: flex; gap: 6px; justify-content: center; align-items: stretch; padding: 4px 0; }
+  .slotwrap { position: relative; flex: 1 1 0; min-width: 0; max-width: 112px; }
+
+  .vs { flex: 0 0 28px; position: relative; display: flex; align-items: center; justify-content: center; }
+  .vs span { position: relative; z-index: 1; font-family: var(--heading); letter-spacing: 0.1em; }
+
+  /* ── unit tile (shared skeleton; each option paints it) ─────────── */
+  .tile {
+    position: relative; width: 100%; height: 100%;
+    display: flex; flex-direction: column; overflow: hidden; text-align: left;
+  }
+  .art { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; background: var(--ground-raised); }
+  .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .art .init { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--heading); font-size: 38px; opacity: 0.6; }
+  .plate { flex: 0 0 auto; padding: 3px 5px 5px; display: flex; flex-direction: column; gap: 3px; }
+  .nm { display: flex; align-items: center; gap: 4px; min-width: 0; font-family: var(--heading); font-size: 13px; letter-spacing: 0.06em; line-height: 1.1; }
+  .nm span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pip { flex: 0 0 8px; width: 8px; height: 8px; transform: rotate(45deg); background: var(--el); }
+  .hp { display: flex; align-items: baseline; gap: 2px; font-variant-numeric: tabular-nums; line-height: 1; }
+  .hp b { font-size: 15px; font-weight: 800; }
+  .hp small { font-size: 9px; font-weight: 700; }
+  .hpbar { height: 6px; }
+  .hpbar i, .ult i { display: block; height: 100%; transition: width 250ms ease-out; }
+  .ult { position: relative; height: 10px; }
+  .ult em { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 9px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+  .banner {
+    position: absolute; inset-inline: 0; z-index: 2;
+    font-size: 9px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; text-align: center; line-height: 1; padding: 3px 2px;
+  }
+  .banner.ready { top: 0; background: var(--el-light); color: var(--ink); }
+  .banner.incoming { bottom: 0; background: var(--destructive); color: var(--ink); }
+  /* An enemy's top-right corner belongs to the 44px focus-fire target, so its
+     ult banner sits on the portrait's bottom edge instead. */
+  .banner.ready.low { top: auto; bottom: 0; }
+  .banner.incoming.stacked { bottom: 15px; }
+  .down {
+    position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center;
+    background: rgba(13,13,16,0.6); font-family: var(--heading); font-size: 20px; letter-spacing: 0.14em; color: var(--destructive);
+  }
+  .tile.dead img { filter: grayscale(1) brightness(0.5); }
+  .brackets { position: absolute; inset: 3px; z-index: 2; pointer-events: none; }
+  .brackets i { position: absolute; width: 14px; height: 14px; border: 0 solid var(--destructive); }
+  .brackets i:nth-child(1) { left: 0; top: 0; border-left-width: 3px; border-top-width: 3px; }
+  .brackets i:nth-child(2) { right: 0; top: 0; border-right-width: 3px; border-top-width: 3px; }
+  .brackets i:nth-child(3) { left: 0; bottom: 0; border-left-width: 3px; border-bottom-width: 3px; }
+  .brackets i:nth-child(4) { right: 0; bottom: 0; border-right-width: 3px; border-bottom-width: 3px; }
+  .aim {
+    position: absolute; right: 0; top: 0; z-index: 4; width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .aim span { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+  .aim svg { width: 14px; height: 14px; }
+
+  /* ── tray: action row, hand, controls ──────────────────────────── */
+  .tray { flex: 0 0 auto; position: relative; }
+  .actionrow { display: flex; gap: 5px; padding: 6px 6px 4px; align-items: stretch; }
+  .btn {
+    min-height: 44px; min-width: 44px; display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .btn svg { width: 17px; height: 17px; flex-shrink: 0; }
+  .slots { flex: 1 1 auto; display: flex; gap: 4px; min-width: 0; }
+  .aslot {
+    flex: 1 1 0; min-width: 0; min-height: 44px; display: flex; align-items: center; gap: 4px; padding: 0 4px;
+    font-size: 9px; font-weight: 800; line-height: 1.1; overflow: hidden;
+  }
+  .aslot.empty { justify-content: center; font-family: var(--heading); font-size: 16px; font-weight: 400; }
+  .aslot img { width: 26px; height: 26px; object-fit: cover; object-position: top; flex-shrink: 0; }
+  .aslot .t { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .endturn {
+    min-height: 44px; padding: 0 16px 0 14px; display: flex; align-items: center; gap: 4px;
+    font-family: var(--heading); font-size: 19px; letter-spacing: 0.06em;
+    background: var(--primary); color: var(--ink);
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  }
+  .endturn:disabled { background: var(--ground-line); color: var(--ground-dim); cursor: not-allowed; }
+  .endturn svg { width: 16px; height: 16px; }
+
+  .hand { display: flex; gap: 2px; padding: 2px; }
+  .card {
+    position: relative; flex: 1 1 0; min-width: 44px; max-width: 96px; height: 107px;
+    display: flex; flex-direction: column; overflow: hidden; text-align: left;
+  }
+  .card .cart { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+  .card .cart img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .card .type { position: absolute; top: 0; right: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; color: var(--ink); z-index: 1; }
+  .card .type svg { width: 10px; height: 10px; }
+  .card .pips { position: absolute; left: 2px; bottom: 1px; z-index: 1; font-size: 8px; line-height: 1; letter-spacing: -0.5px; color: var(--fg); text-shadow: 0 0 2px #000, 0 0 2px #000; }
+  .card .cn { flex: 0 0 auto; padding: 2px 2px 0; font-size: 9px; font-weight: 700; line-height: 1.1; hyphens: auto; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 22px; }
+  .card .cp { flex: 0 0 auto; padding: 0 2px 2px; font-size: 9px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .card.queued { opacity: 0.35; }
+  .card .qn {
+    position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center;
+    font-family: var(--heading); font-size: 30px; color: var(--ink);
+  }
+  .card .qn span { background: var(--primary); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; transform: skewX(-8deg); }
+  .card.ultcard { padding: 2px; background: linear-gradient(135deg, var(--el-light), var(--el-red), var(--el-dark), var(--el-blue), var(--el-green)); }
+  .card.ultcard > .inner { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .controls { display: flex; gap: 5px; padding: 4px 6px 6px; }
+  .controls .btn { flex: 0 0 64px; }
+  .controls .btn.grow { flex: 1 1 auto; }
+
+  /* ── overlays ──────────────────────────────────────────────────── */
+  .fxlayer { position: absolute; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; }
+  .floater {
+    position: absolute; transform: translate(-50%, 0) skewX(-8deg);
+    font-family: var(--heading); font-size: 24px; letter-spacing: 0.04em; line-height: 1;
+    padding: 3px 8px 1px; border: 2px solid var(--ink); color: var(--ink);
+    animation: rise 700ms ease-out forwards;
+  }
+  .floater.dmg { background: var(--destructive); }
+  .floater.crit { background: var(--el-light); font-size: 30px; }
+  @keyframes rise {
+    0% { opacity: 0; translate: 0 8px; scale: 0.85; }
+    20% { opacity: 1; translate: 0 -6px; scale: 1; }
+    100% { opacity: 0; translate: 0 -40px; scale: 1; }
+  }
+  .shake { animation: shake 280ms ease-out; }
+  @keyframes shake {
+    0%, 100% { translate: 0 0; } 20% { translate: -4px 0; } 40% { translate: 4px 0; } 60% { translate: -3px 0; } 80% { translate: 2px 0; }
+  }
+  .cutin {
+    position: absolute; inset-inline: 0; top: 38%; z-index: 31; height: 112px;
+    display: flex; align-items: center; gap: 12px; padding: 0 16px;
+    background: var(--paper); color: var(--ink); border-block: 3px solid var(--ink);
+    transform: skewY(-4deg);
+    animation: slidein 900ms ease-out forwards;
+  }
+  .cutin::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background-image: repeating-conic-gradient(from 0deg at 20% 50%, transparent 0 3deg, rgba(17,17,20,0.08) 3deg 4deg);
+  }
+  .cutin img { width: 84px; height: 100px; object-fit: cover; object-position: top; border: 2px solid var(--ink); }
+  .cutin small { display: block; font-size: 10px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-2); }
+  .cutin b { display: block; font-family: var(--heading); font-weight: 400; font-size: 34px; line-height: 1; letter-spacing: 0.04em; }
+  @keyframes slidein {
+    0% { opacity: 0; translate: -100% 0; } 25% { opacity: 1; translate: 0 0; } 80% { opacity: 1; translate: 0 0; } 100% { opacity: 0; translate: 60% 0; }
+  }
+
+  .scrim { position: absolute; inset: 0; z-index: 40; background: rgba(13,13,16,0.72); display: flex; flex-direction: column; justify-content: flex-end; }
+  .sheet {
+    background: var(--paper); color: var(--ink); border-top: 3px solid var(--ink);
+    padding: 12px 14px 16px; max-height: 80%; overflow-y: auto;
+    animation: up 220ms ease-out;
+  }
+  @keyframes up { from { translate: 0 30px; opacity: 0; } to { translate: 0 0; opacity: 1; } }
+  .sheet .grab { display: block; width: 44px; height: 4px; margin: 0 auto 10px; background: var(--ink-2); }
+  .sheet h4 { font-family: var(--heading); font-weight: 400; font-size: 26px; letter-spacing: 0.04em; line-height: 1.05; }
+  .sheet .sub { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+  .sheet .rows { margin-top: 10px; border: 2px solid var(--ink); background: var(--paper-2); padding: 2px 10px; }
+  .sheet .rows div { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--rule); font-size: 13px; }
+  .sheet .rows div:last-child { border-bottom: 0; }
+  .sheet .rows span:first-child { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); align-self: center; }
+  .sheet .rows span:last-child { font-weight: 800; font-variant-numeric: tabular-nums; }
+  .sheet .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .sheet .pbtn { min-height: 56px; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+  .sheet .danger { grid-column: 1 / -1; min-height: 44px; border: 2px solid var(--destructive); color: var(--ink); background: color-mix(in srgb, var(--destructive) 25%, var(--paper)); }
+  .sheet .doc { margin-top: 10px; font-size: 13px; line-height: 1.6; }
+  .sheet .doc mark { color: var(--ink); background: linear-gradient(transparent 45%, var(--primary) 45%, var(--primary) 92%, transparent 92%); }
+  .sheet .chip { display: inline-block; padding: 1px 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink); transform: skewX(-8deg); }
+  .sheet .close { margin-top: 12px; width: 100%; min-height: 44px; border: 2px solid var(--ink); background: var(--paper); font-weight: 800; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+  .sheet .primary { margin-top: 12px; width: 100%; min-height: 48px; background: var(--primary); color: var(--ink); font-family: var(--heading); font-size: 22px; letter-spacing: 0.06em; box-shadow: 3px 3px 0 var(--slab); }
+
+  /* ══ OPTION A — Ground stage: paper only where you act ════════════ */
+  .opt-a .side-head { color: var(--ground-dim); }
+  .opt-a .vs span { font-size: 15px; color: var(--ground-dim); }
+  .opt-a .vs::before { content: ""; position: absolute; inset-inline: 0; top: 50%; height: 1px; background: var(--ground-line); }
+  .opt-a .vs span { background: var(--bg); padding: 0 8px; }
+  .opt-a .tile { background: var(--ground-raised); border: 2px solid var(--el); box-shadow: 4px 4px 0 var(--slab); color: var(--fg); }
+  .opt-a .plate { border-top: 2px solid var(--el); }
+  .opt-a .hp small { color: var(--ground-dim); }
+  .opt-a .hpbar { border: 1px solid var(--ground-line); background: var(--bg); }
+  .opt-a .hpbar i { background: var(--fg); }
+  .opt-a .tile.hurt .hpbar i { background: var(--destructive); }
+  .opt-a .tile.hurt .hp b { color: var(--destructive); }
+  .opt-a .ult { border: 1px solid var(--ground-line); background: var(--bg); }
+  .opt-a .ult i { background: color-mix(in srgb, var(--el-light) 35%, transparent); }
+  .opt-a .ult.full i { background: var(--el-light); }
+  .opt-a .ult em { color: var(--ground-dim); }
+  .opt-a .ult.full em { color: var(--ink); }
+  .opt-a .aim span { border: 1px solid var(--ground-line); background: rgba(13,13,16,0.75); color: var(--ground-dim); }
+  .opt-a .aim.on span { border-color: var(--destructive); background: var(--destructive); color: var(--ink); }
+  .opt-a .tray { background: var(--paper); color: var(--ink); }
+  .opt-a .btn.paper { border: 2px solid var(--ink); background: var(--paper); color: var(--ink); }
+  .opt-a .btn.paper.on { background: var(--primary); }
+  .opt-a .aslot.empty { border: 2px dashed var(--ink-2); color: var(--ink-2); }
+  .opt-a .aslot.filled { border: 2px solid var(--ink); background: var(--primary); color: var(--ink); }
+  .opt-a .endturn { filter: drop-shadow(3px 3px 0 var(--slab)); }
+  .opt-a .hand { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: var(--paper-2); }
+  .opt-a .card { border: 2px solid var(--ink); background: var(--paper); color: var(--ink); }
+  .opt-a .card .cart { border-bottom: 2px solid var(--ink); background: var(--paper-2); }
+  .opt-a .card .cp { color: var(--ink-2); }
+  .opt-a .card.ultcard { border: 0; }
+  .opt-a .card.ultcard > .inner { background: var(--paper); }
+
+  /* ══ OPTION B — Panel page: every fighter is a paper panel ════════ */
+  .opt-b .field { gap: 0; }
+  .opt-b .side-head { color: var(--ground-dim); }
+  .opt-b .vs { flex-basis: 40px; }
+  .opt-b .vs::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(-8deg, transparent 0 5px, rgba(247,247,242,0.09) 5px 6px);
+  }
+  .opt-b .vs span {
+    font-size: 30px; color: var(--ink); background: var(--primary); padding: 1px 14px 0;
+    transform: skewX(-8deg) rotate(-4deg); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--slab);
+  }
+  .opt-b .tile { background: var(--paper); border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--slab); color: var(--ink); }
+  .opt-b .art { margin: 3px 3px 0; border: 2px solid var(--ink); clip-path: polygon(0 0, 100% 0, 100% 90%, 0 100%); background: color-mix(in srgb, var(--el) 35%, var(--paper-2)); }
+  /* The slanted cut takes the bottom 10% of the portrait on one side; banners sit above it. */
+  .opt-b .banner.incoming, .opt-b .banner.ready.low { bottom: 14px; }
+  .opt-b .banner.incoming.stacked { bottom: 29px; }
+  .opt-b .nm { background: var(--el); margin: 0 -5px; padding: 2px 5px 1px; color: var(--ink); }
+  .opt-b .nm .pip { display: none; }
+  .opt-b .hp small { color: var(--ink-2); }
+  .opt-b .hpbar { border: 1.5px solid var(--ink); background: var(--paper-2); }
+  .opt-b .hpbar i { background: var(--ink); }
+  .opt-b .tile.hurt .hpbar i { background: var(--destructive); }
+  .opt-b .tile.hurt .hp b { background: color-mix(in srgb, var(--destructive) 45%, transparent); padding: 0 2px; }
+  .opt-b .ult { border: 1.5px solid var(--ink); background: var(--paper-2); }
+  .opt-b .ult i { background: color-mix(in srgb, var(--el-light) 55%, var(--paper-2)); }
+  .opt-b .ult.full i { background: var(--el-light); }
+  .opt-b .ult em { color: var(--ink); }
+  .opt-b .aim span { border: 2px solid var(--ink); background: var(--paper); color: var(--ink); }
+  .opt-b .aim.on span { background: var(--destructive); }
+  .opt-b .tray { background: transparent; color: var(--fg); border-top: 1px solid var(--ground-line); }
+  .opt-b .btn.paper { border: 2px solid var(--ground-line); background: var(--ground-raised); color: var(--fg); }
+  .opt-b .btn.paper.on { background: var(--primary); color: var(--ink); border-color: var(--primary); }
+  .opt-b .aslot.empty { border: 2px dashed var(--ground-line); color: var(--ground-dim); }
+  .opt-b .aslot.filled { border: 2px solid var(--ink); background: var(--paper); color: var(--ink); box-shadow: 2px 2px 0 var(--primary); }
+  .opt-b .endturn { filter: drop-shadow(3px 3px 0 var(--slab)); }
+  .opt-b .card { border: 2px solid var(--ink); background: var(--paper); color: var(--ink); }
+  .opt-b .card .cart { border-bottom: 2px solid var(--ink); background: var(--paper-2); }
+  .opt-b .card .cp { color: var(--ink-2); }
+  .opt-b .card.ultcard { border: 0; }
+  .opt-b .card.ultcard > .inner { background: var(--paper); }
+
+  /* ══ OPTION C — Split page: their side on the ground, yours on paper ═ */
+  .opt-c .field { padding: 0; gap: 0; }
+  .opt-c .side.enemy { padding: 4px 8px 0; }
+  .opt-c .side.ally { background: var(--paper); padding: 0 8px 4px; }
+  .opt-c .side.ally .side-head { color: var(--ink-2); }
+  .opt-c .side.enemy .side-head { color: var(--ground-dim); }
+  .opt-c .vs { flex-basis: 34px; }
+  .opt-c .vs::before {
+    content: ""; position: absolute; inset: 0; background: var(--paper);
+    clip-path: polygon(0 70%, 100% 10%, 100% 100%, 0 100%);
+  }
+  .opt-c .vs::after {
+    content: ""; position: absolute; inset: 0; background: var(--ink);
+    clip-path: polygon(0 70%, 100% 10%, 100% calc(10% + 4px), 0 calc(70% + 4px));
+  }
+  .opt-c .vs span {
+    z-index: 2; font-size: 22px; color: var(--ink); background: var(--primary); padding: 0 10px;
+    border: 2px solid var(--ink); transform: skewX(-8deg) rotate(-8deg);
+  }
+  /* enemy tiles: the ground treatment */
+  .opt-c .enemy .tile { background: var(--ground-raised); border: 2px solid var(--el); box-shadow: 4px 4px 0 var(--slab); color: var(--fg); }
+  .opt-c .enemy .plate { border-top: 2px solid var(--el); }
+  .opt-c .enemy .hp small { color: var(--ground-dim); }
+  .opt-c .enemy .hpbar { border: 1px solid var(--ground-line); background: var(--bg); }
+  .opt-c .enemy .hpbar i { background: var(--fg); }
+  .opt-c .enemy .ult { border: 1px solid var(--ground-line); background: var(--bg); }
+  .opt-c .enemy .ult i { background: color-mix(in srgb, var(--el-light) 35%, transparent); }
+  .opt-c .enemy .ult.full i { background: var(--el-light); }
+  .opt-c .enemy .ult em { color: var(--ground-dim); }
+  .opt-c .enemy .ult.full em { color: var(--ink); }
+  .opt-c .enemy .aim span { border: 1px solid var(--ground-line); background: rgba(13,13,16,0.75); color: var(--ground-dim); }
+  .opt-c .enemy .aim.on span { border-color: var(--destructive); background: var(--destructive); color: var(--ink); }
+  /* your tiles: ink on paper, no slab (they are ON the paper, not lifted off it) */
+  .opt-c .ally .tile { background: var(--paper); border: 2px solid var(--ink); color: var(--ink); }
+  .opt-c .ally .nm { background: var(--el); margin: 0 -5px; padding: 2px 5px 1px; }
+  .opt-c .ally .nm .pip { display: none; }
+  .opt-c .ally .art { border-bottom: 2px solid var(--ink); background: color-mix(in srgb, var(--el) 30%, var(--paper-2)); }
+  .opt-c .ally .hp small { color: var(--ink-2); }
+  .opt-c .ally .hpbar { border: 1.5px solid var(--ink); background: var(--paper-2); }
+  .opt-c .ally .hpbar i { background: var(--ink); }
+  .opt-c .ally .ult { border: 1.5px solid var(--ink); background: var(--paper-2); }
+  .opt-c .ally .ult i { background: color-mix(in srgb, var(--el-light) 55%, var(--paper-2)); }
+  .opt-c .ally .ult.full i { background: var(--el-light); }
+  .opt-c .ally .ult em { color: var(--ink); }
+  .opt-c .tile.hurt .hpbar i { background: var(--destructive); }
+  .opt-c .enemy .tile.hurt .hp b { color: var(--destructive); }
+  .opt-c .ally .tile.hurt .hp b { background: color-mix(in srgb, var(--destructive) 45%, transparent); padding: 0 2px; }
+  .opt-c .tray { background: var(--paper); color: var(--ink); border-top: 1px solid var(--rule); }
+  .opt-c .btn.paper { border: 2px solid var(--ink); background: var(--paper); color: var(--ink); }
+  .opt-c .btn.paper.on { background: var(--primary); }
+  .opt-c .aslot.empty { border: 2px dashed var(--ink-2); color: var(--ink-2); }
+  .opt-c .aslot.filled { border: 2px solid var(--ink); background: var(--primary); color: var(--ink); }
+  .opt-c .endturn { filter: drop-shadow(3px 3px 0 var(--slab)); }
+  .opt-c .card { border: 2px solid var(--ink); background: var(--paper); color: var(--ink); }
+  .opt-c .card .cart { border-bottom: 2px solid var(--ink); background: var(--paper-2); }
+  .opt-c .card .cp { color: var(--ink-2); }
+  .opt-c .card.ultcard { border: 0; }
+  .opt-c .card.ultcard > .inner { background: var(--paper); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="eyebrow">Mockup · phase 4 of the Shōnen Ink plan · ruling #144 · 2026-09-26</span><br />
+  <h1>Battle, in ink</h1>
+  <p class="lede">
+    Every other screen is on the new look. The arena is the one place where
+    <b>where the paper goes</b> is a real question: paper is what you read, the
+    ground is the page, and a battle is mostly things you glance at mid-turn.
+    Three answers, each taking a different position. All three share one live
+    fight: <b>tap a card</b> to queue it, tap a queued card or slot to take it
+    back, <b>hold a card or a unit</b> to read it (#118), tap
+    <b>&#8982;</b> to focus fire, then <b>End</b>. Switch options mid-turn;
+    the fight carries over.
+  </p>
+
+  <div class="picker" role="tablist" aria-label="Options">
+    <button class="opt-tab" role="tab" data-opt="a" aria-selected="true">A · Ground stage</button>
+    <button class="opt-tab" role="tab" data-opt="b" aria-selected="false">B · Panel page</button>
+    <button class="opt-tab" role="tab" data-opt="c" aria-selected="false">C · Split page</button>
+    <div class="seg" aria-label="Format">
+      <button data-fmt="3" aria-pressed="false">3v3</button>
+      <button data-fmt="4" aria-pressed="true">4v4</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="phone opt-a" id="phone"></div>
+    <aside class="notes" id="notes"></aside>
+  </div>
+
+  <section class="compare">
+    <h2>Side by side</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th></th><th>A · Ground stage</th><th>B · Panel page</th><th>C · Split page</th></tr></thead>
+        <tbody>
+          <tr><td>Paper holds</td><td>The tray: slots, hand, controls</td><td>Every unit, every card</td><td>Your whole side: team, tray, hand</td></tr>
+          <tr><td>Paper, share of the screen</td><td class="n" id="cmp-a">–</td><td class="n" id="cmp-b">–</td><td class="n" id="cmp-c">–</td></tr>
+          <tr><td>4v4 enemy portrait</td><td class="n" id="por-a">–</td><td class="n" id="por-b">–</td><td class="n" id="por-c">–</td></tr>
+          <tr><td>Who's who, at a glance</td><td>Element frames only</td><td>Element name strips</td><td>The ground itself: dark is theirs, paper is yours</td></tr>
+          <tr><td>Hit effects land on</td><td>Dark tiles (floaters and flashes read as they do today)</td><td>Paper tiles (a red floater on white; flashes need re-tinting)</td><td>Dark on their side, paper on yours</td></tr>
+          <tr><td>Bends a rule</td><td>None</td><td>Slanted panel cut on the portrait. Art only, never text</td><td>A diagonal page cut through the field</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="kept"><b>What every option keeps, because you already settled it:</b></p>
+    <ul class="kept">
+      <li>The 47px hand card on a full-bleed 2px-gap rail, eight to a line (2026-09-01), and its name on two hyphenated lines (2026-09-26).</li>
+      <li>Tap = act, hold = explain (#118). Focus fire as a 44px corner target, opposite the brackets it toggles.</li>
+      <li>Controls at the bottom, under the hand; Skip and Speed out, everything else behind <b>Controls</b> (#118, 2026-09-01).</li>
+      <li>No blur, no glow, no gradient except the ultimate's five-hue frame (#133). Numbers and art are samples; kit text in the hold sheet is placeholder.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const ART = "../../../public/characters/";
+  const EL = { light: "var(--el-light)", red: "var(--el-red)", blue: "var(--el-blue)", green: "var(--el-green)", dark: "var(--el-dark)" };
+  const TYPE_HUE = { attack: "var(--el-red)", attackDebuff: "var(--el-dark)", buff: "var(--el-blue)", stance: "var(--el-light)", heal: "var(--el-green)" };
+  const TYPE_LABEL = { attack: "Attack", attackDebuff: "Attack · debuff", buff: "Buff", stance: "Stance", heal: "Heal", ultimate: "Ultimate" };
+  const ICON = {
+    attack: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="m13 19 6-6"/><path d="m16 16 4 4"/></svg>',
+    attackDebuff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="M9.5 17.5 21 6V3h-3L6.5 14.5"/></svg>',
+    buff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18v-6H5l7-7 7 7h-4v6H9z"/></svg>',
+    stance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 2v20"/></svg>',
+    ultimate: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3 7 7 .6-5.3 4.7L18.4 22 12 18l-6.4 4 1.7-7.7L2 9.6 9 9z"/></svg>',
+    reset: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>',
+    merge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="11" height="11"/><rect x="10" y="10" width="11" height="11"/></svg>',
+    end: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>',
+    gauge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14 16 10"/><path d="M3.3 19a10 10 0 1 1 17.4 0"/></svg>',
+    more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+    aim: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg>',
+  };
+
+  // Sample team: his characters, their real elements and skill art.
+  const PLAYER = [
+    { id: "lyra", name: "Lyra", el: "red", hp: 3920 },
+    { id: "killua", name: "Killua", el: "blue", hp: 3610 },
+    { id: "yalina", name: "Yalina", el: "green", hp: 4200 },
+    { id: "seras", name: "Seras", el: "light", hp: 3869 },
+  ];
+  const ENEMY = [
+    { id: "meliodas", name: "Meliodas", el: "red", hp: 3990 },
+    { id: "duke", name: "Duke", el: "blue", hp: 4010 },
+    { id: "ban", name: "Ban", el: "green", hp: 3780 },
+    { id: "chiara", name: "Chiara", el: "dark", hp: 3540 },
+  ];
+  const POOL = {
+    lyra: [["Flash Point", "attack", "lyra__flash-point"], ["Latent Heat", "buff", "lyra__latent-heat"], ["Shatterburn", "attack", "lyra__shatterburn"]],
+    killua: [["Lightning Palm", "attack", "killua__lightning-palm"], ["Speed of Lightning", "buff", "killua__speed-of-lightning"], ["Thunderbolt", "attackDebuff", "killua__thunderbolt"]],
+    yalina: [["Unexpected Strike", "attack", "yalina__unexpected-strike"], ["Attention Drawer", "stance", "yalina__attention-drawer"], ["Devastating Blow", "attack", "yalina__devastating-blow"]],
+    seras: [["Static Lance", "attack", "seras__static-lance"], ["Chain Tempest", "attackDebuff", "seras__chain-tempest"]],
+  };
+  const ULT = { seras: ["Heavenfall Bolt", "seras__heavenfall-bolt"] };
+  const NOTES = {
+    a: {
+      title: "A · Ground stage",
+      pos: "Paper only where you act. The fight stays on the dark page; the tray you play from is one sheet of paper.",
+      where: [
+        "<b>Field:</b> units are dark tiles in an element frame with a slab, which is today's tile redrawn in ink.",
+        "<b>Tray:</b> the action slots, hand and controls sit on one paper sheet. Queued slots fill yellow.",
+        "<b>Loud parts:</b> the End button and the phase badge only.",
+      ],
+      costs: [
+        "The least change from today. Hit flashes, floaters and the ult cut-in keep working over dark tiles.",
+        "The field reads as the old screen in new type. The motif lives in the bottom third.",
+      ],
+    },
+    b: {
+      title: "B · Panel page",
+      pos: "Every fighter is a panel on a manga page. Units and cards are paper; the ground is only the gutter.",
+      where: [
+        "<b>Field:</b> each unit is a paper panel, its portrait cut on a slant, with its element as a name strip (a fill, never text).",
+        "<b>VS</b> becomes a yellow sound effect over speed lines.",
+        "<b>Tray:</b> stays on the ground. The cards are paper objects lying on it.",
+      ],
+      costs: [
+        "The most Shōnen Ink of the three, and the heaviest. Eight white panels plus eight white cards is a lot of white on a phone mid-fight.",
+        "Hit effects need re-tinting: a flash tuned for dark tiles washes out on paper.",
+      ],
+    },
+    c: {
+      title: "C · Split page",
+      pos: "The ground tells you whose side it is: theirs on the dark page, yours on paper, split by a diagonal cut.",
+      where: [
+        "<b>Enemy side:</b> dark tiles in element frames, as in A.",
+        "<b>Your side:</b> one paper sheet from the cut down, holding your team, the slots, the hand and the controls. Your tiles are ink on paper with no slab, because they sit on the sheet rather than lifted off it.",
+        "<b>The cut</b> carries VS.",
+      ],
+      costs: [
+        "Paper is about half the screen: more than A, less than B.",
+        "Ownership reads without a label. \"Enemy\" and \"Your team\" become redundant, and are kept only for screen readers.",
+        "The one layout that changes if a future mode puts you on top.",
+      ],
+    },
+  };
+
+  const st = {
+    opt: "a", fmt: 4, turn: 3, phase: "you", speed: 1, busy: false,
+    marked: null, queue: [], hand: [], drawIdx: 0, sheet: null, over: false,
+    units: {},
+  };
+  function reset() {
+    st.turn = 3; st.phase = "you"; st.marked = null; st.queue = []; st.over = false; st.sheet = null; st.drawIdx = 0;
+    st.units = {};
+    PLAYER.forEach((u, i) => (st.units["p" + i] = { ...u, key: "p" + i, side: "p", cur: u.hp, gauge: u.id === "seras" ? 4 : i }));
+    ENEMY.forEach((u, i) => (st.units["e" + i] = { ...u, key: "e" + i, side: "e", cur: Math.round(u.hp * (i === 1 ? 0.28 : 1)), gauge: (i * 2) % 5 }));
+    st.hand = [];
+    Object.keys(ultCards).forEach((k) => delete ultCards[k]);
+    fillHand();
+  }
+  const field = (side) => Object.values(st.units).filter((u) => u.side === side).slice(0, st.fmt);
+  const living = (side) => field(side).filter((u) => u.cur > 0);
+  const cap = () => Math.min(3, living("p").length + 1);
+  let cardSeq = 0;
+  function makeCard(owner) {
+    const u = st.units[owner];
+    const pool = POOL[u.id];
+    const [name, type, art] = pool[(st.drawIdx++) % pool.length];
+    const rank = 1 + ((st.drawIdx * 7) % 3 === 0 ? 1 : 0);
+    const power = type === "buff" || type === "stance" ? 0 : 150 + ((st.drawIdx * 37) % 110);
+    return { id: ++cardSeq, owner, name, type, art, rank, power };
+  }
+  function fillHand() {
+    const owners = living("p").map((u) => u.key);
+    // An ultimate card joins the hand when a gauge fills (below), and it takes
+    // one of the eight places rather than pushing past them.
+    const ults = living("p").filter((u) => u.gauge >= 5 && ULT[u.id]).length;
+    const target = Math.min(owners.length * 2, 8 - ults);
+    st.hand = st.hand.filter((c) => owners.includes(c.owner) && c.type !== "ultimate");
+    while (st.hand.length > target) st.hand.pop();
+    let i = 0;
+    while (st.hand.length < target && i < 40) {
+      const counts = {};
+      st.hand.forEach((c) => (counts[c.owner] = (counts[c.owner] || 0) + 1));
+      const owner = owners.find((o) => (counts[o] || 0) < 2) || owners[i % owners.length];
+      st.hand.push(makeCard(owner)); i++;
+    }
+    // an ultimate card joins the hand when a gauge fills
+    living("p").forEach((u) => {
+      if (u.gauge >= 5 && ULT[u.id]) {
+        const kept = ultCards[u.key] || (ultCards[u.key] = { id: ++cardSeq, owner: u.key, name: ULT[u.id][0], type: "ultimate", art: ULT[u.id][1], rank: 1, power: 520 });
+        st.hand.push(kept);
+      } else {
+        delete ultCards[u.key];
+      }
+    });
+  }
+  // Keeps an ultimate card's id stable across refills, so a queued one stays queued.
+  const ultCards = {};
+
+  const phone = document.getElementById("phone");
+  const notes = document.getElementById("notes");
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const img = (path, alt) => `<img src="${ART}${path}.png" alt="${esc(alt)}" onerror="this.remove()" draggable="false" />`;
+
+  function tileHtml(u) {
+    const pct = Math.max(0, (u.cur / u.hp) * 100);
+    const dead = u.cur <= 0, hurt = !dead && pct <= 30, full = u.gauge >= 5;
+    // Queued damage cards all land on the marked enemy, so that tile carries
+    // the count (buffs and stances don't hit anyone).
+    const incoming = u.side === "e" && st.marked === u.key
+      ? st.queue.map((id) => st.hand.find((c) => c.id === id)).filter((c) => c && c.power > 0).length
+      : 0;
+    const isMarked = st.marked === u.key;
+    return `<div class="slotwrap">
+      <button class="tile ${dead ? "dead" : ""} ${hurt ? "hurt" : ""}" data-unit="${u.key}" style="--el:${EL[u.el]}" aria-label="${esc(u.name)}, details">
+        <div class="art"><span class="init">${esc(u.name[0])}</span>${img(u.id, u.name)}
+          ${full && !dead ? `<span class="banner ready ${u.side === "e" ? "low" : ""}">Ult ready</span>` : ""}
+          ${incoming && !dead ? `<span class="banner incoming ${full && u.side === "e" ? "stacked" : ""}">${incoming} incoming</span>` : ""}
+          ${isMarked && !dead ? `<span class="brackets"><i></i><i></i><i></i><i></i></span>` : ""}
+          ${dead ? `<span class="down">DOWN</span>` : ""}
+        </div>
+        <div class="plate">
+          <span class="nm"><i class="pip"></i><span>${esc(u.name.toUpperCase())}</span></span>
+          <span class="hp"><b>${Math.max(0, u.cur)}</b><small>/${u.hp}</small></span>
+          <span class="hpbar"><i style="width:${pct}%"></i></span>
+          <span class="ult ${full ? "full" : ""}"><i style="width:${Math.min(u.gauge, 5) * 20}%"></i><em>${Math.min(u.gauge, 5)}/5</em></span>
+        </div>
+      </button>
+      ${u.side === "e" && !dead ? `<button class="aim ${isMarked ? "on" : ""}" data-aim="${u.key}" aria-pressed="${isMarked}" aria-label="Focus fire on ${esc(u.name)}"><span>${ICON.aim}</span></button>` : ""}
+    </div>`;
+  }
+
+  function cardHtml(c) {
+    const qi = st.queue.indexOf(c.id);
+    const face = `<div class="cart">${img("skills/" + c.art, c.name)}
+        <span class="type" style="background:${c.type === "ultimate" ? "var(--paper)" : TYPE_HUE[c.type]}" aria-label="${TYPE_LABEL[c.type]}">${ICON[c.type]}</span>
+        <span class="pips">${c.type === "ultimate" ? "" : "◆".repeat(c.rank) + "◇".repeat(3 - c.rank)}</span>
+      </div>
+      <span class="cn" lang="en">${esc(c.name)}</span>
+      <span class="cp">${c.power ? c.power : "–"}</span>`;
+    return `<button class="card ${c.type === "ultimate" ? "ultcard" : ""} ${qi >= 0 ? "queued" : ""}" data-card="${c.id}" aria-label="${esc(c.name)}${qi >= 0 ? ", queued " + (qi + 1) : ""}">
+      ${c.type === "ultimate" ? `<div class="inner">${face}</div>` : face}
+      ${qi >= 0 ? `<span class="qn"><span>${qi + 1}</span></span>` : ""}
+    </button>`;
+  }
+
+  function slotsHtml() {
+    const n = cap();
+    let out = "";
+    for (let i = 0; i < n; i++) {
+      const c = st.hand.find((h) => h.id === st.queue[i]);
+      out += c
+        ? `<button class="aslot filled" data-slot="${i}" aria-label="Queued ${i + 1}: ${esc(c.name)}. Tap to take back">${img("skills/" + c.art, "")}<span class="t">${esc(c.name)}</span></button>`
+        : `<div class="aslot empty" aria-label="Empty action ${i + 1}">${i + 1}</div>`;
+    }
+    return out;
+  }
+
+  function sheetHtml() {
+    if (!st.sheet) return "";
+    let body = "";
+    if (st.sheet.kind === "controls") {
+      body = `<span class="grab"></span><h4>Battle</h4>
+        <div class="rows">
+          <div><span>Turn</span><span>${st.turn} · ${st.phase === "you" ? "Your move" : "Enemy move"}</span></div>
+          <div><span>Actions</span><span>${cap()} this turn</span></div>
+          <div><span>Field</span><span>${living("p").length} on field${st.fmt === 3 ? " · 1 benched" : ""}</span></div>
+        </div>
+        <div class="grid3"><button class="pbtn">Log</button><button class="pbtn">Foe</button><button class="pbtn">Team</button>
+        <button class="pbtn danger" data-close>Exit battle</button></div>
+        <button class="close" data-close>Close</button>`;
+    } else if (st.sheet.kind === "card") {
+      const c = st.hand.find((h) => h.id === st.sheet.id);
+      if (!c) return "";
+      body = `<span class="grab"></span><span class="sub">${esc(st.units[c.owner].name)} · ${c.type === "ultimate" ? "Ultimate" : "Rank " + c.rank}</span>
+        <h4>${esc(c.name)}</h4>
+        <span class="chip" style="background:${c.type === "ultimate" ? "var(--el-light)" : TYPE_HUE[c.type]}">${TYPE_LABEL[c.type]}</span>
+        <p class="doc">The skill's real text renders here, from <code>SkillDocument</code>, with its keywords <mark>marked</mark> (#155). Placeholder in this mockup: the look of the sheet is the question, not the words.</p>
+        <button class="close" data-close>Close</button>`;
+    } else if (st.sheet.kind === "unit") {
+      const u = st.units[st.sheet.key];
+      body = `<span class="grab"></span><span class="sub">${u.side === "e" ? "Enemy" : "Your team"} · ${u.el}</span>
+        <h4>${esc(u.name)}</h4>
+        <div class="rows">
+          <div><span>HP</span><span>${Math.max(0, u.cur)} / ${u.hp}</span></div>
+          <div><span>Ult gauge</span><span>${Math.min(u.gauge, 5)} / 5</span></div>
+          <div><span>Buffs</span><span>–</span></div>
+        </div>
+        <p class="doc">The unit detail panel (<code>UnitDetailPanel</code>) as a paper sheet: stats, effects, then the kit on paper.</p>
+        <button class="close" data-close>Close</button>`;
+    } else if (st.sheet.kind === "over") {
+      body = `<span class="grab"></span><span class="sub">Turn ${st.turn}</span><h4>${st.sheet.won ? "Victory" : "Defeat"}</h4>
+        <p class="doc">The result card, on paper.</p>
+        <button class="primary" data-rematch>Rematch</button>`;
+    }
+    return `<div class="scrim" data-scrim><div class="sheet" role="dialog" aria-modal="true">${body}</div></div>`;
+  }
+
+  function render() {
+    phone.className = "phone opt-" + st.opt;
+    // The effects layer outlives a render, or each hit would wipe the last
+    // hit's floater and the ultimate's cut-in mid-animation.
+    const fxKeep = phone.querySelector("#fx");
+    const prog = st.phase === "you" ? (st.queue.length / cap()) * 100 : 100;
+    phone.innerHTML = `
+      <div class="nav"><span class="logo">TOLL</span><span class="locked">In battle</span></div>
+      <div class="status"><span class="turn">TURN ${st.turn}</span>
+        <span class="phase-badge ${st.phase === "you" ? "" : "enemy"}">${st.phase === "you" ? "Your move" : "Enemy move"}</span>
+        <span class="prog"><i style="width:${prog}%"></i></span></div>
+      <div class="field">
+        <div class="side enemy"><div class="side-head"><span>Enemy</span><span class="ehand">Hand 5 <i></i><i></i><i></i><i></i><i></i></span></div>
+          <div class="row">${field("e").map(tileHtml).join("")}</div></div>
+        <div class="vs"><span>VS</span></div>
+        <div class="side ally"><div class="side-head"><span>Your team</span></div>
+          <div class="row">${field("p").map(tileHtml).join("")}</div></div>
+      </div>
+      <div class="tray" data-paper-tray>
+        <div class="actionrow">
+          <button class="btn paper" data-reset aria-label="Reset queue">${ICON.reset}</button>
+          <button class="btn paper" aria-label="Merge">${ICON.merge}</button>
+          <div class="slots">${slotsHtml()}</div>
+          <button class="endturn" data-end ${st.queue.length && !st.busy ? "" : "disabled"}>${ICON.end}END</button>
+        </div>
+        <div class="hand">${st.hand.map(cardHtml).join("")}</div>
+        <div class="controls">
+          <button class="btn paper ${st.speed === 2 ? "on" : ""}" data-speed>${ICON.gauge}${st.speed}×</button>
+          <button class="btn paper grow" data-controls>${ICON.more}Controls</button>
+        </div>
+      </div>
+      <div class="fxlayer" id="fx"></div>
+      ${sheetHtml()}`;
+    if (fxKeep) phone.querySelector("#fx").replaceWith(fxKeep);
+    renderNotes();
+    measureAll();
+  }
+
+  function renderNotes() {
+    const n = NOTES[st.opt];
+    notes.innerHTML = `<h2>${n.title}</h2><p class="pos">${n.pos}</p>
+      <h3>Where the paper goes</h3><ul>${n.where.map((w) => `<li>${w}</li>`).join("")}</ul>
+      <h3>What it costs</h3><ul>${n.costs.map((w) => `<li>${w}</li>`).join("")}</ul>
+      <h3>Measured on this drawing</h3>
+      <dl class="meter">
+        <dt>Paper</dt><dd id="m-paper">–</dd>
+        <dt>Enemy portrait</dt><dd id="m-por">–</dd>
+        <dt>Hand card</dt><dd id="m-card">–</dd>
+      </dl>
+      <p class="how">Measured live with <code>getBoundingClientRect</code> on the phone above,
+        at ${st.fmt}v${st.fmt}. <b>Paper</b> is the share of the 390×844 screen covered by
+        paper surfaces at rest, with no sheet open. A portrait inside a paper panel counts as panel.</p>`;
+  }
+
+  // Paper coverage: the area of every OUTERMOST paper surface (one with no
+  // paper ancestor), over the phone's area. A portrait inside a paper panel
+  // counts as the panel; a card lying on the paper tray counts once, as the
+  // tray. Measured from the laid-out boxes, so it works off-screen too.
+  const PAPER = ["rgb(245, 245, 240)", "rgb(231, 231, 223)"];
+  function paperShare(el) {
+    const pr = el.getBoundingClientRect();
+    let area = 0;
+    const walk = (node) => {
+      for (const child of node.children) {
+        if (child.classList.contains("fxlayer") || child.hasAttribute("data-scrim")) continue;
+        if (PAPER.includes(getComputedStyle(child).backgroundColor)) {
+          const r = child.getBoundingClientRect();
+          const w = Math.max(0, Math.min(r.right, pr.right) - Math.max(r.left, pr.left));
+          const h = Math.max(0, Math.min(r.bottom, pr.bottom) - Math.max(r.top, pr.top));
+          area += w * h;
+        } else {
+          walk(child);
+        }
+      }
+    };
+    walk(el);
+    return area / (pr.width * pr.height);
+  }
+  const RESULTS = {};
+  // Layout reads are synchronous, so the sweep below measures directly; the
+  // frame wait is only for renders driven by the reader.
+  function measureAll() { requestAnimationFrame(measureNow); }
+  function measureNow() {
+    {
+      const visible = !st.sheet;
+      const art = phone.querySelector(".enemy .art");
+      const card = phone.querySelector(".card");
+      const por = art ? `${Math.round(art.getBoundingClientRect().width)}×${Math.round(art.getBoundingClientRect().height)}px` : "–";
+      const cardSz = card ? `${Math.round(card.getBoundingClientRect().width)}×${Math.round(card.getBoundingClientRect().height)}px` : "–";
+      const pd = document.getElementById("m-por"); if (pd) pd.textContent = por;
+      const cd = document.getElementById("m-card"); if (cd) cd.textContent = cardSz;
+      if (st.fmt === 4) { const p = document.getElementById("por-" + st.opt); if (p) p.textContent = por; }
+      // elementFromPoint only sees what is on screen, so paper is measured only
+      // when the whole phone is in view; otherwise the last value stands.
+      if (visible && st.fmt === 4) RESULTS[st.opt] = paperShare(phone);
+      const share = RESULTS[st.opt];
+      const md = document.getElementById("m-paper");
+      if (md) md.innerHTML = share === undefined
+        ? `<span style="font-weight:400;color:var(--ink-2)">measured at 4v4</span>`
+        : `${Math.round(share * 100)}%<span class="bar"><i style="width:${share * 100}%"></i></span>`;
+      if (share !== undefined) document.getElementById("cmp-" + st.opt).textContent = Math.round(share * 100) + "%";
+    }
+  }
+
+  // ── interaction ─────────────────────────────────────────────────
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms / st.speed));
+  function floater(unitKey, text, kind) {
+    const tile = phone.querySelector(`[data-unit="${unitKey}"]`);
+    const fx = phone.querySelector("#fx");
+    if (!tile || !fx) return;
+    const pr = phone.getBoundingClientRect(), tr = tile.getBoundingClientRect();
+    const f = document.createElement("span");
+    f.className = "floater " + kind;
+    f.textContent = text;
+    f.style.left = tr.left - pr.left + tr.width / 2 + "px";
+    f.style.top = tr.top - pr.top + tr.height * 0.3 + "px";
+    f.style.animationDuration = 700 / st.speed + "ms";
+    fx.appendChild(f);
+    tile.classList.add("shake");
+  }
+  function cutIn(u, name, art) {
+    const fx = phone.querySelector("#fx");
+    const c = document.createElement("div");
+    c.className = "cutin";
+    c.style.animationDuration = 900 / st.speed + "ms";
+    c.innerHTML = `${img("skills/" + art, name)}<div><small>${esc(u.name)} · Ultimate</small><b>${esc(name)}</b></div>`;
+    fx.appendChild(c);
+  }
+  function hit(target, dmg, crit) {
+    target.cur = Math.max(0, target.cur - dmg);
+    render();
+    floater(target.key, (crit ? "CRIT " : "") + "−" + dmg, crit ? "crit" : "dmg");
+  }
+  async function endTurn() {
+    if (st.busy || !st.queue.length) return;
+    st.busy = true;
+    const played = st.queue.map((id) => st.hand.find((c) => c.id === id)).filter(Boolean);
+    st.queue = [];
+    for (const c of played) {
+      const owner = st.units[c.owner];
+      st.hand = st.hand.filter((h) => h.id !== c.id);
+      if (c.type === "ultimate") {
+        owner.gauge = 0;
+        render(); cutIn(owner, c.name, c.art); await wait(900);
+      } else {
+        owner.gauge = Math.min(5, owner.gauge + 1);
+      }
+      if (c.power > 0) {
+        const pool = living("e");
+        if (!pool.length) break;
+        const target = (st.marked && st.units[st.marked].cur > 0) ? st.units[st.marked] : pool[Math.floor(Math.random() * pool.length)];
+        const crit = Math.random() < 0.18;
+        hit(target, Math.round(c.power * (c.type === "ultimate" ? 5 : 3.4) * (crit ? 1.5 : 1) + Math.random() * 120), crit);
+      } else {
+        render();
+      }
+      await wait(560);
+    }
+    if (!living("e").length) { st.busy = false; st.sheet = { kind: "over", won: true }; render(); return; }
+    st.phase = "enemy"; render(); await wait(400);
+    for (let i = 0; i < Math.min(3, living("e").length + 1); i++) {
+      const pool = living("p");
+      if (!pool.length) break;
+      const t = pool[Math.floor(Math.random() * pool.length)];
+      hit(t, Math.round(380 + Math.random() * 420), false);
+      await wait(520);
+    }
+    if (!living("p").length) { st.busy = false; st.sheet = { kind: "over", won: false }; render(); return; }
+    Object.values(st.units).forEach((u) => { if (u.side === "e" && u.cur > 0) u.gauge = Math.min(5, u.gauge + 1); });
+    st.turn++; st.phase = "you";
+    if (st.marked && st.units[st.marked].cur <= 0) st.marked = null;
+    fillHand();
+    st.busy = false;
+    render();
+  }
+
+  function toggleCard(id) {
+    if (st.busy || st.phase !== "you") return;
+    const i = st.queue.indexOf(id);
+    if (i >= 0) st.queue.splice(i, 1);
+    else if (st.queue.length < cap()) st.queue.push(id);
+    render();
+  }
+
+  // Tap = act, hold = explain (#118).
+  // `heldAt` swallows only the click that ends the hold itself, not whatever
+  // the reader taps next.
+  let holdTimer = null, heldAt = 0;
+  phone.addEventListener("pointerdown", (e) => {
+    const el = e.target.closest("[data-card],[data-unit]");
+    heldAt = 0;
+    if (!el) return;
+    holdTimer = setTimeout(() => {
+      heldAt = Date.now();
+      st.sheet = el.dataset.card ? { kind: "card", id: +el.dataset.card } : { kind: "unit", key: el.dataset.unit };
+      render();
+    }, 450);
+  });
+  ["pointerup", "pointerleave", "pointercancel"].forEach((t) => phone.addEventListener(t, () => clearTimeout(holdTimer)));
+  phone.addEventListener("contextmenu", (e) => e.preventDefault());
+  phone.addEventListener("click", (e) => {
+    if (heldAt && Date.now() - heldAt < 800) { heldAt = 0; return; }
+    const t = e.target;
+    if (t.closest("[data-rematch]")) { reset(); render(); return; }
+    if (t.closest("[data-close]") || t.matches("[data-scrim]")) { st.sheet = null; render(); return; }
+    if (st.sheet) return;
+    const aim = t.closest("[data-aim]");
+    if (aim) { st.marked = st.marked === aim.dataset.aim ? null : aim.dataset.aim; render(); return; }
+    const card = t.closest("[data-card]");
+    if (card) { toggleCard(+card.dataset.card); return; }
+    const slot = t.closest("[data-slot]");
+    if (slot) { st.queue.splice(+slot.dataset.slot, 1); render(); return; }
+    const unit = t.closest("[data-unit]");
+    if (unit) { st.sheet = { kind: "unit", key: unit.dataset.unit }; render(); return; }
+    if (t.closest("[data-reset]")) { st.queue = []; render(); return; }
+    if (t.closest("[data-end]")) { endTurn(); return; }
+    if (t.closest("[data-speed]")) { st.speed = st.speed === 1 ? 2 : 1; render(); return; }
+    if (t.closest("[data-controls]")) { st.sheet = { kind: "controls" }; render(); return; }
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && st.sheet) { st.sheet = null; render(); } });
+  phone.addEventListener("animationend", (e) => {
+    if (e.target.classList.contains("floater") || e.target.classList.contains("cutin")) e.target.remove();
+    if (e.animationName === "shake") e.target.classList.remove("shake");
+  });
+
+  document.querySelectorAll(".opt-tab").forEach((b) => b.addEventListener("click", () => {
+    st.opt = b.dataset.opt;
+    document.querySelectorAll(".opt-tab").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+    try { localStorage.setItem("battle-ink-opt", st.opt); } catch (_) {}
+    render();
+  }));
+  document.querySelectorAll("[data-fmt]").forEach((b) => b.addEventListener("click", () => {
+    if (st.busy) return;
+    st.fmt = +b.dataset.fmt;
+    document.querySelectorAll("[data-fmt]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    st.queue = []; st.marked = null; fillHand(); render();
+  }));
+  addEventListener("scroll", () => { clearTimeout(window.__m); window.__m = setTimeout(measureAll, 120); }, { passive: true });
+  addEventListener("resize", () => measureAll());
+
+  try {
+    const saved = localStorage.getItem("battle-ink-opt");
+    if (saved && NOTES[saved]) {
+      st.opt = saved;
+      document.querySelectorAll(".opt-tab").forEach((x) => x.setAttribute("aria-selected", String(x.dataset.opt === saved)));
+    }
+  } catch (_) {}
+  reset();
+  render();
+  // Measure every option once at rest, so the comparison table is filled in
+  // without the reader having to click through all three.
+  (async function measureEach() {
+    await (document.fonts ? document.fonts.ready : Promise.resolve());
+    const keep = st.opt;
+    for (const o of ["a", "b", "c"]) { st.opt = o; render(); measureNow(); await new Promise((r) => setTimeout(r, 50)); }
+    st.opt = keep; render();
+  })();
+})();
+</script>
+</body>
+</html>

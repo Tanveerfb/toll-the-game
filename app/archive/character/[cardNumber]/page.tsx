@@ -127,8 +127,16 @@ export default async function CharacterDetailPage({
           {/* Identity rail. Sticky so the statline stays beside whatever
               multiplier you're reading further down a long kit. */}
           <aside className="flex flex-col gap-2.5 lg:sticky lg:top-4 lg:self-start">
+            {/* The card row (his pick B, 2026-09-27, from
+                docs/design/mockups/character-header.html): a card-shaped
+                thumbnail beside the name, the stats in one row, then Growth
+                and Preview. It was a full-width square portrait, 336px tall on
+                a phone, which put Growth at the fold (772px of 792) and the
+                kit below it. Drawn, this puts Growth at 377px and the kit at
+                491px. */}
             <div className={PAPER}>
-              <div className="relative aspect-square overflow-hidden border-b-2 border-border bg-muted">
+              <div className="grid grid-cols-[118px_minmax(0,1fr)]">
+              <div className="relative aspect-[3/4] overflow-hidden border-r-2 border-border bg-muted">
                 {art ? (
                   <Image
                     src={art}
@@ -136,10 +144,10 @@ export default async function CharacterDetailPage({
                     width={1024}
                     height={1024}
                     priority
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover object-[50%_12%]"
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center font-heading text-8xl text-muted-foreground">
+                  <span className="flex h-full w-full items-center justify-center font-heading text-6xl text-muted-foreground">
                     {character.name.charAt(0)}
                   </span>
                 )}
@@ -151,7 +159,7 @@ export default async function CharacterDetailPage({
                 </span>
               </div>
 
-              <div className="px-3 py-2.5">
+              <div className="min-w-0 px-3 py-2.5">
                 {/* Heading above the name, the way ruling #141 describes it:
                     every version of a character keeps the same NAME and is
                     told apart by the heading. Tanveer confirmed the archive
@@ -162,7 +170,7 @@ export default async function CharacterDetailPage({
                     {character.heading}
                   </p>
                 ) : null}
-                <h1 className="font-heading text-4xl leading-none tracking-title">
+                <h1 className="break-words font-heading text-3xl leading-none tracking-title">
                   {character.name}
                 </h1>
                 {/* The card number, not `id`. `id` is a name (`duke`,
@@ -181,10 +189,11 @@ export default async function CharacterDetailPage({
                   </div>
                 ) : null}
               </div>
+              </div>
 
               {/* Client island: the numbers carry the player's own level and
                   ascension, which this statically-generated page can't see. */}
-              <div className="border-t border-rule px-3 py-2.5">
+              <div className="border-t-2 border-border px-3 py-2.5">
                 <CharacterStatBars
                   characterId={character.id}
                   base={{
@@ -196,16 +205,19 @@ export default async function CharacterDetailPage({
                   hue={hue}
                 />
               </div>
-            </div>
 
-            <PreviewButton characterId={character.id} />
-            {/* Growth is ownership-gated and modal — story-only NPC kits have
-                no progression, and an unowned character gets a one-line note
-                instead of controls. */}
-            <CharacterProgressionPanel
-              characterId={character.id}
-              storyOnly={character.storyOnly === true}
-            />
+              {/* Growth first, as the primary; Preview beside it in ink.
+                  Growth is ownership-gated and modal — story-only NPC kits
+                  have no progression (Preview then takes the row), and an
+                  unowned character gets a one-line note instead. */}
+              <div className="grid grid-cols-2 gap-3 px-3 pb-3 empty:hidden [&>*:only-child]:col-span-2">
+                <CharacterProgressionPanel
+                  characterId={character.id}
+                  storyOnly={character.storyOnly === true}
+                />
+                <PreviewButton characterId={character.id} />
+              </div>
+            </div>
 
             {character.lore ? (
               <div className={cn(PAPER, "px-3 py-2.5")}>

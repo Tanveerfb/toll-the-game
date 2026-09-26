@@ -220,8 +220,9 @@ export function SkillBlock({
   );
 }
 
-/** Shared "※ Term — meaning" glossary footnote list (spec §5). */
-function FootnoteList({
+/** Shared "※ Term — meaning" glossary footnote list (spec §5). Also the battle
+ *  card's (`CardDetail`), so a term reads the same in the archive and mid-fight. */
+export function FootnoteList({
   footnotes,
 }: {
   footnotes: KeywordFootnote[];

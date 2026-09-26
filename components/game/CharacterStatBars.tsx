@@ -46,10 +46,17 @@ function StatBar({
   max: number;
   hue: string;
 }): React.JSX.Element {
+  // One column of three (his pick B, 2026-09-27): label and number on one
+  // line, the bar under them. It was one row per stat, three rows deep.
   return (
-    <div className="mt-1 grid grid-cols-[26px_1fr_auto] items-center gap-2">
-      <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
-        {label}
+    <div className="flex min-w-0 flex-col gap-1">
+      <span className="flex items-baseline justify-between gap-1">
+        <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
+          {label}
+        </span>
+        <span className="font-heading text-base leading-none tabular-nums">
+          {display.toLocaleString()}
+        </span>
       </span>
       <span className="block h-1.5 border border-border bg-muted">
         <span
@@ -60,16 +67,11 @@ function StatBar({
           }}
         />
       </span>
-      <span className="text-right">
-        <span className="block font-heading text-base leading-none tabular-nums">
-          {display.toLocaleString()}
+      {display !== base ? (
+        <span className="font-body text-label leading-tight tabular-nums text-muted-foreground">
+          base {base.toLocaleString()}
         </span>
-        {display !== base ? (
-          <span className="block font-body text-label leading-tight tabular-nums text-muted-foreground">
-            base {base.toLocaleString()}
-          </span>
-        ) : null}
-      </span>
+      ) : null}
     </div>
   );
 }
@@ -97,28 +99,25 @@ export default function CharacterStatBars({
   const progress = owned ? (stored ?? BASE_PROGRESSION) : null;
   const shown = progress ? progressedStats(base, progress) : base;
 
+  // The level line that sat beside the header moved onto the Growth button
+  // under this (Lv · A · UL), which says it with the ult level included.
   return (
     <>
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
-          Against the roster
-        </p>
-        {progress ? (
-          <p className="font-body text-label font-bold uppercase tracking-label">
-            Lv {progress.level} · A{progress.ascension}
-          </p>
-        ) : null}
+      <p className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
+        Against the roster
+      </p>
+      <div className="mt-1 grid grid-cols-3 gap-3">
+        {STAT_ROWS.map(({ key, label }) => (
+          <StatBar
+            key={key}
+            label={label}
+            display={shown[key]}
+            base={base[key]}
+            max={peak[key]}
+            hue={hue}
+          />
+        ))}
       </div>
-      {STAT_ROWS.map(({ key, label }) => (
-        <StatBar
-          key={key}
-          label={label}
-          display={shown[key]}
-          base={base[key]}
-          max={peak[key]}
-          hue={hue}
-        />
-      ))}
     </>
   );
 }

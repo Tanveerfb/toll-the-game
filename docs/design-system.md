@@ -183,6 +183,26 @@ stays as it is.
 
 ---
 
+## The battle: a split page (ruling #156)
+
+His pick from three drawn in `docs/design/mockups/battle-ink.html`:
+
+- **The enemy's half is the ground.** Dark tiles, framed in the element hue,
+  with a slab and light text.
+- **Your half is paper**, from a diagonal ink cut down through your row, the
+  queue, the hand and the controls. Your tiles are ink on paper, with no
+  slab: they lie on the sheet.
+- **The cut carries VS** as a yellow sticker.
+- **Ownership is the layout's job, not a label's.** "Enemy" and "Your team"
+  are screen-reader only. His words: *"we don't want to keep the labels if
+  it's obvious."*
+- **A number that must read over either half is an ink chip with its meaning
+  as the fill:** damage floaters, effect counts, the log's damage and heals.
+- **Don't design for a flipped arena.** He: *"nothing planned that will put
+  the user team on top."*
+
+---
+
 ## Meaning, as fills
 
 A number's meaning is a hue BEHIND it with ink on it, never coloured text:
@@ -203,7 +223,13 @@ left rule. `default` is ink (nothing to do), `info` yellow (worth knowing),
 ## Components
 
 A control comes from shadcn and is customised in `components/ui/`, once
-(#154). **A className at a usage adds what the variant cannot know** (a width,
+(#154).
+
+**Two loud buttons, never more.** `default` is the yellow primary, the one
+thing to press. `ink` (ink on a yellow slab) is for the second action on a
+screen that has two worth pressing, beside the primary: the character page's
+Preview next to Growth (#157). Everything else is `secondary`, `outline` or
+`ghost`. **A className at a usage adds what the variant cannot know** (a width,
 a grid position) and never restates the look (#84). The dev-only gallery at
 `/dev/ui` renders every primitive in every variant: check it before and after
 touching one.

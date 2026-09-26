@@ -6,13 +6,8 @@ import { ChevronsRight, Combine, RotateCcw } from "lucide-react";
 import { useGameStore } from "@/store/gameStore";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import MountedDialog from "@/components/ui/MountedDialog";
 import { useBattleContext } from "@/hooks/BattleProvider";
 import type { ActionCard } from "@/types/action";
 import { mergePartnerIds } from "@/lib/game/handTransition";
@@ -21,19 +16,12 @@ import Hand from "@/components/game/battle/Hand";
 import CardDetail, {
   skillPowerText,
 } from "@/components/game/battle/CardDetail";
-import DetailOverlay from "@/components/game/DetailOverlay";
 import {
   useDealSequence,
   usePrefersReducedMotion,
 } from "@/hooks/useDealSequence";
 import { actionsForTurn } from "@/lib/game/actionEconomy";
 import { bonusActionsFor } from "@/lib/game/stageEffects";
-
-/** Merge tier. Deliberately not stars — a star row reads as rarity, which is
- *  a different axis and one this game also has. */
-function getRankPips(rank: 1 | 2 | 3): string {
-  return `${"◆".repeat(rank)}${"◇".repeat(3 - rank)}`;
-}
 
 // The card face — art, rank pips, skill-type glyph — moved to
 // components/game/battle/Hand.tsx with the rest of the hand on 2026-08-12.
@@ -43,22 +31,6 @@ function getCharacterInitial(name?: string): string {
     return "?";
   }
   return name.trim().charAt(0).toUpperCase();
-}
-
-function getColorTokenClasses(color?: string): string {
-  switch (color) {
-    case "red":
-      return "border-el-red/80 bg-el-red/10";
-    case "blue":
-      return "border-el-blue/80 bg-el-blue/10";
-    case "green":
-      return "border-el-green/80 bg-el-green/10";
-    case "dark":
-      return "border-el-dark/80 bg-el-dark/10";
-    case "light":
-    default:
-      return "border-el-light/80 bg-el-light/10";
-  }
 }
 
 export default function Deck() {
@@ -189,31 +161,33 @@ export default function Deck() {
       // hand while the center battle stage takes visual focus — transient
       // only, the hand stays persistently visible in normal play (never a
       // permanent drawer), so this just dims/shrinks it a touch, not hides it.
-      className={`bighit-recede relative z-30 w-full shrink-0 border-t border-hairline bg-linear-to-t from-black/95 to-black/70 px-3 pb-2 pt-1.5 backdrop-blur-md transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.98] opacity-60" : "scale-100 opacity-100"}`}
+      //
+      // The player's paper (ruling #156): the same sheet the player's row sits
+      // on continues through the queue, the hand and the controls, so the
+      // bottom of the screen reads as one page that belongs to you.
+      className={`bighit-recede relative z-30 w-full shrink-0 border-t border-rule bg-card px-3 pb-2 pt-1.5 text-card-foreground transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.98] opacity-60" : "scale-100 opacity-100"}`}
     >
       {previewCard ? (
         <div className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-3 w-full max-w-xl -translate-x-1/2">
-          <Card className="w-full">
-            <CardHeader className="px-4 py-3">
-              <div className="flex w-full items-start justify-between gap-3">
-                <div>
-                  <CardTitle>
-                    {previewCard.skill.skillName}
-                  </CardTitle>
-                  <CardDescription className="tracking-label">
-                    {previewCard.skill.type} • Rank {previewCard.rank} •{" "}
-                    {skillPowerText(previewCard)}
-                  </CardDescription>
-                </div>
-                <span className="rounded-none border border-el-light/70 bg-el-light/15 px-2 py-0.5 font-body text-xs uppercase tracking-label text-el-light">
-                  R{previewCard.rank}
-                </span>
+          {/* A paper panel lifted off the page, the same surface as the
+              press-and-hold dialog below. */}
+          <div className="w-full border-2 border-border bg-card text-card-foreground ink-slab">
+            <div className="flex w-full items-start justify-between gap-3 border-b border-rule px-4 py-3">
+              <div className="min-w-0">
+                <p className="truncate font-heading text-xl tracking-title">
+                  {previewCard.skill.skillName}
+                </p>
+                <p className="font-body text-caption font-bold uppercase tracking-label text-muted-foreground">
+                  {previewCard.skill.type} • Rank {previewCard.rank} •{" "}
+                  {skillPowerText(previewCard)}
+                </p>
               </div>
-            </CardHeader>
-            <CardContent className="px-4 py-3">
+              <Badge variant="secondary">R{previewCard.rank}</Badge>
+            </div>
+            <div className="px-4 py-3">
               <CardDetail card={previewCard} />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       ) : null}
 
@@ -221,13 +195,14 @@ export default function Deck() {
           this existed a player on the device the game targets had no way to
           read a card's skill mid-fight. */}
       {detailCard ? (
-        <DetailOverlay
+        <MountedDialog
           title={detailCard.skill.skillName}
-          subtitle={`${detailCard.skill.type} · Rank ${detailCard.rank} · ${skillPowerText(detailCard)}`}
+          description={`${detailCard.skill.type} · Rank ${detailCard.rank} · ${skillPowerText(detailCard)}`}
           onClose={() => setDetailCard(null)}
+          className="sm:max-w-lg"
         >
           <CardDetail card={detailCard} />
-        </DetailOverlay>
+        </MountedDialog>
       ) : null}
 
       {/* Action economy, queue, controls. The queue scrolls; the controls do
@@ -240,12 +215,11 @@ export default function Deck() {
             is the one irreversible control in a turn, and an unlabelled glyph
             is not what should commit three actions. */}
         <Button
-          variant="ghost"
-          size="sm"
+          variant="secondary"
+          size="icon"
           disabled={!isPlayerActionPhase || !handSnapshot}
           onClick={resetHand}
           aria-label="Reset the hand"
-          className="w-11 shrink-0 px-0"
         >
           <RotateCcw className="h-4 w-4" strokeWidth={2.2} />
         </Button>
@@ -261,12 +235,11 @@ export default function Deck() {
             Disabled rather than hidden when nothing can merge: a control that
             vanishes teaches nobody why. */}
         <Button
-          variant="ghost"
-          size="sm"
+          variant="secondary"
+          size="icon"
           disabled={!isPlayerActionPhase || !canMergeAny}
           onClick={mergeAllCards}
           aria-label="Merge every matching pair in the hand"
-          className="w-11 shrink-0 px-0"
         >
           <Combine className="h-4 w-4" strokeWidth={2.2} />
         </Button>
@@ -299,7 +272,16 @@ export default function Deck() {
                 onMouseLeave={endPreview}
                 onFocus={() => beginPreview(card)}
                 onBlur={endPreview}
-                className={`flex min-h-11 min-w-0 max-w-44 shrink-0 cursor-pointer items-center gap-1.5 border px-1.5 transition-colors ${getColorTokenClasses(char?.color)} ${isUlt ? "ring-1 ring-el-light/80 shadow-[0_0_8px_rgba(232,209,116,0.45)]" : ""}`}
+                // A committed action: yellow, the "this is going to happen"
+                // cue, on the tray's paper. An ultimate carries the five-hue
+                // frame it has in the hand (#133) rather than a glow.
+                //
+                // `flex-1`, the same share as an empty slot (mockup C, his pick
+                // 2026-09-27). It was `shrink-0 max-w-44`: one queued action
+                // took 176px of a ~200px strip, scrolling the second and third
+                // slots off-screen — the 2026-09-01 "two of three actions
+                // invisible" finding, back through the filled slots.
+                className={`flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-1 border-2 bg-primary px-1 text-primary-foreground transition-colors hover:bg-primary/90 ${isUlt ? "frame-ultimate [--frame-fill:var(--primary)]" : "border-border"}`}
               >
                 {char && getCharacterArt(char.id) ? (
                   <Image
@@ -307,21 +289,22 @@ export default function Deck() {
                     alt={char.name}
                     width={48}
                     height={48}
-                    className="h-6 w-6 shrink-0 border border-edge object-cover object-top"
+                    className="h-6 w-6 shrink-0 border border-border object-cover object-top"
                   />
                 ) : (
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center border border-edge font-heading text-sm text-readout-strong/90">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center border border-border font-heading text-sm">
                     {getCharacterInitial(char?.name)}
                   </span>
                 )}
+                {/* At a third of the strip there is room for the portrait
+                    and the skill name on two lines, which is what mockup C
+                    drew. Who and which rank are in the label, and on the card
+                    in the hand the slot was filled from. */}
                 <span className="flex min-w-0 flex-col text-left leading-tight">
-                  <span className="truncate text-[10px] font-bold text-readout-strong">
-                    {char?.name}
+                  <span className="sr-only">
+                    {char?.name} {isUlt ? "ultimate" : `rank ${card.rank}`}:
                   </span>
-                  <span
-                    className={`truncate text-[9px] ${isUlt ? "text-el-light" : "text-readout"}`}
-                  >
-                    {isUlt ? "ULT" : getRankPips(card.rank)} •{" "}
+                  <span className="line-clamp-2 break-words text-label font-bold">
                     {card.skill.skillName}
                   </span>
                 </span>
@@ -334,7 +317,7 @@ export default function Deck() {
               key={`pass-${i}`}
               type="button"
               onClick={() => isPlayerActionPhase && removeNullAction()}
-              className="flex min-h-11 min-w-14 flex-1 items-center justify-center border border-edge bg-panel-raised/60 font-body text-[9px] uppercase tracking-label text-readout-dim transition-colors hover:border-el-red/70 hover:text-el-red"
+              className="flex min-h-11 min-w-14 flex-1 items-center justify-center border-2 border-border bg-muted font-body text-label font-bold uppercase tracking-label transition-colors hover:bg-destructive/30"
             >
               Pass
             </button>
@@ -347,7 +330,7 @@ export default function Deck() {
               onClick={() => isPlayerActionPhase && addNullAction()}
               disabled={!isPlayerActionPhase}
               aria-label="Pass this action"
-              className="flex min-h-11 min-w-14 flex-1 items-center justify-center border border-dashed border-edge font-body text-[10px] text-readout-muted transition-colors enabled:hover:border-edge-strong enabled:hover:text-readout-dim disabled:cursor-not-allowed"
+              className="flex min-h-11 min-w-14 flex-1 items-center justify-center border-2 border-dashed border-muted-foreground font-heading text-base text-muted-foreground transition-colors enabled:hover:border-border enabled:hover:text-card-foreground disabled:cursor-not-allowed"
             >
               {slotsUsed + i + 1}
             </button>
@@ -356,9 +339,8 @@ export default function Deck() {
 
         {/* Pinned outside the scroll container above — End Turn scrolling off
             the edge behind a full queue is the bug that put it here. */}
+        {/* The one thing a turn wants pressed: the primary button. */}
         <Button
-          variant="secondary"
-          size="sm"
           disabled={!isPlayerActionPhase || actionQueue.length === 0}
           onClick={resolveplayerTurnWrapper}
           className="shrink-0 gap-1.5"

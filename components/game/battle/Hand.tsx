@@ -8,7 +8,7 @@ import { getCardFrameStyle } from "@/lib/game/cardFrameStyle";
 import {
   SKILL_TYPE_ICON,
   SKILL_TYPE_LABEL,
-  SKILL_TYPE_TEXT,
+  SKILL_TYPE_CHIP,
   skillTypeCategory,
 } from "@/lib/game/skillTypeStyle";
 import { moveCardById } from "@/lib/game/deck";
@@ -132,7 +132,7 @@ function HoldRing({ durationMs }: { durationMs: number }): React.JSX.Element {
   return (
     <span
       aria-hidden
-      className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-void/55"
+      className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/55"
     >
       <svg viewBox="0 0 44 44" className="h-11 w-11 -rotate-90">
         <circle
@@ -141,7 +141,7 @@ function HoldRing({ durationMs }: { durationMs: number }): React.JSX.Element {
           r={RING_R}
           fill="none"
           strokeWidth="3"
-          className="stroke-edge-strong"
+          className="stroke-ground-line"
         />
         <circle
           cx="22"
@@ -151,7 +151,7 @@ function HoldRing({ durationMs }: { durationMs: number }): React.JSX.Element {
           strokeWidth="3"
           strokeLinecap="butt"
           strokeDasharray={RING_C}
-          className="hold-ring-sweep stroke-signal"
+          className="hold-ring-sweep stroke-primary"
           style={
             {
               "--hold-circumference": RING_C,
@@ -625,7 +625,7 @@ export default function Hand({
       // Cost, accepted: drag-to-reorder no longer works by touch, because the
       // same horizontal swipe now scrolls the row. Mouse drag is unaffected,
       // and merging by touch goes through the card's Merge button (#118).
-      className="hud-scroll flex w-full touch-pan-x justify-start gap-0.5 overflow-x-auto border-y border-hairline bg-void/70 p-0.5 [&>*:first-child]:ml-auto [&>*:last-child]:mr-auto"
+      className="hud-scroll flex w-full touch-pan-x justify-start gap-0.5 overflow-x-auto border-y border-rule bg-muted p-0.5 [&>*:first-child]:ml-auto [&>*:last-child]:mr-auto"
     >
       {displayed.map((card) => {
         const char = playerTeam.find(
@@ -687,16 +687,16 @@ export default function Hand({
             // and hands ~20px back to the field — which is where the 4v4
             // portraits needed it.
             className={`
-              no-callout relative flex h-27 min-w-11 max-w-24 flex-1 select-none flex-col overflow-hidden rounded-lg border bg-panel
+              no-callout relative flex h-27 min-w-11 max-w-24 flex-1 select-none flex-col overflow-hidden border bg-card text-card-foreground
               ${frame.borderClass}
               ${interactive ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
               ${interactive && !isDragged ? "transition-transform duration-150 hover:-translate-y-2" : ""}
               ${isStunned || isSealed ? "grayscale brightness-50" : ""}
               ${queueFull ? "opacity-70" : ""}
               ${dimmed ? "opacity-35 saturate-50" : ""}
-              ${isPartner && !isMergeTarget ? "border-signal shadow-[0_0_0_1px_var(--color-signal),0_0_14px_rgba(79,211,232,0.35)]" : ""}
-              ${isMergeTarget ? "border-el-light shadow-[0_0_0_1px_var(--color-el-light),0_0_20px_rgba(232,209,116,0.5)]" : ""}
-              ${isDragged ? "shadow-[0_14px_34px_rgba(0,0,0,0.65)]" : ""}
+              ${isPartner && !isMergeTarget ? "shadow-[0_0_0_2px_var(--color-primary)]" : ""}
+              ${isMergeTarget ? "shadow-[0_0_0_2px_var(--color-card-foreground),0_0_0_5px_var(--color-primary)]" : ""}
+              ${isDragged ? "shadow-[4px_4px_0_var(--color-card-foreground)]" : ""}
             `}
           >
             {frame.accentBarClass ? (
@@ -705,7 +705,7 @@ export default function Hand({
               />
             ) : null}
 
-            <div className="relative min-h-0 flex-1 overflow-hidden bg-inset">
+            <div className="relative min-h-0 flex-1 overflow-hidden bg-muted">
               {(() => {
                 const art = char
                   ? (getSkillArt(char.id, card.skill.skillName) ??
@@ -721,19 +721,19 @@ export default function Hand({
                     className="h-full w-full object-cover object-top"
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center font-heading text-3xl leading-none text-readout-strong">
+                  <span className="flex h-full w-full items-center justify-center font-heading text-3xl leading-none">
                     {getCharacterInitial(char?.name)}
                   </span>
                 );
               })()}
 
-              <span className="absolute left-0 top-0 bg-void/80 px-1 py-px font-body text-[9px] font-bold leading-none tracking-title">
+              {/* A paper tab on the art, ink on it: the tier words read the
+                  same over any portrait. */}
+              <span className="absolute left-0 top-0 bg-card px-1 py-px font-body text-micro font-bold leading-none tracking-title">
                 {isUlt ? (
-                  <span className="uppercase tracking-label text-el-light">
-                    Ult
-                  </span>
+                  <span className="uppercase tracking-label">Ult</span>
                 ) : (
-                  <span className="text-readout">{getRankPips(card.rank)}</span>
+                  <span>{getRankPips(card.rank)}</span>
                 )}
               </span>
 
@@ -743,7 +743,7 @@ export default function Hand({
                 return (
                   <span
                     aria-label={SKILL_TYPE_LABEL[category]}
-                    className={`absolute right-0 top-0 flex h-4 w-4 items-center justify-center bg-void/80 ${SKILL_TYPE_TEXT[category]}`}
+                    className={`absolute right-0 top-0 flex h-4 w-4 items-center justify-center ${SKILL_TYPE_CHIP[category]}`}
                   >
                     <BadgeIcon className="h-2.5 w-2.5" strokeWidth={2.6} />
                   </span>
@@ -751,13 +751,13 @@ export default function Hand({
               })()}
 
               {isMergeTarget ? (
-                <span className="absolute inset-x-0 bottom-0 bg-el-light py-px text-center font-body text-[8px] font-bold uppercase tracking-label text-void">
+                <span className="absolute inset-x-0 bottom-0 bg-primary py-px text-center font-body text-micro font-bold uppercase tracking-label text-primary-foreground">
                   Merge
                 </span>
               ) : null}
             </div>
 
-            <div className="shrink-0 border-t border-hairline bg-inset px-1 py-0.5">
+            <div className="shrink-0 border-t border-rule px-1 py-0.5">
               {/* Two lines, then an ellipsis (Tanveer's pick, 2026-09-26).
                   Shōnen Ink's body face is ~25% wider than Rajdhani at this
                   size, so a single truncated line cut even short names like
@@ -766,10 +766,10 @@ export default function Hand({
                   because a single word can still be wider than the card
                   (Shatterburn: 55px on 53), and a hyphen reads better than
                   a word split at an arbitrary letter. */}
-              <p className="line-clamp-2 hyphens-auto break-words font-body text-[9px] font-semibold leading-tight text-readout-strong">
+              <p className="line-clamp-2 hyphens-auto break-words font-body text-micro font-bold leading-tight">
                 {card.skill.skillName}
               </p>
-              <p className="truncate font-body text-[8px] font-bold leading-tight tabular-nums text-readout-muted">
+              <p className="truncate font-body text-micro font-bold leading-tight tabular-nums text-muted-foreground">
                 {getSkillPowerText(card)}
               </p>
             </div>
@@ -803,10 +803,8 @@ export default function Hand({
                 // with a reason; this is the reason. The card is what would
                 // have to grow, and it can't without the hand scrolling
                 // further than one swipe.
-                className={`absolute bottom-6 right-0.5 h-5 min-h-0 px-1 py-0 text-[9px] tracking-title ${
-                  armed === card.id
-                    ? "border-el-light bg-el-light text-void"
-                    : "bg-void/85"
+                className={`absolute bottom-6 right-0.5 h-5 min-h-0 px-1 py-0 text-micro tracking-title ${
+                  armed === card.id ? "bg-primary text-primary-foreground" : ""
                 }`}
               >
                 {armed === card.id ? "Pick" : "Merge"}
@@ -816,13 +814,13 @@ export default function Hand({
             {/* The commit target, once a merge is armed. Covers the card so
                 the tap that lands here can't be mistaken for playing it. */}
             {armed !== null && armed !== card.id && isPartner ? (
-              <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-el-light py-px text-center font-body text-[8px] font-bold uppercase tracking-label text-void">
+              <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-primary py-px text-center font-body text-micro font-bold uppercase tracking-label text-primary-foreground">
                 Tap
               </span>
             ) : null}
 
             {isStunned ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-void/40 font-body text-[10px] font-bold uppercase tracking-label text-readout-strong">
+              <div className="absolute inset-0 flex items-center justify-center bg-background/60 font-body text-micro font-bold uppercase tracking-label text-foreground">
                 Stunned
               </div>
             ) : null}
@@ -863,11 +861,9 @@ function punch(node: HTMLElement | undefined): void {
   );
   node.animate(
     [
-      {
-        boxShadow:
-          "0 0 0 1px var(--color-el-light), 0 0 26px rgba(232,209,116,0.7)",
-      },
-      { boxShadow: "0 0 0 0 rgba(232,209,116,0)" },
+      // A yellow ink ring that snaps shut: the motif has no glow (#154).
+      { boxShadow: "0 0 0 4px var(--color-primary)" },
+      { boxShadow: "0 0 0 0 var(--color-primary)" },
     ],
     { duration: 420, easing: EASE_OUT },
   );

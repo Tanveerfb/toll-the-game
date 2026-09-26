@@ -2,6 +2,7 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
+import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/store/gameStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { actionsForTurn } from "@/lib/game/actionEconomy";
@@ -110,35 +111,29 @@ function CoachCard({
         width: CARD_WIDTH,
         transform: above ? "translateY(-100%)" : undefined,
       }}
-      className="pointer-events-auto z-[71] border border-signal bg-panel px-3 py-2.5 shadow-[0_10px_34px_rgba(0,0,0,0.7)]"
+      // A paper card lifted on a yellow slab: the one thing on screen asking
+      // to be read right now (#154).
+      className="pointer-events-auto z-[71] border-2 border-border bg-card px-3 py-2.5 text-card-foreground ink-slab-primary"
     >
-      <p className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-signal">
+      <p className="inline-block bg-primary px-1 font-body text-label font-bold uppercase tracking-eyebrow text-primary-foreground">
         Step {index + 1} of {total}
       </p>
-      <p className="mt-0.5 font-heading text-base leading-tight tracking-title text-readout-strong">
+      <p className="mt-1 font-heading text-base leading-tight tracking-title">
         {step.title}
       </p>
-      <p className="mt-1 font-body text-[11px] leading-snug text-readout-dim">
+      <p className="mt-1 font-body text-caption leading-snug">
         {step.body}
       </p>
       {/* This is the first thing a new player is asked to press, and both
           controls were unpressable on a phone: Skip all was bare 9px text with
           no padding at all (~12px tall) and Got it was ~22px. */}
       <div className="mt-1 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={onSkipAll}
-          className="flex min-h-11 items-center pr-3 font-body text-[9px] font-bold uppercase tracking-label text-readout-muted transition-colors hover:text-el-red"
-        >
+        <Button variant="ghost" size="xs" onClick={onSkipAll}>
           Skip all
-        </button>
-        <button
-          type="button"
-          onClick={onNext}
-          className="flex min-h-11 items-center border border-signal px-4 font-body text-[9px] font-bold uppercase tracking-label text-signal transition-colors hover:bg-signal/20"
-        >
+        </Button>
+        <Button size="sm" onClick={onNext}>
           Got it
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -258,8 +253,8 @@ export default function BattleCoach(): React.JSX.Element | null {
           left: box.left - 4,
           width: box.width + 8,
           height: box.height + 8,
-          boxShadow: "0 0 0 9999px rgba(2, 5, 8, 0.72)",
-          outline: "1px solid var(--color-signal)",
+          boxShadow: "0 0 0 9999px color-mix(in srgb, var(--background) 72%, transparent)",
+          outline: "3px solid var(--primary)",
         }}
         className="pointer-events-none z-[70]"
       />

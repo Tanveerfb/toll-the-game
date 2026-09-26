@@ -22,12 +22,6 @@ import path from "node:path";
 describe("full-viewport overlays escape their stacking context", () => {
   const roots = ["app", "components"];
 
-  /** Overlays that legitimately render in place, and why. */
-  const ROOTED: Record<string, string> = {
-    "components/game/BattleArena.tsx":
-      "The arena's own result/confirm modals; the arena wrapper is plain `relative`.",
-  };
-
   function walk(dir: string): string[] {
     return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
       const full = path.join(dir, entry.name);
@@ -40,66 +34,58 @@ describe("full-viewport overlays escape their stacking context", () => {
     .flatMap((r) => walk(path.join(process.cwd(), r)))
     .map((f) => path.relative(process.cwd(), f).split(path.sep).join("/"));
 
-  const overlays = files.filter((rel) =>
-    /className=(?:"|\{`)[^"`]*\bfixed inset-0\b/.test(
-      fs.readFileSync(rel, "utf8"),
-    ),
-  );
+  /** A hand-built full-viewport overlay: `fixed inset-0` in a className. */
+  const HAND_BUILT = /className=(?:"|\{`)[^"`]*\bfixed inset-0\b/;
 
-  it("finds the overlays it is meant to be guarding", () => {
-    // A regex that silently stops matching would make every assertion below
-    // vacuously pass.
-    // Dropped from 8 to 6 on 2026-08-11 when OwnedTeamSelect was deleted and
-    // TeamSelect's hand-rolled roster overlay moved onto DetailOverlay, which
-    // portals. A FALL below this floor is the signal worth catching — either
-    // the regex broke, or an overlay quietly stopped being one.
-    //
-    // Dropped from 6 to 4 on 2026-09-26, and on purpose: the Shonen Ink pass
-    // (ruling #154) moved the hand-built overlays onto the shadcn `Dialog` and
-    // `Sheet`, which portal through radix. `ModalShell` was deleted and
-    // `PullReveal` and `CharacterBrowser` stopped painting their own. What is
-    // left is battle's three and `DetailOverlay`, which move in phase 4.
-    expect(overlays.length).toBeGreaterThanOrEqual(4);
+  it("the detector still recognises a hand-built overlay", () => {
+    // Without this the ban below passes vacuously the day the regex breaks.
+    expect(HAND_BUILT.test('<div className="fixed inset-0 z-50 bg-black">')).toBe(true);
+    expect(HAND_BUILT.test("<div className={`fixed inset-0 ${x}`}>")).toBe(true);
+    expect(HAND_BUILT.test('<div className="absolute inset-0">')).toBe(false);
   });
 
-  it("either portals or is a documented root-level overlay", () => {
-    const unaccounted = overlays.filter((rel) => {
-      if (rel in ROOTED) return false;
-      return !fs.readFileSync(rel, "utf8").includes("createPortal");
-    });
-    expect(unaccounted).toEqual([]);
-  });
-
-  it("portals the unit info panel, which the battle shake would otherwise trap", () => {
-    // `BattleArena` puts `battle-shake-strong` on its wrapper during heavy
-    // hits; an active transform creates a containing block, which would scope
-    // this fixed overlay to the arena mid-animation.
-    const src = fs.readFileSync(
-      "components/game/battle/UnitDetailPanel.tsx",
-      "utf8",
+  /**
+   * **Every modal is the shadcn `Dialog` or `Sheet` since 2026-09-27**, and
+   * radix portals both to `document.body` — so no screen can trap one again.
+   *
+   * This test used to count hand-built overlays (8, then 6, then 4) and
+   * require each to call `createPortal` or be listed as safe where it sat. The
+   * Shōnen Ink pass (ruling #154) moved them onto the primitives one screen at
+   * a time; the battle's (#156: the unit panel, the log drawer, the controls
+   * sheet, the result and the confirms) were the last, and `DetailOverlay`
+   * was deleted with its last caller. So the rule is now the whole of it: a
+   * full-viewport overlay outside `components/ui` is a hand-rolled modal, and
+   * #154 says there are none.
+   */
+  it("no screen hand-builds a full-viewport overlay", () => {
+    const offenders = files.filter(
+      (rel) =>
+        !rel.startsWith("components/ui/") &&
+        HAND_BUILT.test(fs.readFileSync(rel, "utf8")),
     );
-    expect(src).toContain("createPortal");
-    expect(src).toContain("document.body");
+    expect(offenders).toEqual([]);
   });
 
-  it("portals the battle log drawer, which the same shake would trap", () => {
-    // Was a documented exception: "harmless today because the arena is
-    // near-viewport-sized; portal it if that stops being true." Layout B's
-    // side rail is exactly that stopping being true (2026-08-11).
-    const src = fs.readFileSync(
-      "components/game/battle/BattleLogDrawer.tsx",
-      "utf8",
-    );
-    expect(src).toContain("createPortal");
-    expect(src).toContain("document.body");
+  it("the Dialog and Sheet primitives portal", () => {
+    // The guarantee every modal now leans on. The battle shake
+    // (`battle-shake-strong`) transforms the arena, and a transform is a
+    // containing block: an overlay rendered in place would be scoped to the
+    // arena for the length of the shake.
+    for (const rel of ["components/ui/dialog.tsx", "components/ui/sheet.tsx"]) {
+      const src = fs.readFileSync(rel, "utf8");
+      expect(src, rel).toMatch(/<(?:Dialog|Sheet)Portal>/);
+    }
   });
 
-  it("portals the shared DetailOverlay into document.body", () => {
-    // The one overlay with no fixed home in the tree — callers mount it
-    // wherever the feature lives, so it can never rely on its surroundings.
-    const src = fs.readFileSync("components/game/DetailOverlay.tsx", "utf8");
-    expect(src).toContain("createPortal");
-    expect(src).toContain("document.body");
+  it("the battle's panels are built on them", () => {
+    // Named, because these are the two the shake would trap, and the two that
+    // were hand-built portals until 2026-09-27.
+    expect(
+      fs.readFileSync("components/game/battle/UnitDetailPanel.tsx", "utf8"),
+    ).toContain('from "@/components/ui/dialog"');
+    expect(
+      fs.readFileSync("components/game/battle/BattleLogDrawer.tsx", "utf8"),
+    ).toContain('from "@/components/ui/sheet"');
   });
 
   /**

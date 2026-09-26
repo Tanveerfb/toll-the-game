@@ -136,9 +136,11 @@ export default function CharacterProgressionPanel({
   if (!roster.includes(characterId)) {
     return (
       <p
+        // The same height as the Growth button it stands in for, so the
+        // action row does not change shape between owned and not.
         className={cn(
           panelVariants({ surface: "paper", density: "tight" }),
-          "text-center font-body text-label font-bold uppercase tracking-label text-muted-foreground",
+          "flex min-h-12 items-center justify-center text-center font-body text-label font-bold uppercase tracking-label text-muted-foreground",
         )}
       >
         Not owned — summon to level up
@@ -151,11 +153,14 @@ export default function CharacterProgressionPanel({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="secondary" size="sm" className="w-full">
-          {/* The button states where the character stands, so the modal is
-              worth opening rather than being the only way to find out. */}
-          Growth · Lv {progress.level} · A{progress.ascension} · UL
-          {progress.ultLevel}
+        {/* The primary on this page (his pick, 2026-09-27: "especially the
+            growth one"). It states where the character stands, so the modal
+            is worth opening rather than being the only way to find out. */}
+        <Button size="lg" className="h-auto w-full flex-col gap-0 py-1.5">
+          <span className="text-xl leading-none">Growth</span>
+          <span className="whitespace-normal font-body text-label font-bold uppercase tracking-label">
+            Lv {progress.level} · A{progress.ascension} · UL{progress.ultLevel}
+          </span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">

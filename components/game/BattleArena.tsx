@@ -3,14 +3,24 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import MountedDialog from "@/components/ui/MountedDialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { useFocusBackToOpener } from "@/hooks/useReturnFocus";
 import { AnimatePresence, m } from "framer-motion";
 import {
   FastForward,
@@ -44,7 +54,6 @@ import { useBattleSequencer } from "@/hooks/useBattleSequencer";
 import DuelWaitingOverlay from "@/components/game/battle/DuelWaitingOverlay";
 import { publishDuelResult } from "@/lib/duel/client";
 import { useSettingsStore } from "@/store/settingsStore";
-import { scrimProps, useEscapeKey } from "@/hooks/useEscapeKey";
 import { actionsForTurn } from "@/lib/game/actionEconomy";
 import {
   bonusActionsFor,
@@ -111,27 +120,23 @@ function ControlButton({
   className?: string;
   children: React.ReactNode;
 }): React.JSX.Element {
-  const toneCls =
-    tone === "danger"
-      ? "hover:border-el-red hover:text-el-red"
-      : "hover:border-signal hover:text-signal";
+  // The shadcn Button, stacked: every one of these sits on the player's paper
+  // (the tray or the controls sheet, #156), so it is a paper button, yellow
+  // while on, and the destructive fill for the way out.
   return (
-    <button
+    <Button
       type="button"
+      variant={tone === "danger" ? "destructive" : "secondary"}
+      size="xs"
       onClick={onClick}
       aria-label={title ?? label}
+      aria-pressed={active}
       data-tutorial={tutorialAnchor}
-      className={`flex min-h-11 cursor-pointer flex-col items-center justify-center gap-1 border px-1 py-1 transition-colors ${
-        active
-          ? "border-signal bg-signal/10 text-signal"
-          : `border-edge text-readout-dim ${toneCls}`
-      } ${className ?? ""}`}
+      className={`h-auto flex-col gap-1 px-1 py-1 ${active ? "bg-primary hover:bg-primary/90" : ""} ${className ?? ""}`}
     >
       {children}
-      <span className="font-body text-[8px] font-bold uppercase leading-none tracking-label">
-        {label}
-      </span>
-    </button>
+      <span className="leading-none">{label}</span>
+    </Button>
   );
 }
 
@@ -144,11 +149,11 @@ function SheetStat({
   value: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-hairline py-1.5 last:border-b-0">
-      <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+    <div className="flex items-baseline justify-between gap-3 border-b border-rule py-1.5 last:border-b-0">
+      <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
         {label}
       </span>
-      <span className="min-w-0 truncate text-right font-body text-xs text-readout-strong">
+      <span className="min-w-0 truncate text-right font-body text-xs font-bold">
         {value}
       </span>
     </div>
@@ -174,7 +179,7 @@ function RailStack({
         return (
           <span
             key={unit.instanceId}
-            className="h-4 w-4 overflow-hidden border border-edge bg-inset"
+            className="h-4 w-4 overflow-hidden border border-border bg-muted"
           >
             {art ? (
               <Image
@@ -439,7 +444,9 @@ export default function BattleArena({
     () => document.querySelector<HTMLElement>("[data-battle-control-slot]"),
     () => null,
   );
-  useEscapeKey(() => setIsControlsOpen(false), isControlsOpen);
+  // The sheet has no `SheetTrigger` (the Controls button lives in a portal),
+  // so focus goes back to whatever opened it by hand.
+  const focusBackToOpener = useFocusBackToOpener();
 
   const phaseOrder = [
     "OnBattleStart",
@@ -598,19 +605,17 @@ export default function BattleArena({
   })();
 
   const controlRow = (
-    <div className="shrink-0 border-t border-hairline bg-inset px-2 py-1.5">
+    <div className="shrink-0 border-t border-rule px-2 py-1.5">
       {interactionNotice ? (
-        <div className="flex min-h-11 items-center justify-between gap-2">
-          <p className="min-w-0 truncate font-body text-xs uppercase tracking-label text-el-red">
+        // On the player's paper (#156): a red rule beside ink, since red text
+        // does not read on paper.
+        <div className="flex min-h-11 items-center justify-between gap-2 border-l-8 border-destructive pl-2">
+          <p className="min-w-0 truncate font-body text-xs font-bold uppercase tracking-label">
             {interactionNotice}
           </p>
-          <button
-            type="button"
-            onClick={clearInteractionNotice}
-            className="flex min-h-11 shrink-0 cursor-pointer items-center border border-el-red/70 px-3 font-body text-[10px] uppercase tracking-label text-el-red"
-          >
+          <Button variant="outline" size="xs" onClick={clearInteractionNotice}>
             Dismiss
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="flex items-stretch gap-1.5">
@@ -685,7 +690,7 @@ export default function BattleArena({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 / battleSpeed }}
-              className="absolute inset-0 bg-void/80"
+              className="absolute inset-0 bg-background/80"
             />
           ) : null}
         </AnimatePresence>
@@ -742,8 +747,10 @@ export default function BattleArena({
               transition={{ duration: 0.26 / battleSpeed, ease: "easeIn" }}
               className="absolute left-0 top-0"
             >
+              {/* An ink-framed square with a slab, not a glowing disc: glow
+                  and rounded shapes are excluded from the motif (#154). */}
               <div
-                className={`h-14 w-14 overflow-hidden rounded-full border-2 ${seq.ghost.isUlt ? "border-el-light shadow-[0_0_24px_rgba(232,209,116,0.9)]" : "border-readout-strong/80 shadow-[0_0_14px_rgba(234,242,248,0.5)]"}`}
+                className={`h-14 w-14 overflow-hidden border-2 ink-slab-sm ${seq.ghost.isUlt ? "border-el-light" : "border-foreground"}`}
               >
                 {getCharacterArt(seq.ghost.characterId) ? (
                   <Image
@@ -767,7 +774,7 @@ export default function BattleArena({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 / battleSpeed }}
-              className="absolute inset-0 bg-void/75"
+              className="absolute inset-0 bg-background/75"
             >
               {/* White flash punch on entry */}
               <m.div
@@ -781,7 +788,9 @@ export default function BattleArena({
                 animate={{ x: 0, scale: 1 }}
                 exit={{ x: "100%" }}
                 transition={{ duration: 0.3 / battleSpeed, ease: "easeOut" }}
-                className="absolute inset-x-0 top-1/2 flex h-32 -translate-y-1/2 items-center gap-4 overflow-hidden border-y-2 border-el-light bg-linear-to-r from-el-light/12 via-void/95 to-el-light/12 px-6 shadow-[0_0_60px_rgba(232,209,116,0.4)]"
+                // A manga panel slammed across the page: paper, heavy ink
+                // rules top and bottom, the art framed in ink.
+                className="absolute inset-x-0 top-1/2 flex h-32 -translate-y-1/2 items-center gap-4 overflow-hidden border-y-4 border-border bg-card px-6 text-card-foreground"
               >
                 {/* Skill art first, portrait as fallback. All 48 playable +
                     boss ultimates have their own art already, so every
@@ -793,14 +802,14 @@ export default function BattleArena({
                     alt={seq.cutIn.name}
                     width={220}
                     height={220}
-                    className="h-40 w-28 shrink-0 border-2 border-el-light/70 object-cover object-top shadow-[0_0_30px_rgba(232,209,116,0.6)]"
+                    className="h-28 w-24 shrink-0 border-2 border-border object-cover object-top"
                   />
                 ) : null}
                 <div className="min-w-0">
-                  <p className="font-body text-xs uppercase tracking-eyebrow text-el-light/80">
+                  <p className="font-body text-xs font-bold uppercase tracking-eyebrow text-muted-foreground">
                     {seq.cutIn.name} — Ultimate
                   </p>
-                  <p className="truncate font-heading text-4xl tracking-label text-el-light drop-shadow-[0_0_12px_rgba(232,209,116,0.8)]">
+                  <p className="truncate font-heading text-4xl tracking-label">
                     {seq.cutIn.skillName}
                   </p>
                 </div>
@@ -824,19 +833,19 @@ export default function BattleArena({
                 initial={{ opacity: 0.9 }}
                 animate={{ opacity: 0 }}
                 transition={{ duration: 0.6 / battleSpeed, ease: "easeOut" }}
-                className="absolute inset-0 bg-el-red/40"
+                className="absolute inset-0 bg-destructive/40"
               />
               <m.div
                 initial={{ scale: 1.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
                 transition={{ duration: 0.38 / battleSpeed, ease: "easeOut" }}
-                className="relative flex flex-col items-center gap-1 border-y-2 border-el-red bg-void/80 px-12 py-5 backdrop-blur-sm"
+                className="relative flex flex-col items-center gap-1 border-y-4 border-border bg-destructive px-12 py-5 text-card-foreground"
               >
-                <span className="font-body text-xs uppercase tracking-eyebrow text-el-red/80">
+                <span className="font-body text-xs font-bold uppercase tracking-eyebrow">
                   {phaseBreak.name}
                 </span>
-                <span className="font-heading text-5xl tracking-label text-el-red drop-shadow-[0_0_16px_rgba(255,90,78,0.85)] md:text-6xl">
+                <span className="font-heading text-5xl tracking-label md:text-6xl">
                   PHASE {phaseBreak.phase}
                 </span>
               </m.div>
@@ -852,22 +861,30 @@ export default function BattleArena({
               animate={{ opacity: 1, y: -26, scale: 1 }}
               exit={{ opacity: 0, y: -40 }}
               transition={{ duration: 0.5 / battleSpeed, ease: "easeOut" }}
-              className={`absolute -translate-x-1/2 border px-2 py-0.5 font-heading tracking-title shadow-xl ${
-                floater.kind === "crit"
-                  ? "border-el-light bg-void/90 text-2xl text-el-light"
-                  : floater.kind === "damage"
-                    ? "border-el-red/70 bg-void/85 text-xl text-el-red"
-                    : floater.kind === "counter"
-                      ? "border-edge-strong bg-void/85 text-lg text-readout"
-                      : floater.kind === "heal"
-                        ? "border-el-green/70 bg-void/85 text-xl text-el-green"
-                        : floater.kind === "evade"
-                          ? "border-signal/70 bg-void/85 text-lg text-signal"
-                          : "border-edge-strong bg-void/85 text-sm text-readout-strong"
-              }`}
+              className="absolute -translate-x-1/2"
               style={{ left: floater.x, top: floater.y }}
             >
-              {floater.text}
+              {/* A sound-effect chip: ink outline, the meaning as its fill
+                  (INK_TONE's rule, on a number that has to read over either
+                  half of the page). The skew is on this inner span because
+                  framer-motion owns the outer element's transform. */}
+              <span
+                className={`block border-2 border-border px-2 py-0.5 font-heading tracking-title text-card-foreground ink-skew ${
+                  floater.kind === "crit"
+                    ? "bg-el-light text-2xl"
+                    : floater.kind === "damage"
+                      ? "bg-destructive text-xl"
+                      : floater.kind === "heal"
+                        ? "bg-role-heal text-xl"
+                        : floater.kind === "counter"
+                          ? "bg-card text-lg"
+                          : floater.kind === "evade"
+                            ? "bg-muted text-lg"
+                            : "bg-card text-sm"
+                }`}
+              >
+                {floater.text}
+              </span>
             </m.div>
           ))}
         </AnimatePresence>
@@ -1008,20 +1025,18 @@ export default function BattleArena({
         </AnimatePresence>
       </div>
 
-      {/* Status strip — readout only. Every control moved to the rail; this
-          row used to carry the Speed/Log/Exit cluster, which is what forced
-          the enemy roster button down to top-14 to avoid it. */}
-      <header className="flex shrink-0 items-center gap-3 border-b border-hairline bg-inset px-3 py-1.5">
-        <span className="shrink-0 font-heading text-base tracking-label text-readout-strong">
+      {/* Status strip — readout only, on the ground. The phase is the one
+          loud thing here: a yellow badge, because it is the system telling
+          you whose move it is. */}
+      <header className="flex shrink-0 items-center gap-3 px-3 py-1.5">
+        <span className="shrink-0 font-heading text-lg tracking-label">
           TURN {currentTurn + 1}
         </span>
-        <span className="truncate font-body text-xs uppercase tracking-label text-signal">
-          {phaseLabel}
-        </span>
+        <Badge className="ink-skew truncate">{phaseLabel}</Badge>
         {duelMode ? (
-          <span className="hidden shrink-0 border border-violet-400/70 px-1.5 py-0.5 font-body text-[10px] uppercase tracking-label text-violet-200 sm:inline">
+          <Badge variant="outline" className="hidden shrink-0 sm:inline-flex">
             Duel
-          </span>
+          </Badge>
         ) : null}
         {/* Breakpoints on a readout row, deliberately (2026-08-21). This strip
             is one line and everything in it competes for the same ~390px, so
@@ -1035,19 +1050,19 @@ export default function BattleArena({
             a phone the title card and VS splash have just said the same thing. */}
         {contextLabel ? (
           <span className="hidden min-w-0 shrink items-center gap-2 sm:flex">
-            <span className="h-3 w-px shrink-0 bg-edge" />
-            <span className="truncate font-body text-[11px] uppercase tracking-label text-readout-muted">
+            <span className="h-3 w-px shrink-0 bg-ground-line" />
+            <span className="truncate font-body text-caption uppercase tracking-label text-ground-dim">
               {contextLabel}
             </span>
           </span>
         ) : null}
         <span className="flex-1" />
-        <span className="hidden shrink-0 font-body text-[10px] uppercase tracking-label text-readout-muted md:inline">
+        <span className="hidden shrink-0 font-body text-label uppercase tracking-label text-ground-dim md:inline">
           Player {playerTurns} • Enemy {enemyTurns}
         </span>
-        <div className="h-1.5 w-10 shrink-0 overflow-hidden border border-edge bg-void sm:w-24">
+        <div className="h-1.5 w-10 shrink-0 overflow-hidden border border-ground-line bg-background sm:w-24">
           <m.div
-            className="h-full bg-signal"
+            className="h-full bg-primary"
             initial={{ width: 0 }}
             animate={{ width: `${phaseProgress}%` }}
             transition={{ duration: 0.35, ease: "easeOut" }}
@@ -1055,114 +1070,112 @@ export default function BattleArena({
         </div>
       </header>
 
-      {/* Stage + rail. The rail sits BESIDE the play area rather than floating
-          on top of it — the three controls it replaces (both roster stacks and
-          Skip) all lived over the tiles they described, and the code carried
-          comments about them colliding with each other. */}
-      <div className="flex min-h-0 flex-1">
-        {/* Battlefield — "Balanced Stack" (spec §1): enemy row / center battle
-            stage / ally row. Big-hit focus (R3/ultimate) recedes both team
-            rows and lets the stage take momentary visual focus, then restores. */}
-        <section className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-1 py-1.5 pl-3 pr-2">
-          <div
-            className={`bighit-recede flex min-h-0 flex-col transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.97] opacity-50" : "scale-100 opacity-100"}`}
-          >
-            <div className="mb-1 flex shrink-0 items-center justify-between gap-2">
-              {/* The instruction text that used to live here ("tap to inspect ·
-                  ◎ to focus fire (optional; unmarked attacks pick randomly)")
-                  is gone — a permanent tutorial line on a height-starved
-                  screen. The reticle carries its own tooltip. */}
-              <p className="min-w-0 truncate font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
-                Enemy
-              </p>
-              {/* Enemy hidden deck (headless 7DS GC model): face-down cards =
-                  the enemy's current hand size. */}
-              {enemyDeck.length > 0 ? (
-                <div
-                  className="flex shrink-0 items-center gap-1"
-                  aria-label={`Enemy hand: ${enemyDeck.length} card${enemyDeck.length > 1 ? "s" : ""}`}
-                >
-                  <span className="font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
-                    Hand {enemyDeck.length}
-                  </span>
-                  {enemyDeck.slice(0, 7).map((card, i) => (
-                    <span
-                      key={card.id ?? i}
-                      className="flex h-4 w-3 items-start justify-center border border-edge bg-panel-raised"
-                    >
-                      <span className="mt-1 block h-1 w-1 rotate-45 bg-readout-muted" />
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-            {/* Cards are 9:16 portrait, height-capped to the row and centered;
-                a lone boss just sits alone in the middle. */}
-            <div className="flex min-h-0 flex-1 items-center justify-center gap-2 overflow-hidden">
-              {enemyOnField.map((unit) => (
-                <div
-                  key={unit.instanceId}
-                  className={`${tileAspect(enemyOnField.length)} max-h-full min-w-0 max-w-[112px] flex-1`}
-                >
-                  <TeamUnitTile
-                    unit={unit}
-                    isEnemy
-                    isMarked={selectedEnemyMarker === unit.instanceId}
-                    queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
-                    fx={tileFx(unit.instanceId)}
-                    onInspect={openDetail}
-                    onMark={setEnemyMarker}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* The battlefield, as a split page (ruling #156, 2026-09-27): the
+          enemy's row on the dark ground, a diagonal cut, then the player's
+          row on the paper sheet that carries on through the hand below
+          (`Deck` paints the same paper). Which half is whose is the layout's
+          job, so the "Enemy" / "Your team" labels are screen-reader only —
+          his rule: *"we don't want to keep the labels if it's obvious."*
 
-          {/* Battle stage — the focal strip where attack VFX/reveal animations
-              play (ghost lunge, beams, cut-ins are already absolute-positioned
-              over the whole arena; this band just gives that action a visual
-              "stage" between the two team rows instead of them sitting flush). */}
-          <div
-            className={`bighit-recede relative flex h-6 shrink-0 items-center justify-center transition-[transform,filter] duration-300 sm:h-8 ${bigHitFocus ? "scale-x-105" : ""}`}
-          >
-            <div
-              className={`h-px w-full bg-linear-to-r from-transparent via-edge-strong to-transparent transition-opacity duration-300 ${bigHitFocus ? "opacity-100" : "opacity-60"}`}
-            />
-            <span
-              className={`absolute bg-void px-2 font-heading text-[10px] tracking-eyebrow text-readout-muted transition-opacity duration-300 sm:text-xs ${bigHitFocus ? "opacity-100" : "opacity-60"}`}
-            >
+          Big-hit focus (R3/ultimate) recedes both team rows and lets the cut
+          take momentary visual focus, then restores. The paper stays put;
+          only the tiles on it recede. */}
+      {/* `minmax(0,1fr)` for the column, not the default `auto`: an auto
+          track grows to its content's min width, and four height-sized tiles
+          made the rows 381px wide inside a 366px gutter, running the fourth
+          tile off the right edge. Measured at 390x844, 2026-09-27. */}
+      <section className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+        <div
+          className={`bighit-recede flex min-h-0 flex-col px-3 pt-1 transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.97] opacity-50" : "scale-100 opacity-100"}`}
+        >
+          <div className="mb-1 flex shrink-0 items-center justify-between gap-2">
+            <h2 className="sr-only">Enemy</h2>
+            <span aria-hidden />
+            {/* Enemy hidden deck (headless 7DS GC model): face-down cards =
+                the enemy's current hand size. */}
+            {enemyDeck.length > 0 ? (
+              <div
+                className="flex shrink-0 items-center gap-1"
+                aria-label={`Enemy hand: ${enemyDeck.length} card${enemyDeck.length > 1 ? "s" : ""}`}
+              >
+                <span className="font-body text-label font-bold uppercase tracking-label text-ground-dim">
+                  Hand {enemyDeck.length}
+                </span>
+                {enemyDeck.slice(0, 7).map((card, i) => (
+                  <span
+                    key={card.id ?? i}
+                    className="flex h-4 w-3 items-start justify-center border border-ground-line bg-ground-raised"
+                  >
+                    <span className="mt-1 block h-1 w-1 rotate-45 bg-ground-dim" />
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          {/* Cards are 9:16 portrait, height-capped to the row and centered;
+              a lone boss just sits alone in the middle. */}
+          <div className="flex min-h-0 flex-1 items-center justify-center gap-2 overflow-hidden pb-1.5">
+            {enemyOnField.map((unit) => (
+              <div
+                key={unit.instanceId}
+                className={`${tileAspect(enemyOnField.length)} max-h-full min-w-0 max-w-[112px] flex-1`}
+              >
+                <TeamUnitTile
+                  unit={unit}
+                  isEnemy
+                  surface="ground"
+                  isMarked={selectedEnemyMarker === unit.instanceId}
+                  queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
+                  fx={tileFx(unit.instanceId)}
+                  onInspect={openDetail}
+                  onMark={setEnemyMarker}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* The cut. Paper rises from the lower left to the upper right under
+            a heavy ink stroke, and VS sits on it as a sticker. Decoration
+            only, so it is hidden from assistive tech. */}
+        <div
+          aria-hidden
+          className={`bighit-recede relative h-9 shrink-0 transition-transform duration-300 ${bigHitFocus ? "scale-x-105" : ""}`}
+        >
+          <span className="absolute inset-0 bg-card [clip-path:polygon(0_72%,100%_8%,100%_100%,0_100%)]" />
+          <span className="absolute inset-0 bg-card-foreground [clip-path:polygon(0_72%,100%_8%,100%_calc(8%+4px),0_calc(72%+4px))]" />
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-6">
+            <span className="block border-2 border-border bg-primary px-2.5 font-heading text-xl tracking-label text-primary-foreground ink-skew">
               VS
             </span>
-          </div>
+          </span>
+        </div>
 
+        <div className="flex min-h-0 flex-col bg-card px-3 text-card-foreground">
+          <h2 className="sr-only">Your team</h2>
           <div
-            className={`bighit-recede flex min-h-0 flex-col transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.97] opacity-50" : "scale-100 opacity-100"}`}
+            className={`bighit-recede flex min-h-0 flex-1 items-center justify-center gap-2 overflow-hidden pb-1.5 transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.97] opacity-50" : "scale-100 opacity-100"}`}
           >
-            <p className="mb-1 shrink-0 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
-              Your team
-            </p>
-            <div className="flex min-h-0 flex-1 items-center justify-center gap-2 overflow-hidden">
-              {playerOnField.map((unit) => (
-                <div
-                  key={unit.instanceId}
-                  className={`${tileAspect(playerOnField.length)} max-h-full min-w-0 max-w-[112px] flex-1`}
-                >
-                  <TeamUnitTile
-                    unit={unit}
-                    isEnemy={false}
-                    isMarked={false}
-                    queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
-                    fx={tileFx(unit.instanceId)}
-                    onInspect={openDetail}
-                    onMark={noop}
-                  />
-                </div>
-              ))}
-            </div>
+            {playerOnField.map((unit) => (
+              <div
+                key={unit.instanceId}
+                className={`${tileAspect(playerOnField.length)} max-h-full min-w-0 max-w-[112px] flex-1`}
+              >
+                <TeamUnitTile
+                  unit={unit}
+                  isEnemy={false}
+                  surface="paper"
+                  isMarked={false}
+                  queuedHits={queuedHitCountByEnemy[unit.instanceId] || 0}
+                  fx={tileFx(unit.instanceId)}
+                  onInspect={openDetail}
+                  onMark={noop}
+                />
+              </div>
+            ))}
           </div>
-        </section>
-
-      </div>
+        </div>
+      </section>
 
       {/* The control row paints at the bottom of the screen, through a slot
           `Deck` renders below the hand (Tanveer, 2026-09-01). `controlSlot`
@@ -1174,18 +1187,14 @@ export default function BattleArena({
 
       {/* The sheet itself — bottom-anchored rather than centred, because every
           control in it is one a thumb has to reach. */}
-      {isControlsOpen ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Battle controls"
-          // Escape closes it (see `useEscapeKey` above); the scrim's click is
-          // a pointer convenience on top of that.
-          className="fixed inset-0 z-50 flex flex-col justify-end bg-void/70 backdrop-blur-sm"
-          {...scrimProps(() => setIsControlsOpen(false))}
-        >
-          <div className="pb-safe max-h-[85dvh] overflow-y-auto border-t border-edge-strong bg-panel px-3 pt-3 shadow-[0_-18px_50px_rgba(0,0,0,0.7)]">
-            <span className="mx-auto mb-3 block h-1 w-11 bg-edge-strong" />
+      <Sheet open={isControlsOpen} onOpenChange={setIsControlsOpen}>
+        <SheetContent onCloseAutoFocus={focusBackToOpener} className="px-3 pb-3">
+          <SheetHeader className="px-0">
+            <SheetTitle>Battle</SheetTitle>
+            <SheetDescription className="sr-only">
+              Battle controls
+            </SheetDescription>
+          </SheetHeader>
 
             {/* The readout half (Tanveer, 2026-09-01). Measured before this
                 existed: the sheet was 149px of buttons under 695px of empty
@@ -1201,7 +1210,7 @@ export default function BattleArena({
                 `sm`/`md` is here, where there is room, plus the two things
                 that were never on it at all: how many actions this turn, and
                 what the stage is doing to the fight. */}
-            <div className="mb-3 border border-hairline bg-inset px-3 py-1">
+            <div className="mb-3 border-2 border-border bg-muted px-3 py-1">
               <SheetStat
                 label="Turn"
                 value={`${currentTurn + 1} · ${phaseLabel}`}
@@ -1213,7 +1222,7 @@ export default function BattleArena({
                 <SheetStat
                   label="Mode"
                   value={
-                    <span className="text-violet-200">Duel — Claude plays the foe</span>
+                    <span>Duel — Claude plays the foe</span>
                   }
                 />
               ) : null}
@@ -1245,23 +1254,25 @@ export default function BattleArena({
                 only when the encounter has any, so an ordinary fight does not
                 get an empty box. */}
             {sheetStageEffects.length > 0 ? (
-              <div className="mb-3 border border-hairline bg-inset px-3 py-2">
-                <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+              <div className="mb-3 border-2 border-border bg-muted px-3 py-2">
+                <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
                   Stage effects
                 </span>
                 <ul className="mt-1.5 flex flex-col gap-1">
                   {sheetStageEffects.map((entry, i) => (
                     <li
                       key={`${entry.side}-${i}`}
-                      className="flex items-baseline gap-2 font-body text-xs text-readout"
+                      className="flex items-baseline gap-2 font-body text-xs"
                     >
+                      {/* Whose effect it is, as a fill: the sheet is paper,
+                          where a hue does not read as text. */}
                       <span
-                        className={`shrink-0 font-bold uppercase tracking-label text-[9px] ${
+                        className={`shrink-0 px-1 font-bold uppercase tracking-label text-label ${
                           entry.side === "Enemy"
-                            ? "text-el-red"
+                            ? "bg-destructive"
                             : entry.side === "You"
-                              ? "text-signal"
-                              : "text-readout-muted"
+                              ? "bg-primary"
+                              : "bg-card"
                         }`}
                       >
                         {entry.side}
@@ -1326,9 +1337,8 @@ export default function BattleArena({
                 </ControlButton>
               ) : null}
             </div>
-          </div>
-        </div>
-      ) : null}
+        </SheetContent>
+      </Sheet>
 
       <BattleLogDrawer
         open={isLogOpen}
@@ -1338,88 +1348,77 @@ export default function BattleArena({
       />
 
       {isExitConfirmOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/85 px-4 backdrop-blur-sm">
-          <Card className="w-full max-w-sm border-2 border-el-red">
-            <CardHeader className="px-6 py-5 text-center">
-              <CardTitle className="font-heading text-3xl tracking-label text-el-red">
-                EXIT BATTLE?
-              </CardTitle>
-              <CardDescription className="mt-2 tracking-label">
-                This counts as a loss — your progress in this fight is forfeited.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 px-6 py-5">
-              <Button
-                variant="destructive"
-                size="lg"
-                onClick={confirmExitBattle}
-              >
-                EXIT — TAKE THE LOSS
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => setIsExitConfirmOpen(false)}
-              >
-                CANCEL
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <MountedDialog
+          title="Exit battle?"
+          onClose={() => setIsExitConfirmOpen(false)}
+          className="sm:max-w-sm"
+        >
+          <p>This counts as a loss — your progress in this fight is forfeited.</p>
+          <div className="flex flex-col gap-3">
+            <Button variant="destructive" size="lg" onClick={confirmExitBattle}>
+              EXIT — TAKE THE LOSS
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={() => setIsExitConfirmOpen(false)}
+            >
+              CANCEL
+            </Button>
+          </div>
+        </MountedDialog>
       ) : null}
 
+      {/* The result is a decision point, not a notice: it cannot be
+          dismissed, only answered. The word sits on its meaning's fill — the
+          reward gold for a win, red for a loss — since neither reads as text
+          on paper. */}
       {showBattleOver ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/85 px-4 backdrop-blur-sm">
-          <Card
-            className={`w-full max-w-md border-2 ${battlePhase === "victory" ? "border-el-light" : "border-el-red"}`}
+        <Dialog open>
+          <DialogContent
+            showCloseButton={false}
+            onEscapeKeyDown={(e) => e.preventDefault()}
+            onInteractOutside={(e) => e.preventDefault()}
+            className="sm:max-w-md"
           >
-            <CardHeader className="px-6 py-6 text-center">
-              <CardTitle
-                className={`font-heading text-6xl tracking-label ${battlePhase === "victory" ? "text-el-light" : "text-el-red"}`}
+            <DialogHeader className="items-center pr-0 text-center">
+              <DialogTitle
+                className={`border-2 border-border px-5 pt-1 font-heading text-6xl tracking-label ink-skew ${battlePhase === "victory" ? "bg-el-light" : "bg-destructive"}`}
               >
                 {battlePhase === "victory" ? "VICTORY" : "DEFEAT"}
-              </CardTitle>
-              <CardDescription className="mt-2">
+              </DialogTitle>
+              <DialogDescription className="mt-2">
                 Turn {currentTurn + 1} • {playerTurns} player /{" "}
                 {enemyTurns} enemy actions resolved
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 px-6 py-6">
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-3">
               {battleEnd && battlePhase === "victory" ? (
-                <Button
-                  variant="secondary"
-                  size="xl"
-                  onClick={battleEnd.onContinue}
-                >
+                <Button size="xl" onClick={battleEnd.onContinue}>
                   {battleEnd.continueLabel ?? "CONTINUE"}
                 </Button>
               ) : null}
               {battleEnd && battlePhase === "defeat" ? (
                 <>
-                  <Button
-                    variant="secondary"
-                    size="xl"
-                    onClick={battleEnd.onRetry}
-                  >
+                  <Button size="xl" onClick={battleEnd.onRetry}>
                     RETRY BATTLE
                   </Button>
                   {battleEnd.onChangeTeam ? (
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="xl"
                       onClick={battleEnd.onChangeTeam}
                     >
                       CHANGE TEAM
                     </Button>
                   ) : null}
-                  <Button variant="outline" size="xl" onClick={battleEnd.onQuit}>
+                  <Button variant="secondary" size="xl" onClick={battleEnd.onQuit}>
                     {battleEnd.quitLabel ?? "QUIT"}
                   </Button>
                 </>
               ) : null}
               {!battleEnd && lastBattleConfig ? (
                 <Button
-                  variant="secondary"
                   size="xl"
                   onClick={() =>
                     startCustomBattle(
@@ -1437,7 +1436,7 @@ export default function BattleArena({
                     SAVE BATTLE LOG
                   </Button>
                   {logSaveResult ? (
-                    <p className="text-center font-body text-xs uppercase tracking-label text-readout-dim">
+                    <p className="text-center font-body text-xs uppercase tracking-label text-muted-foreground">
                       {logSaveResult}
                     </p>
                   ) : null}
@@ -1445,7 +1444,7 @@ export default function BattleArena({
               ) : null}
               {!battleEnd ? (
                 <>
-                  <Button variant="outline" size="xl" onClick={resetBattle}>
+                  <Button variant="secondary" size="xl" onClick={resetBattle}>
                     CHANGE TEAMS
                   </Button>
                   <Button
@@ -1460,9 +1459,9 @@ export default function BattleArena({
                   </Button>
                 </>
               ) : null}
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {/* First-battle coach marks. Portals to the body and dims without
@@ -1493,47 +1492,36 @@ export default function BattleArena({
       ) : null}
 
       {pendingAllyCard ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/75 px-4">
-          <Card className="w-full max-w-md border-role-heal/60">
-            <CardHeader className="px-5 py-4">
-              <CardTitle>
-                Choose an ally
-              </CardTitle>
-              <CardDescription>
-                {pendingAllyCard.skill.skillName} — pick who it targets
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 px-5 py-4">
-              <div className="grid grid-cols-2 gap-2">
-                {playerTeam
-                  .filter((p) => p.currentHP > 0 && !p.isSub)
-                  .map((ally) => (
-                    <button
-                      key={ally.instanceId}
-                      type="button"
-                      onClick={() => confirmAllyTarget(ally.instanceId)}
-                      className="flex items-center justify-between gap-2 border-2 border-edge bg-inset px-3 py-2 text-left transition-colors hover:border-signal hover:bg-signal/5"
-                    >
-                      <span className="min-w-0 truncate font-heading text-sm tracking-title text-readout-strong">
-                        {ally.name}
-                      </span>
-                      <span className="shrink-0 font-body text-[10px] uppercase tracking-label text-readout-muted">
-                        {ally.currentHP}/{ally.hp}
-                      </span>
-                    </button>
-                  ))}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={cancelAllyTarget}
-                className="w-full"
-              >
-                Cancel
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <MountedDialog
+          title="Choose an ally"
+          description={`${pendingAllyCard.skill.skillName} — pick who it targets`}
+          onClose={cancelAllyTarget}
+          className="sm:max-w-md"
+        >
+          <div className="grid grid-cols-2 gap-2">
+            {playerTeam
+              .filter((p) => p.currentHP > 0 && !p.isSub)
+              .map((ally) => (
+                <Button
+                  key={ally.instanceId}
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => confirmAllyTarget(ally.instanceId)}
+                  className="justify-between"
+                >
+                  <span className="min-w-0 truncate font-heading text-sm normal-case tracking-title">
+                    {ally.name}
+                  </span>
+                  <span className="shrink-0 tabular-nums">
+                    {ally.currentHP}/{ally.hp}
+                  </span>
+                </Button>
+              ))}
+          </div>
+          <Button variant="ghost" size="sm" onClick={cancelAllyTarget}>
+            Cancel
+          </Button>
+        </MountedDialog>
       ) : null}
     </div>
   );

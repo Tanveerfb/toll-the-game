@@ -47,10 +47,57 @@ function StatusChips({
       {/* Counts, not a chip per effect, and the same encoding the info panel
           uses — the strip used to truncate at CHIP_LIMIT and add "+3", which
           told you less than a number would have (Tanveer, 2026-08-13). */}
-      <EffectCountStrip unit={unit} className="text-[10px]" />
+      <EffectCountStrip unit={unit} className="text-label" />
     </span>
   );
 }
+
+/**
+ * Which half of the split page a tile sits on (ruling #156, 2026-09-27): the
+ * enemy's row is on the dark ground, the player's on the paper sheet.
+ *
+ * - **ground**: a dark tile framed in its element hue, lifted by a slab, with
+ *   light text. Ink would vanish here.
+ * - **paper**: ink outline, the element as a fill behind the name (a hue never
+ *   reads as text on paper), no slab: the tile lies on the sheet rather than
+ *   being lifted off it.
+ */
+export type TileSurface = "ground" | "paper";
+
+const SURFACE: Record<
+  TileSurface,
+  {
+    tile: string;
+    readout: string;
+    maxHp: string;
+    track: string;
+    hpFill: string;
+    ultFill: string;
+    ultCount: string;
+    aim: string;
+  }
+> = {
+  ground: {
+    tile: "bg-ground-raised text-foreground ink-slab-sm",
+    readout: "border-t-2",
+    maxHp: "text-ground-dim",
+    track: "border border-ground-line bg-background",
+    hpFill: "bg-foreground",
+    ultFill: "bg-el-light/35",
+    ultCount: "text-ground-dim",
+    aim: "border-ground-line bg-background/75 text-ground-dim hover:text-foreground",
+  },
+  paper: {
+    tile: "border-border bg-card text-card-foreground",
+    readout: "",
+    maxHp: "text-muted-foreground",
+    track: "border-[1.5px] border-border bg-muted",
+    hpFill: "bg-card-foreground",
+    ultFill: "bg-el-light/55",
+    ultCount: "text-card-foreground",
+    aim: "border-border bg-card text-card-foreground",
+  },
+};
 
 export interface TileFx {
   hpOverride?: number;
@@ -69,6 +116,7 @@ export interface TileFx {
 const TeamUnitTile = React.memo(function TeamUnitTile({
   unit,
   isEnemy,
+  surface,
   isMarked,
   queuedHits,
   fx,
@@ -77,6 +125,9 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
 }: {
   unit: BattleCharacter;
   isEnemy: boolean;
+  /** The half of the page this tile sits on. Not derived from `isEnemy`: which
+   *  side gets which ground is the arena's layout decision, not the tile's. */
+  surface: TileSurface;
   isMarked: boolean;
   queuedHits: number;
   fx: TileFx;
@@ -95,6 +146,8 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
   const gaugeMax = ultGaugeMax(unit);
   const ultFull = unit.ultGauge >= gaugeMax;
   const canTarget = isEnemy && !isDead;
+  const s = SURFACE[surface];
+  const onPaper = surface === "paper";
 
   return (
     <div
@@ -111,10 +164,12 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
         type="button"
         onClick={() => onInspect(unit)}
         aria-label={`${unit.name} — details`}
-        className={`flex h-full min-h-0 w-full cursor-pointer flex-col overflow-hidden border bg-panel text-left transition-colors ${getUnitBorderClass(unit.color)} ${isMarked ? "shadow-[0_0_0_1px_var(--color-el-red)]" : ""}`}
+        className={`flex h-full min-h-0 w-full cursor-pointer flex-col overflow-hidden border-2 text-left ${s.tile} ${onPaper ? "" : getUnitBorderClass(unit.color)}`}
       >
         {/* PORTRAIT */}
-        <div className="relative min-h-0 flex-1 overflow-hidden bg-inset">
+        <div
+          className={`relative min-h-0 flex-1 overflow-hidden ${onPaper ? "border-b-2 border-border bg-muted" : "bg-background"}`}
+        >
           {art ? (
             <Image
               src={art}
@@ -124,7 +179,7 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
               className={`object-cover object-top ${isDead ? "grayscale brightness-50" : ""}`}
             />
           ) : (
-            <span className="absolute inset-0 flex items-center justify-center font-heading text-4xl text-readout-strong">
+            <span className="absolute inset-0 flex items-center justify-center font-heading text-4xl">
               {unit.name.charAt(0).toUpperCase()}
             </span>
           )}
@@ -133,10 +188,10 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
               border, so "marked" never reads as an element colour. */}
           {isMarked && isEnemy ? (
             <div className="pointer-events-none absolute inset-0.5">
-              <span className="absolute left-0 top-0 h-3.5 w-3.5 border-l-2 border-t-2 border-el-red" />
-              <span className="absolute right-0 top-0 h-3.5 w-3.5 border-r-2 border-t-2 border-el-red" />
-              <span className="absolute bottom-0 left-0 h-3.5 w-3.5 border-b-2 border-l-2 border-el-red" />
-              <span className="absolute bottom-0 right-0 h-3.5 w-3.5 border-b-2 border-r-2 border-el-red" />
+              <span className="absolute left-0 top-0 h-3.5 w-3.5 border-l-2 border-t-2 border-destructive" />
+              <span className="absolute right-0 top-0 h-3.5 w-3.5 border-r-2 border-t-2 border-destructive" />
+              <span className="absolute bottom-0 left-0 h-3.5 w-3.5 border-b-2 border-l-2 border-destructive" />
+              <span className="absolute bottom-0 right-0 h-3.5 w-3.5 border-b-2 border-r-2 border-destructive" />
             </div>
           ) : null}
 
@@ -145,7 +200,7 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
           {ultFull && !isDead ? (
             // Keeps clear of the focus-fire reticle in the same corner.
             <span
-              className={`absolute inset-x-0 top-0 bg-el-light px-1 py-px text-center font-body text-[8px] font-bold uppercase leading-none tracking-label text-void ${canTarget ? "pr-10" : ""}`}
+              className={`absolute inset-x-0 top-0 bg-el-light px-1 py-0.5 text-center font-body text-micro font-bold uppercase leading-none tracking-label text-card-foreground ${canTarget ? "pr-10" : ""}`}
             >
               Ult Ready
             </span>
@@ -154,14 +209,14 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
           {/* Incoming hits sit WITH the brackets, not in the opposite corner:
               "marked" and "already taking two hits" are one fact. */}
           {queuedHits > 0 && isEnemy && !isDead ? (
-            <span className="absolute inset-x-0 bottom-0 bg-el-red/90 px-1 py-px text-center font-body text-[8px] font-bold uppercase leading-none tracking-label text-void">
+            <span className="absolute inset-x-0 bottom-0 bg-destructive px-1 py-0.5 text-center font-body text-micro font-bold uppercase leading-none tracking-label text-card-foreground">
               {queuedHits} incoming
             </span>
           ) : null}
 
           {isDead ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-void/55">
-              <span className="font-heading text-sm tracking-eyebrow text-el-red">
+            <div className="absolute inset-0 flex items-center justify-center bg-background/55">
+              <span className="font-heading text-sm tracking-eyebrow text-destructive">
                 DOWN
               </span>
             </div>
@@ -179,7 +234,7 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
               }}
             >
               <div
-                className="absolute inset-y-0 left-1/2 w-1 -translate-x-1/2 rotate-[24deg] bg-readout-strong/80"
+                className="absolute inset-y-0 left-1/2 w-1 -translate-x-1/2 rotate-[24deg] bg-foreground/80"
                 style={{ display: fx.flash.strong ? undefined : "none" }}
               />
             </m.div>
@@ -187,44 +242,53 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
         </div>
 
         {/* READOUT — fixed height, so nothing here can resize the portrait. */}
-        <div className="shrink-0 space-y-1 border-t border-hairline bg-inset px-1.5 py-1">
-          <div className="flex items-center gap-1">
-            <span
-              aria-label={`Element: ${unit.color}`}
-              className={`h-2 w-2 shrink-0 rotate-45 ${ELEMENT_SWATCH[unit.color]}`}
-            />
-            <span className="min-w-0 flex-1 truncate font-heading text-xs tracking-title text-readout-strong">
+        <div
+          className={`shrink-0 space-y-1 px-1.5 pb-1 ${s.readout} ${onPaper ? "" : `pt-1 ${getUnitBorderClass(unit.color)}`}`}
+        >
+          {/* The element: a diamond beside the name on the ground, the name
+              strip's fill on paper. Either way a fill, never coloured text. */}
+          <div
+            aria-label={`Element: ${unit.color}`}
+            className={`flex items-center gap-1 ${onPaper ? `-mx-1.5 px-1.5 py-0.5 ${ELEMENT_SWATCH[unit.color]}` : ""}`}
+          >
+            {onPaper ? null : (
+              <span
+                className={`h-2 w-2 shrink-0 rotate-45 ${ELEMENT_SWATCH[unit.color]}`}
+              />
+            )}
+            <span className="min-w-0 flex-1 truncate font-heading text-xs tracking-title">
               {unit.name}
             </span>
           </div>
 
           {/* Current HP leads; max is a quiet divisor. It used to be the
-              other way round at 9px against an 8px maximum. */}
+              other way round at 9px against an 8px maximum. Danger is a red
+              fill behind the number on paper, where red text would not read. */}
           <div className="flex items-baseline gap-1">
             <span
-              className={`font-body text-base font-bold leading-none tabular-nums ${isHurt ? "text-el-red" : "text-readout-strong"}`}
+              className={`font-body text-base font-bold leading-none tabular-nums ${isHurt ? (onPaper ? "bg-destructive/45 px-0.5" : "text-destructive") : ""}`}
             >
               {Math.max(0, displayHP)}
             </span>
-            <span className="font-body text-[9px] font-semibold leading-none tabular-nums text-readout-muted">
+            <span className={`font-body text-micro font-semibold leading-none tabular-nums ${s.maxHp}`}>
               /{unit.hp}
             </span>
           </div>
-          <div className="h-1.5 w-full overflow-hidden border border-hairline bg-void">
+          <div className={`h-1.5 w-full overflow-hidden ${s.track}`}>
             <div
-              className={`h-full transition-[width] duration-300 ${isHurt ? "bg-el-red" : "bg-readout"}`}
+              className={`h-full transition-[width] duration-300 ${isHurt ? "bg-destructive" : s.hpFill}`}
               style={{ width: `${hpPercent}%` }}
             />
           </div>
 
           {/* One bar with a count, not five slivers. */}
-          <div className="relative h-2.5 w-full overflow-hidden border border-hairline bg-void">
+          <div className={`relative h-2.5 w-full overflow-hidden ${s.track}`}>
             <div
-              className={`h-full transition-[width] duration-300 ${ultFull ? "bg-el-light" : "bg-el-light/30"}`}
+              className={`h-full transition-[width] duration-300 ${ultFull ? "bg-el-light" : s.ultFill}`}
               style={{ width: `${(Math.min(unit.ultGauge, gaugeMax) / gaugeMax) * 100}%` }}
             />
             <span
-              className={`absolute inset-0 flex items-center justify-center font-body text-[8px] font-bold leading-none tabular-nums ${ultFull ? "text-void" : "text-readout-dim"}`}
+              className={`absolute inset-0 flex items-center justify-center font-body text-micro font-bold leading-none tabular-nums ${ultFull ? "text-card-foreground" : s.ultCount}`}
             >
               {Math.min(unit.ultGauge, gaugeMax)}/{gaugeMax}
             </span>
@@ -248,13 +312,11 @@ const TeamUnitTile = React.memo(function TeamUnitTile({
           onClick={() => onMark(unit.instanceId)}
           aria-label={isMarked ? "Clear focus fire" : "Focus fire on this enemy"}
           aria-pressed={isMarked}
-          className={`absolute right-0 top-0 z-10 flex h-11 w-11 items-center justify-center transition-colors ${
-            isMarked ? "text-el-red" : "text-readout-muted hover:text-el-red"
-          }`}
+          className="absolute right-0 top-0 z-10 flex h-11 w-11 items-center justify-center"
         >
           <span
-            className={`flex h-6 w-6 items-center justify-center border bg-void/70 ${
-              isMarked ? "border-el-red bg-el-red/20" : "border-edge"
+            className={`flex h-6 w-6 items-center justify-center border transition-colors ${
+              isMarked ? "border-destructive bg-destructive text-card-foreground" : s.aim
             }`}
           >
             <Crosshair className="h-3.5 w-3.5" strokeWidth={2.2} />

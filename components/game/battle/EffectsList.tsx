@@ -26,33 +26,21 @@ import type { StatusEffect } from "@/types/mechanic";
  * The colour is the cancel rule made visible. A stance used to render blue
  * beside ordinary buffs, which is precisely the distinction #132 had just
  * spent an engine change drawing.
+ *
+ * **Drawn as a fill with ink on it** (Shōnen Ink, #154): these render on
+ * paper (the detail panel, the player's tiles) and on the ground (the enemy's
+ * tiles), and a hue only reads as text on one of them. A fill reads on both.
  */
 type Category = "buff" | "stance" | "debuff" | "effect";
 
 const CATEGORY_STYLE: Record<
   Category,
-  { row: string; chip: string; icon: React.ElementType }
+  { fill: string; icon: React.ElementType }
 > = {
-  buff: {
-    row: "border-el-blue/50 bg-el-blue/8",
-    chip: "text-el-blue",
-    icon: ArrowUp,
-  },
-  debuff: {
-    row: "border-role-attack/50 bg-role-attack/8",
-    chip: "text-role-attack",
-    icon: ArrowDown,
-  },
-  stance: {
-    row: "border-el-light/50 bg-el-light/8",
-    chip: "text-el-light",
-    icon: ShieldHalf,
-  },
-  effect: {
-    row: "border-edge bg-inset",
-    chip: "text-readout-muted",
-    icon: Sparkles,
-  },
+  buff: { fill: "bg-el-blue text-card-foreground", icon: ArrowUp },
+  debuff: { fill: "bg-role-attack text-card-foreground", icon: ArrowDown },
+  stance: { fill: "bg-el-light text-card-foreground", icon: ShieldHalf },
+  effect: { fill: "bg-muted text-muted-foreground", icon: Sparkles },
 };
 
 interface CategorizedEffect {
@@ -268,7 +256,7 @@ function DescriptionText({ text }: { text: string }): React.JSX.Element {
     <>
       {parts.map((part, i) =>
         /^[+-]?\d/.test(part) ? (
-          <span key={i} className="font-semibold text-readout-strong">
+          <span key={i} className="font-extrabold">
             {part}
           </span>
         ) : (
@@ -309,24 +297,51 @@ export function EffectCountStrip({
       aria-label={`${buffs} buff${buffs === 1 ? "" : "s"}, ${stances} stance${stances === 1 ? "" : "s"}, ${debuffs} debuff${debuffs === 1 ? "" : "s"}`}
     >
       {buffs > 0 ? (
-        <span className="flex items-center gap-0.5 text-el-blue">
+        <span className={`flex items-center gap-px pr-0.5 ${CATEGORY_STYLE.buff.fill}`}>
           <ArrowUp className="h-3 w-3" strokeWidth={3} aria-hidden />
           {buffs}
         </span>
       ) : null}
       {stances > 0 ? (
-        <span className="flex items-center gap-0.5 text-el-light">
+        <span className={`flex items-center gap-px pr-0.5 ${CATEGORY_STYLE.stance.fill}`}>
           <ShieldHalf className="h-3 w-3" strokeWidth={3} aria-hidden />
           {stances}
         </span>
       ) : null}
       {debuffs > 0 ? (
-        <span className="flex items-center gap-0.5 text-role-attack">
+        <span className={`flex items-center gap-px pr-0.5 ${CATEGORY_STYLE.debuff.fill}`}>
           <ArrowDown className="h-3 w-3" strokeWidth={3} aria-hidden />
           {debuffs}
         </span>
       ) : null}
     </div>
+  );
+}
+
+/** A category's icon on its hue: the row's "what kind of effect is this". */
+function CategoryGlyph({ category }: { category: Category }): React.JSX.Element {
+  const { fill, icon: Icon } = CATEGORY_STYLE[category];
+  return (
+    <span className={`flex h-4 w-4 shrink-0 items-center justify-center ${fill}`}>
+      <Icon className="h-3 w-3" strokeWidth={2.6} aria-hidden />
+    </span>
+  );
+}
+
+/** A section heading in the effects sheet: the category's name on its hue. */
+function CategoryHeading({
+  category,
+  children,
+}: {
+  category: Category;
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <h3
+      className={`inline-block px-1.5 font-body text-label font-bold uppercase tracking-eyebrow ${CATEGORY_STYLE[category].fill}`}
+    >
+      {children}
+    </h3>
   );
 }
 
@@ -348,7 +363,7 @@ function EffectTable({
 }): React.JSX.Element {
   if (rows.length === 0) {
     return (
-      <p className="py-3 text-center font-body text-xs uppercase tracking-label text-readout-muted">
+      <p className="py-3 text-center font-body text-xs uppercase tracking-label text-muted-foreground">
         {emptyText}
       </p>
     );
@@ -380,8 +395,6 @@ function EffectTable({
             inGroup: boolean,
             groupDuration?: number,
           ) => {
-            const style = CATEGORY_STYLE[category];
-            const Icon = style.icon;
             const duration = memberDurationToShow(
               effect.buffDuration ?? effect.debuffDuration,
               groupDuration,
@@ -406,36 +419,32 @@ function EffectTable({
                     {inGroup ? (
                       <span
                         aria-hidden
-                        className="shrink-0 text-readout-muted"
+                        className="shrink-0 text-muted-foreground"
                       >
                         ↳
                       </span>
                     ) : (
-                      <Icon
-                        className={`h-3 w-3 shrink-0 ${style.chip}`}
-                        strokeWidth={2.6}
-                        aria-hidden
-                      />
+                      <CategoryGlyph category={category} />
                     )}
-                    <span className="font-heading tracking-title text-readout-strong">
+                    <span className="font-heading tracking-title">
                       {inGroup ? groupedLabel(effect) : prettyName(effect)}
                     </span>
                   </span>
                 </TableCell>
-                <TableCell className={`${CELL} text-readout-dim`}>
+                <TableCell className={CELL}>
                   {desc ? <DescriptionText text={desc} /> : "—"}
                 </TableCell>
                 <TableCell
-                  className={`${CELL} text-right tabular-nums text-readout-dim`}
+                  className={`${CELL} text-right tabular-nums`}
                 >
                   {stacks > 1 ? `×${stacks}` : "—"}
                 </TableCell>
                 <TableCell
-                  className={`${CELL} text-right tabular-nums text-readout-dim`}
+                  className={`${CELL} text-right tabular-nums`}
                 >
                   {duration ?? "—"}
                 </TableCell>
-                <TableCell className="truncate py-1.5 pr-0 pl-0 text-readout-muted">
+                <TableCell className="truncate py-1.5 pr-0 pl-0 text-muted-foreground">
                   {sourceName(effect.sourceId)}
                 </TableCell>
               </TableRow>
@@ -446,30 +455,24 @@ function EffectTable({
             return [cells(block.row, `s-${bi}`, false)];
           }
           const head = block.rows[0];
-          const style = CATEGORY_STYLE[head.category];
-          const Icon = style.icon;
           const duration =
             head.effect.buffDuration ?? head.effect.debuffDuration;
           return [
             <TableRow key={`g-${bi}`}>
               <TableCell className={CELL} colSpan={3}>
                 <span className="flex items-center gap-1.5">
-                  <Icon
-                    className={`h-3 w-3 shrink-0 ${style.chip}`}
-                    strokeWidth={2.6}
-                    aria-hidden
-                  />
-                  <span className="font-heading uppercase tracking-label text-readout-strong">
+                  <CategoryGlyph category={head.category} />
+                  <span className="font-heading uppercase tracking-label">
                     {block.name}
                   </span>
                 </span>
               </TableCell>
               <TableCell
-                className={`${CELL} text-right tabular-nums text-readout-dim`}
+                className={`${CELL} text-right tabular-nums`}
               >
                 {duration ?? "—"}
               </TableCell>
-              <TableCell className="truncate py-1.5 pr-0 pl-0 text-readout-muted">
+              <TableCell className="truncate py-1.5 pr-0 pl-0 text-muted-foreground">
                 {sourceName(head.effect.sourceId)}
               </TableCell>
             </TableRow>,
@@ -511,17 +514,13 @@ export function EffectsTables({
   return (
     <div className="space-y-4">
       <section className="space-y-1">
-        <h3 className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-el-blue">
-          Buffs
-        </h3>
+        <CategoryHeading category="buff">Buffs</CategoryHeading>
         <EffectTable rows={buffs} allUnits={allUnits} emptyText="None active" />
       </section>
 
       {stances.length > 0 ? (
         <section className="space-y-1">
-          <h3 className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-el-light">
-            Stances
-          </h3>
+          <CategoryHeading category="stance">Stances</CategoryHeading>
           <EffectTable
             rows={stances}
             allUnits={allUnits}
@@ -531,9 +530,7 @@ export function EffectsTables({
       ) : null}
 
       <section className="space-y-1">
-        <h3 className="font-body text-[10px] font-bold uppercase tracking-eyebrow text-role-attack">
-          Debuffs
-        </h3>
+        <CategoryHeading category="debuff">Debuffs</CategoryHeading>
         <EffectTable
           rows={debuffs}
           allUnits={allUnits}
@@ -547,7 +544,7 @@ export function EffectsTables({
             type="button"
             onClick={onToggleUncancellable}
             aria-expanded={showUncancellable}
-            className="flex min-h-11 w-full items-center justify-between border border-dashed border-edge px-3 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted transition-colors hover:border-edge-strong hover:text-readout"
+            className="flex min-h-11 w-full items-center justify-between border-2 border-dashed border-muted-foreground px-3 font-body text-label font-bold uppercase tracking-label text-muted-foreground transition-colors hover:border-border hover:text-card-foreground"
           >
             <span>
               {grey.length} fixed effect{grey.length === 1 ? "" : "s"}

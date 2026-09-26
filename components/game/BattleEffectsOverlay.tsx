@@ -168,7 +168,7 @@ export default function BattleEffectsOverlay({
             animate={{ opacity: 0.18 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22 }}
-            className="absolute inset-0 bg-linear-to-b from-el-light/30 via-transparent to-transparent"
+            className="absolute inset-0 bg-linear-to-b from-primary/30 via-transparent to-transparent"
           />
         ) : null}
       </AnimatePresence>
@@ -183,10 +183,10 @@ export default function BattleEffectsOverlay({
               animate={{ y: -24, opacity: 1, scale: 1 }}
               exit={{ y: -34, opacity: 0 }}
               transition={{ duration: 0.45 }}
-              className={`absolute rounded border px-3 py-1 font-heading text-2xl tracking-title shadow-2xl md:text-3xl ${
-                effect.kind === "damage"
-                  ? "border-red-300/70 bg-red-950/70 text-red-200"
-                  : "border-emerald-300/70 bg-emerald-950/70 text-emerald-200"
+              // The arena's own floater: an ink chip, its meaning as the
+              // fill (#154). This one carries DoT and passive ticks.
+              className={`absolute border-2 border-border px-3 py-1 font-heading text-2xl tracking-title text-card-foreground md:text-3xl ${
+                effect.kind === "damage" ? "bg-destructive" : "bg-role-heal"
               }`}
               style={{
                 left: effect.anchorX ?? "50%",
@@ -211,10 +211,10 @@ export default function BattleEffectsOverlay({
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 22, opacity: 0 }}
                 transition={{ duration: 0.25 }}
-                className={`rounded border px-3 py-2 font-body text-xs uppercase tracking-label shadow-lg ${
-                  effect.kind === "status"
-                    ? "border-sky-300/60 bg-sky-900/65 text-sky-100"
-                    : "border-edge/70 bg-panel/70 text-readout-strong"
+                // Paper notes; a status proc carries the buff blue as a
+                // heavy left rule, the same as an `Alert`.
+                className={`border-2 border-border bg-card px-3 py-2 font-body text-xs font-bold uppercase tracking-label text-card-foreground ${
+                  effect.kind === "status" ? "border-l-8 border-l-el-blue" : ""
                 }`}
               >
                 {effect.text}

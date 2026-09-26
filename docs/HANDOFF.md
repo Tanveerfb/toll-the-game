@@ -1295,3 +1295,60 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    - **It bends #154's restraint rule**, which kept yellow out of reading
      panels. That rule was Claude's proposal; this is its one exception, and
      it is his pick.
+
+156. **The battle is a split page: the enemy's side on the dark ground, the
+   player's side on paper** (2026-09-27, applies #154 to the arena). Three
+   options were drawn on one live fight in
+   `docs/design/mockups/battle-ink.html`: A ground stage (paper only on the
+   tray), B panel page (every unit and card a paper panel), C split page. He
+   chose **C**, and gave his reasons in his own words:
+
+   > *"paper is half the screen, which is fine. A and B. Uh, it's fine. it, it
+   > looks good though, but because uh, we are uh, doing the dark paper for
+   > the enemy side. Ownership reads without a label, which is good because
+   > uh, we don't want to keep the labels if it's obvious."*
+
+   Part of that sentence is read back from the mockup's own notes ("paper is
+   half the screen", "ownership reads without a label"). **He adopted those
+   claims as his reasons; the wording is Claude's.** The rule underneath them
+   is his: **don't keep a label that the layout already makes obvious.**
+
+   **What it changes.**
+   - Everything the player owns (team row, action slots, hand, controls) sits on
+     one paper sheet from a diagonal cut down. The enemy row stays on the
+     halftone ground in element-framed dark tiles.
+   - The visible **"Enemy" and "Your team" labels go**, and stay only for
+     screen readers.
+   - The mockup flagged one cost: the layout would have to change if a mode
+     ever put the player on top. He closed it: *"that will never happen
+     because I ... am the one who's planning and at least right now there's
+     nothing planned that will put the user team on top so don't worry about
+     that."* **Don't design for a flipped arena.**
+   - The tile, hand and tray geometry is unchanged from #118/#126 and the
+     2026-09-01 corrections; this is a surface change, not a layout change.
+
+157. **The character page leads with a compact card row, and Growth is its
+   primary action** (2026-09-27). His read of the page:
+
+   > *"I think the image might be too big especially on the phone size ... the
+   > top area the header area needs to be optimized more and uh, growth and
+   > preview buttons should be more like attention heavy Because those are
+   > actually important, yes. Especially the growth one."*
+
+   **The layout was a selection.** Three options were drawn beside today's
+   page in `docs/design/mockups/character-header.html`, with positions
+   measured live: A a 16:9 banner, B a card row, C actions pinned above the
+   tab bar. He chose **"B · Card row"**, the option label, over the
+   recommended A.
+
+   **What it changes.**
+   - A 3:4 thumbnail sits beside the heading, name, number and tags, instead
+     of a full-width square portrait (336×336 on a phone).
+   - The stats are one three-column row.
+   - **Growth is the yellow primary** and carries Lv · A · UL. **Preview**
+     sits beside it on the new `Button` variant `ink`: ink on a yellow slab.
+   - Measured at 390×844: Growth's bottom edge moved from 772px (at the fold)
+     to 409px, and the kit now starts on the first screen, at 563px.
+   - **His rule underneath it** is that the page's two important actions get
+     visual weight to match. `ink` exists for the second one beside a
+     primary, one per screen.

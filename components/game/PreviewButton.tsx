@@ -32,15 +32,21 @@ export default function PreviewButton({
   };
 
   return (
+    // Ink, beside Growth's yellow (his pick, 2026-09-27: both "should be
+    // more attention heavy"). The long label became a title and a line under
+    // it; it wrapped to three lines in half a phone's width.
     <Button
-      variant="secondary"
-      size="sm"
+      variant="ink"
+      size="lg"
       onClick={launch}
-      // Wraps rather than clipping: the label is long and this sits in a
-      // 300px sidebar that becomes full-width on mobile.
-      className="w-full whitespace-normal text-center leading-tight"
+      aria-label="Preview: full rank and ultimate set against a training dummy"
+      className="h-auto w-full flex-col gap-0 py-1.5"
     >
-      Preview — full rank &amp; ultimate set vs. a training dummy
+      <span className="text-xl leading-none">Preview</span>
+      {/* Wraps in the 290px desktop sidebar, where the button is 132px. */}
+      <span className="whitespace-normal font-body text-label font-bold uppercase tracking-label">
+        vs training dummy
+      </span>
     </Button>
   );
 }

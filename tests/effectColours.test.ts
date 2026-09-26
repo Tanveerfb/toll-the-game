@@ -108,7 +108,9 @@ describe("#133 — the colours themselves", () => {
     ["buff", "el-blue"],
     ["stance", "el-light"],
     ["debuff", "role-attack"],
-    ["effect", "readout-muted"],
+    // `readout-muted` until 2026-09-27: the grey is paper's muted fill now,
+    // since the list renders on paper (#156).
+    ["effect", "muted-foreground"],
   ])("%s is %s", (category, token) => {
     const entry = styleBlock.slice(
       styleBlock.indexOf(`${category}: {`),
@@ -118,7 +120,7 @@ describe("#133 — the colours themselves", () => {
   });
 
   it("no two classes share a hue", () => {
-    const hues = ["el-blue", "el-light", "role-attack", "readout-muted"];
+    const hues = ["el-blue", "el-light", "role-attack", "muted-foreground"];
     expect(new Set(hues).size).toBe(hues.length);
   });
 });

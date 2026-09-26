@@ -7,8 +7,8 @@
 > | 1 | Tokens, type scale, fonts, primitives, `/dev/ui` gallery | **done 2026-09-26**, browser-checked at 390px |
 > | 2 | The shell: nav, tab bar, `Screen`, `SectionHeader` | **done 2026-09-26**, browser-checked at 390 and 1280px. `Panel` and the home hub moved to phase 3: both hold screen content |
 > | 3 | Screens, one per pass | **done 2026-09-26.** Home hub, archive, events, team select, profile & login, gacha, news, in his order, each browser-checked except the signed-in profile page. Old-theme uses: 1,294 in 76 files at the start, **~345 in 17 files** after (battle, plus `DetailOverlay`, `card`, `Panel`'s legacy surfaces) |
-> | 4 | Battle: mockups first, then the arena | not started |
-> | 5 | Retire Combat Terminal, and the guards that keep it retired | not started |
+> | 4 | Battle: mockups first, then the arena | **done 2026-09-27.** He picked **C · split page** from `docs/design/mockups/battle-ink.html` (ruling #156). Built and browser-checked in a live 4v4 at 390x844. See "Phase 4 as built" |
+> | 5 | Retire Combat Terminal, and the guards that keep it retired | **half done by phase 4**: no code uses a Combat Terminal token any more, and `card.tsx`, `DetailOverlay` and `Panel`'s legacy surfaces are deleted. Left: the tokens and classes in `globals.css`, and the guards |
 
 **Asked for 2026-09-26.** Tanveer: *"we are working on keeping the css and
 component foundation right. only work with shadcn, customize them and use them
@@ -471,6 +471,53 @@ design question: a paper HUD over the fight may be too heavy. **Per ruling
 `TeamUnitTile`, `UnitDetailPanel`, `BattleLogDrawer`, `EffectsList`,
 `CardDetail`, `BattleCoach`, `TeamDetailsList`. Run `npm run test:browser`:
 `hand.browser.test.tsx` pins the hand's geometry.
+
+### Phase 4 as built (2026-09-27)
+
+His pick, **C · split page** (#156): the enemy row on the halftone ground, a
+diagonal ink cut carrying a yellow VS, and one paper sheet from the cut down
+through your row, the queue, the hand and the controls. "Enemy" and "Your
+team" are screen-reader only.
+
+- **`TeamUnitTile` takes a `surface`** (`ground` | `paper`) rather than
+  deriving it from `isEnemy`: which side gets which ground is the arena's
+  call.
+- **Every battle overlay is a shadcn primitive now.** The controls sheet is a
+  `Sheet`, the log drawer a right-hand `Sheet`, and the unit panel a `Dialog`
+  with its own flex layout. The exit confirm, ally picker and card detail are
+  `MountedDialog`. The result screen is a `Dialog` that can't be dismissed.
+  **`DetailOverlay` was deleted**, and its callers use `MountedDialog`.
+- **Colour as fills.** Effect counts and category glyphs are hue fills with
+  ink (`EffectsList`), so they read on both grounds. Damage and heal numbers
+  use `INK_TONE`. The rank ladder on hand cards is an ink ramp
+  (`cardFrameStyle.ts`). The ultimate's frame takes `--frame-fill`, paper by
+  default.
+- **`CardDetail` uses the archive's `FootnoteList`**, so a keyword reads the
+  same mid-fight as on the kit page.
+- **Queued actions are `flex-1`**, like empty slots, as mockup C drew them.
+  At `max-w-44` one queued action pushed the other two slots off-screen: the
+  2026-09-01 "two of three actions invisible" finding, returning through the
+  filled slots.
+
+**Found in the browser, fixed at the source:**
+- **The field overflowed at 4v4.** Its grid's `auto` column grew to the tiles'
+  min width, 381px in a 366px gutter. The fix is `grid-cols-[minmax(0,1fr)]`.
+- **The same bug was in the `Dialog` primitive.** A table's 384px minimum
+  widened every dialog past the phone. The same fix, applied once in
+  `components/ui/dialog.tsx`.
+- **The unit panel's side badge truncated the name.** It moved to the
+  metadata line.
+
+**Guards:**
+- `overlayStacking` now bans hand-built full-viewport overlays outside
+  `components/ui`, and asserts that `Dialog` and `Sheet` portal. It was proven
+  red on an injected overlay.
+- `uiTokens` moved `Panel` to MIGRATED; PENDING is empty.
+- `cardFrameStyle` and `effectColours` assert the paper ramp and fills.
+
+**Not judged:** taste, as always. Unchecked in the browser: the ult cut-in,
+the phase-break banner and a victory, which needs a won fight. They are
+restyled in code but were not seen on screen.
 
 ## Phase 5: retire Combat Terminal
 

@@ -28,6 +28,7 @@ const MIGRATED = [
   "input.tsx",
   "KeyworkHighlighter.tsx",
   "MountedDialog.tsx",
+  "Panel.tsx",
   "popover.tsx",
   "progress.tsx",
   "prose.tsx",
@@ -45,14 +46,11 @@ const MIGRATED = [
 ];
 
 /**
- * Still Combat Terminal, and why they wait. A surface that holds screen
- * content (a card, a panel, a table) moves WITH its consumers: turning it to
- * paper first would put their light text on a light panel.
+ * Still Combat Terminal, and why they wait. Empty since 2026-09-27: `Panel`
+ * moved over with the battle (#156) and `card.tsx` was deleted with its last
+ * consumer. A primitive added here must say why it waits.
  */
-const PENDING = [
-  "card.tsx", // holds screen content: moves with its consumers
-  "Panel.tsx", // holds screen content: moves with its consumers
-];
+const PENDING: string[] = [];
 
 /** Every Combat Terminal colour name, as a Tailwind colour utility, plus its
  *  two shape classes. */
@@ -86,10 +84,11 @@ describe("the shadcn primitives paint Shōnen Ink (#154)", () => {
     expect(read(file)).not.toMatch(/\btext-\[\d+(?:\.\d+)?px\]/);
   });
 
-  it.each(PENDING)("%s is still pending (move it to MIGRATED when it is not)", (file) => {
+  it("every pending file is still pending (move it to MIGRATED when it is not)", () => {
     // Keeps the list honest: a pending file that no longer needs migrating
-    // should say so rather than sit here unguarded.
-    expect(read(file)).toMatch(LEGACY);
+    // should say so rather than sit here unguarded. A loop rather than
+    // `it.each`, which has nothing to run over an empty list.
+    for (const file of PENDING) expect(read(file), file).toMatch(LEGACY);
   });
 
   it("the stray `cn` package is not a dependency", () => {

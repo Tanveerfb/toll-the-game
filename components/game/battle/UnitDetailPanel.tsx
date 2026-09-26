@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { createPortal } from "react-dom";
 import Image from "next/image";
 import {
   CheckCircle2,
@@ -13,6 +12,17 @@ import {
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import MountedDialog from "@/components/ui/MountedDialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { INK_TONE } from "@/components/ui/inkTone";
+import { useFocusBackToOpener } from "@/hooks/useReturnFocus";
 import { getCharacterArt, getSkillArt } from "@/lib/game/characterArt";
 import {
   getCharacterById,
@@ -27,7 +37,6 @@ import { getEvadeChance } from "@/lib/game/evade";
 import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { getPassiveReadout, type PassiveReadout } from "@/lib/game/passiveStacks";
 import SubstatDrawer from "@/components/game/SubstatDrawer";
-import DetailOverlay from "@/components/game/DetailOverlay";
 import { useSettingsStore } from "@/store/settingsStore";
 import {
   EffectCountStrip,
@@ -42,11 +51,6 @@ import {
 } from "@/components/game/KitDetails";
 import type { BattleCharacter } from "@/types/character";
 
-// Never resubscribes — the store has no updates, it exists only so the server
-// snapshot and the client snapshot differ (see DetailOverlay for the same
-// pattern and why an effect isn't used).
-const NO_SUBSCRIBE = () => () => {};
-
 /** Activation-mode tag — the exception, not the rule (most passives show
  *  none): "buildup" for a stack that grants a live, incrementally growing
  *  benefit (Seras/Diane/Ban/Yalina); "once" for a genuine once-per-battle
@@ -58,14 +62,14 @@ function PassiveActivationTag({
 }): React.JSX.Element | null {
   if (mode === "buildup") {
     return (
-      <span className="inline-flex items-center gap-0.5 border border-edge bg-inset px-1 py-px text-readout-dim">
+      <span className="inline-flex items-center gap-0.5 border border-border bg-card px-1 py-px">
         <InfinityIcon className="h-2.5 w-2.5" strokeWidth={2.6} />
       </span>
     );
   }
   if (mode === "once") {
     return (
-      <span className="inline-flex items-center gap-0.5 border border-role-ultimate/70 bg-role-ultimate/15 px-1 py-px font-body text-[9px] font-bold text-role-ultimate">
+      <span className="inline-flex items-center gap-0.5 border border-border bg-role-ultimate px-1 py-px font-body text-label font-bold">
         <CircleAlert className="h-2.5 w-2.5" strokeWidth={2.6} />
         1×
       </span>
@@ -96,14 +100,14 @@ function PassiveReadoutRow({
                 i < passive.stacks!.current
                   ? passive.ready
                     ? "bg-role-ultimate"
-                    : "bg-signal"
-                  : "bg-hairline"
+                    : "bg-card-foreground"
+                  : "bg-muted-foreground/30"
               }`}
             />
           ))}
         </span>
         <span
-          className={`font-body text-xs font-semibold tabular-nums ${passive.ready ? "text-role-ultimate" : "text-readout"}`}
+          className={`font-body text-xs font-extrabold tabular-nums ${passive.ready ? "bg-role-ultimate px-0.5" : ""}`}
         >
           {passive.stacks.current}/{passive.stacks.max}
         </span>
@@ -114,15 +118,15 @@ function PassiveReadoutRow({
     state.push(
       passive.fired ? (
         <span key="progress" className="flex items-center gap-1">
-          <CheckCircle2 className="h-3.5 w-3.5 text-role-heal" strokeWidth={2.6} />
-          <span className="font-body text-xs font-bold uppercase tracking-label text-role-heal">
+          <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.6} />
+          <span className={`font-body text-xs font-bold uppercase tracking-label ${INK_TONE.gain}`}>
             Active
           </span>
         </span>
       ) : (
         <span
           key="progress"
-          className="font-body text-xs font-semibold tabular-nums text-readout"
+          className="font-body text-xs font-extrabold tabular-nums"
         >
           {passive.progress.current}/{passive.progress.required}
         </span>
@@ -133,12 +137,12 @@ function PassiveReadoutRow({
     state.push(
       <span key="cond" className="flex items-center gap-1">
         {passive.conditionMet ? (
-          <CheckCircle2 className="h-3.5 w-3.5 text-role-heal" strokeWidth={2.6} />
+          <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.6} />
         ) : (
-          <Circle className="h-3.5 w-3.5 text-readout-muted" strokeWidth={2.6} />
+          <Circle className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2.6} />
         )}
         <span
-          className={`font-body text-xs font-semibold uppercase tracking-label ${passive.conditionMet ? "text-role-heal" : "text-readout-muted"}`}
+          className={`font-body text-xs font-semibold uppercase tracking-label ${passive.conditionMet ? INK_TONE.gain : "text-muted-foreground"}`}
         >
           {passive.conditionMet ? "Active" : "Inactive"}
         </span>
@@ -149,12 +153,12 @@ function PassiveReadoutRow({
     state.push(
       <span key={`sub-${sub.label}`} className="flex items-center gap-1">
         {sub.active ? (
-          <CheckCircle2 className="h-3.5 w-3.5 text-role-heal" strokeWidth={2.6} />
+          <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.6} />
         ) : (
-          <Circle className="h-3.5 w-3.5 text-readout-muted" strokeWidth={2.6} />
+          <Circle className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2.6} />
         )}
         <span
-          className={`font-body text-xs ${sub.active ? "text-role-heal" : "text-readout-muted"}`}
+          className={`font-body text-xs ${sub.active ? INK_TONE.gain : "text-muted-foreground"}`}
         >
           {sub.label}
         </span>
@@ -163,7 +167,7 @@ function PassiveReadoutRow({
   });
   passive.lines?.forEach((line) => {
     state.push(
-      <span key={`line-${line}`} className="font-body text-xs text-role-heal">
+      <span key={`line-${line}`} className={`font-body text-xs ${INK_TONE.gain}`}>
         {line}
       </span>,
     );
@@ -171,21 +175,21 @@ function PassiveReadoutRow({
 
   return (
     <div
-      className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border px-2.5 py-1.5 ${highlight ? "border-role-ultimate/70 bg-role-ultimate/10" : "border-edge bg-inset"}`}
+      className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-2 border-border px-2.5 py-1.5 ${highlight ? "bg-role-ultimate/35" : "bg-muted"}`}
     >
-      <p className="flex min-w-0 items-center gap-1.5 font-heading text-sm tracking-title text-readout-strong">
+      <p className="flex min-w-0 items-center gap-1.5 font-heading text-sm tracking-title">
         <span className="truncate">{passive.label}</span>
         <PassiveActivationTag mode={passive.activationMode} />
       </p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {state}
         {passive.readyMessage ? (
-          <span className="font-body text-xs font-semibold uppercase tracking-label text-role-ultimate">
+          <span className="bg-role-ultimate px-1 font-body text-xs font-bold uppercase tracking-label">
             {passive.readyMessage}
           </span>
         ) : null}
         {passive.note ? (
-          <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+          <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
             {passive.note}
           </span>
         ) : null}
@@ -209,15 +213,15 @@ function Stat({
   const delta = effective - base;
   return (
     <span className="flex items-baseline gap-1.5">
-      <span className="font-body text-[9px] font-bold uppercase tracking-label text-readout-muted">
+      <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
         {label}
       </span>
-      <span className="font-heading text-lg leading-none tabular-nums text-readout-strong">
+      <span className="font-heading text-lg leading-none tabular-nums">
         {effective}
       </span>
       {delta !== 0 ? (
         <span
-          className={`font-body text-[11px] font-bold tabular-nums ${delta > 0 ? "text-role-heal" : "text-role-attack"}`}
+          className={`font-body text-caption font-bold tabular-nums ${delta > 0 ? INK_TONE.gain : INK_TONE.loss}`}
         >
           {delta > 0 ? "+" : ""}
           {delta}
@@ -250,9 +254,10 @@ type KitTab = { key: string; label: string; art: string | null } & (
  * - The kit tab strip is sticky inside the scroll zone, so a long rank table
  *   can't scroll the tabs away.
  *
- * Portalled to `document.body`: `BattleArena` puts `battle-shake-strong` on
- * its wrapper during heavy hits, and an active transform creates a containing
- * block that would otherwise scope this `fixed` overlay to the arena.
+ * A shadcn `Dialog` on paper since 2026-09-27 (#154, #156). It was a
+ * hand-built portal; the Dialog portals itself, which is what kept it out of
+ * `BattleArena`'s `battle-shake-strong` transform, and brings the focus trap
+ * and Escape the hand-built one wrote by hand.
  */
 export default function UnitDetailPanel({
   unit,
@@ -286,12 +291,7 @@ export default function UnitDetailPanel({
     | null
   >(null);
   const [activeTab, setActiveTab] = React.useState(0);
-
-  const mounted = React.useSyncExternalStore(
-    NO_SUBSCRIBE,
-    () => true,
-    () => false,
-  );
+  const focusBackToOpener = useFocusBackToOpener();
 
   // A bench unit is reachable from the Team list but isn't in `teamOnField`,
   // so the old `Math.max(0, findIndex)` silently resolved it to the FIRST
@@ -316,8 +316,9 @@ export default function UnitDetailPanel({
     setActiveTab(0);
   };
 
-  // Keyboard: Escape closes, arrows walk the side. The panel was previously
-  // mouse-only. Suppressed while a nested overlay owns the keyboard.
+  // Keyboard: arrows walk the side (Escape belongs to the Dialog). The panel
+  // was previously mouse-only. Suppressed while a nested overlay owns the
+  // keyboard.
   //
   // The handler goes through a ref rather than the effect's dependency list:
   // `step` can't be a `useCallback` (see above) and listing it would re-bind
@@ -328,8 +329,7 @@ export default function UnitDetailPanel({
   // its own dependency-free effect.
   React.useEffect(() => {
     keyHandler.current = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-      else if (event.key === "ArrowLeft") step(-1);
+      if (event.key === "ArrowLeft") step(-1);
       else if (event.key === "ArrowRight") step(1);
     };
   });
@@ -407,73 +407,81 @@ export default function UnitDetailPanel({
   });
   const tab = tabs[Math.min(activeTab, tabs.length - 1)];
 
-  if (!mounted) return null;
-
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={`${selected.name} details`}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-void/85 px-3 py-4 backdrop-blur-sm"
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
     >
-      <div className="chamfer-lg flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden border border-edge-strong bg-panel">
+      <DialogContent
+        showCloseButton={false}
+        onCloseAutoFocus={focusBackToOpener}
+        // Its own layout: a pinned block over a scrolling kit, so the
+        // primitive's padded grid and scroll give way to a flex column.
+        className="flex max-w-[calc(100%-1.5rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
+      >
+        <DialogDescription className="sr-only">
+          {`${selected.name} details`}
+        </DialogDescription>
         {/* Header — two rows, so identity never fights the controls for space.
             The old single row put the name between two button clusters. */}
-        <div className="grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-px border-b border-hairline bg-inset px-3 py-2">
-          <button
-            type="button"
+        <div className="grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-px border-b-2 border-border px-3 py-2">
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             aria-label="Close"
-            className="row-span-2 flex h-11 w-11 items-center justify-center border border-edge text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
+            className="row-span-2"
           >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
 
           <div className="flex min-w-0 items-baseline gap-2">
             <span
-              className={`h-2.5 w-2.5 shrink-0 rotate-45 border border-void/40 ${ELEMENT_SWATCH[selected.color]}`}
+              className={`h-2.5 w-2.5 shrink-0 rotate-45 border border-border ${ELEMENT_SWATCH[selected.color]}`}
             />
-            <h2 className="truncate font-heading text-xl leading-none tracking-title text-readout-strong">
+            <DialogTitle className="truncate text-xl leading-none">
               {selected.name}
-            </h2>
-            <span
-              className={`shrink-0 border px-1 py-px font-body text-[9px] font-bold uppercase tracking-label ${
-                selected.team === "player"
-                  ? "border-role-heal/60 text-role-heal"
-                  : "border-role-attack/60 text-role-attack"
-              }`}
-            >
-              {selected.team === "player" ? "Ally" : "Enemy"}
-            </span>
+            </DialogTitle>
           </div>
 
           <div className="row-span-2 flex shrink-0 items-center gap-1">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="icon"
               onClick={() => step(-1)}
               disabled={teamOnField.length < 2}
-              className="flex h-11 w-11 items-center justify-center border border-edge text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:opacity-30"
               aria-label="Previous unit on this side"
             >
               <ChevronLeft className="h-4 w-4" />
-            </button>
+            </Button>
             {/* Position readout — with four units on a side, stepping blind
                 gave no sense of where you were. */}
-            <span className="min-w-8 text-center font-body text-[10px] font-bold tabular-nums text-readout-muted">
+            <span className="min-w-8 text-center font-body text-label font-bold tabular-nums text-muted-foreground">
               {isBenched ? "Sub" : `${idx + 1}/${teamOnField.length}`}
             </span>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="icon"
               onClick={() => step(1)}
               disabled={teamOnField.length < 2}
-              className="flex h-11 w-11 items-center justify-center border border-edge text-readout-dim transition-colors hover:border-edge-strong hover:text-signal disabled:opacity-30"
               aria-label="Next unit on this side"
             >
               <ChevronRight className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
 
-          <div className="col-start-2 flex flex-wrap items-center gap-x-1 font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+          <div className="col-start-2 flex flex-wrap items-center gap-x-1 gap-y-0.5 font-body text-label font-bold uppercase tracking-label text-muted-foreground">
+            {/* Which side, in the arena's own terms (#156): the enemy is the
+                dark half of the page, you are the paper half. On this line,
+                not beside the name, which it truncated at 390px. */}
+            <Badge
+              variant={selected.team === "player" ? "secondary" : "ink"}
+              className="mr-1 shrink-0"
+            >
+              {selected.team === "player" ? "Ally" : "Enemy"}
+            </Badge>
             <span>{selected.color}</span>
             {selected.tier === "elite" ? <span>· Elite</span> : null}
             {(selected.tags ?? []).map((tag) => (
@@ -485,7 +493,7 @@ export default function UnitDetailPanel({
                   // Inline in a metadata run, so it grows its hit area with
                   // padding the line box gives back — the same compromise the
                   // keyword triggers make in `Hint`.
-                  className="cursor-pointer py-1 -my-1 underline decoration-dotted underline-offset-2 transition-colors hover:text-signal"
+                  className="cursor-pointer py-1 -my-1 underline decoration-dotted underline-offset-2 transition-colors hover:text-card-foreground"
                 >
                   {tag}
                 </button>
@@ -495,9 +503,9 @@ export default function UnitDetailPanel({
         </div>
 
         {/* PINNED STATE — fixed height whatever the unit is carrying. */}
-        <div className="shrink-0 border-b border-edge bg-inset px-3 py-2.5">
+        <div className="shrink-0 border-b-2 border-border bg-muted px-3 py-2.5">
           <div className="grid grid-cols-[76px_minmax(0,1fr)] gap-3">
-            <span className="block h-19 w-19 overflow-hidden border border-edge bg-void">
+            <span className="block h-19 w-19 overflow-hidden border-2 border-border bg-card">
               {art ? (
                 <Image
                   src={art}
@@ -508,7 +516,7 @@ export default function UnitDetailPanel({
                   className="h-full w-full object-cover object-[50%_12%]"
                 />
               ) : (
-                <span className="flex h-full w-full items-center justify-center font-heading text-3xl text-readout-dim">
+                <span className="flex h-full w-full items-center justify-center font-heading text-3xl">
                   {selected.name.charAt(0)}
                 </span>
               )}
@@ -516,17 +524,17 @@ export default function UnitDetailPanel({
 
             <div className="min-w-0">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
+                <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
                   HP
                 </span>
-                <span className="font-heading text-xl leading-none tabular-nums text-readout-strong">
+                <span className="font-heading text-xl leading-none tabular-nums">
                   {Math.max(0, selected.currentHP)}
-                  <span className="font-body text-xs font-semibold text-readout-muted">
+                  <span className="font-body text-xs font-semibold text-muted-foreground">
                     /{selected.hp}
                   </span>
                 </span>
               </div>
-              <span className="mt-1 block h-1.5 w-full bg-hairline">
+              <span className="mt-1 block h-2 w-full border border-border bg-card">
                 <span
                   className={`block h-full transition-[width] duration-300 ${hpPercent < 30 ? "bg-role-attack" : "bg-role-heal"}`}
                   style={{ width: `${hpPercent}%` }}
@@ -534,18 +542,18 @@ export default function UnitDetailPanel({
               </span>
 
               <div className="mt-1.5 flex items-center gap-1.5">
-                <span className="font-body text-[9px] font-bold uppercase tracking-eyebrow text-readout-muted">
+                <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
                   Ult
                 </span>
                 <span className="flex flex-1 items-center gap-0.5">
                   {Array.from({ length: gaugeMax }).map((_, i) => (
                     <span
                       key={i}
-                      className={`h-1.5 flex-1 -skew-x-12 ${i < selected.ultGauge ? "bg-role-ultimate" : "bg-hairline"}`}
+                      className={`h-2 flex-1 -skew-x-12 border border-border ${i < selected.ultGauge ? "bg-role-ultimate" : "bg-card"}`}
                     />
                   ))}
                 </span>
-                <span className="font-body text-[10px] font-bold tabular-nums text-role-ultimate">
+                <span className="font-body text-label font-extrabold tabular-nums">
                   {selected.ultGauge}/{gaugeMax}
                 </span>
               </div>
@@ -553,14 +561,14 @@ export default function UnitDetailPanel({
               <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1">
                 <Stat label="Atk" base={selected.atk} effective={effAtk} />
                 <Stat label="Def" base={selected.def} effective={effDef} />
-                <span className="font-body text-[11px] font-semibold tabular-nums text-readout-dim">
-                  <span className="mr-1 text-[9px] font-bold uppercase tracking-label text-readout-muted">
+                <span className="font-body text-caption font-bold tabular-nums">
+                  <span className="mr-1 text-label font-bold uppercase tracking-label text-muted-foreground">
                     Crit
                   </span>
                   {crit}%
                 </span>
-                <span className="font-body text-[11px] font-semibold tabular-nums text-readout-dim">
-                  <span className="mr-1 text-[9px] font-bold uppercase tracking-label text-readout-muted">
+                <span className="font-body text-caption font-bold tabular-nums">
+                  <span className="mr-1 text-label font-bold uppercase tracking-label text-muted-foreground">
                     Evade
                   </span>
                   {evade}%
@@ -576,21 +584,21 @@ export default function UnitDetailPanel({
           <div className="mt-2 flex items-center gap-2">
             <div className="min-w-0 flex-1">
               {counts.buffs === 0 && counts.stances === 0 && counts.debuffs === 0 ? (
-                <span className="font-body text-[10px] font-bold uppercase tracking-label text-readout-muted">
+                <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
                   No active effects
                 </span>
               ) : (
                 <EffectCountStrip unit={selected} />
               )}
             </div>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="xs"
               onClick={() => setEffectsOpen(true)}
               aria-haspopup="dialog"
-              className="flex min-h-11 shrink-0 items-center gap-1 border border-edge px-3 font-body text-[10px] font-bold uppercase tracking-label text-readout-dim transition-colors hover:border-edge-strong hover:text-readout"
             >
               Detail
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -600,7 +608,7 @@ export default function UnitDetailPanel({
               list inside an already-scrolling panel. It lives in a modal now;
               the passive readout stays, since it is one fixed-height row. */}
           {passive ? (
-            <div className="border-b border-hairline p-3">
+            <div className="border-b border-rule p-3">
               <PassiveReadoutRow passive={passive} />
             </div>
           ) : null}
@@ -609,24 +617,28 @@ export default function UnitDetailPanel({
               cost the same vertical space. The strip is sticky: a long rank
               table used to scroll the tabs out of reach. */}
           {tabs.length > 0 && tab ? (
-            <div>
-              <div className="hud-scroll sticky top-0 z-10 flex gap-px overflow-x-auto border-b border-hairline bg-inset">
-                {tabs.map((t, i) => {
-                  const active = t.key === tab.key;
+            // The shadcn Tabs, `line` variant: the one for inside paper.
+            // Only the strip is a tab list; the panel below is shared, so a
+            // single `TabsContent` would restate what `tab` already resolves.
+            <Tabs
+              value={tab.key}
+              onValueChange={(key) =>
+                setActiveTab(Math.max(0, tabs.findIndex((t) => t.key === key)))
+              }
+            >
+              <TabsList
+                variant="line"
+                className="hud-scroll sticky top-0 z-10 w-full justify-start overflow-x-auto bg-card"
+              >
+                {tabs.map((t) => {
                   return (
-                    <button
+                    <TabsTrigger
                       key={t.key}
-                      type="button"
-                      onClick={() => setActiveTab(i)}
-                      aria-pressed={active}
-                      className={`flex min-h-11 shrink-0 items-center gap-1.5 px-2.5 py-1.5 font-body text-[11px] font-bold uppercase tracking-label transition-colors ${
-                        active
-                          ? "bg-signal/10 text-signal shadow-[inset_0_-2px_0_var(--color-signal)]"
-                          : "text-readout-dim hover:text-readout"
-                      }`}
+                      value={t.key}
+                      className="shrink-0 gap-1.5 px-2.5"
                     >
                       {t.art ? (
-                        <span className="relative h-6 w-6 shrink-0 overflow-hidden border border-edge">
+                        <span className="relative h-6 w-6 shrink-0 overflow-hidden border border-border">
                           <Image
                             src={t.art}
                             alt=""
@@ -637,10 +649,10 @@ export default function UnitDetailPanel({
                         </span>
                       ) : null}
                       {t.label}
-                    </button>
+                    </TabsTrigger>
                   );
                 })}
-              </div>
+              </TabsList>
               <div className="p-3">
                 {tab.kind === "skill" ? (
                   <SkillBlock
@@ -667,19 +679,19 @@ export default function UnitDetailPanel({
                   />
                 )}
               </div>
-            </div>
+            </Tabs>
           ) : null}
         </div>
-      </div>
 
       {detailOverlay ? (
-        <DetailOverlay
+        <MountedDialog
+          className="sm:max-w-lg"
           title={
             detailOverlay.kind === "ultimate"
               ? "Super Attack Details"
               : "Passive Details"
           }
-          subtitle={
+          description={
             detailOverlay.kind === "ultimate"
               ? detailOverlay.skill.skillName
               : detailOverlay.passive.name
@@ -691,13 +703,14 @@ export default function UnitDetailPanel({
           ) : (
             <PassiveDetailSections passive={detailOverlay.passive} />
           )}
-        </DetailOverlay>
+        </MountedDialog>
       ) : null}
 
       {effectsOpen ? (
-        <DetailOverlay
+        <MountedDialog
+          className="sm:max-w-lg"
           title="Active Effects"
-          subtitle={selected.name}
+          description={selected.name}
           onClose={() => setEffectsOpen(false)}
         >
           <EffectsTables
@@ -708,10 +721,10 @@ export default function UnitDetailPanel({
               setShowUncancellable(!showUncancellable)
             }
           />
-          <div className="mt-4 border-t border-hairline pt-3">
+          <div className="border-t border-rule pt-3">
             <SubstatDrawer unit={selected} />
           </div>
-        </DetailOverlay>
+        </MountedDialog>
       ) : null}
 
       {tagOverlayTag ? (
@@ -720,8 +733,8 @@ export default function UnitDetailPanel({
           onClose={() => setTagOverlayTag(null)}
         />
       ) : null}
-    </div>,
-    document.body,
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -744,9 +757,9 @@ function CharacterListOverlay({
     (c.tags ?? []).includes(tag),
   );
   return (
-    <DetailOverlay title={`Tag: ${tag}`} onClose={onClose}>
+    <MountedDialog title={`Tag: ${tag}`} onClose={onClose} className="sm:max-w-lg">
       {matches.length === 0 ? (
-        <p className="py-6 text-center font-body text-sm font-bold uppercase tracking-label text-readout-muted">
+        <p className="py-6 text-center font-body text-sm font-bold uppercase tracking-label text-muted-foreground">
           No characters found.
         </p>
       ) : (
@@ -756,9 +769,9 @@ function CharacterListOverlay({
             return (
               <div
                 key={char.id}
-                className="flex flex-col items-center gap-1 border border-edge bg-inset p-1.5"
+                className="flex flex-col items-center gap-1 border-2 border-border bg-card p-1.5"
               >
-                <div className="relative aspect-square w-full overflow-hidden border border-hairline">
+                <div className="relative aspect-square w-full overflow-hidden border border-border bg-muted">
                   {charArt ? (
                     <Image
                       src={charArt}
@@ -768,13 +781,13 @@ function CharacterListOverlay({
                       className="object-cover object-top"
                     />
                   ) : (
-                    <span className="flex h-full w-full items-center justify-center font-heading text-2xl text-readout-dim">
+                    <span className="flex h-full w-full items-center justify-center font-heading text-2xl">
                       {char.name.charAt(0)}
                     </span>
                   )}
                 </div>
                 <Badge
-                  className={`w-full justify-center truncate px-1 text-[9px] text-void ${ELEMENT_SWATCH[char.color]}`}
+                  className={`w-full justify-center truncate px-1 text-label text-card-foreground ${ELEMENT_SWATCH[char.color]}`}
                 >
                   {char.name}
                 </Badge>
@@ -783,6 +796,6 @@ function CharacterListOverlay({
           })}
         </div>
       )}
-    </DetailOverlay>
+    </MountedDialog>
   );
 }

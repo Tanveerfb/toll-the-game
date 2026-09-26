@@ -2,26 +2,29 @@ import { describe, expect, it } from "vitest";
 import { getCardFrameStyle } from "@/lib/game/cardFrameStyle";
 
 describe("getCardFrameStyle", () => {
-  it("R1 gets the dimmest thin border and no accent bar", () => {
+  // On paper since 2026-09-27 (#156): the ramp is grey -> ink -> heavy ink.
+  // It read `border-edge` / `edge-strong` / `readout`, the Combat Terminal
+  // ramp on a dark card, until the hand moved onto the player's paper.
+  it("R1 gets the faintest thin border and no accent bar", () => {
     const style = getCardFrameStyle(1, false);
     expect(style.tier).toBe("r1");
-    expect(style.borderClass).toContain("border-edge");
+    expect(style.borderClass).toContain("border-muted-foreground");
     expect(style.borderClass).not.toContain("border-2");
     expect(style.accentBarClass).toBeUndefined();
   });
 
-  it("R2 gets a brighter thin border and no accent bar", () => {
+  it("R2 gets a full-ink thin border and no accent bar", () => {
     const style = getCardFrameStyle(2, false);
     expect(style.tier).toBe("r2");
-    expect(style.borderClass).toContain("border-edge-strong");
+    expect(style.borderClass).toContain("border-border");
     expect(style.borderClass).not.toContain("border-2");
     expect(style.accentBarClass).toBeUndefined();
   });
 
-  it("R3 gets the brightest border plus a top accent bar", () => {
+  it("R3 gets the heaviest border plus a top accent bar", () => {
     const style = getCardFrameStyle(3, false);
     expect(style.tier).toBe("r3");
-    expect(style.borderClass).toContain("border-readout");
+    expect(style.borderClass).toContain("border-2");
     expect(style.accentBarClass).toBeDefined();
   });
 

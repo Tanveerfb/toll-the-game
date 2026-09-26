@@ -7,10 +7,8 @@ import {
   buildDescriptionForRank,
   buildSkillKeywordGlossary,
 } from "@/lib/game/descriptionTranslator";
-import {
-  extractKeywordFootnotes,
-  formatFootnoteLabel,
-} from "@/lib/game/keywordFootnotes";
+import { extractKeywordFootnotes } from "@/lib/game/keywordFootnotes";
+import { FootnoteList } from "@/components/game/KitDetails";
 import { mechanicGlossary } from "@/lib/game/mechanicGlossary";
 import type { CharacterSkillData } from "@/lib/game/characterCatalog";
 import type { ActionCard } from "@/types/action";
@@ -67,36 +65,20 @@ export default function CardDetail({
     [description, glossary],
   );
 
+  // Kit text is read on paper, with the archive's own marker and footnotes
+  // (ruling #155): this renders inside the press-and-hold dialog and the
+  // hover preview, both paper. It had its own outlined-keyword style, which is
+  // how a keyword came to look different mid-fight from the kit page.
   return (
     <>
-      <p className="font-body text-sm text-readout">
+      <p className="font-body text-sm">
         <KeyworkHighlighter
           text={description}
-          className="font-body text-sm text-readout"
+          className="font-body text-sm"
           glossary={glossary}
-          keywordClassName="inline-flex cursor-help items-center rounded-none border border-edge-strong bg-transparent px-1 py-[1px] font-body text-xs uppercase tracking-title text-readout-strong"
         />
       </p>
-
-      {footnotes.length > 0 ? (
-        <>
-          <div className="my-3 border-t border-edge" />
-          <div className="space-y-1">
-            {footnotes.map((entry) => (
-              <p
-                key={entry.keyword}
-                className="font-body text-xs text-readout-dim"
-              >
-                <span className="mr-1 text-readout-muted">※</span>
-                <span className="font-semibold text-signal">
-                  {formatFootnoteLabel(entry.keyword)}
-                </span>
-                <span className="text-readout"> — {entry.meaning}</span>
-              </p>
-            ))}
-          </div>
-        </>
-      ) : null}
+      <FootnoteList footnotes={footnotes} />
     </>
   );
 }

@@ -37,6 +37,13 @@ const buttonVariants = cva(
         /** Primary action — the one thing the screen wants you to press. */
         default:
           "ink-skew border-border bg-primary text-primary-foreground ink-slab-sm hover:bg-primary/90",
+        /**
+         * The second loud action, beside a primary: ink, on a yellow slab.
+         * For a screen with two things worth pressing, where `secondary`
+         * would read as a footnote (the character page's Preview beside
+         * Growth, his pick 2026-09-27). One per screen, next to a primary.
+         */
+        ink: "ink-skew border-border bg-card-foreground text-card ink-slab-primary hover:bg-card-foreground/90",
         /** A second action beside the primary one: a paper button. */
         secondary:
           "border-border bg-secondary text-secondary-foreground hover:bg-muted",

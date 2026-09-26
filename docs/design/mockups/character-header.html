@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Character Page Header</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=M+PLUS+1p:wght@400;700;800&display=swap" rel="stylesheet" />
+<style>
+  /* Shonen Ink tokens, copied from styles/globals.css (docs/design-system.md). */
+  :root {
+    --bg: #0d0d10; --fg: #f7f7f2; --ground-dim: #b9b9b2; --ground-raised: #1c1c21;
+    --ground-line: #33333a; --halftone: #25252c; --slab: #2b2b33;
+    --paper: #f5f5f0; --paper-2: #e7e7df; --ink: #111114; --ink-2: #5d5d63;
+    --rule: rgba(93, 93, 99, 0.3); --primary: #ffd400; --destructive: #ff5a4e;
+    --el-red: #ff5a4e; --el-light: #e8d174; --el-green: #35d48b;
+    --heading: "Bangers", Impact, "Arial Black", sans-serif;
+    --body: "M PLUS 1p", "Segoe UI", system-ui, sans-serif;
+    --nav: 46px; --tabbar: 52px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  body {
+    background: var(--bg) radial-gradient(var(--halftone) 1.1px, transparent 1.5px) 0 0 / 7px 7px;
+    color: var(--fg); font-family: var(--body); line-height: 1.5;
+    padding-inline: 16px; padding-block: 28px 80px;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+  .eyebrow { font-size: 10px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ground-dim); }
+  h1 { display: inline-block; margin-top: 8px; font-family: var(--heading); font-weight: 400; font-size: clamp(32px, 6vw, 48px);
+    letter-spacing: 0.04em; line-height: 1; color: var(--ink); background: var(--paper); padding: 6px 16px 2px;
+    transform: skewX(-8deg); box-shadow: 5px 5px 0 var(--primary); }
+  .lede { max-width: 68ch; margin-top: 18px; color: var(--ground-dim); font-size: 15px; }
+  .lede b { color: var(--fg); }
+  .picker { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; align-items: center; }
+  .opt-tab { min-height: 44px; padding: 0 14px; font-family: var(--heading); font-size: 19px; letter-spacing: 0.06em;
+    background: var(--ground-raised); color: var(--ground-dim); border: 2px solid var(--ground-line); }
+  .opt-tab[aria-selected="true"] { background: var(--paper); color: var(--ink); border-color: var(--ink);
+    transform: skewX(-8deg); box-shadow: 3px 3px 0 var(--primary); }
+  .seg { display: flex; margin-left: auto; }
+  .seg button { min-height: 44px; padding: 0 12px; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    border: 2px solid var(--ground-line); color: var(--ground-dim); background: var(--ground-raised); }
+  .seg button + button { border-left: 0; }
+  .seg button[aria-pressed="true"] { background: var(--primary); color: var(--ink); border-color: var(--primary); }
+  .stage { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 18px; align-items: flex-start; }
+  .notes { flex: 1 1 340px; min-width: 0; background: var(--paper); color: var(--ink); border: 2px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--slab); padding: 18px 20px 20px; }
+  .notes h2 { font-family: var(--heading); font-weight: 400; font-size: 30px; letter-spacing: 0.04em; line-height: 1.05; }
+  .notes .pos { margin-top: 6px; font-size: 15px; font-weight: 700; }
+  .notes h3 { margin-top: 16px; padding-bottom: 3px; border-bottom: 1px solid var(--rule); font-size: 10px; font-weight: 800;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+  .notes ul { margin: 8px 0 0 18px; font-size: 14px; }
+  .notes li { margin-bottom: 5px; }
+  .meter { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin-top: 8px; font-size: 14px; }
+  .meter dt { color: var(--ink-2); }
+  .meter dd { font-weight: 800; font-variant-numeric: tabular-nums; }
+  .ok { background: color-mix(in srgb, var(--el-green) 45%, transparent); padding: 0 3px; }
+  .no { background: color-mix(in srgb, var(--destructive) 30%, transparent); padding: 0 3px; }
+  .how { margin-top: 14px; padding: 8px 12px; border-left: 8px solid var(--primary); background: var(--paper-2); font-size: 13px; }
+  .scroll-x { overflow-x: auto; margin-top: 16px; }
+  table { border-collapse: collapse; min-width: 620px; width: 100%; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+  td.n { font-variant-numeric: tabular-nums; font-weight: 800; }
+  .compare { margin-top: 40px; }
+  .compare h2 { display: inline-block; font-family: var(--heading); font-weight: 400; font-size: 28px; color: var(--ink);
+    background: var(--paper); padding: 4px 12px 0; transform: skewX(-8deg); box-shadow: 4px 4px 0 var(--primary); }
+
+  /* ── phone 390x844 ── */
+  .phone { position: relative; flex: 0 0 auto; width: 390px; max-width: 100%; height: 844px; overflow: hidden;
+    border: 2px solid var(--ground-line); background: var(--bg) radial-gradient(var(--halftone) 1.1px, transparent 1.5px) 0 0 / 7px 7px; }
+  .pnav { position: absolute; inset: 0 0 auto; height: var(--nav); z-index: 5; display: flex; align-items: center; gap: 8px; padding: 0 10px;
+    background: var(--bg); border-bottom: 1px solid var(--ground-line); }
+  .pnav .logo { font-family: var(--heading); font-size: 20px; color: var(--ink); background: var(--paper); padding: 0 8px; transform: skewX(-8deg); }
+  .pnav .res { margin-left: auto; font-size: 11px; font-weight: 800; color: var(--ink); background: var(--paper); padding: 4px 8px; }
+  .tabbar { position: absolute; inset: auto 0 0; height: var(--tabbar); z-index: 5; display: grid; grid-template-columns: repeat(5, 1fr);
+    background: var(--bg); border-top: 1px solid var(--ground-line); }
+  .tabbar span { display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ground-dim); }
+  .tabbar span.on { color: var(--ink); background: var(--primary); }
+  .scroller { position: absolute; left: 0; right: 0; top: var(--nav); bottom: var(--tabbar); overflow-y: auto; }
+  .page { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .fold { position: absolute; left: 0; right: 0; bottom: var(--tabbar); height: 0; border-top: 2px dashed var(--primary); z-index: 6; pointer-events: none; }
+  .fold span { position: absolute; right: 4px; top: -18px; font-size: 9px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink); background: var(--primary); padding: 1px 5px; }
+
+  .back { align-self: flex-start; min-height: 44px; padding: 0 12px; border: 2px solid currentColor; font-size: 11px; font-weight: 800;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg); }
+  .paper { background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 5px 5px 0 var(--slab); }
+  .art { position: relative; overflow: hidden; background: var(--paper-2); border-bottom: 2px solid var(--ink); }
+  .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .elcode { position: absolute; left: 0; top: 0; z-index: 1; background: var(--el-red); color: var(--ink); font-size: 11px; font-weight: 800;
+    letter-spacing: 0.14em; padding: 1px 8px; border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
+  .idb { padding: 10px 12px; }
+  .heading { font-size: 11px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-2); }
+  .name { font-family: var(--heading); font-weight: 400; font-size: 36px; line-height: 1; letter-spacing: 0.08em; }
+  .num { margin-top: 2px; font-size: 11px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; border: 2px solid var(--ink); padding: 1px 6px; }
+  .stats { border-top: 1px solid var(--rule); padding: 10px 12px; display: grid; gap: 6px; }
+  .stat { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; font-size: 10px; font-weight: 800; letter-spacing: 0.14em; }
+  .stat .bar { height: 7px; border: 1.5px solid var(--ink); background: var(--paper-2); }
+  .stat .bar i { display: block; height: 100%; background: var(--el-red); }
+  .stat b { font-size: 13px; font-variant-numeric: tabular-nums; letter-spacing: 0; }
+  .stats.inline { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stats.inline .stat { grid-template-columns: 1fr; gap: 2px; }
+
+  /* buttons */
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn { min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; line-height: 1.05; text-align: center; padding: 4px 10px; }
+  .btn .big { font-family: var(--heading); font-size: 22px; letter-spacing: 0.06em; }
+  .btn .small { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+  .btn.growth { background: var(--primary); color: var(--ink); border: 2px solid var(--ink); transform: skewX(-8deg); box-shadow: 4px 4px 0 var(--slab); }
+  .btn.growth > * { transform: skewX(8deg); }
+  .btn.preview { background: var(--ink); color: var(--paper); border: 2px solid var(--ink); transform: skewX(-8deg); box-shadow: 4px 4px 0 var(--primary); }
+  .btn.preview > * { transform: skewX(8deg); }
+  .btn.today { background: var(--paper); color: var(--ink); border: 2px solid var(--ink); min-height: 44px; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+  .notowned { background: var(--paper); color: var(--ink-2); border: 2px solid var(--ink); min-height: 48px; display: flex; align-items: center;
+    justify-content: center; text-align: center; font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; padding: 4px 8px; }
+  .lore p:first-child { font-size: 10px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-2); }
+  .lore { padding: 10px 12px; font-size: 14px; }
+  .kit { padding: 6px 14px 16px; }
+  .kit h3 { font-family: var(--heading); font-weight: 400; font-size: 26px; letter-spacing: 0.06em; border-bottom: 2px solid var(--ink); margin-top: 8px; }
+  .skill { margin-top: 10px; border: 2px solid var(--ink); padding: 8px 10px; font-size: 13px; }
+  .skill b { font-family: var(--heading); font-weight: 400; font-size: 18px; letter-spacing: 0.06em; }
+  .skill mark { background: linear-gradient(transparent 45%, var(--primary) 45%, var(--primary) 92%, transparent 92%); color: var(--ink); }
+
+  /* option B: card row */
+  .row { display: grid; grid-template-columns: 118px minmax(0, 1fr); }
+  .row .art { border-bottom: 0; border-right: 2px solid var(--ink); aspect-ratio: 3 / 4; }
+  .row .name { font-size: 30px; }
+
+  /* option C: sticky action bar */
+  .sticky { position: absolute; left: 0; right: 0; bottom: var(--tabbar); z-index: 4; padding: 8px 16px 10px; background: var(--paper);
+    border-top: 2px solid var(--ink); }
+  .sticky .actions { gap: 10px; }
+
+  .sheet-scrim { position: absolute; inset: 0; z-index: 20; background: rgba(13,13,16,0.72); display: flex; flex-direction: column; justify-content: center; padding: 16px; }
+  .dlg { background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 5px 5px 0 var(--slab); padding: 16px; }
+  .dlg h4 { font-family: var(--heading); font-weight: 400; font-size: 28px; }
+  .dlg p { font-size: 13px; margin-top: 6px; }
+  .dlg button { margin-top: 12px; width: 100%; min-height: 44px; border: 2px solid var(--ink); font-weight: 800; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="eyebrow">Mockup · the character page's header · ruling #144 · 2026-09-27</span><br />
+  <h1>Character header</h1>
+  <p class="lede">
+    His read: the portrait is <b>too big on a phone</b>, the top area needs
+    tightening, and <b>Growth and Preview should pull the eye</b>, Growth most.
+    Three answers plus today's page for comparison, all with Meliodas's real
+    data. <b>Scroll inside the phone</b>; the yellow dashed line is the fold
+    (the top of the bottom tab bar). Toggle <b>Owned / Not owned</b> to see
+    the case where Growth is replaced by a note. The kit below is abridged:
+    only the header is in question.
+  </p>
+
+  <div class="picker" role="tablist" aria-label="Options">
+    <button class="opt-tab" role="tab" data-opt="today" aria-selected="false">Today</button>
+    <button class="opt-tab" role="tab" data-opt="a" aria-selected="true">A · Banner</button>
+    <button class="opt-tab" role="tab" data-opt="b" aria-selected="false">B · Card row</button>
+    <button class="opt-tab" role="tab" data-opt="c" aria-selected="false">C · Pinned actions</button>
+    <div class="seg" aria-label="Ownership">
+      <button data-own="1" aria-pressed="true">Owned</button>
+      <button data-own="0" aria-pressed="false">Not owned</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="phone" id="phone"></div>
+    <aside class="notes" id="notes"></aside>
+  </div>
+
+  <section class="compare">
+    <h2>Side by side, measured on these drawings</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th></th><th>Today</th><th>A · Banner</th><th>B · Card row</th><th>C · Pinned</th></tr></thead>
+        <tbody>
+          <tr><td>Portrait on screen</td><td class="n" id="art-today">–</td><td class="n" id="art-a">–</td><td class="n" id="art-b">–</td><td class="n" id="art-c">–</td></tr>
+          <tr><td>Growth, bottom edge (fold at 792px)</td><td class="n" id="gr-today">–</td><td class="n" id="gr-a">–</td><td class="n" id="gr-b">–</td><td class="n" id="gr-c">–</td></tr>
+          <tr><td>Kit starts at</td><td class="n" id="kit-today">–</td><td class="n" id="kit-a">–</td><td class="n" id="kit-b">–</td><td class="n" id="kit-c">–</td></tr>
+          <tr><td>Growth while reading the kit</td><td>Scrolled away</td><td>Scrolled away</td><td>Scrolled away</td><td>Always on screen</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const ART = "../../../public/characters/meliodas.png";
+  const st = { opt: "a", owned: true, open: false };
+  const NOTES = {
+    today: {
+      title: "Today", pos: "What ships now, measured the same way, so the options have a baseline.",
+      pts: ["A full-width square portrait, about 358×358px on a phone.", "Preview and Growth are paper buttons under the stat bars, the same weight as the Back button.", "Growth's own label carries the state: Lv · A · UL."],
+      cost: [],
+    },
+    a: {
+      title: "A · Banner", pos: "Shrink the art to a wide banner, and put the two actions straight under the name.",
+      pts: ["The portrait becomes a 16:9 crop from the top, which keeps the face.", "Name, number and tags sit under it, then <b>Growth</b> (the yellow primary, with its Lv · A · UL) and <b>Preview</b> (ink, with a yellow slab) side by side, before the stats.", "The stats become one compact three-column row."],
+      cost: ["The full-body art is cropped here; the archive grid and the gacha still show it whole.", "The actions scroll away once you are in the kit."],
+    },
+    b: {
+      title: "B · Card row", pos: "Identity as one compact row: a card-shaped thumbnail beside the name.",
+      pts: ["A 3:4 thumbnail on the left, like the card itself; name, heading, number and tags beside it.", "Stats in one row under that, then Growth and Preview, as in A.", "The shortest header of the three: the kit starts highest."],
+      cost: ["The smallest art: this page stops being where you look at the character.", "The actions scroll away once you are in the kit."],
+    },
+    c: {
+      title: "C · Pinned actions", pos: "Keep a good-sized image, and take the actions out of the flow: a bar pinned above the tab bar.",
+      pts: ["A 4:3 portrait (shorter than today's square), then identity and stats as today.", "Growth and Preview live in a paper bar pinned just above the tab bar, in the thumb's reach, for the whole page.", "The most attention of the three: they never leave the screen."],
+      cost: ["The pinned bar takes 66px off every scroll position.", "A second pinned bar on a screen that already has the tab bar."],
+    },
+  };
+
+  const phone = document.getElementById("phone");
+  const notes = document.getElementById("notes");
+
+  const growth = () => st.owned
+    ? `<button class="btn growth" data-growth><span class="big">Growth</span><span class="small">Lv 20 · A1 · UL2</span></button>`
+    : `<div class="notowned">Not owned — summon to level up</div>`;
+  const preview = `<button class="btn preview"><span class="big">Preview</span><span class="small">vs training dummy</span></button>`;
+  const statsFull = `<div class="stats">
+      <div class="stat"><span>HP</span><span class="bar"><i style="width:80%"></i></span><b>3200</b></div>
+      <div class="stat"><span>ATK</span><span class="bar"><i style="width:84%"></i></span><b>285</b></div>
+      <div class="stat"><span>DEF</span><span class="bar"><i style="width:62%"></i></span><b>155</b></div></div>`;
+  const statsInline = `<div class="stats inline">
+      <div class="stat"><span>HP <b>3200</b></span><span class="bar"><i style="width:80%"></i></span></div>
+      <div class="stat"><span>ATK <b>285</b></span><span class="bar"><i style="width:84%"></i></span></div>
+      <div class="stat"><span>DEF <b>155</b></span><span class="bar"><i style="width:62%"></i></span></div></div>`;
+  const ident = (size) => `<div class="idb">
+      <p class="heading">Captain of the Sins</p>
+      <p class="name" ${size ? `style="font-size:${size}px"` : ""}>Meliodas</p>
+      <p class="num">No. 100020</p>
+      <div class="tags"><span class="tag">Collab</span><span class="tag">Demon</span><span class="tag">Seven Deadly Sins</span></div></div>`;
+  const lore = `<div class="paper lore"><p>Lore</p><p>The captain of the Seven Deadly Sins, a demon who hides his power behind a grin.</p></div>`;
+  const kit = `<div class="paper kit" data-kit><h3>Skills</h3>
+      <div class="skill"><b>S1 · Triple Strike</b><br />Does <mark>Weakpoint</mark> damage equal to 150% ATK to one enemy.</div>
+      <div class="skill"><b>S2 · Full Counter</b><br />Assumes a stance for 1 turn: counters attackers.</div>
+      <div class="skill"><b>ULT · Evil Spirit</b><br />Deals damage to all enemies.</div>
+      <h3>Passive</h3><div class="skill"><b>Deathblow</b><br />Damage dealt and crit chance rise as HP is lost.</div></div>`;
+  const art = (ratio) => `<div class="art" data-art style="aspect-ratio:${ratio}"><span class="elcode">RED</span><img src="${ART}" alt="Meliodas" style="object-position:50% 12%" onerror="this.remove()" /></div>`;
+  const back = `<button class="back">← Character archive</button>`;
+
+  function page() {
+    if (st.opt === "today") {
+      return `${back}<div class="paper">${art("1 / 1")}${ident()}${statsFull}</div>
+        <button class="btn today">Preview — full rank &amp; ultimate set vs. a training dummy</button>
+        ${st.owned ? `<button class="btn today" data-growth>Growth · Lv 20 · A1 · UL2</button>` : `<div class="notowned">Not owned — summon to level up</div>`}
+        ${lore}${kit}`;
+    }
+    if (st.opt === "a") {
+      return `${back}<div class="paper">${art("16 / 9")}${ident(32)}
+        <div style="padding:0 12px 12px"><div class="actions">${growth()}${preview}</div></div>${statsInline}</div>${lore}${kit}`;
+    }
+    if (st.opt === "b") {
+      return `${back}<div class="paper"><div class="row">${art("3 / 4")}${ident(28)}</div>${statsInline}
+        <div style="padding:0 12px 12px"><div class="actions">${growth()}${preview}</div></div></div>${lore}${kit}`;
+    }
+    return `${back}<div class="paper">${art("4 / 3")}${ident()}${statsFull}</div>${lore}${kit}<div style="height:70px"></div>`;
+  }
+
+  function render() {
+    const keep = phone.querySelector(".scroller")?.scrollTop ?? 0;
+    phone.innerHTML = `
+      <div class="pnav"><span class="logo">TOLL</span><span class="res">63/120 · 995</span></div>
+      <div class="scroller"><div class="page">${page()}</div></div>
+      ${st.opt === "c" ? `<div class="sticky"><div class="actions">${growth()}${preview}</div></div>` : ""}
+      <div class="fold"><span>fold</span></div>
+      <div class="tabbar"><span>Home</span><span class="on">Archive</span><span>Events</span><span>Gacha</span><span>News</span></div>
+      ${st.open ? `<div class="sheet-scrim" data-close><div class="dlg"><h4>Growth</h4><p>The Growth dialog opens here, unchanged: Level, Ascend and Ultimate tabs.</p><button data-close>Close</button></div></div>` : ""}`;
+    phone.querySelector(".scroller").scrollTop = keep;
+    const n = NOTES[st.opt];
+    notes.innerHTML = `<h2>${n.title}</h2><p class="pos">${n.pos}</p>
+      <h3>What changes</h3><ul>${n.pts.map((x) => `<li>${x}</li>`).join("")}</ul>
+      ${n.cost.length ? `<h3>What it costs</h3><ul>${n.cost.map((x) => `<li>${x}</li>`).join("")}</ul>` : ""}
+      <h3>Measured on this drawing</h3>
+      <dl class="meter"><dt>Portrait</dt><dd id="m-art">–</dd><dt>Growth, bottom edge</dt><dd id="m-gr">–</dd><dt>Kit starts at</dt><dd id="m-kit">–</dd></dl>
+      <p class="how">Positions are from the top of the 390×844 screen at scroll 0,
+        measured with <code>getBoundingClientRect</code>. The fold is <b>792px</b>:
+        the top of the 52px tab bar. Anything below it needs a scroll.</p>`;
+    measure();
+  }
+
+  function measure() {
+    const pr = phone.getBoundingClientRect();
+    const sc = phone.querySelector(".scroller");
+    const top = (el) => el.getBoundingClientRect().top - pr.top + sc.scrollTop;
+    const bottom = (el) => el.getBoundingClientRect().bottom - pr.top + sc.scrollTop;
+    const a = phone.querySelector("[data-art]").getBoundingClientRect();
+    const artTxt = `${Math.round(a.width)}×${Math.round(a.height)}px`;
+    const g = phone.querySelector("[data-growth]") || phone.querySelector(".notowned");
+    const pinned = st.opt === "c";
+    const gb = pinned ? g.getBoundingClientRect().bottom - pr.top : bottom(g);
+    const kitTop = Math.round(top(phone.querySelector("[data-kit]")));
+    const fold = 844 - 52;
+    const grTxt = pinned
+      ? `<span class="ok">${Math.round(gb)}px, pinned</span>`
+      : `<span class="${gb <= fold ? "ok" : "no"}">${Math.round(gb)}px${gb <= fold ? "" : ", below the fold"}</span>`;
+    const kitTxt = `${kitTop}px`;
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.innerHTML = v; };
+    set("m-art", artTxt); set("m-gr", grTxt); set("m-kit", kitTxt);
+    if (st.owned) { set("art-" + st.opt, artTxt); set("gr-" + st.opt, grTxt); set("kit-" + st.opt, kitTxt); }
+  }
+
+  phone.addEventListener("click", (e) => {
+    if (e.target.closest("[data-growth]")) { st.open = true; render(); return; }
+    if (e.target.closest("[data-close]") && (e.target.matches("[data-close]") || e.target.tagName === "BUTTON")) { st.open = false; render(); }
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && st.open) { st.open = false; render(); } });
+  document.querySelectorAll(".opt-tab").forEach((b) => b.addEventListener("click", () => {
+    st.opt = b.dataset.opt;
+    document.querySelectorAll(".opt-tab").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+    phone.querySelector(".scroller").scrollTop = 0;
+    render();
+  }));
+  document.querySelectorAll("[data-own]").forEach((b) => b.addEventListener("click", () => {
+    st.owned = b.dataset.own === "1";
+    document.querySelectorAll("[data-own]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    render();
+  }));
+  render();
+  // Fill the comparison for every option at rest, owned. Measured after the
+  // art loads, since the portrait's box is what moves everything below it.
+  const sweep = () => {
+    const keep = st.opt;
+    for (const o of ["today", "a", "b", "c"]) { st.opt = o; render(); }
+    st.opt = keep; render();
+  };
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(sweep);
+  const img = new Image(); img.onload = sweep; img.src = ART;
+})();
+</script>
+</body>
+</html>
