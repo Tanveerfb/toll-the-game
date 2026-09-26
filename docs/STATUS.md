@@ -10,7 +10,7 @@ Living snapshot. Session history is folded to
 `components/ui/Screen.tsx` and `tests/layoutSystem.test.ts` allows **zero**
 hand-typed shells. Lyra has an approved card pose and an approved bow. Suite
 **1,556 unit / 125 files**, **17 browser / 3 files**, `next build` clean.
-Committed as `{HASH}`.
+Committed as `77b437a`.
 
 **Next:** `TeamPicker` (582 lines) filters but has **no search and no sort**,
 while `CharacterBrowser` next door has all three — the QOL benchmark ruling
