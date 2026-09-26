@@ -22,6 +22,7 @@ import {
   DAMAGE_PREVIEW_DUMMY,
 } from "@/lib/game/damagePreview";
 import { getCharacterArt } from "@/lib/game/characterArt";
+import { Screen } from "@/components/ui/Screen";
 
 interface CharacterPageProps {
   /**
@@ -91,8 +92,12 @@ export default async function CharacterDetailPage({
   const isMultiPhase = getCharacterPhases(character).length > 1;
 
   return (
-    <main className="terminal-grid min-screen-below-nav bg-void">
-      <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8">
+    // `app`, not `read`, deliberately. Plans/2026-09-17-layout-system.md files
+    // "kit pages" under `read` (42rem), but that was written before this screen
+    // gained its 290px stat sidebar: at 42rem the main column resolves to
+    // 368px, narrower than the content area of a 390px phone. `app` gives it
+    // 592px. Flagged for Tanveer — it is a one-word change if he wants `read`.
+    <Screen width="app">
         <Link
           href="/archive"
           className="chamfer inline-flex min-h-11 items-center border border-edge px-3 font-body text-[11px] font-bold uppercase tracking-eyebrow text-readout-dim transition-colors hover:border-edge-strong hover:text-signal"
@@ -256,7 +261,6 @@ export default async function CharacterDetailPage({
             </ProseSection>
           </div>
         </div>
-      </div>
-    </main>
+    </Screen>
   );
 }

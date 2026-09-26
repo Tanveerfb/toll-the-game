@@ -27,6 +27,7 @@ import {
   permanentTicketCost,
   PERMANENT_TICKET_COST,
 } from "@/lib/gacha/cost";
+import { Screen } from "@/components/ui/Screen";
 
 type Tab = "limited" | "permanent";
 
@@ -140,8 +141,7 @@ export default function BannerScreen(): React.JSX.Element {
     `Draw ×${count} · ${count === 1 ? singleCost : multiCost} ${unit}`;
 
   return (
-    <main className="terminal-grid min-screen-below-nav bg-void">
-      <section className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-6 md:px-8">
+    <Screen width="app">
         {ticketBannerAvailable ? (
           <div className="flex gap-1.5 border-b border-edge pb-2">
             {(["limited", "permanent"] as const).map((t) => (
@@ -400,7 +400,6 @@ export default function BannerScreen(): React.JSX.Element {
             Rates &amp; pool
           </button>
         </div>
-      </section>
 
       {showFeatured ? (
         <FeaturedModal
@@ -460,6 +459,6 @@ export default function BannerScreen(): React.JSX.Element {
           onClose={() => setReveal(null)}
         />
       ) : null}
-    </main>
+    </Screen>
   );
 }

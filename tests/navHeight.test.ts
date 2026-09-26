@@ -86,11 +86,24 @@ describe("nav height is declared once, not repeated", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("the scrolling screens use the shared min-height class", () => {
-    const users = files.filter((rel) =>
-      source(rel).includes("min-screen-below-nav"),
+  /**
+   * **Anchored on the owner, not on a file count, since 2026-09-26.** This
+   * asserted `>= 8` files carried `min-screen-below-nav`, which was right while
+   * every screen typed its own shell. Finishing the `Screen` migration took the
+   * real count to 3 and failed it — for doing exactly what the layout system
+   * exists to do. The same thing happened to `viewportUnits.test.ts`.
+   *
+   * A count cannot express the intent any more. The intent is *"the ban above
+   * is not passing because nothing sizes to the viewport"*, and post-migration
+   * the thing that must size to the viewport is **`Screen`**. Asserting that
+   * directly is strictly stronger than a floor: deleting the class from the one
+   * file that matters now fails, where a count of 8 could be satisfied by any
+   * eight files and stay green while `Screen` itself was gutted.
+   */
+  it("the shell primitive uses the shared min-height class", () => {
+    expect(source("components/ui/Screen.tsx")).toContain(
+      "min-screen-below-nav",
     );
-    expect(users.length).toBeGreaterThanOrEqual(8);
     const css = fs.readFileSync("styles/globals.css", "utf8");
     expect(css).toContain(".min-screen-below-nav");
     expect(css).toContain(

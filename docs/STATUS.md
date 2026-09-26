@@ -1,4 +1,4 @@
-# Status — 2026-09-21
+# Status — 2026-09-26
 
 Living snapshot. Session history is folded to
 [`docs/archive/STATUS-2026-08.md`](archive/STATUS-2026-08.md) and
@@ -6,33 +6,26 @@ Living snapshot. Session history is folded to
 
 ## Start here
 
-**State:** Two sessions of work landing together. The **trial run flow** is
-rebuilt to his picked mockups (option C mid-run, option E completion) and the
-growth modal's duplicate level chip is fixed — both were found by him actually
-playing the First Ascension Trial, not by a test. Lyra's skills are renamed from
-canon (#150), and the **layered art pipeline is real**: her A-pose character
-layer and her drawn bow are approved, and a **card pose** now exists as a second
-skeleton from the same generator. Suite **1,556 tests / 125 files**, typecheck
-and lint clean.
+**State:** The layout system is **finished** — every screen renders through
+`components/ui/Screen.tsx` and `tests/layoutSystem.test.ts` allows **zero**
+hand-typed shells. Lyra has an approved card pose and an approved bow. Suite
+**1,556 unit / 125 files**, **17 browser / 3 files**, `next build` clean.
+Committed as `{HASH}`.
 
-**Next:** Finish Lyra's card render — he picked the **fist** arm variant (B1/B3
-from the 2026-09-21 comparison); run the hand detailer on the pick, matte it,
-and then do the three skill artworks: Shatterburn, Flash Point, Latent Heat.
-Method and every failure are in
-[`docs/ART_PIPELINE.md`](ART_PIPELINE.md) — read its last six sections first.
+**Next:** `TeamPicker` (582 lines) filters but has **no search and no sort**,
+while `CharacterBrowser` next door has all three — the QOL benchmark ruling
+#139 names. Last open finding touching a screen he uses every session, and it
+needs no decision from him. See **Open items**.
 
-**Blocked on him:** notices — `content/news/notices/` holds only
-`_placeholder.mdx`. Still open: Molvarr's second-form naming, **PROVISIONAL
-#136**, Chapter 11's *"training partners"* line (it still implies a combat
-academy, which #149 says she never attended), and installing `accelerate`,
-which is required before any LoRA training and is unapproved.
+**Blocked on him:** notices (`content/news/notices/` holds only
+`_placeholder.mdx`), Lyra's C4 collar colour, PROVISIONAL #136, Molvarr's
+second-form naming, Chapter 11's *"training partners"* line, and installing
+`accelerate`.
 
-**Don't trust:** the art sections describe what was **generated**, not what is
-**shipped** — no card render is in `public/` yet, and Lyra's approved character
-layer is still only in the session scratchpad. `TrialRail` and `TrialClearSummary`
-are **now rendered and played**, which the previous checkpoint listed as never
-having happened. The **battle screen** remains excluded from the layout
-migration. See **Confidence and gaps**.
+**Don't trust:** **Confidence and gaps** is the only section separating checked
+from assumed. Short version: **no screen was opened in a browser this session**
+though six changed desktop width, **no card art is wired into any screen**, and
+eight findings in `Plans/2026-09-17-code-quality-audit.md` were not re-measured.
 
 ## Working (implemented, tested, browser-verified)
 
@@ -383,6 +376,87 @@ migration. See **Confidence and gaps**.
 - **Fixes (2026-07-12/13)** — Mustafa's Earth Stance: Fortress is a team-wide (aoe) DR stance, no ally pick; single-target attacks retarget to a living enemy when their marked target died mid-queue (focus-fire no longer wastes cards on a corpse).
 - **Tests** — **723 across 62 files** (`npx vitest run`, ~3s). Coverage spans battle event emission, combat rank, Flowing Ruin, AI, debuff skills, damage formula, ticks, subs, deck flow, Seras, 7DS kits, HxH kits, description placeholders, ally targeting, optional enemy targeting (unmarked = random), enemy action economy (low-mid +1 / elite always 3), multiplicative buff+debuff stacking, lethal survival, effects/links, playtest-2 regressions, kit schema validation, story schema + sequential unlock + reward/teamMode validation, story reward rolls (range bounds, first-clear vs replay, stamina cost), story team resolution (canon/anchored/free, anchor-bypasses-ownership), scene-reader pacing (word splitting, capped stagger, delay monotonicity, tap contract, auto dwell, narration classification, portrait-side memory) and the music controller (role no-op, crossfade, autoplay gate, missing-file tolerance, volume/mute), boss mechanics/passives + phase transitions, leveling/ascension/stamina, substats, gacha (banners, pull, dupes, milestone, materials), playerStore actions + migration, news sorting/read-tracking, passive markup + readouts, card frame + reveal tiers, battle-log grouping + markdown export, per-character VFX registry invariants, kit-preview coverage/correctness, character-catalog registration, duel-mode move validation + state serialisation (kit visibility, hidden-information guard).
 
+## Session log — 2026-09-21/26: the card pose, and the last hand-typed shell
+
+**Two threads.** The art thread finished Lyra's card pose; the code thread
+finished the layout system.
+
+**Lyra's card pose.** A second COCO-18 skeleton from the same generator as the
+A-pose — `scripts/draw_lyra_card_pose.py`, then
+`scripts/draw_lyra_card_arm_variants.py`. **Twelve images were generated before
+one was worth showing.** Both causes of the first failure were authoring
+mistakes, not bad rolls, and both are written up in `docs/ART_PIPELINE.md`:
+a skeleton drawn with **stub arms** (87px upper arm against a 166px thigh) to
+"signal" foreshortening, plus `(spread fingers:1.2)` and the word
+`foreshortening` in the prompt, produced hands bigger than her head in five of
+six and one image with two heads. ControlNet **0.6 is a neutral-pose number**;
+the dynamic pose needed **0.78**, after which the raised arm took in six of six.
+
+**He overruled the recommendation, and the record was wrong.** Claude
+recommended the fist row and wrote the swept row off in `ART_PIPELINE` as
+*"fails — the arm hides behind the body and reads as missing"*. He picked the
+swept row: *"Good ones — C1, C2, C4 (my fav)."* That claim is corrected in
+place, with the reason it was wrong named: **taste stated as measurement.**
+Transparency percentages and limb lengths are measurements; "reads as missing"
+is an opinion, and #139 puts that with him. The two-stage QC filter removes
+images with **defects**, not images Claude dislikes. Session memory updated.
+
+**The matte recipe had rotted.** `BiRefNet_toonout` is named in the v7 recipe
+and the approved A-pose layer's PNG metadata still carries it — but
+`BiRefNetRMBG` **no longer offers it**, so the recipe could not be run as
+written. Replacement chosen by bake-off rather than by name, measuring
+transparency, soft edge and opaque pixels on the canvas border:
+**`BiRefNet-HR-matting`**, 70.0% / 6.05% / 0. A clean bake-off did not mean a
+clean batch — the same model left C1 at a 20.4% soft edge and C2 with 68
+pixels on the frame edge, so **every matte gets measured, not just the one it
+was tuned on**.
+
+**The layout system is finished.** Nine hand-typed shells migrated onto
+`Screen`: practice, both archives, the kit page, profile, login, `HomeMenu`
+(which carried two), `BannerScreen`, and `StoryStage` — the last being the
+**precedent `Screen` was generalised from**, which had kept its own copy of
+both shells ever since. Six screens changed desktop width as the ten ad-hoc
+widths collapsed onto the three tokens.
+
+**Three guards were wrong, and finishing the work is what exposed them.**
+
+1. **The layout ratchet over-counted.** It matched `terminal-grid` anywhere in
+   a file and allowed 11. Three of the files it counted were not shells at all
+   — `StoryBackdrop` paints that class on a decorative `absolute inset-0` div
+   and can never be migrated, and two others only named it in a comment. Part
+   of the allowance was budget for the guard's own noise. Now matched per
+   string literal on `terminal-grid` + `screen-below-nav`, allowed **0**.
+2. **`navHeight` and `viewportUnits` failed, correctly.** They asserted floors
+   of ≥8 and ≥10 files carrying the shell classes — "proof this isn't passing
+   by absence". Centralising into `Screen` dropped the real counts to 3 and 4.
+   Their own comments record the same thing happening on 2026-09-01 (*"dropped
+   from 15 to 1 and that was the fix, not a regression"*), so rather than lower
+   the floors a second time, both now assert **`Screen` itself** carries the
+   class. Strictly stronger: a floor of 8 can be met by any eight files while
+   the one that matters is gutted.
+
+**All three were falsified before being trusted**, and one falsification was
+itself wrong first time: `viewportUnits` appeared to survive having the class
+removed, because its regex also accepts the bare `screen-below-nav` that the
+`fixed` variant carries and the mutation only replaced the `min-` form. Both
+spellings removed, it fails correctly.
+
+**A deviation from the plan, flagged rather than buried.**
+`Plans/2026-09-17-layout-system.md` files kit pages under `read` (42rem). That
+screen gained a 290px stat sidebar *after* the plan was written; at 42rem its
+main column resolves to **368px, narrower than a 390px phone's content area**.
+It ships on `app` with the arithmetic in a comment at the call site.
+
+**This checkpoint's own near-miss, recorded because it nearly shipped.** The
+first sweep script sliced this document with
+`s.index('## Confidence and gaps')`. That phrase occurs **five** times and the
+first is a cross-reference 600 lines above the heading, so the slice deleted
+both session logs: **786 → 222 lines**. Every `replace()` in that script
+asserted its anchor; the two `index()` calls did not. Caught by the line count,
+reverted from git, and the rewrite asserts every anchor, matches headings as
+`\n## Heading\n`, and refuses to write if the document shrinks or loses a
+section.
+
 ## Session log — 2026-09-17/18: four screens, and three guards that never ran
 
 The longest session so far. Two threads ran through it: **screens got rebuilt
@@ -451,8 +525,12 @@ stutters against the names it sits above — *Raider* over **Raider**.
 `Screen` (3 variants), `Panel` + `PanelHeader`/`PanelBody`, `SectionHeader`, and
 three `--container-*` width tokens. **Eight spellings of three page shells**
 collapse to one component; **ten content widths** collapse to three.
-`tests/layoutSystem.test.ts` ratchets hand-typed shells, **13 → 11** as screens
-migrated, and the ratchet was falsified before being trusted.
+`tests/layoutSystem.test.ts` ratcheted hand-typed shells **13 → 11** as screens
+migrated and reached **0 on 2026-09-26**, when its measure was also tightened.
+It had matched the substring `terminal-grid` anywhere in a file, which counted a
+decorative div and two comments as shells; it now matches per **string literal**
+on `terminal-grid` + `screen-below-nav`. Falsified both ways — a real shell
+fails and names the file, the same classes in a comment do not.
 
 ### Four screens
 
@@ -538,112 +616,9 @@ because they govern how work is done.
 `tsconfig.json` reverted. **Committed as `525e335`.** His `:3000` was never touched; every browser check ran
 on a scratch build on `:3210`, killed by PID afterwards.
 
-## Session log — 2026-09-17: his vocabulary, an audit, and looking at it
+## Session log — 2026-09-17 — folded
 
-A planning session that became a cleanup. He paused the ascension-trial build
-to load his own vision into a document, then opened the scope: *"I am open to
-let you change all other pages other than battle UI."*
-
-**Rulings #137–#140.** Suite **1,506 tests / 121 files**, browser 17, lint
-clean, build clean.
-
-### The vocabulary, twice
-
-`Plans/2026-09-16-pve-structure.md` grew to **20 points**, dictated. The taxonomy
-took two passes and **#137 was wrong for about three hours** — its summary line,
-*"a wave changes how many enemies there are; a phase changes what one enemy
-is"*, was **Claude's formulation, not his**, and he replaced the whole scheme:
-
-| term | means |
-|---|---|
-| **Event** | a folder — a group of stages |
-| **Stage** | an entry to a fight or a story panel |
-| **Fight** | resets everything on start; may hold phases |
-| **Phase** | *any* transition to a new state inside one fight |
-
-**"Wave" is retired as a term.** The `ruling` skill gained a section on marking
-the seam between his words and Claude's synthesis, because the quotes in #137
-were all accurate and the damage was done by the one sentence nobody had said.
-
-His worked examples: **Molvarr is one fight with two phases**; the **trial is
-three fights in one stage**. And a phase preserves everything — *"we'll keep the
-damage, we'll keep all our stat changes… an infinite defense or attack stacker
-would benefit"* — which makes a multi-phase fight reward ramping where a
-multi-fight stage punishes it.
-
-**Power Strike adopted** (#10–12 in the plan): 30% extra damage per 100 enemy
-DEF, reading **effective** defence, on carrier skills with below-standard
-scaling. Rate recorded in `ARCHITECTURE.md`; the old glossary said 5% per 10 and
-had never been implemented.
-
-### The audit, and what the first pass missed
-
-`Plans/2026-09-17-code-quality-audit.md`. **The first version was shallow** —
-eight greps over 42,000 lines — and he asked whether it was really deep. It was
-not. Three of the five worst findings came from the second pass:
-
-- **Q3** — `app/events/page.tsx` read player state **twenty times with no
-  hydration gate**, so the board could paint against rank 1 and default stamina.
-  Both it and `/story` now gate; `tests/hydrationGate.test.ts` guards the class.
-  It caught a third page on its first run — `/profile`, which gates correctly by
-  a different pattern, so the guard accepts both shapes.
-- **M3** — `mechanicTemplates.ts` and `balance.ts`, **362 lines with zero
-  importers**, left behind by the deleted Kit Lab. Removed on his call; the spec
-  is marked RETIRED rather than deleted.
-- **T1** — five `lib/game` modules had no tests. `mechanicQueue` (the passive
-  queue) and `fightDriver` now have 24 between them, all falsified.
-
-Also **C5**, the `wave` → `fight` rename across 34 files plus a data migration
-in `chapter-1.json`; and **C1**, twelve hand-rolled buttons onto the `Button`
-primitive with a new `claim` variant and a guard.
-
-### Two corrections to Claude's own claims
-
-- The audit said some buttons had **no disabled styling**. **Wrong** — an
-  artefact of a regex that stopped at the `>` inside `onClick={() =>`.
-  Re-measured: all 17 disable-able buttons already show it.
-- The `tracking-wide` token **collided with Tailwind's own scale** (0.025em),
-  silently re-spacing four places by **9x**. Renamed `tracking-eyebrow`. The
-  same pass had also left 46 named defaults unmigrated, so five values were in
-  play rather than three.
-
-**L4 is done:** 395 usages across 18 values are now three tokens —
-`tracking-title` 0.08em, `tracking-label` 0.14em, `tracking-eyebrow` 0.22em.
-`tests/typeScale.test.ts` forbids arbitrary values, Tailwind's own steps, and a
-fourth token.
-
-### Then he granted a browser, and it paid immediately
-
-**With 1,506 tests passing**, ten minutes at 390×844 found two defects:
-
-- **The trial was unenterable.** The brief gated Enter on `!!event.enemyId` —
-  **null on a trial** — while `eventLockReason` reported it unlocked. Two
-  conditions, one question, one updated. `eventLockReason` is now the single
-  source and a test pins it.
-- **The trial brief was boss-shaped** — a difficulty ladder over copy about drop
-  tables and auto clear, on an event with none of them. Now reads *"3 fights ·
-  one HP bar"*.
-
-Then verified end to end: board → brief → team → fight one, with Frost 1547 /
-Gale 1361 / Prism 1670 and Iron benched — HP values that confirm level 15 is
-reaching the engine.
-
-### Open, and his
-
-- **The layout system** — `Plans/2026-09-17-layout-system.md`, also published as
-  an artifact for phone reading. Three widths for ten, one `Screen` for eight
-  spellings, `Panel`, `SectionHeader`, `RewardList`, and the QOL items. Only the
-  three tracking values needed his approval and he gave them.
-- **Fight phases** — `Plans/2026-09-17-fight-phases.md`. Steps 1–3 are
-  structural; **5–6 wait on him naming Molvarr's second form.**
-- **Ruling #136 stays PROVISIONAL.** The trial's three fights are settled; the
-  stage-map-node layer he described has no equivalent in the code at all.
-
-### Not verified
-
-The battle screen was deliberately untouched — its density is tuned and only he
-can judge it. `TrialRail` still has never been rendered: reaching it needs a
-fight won, and the trial's structure may change anyway.
+His vocabulary, the first code-quality audit, and the events screen opened in a browser — [`archive/STATUS-2026-09.md`](archive/STATUS-2026-09.md).
 
 ## Session log — 2026-09-16b — folded
 
@@ -699,51 +674,65 @@ on 2026-08-20. Each line below is one section in that file.
 ## Confidence and gaps
 
 Rewritten every checkpoint. **This section is what stops the rest of the
-document being read as uniformly solid.**
+document being read as uniformly solid.** Rewritten 2026-09-26; the previous
+version quoted 1,542 tests and "11 files still containing `terminal-grid`",
+and claimed **`TrialRail` has still never been rendered** — all three were
+made untrue by the two sessions since.
 
 ### Verified in this session, by running it
 
-- `npm run check` — **1,542 tests / 125 files**; 3 eslint warnings, all
-  pre-existing in `tests/duel.test.ts`.
+- `npm run check` — **1,556 tests / 125 files**, typecheck clean, **lint
+  clean**. The 3 long-standing `tests/duel.test.ts` warnings were dead imports
+  left by the rename rewrite and are gone.
 - `npm run test:browser` — **17 tests / 3 files**.
-- `NEXT_DIST_DIR=.next-verify npx next build` — clean.
-- **Counted from the files, not recalled:** 31 kits, all with a heading;
-  card numbers 100001–100031, uniqueness asserted; 6 kits reading `Common Foe`;
-  `app/events/page.tsx` 539 lines; `lib/game/damagePreview.ts` 1,195 lines;
-  11 files still containing `terminal-grid`.
-- **Driven in a browser on a scratch build:** the events board, both event
-  briefs, a live trial **fight 1**; the growth modal's three tabs, including a
-  real Lv 1→20 commit whose spend was read back out of `localStorage`; the news
-  page in first-visit, returning and search states.
+- `NEXT_DIST_DIR=.next-verify npx next build` — clean, every route compiled.
+  `.next-verify` removed afterwards; his `:3000` never touched.
+- **Counted from the files, not recalled:** 4 files still contain
+  `terminal-grid` (`Screen` itself, one decorative div, two comments); 16 files
+  render `<Screen>`; `app/events/page.tsx` **561** lines;
+  `lib/game/damagePreview.ts` 1,195 lines; 31 kits.
+- **Guards falsified, not assumed.** All three rewritten this session were
+  mutated and watched go red. The layout ratchet was additionally proved to
+  stay *green* on a comment — the distinction its old measure could not draw.
 
 ### Believed but NOT verified
 
-- **Every visual judgement.** He reviewed the growth modal and said it *"looks
-  good and consistent"*; **the news rebuild has not been looked at by him**, and
-  neither have the heading lines on `TeamPicker` and the gacha reveal, which
-  were flagged at the time as the tight ones.
-- **The 12 files newly listed in `buttonPrimitive`'s `ALLOWED`** are assumed to
-  be genuine action buttons worth migrating. They were counted, not read.
-- **`Common Foe` on six enemies** reads fine in the archive list; it has not
-  been seen anywhere else those units render.
+- **Every visual judgement in the layout migration.** Nine screens changed
+  shells and **six changed desktop width** (archive / NPC / kit page
+  72→56rem, home 64→56, profile 48→56, gacha banner 42→56). Only the
+  suites and a build were run — **no screen was opened in a browser this
+  session.** The gacha banner is the one to look at: its art renders 33% wider.
+- **The kit page on `app` rather than `read`.** A deliberate deviation from the
+  layout plan's own width table, with the measurement stated at the call site
+  (at `read` its main column is 368px, narrower than a 390px phone). His call.
+- **Lyra's C1 and C2 poses.** He judged C2 *"at least in the grid"* —
+  thumbnail size only, never full-size.
 
 ### Untested by anything
 
-- **`TrialRail` has still never been rendered**, and neither has the trial
-  results screen or the multi-fight carry-HP path beyond fight 1. A trial fight
-  was started this session and not won.
-- **Battle screen** — deliberately untouched all session. Its density is his.
-- **Auto Clear's blocker messages** now render as visible text instead of a
-  hover `title=`; the *wording* has not been reviewed.
+- **Battle screen** — excluded from the layout migration by decision, not
+  oversight. `Screen`'s `fixed` variant exists so it can adopt this later
+  without inventing a fourth shape.
+- **Four `lib/game` modules have no test at all**: `storyTeam.ts` (184 lines),
+  `storyBackgrounds.ts` (174), `worldBossPreview.ts` (128), `immunity.ts` (28).
+- **No card art is wired into any screen.**
+  `public/characters/cards/lyra_pose_c{1,2,4}.png` exist and nothing renders
+  them — deliberately, since inventing a registry for an unused asset is how
+  `gamblers_table` happened.
+- **C1 and C2 mattes are not usable**: C1 carries a 20.4% soft edge, C2 has 68
+  opaque pixels touching the frame edge. Only **C4** matted clean (70.0%
+  transparent, 0 frame contact).
 
 ### What I would check first coming back cold
 
-1. Open `/news` as a returning player — it is the newest screen and the least
-   looked at.
-2. Win a trial, to render `TrialRail` and the trial results screen for the first
-   time.
-3. Re-run the three repaired guards against a deliberately broken file, because
-   **this session proved that a green guard can mean nothing**.
+1. **Open the six width-changed screens, at 390px and at desktop.** That is the
+   largest unverified surface in the repo right now.
+2. Re-read `Plans/2026-09-17-code-quality-audit.md`. Its header now marks five
+   findings closed, but **eight were not re-measured** and still read as open.
+3. `docs/ART_PIPELINE.md`'s v7 recipe table names matte model
+   `BiRefNet_toonout`; **that model no longer exists on this ComfyUI install**.
+   The replacement, chosen by bake-off, is `BiRefNet-HR-matting` — recorded in
+   its own section further down that file.
 
 ## Open Issues
 
@@ -768,7 +757,7 @@ Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier sta
 - **Story chapters 2–12** — the twelve webtoon chapters were all adapted under the v1 Part structure and that data was **deleted** on 2026-08-18 with the rebuild. Only **chapter 1** exists in v2 (`data/story/chapter-1.json`); the rest are re-authored one chapter at a time through the FillerAssist pass, against the source beat sheets in `E:\Toll - Web toon`. `UPCOMING_PARTS` is gone — `SOURCE_CHAPTERS_WRITTEN` in `storyCatalog.ts` records that twelve source chapters exist without naming any of them.
 - Story **Phase 3** — the bracket chapter 12 ends on. Not written in the source yet.
 - ~10 additional characters (Tanveer adds when game is in working order)
-- **Mobile layout pass** — narrowed again on 2026-09-17: `Screen`, `Panel` and `SectionHeader` now exist and **events, news and the growth modal are migrated**, with `tests/layoutSystem.test.ts` ratcheting the remaining **10 hand-typed shells**. Still the biggest gap in roadmap item 2, but the shape is now mechanical rather than per-screen invention. Narrowed earlier on 2026-08-20: all 15 `min-h-screen` uses are now `min-h-dvh` and `tests/viewportUnits.test.ts` prevents new ones. Battle, gacha, archive and the hub still need their per-screen passes (the `mobilecheck` skill runs one screen at a time)
+- **Mobile layout pass** — **the shell half is DONE as of 2026-09-26**: `Screen`, `Panel` and `SectionHeader` exist and **every screen renders through `Screen`**, with `tests/layoutSystem.test.ts` allowing **0** hand-typed shells. *This line read "the remaining 10 hand-typed shells" until 2026-09-26.* What remains is per-screen density and taste, not structure. Still the biggest gap in roadmap item 2, but the shape is now mechanical rather than per-screen invention. Narrowed earlier on 2026-08-20: all 15 `min-h-screen` uses are now `min-h-dvh` and `tests/viewportUnits.test.ts` prevents new ones. Battle, gacha, archive and the hub still need their per-screen passes (the `mobilecheck` skill runs one screen at a time)
 - **Audio assets** — the music *system* shipped 2026-08-09; `public/audio/` is empty until Tanveer supplies the OST (`docs/AUDIO.md`). No SFX system exists and none is planned.
 - ~~FTUE / onboarding~~ **built 2026-08-13** (Bureau Orders + four battle coach marks). Daily loop and analytics remain — the orders evaluator was built general so daily missions are mostly a data change (see `docs/PRODUCT_AUDIT.md`)
 - ~~Deployment~~ — **already live at https://toll-the-game.vercel.app/**, and has been. The Vercel project is linked and every push to `master` auto-builds. These docs said "not started" and I repeated it to Tanveer on 2026-08-13; he corrected it. **A push is a deploy — treat `master` as production.**

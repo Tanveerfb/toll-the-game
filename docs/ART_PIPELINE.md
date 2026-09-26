@@ -751,6 +751,42 @@ pixels touching the frame edge**; only C4 was clean at 6.05% and 0. So
 **measure every matte, never just the one you tuned on** — those two need a
 second pass before they are usable.
 
+
+### C4 is the design (2026-09-21) — his close inspection of the three
+
+The earlier note records him picking **C1, C2 and C4**. That was his reaction to
+the contact sheet; after looking at them properly he narrowed it:
+
+> *"I think C4 is my favorite design. Not C1 or C2. C4."*
+
+**C4 is the approved Lyra card pose.** C1 and C2 are not rejected outright, but
+they are not the design.
+
+**Per-image, his words:**
+
+| | verdict |
+| --- | --- |
+| C1 | *"the left arm's wrist is bent in an awkward way"* — a real defect |
+| C2 | *"overall actually she looks good, at least in the grid you showed me"* — approved only at thumbnail size; he has not judged it full-size |
+| **C4** | everything good **except the collar, which renders WHITE** |
+
+**The open defect on C4 is the collar colour.** The identity prompt says
+*"crimson red sleeveless top with a frilled collar"*, and the collar came out
+white anyway. This is the costume-drift failure mode noted above surviving the
+corrections that fixed the top, the skirt and the boots — the collar was named
+but never weighted, so it is the one garment clause with no emphasis on it.
+Untried fix: weight the collar explicitly, the way `(short white pleated
+skirt:1.4)` is weighted, and negate `white collar`.
+
+**It does not need a re-roll.** The pose is approved and re-generating risks
+losing it. A collar is a small, flat, enclosed region — a recolour or a tiny
+masked inpaint keeps the approved image and changes only the defect. Regenerate
+only if that fails.
+
+**Still true from the matte pass:** C1 is at a 20.4% soft edge and C2 has 68
+opaque pixels on the frame edge, so both would need a second matte anyway. C4
+matted clean at 70.0% transparent, zero frame contact.
+
 ### Still open
 
 - **Face identity is the remaining gap** — see below.

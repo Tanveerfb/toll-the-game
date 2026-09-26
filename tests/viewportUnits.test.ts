@@ -79,11 +79,22 @@ describe("viewport units are dynamic (ruling #107)", () => {
    * all — and `tests/navHeight.test.ts` holds the shared classes to their
    * definitions.
    */
+  /**
+   * **2026-09-26: this became an assertion about `Screen`, for the same reason
+   * the count moved in the first place.** The floor was 10; finishing the
+   * `Screen` migration took the real count to 4 and failed it, because the
+   * screens that used to spell the class each now inherit it from one
+   * component. That is the second time this number has been made wrong by a
+   * consolidation, so it is no longer a number.
+   *
+   * The assertion the comment above describes is preserved exactly — prove the
+   * ban is not passing by absence — but anchored where it cannot rot: the one
+   * component that owns the shell.
+   */
   it("the dynamic units are actually in use, so this isn't passing by absence", () => {
-    const users = files.filter((rel) =>
-      /\b(min-)?h-dvh\b|\b(min-)?screen-below-nav\b/.test(code(rel)),
+    expect(code("components/ui/Screen.tsx")).toMatch(
+      /\b(min-)?h-dvh\b|\b(min-)?screen-below-nav\b/,
     );
-    expect(users.length).toBeGreaterThanOrEqual(10);
     const css = fs.readFileSync("styles/globals.css", "utf8");
     expect(css).toMatch(/height:\s*calc\(100dvh/);
   });

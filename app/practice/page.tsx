@@ -6,6 +6,7 @@ import { useBattleContext } from "@/hooks/BattleProvider";
 import Deck from "@/components/game/Deck";
 import BattleArena from "@/components/game/BattleArena";
 import TeamSelect from "@/components/game/TeamSelect";
+import { Screen } from "@/components/ui/Screen";
 
 export default function Practice() {
   const { battlePhase } = useGameStore();
@@ -15,14 +16,15 @@ export default function Practice() {
 
   if (isInitializing) {
     return (
-      <main className="relative min-screen-below-nav bg-void text-readout">
+      <Screen className="relative text-readout" width="none">
         <TeamSelect onStart={startCustomBattle} />
-      </main>
+      </Screen>
     );
   }
 
   // Single-viewport battle HUD: arena fills the screen, deck docked at the
-  // bottom, no page scroll (STATUS #20).
+  // bottom, no page scroll (STATUS #20). That is exactly `Screen`'s `fixed`
+  // variant, and `width="none"` because the arena owns the full area.
   //
   // This used to paint an amber radial over a hand-written gradient
   // (`rgba(245,158,11,…)`, `#09090b`, `#111827`) plus its own grid overlay —
@@ -30,9 +32,9 @@ export default function Practice() {
   // sweep on 2026-08-13 walked straight past it. `.terminal-grid` is the same
   // 44px ground every other screen stands on.
   return (
-    <main className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout">
+    <Screen variant="fixed" width="none">
       <BattleArena />
       <Deck />
-    </main>
+    </Screen>
   );
 }

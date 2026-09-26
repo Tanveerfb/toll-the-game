@@ -3,8 +3,30 @@
 **Run 2026-09-17**, against the three values he named as his standing criteria
 (ruling #139): *"consistency, modularization, and QOL."*
 
-Everything below is **measured**, not opined. Nothing has been changed. Each
-finding names what it costs and roughly what fixing it touches, so he can pick.
+Everything below is **measured**, not opined. Each finding names what it costs
+and roughly what fixing it touches, so he can pick.
+
+> **"Nothing has been changed" stopped being true.** Re-measured 2026-09-26,
+> five findings are now CLOSED and the body below still describes them as open.
+> Check here before acting on any finding:
+>
+> | | was | now |
+> | --- | --- | --- |
+> | **M1** events monolith | 1,235 lines, 11 view branches | **561 lines** + 7 components in `components/game/events/` |
+> | **M3** `lib/game/mechanicTemplates.ts` dead | live | **file deleted** |
+> | **C5** code says "wave", means "fight" | rename half-done | **0 occurrences** in `lib/`, `components/`, `store/`, `types/` |
+> | **Q3** no hydration gate | two biggest screens | `hasHydrated` in events, story, profile, `TeamPicker` |
+> | **L2 shells** (via the layout plan) | 12 hand-typed | **0**, ratchet allows none |
+>
+> **Still open and re-verified today:** **Q1** (`TeamPicker`, 582 lines, filters
+> but **no search and no sort**, against `CharacterBrowser` which has all three
+> — the benchmark ruling #139 names), and **T1**, now **four** modules with no
+> test rather than five: `storyTeam.ts` (184), `storyBackgrounds.ts` (174),
+> `worldBossPreview.ts` (128), `immunity.ts` (28).
+>
+> **Not re-measured, so treat as unverified:** **C1** (seven button variants),
+> **C2** (18 letter-spacing values), **C3**, **C4**, **C6**, **M2**, **Q2**,
+> **Q4**.
 
 > **The first version of this audit was shallow** — about eight greps over
 > 42,000 lines, covering only UI class drift, file sizes and list affordances.

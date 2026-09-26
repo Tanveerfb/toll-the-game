@@ -1,11 +1,27 @@
 # A layout system for every screen except battle
 
-**Status, 2026-09-17: steps 1-4 of the order at the bottom are BUILT.**
+**Status, 2026-09-26: steps 1-4 are BUILT and the shell migration is FINISHED.**
 L4 (tracking), L1 (widths), L2 (`Screen`), L5 (`Panel`), L6 (`SectionHeader`)
-and L7 (`RewardList`) all exist, and `app/events/` is the first screen moved
-onto them. Twelve screens still hand-type a shell; `tests/layoutSystem.test.ts`
-ratchets that number so it can only go down. **Still unbuilt: Q-a, Q-b, Q-c,
-Q-d.**
+and L7 (`RewardList`) all exist, and **every screen now renders through
+`Screen`** — `tests/layoutSystem.test.ts` allows **0** hand-typed shells.
+**Still unbuilt: Q-a, Q-b, Q-c, Q-d.**
+
+*This header read "Twelve screens still hand-type a shell" until 2026-09-26.*
+
+**Two corrections the migration itself produced, both worth reading before
+trusting a number in this plan:**
+
+1. **The ratchet was over-counting.** It matched the substring `terminal-grid`
+   anywhere in a file, allowing 11. Three of the files it counted were not
+   shells: `StoryBackdrop` uses that class on a decorative `absolute inset-0`
+   div and can never be migrated, and two others only named it in a *comment*.
+   Part of the allowance was budget for the guard's own noise. It now matches
+   per **string literal** on the pair `terminal-grid` + `screen-below-nav`.
+2. **L1's width table does not fit the kit page any more.** It files "kit
+   pages" under `read` (42rem), but that screen gained a 290px stat sidebar
+   after this plan was written; at 42rem its main column resolves to **368px,
+   narrower than a 390px phone's content area**. It ships on `app`, flagged at
+   the call site. Open for Tanveer.
 
 Written because he opened the scope:
 *"I am open to let you change all other pages other than battle UI. You can

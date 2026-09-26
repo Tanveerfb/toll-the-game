@@ -18,6 +18,7 @@ import InventoryModal from "@/components/game/InventoryModal";
 import AccountModal from "@/components/game/AccountModal";
 import DevGrantPanel from "@/components/game/DevGrantPanel";
 import SoundSettings from "@/components/game/SoundSettings";
+import { Screen } from "@/components/ui/Screen";
 
 const PLAYABLE_COUNT = getPlayableCharacters().length;
 
@@ -124,8 +125,7 @@ export default function ProfilePage() {
   const nextWall = RANK_WALLS.find((wall) => wall > account.rank);
 
   return (
-    <main className="terminal-grid min-screen-below-nav bg-void">
-      <section className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8 md:py-8">
+    <Screen width="app">
         {/* The page opens with what it's about. It used to open with a Stamina
             card, and the account itself was a line of email text near the
             bottom above the logout button. */}
@@ -281,14 +281,15 @@ export default function ProfilePage() {
         <div className="mt-4">
           <DevGrantPanel />
         </div>
-      </section>
-
+      {/* Both overlays portal to <body> with `fixed inset-0`
+          (`components/game/DetailOverlay.tsx`), so sitting inside the column
+          rather than beside it does not change where they render. */}
       {showInventory ? (
         <InventoryModal onClose={() => setShowInventory(false)} />
       ) : null}
       {showAccount ? (
         <AccountModal onClose={() => setShowAccount(false)} />
       ) : null}
-    </main>
+    </Screen>
   );
 }

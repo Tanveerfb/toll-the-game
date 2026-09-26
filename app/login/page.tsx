@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/AuthProvider";
 import { firebaseEnabled } from "@/lib/firebase";
 import { getStarterOrders, summariseRewards } from "@/lib/game/orders";
 import { getCharacterById } from "@/lib/game/characterCatalog";
+import { Screen } from "@/components/ui/Screen";
 
 /**
  * Sign-in.
@@ -117,7 +118,11 @@ export default function LoginPage(): React.JSX.Element {
     .join(", ");
 
   return (
-    <main className="terminal-grid relative min-screen-below-nav overflow-hidden bg-void">
+    // `width="none"`: the key art and its gradient have to be full-bleed
+    // children of the shell, so this screen owns its own inner column rather
+    // than taking Screen's. The column itself is still a token — `max-w-panel`
+    // is the 28rem `max-w-md` was already resolving to.
+    <Screen className="relative overflow-hidden" width="none">
       {/* Key art, pushed well back. It sets the tone; the panel does the work. */}
       <Image
         src="/banners/debut-2026-08.png"
@@ -129,7 +134,7 @@ export default function LoginPage(): React.JSX.Element {
       />
       <span className="pointer-events-none absolute inset-0 bg-linear-to-b from-void/70 via-void/85 to-void" />
 
-      <section className="relative z-10 mx-auto flex min-screen-below-nav w-full max-w-md flex-col justify-center gap-5 px-5 py-10">
+      <section className="relative z-10 mx-auto flex min-screen-below-nav w-full max-w-panel flex-col justify-center gap-5 px-5 py-10">
         <header className="border-l-2 border-signal pl-3">
           <span className="block font-heading text-2xl tracking-eyebrow text-signal">
             TOLL
@@ -211,6 +216,6 @@ export default function LoginPage(): React.JSX.Element {
           ) : null}
         </div>
       </section>
-    </main>
+    </Screen>
   );
 }

@@ -73,26 +73,50 @@ describe("the page shell comes from Screen", () => {
 
   /**
    * The ratchet.
+   * **The count reached zero on 2026-09-26, and the measure changed with it.**
    *
-   * `terminal-grid` is the marker of a hand-typed page shell. Eleven files
-   * carry one: ten unmigrated screens plus `Screen` itself, which is where the
-   * class is now allowed to be written down. It started at thirteen; the news
-   * index and post layout came off it on 2026-09-17. **This number may only go
-   * down, and a migration lowers it in the same commit.**
+   * It used to be `read(rel).includes("terminal-grid")`, allowing 11. That
+   * over-counted, and finishing the migration is what exposed it: of the four
+   * files still matching, **three are not hand-typed shells at all** —
+   * `StoryBackdrop` paints `terminal-grid` on a decorative `absolute inset-0`
+   * div (the texture, not a shell, and it can never be migrated), while
+   * `practice` and `StoryStage` only mention the class in a *comment*. A
+   * substring search over the whole file cannot tell a shell from prose about
+   * one, so the old allowance of 11 was partly budget for its own noise.
    *
-   * **Falsified before being trusted** (`AGENTS.md`): re-typing the shell back
-   * into `app/events/page.tsx` pushes the count to 12 and fails this.
+   * The signature of the real defect is narrower: a `className` that pairs the
+   * grid texture with a **shell height** — `screen-below-nav` or
+   * `min-screen-below-nav`. Nothing but a page shell does that. `Screen` is
+   * exempt because it is where the pairing is now allowed to be written down.
+   *
+   * **Allowed is 0, so this is no longer a ratchet with slack in it** — any
+   * screen that hand-types a shell fails immediately.
+   *
+   * **Falsified before being trusted** (`AGENTS.md`): pasting
+   * `<main className="terminal-grid min-screen-below-nav bg-void">` back into
+   * `app/archive/page.tsx` fails this with that file named; changing the same
+   * file's *comment* to mention `terminal-grid` does not, which is the
+   * distinction the old measure could not draw.
    */
-  it("no new screen hand-types the shell", () => {
+  it("no screen hand-types the shell", () => {
     expect(files.length).toBeGreaterThan(40);
-    const handTyped = files.filter((rel) => read(rel).includes("terminal-grid"));
-    const allowed = 11; // 2026-09-17: 10 unmigrated screens + Screen itself.
+    // Per *string literal*, not per file. A class list is one literal, so both
+    // markers landing inside the same one is the shell; prose about the shell
+    // lives in comments, which are not string literals, and the decorative use
+    // is a literal carrying only `terminal-grid`. A ternary that picks between
+    // two shell strings is caught because each branch is its own literal.
+    const LITERAL = /"[^"\n]*"/g;
+    const handTyped = files.filter((rel) => {
+      if (rel === "components/ui/Screen.tsx") return false;
+      return (read(rel).match(LITERAL) ?? []).some(
+        (s) => s.includes("terminal-grid") && s.includes("screen-below-nav"),
+      );
+    });
     expect(
       handTyped.length,
       `Hand-typed page shells: ${handTyped.join(", ")}. ` +
-        `Use <Screen variant=… width=…> from components/ui/Screen, or lower ` +
-        `this number in the same commit as a migration.`,
-    ).toBeLessThanOrEqual(allowed);
+        `Use <Screen variant=… width=…> from components/ui/Screen.`,
+    ).toBe(0);
   });
 });
 

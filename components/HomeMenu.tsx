@@ -29,6 +29,7 @@ import {
   hasUnreadNews,
   subscribeToNewsReadState,
 } from "@/lib/news/readTracking";
+import { Screen } from "@/components/ui/Screen";
 
 interface HomeMenuProps {
   latestNewsDate: string | null;
@@ -237,16 +238,15 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
     // else. Reachable before through the TOLL wordmark; the bottom tab bar
     // (ruling #123) turned it into a one-tap route, which is how it surfaced.
     return (
-      <main className="terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout">
+      <Screen variant="fixed" width="none">
         <BattleArena />
         <Deck />
-      </main>
+      </Screen>
     );
   }
 
   return (
-    <main className="terminal-grid min-screen-below-nav bg-void">
-      <section className="mx-auto w-full max-w-5xl px-4 py-5 md:px-8 md:py-7">
+    <Screen width="app">
         {/* HERO — the one thing to do next, derived from progress rather than
             fixed. The menu this replaced gave MAIN STORY and LOGIN the same
             rectangle, so nothing said what to do first. */}
@@ -400,7 +400,6 @@ export default function HomeMenu({ latestNewsDate }: HomeMenuProps) {
             onClick={() => router.push(user ? "/profile" : "/login")}
           />
         </div>
-      </section>
-    </main>
+    </Screen>
   );
 }

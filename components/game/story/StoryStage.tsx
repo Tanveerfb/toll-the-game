@@ -3,6 +3,7 @@
 import React from "react";
 
 import StoryBackdrop from "@/components/game/story/StoryBackdrop";
+import { Screen } from "@/components/ui/Screen";
 
 /**
  * The one frame every story view renders inside.
@@ -46,17 +47,23 @@ export default function StoryStage({
   children?: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <main
-      className={
-        variant === "stage"
-          ? "terminal-grid relative flex screen-below-nav flex-col overflow-hidden bg-void text-readout"
-          : // Not `min-h-screen` (`100vh` in Tailwind 4 — the *largest*
-            // viewport, taller than what mobile browser chrome leaves you) and
-            // not `min-h-dvh` either: this `<main>` starts below the nav and
-            // `body` pads for the tab bar, so a full-viewport floor overshoots
-            // by both bars. `.min-screen-below-nav` subtracts them.
-            "terminal-grid relative min-screen-below-nav bg-void"
-      }
+    // This component was the PRECEDENT `Screen` was generalised from, and kept
+    // its own copy of both shells afterwards — which is the drift `Screen`
+    // exists to stop, in the one file that proved the idea. It delegates now.
+    //
+    // `stage` is `fixed` (exact height, no page scroll, the backdrop absolutely
+    // positioned inside it) and `page` is `scroll`. Both take `width="none"`
+    // because the children here own their own column.
+    //
+    // The reasoning that used to sit inline still holds and now lives in
+    // `Screen`: not `min-h-screen` (`100vh` in Tailwind 4 is the *largest*
+    // viewport) and not `min-h-dvh` either — this `<main>` starts below the nav
+    // and `body` pads for the tab bar, so a full-viewport floor overshoots by
+    // both. `.min-screen-below-nav` subtracts them.
+    <Screen
+      variant={variant === "stage" ? "fixed" : "scroll"}
+      width="none"
+      className="relative"
     >
       {backgroundId ? (
         <div
@@ -89,6 +96,6 @@ export default function StoryStage({
       ) : (
         children
       )}
-    </main>
+    </Screen>
   );
 }
