@@ -106,7 +106,7 @@ Negative prompt: same as portraits (+ per-character bleed guards).
 | gabrist | blue | ink brush strokes |
 | killua | blue | crackling blue-white lightning |
 | leorio | red | red energy-fist glow |
-| lyra | red | crimson red-ice shards |
+| lyra | red | crimson red-ice shards (optional, not in every piece: ruling #163) |
 | master_tao | green | fire/flame licks |
 | meliodas | red | dark demonic aura wisps |
 | mustafa | green | earth/stone shards |
@@ -132,7 +132,7 @@ Cards are now **narrow/tall** (flex-fit, ~44–80px wide). Art should be a **ver
 ## Code wiring (do alongside generation)
 
 - **Naming/slug:** `skillArtSlug(skillName)` → kebab-case, strip punctuation. `"Jajanken: Rock"` → `jajanken-rock`, `"Fist of Flowing Ruin : Slide"` → `fist-of-flowing-ruin-slide`.
-- **Files:** playables `public/characters/skills/<charId>__<slug>.png`; boss `public/npc/skills/molvarr__<slug>.png`.
+- **Files:** playables `public/characters/<color>_<charId>/skills/<slug>.png`; boss `public/npc/dark_molvarr/skills/<slug>.png` (per-unit folders since 2026-09-27; the registry key stays `<charId>__<slug>`).
 - **Lookup:** add `getSkillArt(charId, skill)` to `lib/game/characterArt.ts` — returns the skill-art path if registered (a `SKILLS_WITH_ART` set, same pattern as `CHARACTERS_WITH_ART`), else `null`.
 - **Fallback:** the card already defaults to the portrait — so `getSkillArt(...) ?? getCharacterArt(charId)`. Ungenerated skills gracefully show the portrait; no broken images. This lets us ship art incrementally.
 - **Consumers to switch to `getSkillArt`:** `components/game/Deck.tsx` (hand card art), and the skill thumbnails on the archive character page / detail overlays if we want them there too.
@@ -152,7 +152,7 @@ Order: prove the recipe on **Gon** (canon tag, easy consistency) → review with
 - [ ] **gon** — Jajanken: Rock · Jajanken: Round 2 · Jajanken Combo (ult)  ← recipe proof
 - [ ] **killua** — Lightning Palm · Thunderbolt · Speed of Lightning (ult)
 - [ ] **leorio** — Member of the Zodiac · Switchblade Attack · Remote Punch (ult)
-- [ ] **lyra** — Shatterburn · Flash Point · Latent Heat (ult)
+- [x] **lyra** — Shatterburn · Flash Point · Latent Heat (ult) — redone with the LoRA 2026-09-27/28 (`docs/ART_PIPELINE.md`, "Lyra kit art with the LoRA")
 - [ ] **master_tao** — Flaming Palm · Inferno Consumption · Wrath of the Fire Sage (ult)
 - [ ] **meliodas** — Triple Strike · Full Counter · Evil Spirit (ult)
 - [ ] **mustafa** — Earth Stance: Fortress · Earth Shatter · Tea Time Tremor (ult)
@@ -190,7 +190,7 @@ Per-skill action fragment (insert between lock block and tail):
 - [ ] `gon__jajanken-round-2` (Jajanken: Round 2) — `charging an even bigger two-fisted strike, intense swirling green nen aura, ground cracking beneath a powerful braced stance`
 - [ ] `gon__jajanken-combo` (Jajanken Combo, ULT) — `unleashing an all-out finishing punch, giant glowing fist, massive green nen shockwave explosion, full-body dynamic action pose`
 
-Save to `public/characters/skills/gon__<slug>.png`, add each `gon__<slug>` key to `SKILLS_WITH_ART` in `lib/game/characterArt.ts`, bump `ART_VERSION`. Then the cards pick them up automatically.
+Save to `public/characters/green_gon/skills/<slug>.png`, add each `gon__<slug>` key to `SKILLS_WITH_ART` in `lib/game/characterArt.ts`, bump `ART_VERSION`. Then the cards pick them up automatically.
 
 ## Batch status (2026-07-25)
 
@@ -209,7 +209,7 @@ The re-spin uses **IP-Adapter (design-ref lock)**, NOT pure txt2img. The charact
 - ControlNet folder is EMPTY (no OpenPose yet) — pose comes from the text prompt, not ControlNet. If a specific pose won't hold, download an SDXL OpenPose ControlNet and pair it.
 
 **Proven recipe (Ban Drain test, on-model, red costume held):**
-1. `upload_image` the character portrait → `public/characters/<id>.png` (boss: `public/npc/<id>.png`). Use filename `ref_<id>_portrait.png`.
+1. `upload_image` the character portrait → `public/characters/<color>_<id>/portrait.png` (boss: `public/npc/<color>_<id>/portrait.png`). Use filename `ref_<id>_portrait.png`.
 2. `generate_with_ip_adapter`:
    - `reference_image` = the uploaded ref
    - `preset` = `PLUS (high strength)`, `weight` = **0.6–0.65**, `weight_type` = `standard`

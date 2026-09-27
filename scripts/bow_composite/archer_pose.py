@@ -23,6 +23,15 @@ POSES = {
         2: (295, 480), 3: (185, 430), 4: (348, 396),
         8: (320, 850), 11: (400, 850), 9: (290, 1090), 12: (440, 1080),
     },
+    # Shatterburn release (2026-09-27 redo): the Shatterburn stance just AFTER the shot. Bow arm still raised
+    # to viewer-right, bow hand open (the bow is drawn in afterwards, tipping forward in it); the draw hand has
+    # flown back past her ear, as it does on release.
+    "shatterburn_release": {
+        0: (395, 385), 1: (350, 460), 14: (382, 372), 15: (407, 370), 16: (345, 378),
+        5: (400, 475), 6: (525, 420), 7: (645, 370),
+        2: (295, 480), 3: (205, 420), 4: (225, 320),
+        8: (320, 850), 11: (400, 850), 9: (290, 1090), 12: (440, 1080),
+    },
 }
 NAME = sys.argv[1] if len(sys.argv) > 1 else "flashpoint"
 P = POSES[NAME]

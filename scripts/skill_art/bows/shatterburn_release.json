@@ -1,0 +1,12 @@
+{
+  "_note": "Shatterburn, original method (2026-09-27): release pose, no bow rendered; drawn bow tipped forward in her open hand. Base: red_lyra/shatterburn/drafts/release_9400_00004 (sheet #03).",
+  "source": "E:/Installed/ComfyUI_windows_portable/ComfyUI/output/red_lyra/shatterburn/work/release/r3_hemfixed.png",
+  "out_dir": "E:/Installed/ComfyUI_windows_portable/ComfyUI/output/red_lyra/shatterburn/work/release",
+  "out_prefix": "red_lyra/shatterburn/work/release/r3",
+  "grip": [738, 398],
+  "scale": 0.86,
+  "tilt": -14,
+  "mirror": false,
+  "hand_box": [690, 355, 810, 445],
+  "fx": {"class": "attackDebuff", "focus": [0.9, 0.3], "burst": [760, 250], "bg_seed": 6}
+}

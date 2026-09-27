@@ -7,8 +7,54 @@ All character art is **AI-generated locally** (ComfyUI, RTX 5060 Ti). Style targ
 - ComfyUI portable @ `E:\Installed\ComfyUI_windows_portable` (`run_nvidia_gpu.bat`, API on `127.0.0.1:8188`)
 - Checkpoint: **`animagineXL40_v4Opt.safetensors`** (Animagine XL 4.0)
 - Settings: 1024×1024, 28 steps, CFG 7, `euler_ancestral` / `normal`
-- Output → copy to `public/characters/<id>.png`; register the id in `lib/game/characterArt.ts`
+- Output → copy to `public/characters/<color>_<id>/portrait.png` (one folder per unit, colour from the kit); register the id in `lib/game/characterArt.ts`
 - ~12s per image
+
+## Where art lives: one folder per unit (his call, 2026-09-27)
+
+*"when we select new assets, can we organize them in proper structure and
+naming? for e.g. blue_lyra folder would have all of her assets in there."*
+He then said *"do both folder structures and red_lyra yes"*. The folder is
+`<element color>_<id>`, and the colour comes from the kit
+(`data/characters/<id>.json`). A future colour variant of a character, 7DSGC
+style, therefore gets its own folder.
+
+**In the game** (`lib/game/characterArt.ts` derives every path through
+`artFolder()`; `tests/characterArt.test.ts` checks every registered file
+exists):
+```
+public/characters/red_lyra/portrait.png        card portrait, 1024x1024
+public/characters/red_lyra/skills/<slug>.png   skill and ultimate art, 832x1216
+public/characters/red_lyra/cards/pose-c4.png   full-body card poses (no screen yet)
+public/npc/<color>_<id>/...                    NPCs and bosses, same layout
+```
+`sea_monster` has art but no kit, so its folder is a bare `sea_monster/`.
+Nothing renders it.
+
+**Working files on his PC** (ComfyUI `output\`, outside the repo):
+```
+output\red_lyra\<piece>\drafts\   candidate renders he picks from
+output\red_lyra\<piece>\work\     mattes, grips, intermediates
+output\red_lyra\<piece>\final\    finished pieces (a copy of what the game ships)
+output\red_lyra\lora\             the LoRA dataset candidates and checkpoint tests
+output\references\7dsgc\skeletons\  DWPose skeletons from his 7DSGC references
+```
+Each piece is a slug: `card-art`, `flash-point`, `shatterburn`, `latent-heat`,
+`supercooling`. A new render's `filename_prefix` goes straight into this
+layout. `output\_moved.tsv` records every file moved on 2026-09-27.
+
+**The whole output folder was sorted the same day** (*"sort as much as
+possible"*):
+- Other units: `blue_duke\` (character design and WAN animation tests),
+  `red_leorio\`, `green_ban\`, `green_gon\` and a few more. Files named only
+  by ComfyUI were matched by the character name in the prompt that ComfyUI
+  embeds in each PNG, and go in `<unit>\misc\drafts\`.
+- Everything else by kind: `items\` (inventory icons), `backgrounds\`,
+  `story\backgrounds\` (kept for when story mode returns), `sea_monster\`,
+  and `_other-projects\stashly\`.
+- **`_unsorted\` still holds 209 renders** whose prompts describe a look but
+  name nobody. They are left rather than guessed; sort them as each
+  character's art gets made.
 
 ## Prompt Template
 
@@ -113,7 +159,7 @@ Bureau officials introduced in the story (Ch7+). Art locked; game kits deferred 
 
 ### Story-only NPC/enemy art (v6 — 2026-07-12)
 
-NPC/enemy art lives in **`public/npc/<id>.png`** (separated from playable `public/characters/` as of 2026-07-18). `getCharacterArt` routes NPC ids via the `NPC_ART` set to `/npc/`. Generic enemy kits — no character sheets, AI-invented per element. Shown only in the hidden `/archive/npc` page and in story battles.
+NPC/enemy art lives in **`public/npc/<color>_<id>/portrait.png`** (per-unit folders since 2026-09-27; flat `public/npc/<id>.png` before that) (separated from playable `public/characters/` as of 2026-07-18). `getCharacterArt` routes NPC ids via the `NPC_ART` set to `/npc/`. Generic enemy kits — no character sheets, AI-invented per element. Shown only in the hidden `/archive/npc` page and in story battles.
 
 | Character | Seed | Design source | Notes |
 |---|---|---|---|
@@ -420,7 +466,7 @@ So the composite-and-blend recipe splits in two: a **hard-edged subject on smoot
 
 1. Write the positive prompt from the template using the character's locked design (or Tanveer's blueprint; only invent as a stopgap and note it here).
 2. Generate, inspect at full size, fix color bleed per the rule, re-roll seed if pose is weak.
-3. Copy to `public/characters/<id>.png`, add id to `lib/game/characterArt.ts`, add a row to the table above.
+3. Copy to `public/characters/<color>_<id>/portrait.png`, add id to `lib/game/characterArt.ts`, add a row to the table above.
 
 ## Consistency Rules
 
@@ -893,27 +939,27 @@ longer applies: the bow is drawn in code and composited. It can be held (the
 Flash Point method) or slung on her back (a composite behind the matte).
 Filed as **ruling #160**, with a back-link on #151.
 
-### Lyra kit art with the LoRA (2026-09-27, paused mid-way at his call)
+### Lyra kit art with the LoRA (complete 2026-09-28)
 
 His bar for kit art: *"we don't need perfection for the kit arts as they will
 be small resolution when viewed."*
 
 | piece | status | file |
 | --- | --- | --- |
-| Card art (portrait) | **C10, his pick**, installed | `public/characters/lyra.png`, `ART_VERSION` 15 |
-| Card pose C4, collar fixed | approved, in the card folder (not wired to any screen) | `public/characters/cards/lyra_pose_c4.png` |
-| Flash Point | **approved with a red-ice aura** (*"i like the red ice aura version"*), installed. Background is still the prompted red, not yet the drawn class-colour layer | `public/characters/skills/lyra__flash-point.png` |
-| Supercooling (passive) | **Q07, his pick**; bow still to be added (slung on her back, pending his yes); no passive-art slot exists in code | `ComfyUI output\lyra_kit\passive2_*` |
-| Shatterburn | **approved** (*"its not perfect and doesn't need to be so i will take it"*), installed. The first fully layered card: purple attack-debuff background drawn from the token, red aura, glowing arrow, scattered particles | `public/characters/skills/lyra__shatterburn.png` |
-| Latent Heat | not started | — |
+| Card art (portrait) | **C10, his pick**, installed | `public/characters/red_lyra/portrait.png`, `ART_VERSION` 15 |
+| Card pose C4, collar fixed | approved, in the card folder (not wired to any screen) | `public/characters/red_lyra/cards/pose-c4.png` |
+| Flash Point | **Redone 2026-09-27, approved** (*"flashpoint one looks good tho"*), `ART_VERSION` 17. He asked for a redo because Flash Point and Shatterburn *"basically read as same kind of attack"*. His pick F4: she leaps mid-air at full draw. No aura, his call. The fist is gone: she was rendered holding a bow and the drawn bow was swapped in (`scripts/skill_art/bow_swap.py`, config `bows/flash-point.json`). Layers: attack-class background, motion streaks, a burning shaft and a flash at the head (`compose_bow_skill.py flash`). The earlier aura version it replaces is in git at `3c543f8` | `public/characters/red_lyra/skills/flash-point.png` |
+| Supercooling (passive) | **Q07 confirmed** (2026-09-27) over a 24-draft round (`red_lyra\supercooling\drafts\supercool_draft_*`, the first run of his draft-then-finish workflow). Finished with `scripts/skill_art/finish_pass.py` (anime 4x upscale to 1.5x, then a 0.35 img2img pass): cleaner lines and eyes, same picture. **Done:** he picked background 01, Q07's own red, over a drawn crimson and the Latent Heat night (*"01"*). Layers: red-ice shards and glints, and cold mist; no aura (one per character, "not always"). **The slung bow was removed** (2026-09-28): it had no strap (*"Physics where mate?"*, ruling #163). A strap was drawn (`add_bow_strap.py`) and he chose *"Just lose the bow"* instead. `scripts/skill_art/compose_supercooling.py` (no bow by default; a rerun reproduces the installed file pixel for pixel, verified). Her red top on the red ground came out see-through in the matte, so the chest hole is filled by name (`FILL_HOLES`) and background islands are dropped. **No screen shows passive art yet**, so the file ships unwired, like the C4 card pose | `public/characters/red_lyra/passive.png` |
+| Shatterburn | **Replaced 2026-09-28 by H2** (*"That one looks good"*), `ART_VERSION` 18. A back view (his idea, after Gawain's skill 2 in 7DSGC), with her left hand really gripping the bow at her side. Made the original way: 12 renders of her holding a model bow, he picked H2, the model's bow and string were masked by hand and repainted out (`bows/shatterburn_h2.json`, seed 11), then the drawn bow was placed in her grip (`bow_swap.py`). Layers: purple attack-debuff background, a burst of light ahead, drifting embers; **no aura and no red-ice shards** (*"You don't have to force them in every art"*). Leftover: a faint pale edge on her fingers, visible only zoomed in. **Rejected on the way:** B3 with the bow in her open hand (*"She isn't holding the bow"*); 4 hand repaints of it, all mangled; B3 with the bow slung and no strap (*"Physics where mate?"*); a release pose (`bows/shatterburn_release.json`, on hold, then superseded). **B1**, a back view with one open hand, is kept for his next Lyra variant: `output\red_lyra\_reserved-for-variant\`. The previous art (aura, full draw) is in git at `3c543f8`. **Earlier the same day a redo was started and dropped:** his pick S6 was a follow-through, bow lowered. Marking and repainting out the model's bow and string took round after round, and he stopped it. His words: *"wasn't expecting you to take this much time"*, and *"guess we will stick to old method for now"*. The old art stays. The S6 work is in `red_lyra\shatterburn\work\bow_swap\` and `bows/shatterburn.json` (its string coordinates are unverified) | `public/characters/red_lyra/skills/shatterburn.png` |
+| Latent Heat (ultimate) | **approved** (*"ooo I love that. best art so far? maybe."*), installed, `ART_VERSION` 16. Base is his pick of 16 renders, `latent_storm_00008` (pointing up, no bow in hand), matted with BiRefNet-HR-matting. The model's light streaks are replaced by a drawn violet night and about 40 drawn red-ice arrows in three depth bands (*"the background arrows can be reiterated"*), plus a small aura (*"not too big"*: `aura.py` height 0.35, spread 9). A red sky was tried first and swallowed the red arrows and aura. Built by `scripts/skill_art/compose_latent_heat.py` | `public/characters/red_lyra/skills/latent-heat.png` |
 
 **The bow hand, learned on Shatterburn (2026-09-27): an archer's bow hand is
 NOT a fist.** The grip sits in the web between thumb and index finger, with
 the fingers wrapped round the handle. His correction: *"her left hand should
 be holding the center of the bow and not be a fist"*. Four attempts:
 1. **A rendered fist with the drawn bow behind it** (Flash Point and the first
-   Shatterburn). This reads as a punch next to a stick. **Flash Point still has
-   this flaw.**
+   Shatterburn). This reads as a punch next to a stick. Flash Point had this
+   flaw until its 2026-09-27 redo.
 2. **Inpainting the hand around a composited bow** (`grip_pass.py`, 0.72 and
    0.85). The fingers came out mangled (*"her hand is mangled up"*).
 3. **Prompting "back of the hand to the viewer"** (option C). Useless: the
@@ -958,11 +1004,80 @@ were shown and none was picked, because the aura won.
 **Tried and dropped:** a masked img2img finger pass at 0.55 denoise. It kept
 the bow in front of the hand in all four variants. The prototype scripts are saved as-is in `scripts/bow_composite/`:
 `archer_pose.py`, `flashpoint_gen.py`, `bow_composite.py`, `fist_over.py`,
-and `lyra_kit_gen.py` for the card and passive batches. Their output paths
-still point at the old session scratchpad. Tidy them into one tool when
-Shatterburn and Latent Heat are built. The Flash Point hand coordinates
+and `lyra_kit_gen.py` for the card and passive batches. **Their paths are
+retired.** They read and write ComfyUI `output\lyra_kit\` and the old session
+scratchpad; `lyra_kit\` was sorted into `output\red_lyra\<piece>\` on
+2026-09-27, and `output\_moved.tsv` maps every old name to its new home. The
+maintained tools are in `scripts/skill_art/` (next section);
+`archer_pose.py` is still current (it gained `shatterburn_release`). The
+old Flash Point hand coordinates
 were: fist (120, 392), draw hand (530, 372), scale 0.88, tilt 6.5°, fist
 box (72, 342)–(168, 438).
+
+### Pose references from 7DSGC art (2026-09-27)
+
+He supplied 7DSGC art as **pose references**, and they are used for that
+only. Each image gives a DWPose skeleton; their art never reaches a sampler
+(no IP-Adapter, no img2img) and never enters this repo. The folder is
+`C:\Users\Tanve\Downloads\7dsgc assets`: 37 card cut-outs at the top level
+and 42 kit images in `Kit arts\`. Everything is named `<unit>_<kind>`.
+`_names.tsv` in each folder maps back to the original names. Units are named
+only where certain; the rest are named by pose and weapon. Skeletons are in
+ComfyUI `output\references\7dsgc\skeletons\` (`cards\`,
+`cards-whole-image-pass\`, `kit\`).
+
+**What DWPose (`DWPreprocessor`, torchscript models) does on this art:**
+- **Run two passes and keep the better one.** The first pass uses the
+  `yolox_l` person detector, the second uses `bbox_detector: None` (the whole
+  image counts as one person). On the card cut-outs, yolox returned blank for
+  16 of 37 and the whole-image pass recovered them all. On the kit images,
+  sometimes the other pass won.
+- **About half the results are usable.** Limbs are lost under armour, wings,
+  capes, heavy effects and rear views.
+- **Kit art is only 128×256 to 200×312.** A figure about 60 px tall gives
+  fragments. The archer drawing his bow (`blond-archer-boy_skill-drawing-bow`)
+  is one example: he was not hand-traced either, because the grip is a blur
+  and a trace would be a guess. Our drawn archer skeletons (`archer_pose.py`)
+  already cover that pose.
+- **The best skeletons are:**
+  - Cards: shadow, beta, aqua, card-magician, blue-hair-staff-girl,
+    priscilla, blond-archer-boy and emilia.
+  - Kit art: blond-archer-boy holding his bow, alpha skill 3, both of the
+    blade dancer's arms-spread skills, elizabeth skill 2, shadow skill 2,
+    gowther skill 3 and the lancer's skill 2.
+
+### Bow tools and what they cost (Flash Point and Shatterburn redo, 2026-09-27/28)
+
+All in `scripts/skill_art/`, one JSON config per piece in `bows/`:
+- **`bow_swap.py`** replaces a model-drawn bow while keeping the model's grip.
+  Steps: `mask` (hand-placed strokes and lines on a labelled grid; the hands
+  are protected by colour), `prefill` (clears empty ground, blends across her
+  body; no AI), `inpaint` (low-noise repaint of body pixels only, several
+  seeds), `pick`, then `place` (the drawn bow, hand pasted back).
+  **Cost:** Flash Point took over a dozen mask and repaint rounds, and he
+  called the time out. H2 took 4 mask rounds and 2 repaints. The slow part is always finding the model's
+  string by eye. **Read coordinates off a full-resolution grid, never a
+  downscaled crop:** three wrong string lines on the dropped S6 came from
+  that.
+- **Inpainting the whole bow's path fails.** Every seed invented a limb (a
+  glove, a raised hand, an extra bracer) in the empty strip. That is why the
+  repaint is limited to `inpaint_zones` over her body.
+- **`bow_in_open_hand.py`** draws the bow into an open hand, with nothing to
+  erase. It is fast, but **an open hand does not read as holding** (his
+  verdict on B3). Use it only where letting go is the point.
+- **`grip_hand.py`** (repaint only the hand to close it round a placed bow)
+  **failed on all 4 seeds**, the same mangling as `grip_pass.py`. Do not
+  retry it.
+- **`compose_bow_skill.py`** does the layers: class background, cut-out
+  (BiRefNet plus a flood fill, so her white skirt on a white ground stays
+  solid) and effects (`flash`; `shatter` with shards only when
+  `fx.shards` is set).
+- **`paint_out.py`** removes the red hem stripe the model keeps adding to her
+  white skirt. Keep the saturation test strict: a loose one repainted her
+  thigh.
+- **Draft-then-finish is paused, his call** (*"guess we will stick to old
+  method for now"*). `finish_pass.py` and the draft scripts remain; ask him
+  before using them.
 
 ### Character LoRA recipe — APPROVED, frozen (2026-09-27)
 

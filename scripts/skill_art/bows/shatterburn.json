@@ -1,0 +1,29 @@
+{
+  "_note": "Shatterburn redo, his pick S6 (follow-through, seed 9202), finished 1248x1824. Bow held low in her right hand (viewer left), at brace, no arrow: the shot is already gone.",
+  "source": "E:/Installed/ComfyUI_windows_portable/ComfyUI/output/red_lyra/shatterburn/final/s6_finish_00001_.png",
+  "matte": "E:/Installed/ComfyUI_windows_portable/ComfyUI/output/red_lyra/shatterburn/final/s6_finish_matte_00001_.png",
+  "prompt_file": "E:/Projects/toll-the-game/scripts/skill_art/prompts/red_lyra_shatterburn.txt",
+  "out_dir": "E:/Installed/ComfyUI_windows_portable/ComfyUI/output/red_lyra/shatterburn/work/bow_swap",
+  "out_prefix": "red_lyra/shatterburn/work/bow_swap/s6",
+  "region": [0, 0, 1, 1],
+  "keep_boxes": [],
+  "hard_keep": [[110, 1560, 310, 1800]],
+  "lines": [[0, 1384, 1115, 1778, 52]],
+  "strokes": [
+    [[[-20, 1465], [60, 1580], [150, 1690]], 95],
+    [[[250, 1730], [420, 1790], [620, 1830]], 100],
+    [[[620, 1830], [880, 1815], [1120, 1800]], 60]
+  ],
+  "seeds": [11, 21, 31, 41],
+  "denoise": 0.8,
+  "inpaint_zones": [[110, 1380, 770, 1824]],
+  "grip": [228, 1700],
+  "nock": [228, 1700],
+  "drawn": false,
+  "scale": 1.35,
+  "tilt": 44.7,
+  "mirror": false,
+  "hand_box": [110, 1560, 310, 1800],
+  "arrow": false,
+  "fx": {"class": "attackDebuff", "focus": [0.8, 0.28], "burst": [1000, 520], "bg_seed": 6}
+}

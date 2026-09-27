@@ -1,11 +1,19 @@
 // Character card art (AI-generated, Dokkan × 7DSGC style).
-// Files live in public/characters/<id>.png at 1024×1024.
+// One folder per unit, named <element color>_<id> (his call, 2026-09-27:
+// "red_lyra yes"), so a future colour variant of a character gets its own:
+//   public/characters/red_lyra/portrait.png        1024×1024
+//   public/characters/red_lyra/skills/<slug>.png   832×1216
+//   public/characters/red_lyra/cards/pose-c4.png   (not wired to a screen yet)
+//   public/characters/red_lyra/passive.png         (not wired to a screen yet)
+// NPCs and bosses use the same layout under public/npc/. The colour comes from
+// the kit (data/characters/<id>.json), so a folder cannot drift from it.
 // Regeneration pipeline: docs/ART_PIPELINE.md
+import { getCharacterById } from "@/lib/game/characterCatalog";
 
 // Bump when any art file is replaced in place — busts the Next.js image
 // optimizer cache and browser cache, which otherwise keep serving the old
 // pixels for the unchanged URL.
-const ART_VERSION = 15;
+const ART_VERSION = 18;
 
 const CHARACTERS_WITH_ART = new Set([
   "ban",
@@ -68,18 +76,27 @@ function resolveArtId(id: string): string {
   return ART_ALIAS[id] ?? id;
 }
 
+/** The unit's art folder name: `<color>_<id>` from its kit. `sea_monster` has
+ *  art but no kit (nothing renders it), so it keeps a bare `<id>` folder. */
+export function artFolder(artId: string): string {
+  const color = getCharacterById(artId)?.color;
+  return color ? `${color}_${artId}` : artId;
+}
+
+function artRoot(artId: string): string {
+  return `/${NPC_ART.has(artId) ? "npc" : "characters"}/${artFolder(artId)}`;
+}
+
 export function getCharacterArt(id: string): string | null {
   const artId = resolveArtId(id);
-  if (NPC_ART.has(artId)) return `/npc/${artId}.png?v=${ART_VERSION}`;
-  if (CHARACTERS_WITH_ART.has(artId))
-    return `/characters/${artId}.png?v=${ART_VERSION}`;
-  return null;
+  if (!NPC_ART.has(artId) && !CHARACTERS_WITH_ART.has(artId)) return null;
+  return `${artRoot(artId)}/portrait.png?v=${ART_VERSION}`;
 }
 
 // Per-skill card art (art-forward cards, spec battle-UI overhaul). One art per
 // skill/ultimate, keyed `<charId>__<slug>`. Files:
-//   playables -> public/characters/skills/<charId>__<slug>.png
-//   npc/boss  -> public/npc/skills/<charId>__<slug>.png
+//   playables -> public/characters/<color>_<charId>/skills/<slug>.png
+//   npc/boss  -> public/npc/<color>_<charId>/skills/<slug>.png
 // Registered ids are added here as art is generated; callers fall back to the
 // character portrait for any skill without its own art yet, so art ships
 // incrementally with no broken images. See docs/design/SKILL_ART_PLAN.md.
@@ -144,6 +161,9 @@ const SKILLS_WITH_ART = new Set<string>([
   "molvarr__tidal-cataclysm",
 ]);
 
+/** Every registered `<charId>__<slug>` key; tests check each file exists. */
+export const registeredSkillArt: readonly string[] = [...SKILLS_WITH_ART];
+
 /** Deterministic slug for a skill name (kebab-case, punctuation stripped).
  *  "Jajanken: Rock" -> "jajanken-rock" · "Fist of Flowing Ruin : Slide" ->
  *  "fist-of-flowing-ruin-slide". */
@@ -158,8 +178,7 @@ export function skillArtSlug(skillName: string): string {
  *  back to getCharacterArt). */
 export function getSkillArt(id: string, skillName: string): string | null {
   const artId = resolveArtId(id);
-  const key = `${artId}__${skillArtSlug(skillName)}`;
-  if (!SKILLS_WITH_ART.has(key)) return null;
-  const dir = NPC_ART.has(artId) ? "npc" : "characters";
-  return `/${dir}/skills/${key}.png?v=${ART_VERSION}`;
+  const slug = skillArtSlug(skillName);
+  if (!SKILLS_WITH_ART.has(`${artId}__${slug}`)) return null;
+  return `${artRoot(artId)}/skills/${slug}.png?v=${ART_VERSION}`;
 }

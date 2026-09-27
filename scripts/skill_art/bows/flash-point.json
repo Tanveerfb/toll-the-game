@@ -1,0 +1,30 @@
+{
+  "_note": "Flash Point redo, his pick F4 (leap, seed 9200), finished 1248x1824. Coordinates read off a labelled grid.",
+  "source": "E:/Installed/ComfyUI_windows_portable/ComfyUI/output/red_lyra/flash-point/final/f4_finish_00001_.png",
+  "matte": "E:/Installed/ComfyUI_windows_portable/ComfyUI/output/red_lyra/flash-point/final/f4_finish_matte_00001_.png",
+  "prompt_file": "E:/Projects/toll-the-game/scripts/skill_art/prompts/red_lyra_flash-point.txt",
+  "out_dir": "E:/Installed/ComfyUI_windows_portable/ComfyUI/output/red_lyra/flash-point/work/bow_swap",
+  "out_prefix": "red_lyra/flash-point/work/bow_swap/f4",
+  "region": [930, 430, 1248, 670],
+  "keep_boxes": [[685, 600, 855, 790]],
+  "hard_keep": [[812, 580, 968, 768], [318, 628, 428, 752]],
+  "lines": [[428, 686, 1070, 556, 16], [505, 0, 530, 118, 10], [492, 1440, 660, 1824, 44]],
+  "strokes": [
+    [[[775, -20], [795, 200], [865, 400], [858, 530]], 175],
+    [[[895, 775], [935, 950], [900, 1100], [850, 1300]], 150],
+    [[[835, 1300], [800, 1500], [750, 1700], [705, 1850]], 115]
+  ],
+  "seeds": [11, 21, 31, 41],
+  "denoise": 0.8,
+  "seed_pick": 41,
+  "clear_boxes": [[495, 0, 545, 72]],
+  "inpaint_zones": [[690, 960, 1080, 1824], [420, 560, 800, 720], [480, 1430, 700, 1824], [470, 0, 570, 135], [800, 540, 1010, 960], [1000, 540, 1248, 700]],
+  "grip": [880, 655],
+  "nock": [395, 690],
+  "scale": 1.75,
+  "tilt": -2.5,
+  "mirror": true,
+  "hand_box": [812, 580, 968, 768],
+  "arrow": true,
+  "fx": {"class": "attack", "focus": [0.84, 0.25], "travel": [0.97, -0.22], "bg_seed": 4}
+}

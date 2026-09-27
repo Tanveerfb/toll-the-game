@@ -127,7 +127,7 @@ scene-direction pass; worked 2026-08-20.
 **Status: open, nothing specific queued.**
 
 Ten NPC/enemy portraits exist in `public/npc/` (plus 8 skill images in
-`public/npc/skills/`), covering `frost`, `gale`, `iron`, `lyra_npc`, `molvarr`,
+`public/npc/<color>_<id>/skills/`), covering `frost`, `gale`, `iron`, `lyra_npc`, `molvarr`,
 `prism`, `raider`, `road_bandit`, `wild_beast`. New NPCs get requested here as the
 story needs them.
 
@@ -465,7 +465,8 @@ that lands where the component expects it. What is being requested is the
   is right except one thing: **the frilled collar renders WHITE and must be
   crimson red**, matching her sleeveless top. It becomes her card art, the
   character layer shown on her archive page and in the hand.
-- **Source image:** `E:\Installed\ComfyUI_windows_portable\ComfyUI\output\lyra_card_c4_00001_.png`.
+- **Source image:** `E:\Installed\ComfyUI_windows_portable\ComfyUI\output\red_lyra\card-art\work\lyra_card_c4_00001_.png`
+  (moved from `output\` on 2026-09-27; `output\_moved.tsv`).
   **Do not re-roll the pose**: it is approved, and a new seed risks losing it.
 - **Specs:** unchanged from the original render. Only the collar region
   changes; every other pixel should survive.
@@ -482,13 +483,14 @@ that lands where the component expects it. What is being requested is the
 - **After the fix:** matte it with `BiRefNet-HR-matting`, which C4 already
   passed cleanly (70.0% transparent, 6.05% soft edge, zero frame contact).
   Measure the matte again anyway; a recolour can move an edge.
-- **Lands at:** decided with him when it is approved. `public/characters/lyra.png`
+- **Lands at:** decided with him when it is approved. `public/characters/red_lyra/portrait.png`
   is today's primary and `lib/game/characterArt.ts` already serves it, so
   replacing that file is the whole registration.
-- **Fallback, already shipping:** the current `lyra.png`. Nothing is blocked.
+- **Fallback, already shipping:** her portrait, `public/characters/red_lyra/portrait.png`. Nothing is blocked.
 - **Status:** `approved, not yet placed` (2026-09-27). His verdict: *"It
   looks good to me. perfect even."* Recoloured by mask, not re-rolled:
-  `output\lyra_card_c4_collar_00001_.png`. The matte is unchanged (alpha
+  `output\red_lyra\card-art\work\lyra_card_c4_collar_00001_.png`, placed as
+  `public/characters/red_lyra/cards/pose-c4.png`. The matte is unchanged (alpha
   untouched). How it was done is in `docs/ART_PIPELINE.md`, under "C4 is the
   design". **Not touched:** the small white-and-black checked V at the front
   of the neckline, which reads as a separate piece from the frill. He called

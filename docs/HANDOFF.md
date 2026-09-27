@@ -1406,7 +1406,8 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    survives it. The overhaul is on `docs/ROADMAP.md`; the design is his.
 
 160. **A weapon may appear in card art, drawn and composited, never generated**
-   (2026-09-27, amends #151). After studying 7DSGC's UR card art (Green
+   (2026-09-27, amends #151). **Amended by #163 (2026-09-27):** a bow slung
+   on the back needs a visible strap. After studying 7DSGC's UR card art (Green
    Lancelot's bow slung on his back, Skuld's giant crescent blade), his words:
    *"you could use some weapons in card arts yes?"* #151 removed the weapon
    because diffusion cannot draw a held bow. That reason is now met another
@@ -1444,3 +1445,39 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 
    Evidence: eleven skill sets and eight UR cards,
    `docs/design/research/7dsgc-skill-art.md`.
+
+162. **Art lives in one folder per unit, named `<element color>_<id>`**
+   (2026-09-27). His words: *"when we select new assets, can we organize them
+   in proper structure and naming? for e.g. blue_lyra folder would have all of
+   her assets in there."* Asked whether the colour meant 7DSGC-style colour
+   variants of one character, he answered *"do both folder structures and
+   red_lyra yes"*.
+   - **The game:** `public/characters/red_lyra/` holds `portrait.png`,
+     `skills/<slug>.png`, `cards/pose-cN.png` and `passive.png`. NPCs and
+     bosses use the same layout under `public/npc/`.
+   - **Working files:** ComfyUI `output\red_lyra\<piece>\{drafts,work,final}\`.
+   - **The colour is read from the kit** (`artFolder()` in
+     `lib/game/characterArt.ts`), so a folder cannot drift from its kit.
+     `tests/characterArt.test.ts` checks that every registered file exists.
+   - **Inference, flagged:** "colour variant" is Claude's word for his *"I have
+     another variant of lyra in works"*. What a variant is mechanically is
+     his to define. The folder only makes room for one.
+
+163. **Art obeys the world's physics, and a signature effect is not forced
+   into every piece** (2026-09-27, amends #160 and #161). Both are his
+   corrections on Lyra's Shatterburn:
+   - *"you made her bow somehow stick to her back? Physics where mate? ... do
+     try to follow world rules with the assets yeah?"* A carried prop needs
+     something visibly holding it: a strap, a belt or a hand actually
+     closed round it. **#160's "slung on the back" therefore means slung
+     with a strap.** Both strapless bows (Supercooling, a Shatterburn draft)
+     were removed.
+   - *"the red crystals seem out of place. You don't have to force them in
+     every art."* This is #161's aura rule applied to every motif: an effect
+     appears where the skill's moment calls for it, not by default.
+     `compose_bow_skill.py` now draws the shards only when asked.
+   - **Working style, from the same exchange:** when his request cannot be
+     done as asked, stop and bring the failure with options; do not
+     substitute. His words: *"Ain't you making decisions now without
+     consulting. I asked for her holding bow in her hands."* Also in
+     `AGENTS.md`.

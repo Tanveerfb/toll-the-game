@@ -58,3 +58,6 @@ docs/design/references/**/*.jpg
 # Vitest browser-mode artefacts — failure screenshots and attachments.
 .vitest-attachments/
 tests/__screenshots__/
+
+# python bytecode from the art scripts (scripts/skill_art imports its siblings)
+__pycache__/

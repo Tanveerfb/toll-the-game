@@ -1,0 +1,32 @@
+{
+  "_note": "Shatterburn, his pick B3 (2026-09-27): back view like Gawain skill 2, arms out, walking into the blaze. Bow resting in her open right hand (viewer right). Base: red_lyra/shatterburn/drafts/back_9502_00002 with the hem stripe painted out.",
+  "source": "E:/Installed/ComfyUI_windows_portable/ComfyUI/output/red_lyra/shatterburn/work/back/b3_clean.png",
+  "out_dir": "E:/Installed/ComfyUI_windows_portable/ComfyUI/output/red_lyra/shatterburn/work/back",
+  "out_prefix": "red_lyra/shatterburn/work/back/b3",
+  "grip": [
+    676,
+    640
+  ],
+  "scale": 0.72,
+  "tilt": -8,
+  "mirror": false,
+  "hand_box": [
+    628,
+    596,
+    730,
+    690
+  ],
+  "fx": {
+    "class": "attackDebuff",
+    "focus": [
+      0.5,
+      0.18
+    ],
+    "burst": [
+      420,
+      170
+    ],
+    "bg_seed": 6
+  },
+  "prompt_file": "E:/Projects/toll-the-game/scripts/skill_art/prompts/red_lyra_shatterburn.txt"
+}

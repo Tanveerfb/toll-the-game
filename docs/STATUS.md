@@ -1,4 +1,4 @@
-# Status — 2026-09-27 (evening)
+# Status — 2026-09-28
 
 **Who updates this:** every checkpoint, by **rewriting** it, never appending
 (`project-rules.md` §2; his call, `decisions.md` 2026-09-27). It holds the
@@ -10,54 +10,90 @@ current position only. A session's log goes to
 
 ## Start here
 
-**State:** the game is unchanged since `c2e3399` except for Lyra's art. This
-session was a ComfyUI session: Lyra has a trained face LoRA, a new card
-portrait, two new skill arts and a fixed C4 collar. Two rulings were filed:
-#160 (weapons may appear in card art, drawn and composited) and #161 (a skill
-card's background is its class colour). Last checkpoint: the commit after
-`c2e3399` (`git log -1`).
+**State:** The game logic is unchanged since `c2e3399`; only art and where
+art lives changed.
+- **Lyra's kit art is complete:** portrait, the C4 card pose, Flash Point,
+  Shatterburn, Latent Heat, and Supercooling as `passive.png`.
+- **All game art now lives in per-unit folders,** `public/characters/<color>_<id>/`
+  (ruling #162).
+- **Two new rulings:** #162 (the folders) and #163 (art obeys world physics,
+  signature effects are not forced, and when his ask fails, stop and bring
+  options).
+- Last checkpoint: `git log -1`. This session's log:
+  `docs/archive/STATUS-2026-09.md`, 2026-09-27d.
 
-**Next: finish Lyra's kit art, paused at his call** (the table in
-`docs/ART_PIPELINE.md`, "Lyra kit art with the LoRA"). In order:
-1. **Latent Heat**, the ultimate, generated whole (free colour, free pose):
-   a red-ice arrow storm, Gowther-style.
-2. **Supercooling**, passive Q07 (his pick): add the drawn bow slung on her
-   back.
-3. **Flash Point** still has a fist on the bow. Re-do it with the option-A
-   hand method if he wants it.
-4. Optional: the C4 upgrade (slung bow and aura).
+**Next:** his call. He closed the ComfyUI run (*"we're done for all config
+sessions until uh, uh, next time"*). **Before any art work, read in
+`docs/ART_PIPELINE.md`:**
+- "Where art lives"
+- the kit art table
+- "Bow tools and what they cost"
 
-ComfyUI is Claude's to drive; filter output, then bring images with a
-recommendation. `get_system_stats action:"health"` first.
+**Standing art rules from this session** (also in memory and the ledger):
+- **The old method is the default:** a full-quality batch, filter it, he
+  picks, then layers. Draft-then-finish is paused: ask him first.
+- **Props obey physics:** a slung bow needs a strap, a held bow needs a
+  closed hand. When his request can't be done as asked, report and offer
+  options; never substitute (#163, `AGENTS.md`).
+- **Signature effects (red-ice shards, aura) only where the moment calls for
+  them.**
 
 **Blocked on him:**
-- Which screens show Lyra's full-body C4 card (the card slot is his pick,
-  not yet built; `docs/ART_REQUESTS.md` D5).
-- Carried over: building "Roused" (Molvarr phase 2), where the closed Orders
-  tile sits, recolouring the app icon, the foundation audit's next section,
-  and scheduling the folder migration and sentence case.
+- Which screens show Lyra's C4 card pose and her passive art. Neither slot
+  exists in code yet (`docs/ART_REQUESTS.md` D5).
+- His **next Lyra variant**. B1 is reserved for it at ComfyUI
+  `output\red_lyra\_reserved-for-variant\`. What a variant is mechanically is
+  his to define (#162).
+- Carried over:
+  - building "Roused" (Molvarr phase 2)
+  - where the closed Orders tile sits
+  - recolouring the app icon
+  - the foundation audit's next section
+  - scheduling the folder migration and sentence case
 
-**Don't trust:** taste on any art is his. See **Confidence and gaps**.
+**Don't trust:** the new art has not been seen on a game screen. See
+**Confidence and gaps**.
+
+## Outside the repo, on his PC
+
+- **7DSGC references:** `C:\Users\Tanve\Downloads\7dsgc assets`, 37 cards
+  plus 42 kit arts in `Kit arts\`.
+  - Renamed `<unit>_<kind>`; `_names.tsv` in each folder maps back to the
+    original names. Units are named only where certain (Gawain is the
+    blue-haired one).
+  - Skeletons only, in ComfyUI `output\references\7dsgc\skeletons\`.
+  - **Never** feed their art to IP-Adapter or img2img, and never put it in
+    this repo.
+- **ComfyUI output is sorted per unit:**
+  - `output\red_lyra\<piece>\{drafts,work,final}\`, plus other units' folders.
+  - `items\`, `backgrounds\`, `story\backgrounds\`, `_other-projects\`.
+  - 209 renders nobody could identify stay in `_unsorted\`.
+  - `output\_moved.tsv` maps every old path to its new one.
+- **Models:** `loras\lyra_toll.safetensors` is step 1500 (the recipe is
+  frozen). `upscale_models\RealESRGAN_x4plus_anime_6B.pth` was added this
+  session.
 
 ## Confidence and gaps
 
-### Verified on 2026-09-27 (evening), by running it
+### Verified on 2026-09-28, by running it
 
-- `npm run check`: **1,478 passed / 124 files**, typecheck and lint clean,
-  after the only code change, `ART_VERSION` 14 to 15.
-- **The LoRA trainer works:** `lyra_toll_v2` trained 2,000 steps on 24
-  images he approved. Checked in ComfyUI against today's IP-Adapter method on
-  three situations absent from the dataset: skirt right in 24 of 24 against
-  3 of 6. He picked step 1500.
-- `draw_lyra_bow.py`'s default output is **pixel-identical** to the approved
-  `lyra_bow.png` after the draw and arrow options were added (checked twice).
+- `npm run check`: **1,480 passed / 124 files**, typecheck and lint clean.
+  That was after the art-path change and `ART_VERSION` 18. No TypeScript
+  changed after it; the later edits are Python art scripts and docs.
+- A scratch production build (`NEXT_DIST_DIR=.next-verify npx next build`)
+  passed. `.next-verify` was removed and `tsconfig.json` restored.
+- **Every registered portrait and skill image exists at its new path.**
+  `tests/characterArt.test.ts` checks this, and its new skill-art check was
+  proved to fail with a file hidden.
+- **Supercooling:** rerunning `compose_supercooling.py` with defaults
+  reproduces the installed `passive.png` pixel for pixel.
 
 ### Believed but NOT verified
 
-- **The new art has not been seen in the game.** `lyra.png` (C10), Flash
-  Point and Shatterburn were checked as images, not on a screen. Cache-busting
-  relies on `ART_VERSION` 15.
-- The recipe's reuse on a second character is untested; Lyra is the only run.
+- **The new art has not been seen in the game.** Latent Heat, Flash Point and
+  Shatterburn were checked as images and zoomed crops, not on a screen.
+  Cache-busting relies on `ART_VERSION` 18.
+- The LoRA recipe's reuse on a second character is still untested.
 
 ### Untested by anything
 
@@ -68,7 +104,6 @@ recommendation. `get_system_stats action:"health"` first.
 ### What I would check first coming back cold
 
 1. `git status` and `git log -3`.
-2. `docs/ART_PIPELINE.md`: the kit art table, "The bow hand" and "Character
-   LoRA recipe" (frozen) before any ComfyUI work.
-3. `docs/design/SKILL_ART_PLAN.md` (rulings #160, #161 at the top) before any
-   skill art.
+2. Open a battle with Lyra and her archive page. Confirm her four kit images
+   load from `/characters/red_lyra/`.
+3. `docs/ART_PIPELINE.md` "Bow tools and what they cost" before any bow art.

@@ -215,6 +215,15 @@ clipped. **Measure geometry in the page, not in a screenshot.** To reach gated c
 edit `toll-player-storage` in the browser's own localStorage rather than
 touching `data/` — it is that viewer's copy and nothing in the repo changes.
 
+**When his request cannot be done as asked, stop and bring options. Never
+substitute** (ruling #163, 2026-09-27). He asked for Lyra *holding* her bow
+*"if you can easily"*. The attempt failed, and the bow was slung on her back
+instead, unasked. His words: *"Ain't you making decisions now without
+consulting."* A conditional ask is a feasibility question, not permission to
+pick an alternative. Show the failure and list the options, including "try
+harder at the original". The same exchange set **art obeys world physics**:
+a carried prop needs a strap or a closed hand (*"Physics where mate?"*).
+
 **Asked to redesign a screen? Draw mockups first, and draw more than one**
 (ruling #144, 2026-09-17). *"You can always draw mockups, and then I have a look
 and then I can tell you which of the mockups is the best one."* Options, not a

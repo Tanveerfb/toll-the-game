@@ -1,7 +1,9 @@
 """Dragon Ball-style aura behind a character (prototype, 2026-09-27).
 The matte's silhouette is grown, its edge torn upward into flame tongues with
 noise, filled with a hot-core gradient, glowed, and placed BEHIND the figure.
-Usage: aura.py <image.png> <matte_rgba.png> <out.png> <r,g,b core> <r,g,b edge> [height]"""
+Usage: aura.py <image.png> <matte_rgba.png> <out.png> <r,g,b core> <r,g,b edge> [height] [spread]
+spread = how far the aura reaches past the silhouette, in px (odd; default 21, Flash Point/Shatterburn).
+Latent Heat uses a smaller one (his note: "add a aura but not too big")."""
 import math
 import random
 import sys
@@ -14,6 +16,7 @@ out_p = sys.argv[3]
 core = tuple(int(v) for v in sys.argv[4].split(","))
 edge = tuple(int(v) for v in sys.argv[5].split(","))
 height = float(sys.argv[6]) if len(sys.argv) > 6 else 1.0
+spread = int(sys.argv[7]) | 1 if len(sys.argv) > 7 else 21
 W, H = img.size
 rnd = random.Random(3)
 
@@ -27,7 +30,7 @@ def grow(a, r):
 
 # Flames rise: shift the silhouette upward in several jittered copies and keep
 # the union, so the top edge stretches into tongues and the bottom barely moves.
-body = grow(m, 21)
+body = grow(m, spread)
 flame = body.copy()
 ys, xs = np.mgrid[0:H, 0:W]
 for k in range(10):

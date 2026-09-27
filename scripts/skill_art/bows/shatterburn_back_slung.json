@@ -1,0 +1,29 @@
+{
+  "_note": "Shatterburn B3 (2026-09-27): back view like Gawain skill 2. Bow SLUNG across her back (the open-hand version did not read as held, and 4 hand repaints mangled the fingers). Ponytail over the bow. No red-ice shards (his note: do not force them).",
+  "source": "E:/Installed/ComfyUI_windows_portable/ComfyUI/output/red_lyra/shatterburn/work/back/b3_clean.png",
+  "out_dir": "E:/Installed/ComfyUI_windows_portable/ComfyUI/output/red_lyra/shatterburn/work/back_slung",
+  "out_prefix": "red_lyra/shatterburn/work/back_slung/b3",
+  "grip": [
+    445,
+    515
+  ],
+  "scale": 0.6,
+  "tilt": -34,
+  "mirror": false,
+  "hand_box": null,
+  "fx": {
+    "class": "attackDebuff",
+    "focus": [
+      0.5,
+      0.18
+    ],
+    "burst": [
+      420,
+      170
+    ],
+    "bg_seed": 6
+  },
+  "prompt_file": "E:/Projects/toll-the-game/scripts/skill_art/prompts/red_lyra_shatterburn.txt",
+  "hair_over": true,
+  "hair_dark_below_y": 9999
+}
