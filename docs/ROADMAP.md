@@ -42,6 +42,28 @@ The foundation (combat, kits, story P1-2, archive, art, auth) is solid enough to
 
 This supersedes the "Deliberately Out of Scope" note below — gacha/monetization are now IN scope, sequenced.
 
+### Queued by him, 2026-09-27 — each waits for his design
+
+Added after his phone check of the Shōnen Ink build: *"the design the font
+change it looks good on the phone now."* None of these is scheduled; each
+starts when he brings the design (#144: mockups first).
+
+- **Battle flow.** *"how it flows we have to adjust something but it's in the
+  future but I will let you know."* The look is settled (#156); the flow is
+  not. Nothing to build until he says what changes.
+- **Ascension trial stage-map nodes** (#136, still PROVISIONAL). The layer he
+  described on 2026-09-16 (places on a map carrying drops, fights, jump points
+  and an end) has no equivalent in the code. Researched in
+  `Plans/2026-09-16-pve-structure.md` §23. Today the trial is three fights on
+  one HP bar, with Molvarr as the difficulty-1 boss (#158).
+- **Bureau Orders overhaul** (#159). The board is closed behind `ORDERS_OPEN`
+  in `lib/game/orders.ts`, and the home tile says it is being overhauled.
+  Reopening is a design pass of his (the steps, how many orders, what they
+  teach), then flipping the switch.
+- **Notices on the news screen.** Updates and Notices are both filters there,
+  and no notice exists yet (`content/news/notices/` holds only a placeholder),
+  so the Notices filter shows nothing. *"we'll add that later."*
+
 ---
 
 ## Phase 0 — Resurrect the Build ✅ (2026-07-06)
@@ -113,3 +135,19 @@ This supersedes the "Deliberately Out of Scope" note below — gacha/monetizatio
 
 - PvP/multiplayer, gacha/monetization, native apps
 - Three.js/PixiJS battle scenes — 2D UI battles are enough to ship
+
+## Not built yet
+
+*Moved verbatim from `docs/STATUS.md` on 2026-09-27.*
+
+- ~~**Story chapters 2–12**~~ **Story mode itself was removed on 2026-09-26 (ruling #152)** — nothing story-shaped is on the build list until he says it is back. Old text: the twelve webtoon chapters were all adapted under the v1 Part structure and that data was **deleted** on 2026-08-18 with the rebuild. Only **chapter 1** exists in v2 (`data/story/chapter-1.json`); the rest are re-authored one chapter at a time through the FillerAssist pass, against the source beat sheets in `E:\Toll - Web toon`. `UPCOMING_PARTS` is gone — `SOURCE_CHAPTERS_WRITTEN` in `storyCatalog.ts` records that twelve source chapters exist without naming any of them.
+- ~~Story **Phase 3**~~ — parked with story mode (#152).
+- ~10 additional characters (Tanveer adds when game is in working order)
+- **Mobile layout pass** — **the shell half is DONE as of 2026-09-26**: `Screen`, `Panel` and `SectionHeader` exist and **every screen renders through `Screen`**, with `tests/layoutSystem.test.ts` allowing **0** hand-typed shells. *This line read "the remaining 10 hand-typed shells" until 2026-09-26.* What remains is per-screen density and taste, not structure. Still the biggest gap in roadmap item 2, but the shape is now mechanical rather than per-screen invention. Narrowed earlier on 2026-08-20: all 15 `min-h-screen` uses are now `min-h-dvh` and `tests/viewportUnits.test.ts` prevents new ones. Battle, gacha, archive and the hub still need their per-screen passes (the `mobilecheck` skill runs one screen at a time)
+- **Audio assets** — the music *system* shipped 2026-08-09; `public/audio/` is empty until Tanveer supplies the OST (`docs/AUDIO.md`). No SFX system exists and none is planned.
+- ~~FTUE / onboarding~~ **built 2026-08-13** (Bureau Orders + four battle coach marks). Daily loop and analytics remain — the orders evaluator was built general so daily missions are mostly a data change (see `docs/PRODUCT_AUDIT.md`)
+- ~~Deployment~~ — **already live at https://toll-the-game.vercel.app/**, and has been. The Vercel project is linked and every push to `master` auto-builds. These docs said "not started" and I repeated it to Tanveer on 2026-08-13; he corrected it. **A push is a deploy — treat `master` as production.**
+- ~~Effect application in the battle-event stream (Open Issue #22)~~ — **built 2026-09-01**, see the Open Issues table
+- ~~Story chapter **mission objectives**, the **node-path stage map**, **multi-wave stages with persistent HP**~~ — **all three shipped 2026-08-18** in story mode v2, in a different shape than this line imagined: missions are per *stage* (up to 3, seven goal types) rather than three per chapter, the node board was built on 2026-08-17 and then deliberately deleted (ruling #108), and multi-wave persistent HP is the wave loop. Story **difficulty tiers** remain unbuilt and unwanted — story is authored difficulty at base 1x (ruling #87)
+
+Note: "playerStore is a stub" is no longer true — it carries roster, currencies, inventory, per-character progress, stamina, gacha pity, lifetime stats, claimed orders, Auto Clear Tickets and per-difficulty clear records, with migrations at **v9** (`CURRENT_PLAYER_STATE_VERSION`, verified 2026-08-18). *(This line read "v7" until 2026-08-13 and "v8" until 2026-08-18; v8 shipped with Auto Clear in `018e9d0` and v9 with ult levels in `54ef93b`, and the note lagged both times. `storyStore` was at **v3** until story mode was removed on 2026-09-26; the store no longer exists, and a browser keeps its orphaned `toll-story-progress` key harmlessly.)*

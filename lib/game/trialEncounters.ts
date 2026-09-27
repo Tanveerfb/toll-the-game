@@ -1,4 +1,5 @@
 import type { RunnableEncounter } from "@/lib/game/fightRun";
+import { enemyLevelForDifficulty } from "@/lib/game/worldLevel";
 
 /**
  * Ascension trial encounters — the fights behind the rank walls.
@@ -32,6 +33,13 @@ import type { RunnableEncounter } from "@/lib/game/fightRun";
  * The simulator runs the PLAYER side on the enemy AI, which is mediocre, so a
  * real player clears more often than 77%. That is the 4/10 the brief asked
  * for; the numbers are the floor, not the expectation.
+ *
+ * **Superseded 2026-09-27 (ruling #158).** The table above was measured while
+ * Molvarr's second phase ignored his level. Fixing that made the authored
+ * Lv24 Molvarr a 2.2% clear, and Tanveer then set him to the difficulty-1
+ * world boss, where the balanced Lv20 team clears **93–98%**, every loss in
+ * fight 3 (`tests/trialEncounter.test.ts`). The level-1 team still wipes to
+ * Lyra. The rows below the table have not been re-measured.
  *
  * **Known exception, and it is not fixable here.** A team stacking DEF
  * (Yalina/Mustafa/Gabrist/Lyra) clears at **100%** and finishes fight 3 at 74%
@@ -103,7 +111,12 @@ export const FIRST_ASCENSION_TRIAL: RunnableEncounter = {
     // Molvarr, both phases, fought to the end — his call over the
     // survive-to-a-threshold option `victoryAtEnemyHpPercent` offers. The
     // player arrives on whatever fights 1 and 2 left them, which is the point.
-    { enemies: [{ id: "molvarr", level: 24 }] },
+    //
+    // **The difficulty-1 world boss**, not a level of its own (ruling #158,
+    // 2026-09-27): *"it's not level 24 so it's not difficulty two it's a
+    // difficulty one version."* He was authored at 24 until then, which the
+    // stat-pipeline fix of 2026-09-26 turned into a 2.2% clear.
+    { enemies: [{ id: "molvarr", level: enemyLevelForDifficulty(1) }] },
   ],
 };
 

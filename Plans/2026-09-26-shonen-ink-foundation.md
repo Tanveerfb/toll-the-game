@@ -8,7 +8,7 @@
 > | 2 | The shell: nav, tab bar, `Screen`, `SectionHeader` | **done 2026-09-26**, browser-checked at 390 and 1280px. `Panel` and the home hub moved to phase 3: both hold screen content |
 > | 3 | Screens, one per pass | **done 2026-09-26.** Home hub, archive, events, team select, profile & login, gacha, news, in his order, each browser-checked except the signed-in profile page. Old-theme uses: 1,294 in 76 files at the start, **~345 in 17 files** after (battle, plus `DetailOverlay`, `card`, `Panel`'s legacy surfaces) |
 > | 4 | Battle: mockups first, then the arena | **done 2026-09-27.** He picked **C · split page** from `docs/design/mockups/battle-ink.html` (ruling #156). Built and browser-checked in a live 4v4 at 390x844. See "Phase 4 as built" |
-> | 5 | Retire Combat Terminal, and the guards that keep it retired | **half done by phase 4**: no code uses a Combat Terminal token any more, and `card.tsx`, `DetailOverlay` and `Panel`'s legacy surfaces are deleted. Left: the tokens and classes in `globals.css`, and the guards |
+> | 5 | Retire Combat Terminal, and the guards that keep it retired | **done 2026-09-27**, his go-ahead the same day. See "Phase 5 as built" |
 
 **Asked for 2026-09-26.** Tanveer: *"we are working on keeping the css and
 component foundation right. only work with shadcn, customize them and use them
@@ -528,3 +528,39 @@ restyled in code but were not seen on screen.
   - No `text-[Npx]` in a component.
   - No raw hex in a component.
   - No `fixed inset-0` overlay outside `components/ui/`.
+
+### Phase 5 as built (2026-09-27)
+
+His go-ahead, relayed: *"it deletes the old combat terminal color styles from
+global okay and adds [tests] that okay yeah you can do that."*
+
+- **Deleted from `styles/globals.css`:** the fourteen Combat Terminal colours
+  (`void`, `panel`, `panel-raised`, `inset`, `gridline`, `hairline`, `edge`,
+  `edge-strong`, the four `readout`s, `signal`, `signal-dim`) and the
+  `.terminal-grid`, `.chamfer` and `.chamfer-lg` classes. The tracking, type,
+  container, element and role tokens in the same `@theme` block stay: they
+  were never the motif.
+- **Three raw colours found and moved onto tokens:**
+  - The install manifest still painted the old void, `#06090c`. It now uses
+    the ground, `#0d0d10`, and a test keeps it equal to `--background`.
+  - The battle's white screen flash, burst and sweep core were `#ffffff`. They
+    now use `var(--foreground)`, the ground's near-white.
+- **Guards, all in `tests/uiTokens.test.ts`, which now covers the whole source
+  tree rather than `components/ui/` only.** Its MIGRATED/PENDING lists went: they
+  tracked a migration that is finished. Each guard was **proven red** on a
+  planted `components/__probe.tsx` plus the old `globals.css`, then the probes
+  were removed:
+  - no Combat Terminal token or class in `app`, `components`, `hooks`, `lib`,
+    `content` or `styles`;
+  - no hand-written font size (`text-[10px]`, `text-[0.7rem]`) in the same
+    roots;
+  - no raw hex colour in `app` or `components`. The Google logo on `/login`
+    and the manifest are exempt, each with its reason, and an exemption that
+    stops covering anything fails too;
+  - `fixed inset-0` was already guarded by `overlayStacking` in phase 4.
+- **The five older mockups** (`battle-mobile`, `battle-mobile-v2`,
+  `growth-modal`, `shell-mobile`, `trial-run-flow`) now say that their look is
+  retired and their decisions are not.
+- **Not changed:** the app icon (`public/icons/app-icon.png`), drawn on
+  2026-08-22 in the old void and cyan. Recolouring it is a visual-identity
+  call and is his.

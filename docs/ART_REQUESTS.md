@@ -448,14 +448,47 @@ that lands where the component expects it. What is being requested is the
   that step the file sits in `public/` invisible, which is the failure this
   file's format block calls out.
 
-- **Fallback, already shipping:** the rail renders on the `terminal-grid`
-  background with no plate, and reads fine. **Nothing is blocked** — this is
+- **Fallback, already shipping:** the rail renders on the halftone ground
+  with no plate, and reads fine. (It said the `terminal-grid` background until
+  2026-09-27, when that class was deleted with Combat Terminal.) **Nothing is blocked** — this is
   polish on a screen that already works.
 
 - **Status:** `open`. Medium priority — unlike D3 this one ships at full screen
   width, so the asset is actually *seen* and the effort converts.
 - **Requested:** 2026-09-16, from the First Ascension Trial adopting the
   battle-road structure.
+
+### D5 — lyra-card-c4-collar — recolour the collar on Lyra's approved card pose
+
+- **Purpose:** C4 is **the approved Lyra card pose** (his words, 2026-09-21:
+  *"I think C4 is my favorite design. Not C1 or C2. C4."*). Everything about it
+  is right except one thing: **the frilled collar renders WHITE and must be
+  crimson red**, matching her sleeveless top. It becomes her card art, the
+  character layer shown on her archive page and in the hand.
+- **Source image:** `E:\Installed\ComfyUI_windows_portable\ComfyUI\output\lyra_card_c4_00001_.png`.
+  **Do not re-roll the pose**: it is approved, and a new seed risks losing it.
+- **Specs:** unchanged from the original render. Only the collar region
+  changes; every other pixel should survive.
+- **Prompt notes, in the order to try:**
+  1. **Recolour or a small masked inpaint of the collar only.** It is a small,
+     flat, enclosed region, which is the case a mask handles well. Crimson red
+     to match the top (`el-red` family, `#ff5a4e` is the element hue; match
+     the top's actual rendered red, not the token).
+  2. Only if that fails: re-render with the collar **weighted** the way the
+     skirt is, e.g. `(crimson red frilled collar:1.4)`, and `white collar` in
+     the negative. The collar was named in the identity prompt but never
+     weighted, which is why it drifted when the other garments did not
+     (`docs/ART_PIPELINE.md`, "C4 is the design").
+- **After the fix:** matte it with `BiRefNet-HR-matting`, which C4 already
+  passed cleanly (70.0% transparent, 6.05% soft edge, zero frame contact).
+  Measure the matte again anyway; a recolour can move an edge.
+- **Lands at:** decided with him when it is approved. `public/characters/lyra.png`
+  is today's primary and `lib/game/characterArt.ts` already serves it, so
+  replacing that file is the whole registration.
+- **Fallback, already shipping:** the current `lyra.png`. Nothing is blocked.
+- **Status:** `open`. **Held for a ComfyUI session he runs with Claude**
+  (2026-09-27: *"we'll focus on comfy session soon"*). Do it then, not before.
+- **Requested:** 2026-09-27, from his review of the Lyra card-pose pass.
 
 ---
 

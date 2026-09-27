@@ -14,6 +14,7 @@ import {
 import { NAV_CHIP } from "@/components/ui/navChip";
 import { panelVariants } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils";
+import { ORDERS_CLOSED_NOTE, ORDERS_OPEN } from "@/lib/game/orders";
 
 /**
  * Bureau Orders, reachable from anywhere (Tanveer, 2026-08-13).
@@ -46,6 +47,28 @@ export default function OrdersButton({
 } = {}): React.JSX.Element | null {
   const [open, setOpen] = React.useState(false);
   const state = useOrdersState();
+
+  // Closed for the overhaul (ruling #159): the home tile says so, and the nav
+  // chip goes. A static row, not a button, because there is nothing to open.
+  if (!ORDERS_OPEN) {
+    if (variant !== "tile") return null;
+    return (
+      <div
+        className={cn(
+          panelVariants({ surface: "paper", density: "tight" }),
+          "flex w-full items-center gap-3",
+        )}
+      >
+        <ClipboardList className="h-5 w-5 shrink-0 text-muted-foreground" strokeWidth={2} />
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="font-heading text-lg tracking-title">Bureau Orders</span>
+          <span className="font-body text-caption font-bold uppercase tracking-label text-muted-foreground">
+            {ORDERS_CLOSED_NOTE}
+          </span>
+        </span>
+      </div>
+    );
+  }
 
   if (state.hidden) return null;
 

@@ -151,7 +151,7 @@ Phase-queue additions: `characterSynergy` (Leorio) registers a static base bonus
 
 ## Design Glossary
 
-Reference definitions migrated from `author_notes.md` once confirmed stable against the code (see `author_notes_report.md` for when/why).
+Reference definitions migrated from his author notes once confirmed stable against the code (see `docs/archive/author_notes_report.md` for when/why; the notes themselves moved to `toll-kits` on 2026-09-27).
 
 **Effect coloring:** Grey = uncancellable effect. Blue = cancellable buff. Red = cancellable debuff.
 

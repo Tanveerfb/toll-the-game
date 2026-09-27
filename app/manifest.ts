@@ -25,10 +25,12 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     orientation: "portrait",
-    // The Combat Terminal void, so the splash and the app shell match the game
-    // rather than flashing white on launch.
-    background_color: "#06090c",
-    theme_color: "#06090c",
+    // The Shōnen Ink ground (`--background` in styles/globals.css), so the
+    // splash and the app shell match the game rather than flashing white on
+    // launch. A literal because the OS reads this, not the page's CSS;
+    // tests/uiTokens.test.ts keeps the two equal.
+    background_color: "#0d0d10",
+    theme_color: "#0d0d10",
     // The same file declared twice, which is the shape Next's typed manifest
     // wants — `purpose` takes one value, not the space-separated pair the web
     // manifest spec allows.

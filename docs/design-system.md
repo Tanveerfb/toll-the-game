@@ -19,8 +19,13 @@ outlines, halftone screens, skewed panel cuts, offset slab shadows**, over the
 anime card art.
 
 It replaces **Combat Terminal** (2026-08-11), a tactical-HUD look of hairlines,
-chamfers and cyan. Screens still painting in it are mid-migration, not a second
-style; `Plans/2026-09-26-shonen-ink-foundation.md` tracks which.
+chamfers and cyan. **Its tokens and classes were deleted on 2026-09-27**
+(phase 5 of `Plans/2026-09-26-shonen-ink-foundation.md`), and
+`tests/uiTokens.test.ts` fails the build if any of them returns. The same file
+forbids a hand-written font size anywhere and a raw hex colour in `app/` or
+`components/`; the two exemptions (Google's logo, the install manifest) are
+listed in it with their reasons. Older mockups in `docs/design/mockups/` are
+drawn in the retired look and say so.
 
 ### The one rule that keeps it readable
 

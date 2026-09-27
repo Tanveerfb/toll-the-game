@@ -11,8 +11,9 @@ he owns skill names, mechanical effects, damage multipliers and final kit JSON �
 **He names the character. Every time.** Don't self-select a subject and start
 drafting, even after offering and hearing no objection (Tanveer, 2026-08-10). He
 works from a roster plan and stays inside the reference anime he actually knows
-— currently 7DS and HxH. Practice drafts are practice: they do **not** go into
-`author_notes.md` or `data/characters/`.
+— currently 7DS and HxH. Practice drafts are practice: they stay in `toll-kits`'
+`practice/` and do **not** go into its `planned/` or `drafts/`, or into the
+game's `data/characters/`.
 
 **Scoring.** He grades a draft out of 10, and the last point is a **bonus
 reserved for beating his own vision** — not a deduction. 9/10 is a clean pass;
@@ -220,4 +221,4 @@ mid-turn DEF changes.
 6. State durations, and whether each effect is cancellable.
 7. Sanity-check R1 pacing in all four formats.
 8. List every open question **before** writing JSON — Tanveer answers fast and
-   the answers change the shape (see `author_notes.md` for Knuckle/Netero).
+   the answers change the shape (see `toll-kits`' `planned/knuckle-and-netero.md`).

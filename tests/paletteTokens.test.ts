@@ -5,9 +5,10 @@ import { describe, expect, it } from "vitest";
 /**
  * The palette is the token layer, not Tailwind's stock ramps (2026-08-13).
  *
- * `styles/globals.css` declares the Combat Terminal tokens — surfaces, lines,
- * readout text, `signal` chrome, five element hues — and the screens migrated
- * to them over 2026-08-11. Eight files never did, and the two that mattered
+ * `styles/globals.css` declared the Combat Terminal tokens then — surfaces,
+ * lines, readout text, `signal` chrome, five element hues — and the screens
+ * migrated to them over 2026-08-11. (Shōnen Ink replaced that set, #154;
+ * `tests/uiTokens.test.ts` keeps it deleted.) Eight files never did, and the two that mattered
  * were **shared components** rather than pages: `AudioControl` sat in the nav
  * on every screen still wearing `amber-300`, and `KitDetails` rendered inside
  * an already-migrated battle screen.
@@ -70,6 +71,6 @@ describe("no screen is left on the pre-token palette", () => {
   it("does not fire on layout utilities that merely contain a ramp name", () => {
     // `translate` contains "slate"; `to-` prefixes appear inside words.
     expect('className="-translate-x-1/2"'.match(OFFENDER)).toBeNull();
-    expect('className="bg-panel text-readout-dim"'.match(OFFENDER)).toBeNull();
+    expect('className="bg-card text-muted-foreground"'.match(OFFENDER)).toBeNull();
   });
 });

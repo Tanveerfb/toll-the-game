@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { CloudUpload, ScrollText, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/AuthProvider";
 import { firebaseEnabled } from "@/lib/firebase";
-import { getStarterOrders, summariseRewards } from "@/lib/game/orders";
+import { getStarterOrders, ORDERS_OPEN, summariseRewards } from "@/lib/game/orders";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { Screen } from "@/components/ui/Screen";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -149,15 +149,20 @@ export default function LoginPage(): React.JSX.Element {
           {firebaseEnabled ? (
             <>
               <ul className="flex flex-col gap-3">
-                <Perk
-                  icon={ScrollText}
-                  title="Bureau Orders unlock"
-                  detail={
-                    headline
-                      ? `${headline} and ${total.gems.toLocaleString()} gems are waiting to be claimed.`
-                      : `${total.gems.toLocaleString()} gems are waiting to be claimed.`
-                  }
-                />
+                {/* Promises nothing while the orders are closed for their
+                    overhaul (#159): a reward pitch for a board that cannot
+                    pay is worse than no pitch. */}
+                {ORDERS_OPEN ? (
+                  <Perk
+                    icon={ScrollText}
+                    title="Bureau Orders unlock"
+                    detail={
+                      headline
+                        ? `${headline} and ${total.gems.toLocaleString()} gems are waiting to be claimed.`
+                        : `${total.gems.toLocaleString()} gems are waiting to be claimed.`
+                    }
+                  />
+                ) : null}
                 <Perk
                   icon={CloudUpload}
                   title="Your save follows you"

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { emptyRewards } from "@/lib/game/worldBossRewards";
+import { evaluateOrder, getOrder, ORDERS_OPEN } from "@/lib/game/orders";
 import { usePlayerStore } from "@/store/playerStore";
 
 function resetToKnownState() {
@@ -159,5 +160,41 @@ describe("grantWorldBossRewards", () => {
     expect(state.currencies.coin).toBe(105000);
     expect(state.currencies.gems).toBe(1025);
     expect(state.currencies.permanentTicket).toBe(1);
+  });
+});
+
+/**
+ * Bureau Orders are closed for their overhaul (ruling #159). Hiding the board
+ * is a rendering call; the store is where a reward is real, so the store is
+ * what has to refuse.
+ */
+describe("claimOrder while the orders are closed", () => {
+  beforeEach(resetToKnownState);
+
+  it("pays nothing for an order whose goal is met", () => {
+    usePlayerStore.setState((s) => ({
+      uid: "signed-in",
+      stats: { ...s.stats, pulls: 50 },
+      claimedOrders: {},
+    }));
+    const state = usePlayerStore.getState();
+    const order = getOrder("first-summon");
+    expect(order).toBeDefined();
+    // Met, so it would pay if the board were open.
+    const progress = evaluateOrder(order!, {
+      pulls: state.stats.pulls,
+      bossClears: state.stats.bossClears,
+      presetsSaved: state.presets.length,
+      rosterSize: state.roster.length,
+      accountRank: state.account.rank,
+      characters: state.characters,
+      claimed: state.claimedOrders,
+    });
+    expect(progress.claimable).toBe(true);
+
+    expect(ORDERS_OPEN).toBe(false);
+    expect(usePlayerStore.getState().claimOrder("first-summon")).toBe(false);
+    expect(usePlayerStore.getState().claimedOrders).toEqual({});
+    expect(usePlayerStore.getState().currencies).toEqual(state.currencies);
   });
 });

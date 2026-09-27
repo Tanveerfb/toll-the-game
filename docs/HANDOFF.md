@@ -237,7 +237,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
 78. **Auto Clear instead of auto-battle** (2026-08-13). Auto-battle was proposed and rejected for a concrete reason: *"it would also mean designing a auto battle ai too and that's a big work."* A player-side AI has to handle 27 kits, ally targeting, ult timing and merges, and would be judged against how he plays. **Auto Clear** simulates nothing — it pays a fight's cost and grants its reward, for a fight already beaten. His rules: **1 ticket = 1 fight**, **full stamina per skipped run**, **full reward roll**, **manual clear required first**, **Molvarr only for now**, tickets from Bureau Orders and **5 per account rank gained**, **no cap** on banked tickets. The load-bearing property is the stamina cost: it keeps stamina the only throughput gate, so a ticket buys *time, never resources* — which is what makes full rewards safe rather than exploitable. Spec: `docs/superpowers/specs/2026-08-13-auto-clear-design.md`.
 
-79. **Bureau Orders are stepped, ten to a step** (2026-08-13). *"the exisiting batch of orders are from step 1. once completed all of step 1, step 2 is unlocked and there are new missions. for each step, keep it with 10 missions... the steps can be tabs."* A step opens when every order in the previous one is **claimed**, not merely met — the same rule `requires` uses, and it stops a step unlocking while its last reward is still sitting uncollected. Progress toward a locked step's orders still accrues; only collection waits. One data file per step (`data/orders/step-N.json`), a `step` field on every order, and the ten-per-step rule asserted by test rather than thrown at load, so authoring a step doesn't break the app mid-edit.
+79. **Parked by #159 (2026-09-27): Bureau Orders are closed while he overhauls them, and the steps are part of what he is redesigning.** Removing story's orders had already left eight to a step (2026-09-26). **Bureau Orders are stepped, ten to a step** (2026-08-13). *"the exisiting batch of orders are from step 1. once completed all of step 1, step 2 is unlocked and there are new missions. for each step, keep it with 10 missions... the steps can be tabs."* A step opens when every order in the previous one is **claimed**, not merely met — the same rule `requires` uses, and it stops a step unlocking while its last reward is still sitting uncollected. Progress toward a locked step's orders still accrues; only collection waits. One data file per step (`data/orders/step-N.json`), a `step` field on every order, and the ten-per-step rule asserted by test rather than thrown at load, so authoring a step doesn't break the app mid-edit.
 
 80. **Every fight pays two separate reward lists: first-time-only, and farmable** (2026-08-13). *"from this point onwards, every fight will have two types of rewards payout — first time only and farmable. both will be different."* A first clear pays **both together**; every clear after it pays the farmable list alone. The first-clear bundle is **fixed amounts, never rolled** — his correction: *"first clear rewards aren't supposed to be chance based with amounts."* This is the shape story chapters already used (`firstClear` fixed / `repeat` ranges); the world boss had one roll table doing both jobs, which is how it ended up paying summoning gems on every clear at ~7 runs a day.
 
@@ -833,7 +833,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 
     Confirmed lines and their rejected alternatives are in `.claude/skills/kitwords/EXAMPLES.md`; the roster guards are in `tests/kitDescriptionRules.test.ts`. One consequence: **`"damage reduction"` is now dead glossary vocabulary**, matched by nothing. Left in place for a future kit that wants the noun form.
 
-136. **An ascension trial is a battle road — several fights on one HP bar** (2026-09-16, applies #103 outside story, fills the encounter #127's board left empty). **PROVISIONAL — the structure is still his.** Same day, after the first build: *"I guess this needs more of a personal touch from me so let me think about it and we'll make a structure."* The quotes below are real and the code shipped against them, but he is reconsidering the shape, so **do not treat this entry as settled and do not build on it** until he says. It is recorded rather than dropped because the engine work it drove — the wave runner leaving story, the cancel of the boss reward path for trials — stands whatever structure he lands on. The rank walls have had trials declared since the rank system shipped and **no encounter behind either of them**. Tanveer designed the first one:
+136. **An ascension trial is a battle road — several fights on one HP bar** (2026-09-16, applies #103 outside story, fills the encounter #127's board left empty). **PROVISIONAL — the structure is still his.** **Molvarr's level amended by #158 (2026-09-27):** the trial fields the difficulty-1 world boss, so the level-24 tuning below is history. **The stage-map-node layer he described is on `docs/ROADMAP.md`, unbuilt.** Same day, after the first build: *"I guess this needs more of a personal touch from me so let me think about it and we'll make a structure."* The quotes below are real and the code shipped against them, but he is reconsidering the shape, so **do not treat this entry as settled and do not build on it** until he says. It is recorded rather than dropped because the engine work it drove — the wave runner leaving story, the cancel of the boss reward path for trials — stands whatever structure he lands on. The rank walls have had trials declared since the rank system shipped and **no encounter behind either of them**. Tanveer designed the first one:
 
     > *"Now i would like it to be a series of fights against groups of enemies. I was thinking 3 fights. Starting with a group of 3 npc enemies. 2nd fight would be against a elite enemy but non-boss enemy, lyra? 3rd fight would be against molvarr."*
 
@@ -1352,3 +1352,54 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    - **His rule underneath it** is that the page's two important actions get
      visual weight to match. `ink` exists for the second one beside a
      primary, one per screen.
+
+158. **The First Ascension Trial's Molvarr is the difficulty-1 world boss**
+   (2026-09-27, amends the tuning of #136). Told that the trial authored him at
+   level 24, which the stat-pipeline fix of 2026-09-26 had turned into a 2.2%
+   clear for a Lv20 team, he said:
+
+   > *"in the ascension trial it's the [Molvarr] fight is not level 24 so it's
+   > not difficulty two it's a difficulty one version."*
+
+   (Dictated; "Malwar" in the transcript is Molvarr.)
+
+   **What it changes.** `lib/game/trialEncounters.ts` fields him at
+   `enemyLevelForDifficulty(1)`, level 1, rather than a level of the trial's
+   own, so the trial's boss and the world boss's first difficulty are one
+   fight by construction. Measured, balanced Lv20 team, 60 runs a seed:
+   **98.3% / 93.3% / 98.3%** clear on seeds 11 / 23 / 37, every loss in fight
+   3. A level-1 team still wipes to Lyra in fight 2. The tuning test in
+   `tests/trialEncounter.test.ts`, parked since 2026-09-26 for his playtest,
+   is live again at that band. The level-based "escalates" test went with it:
+   a level-1 two-phase boss after a Lv20 elite is not a weaker fight, and the
+   simulated outcome already asserts fight 3 is where runs are lost.
+
+   **An inference, flagged:** he may have been correcting a description he
+   believed was already true rather than giving an instruction. The code now
+   matches his description either way. His brief of a *"4/10 difficulty
+   feel"* for a Lv20 team (#136) reads easier than that at 93–98%; the
+   simulator plays the player with the enemy AI, so a real clear rate is
+   higher still. Reported, not retuned.
+
+159. **Bureau Orders are closed while he overhauls them** (2026-09-27, parks
+   #79). His words:
+
+   > *"bureau orders will also overhaul them for the time being don't worry
+   > about that But uh, as for now, disable them aka there are no bureau
+   > orders or they are like, you know, over being overhauled. Like send, uh,
+   > keep a message there if you have to, but we'll do that later. Put it in
+   > the roadmap."*
+
+   **What it changes.** One switch, `ORDERS_OPEN` in `lib/game/orders.ts`,
+   now false:
+   - `playerStore.claimOrder` refuses every claim, which is where a reward is
+     real. `tests/playerStoreActions.test.ts` claims a met order and asserts
+     nothing pays; it was proven red by removing the check.
+   - The home tile stays as a static row reading *"Being overhauled. Back in
+     a later update."* The nav chip and the ready-to-claim badge go.
+   - The sign-in page drops its "Bureau Orders unlock" perk, which promised
+     rewards the board could no longer pay.
+
+   **What it keeps.** The authored orders, the evaluator and its tests, and
+   `claimedOrders` in the cloud save, so an order claimed before the close
+   survives it. The overhaul is on `docs/ROADMAP.md`; the design is his.

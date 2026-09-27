@@ -27,7 +27,7 @@ import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
 import { getCurrentStamina, STAMINA_CAP } from "@/lib/game/stamina";
 import { rankProgress } from "@/lib/game/accountRank";
-import { claimableCount, evaluateOrders } from "@/lib/game/orders";
+import { claimableCount, evaluateOrders, ORDERS_OPEN } from "@/lib/game/orders";
 import { firebaseEnabled } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
 
@@ -190,8 +190,9 @@ export default function TopNav() {
   // every screen that leads to a locked panel is nagging, not enticing. The
   // pitch belongs on the home panel, once.
   const canClaimOrders = !firebaseEnabled || !!user;
+  // And on the board being open at all: closed for the overhaul (#159).
   const readyOrders =
-    ready && canClaimOrders ? claimableCount(orderBoard) : 0;
+    ORDERS_OPEN && ready && canClaimOrders ? claimableCount(orderBoard) : 0;
   const rankPercent = progress
     ? Math.min(100, (progress.current / progress.required) * 100)
     : 100;

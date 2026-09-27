@@ -794,6 +794,14 @@ matted clean at 70.0% transparent, zero frame contact.
   neighbourhood; a **per-character LoRA** is what holds a face across the ~4
   artworks each character needs (1 character layer + 2 skills + 1 ultimate =
   **86 skill/ult artworks across the roster**, 50 of which exist and drifted).
-  Training needs the `accelerate` package installed — **not yet approved.**
+  **`accelerate` 1.15.0 is installed** in ComfyUI's `python_embeded` (his
+  go-ahead, 2026-09-27; a dry run showed it added nothing else and torch
+  2.12.0+cu130 was untouched). **That alone does not make training possible**,
+  measured the same day: no training node pack is in `custom_nodes/`, and the
+  comfyui-mcp trainer (`train_doctor`) reports no Docker, no native ai-toolkit
+  install and no `HF_TOKEN`. Choosing the trainer is the first step of the
+  training session: `train_doctor action:"bootstrap"` installs ai-toolkit
+  natively (~10 min, no Docker), and it must train against our SDXL
+  checkpoint (Animagine), not the FLUX default.
 - **Every training image needs his approval before it enters the dataset.** An
   earlier Duke LoRA was trained on unapproved images and came out inconsistent.

@@ -35,7 +35,7 @@ import {
 import { characterCoinId } from "@/lib/game/materials";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import type { Payout } from "@/lib/game/payout";
-import { evaluateOrder, getOrder } from "@/lib/game/orders";
+import { evaluateOrder, getOrder, ORDERS_OPEN } from "@/lib/game/orders";
 import { firebaseEnabled } from "@/lib/firebase";
 import { grantAccountXp } from "@/lib/game/accountRank";
 import {
@@ -993,6 +993,9 @@ export const usePlayerStore = create<PlayerState>()(
 
       claimOrder: (orderId) => {
         const state = get();
+        // Closed for the overhaul (ruling #159). Checked here because this is
+        // where the reward is real; hiding the board is only a rendering call.
+        if (!ORDERS_OPEN) return false;
         const order = getOrder(orderId);
         if (!order) return false;
 

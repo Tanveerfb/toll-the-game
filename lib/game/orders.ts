@@ -96,6 +96,23 @@ const ORDERS: Order[] = z
   .array(orderSchema)
   .parse([...step1Orders, ...step2Orders]);
 
+/**
+ * **Closed while he overhauls them** (Tanveer, 2026-09-27, ruling #159):
+ * *"as for now, disable them aka there are no bureau orders or they are like,
+ * you know, over being overhauled."*
+ *
+ * The one switch. Off, the store refuses every claim, the nav chip and its
+ * badges go, the home tile says why instead of opening the board, and the
+ * sign-in page stops promising rewards it cannot pay. The authored orders and
+ * the evaluator stay as they are, so turning this back on is a data review,
+ * not a rebuild. `claimedOrders` keeps syncing: a claim made before the close
+ * must survive it.
+ */
+export const ORDERS_OPEN = false;
+
+/** What the home tile says while `ORDERS_OPEN` is false. */
+export const ORDERS_CLOSED_NOTE = "Being overhauled. Back in a later update.";
+
 /** Every authored step, ascending. */
 export const ORDER_STEPS: readonly number[] = [
   ...new Set(ORDERS.map((order) => order.step)),

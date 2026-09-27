@@ -23,6 +23,7 @@ import { FIELD_CAP } from "@/lib/game/format";
 import { levelMultiplier, ascensionMultiplier } from "@/lib/game/progression";
 import { maxLevelForAscension } from "@/lib/game/ascension";
 import { simulateRun, clearRate, playerBand } from "@/lib/game/simulate";
+import { enemyLevelForDifficulty } from "@/lib/game/worldLevel";
 
 /**
  * The First Ascension Trial — three fights on one HP bar (Tanveer,
@@ -116,21 +117,21 @@ describe("the shape he asked for", () => {
   });
 
   it("ends on Molvarr, both phases, fought to the end", () => {
-    expect(third.enemies).toEqual([{ id: "molvarr", level: 24 }]);
+    // The difficulty-1 world boss (ruling #158), not a level of its own.
+    expect(third.enemies).toEqual([
+      { id: "molvarr", level: enemyLevelForDifficulty(1) },
+    ]);
     expect(getCharacterById("molvarr")!.phases).toHaveLength(2);
     // He chose the kill over the survive-to-a-threshold option, so the fight
     // must NOT carry an early-victory condition.
     expect(third.victoryAtEnemyHpPercent).toBeUndefined();
   });
 
-  it("escalates — no fight is easier than the one before", () => {
-    const levels = FIRST_ASCENSION_TRIAL.fights.map((w) =>
-      Math.max(...w.enemies.map((e) => e.level ?? 1)),
-    );
-    for (let i = 1; i < levels.length; i += 1) {
-      expect(levels[i]).toBeGreaterThanOrEqual(levels[i - 1]);
-    }
-  });
+  // "Escalates — no fight is a lower level than the one before" lived here
+  // until 2026-09-27. Ruling #158 made Molvarr the difficulty-1 boss, level 1
+  // after a Lv20 elite, and a two-phase boss is not weaker for it: level was
+  // never the measure of a fight. The escalation that matters, that fight 3 is
+  // where runs are lost, is asserted on the simulated outcome below.
 });
 
 describe("the tuning reference is a team the game can produce", () => {
@@ -226,29 +227,28 @@ describe("difficulty is still where it was tuned", () => {
   const BALANCED = ["meliodas", "seras", "leorio", "mustafa"];
 
   /**
-   * PARKED 2026-09-26, pending his playtest.
+   * Parked 2026-09-26 and restored 2026-09-27 at **his** band, ruling #158:
+   * Molvarr here is the difficulty-1 world boss (enemy level 1).
    *
-   * This clear rate (~77%) was measured while Molvarr's second phase ignored
-   * his level (`enterBossPhase` copied raw JSON). With the stat pipeline fixed
-   * (`tests/battleStats.test.ts`) the same team clears **2.2%** at his
-   * authored level 24. Measured, Lv20 balanced team, 180 runs:
+   * History, so the number is not re-litigated: ~77% was measured while
+   * Molvarr's second phase ignored his level (`enterBossPhase` copied raw
+   * JSON). With the stat pipeline fixed (`tests/battleStats.test.ts`) the same
+   * team cleared **2.2%** at the level 24 he was authored at. Measured then,
+   * Lv20 balanced team, 180 runs: Lv1 96.1% · Lv6 79.4% · Lv10 52.8% ·
+   * Lv14 24.4% · Lv18 12.2% · Lv24 2.2%.
    *
-   *   Molvarr Lv1 96.1% · Lv6 79.4% · Lv10 52.8% · Lv14 24.4% · Lv18 12.2% ·
-   *   Lv24 2.2%
-   *
-   * Tanveer, 2026-09-26: *"let me judge if the molvarr fight is too difficult
-   * or not. i will play test it and get back to you"*. The level is his call;
-   * un-skip this with whatever band his answer implies.
+   * At difficulty 1, 60 runs each: **98.3% / 93.3% / 98.3%** on seeds
+   * 11 / 23 / 37, every loss in fight 3. The simulator plays the player side
+   * with the enemy AI, so a real player clears at least as often.
    */
-  it.skip("a level-20 balanced team clears more often than not, but bleeds", async () => {
+  it("a level-20 balanced team clears the difficulty-1 trial", async () => {
     const result = await simulateRun(
       playerBand(BALANCED, 20),
       FIRST_ASCENSION_TRIAL.fights.map((w) => w.enemies),
       { runs: 60, seed: 11, maxTurns: 80 },
     );
     const rate = clearRate(result);
-    expect(rate).toBeGreaterThan(55);
-    expect(rate).toBeLessThan(95);
+    expect(rate).toBeGreaterThan(85);
     // The climax is fight 3, not fight 1 — if that inverts, the escalation broke.
     expect(result.wipesByFight[2]).toBeGreaterThanOrEqual(
       result.wipesByFight[0],

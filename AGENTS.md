@@ -10,7 +10,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # toll-the-game — Project Documentation
 
-Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDOFF.md` first** — context, design rulings ledger, working style. Architecture in `docs/ARCHITECTURE.md`; current state in `docs/STATUS.md`; plan in `docs/ROADMAP.md`; art generation in `docs/ART_PIPELINE.md`.
+Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDOFF.md` first** — context, design rulings ledger, working style. Architecture in `docs/ARCHITECTURE.md`; current state in `docs/STATUS.md` (short, rewritten each checkpoint; history in `docs/archive/`); issues in `docs/issues.md`; plan in `docs/ROADMAP.md`; art generation in `docs/ART_PIPELINE.md`. How this repo diverges from `project-rules.md` is `conventions.md`, and why is `decisions.md`.
 
 **Never block on missing art.** If a feature needs an image the game doesn't have, append a request to `docs/ART_REQUESTS.md`, ship the feature with a fallback, and move on — ComfyUI runs in its own dedicated sessions, and that file is what they read.
 
@@ -269,13 +269,16 @@ yet (`drafts/`, `planned/`, `brainstorm/`), `practice/` and
   sessions that asked for it.
 
 Changing a mirrored file here changes it there on the next session start, so
-nothing in this repo needs to know about the sync. **`author_notes.md` was
-copied there verbatim**, split by stage into `planned/` (Knuckle, Netero) and
-`brainstorm/` (the DBZ set), and those copies are meant to be the live ones; retiring
-this repo's copy is his call and has not been made.
+nothing in this repo needs to know about the sync. **`author_notes.md` lives
+there now, not here.** It was copied verbatim and split by stage into
+`planned/` (Knuckle, Netero) and `brainstorm/` (the DBZ set), and this repo's
+copy was **retired on 2026-09-27**, his call, after every line was checked
+present in the two copies. Its processing log moved to
+`docs/archive/author_notes_report.md`. Kit ideas he has not made official go
+to `toll-kits`, never back into this repo.
 
 **Before drafting or rebalancing any kit, read `docs/design/KIT_DESIGN.md`.** It carries the stat bands, the wording rules, and the constraints that are easy to get wrong: buffs multiply so magnitudes stay small (self-buff 25/50/75, team-wide 20/30/50), one scaling stat per kit including heals, skill ranks never exceed 3, and inflating a stat silently buffs anything that scales off it.
 
 **A new event needs two answers, not one** (ruling #127, 2026-09-01). *When may it be seen* and *when may it be entered* are separate questions, and the events on the board answer them differently — the First Ascension Trial is visible at rank 1 and locked until 20, the Second is withheld entirely until the First is cleared. **Ask him for both before authoring an event**, and expect to ask: he said to log this so the question gets put to him if he forgets to volunteer it. `GameEvent.visibleWhen` carries the first; `requiredRank` and `eventLockReason` carry the second.
 
-**Character stat bands changed on 2026-08-10** (ruling #68): HP now sits at 2900–4000, ATK broadly unchanged, DEF ~1.6x its old value. `data/characters/*.json` is the source of truth — statlines quoted in older docs and in `author_notes.md` predate this.
+**Character stat bands changed on 2026-08-10** (ruling #68): HP now sits at 2900–4000, ATK broadly unchanged, DEF ~1.6x its old value. `data/characters/*.json` is the source of truth — statlines quoted in older docs and in his old author notes (now in `toll-kits`) predate this.

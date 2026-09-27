@@ -720,7 +720,7 @@ export default function BattleArena({
               style={{
                 background:
                   seq.screenFlash.kind === "white"
-                    ? "#ffffff"
+                    ? "var(--foreground)"
                     : FLASH_TINTS[seq.screenFlash.color],
               }}
             />
@@ -968,7 +968,7 @@ export default function BattleArena({
                       top: burst.y,
                       width: size * 0.7,
                       height: size * 0.7,
-                      background: "#ffffff",
+                      background: "var(--foreground)",
                       filter: "blur(1px)",
                       ...vfxShapeStyle(shape),
                     }}
@@ -1014,7 +1014,7 @@ export default function BattleArena({
                 left: seq.sweep.x,
                 top: seq.sweep.y,
                 width: seq.sweep.width,
-                background: `linear-gradient(90deg, transparent, ${getVfxTint(seq.sweep.characterId, FLASH_TINTS[seq.sweep.color])} 45%, #ffffffcc 50%, ${getVfxTint(seq.sweep.characterId, FLASH_TINTS[seq.sweep.color])} 55%, transparent)`,
+                background: `linear-gradient(90deg, transparent, ${getVfxTint(seq.sweep.characterId, FLASH_TINTS[seq.sweep.color])} 45%, color-mix(in srgb, var(--foreground) 80%, transparent) 50%,${getVfxTint(seq.sweep.characterId, FLASH_TINTS[seq.sweep.color])} 55%, transparent)`,
                 filter: seq.sweep.strong ? "blur(2px)" : "blur(1px)",
                 boxShadow: seq.sweep.strong
                   ? `0 0 26px ${getVfxTint(seq.sweep.characterId, FLASH_TINTS[seq.sweep.color])}`
