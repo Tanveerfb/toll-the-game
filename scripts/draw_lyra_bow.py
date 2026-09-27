@@ -92,8 +92,24 @@ def draw_limb(d, upper):
     return pts
 
 
-def render():
-    img = Image.new("RGBA", (W * SS, H * SS), (0, 0, 0, 0))
+GRIP = (CX, 616)  # centre of the leather wrap: where the bow hand closes
+SHELF = (CX + 30, 553)  # arrow rest, above the grip on the string side
+ICE = (196, 30, 44)
+ICE_LIGHT = (255, 120, 120)
+
+
+def render(draw_point=None, arrow=False, canvas=(W, H)):
+    """Draw the bow and return (RGBA image, key points).
+
+    draw_point: where the string is pulled to, in this canvas's pixels (the
+    draw hand). None keeps the string straight at brace, which is the prop.
+    arrow: nock a red-ice arrow at the draw point, resting on the shelf.
+    canvas: output size. Geometry stays in the same pixels; a wider canvas
+    only gives a full draw room to the right of the bow.
+    Skill art composites this onto a posed render (scripts/lora/, 2026-09-27);
+    the design itself is unchanged by either option.
+    """
+    img = Image.new("RGBA", (canvas[0] * SS, canvas[1] * SS), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
 
     class S:  # scale-aware wrapper so the geometry above stays in real pixels
@@ -140,13 +156,55 @@ def render():
 
     # THE STRING: a straight line between the two tips. Drawn, never generated -
     # every one of the eight rolls broke it. Serving whipping at the nock point.
-    s.line([top_pts[-1], bot_pts[-1]], INK, 5.0)
-    s.line([top_pts[-1], bot_pts[-1]], STRING, 2.6)
-    mid = ((top_pts[-1][0] + bot_pts[-1][0]) / 2,
-           (top_pts[-1][1] + bot_pts[-1][1]) / 2)
-    s.line([(mid[0], mid[1] - 46), (mid[0], mid[1] + 46)], LEATHER, 6.0)
+    if draw_point is None:
+        s.line([top_pts[-1], bot_pts[-1]], INK, 5.0)
+        s.line([top_pts[-1], bot_pts[-1]], STRING, 2.6)
+        mid = ((top_pts[-1][0] + bot_pts[-1][0]) / 2,
+               (top_pts[-1][1] + bot_pts[-1][1]) / 2)
+        s.line([(mid[0], mid[1] - 46), (mid[0], mid[1] + 46)], LEATHER, 6.0)
+        nock = mid
+    else:
+        # Drawn: two straight runs, tip -> draw point -> tip. The limbs are not
+        # re-bent; at card scale the flex is not readable and redrawing them
+        # would put the approved silhouette at risk.
+        run = [top_pts[-1], draw_point, bot_pts[-1]]
+        s.line(run, INK, 5.0)
+        s.line(run, STRING, 2.6)
+        nock = draw_point
+    if arrow and draw_point is not None:
+        # Shaft from the nock through the shelf and on past the riser.
+        dx, dy = SHELF[0] - nock[0], SHELF[1] - nock[1]
+        L = math.hypot(dx, dy)
+        ux, uy = dx / L, dy / L
+        # At full draw the head sits just past the riser, as on a real bow; a
+        # longer shaft put the red-ice head off the frame edge (Flash Point v1).
+        tip = (SHELF[0] + ux * 95, SHELF[1] + uy * 95)
+        s.line([nock, tip], INK, 6.0)
+        s.line([nock, tip], (150, 118, 88), 3.2)
+        # fletching: two vanes behind the nock
+        for side in (1, -1):
+            nx, ny = -uy * side, ux * side
+            s.polygon([(nock[0] + ux * 8, nock[1] + uy * 8),
+                       (nock[0] + ux * 58 + nx * 3, nock[1] + uy * 58 + ny * 3),
+                       (nock[0] + ux * 50 + nx * 15, nock[1] + uy * 50 + ny * 15),
+                       (nock[0] + ux * 14 + nx * 12, nock[1] + uy * 14 + ny * 12)],
+                      fill=ICE, outline=INK)
+        # head: a red-ice crystal, her element (lore: "Red Ice")
+        hx, hy = tip
+        nx, ny = -uy, ux
+        s.polygon([(hx + ux * 46, hy + uy * 46),
+                   (hx + nx * 13, hy + ny * 13),
+                   (hx - ux * 10, hy - uy * 10),
+                   (hx - nx * 13, hy - ny * 13)], fill=ICE, outline=INK)
+        s.polygon([(hx + ux * 38, hy + uy * 38), (hx + nx * 5, hy + ny * 5),
+                   (hx - ux * 2, hy - uy * 2)], fill=ICE_LIGHT)
 
-    img = img.resize((W, H), Image.LANCZOS)
+    img = img.resize(canvas, Image.LANCZOS)
+    return img, {"grip": GRIP, "top": top_pts[-1], "bottom": bot_pts[-1], "nock": nock}
+
+
+def main():
+    img, pts = render()
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     outdir = os.path.join(root, 'public', 'props')
     os.makedirs(outdir, exist_ok=True)
@@ -154,7 +212,8 @@ def render():
     img.save(out)
     bb = img.getbbox()
     print("bow drawn", img.size, "content bbox", bb)
-    print("string spans", top_pts[-1], "->", bot_pts[-1])
+    print("string spans", pts["top"], "->", pts["bottom"])
 
 
-render()
+if __name__ == "__main__":
+    main()

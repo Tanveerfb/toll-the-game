@@ -787,6 +787,22 @@ only if that fails.
 opaque pixels on the frame edge, so both would need a second matte anyway. C4
 matted clean at 70.0% transparent, zero frame contact.
 
+**C4's collar was recoloured, not re-rolled** (2026-09-27, `ART_REQUESTS.md`
+D5): `output\lyra_card_c4_collar_00001_.png`. The white frill trim became
+the top's own measured red (median HSV 0.976 / 0.688 / 0.804 over 5,182
+pixels of the top), with each pixel keeping its brightness so the shading
+survives. 2,199 pixels changed; alpha is untouched, so the matte still
+measures 70.0% transparent and 6.05% soft edge. **How the mask was made, and
+what failed first:**
+- **Colour alone cannot find the frill**: her skin is the same near-white,
+  and the shoulder touches the frill. The mask is a **hand-traced polygon**
+  following the frill's own dark outline, with a colour test inside it.
+- **`SAM2Segment` (text-prompted) is broken here**: GroundingDINO fails with
+  `'BertModel' object has no attribute 'get_head_mask'`, a transformers
+  version mismatch.
+- **`BodySegment` and `FaceSegment` are useless on anime art.** They found a
+  few scattered blobs and missed the face entirely.
+
 ### Still open
 
 - **Face identity is the remaining gap** — see below.
@@ -799,9 +815,193 @@ matted clean at 70.0% transparent, zero frame contact.
   2.12.0+cu130 was untouched). **That alone does not make training possible**,
   measured the same day: no training node pack is in `custom_nodes/`, and the
   comfyui-mcp trainer (`train_doctor`) reports no Docker, no native ai-toolkit
-  install and no `HF_TOKEN`. Choosing the trainer is the first step of the
-  training session: `train_doctor action:"bootstrap"` installs ai-toolkit
-  natively (~10 min, no Docker), and it must train against our SDXL
-  checkpoint (Animagine), not the FLUX default.
+  install and no `HF_TOKEN`.
+- **The trainer is installed, but must be run directly — not through
+  `train_start`** (2026-09-27). ai-toolkit is at
+  `C:\Users\Tanve\.comfyui-mcp\training\ai-toolkit` (pinned `a022479`), venv
+  on **Python 3.12.11**, torch **2.9.1+cu128**, which sees the 5060 Ti
+  (`sm_120`). Three things learned getting there:
+  - **`train_doctor action:"bootstrap"` fails on this box.** It built the venv
+    on the default Python, 3.14, and `scipy==1.12.0` has no 3.14 wheel, so pip
+    tried to compile it and died looking for Fortran. The venv was rebuilt with
+    `uv venv --python 3.12 --seed venv`, then torch from the cu128 index and
+    `requirements.txt` with `uv pip`. `py -3.12` points at a missing
+    `C:\Python312`; uv's managed 3.12 is the one that exists. A harmless
+    `sitecustomize` warning about `pip_system_certs` prints on every launch.
+  - **`train_start` can only train FLUX.1-dev** (its `model` enum has one
+    value), and FLUX is wrong twice over here: our art is Animagine (SDXL),
+    and its preset wants 24 GB against this card's 16. **ai-toolkit itself
+    trains SDXL** (`model.is_xl: true`, `name_or_path` at the checkpoint file),
+    so the plan is a hand-written config run as
+    `venv\Scripts\python.exe run.py <config>.yaml`.
+  - **Proven by a run on 2026-09-27**, after three more fixes, all needed
+    because of Avast's HTTPS scanning or a version slip:
+    - **torchaudio.** `requirements.txt` pulled 2.11 against torch 2.9.1, so
+      its DLL would not load. Pinned to `2.9.1+cu128`.
+    - **`no OPENSSL_Applink` crash.** Avast sets `SSLKEYLOGFILE` machine-wide,
+      and this Python aborts on its first TLS connection while it is set.
+      albumentations' import-time update check was the first to trip it
+      (`NO_ALBUMENTATIONS_UPDATE=1` turns that check off).
+    - **Certificate failures.** Hugging Face downloads rejected Avast's root
+      certificate until `pip-system-certs` went into the venv. **Launch
+      through `C:\Users\Tanve\.comfyui-mcp\training\train.sh <config>`**,
+      which applies all three. He then added URL exceptions in Avast for
+      Hugging Face, PyTorch and PyPI (2026-09-27), so downloads are no longer
+      intercepted. The wrapper stays anyway.
+- **Lyra v1 learned almost nothing, and why** (2026-09-27). Settings were
+  rank 16, alpha 8, lr 1e-4, EMA 0.99, 1,500 steps, 24 approved images. At
+  step 750 the LoRA had learned only "red": the outfit drifted red and her
+  hair went *red*, not blue. **Checked in ComfyUI, not only in ai-toolkit's
+  samples**, with the same seed with and without the LoRA: the effect was
+  close to nil. Cause: two settings each damp the update. Alpha/rank = 0.5
+  halves it, and EMA 0.99 makes the saved weights lag. Stopped at 750. Also,
+  ai-toolkit's `ddpm` sample sampler is marked possibly unsupported in its
+  own code (`toolkit/sampler.py`), so v2 samples with `euler_a`.
+- **Lyra v2 works** (2026-09-27): rank 32, alpha 32, lr 2e-4, no EMA,
+  2,000 steps, same dataset and captions (`configs/lyra_sdxl_lora_v2.yaml`),
+  ~55 min at 1.4–1.6 s/step, 10.3 GB VRAM. Checkpoints every 250 steps in
+  `runs\lyra_toll_v2\`; 750–2000 are copied to ComfyUI
+  `models\loras\training\`. What was measured:
+  - **Trigger word alone** (`lyratoll, 1girl, portrait`, no description)
+    draws her dark-blue high ponytail, red frilled top, boots and violet-red
+    eyes from step 1000 on. The untrained baseline draws unrelated
+    characters. **One consistent miss: her skirt comes out red.** Captions
+    leave the outfit out on purpose, and the dataset is flattened on white, so
+    a white skirt on a white ground is what it learned weakest. The production
+    prompt names the skirt, so this does not bite in use.
+  - **Production-style test**: C4's full identity prompt in three situations
+    absent from the dataset (running in a field, sitting on a wall at night,
+    a wind-blown close-up), same seeds. **Today's method (IP-Adapter face
+    ref) got the skirt wrong in 3 of 6** (black). **The LoRA at 1250, 1500,
+    1750 and 2000 got it right in 24 of 24**, with top, collar, bracers,
+    gloves, boots and ponytail right in every image. LoRA strength 0.9, no
+    IP-Adapter.
+  - **1500 to 2000 look nearly identical.** **He picked 1500** (2026-09-27:
+    *"go with 1500, 1750 is a very close second too"*). It is installed as
+    ComfyUI `models\loras\lyra_toll.safetensors`. 1750 stays in
+    `models\loras\training\` as the fallback.
+  - **One flaw seen on the LoRA side:** in 2 of the 6 step-1500 images the
+    frilled collar has a pink or magenta cast, not crimson.
+
+### Weapons are allowed in card art again (2026-09-27) — amends #151
+
+After seeing 7DSGC's UR card art (Lancelot's slung bow, Skuld's giant
+crescent blade), his words: *"you could use some weapons in card arts
+yes?"* **Ruling #151 took weapons out of character art. This puts them
+back**, and the reason #151 existed (diffusion cannot draw a held bow) no
+longer applies: the bow is drawn in code and composited. It can be held (the
+Flash Point method) or slung on her back (a composite behind the matte).
+Filed as **ruling #160**, with a back-link on #151.
+
+### Lyra kit art with the LoRA (2026-09-27, paused mid-way at his call)
+
+His bar for kit art: *"we don't need perfection for the kit arts as they will
+be small resolution when viewed."*
+
+| piece | status | file |
+| --- | --- | --- |
+| Card art (portrait) | **C10, his pick**, installed | `public/characters/lyra.png`, `ART_VERSION` 15 |
+| Card pose C4, collar fixed | approved, in the card folder (not wired to any screen) | `public/characters/cards/lyra_pose_c4.png` |
+| Flash Point | **approved with a red-ice aura** (*"i like the red ice aura version"*), installed. Background is still the prompted red, not yet the drawn class-colour layer | `public/characters/skills/lyra__flash-point.png` |
+| Supercooling (passive) | **Q07, his pick**; bow still to be added (slung on her back, pending his yes); no passive-art slot exists in code | `ComfyUI output\lyra_kit\passive2_*` |
+| Shatterburn | **approved** (*"its not perfect and doesn't need to be so i will take it"*), installed. The first fully layered card: purple attack-debuff background drawn from the token, red aura, glowing arrow, scattered particles | `public/characters/skills/lyra__shatterburn.png` |
+| Latent Heat | not started | — |
+
+**The bow hand, learned on Shatterburn (2026-09-27): an archer's bow hand is
+NOT a fist.** The grip sits in the web between thumb and index finger, with
+the fingers wrapped round the handle. His correction: *"her left hand should
+be holding the center of the bow and not be a fist"*. Four attempts:
+1. **A rendered fist with the drawn bow behind it** (Flash Point and the first
+   Shatterburn). This reads as a punch next to a stick. **Flash Point still has
+   this flaw.**
+2. **Inpainting the hand around a composited bow** (`grip_pass.py`, 0.72 and
+   0.85). The fingers came out mangled (*"her hand is mangled up"*).
+3. **Prompting "back of the hand to the viewer"** (option C). Useless: the
+   words turned into red hand-shaped blobs across the background, and no
+   render showed the back of a hand.
+4. **WHAT WORKS: render her HOLDING a bow** (option A,
+   `shatterburn_gen_a.py`). The model draws a natural grip because a bow is
+   really there. Then `compose_shatterburn_a.py` does the swap:
+   - cut the model's bow out of the matte (colour near the bow, plus
+     everything right of her body except her hair);
+   - place the locked drawn bow on the model's grip point, lean and arrow
+     line;
+   - paste her hand back over the new riser, with the model's grip recoloured
+     to the drawn bow's leather.
+
+   This is the method for every future bow shot. Known leftovers are specks
+   along the aura edge and a small grip fragment, acceptable at card size.
+
+**The bow method (worked on Flash Point):**
+1. Draw an OpenPose skeleton so both hands land where the composite needs
+   them.
+2. Render with the LoRA plus ControlNet 0.78/0.85, and `bow`, `arrow` and
+   `bowstring` in the negative. The model then poses her hands with no bow.
+3. `scripts/draw_lyra_bow.py` `render(draw_point, arrow=True, canvas)` draws
+   the locked bow with the string pulled to the draw hand and a red-ice
+   arrow. The default output stays pixel-identical to `lyra_bow.png`
+   (verified). Scale it, rotate it perpendicular to the bow arm, and put the
+   grip on the fist.
+4. **Paste the original fist and glove pixels back over the bow**, so the
+   riser passes behind her fingers.
+
+**Aura** (2026-09-27, his reaction: *"ooo i like it"*):
+`scripts/bow_composite/aura.py <image> <matte> <out> <core rgb> <edge rgb>
+[height]`. It is drawn behind the figure from the BiRefNet-HR-matting cut-out,
+and it is an effect layer (layer 3 of the skill-art stack). Flash Point uses
+core `255,200,205` and edge `220,20,45`. **Known limits:** the flame tops are
+jagged spikes, not Dragon Ball's tapered tongues, and a red aura on a red
+attack card is low-contrast, although he picked red anyway.
+`arrow_fx.py` draws three arrow effects (glow, ice shards, streaks). Samples
+were shown and none was picked, because the aura won.
+
+**Tried and dropped:** a masked img2img finger pass at 0.55 denoise. It kept
+the bow in front of the hand in all four variants. The prototype scripts are saved as-is in `scripts/bow_composite/`:
+`archer_pose.py`, `flashpoint_gen.py`, `bow_composite.py`, `fist_over.py`,
+and `lyra_kit_gen.py` for the card and passive batches. Their output paths
+still point at the old session scratchpad. Tidy them into one tool when
+Shatterburn and Latent Heat are built. The Flash Point hand coordinates
+were: fist (120, 392), draw hand (530, 372), scale 0.88, tilt 6.5°, fist
+box (72, 342)–(168, 438).
+
+### Character LoRA recipe — APPROVED, frozen (2026-09-27)
+
+Drafted from the Lyra run and **approved by him the same day** (*"approve
+the recipe"*). Per his rule, one method for every character: run it as
+written, and treat any change to it as his decision.
+
+1. **Dataset, about 24 images, every one approved by him.** His two approved
+   images (the card pose and the A-pose), about 11 body shots and about 11
+   head-and-shoulders close-ups.
+   - Generate with the character's identity prompt plus the IP-Adapter face
+     reference at 0.6, no ControlNet, white background.
+   - **Body shots at 832×1216. Close-ups at 1024×1024 with the lower-body
+     garments REMOVED from the prompt**, and `multiple girls, multiple views,
+     lower body` in the negative. Leaving them in crammed two figures into a
+     square.
+   - Claude filters for defects first (wrong garment colour, extra figure,
+     props, halos, crop errors), then he approves.
+2. **Captions:** `<trigger>, 1girl, solo, <framing, pose, expression>, white
+   background`. Hair, eyes and outfit are left out so the trigger absorbs
+   them. Trigger is `<id>toll` (`lyratoll`). Images are flattened onto white.
+3. **Trainer:** `configs/lyra_sdxl_lora_v2.yaml` with only the name, trigger
+   and dataset path changed. Animagine XL 4.0, rank 32, alpha 32, lr 2e-4,
+   no EMA, 2,000 steps, save every 250. Launch with `train.sh`.
+4. **Pick the checkpoint in ComfyUI, not from ai-toolkit's samples.** Run the
+   identity prompt plus trigger in three situations absent from the dataset,
+   same seeds, against today's IP-Adapter method (`lora_test2.py` in the
+   session scratchpad; to be moved into `scripts/` if the recipe is
+   approved). Take the earliest checkpoint whose results match the later
+   ones.
+5. **Use:** trigger plus the full identity prompt, LoRA strength 0.9, no
+   IP-Adapter.
+- **One training method for every character, fixed after Lyra** (Tanveer,
+  2026-09-27): *"we will have to find and select a training method once lyra
+  batch is done. we will use the same method for all others ... we have to be
+  consistent and efficient moving forward."* Lyra is the tuning run. Whatever
+  settles there (dataset recipe, caption scheme, trainer config, checkpoint
+  choice) is written down as the recipe, and every later character runs it
+  unchanged. A change to the recipe is a decision for him, not a per-character
+  tweak.
 - **Every training image needs his approval before it enters the dataset.** An
   earlier Duke LoRA was trained on unapproved images and came out inconsistent.

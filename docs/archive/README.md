@@ -8,6 +8,10 @@ holds it verbatim. Moved here from `docs/STATUS.md` on 2026-09-27.
   "Working" feature log and the session logs of 2026-09-26c, 2026-09-26d and
   2026-09-27.
 
+## Session log — 2026-09-27c
+
+The ComfyUI session: Lyra's LoRA, card and skill art, rulings #160–#161 — [`STATUS-2026-09.md`](STATUS-2026-09.md).
+
 ## Session log — 2026-09-27b
 
 Combat Terminal deleted, Bureau Orders closed, the fleet standard adopted — [`STATUS-2026-09.md`](STATUS-2026-09.md).

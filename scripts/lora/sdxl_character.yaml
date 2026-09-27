@@ -1,0 +1,66 @@
+---
+# Character LoRA template: the frozen recipe (Lyra v2, approved 2026-09-27).
+# Replace ONLY <ID> and <TRIGGER>; any other change is his decision.
+# Face-identity LoRA on Animagine XL 4.0 (SDXL). Hand-written because the
+# comfyui-mcp train_start flow only offers FLUX.1-dev (docs/ART_PIPELINE.md).
+# Save as C:\Users\Tanve\.comfyui-mcp\training\configs\<ID>_sdxl_lora.yaml and run
+# train.sh configs/<ID>_sdxl_lora.yaml. Every dataset image is one he approved.
+job: extension
+config:
+  name: "<ID>_toll_v1"
+  process:
+    - type: "sd_trainer"
+      training_folder: "C:\\Users\\Tanve\\.comfyui-mcp\\training\\runs"
+      device: cuda:0
+      trigger_word: "<TRIGGER>"
+      network:
+        type: "lora"
+        linear: 32
+        linear_alpha: 32
+      save:
+        dtype: float16
+        save_every: 250
+        max_step_saves_to_keep: 8
+        push_to_hub: false
+      datasets:
+        - folder_path: "C:\\Users\\Tanve\\.comfyui-mcp\\training\\datasets\\<ID>_v1"
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05
+          shuffle_tokens: false
+          cache_latents_to_disk: true
+          resolution: [768, 1024]
+      train:
+        batch_size: 1
+        steps: 2000
+        gradient_accumulation_steps: 1
+        train_unet: true
+        train_text_encoder: false
+        gradient_checkpointing: true
+        noise_scheduler: "ddpm"
+        optimizer: "adamw8bit"
+        lr: 2e-4
+        ema_config:
+          use_ema: false
+          ema_decay: 0.99
+        dtype: bf16
+      model:
+        name_or_path: "E:\\Installed\\ComfyUI_windows_portable\\ComfyUI\\models\\checkpoints\\animagineXL40_v4Opt.safetensors"
+        is_xl: true
+      sample:
+        sampler: "euler_a"
+        sample_every: 250
+        sample_start_step: 0
+        width: 832
+        height: 1216
+        prompts:
+          - "<TRIGGER>, 1girl, solo, portrait, close-up, looking at viewer, white background"
+          - "<TRIGGER>, 1girl, solo, full body, standing, white background"
+          - "<TRIGGER>, 1girl, solo, upper body, three-quarter view, smiling, outdoors"
+        neg: "worst quality, low quality, blurry, bad anatomy, child, loli"
+        seed: 42
+        walk_seed: true
+        guidance_scale: 6
+        sample_steps: 25
+meta:
+  name: "[name]"
+  version: "1.0"

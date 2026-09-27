@@ -1104,7 +1104,8 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    nothing is renamed without him — #65 is untouched by this.
 
 
-151. **A weapon is its own asset; character art does not carry it** (2026-09-21,
+151. **Amended by #160 (2026-09-27): weapons may appear in card art again, drawn and composited.** The "weapon is its own asset" half stands.
+   **A weapon is its own asset; character art does not carry it** (2026-09-21,
    adopted from Genshin after comparing it against Dokkan, governs
    `docs/ART_PIPELINE.md` and every future character render). Researching how
    other games handle a weapon on a character card, he settled the route:
@@ -1403,3 +1404,43 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    **What it keeps.** The authored orders, the evaluator and its tests, and
    `claimedOrders` in the cloud save, so an order claimed before the close
    survives it. The overhaul is on `docs/ROADMAP.md`; the design is his.
+
+160. **A weapon may appear in card art, drawn and composited, never generated**
+   (2026-09-27, amends #151). After studying 7DSGC's UR card art (Green
+   Lancelot's bow slung on his back, Skuld's giant crescent blade), his words:
+   *"you could use some weapons in card arts yes?"* #151 removed the weapon
+   because diffusion cannot draw a held bow. That reason is now met another
+   way: the locked bow is drawn in code (`scripts/draw_lyra_bow.py`) and
+   composited, either held (option A below) or slung on the back behind the
+   matte. **What stands from #151:** the weapon is its own asset, drawn once,
+   and never generated. **The bow hand is not a fist.** His correction on
+   Shatterburn: *"her left hand should be holding the center of the bow and
+   not be a fist"*. The working method is to render the character holding a
+   bow, then swap the model's bow for the drawn one (`docs/ART_PIPELINE.md`,
+   "The bow hand").
+
+161. **A skill card's background is its skill class's colour; ultimates and
+   passives are free** (2026-09-27, from 7DSGC, walked through on his
+   Discord). His words: *"if you look at a red one that means it's an attack
+   skill ... if it's a yellow ... that's a stance skill ... blue for buffs
+   green for healing skills and purple for ... debuff or attack debuff
+   skills"*, and *"ultimate and passive actually don't follow that so they
+   can be any color any pose ... it's only the skills that reflect the
+   type"*. The map is #133's (`lib/game/skillTypeStyle.ts`). **Replaces the
+   element-colour background of `docs/design/SKILL_ART_PLAN.md`.**
+   - **Layered, with the background drawn in code:** offered layered or
+     prompted, he chose layered, *"better quality and more consistency across
+     the game"* (a selection among options Claude offered). The drawer is
+     `scripts/skill_art/draw_class_bg.py`, and it reads the tokens, so it
+     restates no colour.
+   - **All kit art stays tall,** passives included (his pick over 7DS's
+     square passives).
+   - **Each character has one signature aura:** *"unique per character ...
+     can be shown in passive, skills, ultimates, card artwork but not always
+     and not everywhere at once"*.
+   - **Pose and shot are free.** He corrected Claude's reading of composition
+     rules into the reference: *"the poses can be anything ... it just the
+     background"*.
+
+   Evidence: eleven skill sets and eight UR cards,
+   `docs/design/research/7dsgc-skill-art.md`.

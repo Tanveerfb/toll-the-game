@@ -1,0 +1,14 @@
+{
+  "id": "lyra",
+  "trigger": "lyratoll",
+  "face_ref": "lyra_head_ref.png",
+  "identity": "masterpiece, best quality, absurdres, 1girl, solo, mature adult woman, late 20s, slender athletic build, (dark blue hair, very long high ponytail:1.3), (violet red eyes:1.2), (crimson red sleeveless top with a (crimson red frilled collar:1.2) and frilled shoulders:1.1), bare arms, gold bracers, dark red fingerless gloves, (short white pleated skirt:1.4), (crimson ankle boots:1.2)",
+  "identity_upper": "masterpiece, best quality, absurdres, 1girl, solo, mature adult woman, late 20s, (dark blue hair, very long high ponytail:1.3), (violet red eyes:1.2), (crimson red sleeveless top with a (crimson red frilled collar:1.2):1.1), bare shoulders",
+  "negative_extra": "child, loli, teenager, (long skirt:1.2), (red skirt:1.3), (blue skirt:1.2), white shirt, (white collar:1.2), thigh-high boots, thighhighs",
+  "approved_refs": [
+    "output/lyra_card_c4_collar_00001_.png",
+    "input/lyra_v7_pick.png"
+  ],
+  "lora": "lyra_toll.safetensors",
+  "lora_checkpoint": 1500
+}

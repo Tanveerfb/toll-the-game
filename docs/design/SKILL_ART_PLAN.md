@@ -1,5 +1,57 @@
 # Skill Art Generation Plan (ComfyUI)
 
+> **Background colour = skill class** (Tanveer, 2026-09-27, walking Claude
+> through 7DSGC's skill art on his Discord). *"if you look at a red one that
+> means it's an attack skill ... if it's a yellow ... that's a stance skill
+> ... blue for buffs green for healing skills and purple for ... debuff or
+> attack debuff skills."* And: *"the poses can be anything ... it just the
+> background."* That is the same map as ruling #133 (`lib/game/skillTypeStyle.ts`:
+> attack red, attackDebuff purple, heal green, buff blue, stance yellow), so a
+> skill's art takes the class that file computes. **This replaces the
+> element-colour background below** (`dark ELEMENT-COLOR gradient`); the
+> element now shows only as the power hint. **Pose and shot are free.** Claude
+> first read composition rules into four 7DSGC sets ("attacks are a small
+> figure on the diagonal", "support is symmetrical"), and he corrected that:
+> only the colour is a rule. Five sets were seen (Cruel Nightmare Meliodas,
+> Skuld, Aqua, Darkness, Christmas Queen Elizabeth), and Elizabeth's skill 2
+> confirmed blue for a buff. **Ultimates and passives are free**, in his
+> words: *"ultimate and passive actually don't follow that so they can be any
+> color any pose ... it's only the skills that reflect the type."* An
+> ultimate's art does NOT take its class colour, although its card frame
+> still shows its class glyph (`skillTypeStyle.ts`).
+>
+> **The character's own power shows as effects on top of the class colour,
+> and they are optional** (his words: *"sometimes they show it here
+> sometimes they don't"*). Snowflakes, hearts, orbs: for Lyra, red-ice
+> shards; for Duke, water particles. A sword-wielding ice user (a sixth set)
+> carried it **in the weapon's slash trails**, icy cyan-white arcs over the
+> red attack background, not as floating particles. So the power can travel
+> with the move itself; for Lyra, a red-ice trail behind the arrow.
+>
+> **Skill art is LAYERED, and code draws the background** (his pick,
+> 2026-09-27, from options Claude offered: *"layered bgs would be better
+> quality and more consistency across the game"*). Four layers:
+> 1. **Background:** drawn in code in the class-colour tokens from
+>    `skillTypeStyle.ts`, with radial speed lines, so every card of a class is
+>    the identical colour.
+> 2. **Character:** the LoRA render, matted.
+> 3. **Effect:** the character's power.
+> 4. **Weapon:** drawn, where one appears.
+>
+> **Aura: a unique signature per character, used sometimes, never
+> everywhere** (Tanveer, 2026-09-27): *"unique per character and yes, but not
+> limited to powered moves. can be shown in passive, skills, ultimates, card
+> artwork but not always and not everywhere at once."* Each character gets
+> one aura (colour and shape, `scripts/bow_composite/aura.py`) that may
+> appear on any of their pieces. Pick per piece; do not stamp it on all five.
+> Lyra's is red ice, first used on Flash Point. The rough flame edge is fine
+> for kit art: he declined the refinement, *"no need for kit arts"*.
+>
+> Ultimates and passives are generated whole. **All kit art stays tall
+> (832×1216) like the rest of our art**, passives included. His pick; 7DS's
+> passives are square, and we are not copying that. The research behind all
+> of this is in `docs/design/research/7dsgc-skill-art.md`.
+
 **Status:** Planned 2026-07-24. NOT started — this is the plan only, no generation run yet.
 
 ## Why

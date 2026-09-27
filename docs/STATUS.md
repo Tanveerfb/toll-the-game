@@ -1,4 +1,4 @@
-# Status — 2026-09-27
+# Status — 2026-09-27 (evening)
 
 **Who updates this:** every checkpoint, by **rewriting** it, never appending
 (`project-rules.md` §2; his call, `decisions.md` 2026-09-27). It holds the
@@ -10,94 +10,65 @@ current position only. A session's log goes to
 
 ## Start here
 
-**State:** Shōnen Ink is on every screen, and Combat Terminal is deleted
-(phase 5; `tests/uiTokens.test.ts` keeps it out). The battle is a split page
-(#156). Bureau Orders are closed for an overhaul (#159). The trial's Molvarr
-is the difficulty-1 boss (#158). The repo was audited against the fleet
-standard: see [`conventions.md`](../conventions.md) and
-[`decisions.md`](../decisions.md). Last checkpoint: the commit after
-`957d18e`, "Retire Combat Terminal, close Bureau Orders, adopt the fleet
-standard" (`git log -1`).
+**State:** the game is unchanged since `c2e3399` except for Lyra's art. This
+session was a ComfyUI session: Lyra has a trained face LoRA, a new card
+portrait, two new skill arts and a fixed C4 collar. Two rulings were filed:
+#160 (weapons may appear in card art, drawn and composited) and #161 (a skill
+card's background is its class colour). Last checkpoint: the commit after
+`c2e3399` (`git log -1`).
 
-**Next: the ComfyUI session, once he has compacted this conversation and
-comes back** (2026-09-27: *"we'll actually do the comfy session now uh, but
-uh, that would be after I come back to you"*, then *"after i compact you"*).
-In order:
-1. **Set up a trainer.** `accelerate` is installed, but nothing trains yet:
-   no training node pack, and `train_doctor` reports no Docker and no native
-   ai-toolkit. `train_doctor action:"bootstrap"` is the no-Docker route
-   (~10 min). It must train against Animagine (SDXL), not the FLUX default.
-   Details in `docs/ART_PIPELINE.md`, "Still open".
-2. **Lyra's C4 collar**, `docs/ART_REQUESTS.md` entry **D5**: recolour or
-   mask-inpaint the collar crimson on the approved render; never re-roll.
-3. **Per-character LoRA** for face identity. **Every training image needs
-   his approval before it enters a dataset** (an unapproved Duke set failed).
+**Next: finish Lyra's kit art, paused at his call** (the table in
+`docs/ART_PIPELINE.md`, "Lyra kit art with the LoRA"). In order:
+1. **Latent Heat**, the ultimate, generated whole (free colour, free pose):
+   a red-ice arrow storm, Gowther-style.
+2. **Supercooling**, passive Q07 (his pick): add the drawn bow slung on her
+   back.
+3. **Flash Point** still has a fist on the bow. Re-do it with the option-A
+   hand method if he wants it.
+4. Optional: the C4 upgrade (slung bow and aura).
 
-`get_system_stats action:"health"` before anything. ComfyUI is Claude's to
-drive; bring him images and decisions, filtered first.
-
-**After that:** a mobile pass on the battle screen's components, which he
-asked for the same day (*"especially in the battle ... UI screen that need
-the touch and optimization for mobile"*), one screen per `mobilecheck` run.
-His battle **flow** changes are separate and wait for him (`ROADMAP.md`).
+ComfyUI is Claude's to drive; filter output, then bring images with a
+recommendation. `get_system_stats action:"health"` first.
 
 **Blocked on him:**
-- Building the name **Roused** for Molvarr's second phase (a heading on phase
-  2 in `molvarr.json`, which is his file).
-- Where the closed Orders tile sits: it leads the home screen today.
-- Recolouring the app icon, which is still in the old void and cyan.
-- The foundation audit's next section (`Plans/2026-09-26-foundation-audit.md`).
-- Scheduling the folder migration and the sentence-case change
-  (`conventions.md`, both his picks and both queued).
+- Which screens show Lyra's full-body C4 card (the card slot is his pick,
+  not yet built; `docs/ART_REQUESTS.md` D5).
+- Carried over: building "Roused" (Molvarr phase 2), where the closed Orders
+  tile sits, recolouring the app icon, the foundation audit's next section,
+  and scheduling the folder migration and sentence case.
 
-**Don't trust:** taste on any screen, which is his. See **Confidence and gaps**.
+**Don't trust:** taste on any art is his. See **Confidence and gaps**.
 
 ## Confidence and gaps
 
-Rewritten every checkpoint. **This section is what stops the rest of the
-docs being read as uniformly solid.**
+### Verified on 2026-09-27 (evening), by running it
 
-### Verified on 2026-09-27, by running it
-
-- `npm run check`: **1,478 passed, 0 skipped / 124 files**, typecheck and
-  lint clean. The count fell from 1,521 because `uiTokens` swapped 54
-  per-file cases for 10 tree-wide guards.
-- `npm run test:browser`: **17 / 3 files**. A production build to
-  `.next-verify` is clean.
-- **Guards falsified:** the legacy-token, font-size and raw-hex guards went
-  red on a planted component plus the old `globals.css`. The closed-orders
-  store test went red with its check removed.
-- **Trial tuning at difficulty-1 Molvarr:** 98.3% / 93.3% / 98.3% on seeds
-  11 / 23 / 37 (Lv20 balanced team, 60 runs each); a level-1 team still fails.
-- **Home at 375px:** the Orders tile reads "Being overhauled…", no Orders
-  control remains, and nothing scrolls sideways.
-- **Earlier the same day:** a live 4v4 at 390×844 and the character page at
-  390 and 1280 (archive log for 2026-09-27).
-- **toll-kits:** the heredoc hook blocks a `<<` command (exit 2) and passes
-  `ls` (exit 0); pushed as `9d1f51d`.
+- `npm run check`: **1,478 passed / 124 files**, typecheck and lint clean,
+  after the only code change, `ART_VERSION` 14 to 15.
+- **The LoRA trainer works:** `lyra_toll_v2` trained 2,000 steps on 24
+  images he approved. Checked in ComfyUI against today's IP-Adapter method on
+  three situations absent from the dataset: skirt right in 24 of 24 against
+  3 of 6. He picked step 1500.
+- `draw_lyra_bow.py`'s default output is **pixel-identical** to the approved
+  `lyra_bow.png` after the draw and arrow options were added (checked twice).
 
 ### Believed but NOT verified
 
-- **Taste** on every screen. He reported the design and font *"looks good on
-  the phone now"*; that is his pass, not a measurement.
-- **Not seen on screen:** the ultimate cut-in, the phase-break banner and a
-  Victory card.
-- **Not opened:** the signed-in profile page and its dialogs; the sign-in page
-  without its Orders perk.
-- **Training:** `accelerate` imports with CUDA, but no trainer is set up
-  (`docs/ART_PIPELINE.md`).
+- **The new art has not been seen in the game.** `lyra.png` (C10), Flash
+  Point and Shatterburn were checked as images, not on a screen. Cache-busting
+  relies on `ART_VERSION` 15.
+- The recipe's reuse on a second character is untested; Lyra is the only run.
 
 ### Untested by anything
 
-- A reload **between** two trial fights still loses the run (a gap in #153).
-- `worldBossPreview.ts` and `immunity.ts` have no test.
-- No screen flow is tested (audit S2).
-- The SFX files don't exist: `/audio/sfx/hit.ogg` 404s in battle.
+- Carried over: a reload between two trial fights loses the run;
+  `worldBossPreview.ts` and `immunity.ts` have no test; no screen flow is
+  tested; the SFX files do not exist.
 
 ### What I would check first coming back cold
 
-1. `git status` and `git log -3`: anything uncommitted is either his or a
-   session that ended before a checkpoint.
-2. `conventions.md` before any structural change: two big migrations are
-   queued, not started.
-3. `docs/design-system.md` before touching any screen.
+1. `git status` and `git log -3`.
+2. `docs/ART_PIPELINE.md`: the kit art table, "The bow hand" and "Character
+   LoRA recipe" (frozen) before any ComfyUI work.
+3. `docs/design/SKILL_ART_PLAN.md` (rulings #160, #161 at the top) before any
+   skill art.

@@ -486,8 +486,23 @@ that lands where the component expects it. What is being requested is the
   is today's primary and `lib/game/characterArt.ts` already serves it, so
   replacing that file is the whole registration.
 - **Fallback, already shipping:** the current `lyra.png`. Nothing is blocked.
-- **Status:** `open`. **Held for a ComfyUI session he runs with Claude**
-  (2026-09-27: *"we'll focus on comfy session soon"*). Do it then, not before.
+- **Status:** `approved, not yet placed` (2026-09-27). His verdict: *"It
+  looks good to me. perfect even."* Recoloured by mask, not re-rolled:
+  `output\lyra_card_c4_collar_00001_.png`. The matte is unchanged (alpha
+  untouched). How it was done is in `docs/ART_PIPELINE.md`, under "C4 is the
+  design". **Not touched:** the small white-and-black checked V at the front
+  of the neckline, which reads as a separate piece from the frill. He called
+  the result perfect with it left as is.
+- **Where it lands (his pick, 2026-09-27; a selection, not his words):**
+  offered three placements, he chose **a new card slot**. **`lyra.png` stays
+  her square portrait everywhere.** C4 becomes a separate card file, shown only
+  on screens where a full-body card belongs. **Superseded:** the "Lands at"
+  line above assumed C4 would replace `lyra.png`, which is what this choice
+  rules out. The reason: all 18 portraits are 1024×1024 opaque squares, about
+  15 screens crop them as square tiles (`object-cover object-top`), and C4 is
+  an 832×1216 cutout. **Still open, and his:** which screens show the card.
+  Building the slot (a card getter in `lib/game/characterArt.ts`, with the
+  portrait as fallback) waits on that answer.
 - **Requested:** 2026-09-27, from his review of the Lyra card-pose pass.
 
 ---
