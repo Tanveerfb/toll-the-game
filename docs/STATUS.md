@@ -1,4 +1,4 @@
-# Status — 2026-09-28
+# Status — 2026-10-02
 
 **Who updates this:** every checkpoint, by **rewriting** it, never appending
 (`project-rules.md` §2; his call, `decisions.md` 2026-09-27). It holds the
@@ -10,100 +10,86 @@ current position only. A session's log goes to
 
 ## Start here
 
-**State:** The game logic is unchanged since `c2e3399`; only art and where
-art lives changed.
-- **Lyra's kit art is complete:** portrait, the C4 card pose, Flash Point,
-  Shatterburn, Latent Heat, and Supercooling as `passive.png`.
-- **All game art now lives in per-unit folders,** `public/characters/<color>_<id>/`
-  (ruling #162).
-- **Two new rulings:** #162 (the folders) and #163 (art obeys world physics,
-  signature effects are not forced, and when his ask fails, stop and bring
-  options).
-- Last checkpoint: `git log -1`. This session's log:
-  `docs/archive/STATUS-2026-09.md`, 2026-09-27d.
+**State:** Three new units are game-ready but **not live**: blue Lyra, Caila
+and green Duke (`"unreleased": true`, ruling #171). They show only under
+`next dev`. The engine gained Freeze, [Cold], the ultimate seal and a team
+counter (#164–#167). Last checkpoint: `git log -1`. This session's log:
+`docs/archive/STATUS-2026-10.md`.
 
-**Next:** his call. He closed the ComfyUI run (*"we're done for all config
-sessions until uh, uh, next time"*). **Before any art work, read in
-`docs/ART_PIPELINE.md`:**
-- "Where art lives"
-- the kit art table
-- "Bow tools and what they cost"
-
-**Standing art rules from this session** (also in memory and the ledger):
-- **The old method is the default:** a full-quality batch, filter it, he
-  picks, then layers. Draft-then-finish is paused: ask him first.
-- **Props obey physics:** a slung bow needs a strap, a held bow needs a
-  closed hand. When his request can't be done as asked, report and offer
-  options; never substitute (#163, `AGENTS.md`).
-- **Signature effects (red-ice shards, aura) only where the moment calls for
-  them.**
+**Next:** his playtest of the three in practice on his local dev server, then
+their art (`docs/ART_REQUESTS.md`, Category E). Release = art + delete the
+flag.
 
 **Blocked on him:**
-- Which screens show Lyra's C4 card pose and her passive art. Neither slot
-  exists in code yet (`docs/ART_REQUESTS.md` D5).
-- His **next Lyra variant**. B1 is reserved for it at ComfyUI
-  `output\red_lyra\_reserved-for-variant\`. What a variant is mechanically is
-  his to define (#162).
-- Carried over:
-  - building "Roused" (Molvarr phase 2)
-  - where the closed Orders tile sits
-  - recolouring the app icon
-  - the foundation audit's next section
-  - scheduling the folder migration and sentence case
+- Caila's design sheet (E2 cannot start without it).
+- Confirming the new card texts (`.claude/skills/kitwords/EXAMPLES.md`, Open).
+- Carried over: which screens show Lyra's C4 card pose and passive art (D5);
+  his next Lyra variant (B1 reserved); Roused; the closed Orders tile; the app
+  icon recolour; the foundation audit's next section; scheduling the folder
+  migration and sentence case.
 
-**Don't trust:** the new art has not been seen on a game screen. See
-**Confidence and gaps**.
+**Don't trust:** no screen was opened this session. The new units, Frozen
+and [Cold] rows, and the sealed-ultimate card are verified in tests only.
 
-## Outside the repo, on his PC
+## The three units (all `unreleased`)
 
-- **7DSGC references:** `C:\Users\Tanve\Downloads\7dsgc assets`, 37 cards
-  plus 42 kit arts in `Kit arts\`.
-  - Renamed `<unit>_<kind>`; `_names.tsv` in each folder maps back to the
-    original names. Units are named only where certain (Gawain is the
-    blue-haired one).
-  - Skeletons only, in ComfyUI `output\references\7dsgc\skeletons\`.
-  - **Never** feed their art to IP-Adapter or img2img, and never put it in
-    this repo.
-- **ComfyUI output is sorted per unit:**
-  - `output\red_lyra\<piece>\{drafts,work,final}\`, plus other units' folders.
-  - `items\`, `backgrounds\`, `story\backgrounds\`, `_other-projects\`.
-  - 209 renders nobody could identify stay in `_unsorted\`.
-  - `output\_moved.tsv` maps every old path to its new one.
-- **Models:** `loras\lyra_toll.safetensors` is step 1500 (the recipe is
-  frozen). `upscale_models\RealESRGAN_x4plus_anime_6B.pth` was added this
-  session.
+| Unit | Card | Role | Kit | Engine pieces |
+| --- | --- | --- | --- | --- |
+| Lyra, "Grounded in Frost" | 100032 | defense, sub-DPS | `blue_lyra.json` | Frostline: fading ATK (field only), [Cold] → Freeze |
+| Caila, "The Wandering Apothecary" | 100033 | support | `caila.json` | [Vial], ultimate seal, team gauge from Theriac |
+| Duke, "An Art Still Unfolding" | 100034 | DPS | `green_duke.json` | Undertow team counter, Confluence bonds by name |
+
+Every rule is in the ledger, #164–#171, with his words and which answers were
+selections of Claude's options. The `toll-kits` workshop is synced to this
+checkpoint (its drafts are marked imported, PENDING emptied).
 
 ## Confidence and gaps
 
-### Verified on 2026-09-28, by running it
+### Verified on 2026-10-02, by running it
 
-- `npm run check`: **1,480 passed / 124 files**, typecheck and lint clean.
-  That was after the art-path change and `ART_VERSION` 18. No TypeScript
-  changed after it; the later edits are Python art scripts and docs.
-- A scratch production build (`NEXT_DIST_DIR=.next-verify npx next build`)
-  passed. `.next-verify` was removed and `tsconfig.json` restored.
-- **Every registered portrait and skill image exists at its new path.**
-  `tests/characterArt.test.ts` checks this, and its new skill-art check was
-  proved to fail with a file hidden.
-- **Supercooling:** rerunning `compose_supercooling.py` with defaults
-  reproduces the installed `passive.png` pixel for pixel.
+- `npm run check`: **1,522 passed / 125 files**, typecheck and lint clean.
+- A scratch production build passed (`.next-verify` removed, `tsconfig.json`
+  restored).
+- Proved red by breaking them: the release gate, the frozen post-pass, and
+  the blue Lyra bench rule (`tests/examArcKits.test.ts`).
+- Headless traces of blue Lyra vs red Lyra and green Duke vs blue Duke ran
+  every new path (Cold tiers, Freeze skipping a turn, team counter, stance
+  stacks) without error.
 
 ### Believed but NOT verified
 
-- **The new art has not been seen in the game.** Latent Heat, Flash Point and
-  Shatterburn were checked as images and zoomed crops, not on a screen.
-  Cache-busting relies on `ART_VERSION` 18.
-- The LoRA recipe's reuse on a second character is still untested.
+- Nothing was looked at in a browser: the hand's "Frozen" overlay, the effects
+  rows for [Cold]/[Frozen]/ultimate seal, the dev-only roster.
+- Sim numbers ignore ultimates: **the simulator keeps no ult gauge, so it
+  never casts one** (a task chip was raised for it). Green Duke's 0% vs blue
+  Duke and blue Lyra's 100% vs red Lyra are AI-and-format measurements, not
+  balance verdicts (#138).
 
-### Untested by anything
+### Known open decisions recorded as Claude's reading
 
-- Carried over: a reload between two trial fights loses the run;
-  `worldBossPreview.ts` and `immunity.ts` have no test; no screen flow is
-  tested; the SFX files do not exist.
+- Frostline "field only" is read as: a Lyra who starts on the bench never
+  gets the battle-start ATK bonus, even after she is promoted (#165).
+- Green Duke's Confluence bonuses still apply when he starts on the bench —
+  he corrected Lyra's only.
+
+### Carried over, untested by anything
+
+- A reload between two trial fights loses the run; `worldBossPreview.ts` and
+  `immunity.ts` have no test; no screen flow is tested; the SFX files do not
+  exist. Lyra's new skill art has still not been seen on a game screen.
 
 ### What I would check first coming back cold
 
 1. `git status` and `git log -3`.
-2. Open a battle with Lyra and her archive page. Confirm her four kit images
-   load from `/characters/red_lyra/`.
-3. `docs/ART_PIPELINE.md` "Bow tools and what they cost" before any bow art.
+2. `npm run dev` on his box, practice: field the three, watch a freeze land
+   and a sealed ultimate grey out.
+3. Ledger #164–#171 before touching any of the new mechanics.
+
+## Outside the repo
+
+- **`toll-kits`** (`E:\Projects\toll-kits`): main now carries the merged
+  workshop branch. **The story repo `element-clash-toll`** (`E:\Toll - Web
+  toon`) has an unmerged branch `claude/pensive-brahmagupta-8yv4rd` (chapter
+  rewrites, Arc 1 renumbered to 20) and a stale merged one; untouched.
+- ComfyUI, 7DSGC references and the Lyra LoRA are as recorded in
+  `docs/ART_PIPELINE.md`.

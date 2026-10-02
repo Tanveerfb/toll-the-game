@@ -10,7 +10,7 @@ import {
   ultDamageForLevel,
   ultMultiplier,
 } from "@/lib/game/progression";
-import { getPlayableCharacters } from "@/lib/game/characterCatalog";
+import { getAllCharacters } from "@/lib/game/characterCatalog";
 import { MAX_ULT_LEVEL } from "@/lib/gacha/dupes";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 
@@ -168,7 +168,8 @@ describe("ultDamageForLevel", () => {
   });
 
   it("every playable ultimate authors a six-value ladder that only climbs", () => {
-    for (const character of getPlayableCharacters()) {
+    // Unreleased kits included — see kitInvariants.test.ts.
+    for (const character of getAllCharacters().filter((c) => c.storyOnly !== true)) {
       const ult = character.ultimate;
       if (!ult) continue;
       const ladder = ult.damageByUltLevel;

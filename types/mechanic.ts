@@ -95,6 +95,18 @@ interface MechanicBase {
    *  mechanic is dropped rather than applied at zero — Isolde's Debuff
    *  Immunity only exists from ult level 3. */
   minUltLevel?: number;
+  /**
+   * Skill rank at which this mechanic starts applying at all — the skill-card
+   * twin of `minUltLevel`. Below it the mechanic does not exist: nothing
+   * applies, nothing renders, nothing logs.
+   *
+   * Exists because a ladder of 0s cannot express "from Rank 2" for a
+   * mechanic that has no number to zero. Caila's Panacea cleanses from Rank 2,
+   * and a cleanse has no value; green Duke's Undertow grants Debuff Immunity
+   * only at Rank 3 (Tanveer, 2026-09-27). A zero `durationRanked` on a
+   * heal-over-time is worse than inert: a 0 duration never expires.
+   */
+  minRank?: number;
   /** Normalized scalars (written by normalizeMechanic, or authored flat). */
   value?: number;
   stacks?: number;
@@ -225,6 +237,14 @@ export interface StanceMechanic extends MechanicBase {
   targetSelf?: boolean;
   unstackable?: boolean;
   uncancellable?: boolean;
+  /**
+   * A counter stance that answers an attack on ANY ally, not only on its
+   * holder — green Duke's Undertow (Tanveer, 2026-09-27: *"does x amount of
+   * damage to the attacker who attacks any ally"*). Countered off the HOLDER's
+   * ATK, once per enemy skill however many allies it struck. See
+   * `lib/game/counter.ts` for the rules he settled on 2026-10-02.
+   */
+  guardsAllies?: boolean;
 }
 export interface HealMechanic extends MechanicBase {
   type: "heal";
@@ -284,12 +304,29 @@ export interface HealOverTimeMechanic extends MechanicBase {
 export interface StunMechanic extends MechanicBase {
   type: "stun";
 }
+/**
+ * [Freeze] — the mechanic; the debuff it leaves is **[Frozen]** (Tanveer,
+ * 2026-09-27: *"technically the mechanic is called freeze but the debuff …
+ * on a frozen enemy would be called frozen"*). A stun that also strips the
+ * target and keeps it stripped. Every rule lives in `lib/game/freeze.ts`.
+ */
+export interface FreezeMechanic extends MechanicBase {
+  type: "freeze";
+}
 export interface TauntMechanic extends MechanicBase {
   type: "taunt";
 }
 export interface SealMechanic extends MechanicBase {
   type: "seal";
-  sealType?: string; // which skill type is sealed (e.g. "attack")
+  /**
+   * Which skills are sealed: "attack", "debuff", "attackDebuff", or
+   * "ultimate". The last is Tanveer's `ult-disable` (2026-09-26): *"it will
+   * basically seal only ultimate cards, similar to how attack or atk-debuff
+   * seals work"*, worded on the card as "disables ultimate moves". The gauge
+   * is untouched — it still rises and falls; only using the ultimate is
+   * blocked. See `lib/game/seal.ts`.
+   */
+  sealType?: string;
 }
 export interface ShockMechanic extends MechanicBase {
   type: "shock";
@@ -320,8 +357,20 @@ export interface ConsumeIgniteMechanic extends MechanicBase {
 export interface LowerUltGaugeMechanic extends MechanicBase {
   type: "lowerUltGauge";
 }
+/**
+ * Fills ultimate gauge. On an ordinary skill it fills the caster's own gauge
+ * (Gon's Jajanken Round 2). On an ultimate it is the gauge left AFTER the ult
+ * spends it (Molvarr P2 refills 3) — and with `applyTo: "allies"` every living
+ * field ally gains it too, the caster included (Caila's Theriac; Tanveer,
+ * 2026-09-29: "all allies" includes her). `lib/game/ultGauge.ts` owns both.
+ */
 export interface GainUltGaugeMechanic extends MechanicBase {
   type: "gainUltGauge";
+}
+/** Grants the caster stacks of her own `healBoostStacks` passive — Caila's
+ *  Theriac restocks her [Vial]s. Capped at the passive's `maxStacks`. */
+export interface GainHealBoostStacksMechanic extends MechanicBase {
+  type: "gainHealBoostStacks";
 }
 export interface LifestealMechanic extends MechanicBase {
   type: "lifesteal";
@@ -449,6 +498,88 @@ export interface RankUpOwnDeckMechanic extends MechanicBase {
   type: "rankUpOwnDeck";
   atTurn?: number;
 }
+/**
+ * [Cold] — blue Lyra's Frostline (Tanveer, 2026-09-27). Every attack that
+ * really hits puts one [Cold] on the enemy, up to `maxStacks`. An EFFECT:
+ * uncancellable, not cleansable, not blocked by Debuff Immunity; it stays
+ * until it triggers at the top tier or Lyra dies. The tiers that read it are
+ * `coldTiers`. Engine: `lib/game/cold.ts`.
+ */
+export interface ColdStacksMechanic extends MechanicBase {
+  type: "coldStacks";
+  maxStacks?: number;
+}
+/**
+ * What [Cold] does at the end of the holder's team turn, by stack count. Tiers
+ * stack up: at 2 the enemy gets both the stat drop and the ultimate disable;
+ * at `freezeAt` the stacks are spent and only the freeze applies.
+ */
+export interface ColdTiersMechanic extends MechanicBase {
+  type: "coldTiers";
+  /** ATK and DEF lowered from 1 stack, as one effect. */
+  statDownPercent?: number;
+  /** Stacks at which ultimate moves are disabled too. */
+  ultSealAt?: number;
+  /** Stacks at which every stack is spent and the enemy is frozen. */
+  freezeAt?: number;
+  /** Turns each tier effect lasts (re-applied at every turn end). */
+  tierDuration?: number;
+  freezeDuration?: number;
+}
+/**
+ * A self buff that starts high at battle start and falls at the end of every
+ * turn (both sides') until it reaches a floor, where it holds. Blue Lyra's
+ * Frostline: ATK +50%, −20 per turn end, holds at +10% (Tanveer, 2026-09-27;
+ * "every turn" per his answer, 2026-10-02). The parked Full Power Freeza kit
+ * is the same shape. Uncancellable.
+ */
+export interface FadingBuffMechanic extends MechanicBase {
+  type: "fadingBuff";
+  stat: string;
+  /** Starting value. */
+  valuePercent: number;
+  stepPercent: number;
+  floorPercent: number;
+}
+/**
+ * Caila's [Vial] (Materia Medica, Tanveer 2026-09-26): one stack at the start
+ * of each of her team's turns, up to `maxStacks`. Using a heal-type skill
+ * spends them all for `perStackPercent` more healing each — or
+ * `fullStackBonusPercent` when every stack is spent at once (his "180%").
+ * Rejuvenate ticks never spend them; only the skill does.
+ */
+export interface HealBoostStacksMechanic extends MechanicBase {
+  type: "healBoostStacks";
+  maxStacks: number;
+  perStackPercent: number;
+  fullStackBonusPercent: number;
+}
+/**
+ * A stat bonus while an ally with a given NAME is on the team — every variant
+ * of that character counts, because variants share a name (ruling #141) and
+ * not an id (Tanveer, 2026-09-27: "When there is a ally with the name
+ * 'lyra'"). Decided once at battle start; subs count; it stays all fight even
+ * if the ally falls. Uncancellable. On the owner only.
+ */
+export interface NamedAllyBonusMechanic extends MechanicBase {
+  type: "namedAllyBonus";
+  allyName: string;
+  stat?: string;
+  stats?: string[];
+  valuePercent: number;
+}
+/**
+ * Stats up every time the owner uses a stance skill, capped — green Duke's
+ * Confluence: basic stats +5% per stance used, max +25%. Uncancellable, all
+ * battle. The cap is authored as the percent he wrote ("Max 25%"), so the
+ * passive text and the data state the same number.
+ */
+export interface StanceUseStacksMechanic extends MechanicBase {
+  type: "stanceUseStacks";
+  stats: string[];
+  valuePercent: number;
+  maxPercent: number;
+}
 /** One option a `randomTurnEffect` passive can roll. */
 export interface RandomEffectOption {
   target: "enemies" | "allies" | "self";
@@ -539,6 +670,7 @@ export type Mechanic =
   | StatDebuffImmunityMechanic
   | HealOverTimeMechanic
   | StunMechanic
+  | FreezeMechanic
   | TauntMechanic
   | SealMechanic
   | ShockMechanic
@@ -549,6 +681,7 @@ export type Mechanic =
   | ConsumeIgniteMechanic
   | LowerUltGaugeMechanic
   | GainUltGaugeMechanic
+  | GainHealBoostStacksMechanic
   | LifestealMechanic
   | ExtortMechanic
   | SynergyMechanic
@@ -566,6 +699,12 @@ export type Mechanic =
   | ConditionalBuffMechanic
   | RankUpOwnDeckMechanic
   | RandomTurnEffectMechanic
+  | ColdStacksMechanic
+  | ColdTiersMechanic
+  | FadingBuffMechanic
+  | HealBoostStacksMechanic
+  | NamedAllyBonusMechanic
+  | StanceUseStacksMechanic
   | BossAutoSpMechanic
   | BossStatSpikeMechanic
   | BossMaxHpDrainMechanic
@@ -601,6 +740,7 @@ export const MECHANIC_TYPES = [
   "statDebuffImmunity",
   "healOverTime",
   "stun",
+  "freeze",
   "taunt",
   "seal",
   "shock",
@@ -611,6 +751,7 @@ export const MECHANIC_TYPES = [
   "consumeIgnite",
   "lowerUltGauge",
   "gainUltGauge",
+  "gainHealBoostStacks",
   "lifesteal",
   "extort",
   "synergy",
@@ -628,6 +769,12 @@ export const MECHANIC_TYPES = [
   "conditionalBuff",
   "rankUpOwnDeck",
   "randomTurnEffect",
+  "coldStacks",
+  "coldTiers",
+  "fadingBuff",
+  "healBoostStacks",
+  "namedAllyBonus",
+  "stanceUseStacks",
   "bossAutoSp",
   "bossStatSpike",
   "bossMaxHpDrain",
@@ -647,6 +794,10 @@ export type StatusEffectType =
   | "stance"
   | "taunt"
   | "stun"
+  /** [Frozen] — see lib/game/freeze.ts. */
+  | "freeze"
+  /** [Cold] stacks — an effect, always uncancellable. See lib/game/cold.ts. */
+  | "cold"
   | "seal"
   | "ignite"
   | "decay"
@@ -695,6 +846,8 @@ export interface StatusEffect {
   hpScalePercent?: number;
   /** Counter stance: % of ATK dealt back to attackers. */
   counterDamagePercent?: number;
+  /** Counter stance that answers attacks on any ally (StanceMechanic). */
+  guardsAllies?: boolean;
   /**
    * Links every entry one stance applied, so the panel can show them as a
    * named group rather than as unrelated rows (#131, 2026-09-16).

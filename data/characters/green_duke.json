@@ -1,0 +1,96 @@
+{
+  "id": "green_duke",
+  "cardNumber": 100034,
+  "name": "Duke",
+  "heading": "An Art Still Unfolding",
+  "color": "green",
+  "unreleased": true,
+  "tags": ["Human"],
+  "atk": 265,
+  "def": 155,
+  "hp": 3350,
+  "skills": [
+    {
+      "skillName": "Fist of Flowing Ruin : Pressure Point",
+      "description": "Cancels buffs; does damage equal to ATK-scaled to one enemy.",
+      "characterId": "green_duke",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [230, 280, 350],
+      "mechanics": [
+        {
+          "type": "cancelBuffs"
+        }
+      ]
+    },
+    {
+      "skillName": "Fist of Flowing Ruin : Undertow",
+      "description": "Assumes a stance for [stance.duration] turns: counters any enemy that attacks an ally for damage equal to [stance.counterDamagePercent]% ATK; reduces allies' damage taken by [z-ranked]%; [debuffImmunity? gains Debuff Immunity : ].",
+      "characterId": "green_duke",
+      "type": "stance",
+      "statMultiplier": "atk",
+      "damageRanked": [0, 0, 0],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "stance",
+          "targetSelf": true,
+          "name": "Undertow",
+          "guardsAllies": true,
+          "counterDamagePercentRanked": [130, 160, 200],
+          "durationRanked": [1, 1, 2]
+        },
+        {
+          "type": "stance",
+          "applyTo": "allies",
+          "stat": "damageReduction",
+          "valueRanked": [0, 10, 20],
+          "durationRanked": [1, 1, 2],
+          "minRank": 2
+        },
+        {
+          "type": "debuffImmunity",
+          "targetSelf": true,
+          "durationRanked": [0, 0, 2],
+          "minRank": 3
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Fist of Flowing Ruin : Water",
+    "description": "Does damage equal to ATK-scaled to one enemy.",
+    "characterId": "green_duke",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 350,
+    "damageByUltLevel": [350, 385, 430, 475, 520, 575]
+  },
+  "passive": {
+    "name": "Confluence",
+    "description": "# When there is an ally named Lyra\n- DEF 50% 👆 during battle (Activates once, Uncancellable)\n\n# When there is an ally named Batra\n- ATK 50% 👆 during battle (Activates once, Uncancellable)\n\n# Every time this character uses a stance skill\n- Basic stats 5% 👆 (Max 25%, Uncancellable)",
+    "trigger": "onBattleStart",
+    "mechanics": [
+      {
+        "type": "namedAllyBonus",
+        "allyName": "Lyra",
+        "stat": "def",
+        "valuePercent": 50
+      },
+      {
+        "type": "namedAllyBonus",
+        "allyName": "Batra",
+        "stat": "atk",
+        "valuePercent": 50
+      },
+      {
+        "type": "stanceUseStacks",
+        "stats": ["atk", "def", "hp"],
+        "valuePercent": 5,
+        "maxPercent": 25
+      }
+    ]
+  }
+}

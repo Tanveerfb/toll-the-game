@@ -1,5 +1,6 @@
 import { applyHeal } from "@/lib/game/heal";
 import { blocksFor } from "@/lib/game/passiveBlocks";
+import { clearColdFrom } from "@/lib/game/cold";
 import type { BattleCharacter } from "@/types/character";
 
 /**
@@ -85,6 +86,13 @@ export function applyDefeatPassives(
 
     for (const unit of justDied) {
       unit.passiveState[FIRED] = true;
+      // What the fallen unit was sustaining on the other side ends with it:
+      // blue Lyra's [Cold] lasts "until it is removed on 3rd stack or lyra
+      // dies" (Tanveer, 2026-09-27). The same once-per-death guard covers it.
+      clearColdFrom(
+        teams[side === "playerTeam" ? "enemyTeam" : "playerTeam"],
+        unit.instanceId,
+      );
       const blocks = blocksFor(unit, "onDefeat");
       if (blocks.length === 0) continue;
 

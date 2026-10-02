@@ -142,7 +142,15 @@ describe("debuff immunity blocks every applier (ruling #60)", () => {
       })
       .sort();
 
-    expect(creators).toEqual(["bossPassives.ts", "combat.ts", "passive.ts"]);
+    // `cold.ts` joined 2026-10-02 (blue Lyra's Frostline). Its [Cold] stack is
+    // an EFFECT and ignores immunity by Tanveer's ruling — but its tier
+    // debuffs and its Freeze are blocked by it, so the guard below holds.
+    expect(creators).toEqual([
+      "bossPassives.ts",
+      "cold.ts",
+      "combat.ts",
+      "passive.ts",
+    ]);
 
     for (const f of creators) {
       const src = fs.readFileSync(path.join(dir, f), "utf8");

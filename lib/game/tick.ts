@@ -2,6 +2,7 @@ import { scaleMaxHp, inverseHpPercent } from "@/lib/game/maxHp";
 import { BattleCharacter } from "@/types/character";
 import { trySurviveLethal } from "./lethal";
 import { applyHeal } from "./heal";
+import { breakFreeze } from "./freeze";
 
 /**
  * Duration semantics (ruling #21 — durations are literal):
@@ -131,6 +132,12 @@ export function tickTeamDebuffs(
       }
       // DoT counts as taking damage (matters for Extort Life-style passives)
       char.passiveState.tookDamageThisRound = true;
+      // …and any damage breaks Freeze (Tanveer, 2026-09-27). Landing a Freeze
+      // already cleared every cancellable DoT, so only an uncancellable one
+      // can reach this — none is planned, but the rule is his.
+      if (char.currentHP > 0 && breakFreeze(char)) {
+        log(`[System] ${char.name} is no longer Frozen.`);
+      }
       if (!survivedLethalDot) {
         log(`[System] ${char.name} takes ${totalDot} damage from DoT.`);
       }

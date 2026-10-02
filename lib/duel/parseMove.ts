@@ -1,3 +1,4 @@
+import { incapacitationWord, isIncapacitated } from "@/lib/game/freeze";
 import type { BattleCharacter } from "@/types/character";
 import type { Action } from "@/types/action";
 import type { ActionCard } from "@/types/action";
@@ -118,8 +119,11 @@ export function parseDuelMove(raw: string, context: ParseContext): ParseResult {
     if (source.isSub) {
       return { ok: false, reason: `action ${index}: ${source.name} is benched and cannot act` };
     }
-    if (source.debuffs.some((d) => d.type === "stun")) {
-      return { ok: false, reason: `action ${index}: ${source.name} is stunned` };
+    if (isIncapacitated(source)) {
+      return {
+        ok: false,
+        reason: `action ${index}: ${source.name} is ${incapacitationWord(source)}`,
+      };
     }
 
     let targetInstanceId = "";

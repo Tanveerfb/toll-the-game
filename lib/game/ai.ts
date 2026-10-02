@@ -1,4 +1,6 @@
 import { entryAffectsStat } from "./stats";
+import { isIncapacitated } from "./freeze";
+import { activeSealFor } from "./seal";
 import { BattleCharacter } from "@/types/character";
 import { Action, ActionCard } from "@/types/action";
 import { SkillCard } from "@/types/skillCard";
@@ -99,7 +101,7 @@ export function getAIMove(
   if (alivePlayers.length === 0) return null;
 
   const actingPool = enemyTeam.filter(
-    (e) => e.currentHP > 0 && !e.isSub && !e.debuffs.some((d) => d.type === "stun"),
+    (e) => e.currentHP > 0 && !e.isSub && !isIncapacitated(e),
   );
   if (actingPool.length === 0) return null;
 
@@ -114,8 +116,11 @@ export function getAIMove(
     livingAllies[0],
   );
 
-  const attackSealed = (e: BattleCharacter) =>
-    e.debuffs.some((d) => d.type === "seal" && d.sealType === "attack");
+  // Every seal type, ultimates included — one answer (lib/game/seal.ts). This
+  // used to check "attack" by name, so a debuff or attack-debuff seal never
+  // steered the AI; the engine fizzled the card instead.
+  const sealed = (e: BattleCharacter, play: Play) =>
+    activeSealFor(e, play.skill) !== undefined;
 
   // The plays available to an enemy: hand cards for that enemy (headless deck),
   // or its full skill list when no hand is supplied.
@@ -129,15 +134,15 @@ export function getAIMove(
   };
 
   const playOfType = (e: BattleCharacter, type: string): Play | undefined =>
-    playsFor(e).find(
-      (p) => p.skill.type === type && !(attackSealed(e) && p.skill.type === "attack"),
-    );
+    playsFor(e).find((p) => p.skill.type === type && !sealed(e, p));
 
   const ultPlayFor = (e: BattleCharacter): Play | undefined => {
-    if (hand) return playsFor(e).find((p) => p.skill.type === "ultimate");
-    return e.ultimate && e.ultGauge >= ultGaugeMax(e)
-      ? { skill: e.ultimate }
-      : undefined;
+    const play = hand
+      ? playsFor(e).find((p) => p.skill.type === "ultimate")
+      : e.ultimate && e.ultGauge >= ultGaugeMax(e)
+        ? { skill: e.ultimate }
+        : undefined;
+    return play && !sealed(e, play) ? play : undefined;
   };
 
   /** Highest stamp among a unit's taunt entries; 0 if it carries none. */
@@ -244,18 +249,10 @@ export function getAIMove(
 
   // Tier 6 — any remaining usable play (executeSkill safely fizzles a sealed
   // cast if that's all that's left). Enemies with an empty hand can't act.
-  const playablePool = actingPool.filter((e) => {
-    const plays = playsFor(e);
-    return (
-      plays.some((p) => !(attackSealed(e) && p.skill.type === "attack")) ||
-      plays.length > 0
-    );
-  });
+  const playablePool = actingPool.filter((e) => playsFor(e).length > 0);
   if (playablePool.length === 0) return null;
   const e = pick(playablePool);
   const plays = playsFor(e);
-  const play =
-    plays.find((p) => !(attackSealed(e) && p.skill.type === "attack")) ??
-    plays[0];
+  const play = plays.find((p) => !sealed(e, p)) ?? plays[0];
   return action(e, play, attackTargetFor());
 }

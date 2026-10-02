@@ -59,6 +59,15 @@ const CHARACTER_VFX: Record<string, CharacterVfx> = {
   siddiq: { tint: "rgba(74,222,128,0.8)", shape: "bloom" }, // vines/petals — green, away from red
   yalina: { tint: "rgba(251,191,36,0.8)", shape: "slash" }, // energy fist — amber, away from green
 
+  // --- Exam-arc variants and Caila (2026-10-02, unreleased) ---
+  // A variant keeps its character's power, so its flavour: blue Lyra is still
+  // Red Ice, green Duke still water. Both tints already sit away from the
+  // variant's own element (magenta vs blue, teal vs green).
+  blue_lyra: { tint: "rgba(232,65,199,0.8)", shape: "shard" },
+  green_duke: { tint: "rgba(45,212,191,0.8)", shape: "ripple" },
+  // Liquid Toll shaped into medicine — mint, away from her red element.
+  caila: { tint: "rgba(110,231,183,0.8)", shape: "bloom" },
+
   // --- Boss / story-only ---
   molvarr: { tint: "rgba(132,204,22,0.82)", shape: "ripple" }, // corrosive sea-rot — sickly lime, away from dark
   frost: { tint: "rgba(224,242,254,0.85)", shape: "shard" },

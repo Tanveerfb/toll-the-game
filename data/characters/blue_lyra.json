@@ -1,0 +1,90 @@
+{
+  "id": "blue_lyra",
+  "cardNumber": 100032,
+  "name": "Lyra",
+  "heading": "Grounded in Frost",
+  "color": "blue",
+  "unreleased": true,
+  "tags": ["Human", "Female"],
+  "atk": 185,
+  "def": 225,
+  "hp": 3850,
+  "skills": [
+    {
+      "skillName": "Icefall",
+      "description": "Raises DEF by [buff.value]% for [buff.duration] turns; then does damage equal to ATK-scaled to one enemy.",
+      "characterId": "blue_lyra",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [195, 240, 300],
+      "mechanics": [
+        {
+          "type": "buff",
+          "targetSelf": true,
+          "stat": "def",
+          "valueRanked": [30, 30, 50],
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "skillName": "Thermal Shock",
+      "description": "Does damage equal to ATK-scaled to one enemy; seals Attack Debuff skills for [seal.duration] turns.",
+      "characterId": "blue_lyra",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [230, 280, 350],
+      "mechanics": [
+        {
+          "type": "seal",
+          "sealType": "attackDebuff",
+          "durationRanked": [0, 1, 2]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Latent Heat",
+    "description": "Does Pierce damage equal to ATK-scaled to all enemies.",
+    "characterId": "blue_lyra",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 350,
+    "damageByUltLevel": [350, 385, 430, 475, 520, 575],
+    "mechanics": [
+      {
+        "type": "aoe"
+      },
+      {
+        "type": "pierce"
+      }
+    ]
+  },
+  "passive": {
+    "name": "Frostline",
+    "description": "# At the start of battle\n- ATK 50% 👆, falling by 20% at the end of every turn to a minimum of 10% (Uncancellable)\n\n# Every time this character attacks\n- Applies [Cold] to each enemy hit (Max 3 per enemy, Uncancellable)\n- [Cold] stays until it reaches 3 stacks or this character is defeated\n\n# At the end of the turn, by each enemy's [Cold] stacks\n- 1 stack: ATK and DEF 10% 👇 for 1 turn\n- 2 stacks: also disables ultimate moves for 1 turn\n- 3 stacks: removes all [Cold], then [Frozen] for 1 turn",
+    "trigger": "onDamageDealt",
+    "mechanics": [
+      {
+        "type": "fadingBuff",
+        "stat": "atk",
+        "valuePercent": 50,
+        "stepPercent": 20,
+        "floorPercent": 10
+      },
+      {
+        "type": "coldStacks",
+        "name": "Cold",
+        "maxStacks": 3
+      },
+      {
+        "type": "coldTiers",
+        "statDownPercent": 10,
+        "ultSealAt": 2,
+        "freezeAt": 3,
+        "tierDuration": 1,
+        "freezeDuration": 1
+      }
+    ]
+  }
+}

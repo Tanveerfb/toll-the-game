@@ -13,7 +13,28 @@ Status vocabulary: `confirmed` · `rejected` · `open`.
 
 ## Open — awaiting his ruling
 
-*(none right now)*
+### The three exam-arc imports — `open 2026-10-02`
+
+Written by Claude from the `toll-kits` drafts; he has the mechanics, not yet
+these sentences. Rendered at R3 / UL6:
+
+- blue Lyra, Icefall: *"Raises DEF by 50% for 1 turn and then does damage
+  equal to 300% ATK to one enemy."* (A ladder 30/30/50, so the number is
+  stated at every rank — #130.)
+- blue Lyra, Thermal Shock: *"… and seals Attack Debuff skills for 2 turns."*
+- Caila, Panacea: *"Heals all allies equal to 25% HP, cleanses their debuffs
+  and applies Rejuvenate for 2 turns."* (R1 reads the heal alone.)
+- Caila, Soporific: *"… and disables ultimate moves for 2 turns."* — his
+  wording, from the draft.
+- Caila, Theriac: *"Cleanses debuffs from all allies, fills all allies'
+  ultimate gauge by 2 and gains 3 [Vial]."* ("Fill to 3" at UL6 is written
+  as gaining 3, which fills an empty pouch.)
+- green Duke, Undertow: *"Assumes a stance for 2 turns: counters any enemy
+  that attacks an ally for damage equal to 200% ATK, reduces allies' damage
+  taken by 20% and gains Debuff Immunity."* (#134 shape; the immunity
+  inherits the stance's duration.)
+- Passives: his own text where he typed it (Frostline's tiers, Confluence),
+  with "[Frozen] for 1 turn" for the freeze (#164's naming).
 
 ---
 
@@ -256,6 +277,17 @@ rules it a stun variant, unbuilt). Rewritten to "stuns".
 
 Now enforced — `tests/kitDescriptionRules.test.ts` holds a list of named-but-
 unbuilt mechanics and fails if a description or the glossary uses one.
+
+**[Freeze] was built on 2026-10-02 (#164).** The rejection stands for what it
+was — a card naming a mechanic the engine did not run — but "freezes" and
+"[Frozen] for N turns" are legal words now. Frost still runs a stun, so its
+card still says "stuns".
+
+### A name or heading built round a comma — `rejected 2026-09-27`
+
+"What Kneels, Rises" and "Red Ice, Measured", both Claude's suggestions.
+Tanveer: *"I don't like your suggestions when it, there's a comma."* Ruling
+#170. Suggest names that stand without one ("Grounded in Frost" was taken).
 
 ### "…for 2 turns. to all allies" — `rejected`
 

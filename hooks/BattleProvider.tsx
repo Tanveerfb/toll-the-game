@@ -18,7 +18,7 @@ import {
 } from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
 import { applyAdjacentMerges } from "@/lib/game/deck";
-import { ultGaugeMax } from "@/lib/game/ultGauge";
+import { ultGaugeAfterUltimate, ultGaugeMax } from "@/lib/game/ultGauge";
 import { transitionBossPhases } from "@/lib/game/phases";
 import { applyBossTurnStart, bossForcedSpAction } from "@/lib/game/bossPassives";
 import { applyDefeatPassives } from "@/lib/game/onDefeat";
@@ -597,20 +597,16 @@ export default function BattleProvider({
       }
 
       // Grant ult gauge for the source character. An ultimate consumes the
-      // gauge (→0), then refills by its own gainUltGauge mechanic if any
-      // (Molvarr P2 ult refills 3); normal cards grant +1.
-      const playerUltRefill =
-        action.skill.type === "ultimate"
-          ? action.skill.mechanics?.find((m) => m.type === "gainUltGauge")
-              ?.value ?? 0
-          : 0;
+      // gauge (→0), then refills by its own gainUltGauge mechanics if any
+      // (Molvarr P2 refills 3; Caila's Theriac gives all allies, her
+      // included — `ultGaugeAfterUltimate`); normal cards grant +1.
       currentTeams.playerTeam = currentTeams.playerTeam.map((char) =>
         char.instanceId === action.sourceInstanceId
           ? {
               ...char,
               ultGauge:
                 action.skill.type === "ultimate"
-                  ? Math.min(ultGaugeMax(char), playerUltRefill)
+                  ? ultGaugeAfterUltimate(char, action.skill.mechanics)
                   : Math.min(ultGaugeMax(char), char.ultGauge + 1),
             }
           : char,
@@ -830,19 +826,14 @@ export default function BattleProvider({
       }
 
       // +1 ult gauge for playing a card; an ult consumes then refills by its
-      // own gainUltGauge mechanic (Molvarr P2 = 3) — same rule the player gets.
-      const enemyUltRefill =
-        action.skill.type === "ultimate"
-          ? action.skill.mechanics?.find((m) => m.type === "gainUltGauge")
-              ?.value ?? 0
-          : 0;
+      // own gainUltGauge mechanics (Molvarr P2 = 3) — same rule the player gets.
       currentTeams.enemyTeam = currentTeams.enemyTeam.map((char) =>
         char.instanceId === action.sourceInstanceId
           ? {
               ...char,
               ultGauge:
                 action.skill.type === "ultimate"
-                  ? Math.min(ultGaugeMax(char), enemyUltRefill)
+                  ? ultGaugeAfterUltimate(char, action.skill.mechanics)
                   : Math.min(ultGaugeMax(char), char.ultGauge + 1),
             }
           : char,

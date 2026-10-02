@@ -46,10 +46,14 @@ describe("#65 — descriptions only name mechanics the engine has", () => {
   /**
    * Mechanics that have been *named* in design conversation but do not exist
    * in `types/mechanic.ts`. A word leaves this list the day it is built, not
-   * the day it is discussed. Freeze is the one with history; add to this list
-   * whenever Tanveer names a future mechanic, so a kit can't ship using it.
+   * the day it is discussed. Add to it whenever Tanveer names a future
+   * mechanic, so a kit can't ship using it.
+   *
+   * Freeze left on 2026-10-02, the day it was built (lib/game/freeze.ts) from
+   * his full definition of 2026-09-27. It was the entry with history: Frost's
+   * Glacial Bind read "Freezes them" while the engine ran a stun.
    */
-  const NOT_BUILT = ["freeze", "freezes", "frozen", "chill", "chilled"];
+  const NOT_BUILT = ["chill", "chilled"];
 
   it("no skill description names an unbuilt mechanic", () => {
     const offenders: string[] = [];

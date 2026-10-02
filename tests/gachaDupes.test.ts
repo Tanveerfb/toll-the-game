@@ -6,7 +6,7 @@ import {
   ultLevelCoinCost,
 } from "@/lib/gacha/dupes";
 import { characterCoinId } from "@/lib/game/materials";
-import { getPlayableCharacters } from "@/lib/game/characterCatalog";
+import { getAllCharacters } from "@/lib/game/characterCatalog";
 
 /**
  * Dupes used to bump `ultLevel` on the spot — six copies maxed the ultimate
@@ -37,7 +37,11 @@ describe("resolvePullResult", () => {
   });
 
   it("gives every playable character a distinct coin", () => {
-    const coins = getPlayableCharacters().map((c) => characterCoinId(c));
+    // Unreleased kits included: the undoubled colour rule (blue_lyra_coin) is
+    // exactly where two coins could collide.
+    const coins = getAllCharacters()
+      .filter((c) => c.storyOnly !== true)
+      .map((c) => characterCoinId(c));
     expect(new Set(coins).size).toBe(coins.length);
   });
 });

@@ -978,9 +978,16 @@ function buildPreviewRow(
   rankIndex?: number,
   ultLevelIndex?: number,
 ): DamagePreviewRow {
-  const mechanics = (skill.mechanics ?? []).map((mechanic) =>
-    normalizeMechanic(mechanic, rankIndex ?? 0),
-  );
+  // A mechanic below its `minRank` does not exist at this rank — the engine
+  // drops it (combat.ts `meetsRankGate`), so the preview must too.
+  const mechanics = (skill.mechanics ?? [])
+    .filter(
+      (mechanic) =>
+        typeof mechanic.minRank !== "number" ||
+        rankIndex === undefined ||
+        rankIndex + 1 >= mechanic.minRank,
+    )
+    .map((mechanic) => normalizeMechanic(mechanic, rankIndex ?? 0));
   const multiplier = getDamageMultiplier(skill, rankIndex, ultLevelIndex);
   const selfBuffState = applyPreHitSelfBuffs(
     skill,

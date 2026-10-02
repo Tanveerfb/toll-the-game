@@ -1,0 +1,94 @@
+{
+  "id": "caila",
+  "cardNumber": 100033,
+  "name": "Caila",
+  "heading": "The Wandering Apothecary",
+  "color": "red",
+  "unreleased": true,
+  "tags": ["Human", "Female"],
+  "atk": 170,
+  "def": 160,
+  "hp": 3350,
+  "skills": [
+    {
+      "skillName": "Panacea",
+      "description": "Heals all allies equal to HP-scaled; [cleanse? cleanses their debuffs : ]; applies Rejuvenate for [healOverTime.duration] turns.",
+      "characterId": "caila",
+      "type": "heal",
+      "statMultiplier": "hp",
+      "damageRanked": [16, 20, 25],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "cleanse",
+          "applyTo": "allies",
+          "minRank": 2
+        },
+        {
+          "type": "healOverTime",
+          "applyTo": "allies",
+          "valuePercent": 30,
+          "durationRanked": [0, 1, 2],
+          "minRank": 2
+        }
+      ]
+    },
+    {
+      "skillName": "Soporific",
+      "description": "Does damage equal to HP-scaled to one enemy; disables ultimate moves for [seal.duration] turns.",
+      "characterId": "caila",
+      "type": "attack",
+      "statMultiplier": "hp",
+      "damageRanked": [10, 13, 16],
+      "mechanics": [
+        {
+          "type": "seal",
+          "sealType": "ultimate",
+          "durationRanked": [1, 2, 2]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Theriac",
+    "description": "Cleanses debuffs from all allies; fills all allies' ultimate gauge by [gainUltGauge.value]; gains [gainHealBoostStacks.value] [Vial].",
+    "characterId": "caila",
+    "type": "ultimate",
+    "statMultiplier": "hp",
+    "damage": 0,
+    "mechanics": [
+      {
+        "type": "aoe"
+      },
+      {
+        "type": "cleanse",
+        "applyTo": "allies"
+      },
+      {
+        "type": "gainUltGauge",
+        "applyTo": "allies",
+        "valueByUltLevel": [0, 1, 1, 1, 2, 2]
+      },
+      {
+        "type": "gainHealBoostStacks",
+        "valueByUltLevel": [1, 1, 2, 2, 2, 3]
+      }
+    ]
+  },
+  "passive": {
+    "name": "Materia Medica",
+    "description": "# At the start of each turn\n- [Vial] +1 (Max 3, Uncancellable)\n\n# When using a heal skill\n- Consumes all [Vial]: healing 30% 👆 per [Vial] consumed\n- Consuming 3 [Vial] at once: healing 180% 👆 instead",
+    "trigger": "onNewTurn",
+    "mechanics": [
+      {
+        "type": "healBoostStacks",
+        "name": "Vial",
+        "maxStacks": 3,
+        "perStackPercent": 30,
+        "fullStackBonusPercent": 180
+      }
+    ]
+  }
+}

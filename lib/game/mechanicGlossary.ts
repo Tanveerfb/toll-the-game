@@ -5,6 +5,16 @@ export const mechanicGlossary = {
   concentrate: "Damage increases by 50/20/10/0% for 1/2/3/4 enemies present",
   stuns: "Prevents target from acting for the listed duration.",
   stun: "Prevents the target from acting for the listed duration.",
+  // Built 2026-10-02 from Tanveer's definition (lib/game/freeze.ts). The
+  // mechanic is Freeze; the debuff it leaves is Frozen.
+  frozen:
+    "Cannot act and gains no new buffs or debuffs; landing removes cancellable buffs, debuffs and stances; any damage breaks it; Debuff Immunity blocks it",
+  freezes:
+    "Cannot act and gains no new buffs or debuffs; landing removes cancellable buffs, debuffs and stances; any damage breaks it; Debuff Immunity blocks it",
+  "disables ultimate moves":
+    "The target cannot use its ultimate for the duration; its gauge still rises and falls",
+  "counters any enemy that attacks an ally":
+    "Strikes back at an enemy whose skill attacks any ally, once per skill — unless every ally it attacked fell",
   ignite: "Each stack increases damage taken by 10%",
   decay: " Decay deals 10% of inflicted skill damage as a DoT",
   pierce: "Ignores 50% of the enemy's DEF",
@@ -50,8 +60,10 @@ export const mechanicGlossary = {
   "damage dealt": "The damage this unit deals to enemies",
   extort: "Lowers enemy ATK/DEF and adds the stolen points to own stats for the duration; never stacks",
   extorts: "Lowers enemy ATK/DEF and adds the stolen points to own stats for the duration; never stacks",
-  seal: "Blocks the listed skill type for the duration; ultimates are unaffected",
-  seals: "Blocks the listed skill type for the duration; ultimates are unaffected",
+  // "Ultimates are unaffected" was true of every seal until 2026-10-02. An
+  // ultimate seal now exists, worded on cards as "disables ultimate moves".
+  seal: "Blocks the listed skill type for the duration",
+  seals: "Blocks the listed skill type for the duration",
   deathblow: "Damage and crit chance +2% for every 3% of max HP lost",
   crit: "A critical hit: ignores 50% defense and type matchups, +50% damage",
   countered: "A unit in a counter stance strikes back when attacked (unless the hit kills it)",
@@ -204,6 +216,10 @@ export const keywordCategories: Record<MechanicKeyword, KeywordCategory> = {
   deathblow: "offense",
   stuns: "effect",
   stun: "effect",
+  frozen: "effect",
+  freezes: "effect",
+  "disables ultimate moves": "effect",
+  "counters any enemy that attacks an ally": "stance",
   ignite: "effect",
   decay: "effect",
   shock: "effect",

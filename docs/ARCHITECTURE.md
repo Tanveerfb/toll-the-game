@@ -44,7 +44,7 @@ initializing → OnBattleStart → OnPlayerTurnStart → PlayerAction
 Durations mean exactly what they say: N turns = N procs / N blocked turns.
 
 - **Buffs/stances/HoT** tick at the **owner's turn START** (`tickTeamBuffs`): reset per-turn passive flags, proc HoT, decrement `buffDuration`, drop expired. A 1-turn buff applied on your turn survives the whole opposing turn.
-- **Debuffs/DoT/stun/seal** tick at the **victim's turn END** (`tickTeamDebuffs`): proc DoT (`damageOverTime`, `decay`), decrement `debuffDuration`, drop expired. The victim always gets their own turn to cleanse before the first proc; a 1-turn stun blocks exactly one turn.
+- **Debuffs/DoT/stun/freeze/seal** tick at the **victim's turn END** (`tickTeamDebuffs`): proc DoT (`damageOverTime`, `decay`), decrement `debuffDuration`, drop expired. The victim always gets their own turn to cleanse before the first proc; a 1-turn stun or freeze blocks exactly one turn. A DoT tick that deals damage breaks Freeze (#164).
 - Durationless effects persist until removed by other means.
 
 ## Sub (Bench) Units — `lib/game/sub.ts`
@@ -64,14 +64,14 @@ Battle format sets the field cap: **4v4** = all four on field, **3v3** = three o
 - **Draw (7DS GC behavior):** the hand is never reset — leftover cards persist. New cards are drawn **one at a time, purely at random** from living field units' skill pools at turn-end phases (and a turn-start top-up for freshly promoted subs), **auto-merging** adjacent identical cards as they land (+1 ult gauge per merge), until the hand is full. If a character's `ultGauge ≥ 5` **before the refill starts**, their ultimate is guaranteed-drawn (one copy in hand max). A gauge filled by merges during a refill guarantees the ultimate on the **next turn's** draw, never the same refill.
 - **Merging:** two cards, same character + same skill + same rank → one card of rank+1 (max 3). Three paths: explicit merge button, auto-merge when dragged adjacent, and auto-merge on draw. Each merge grants +1 ult gauge to the card's owner.
 - **Interaction lock:** the deck can only be touched (select/merge/drag) during `PlayerAction`.
-- **Action queue:** up to 3 cards queued per player turn. Enemy-targeting card types (`attack`, `debuff`, `disable`, `ultimate`) require a marked enemy target at selection time. Stunned characters' cards can't be queued.
+- **Action queue:** up to 3 cards queued per player turn. Enemy-targeting card types (`attack`, `debuff`, `disable`, `ultimate`) require a marked enemy target at selection time. Stunned or frozen characters' cards can't be queued (`isIncapacitated`, `lib/game/freeze.ts`).
 - **Rank effect:** on resolution, `BattleProvider` substitutes `damageRanked[rank-1]` as the damage multiplier. (Mechanic `*Ranked` values currently do not scale — see STATUS.md.)
 
 ## Skill Resolution (`lib/game/combat.ts` → `executeSkill`)
 
 Order of operations per action:
 
-1. Stun check on source → skip action.
+1. Stun/freeze check on source → skip action. Then the seal check: `lib/game/seal.ts` is the one answer to which seal blocks which skill, ultimates included (#166).
 2. Pre-skill passives (`beforeSkill`, e.g. HP consumption).
 3. `onFirstAction` passive trigger (first queued action of the turn).
 4. Ally skill-use trackers (`onAllySkill` momentum stacks).
@@ -86,7 +86,10 @@ Order of operations per action:
    **Taunt is not in this list** — it goes up on the caster once per cast, with the
    self-buff pass at step 6.5, because it is part of the caster's own stance (#131).
    Applying it here would push one identical entry per enemy hit.
-9. Post-damage passives (`onDamageDealt` lifesteal) and `afterSkill` stack accumulation.
+9. Team counters (`lib/game/counter.ts`, #167) once per skill; post-damage passives (`onDamageDealt` lifesteal) and `afterSkill` stack accumulation; team ult gauge and [Vial] restock from an ultimate; stance-use stacks.
+10. `enforceFrozen` (`lib/game/freeze.ts`): a unit frozen before the action and still frozen after it keeps nothing cancellable that landed meanwhile. The passive queue runs the same post-pass after every item.
+
+The exam-arc mechanics each have one module (2026-10-02): **Freeze** `lib/game/freeze.ts` (#164), **[Cold]** `lib/game/cold.ts` (#165), **seals** `lib/game/seal.ts` (#166), **counters** `lib/game/counter.ts` (#167). A mechanic below its `minRank` does not exist at that rank (`meetsRankGate`), in the engine, the card text and the preview alike.
 
 Teams are deep-copied per action — `executeSkill` is pure with respect to its inputs and returns new team arrays.
 

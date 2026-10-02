@@ -26,6 +26,21 @@ import { ultDamageForLevel } from "./progression";
 import { MAX_ULT_LEVEL } from "@/lib/gacha/dupes";
 import { isImmuneToStatDebuff } from "./immunity";
 import { DEFAULT_BLEED_TURNS, DEFAULT_IGNITE_TURNS } from "./dotDurations";
+import {
+  applyFreeze,
+  breakFreeze,
+  enforceFrozen,
+  incapacitationWord,
+  isIncapacitated,
+} from "./freeze";
+import { activeSealFor, sealName, sealPhrase } from "./seal";
+import { applyColdStack } from "./cold";
+import {
+  ownCounterStance,
+  resolveTeamCounters,
+  strikeBack,
+} from "./counter";
+import { skillTypeCategory } from "./skillTypeStyle";
 import { SkillCard } from "@/types/skillCard";
 import { UltimateCard } from "@/types/ultimateCard";
 import {
@@ -51,10 +66,9 @@ import type { MechanicAudience, StatusEffect } from "@/types/mechanic";
  * set sits after the damage clause.
  *
  * DoTs, gauge depletion and hard CC. Stun joined on 2026-08-13 once Tanveer
- * ruled on it: "null them if the damage resulted in null". **Freeze belongs
- * here too** — it is not implemented yet, but he confirmed it is a stun
- * variant in every respect, so it goes in this set the day it exists rather
- * than being re-litigated then.
+ * ruled on it: "null them if the damage resulted in null". **Freeze is here
+ * too**: he confirmed it a stun variant in every respect before it existed,
+ * and it joined the set the day it was built (2026-10-02).
  *
  * The stat debuffs (a plain `debuff` entry) are still OUT. They are the same
  * shape and will likely follow, but he has not ruled, and the clause-order
@@ -68,6 +82,7 @@ const NULLED_BY_TANKED_HIT: ReadonlySet<string> = new Set([
   "ignite",
   "lowerUltGauge",
   "stun",
+  "freeze",
 ]);
 
 /**
@@ -231,6 +246,11 @@ function meetsUltLevelGate(mechanic: Mechanic, ultLevel: number): boolean {
   return mechanic.minUltLevel == null || ultLevel >= mechanic.minUltLevel;
 }
 
+/** The skill-rank twin of the gate above (`MechanicBase.minRank`). */
+export function meetsRankGate(mechanic: Mechanic, rankIndex: number): boolean {
+  return mechanic.minRank == null || rankIndex + 1 >= mechanic.minRank;
+}
+
 function formatTurns(duration?: number): string {
   if (!duration || duration <= 0) return "";
   return ` for ${duration} turn${duration > 1 ? "s" : ""}`;
@@ -327,46 +347,21 @@ export function executeSkill(
     ? snapshotEffects([...updatedTeams.playerTeam, ...updatedTeams.enemyTeam])
     : undefined;
 
-  // -- STUN CHECK
-  if (updatedSource.debuffs.some((d) => d.type === "stun")) {
-    log(`[Action] ${updatedSource.name} could not act due to stun.`);
+  // -- STUN / FREEZE CHECK
+  if (isIncapacitated(updatedSource)) {
+    log(
+      `[Action] ${updatedSource.name} could not act — ${incapacitationWord(updatedSource)}.`,
+    );
     return updatedTeams;
   }
 
   // -- SEAL CHECK (defense in depth — the UI/AI should not offer sealed
-  // skills, but never let one through). A seal's sealType names which
-  // category of skill it blocks: "attack" = any attack-type skill (the
-  // original/default case), "debuff" = any debuff-type skill, "attackDebuff"
-  // = an attack-type skill that ALSO carries any hostile debuff-category
-  // mechanic (Chiara's "House Rules" — a conceptual category, not a literal
-  // skill.type value; see Diane's Rush Rock (a "seal" mechanic) and the
-  // author's own example, "applies [Bleed] debuff", for the breadth of what
-  // counts). Ultimates are never sealed by any sealType.
-  const DEBUFF_CATEGORY_MECHANICS = new Set([
-    "debuff",
-    "stun",
-    "seal",
-    "taunt",
-    "shock",
-    "bleed",
-    "decay",
-    "corrosion",
-    "ignite",
-    "extort",
-  ]);
-  const skillHasDebuffMechanic = (action.skill.mechanics ?? []).some((m) =>
-    DEBUFF_CATEGORY_MECHANICS.has(m.type),
-  );
-  const activeSeal = updatedSource.debuffs.find((d) => {
-    if (d.type !== "seal") return false;
-    if (d.sealType === "attackDebuff") {
-      return action.skill.type === "attack" && skillHasDebuffMechanic;
-    }
-    return d.sealType === action.skill.type;
-  });
+  // skills, but never let one through). Which seal blocks which skill is
+  // `lib/game/seal.ts`'s one answer, ultimates included since 2026-10-02.
+  const activeSeal = activeSealFor(updatedSource, action.skill);
   if (activeSeal) {
     log(
-      `[Action] ${updatedSource.name}'s ${activeSeal.sealType} skills are sealed — ${action.skill.skillName} fizzles.`,
+      `[Action] ${updatedSource.name}'s ${sealPhrase(activeSeal.sealType)} — ${action.skill.skillName} fizzles.`,
     );
     return updatedTeams;
   }
@@ -465,6 +460,7 @@ export function executeSkill(
   const ultIndex = casterUltLevel - 1;
   const skillMechanics = (action.skill.mechanics ?? [])
     .filter((m) => meetsUltLevelGate(m, casterUltLevel))
+    .filter((m) => meetsRankGate(m, rankIndex))
     .map((m) => normalizeMechanic(m, rankIndex, ultIndex));
 
   const isAoe = skillMechanics.some(
@@ -627,6 +623,25 @@ export function executeSkill(
     Boolean(mech.targetSelf) || audienceFor(mech) === "self";
 
   const applySelfBuff = (mech: Mechanic) => {
+    // Self Debuff Immunity: the self audience never rides the target loop, so
+    // without this branch a self-only immunity was silently dropped. First
+    // user is green Duke's Undertow, where it is a PART of the stance (#131) —
+    // grouped, so cancelStances takes it and cancelBuffs does not.
+    if (mech.type === "debuffImmunity") {
+      updatedSource.debuffs = updatedSource.debuffs.filter((d) => d.uncancellable);
+      updatedSource.buffs.push({
+        type: "buff",
+        debuffImmune: true,
+        buffDuration: mech.duration,
+        name: mech.name || "Debuff Immunity",
+        groupId: skillIsStance ? stanceGroupId : undefined,
+        groupName: skillIsStance ? action.skill.skillName : undefined,
+      });
+      log(
+        `[Action] ${updatedSource.name} gained Debuff Immunity${formatTurns(mech.duration)}.`,
+      );
+      return;
+    }
     if (mech.type !== "buff" && mech.type !== "stance") return;
     updatedSource.buffs.push({
         type: mech.type,
@@ -638,6 +653,7 @@ export function executeSkill(
           ? undefined
           : mech.valuePercent || mech.value,
         counterDamagePercent: mech.counterDamagePercent,
+        guardsAllies: mech.type === "stance" ? mech.guardsAllies : undefined,
         name: mech.name,
         buffDuration: mech.duration,
         unstackable: mech.unstackable,
@@ -653,9 +669,13 @@ export function executeSkill(
         groupId: skillIsStance ? stanceGroupId : undefined,
         groupName: skillIsStance ? action.skill.skillName : undefined,
       });
+    // A counter stance has no stat, so the generic line read "gained stance
+    // to stats by  for 1 turn" for Full Counter and Undertow alike.
     log(
-      `[Action] ${updatedSource.name} gained ${mech.type} to ${statPhrase(mech)} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`.trim() +
-        ".",
+      (mech.counterDamagePercent
+        ? `[Action] ${updatedSource.name} assumed a counter stance (${mech.counterDamagePercent}% ATK${mech.type === "stance" && mech.guardsAllies ? ", guarding all allies" : ""})${formatTurns(mech.duration)}`
+        : `[Action] ${updatedSource.name} gained ${mech.type} to ${statPhrase(mech)} by ${toPercentText(mech.valuePercent || mech.value)}${formatTurns(mech.duration)}`
+      ).trim() + ".",
     );
   };
 
@@ -946,6 +966,26 @@ export function executeSkill(
     }
   }
 
+  // -- [VIAL] (Caila's Materia Medica): a heal SKILL spends every stack for
+  // more healing — the whole cast, every ally it reaches. Rejuvenate is
+  // valued off the boosted heal, so it follows automatically; its ticks never
+  // spend stacks, because they are not a skill (Tanveer, 2026-09-26).
+  if (action.skill.type === "heal") {
+    const vial = findAnyPassiveMechanic(updatedSource, "healBoostStacks");
+    const stacks = (updatedSource.passiveState.healBoostStacks as number) || 0;
+    if (vial && stacks > 0) {
+      const bonus =
+        stacks >= vial.maxStacks
+          ? vial.fullStackBonusPercent
+          : stacks * vial.perStackPercent;
+      baseDamage *= 1 + bonus / 100;
+      updatedSource.passiveState.healBoostStacks = 0;
+      log(
+        `${updatedSource.name} spends ${stacks} [${vial.name ?? "Vial"}] — healing +${bonus}%!`,
+      );
+    }
+  }
+
   // Structured event payload built alongside the log entries
   const eventTargets: BattleEventTarget[] = [];
   const eventCounters: BattleEventCounter[] = [];
@@ -974,8 +1014,16 @@ export function executeSkill(
     });
   }
 
+  /** Every unit on the defending side this skill was aimed at, evaded or hit —
+   *  what a team counter (green Duke's Undertow) answers to. */
+  const attackedUnits: BattleCharacter[] = [];
+
   targets.forEach((updatedTarget) => {
     if (updatedTarget.currentHP <= 0) return;
+
+    if (isAttack && updatedTarget.team !== updatedSource.team) {
+      attackedUnits.push(updatedTarget);
+    }
 
     // -- EVADE ROLL — an evaded attack deals no damage and applies none of
     // its hostile effects; evading still counts as "receiving an attack"
@@ -1150,6 +1198,18 @@ export function executeSkill(
       // Damage-taken bookkeeping (Extort Life reset is resolved at round end)
       if (dealtDamage > 0) {
         updatedTarget.passiveState.tookDamageThisRound = true;
+        // Any damage breaks Freeze — before the hostile mechanics below, so a
+        // skill that freezes refreezes at the END of its own attack (Tanveer,
+        // 2026-09-27).
+        if (breakFreeze(updatedTarget)) targetEffects.push("broke Frozen");
+        // [Cold] on a real hit only — never on an evade (returned above) or a
+        // tanked hit (his answer, 2026-10-02). The hit that breaks a freeze
+        // still adds one, so the cycle restarts.
+        const cold =
+          updatedTarget.team !== updatedSource.team
+            ? applyColdStack(updatedSource, updatedTarget)
+            : null;
+        if (cold !== null) targetEffects.push(`applied [Cold] (${cold})`);
       }
     } else if (action.skill.type === "heal") {
       // Molvarr SP: heal a % of MISSING HP (maxHP - currentHP) instead of the
@@ -1324,14 +1384,15 @@ export function executeSkill(
           // Rank-conditional via durationRanked (e.g. [0,1,2]): 0 = inactive
           const sealDuration = mech.duration || 0;
           if (sealDuration > 0) {
+            const sealType = mech.sealType || "attack";
             updatedTarget.debuffs.push({
               type: "seal",
-              sealType: mech.sealType || "attack",
+              sealType,
               debuffDuration: sealDuration,
-              name: "Attack Seal",
+              name: sealName(sealType),
             });
             targetEffects.push(
-              `sealed ${mech.sealType || "attack"} skills${formatTurns(sealDuration)}`,
+              `${sealType === "ultimate" ? "disabled ultimate moves" : `sealed ${sealType} skills`}${formatTurns(sealDuration)}`,
             );
           }
         }
@@ -1450,6 +1511,25 @@ export function executeSkill(
             `lowered atk by ${flowingRuinMech.atkDownPercent ?? 20}%${formatTurns(flowingRuinMech.atkDownDuration ?? 2)}`,
           );
         }
+      }
+
+      // [Freeze] resolves LAST among the hostile effects: it strips every
+      // cancellable entry, so anything this same skill applied alongside it is
+      // gone either way, and applying it last keeps the log honest about that.
+      const freezeMech = skillMechanics.find((m) => m.type === "freeze");
+      const freezeDuration = freezeMech?.duration ?? 1;
+      if (
+        freezeMech &&
+        !damageNulled &&
+        freezeDuration > 0 &&
+        updatedTarget.currentHP > 0
+      ) {
+        const result = applyFreeze(updatedTarget, freezeDuration);
+        targetEffects.push(
+          result === "frozen"
+            ? `Frozen${formatTurns(freezeDuration)}`
+            : `resisted Freeze (${result === "ccImmune" ? "CC immune" : "Debuff Immunity"})`,
+        );
       }
     }
 
@@ -1610,57 +1690,34 @@ export function executeSkill(
       updatedTarget.currentHP > 0 &&
       updatedTarget.team !== updatedSource.team
     ) {
-      const counterStance = updatedTarget.buffs.find(
-        (b) => b.type === "stance" && b.counterDamagePercent,
-      );
+      // A team counter (`guardsAllies`) is not an own counter — it answers
+      // once per skill, below, rather than once per unit struck.
+      const counterStance = ownCounterStance(updatedTarget);
       if (counterStance && updatedSource.currentHP > 0) {
-        const counterBase =
-          (getEffectiveAttack(updatedTarget) *
-            (counterStance.counterDamagePercent || 0)) /
-          100;
-        const counterDamage = Math.floor(
-          calculateDamage({
-            baseDamage: counterBase,
-            skillMechanics: [],
-            target: updatedSource,
-            attackerColor: updatedTarget.color,
-            attacker: updatedTarget,
-          }),
-        );
-        updatedSource.currentHP = Math.max(
-          0,
-          updatedSource.currentHP - counterDamage,
-        );
-        if (counterDamage > 0) {
-          updatedSource.passiveState.tookDamageThisRound = true;
-        }
-        if (counterDamage > 0) {
-          const counterLifestealPercent = getEffectiveLifesteal(updatedTarget);
-          if (counterLifestealPercent > 0) {
-            const { character: healedCounterer, healed } = applyHeal(
-              updatedTarget,
-              Math.floor(counterDamage * (counterLifestealPercent / 100)),
-            );
-            Object.assign(updatedTarget, healedCounterer);
-            if (healed > 0) {
-              log(`${updatedTarget.name} self-healed ${healed} HP (lifesteal counter).`);
-            }
-          }
-        }
-        eventCounters.push({
-          byInstanceId: updatedTarget.instanceId,
-          byName: updatedTarget.name,
-          onInstanceId: updatedSource.instanceId,
-          damage: counterDamage,
-          killedAttacker: updatedSource.currentHP === 0,
-          attackerHpAfter: updatedSource.currentHP,
-        });
-        log(
-          `[Action] ${updatedTarget.name} counters ${updatedSource.name} for ${counterDamage} damage${updatedSource.currentHP === 0 ? " — defeated" : ""}!`,
+        eventCounters.push(
+          strikeBack(
+            updatedTarget,
+            updatedSource,
+            counterStance.counterDamagePercent || 0,
+            log,
+          ),
         );
       }
     }
   });
+
+  // -- TEAM COUNTER (green Duke's Undertow): once per enemy skill, after every
+  // target has resolved, so an AoE across four allies draws one answer.
+  if (isAttack && updatedSource.currentHP > 0) {
+    eventCounters.push(
+      ...resolveTeamCounters(
+        enemyTeamForSource,
+        attackedUnits,
+        updatedSource,
+        log,
+      ),
+    );
+  }
 
   // -- EXTORT SELF-GAIN (Ban): per-stat mapping, flat points stolen from
   // every target hit; recasting refreshes (removes the previous Extort
@@ -1699,6 +1756,84 @@ export function executeSkill(
     log(
       `[Action] ${updatedSource.name} fills their ultimate gauge by ${gain}.`,
     );
+  }
+
+  // -- TEAM ULT GAUGE from an ultimate (Caila's Theriac): every living field
+  // ally gains it. The CASTER's share is not set here — her gauge is spent by
+  // the ult and refilled by the battle loop through `ultGaugeAfterUltimate`
+  // (lib/game/ultGauge.ts), which counts this mechanic for her too.
+  if (action.skill.type === "ultimate") {
+    for (const mech of skillMechanics) {
+      if (mech.type !== "gainUltGauge") continue;
+      const audience = audienceFor(mech);
+      if (audience !== "allies" && audience !== "alliesExceptSelf") continue;
+      const gain = mech.value ?? 0;
+      if (gain <= 0) continue;
+      alliedTeamForSource
+        .filter(
+          (ally) =>
+            ally.currentHP > 0 &&
+            !ally.isSub &&
+            ally.instanceId !== updatedSource.instanceId,
+        )
+        .forEach((ally) => {
+          ally.ultGauge = Math.min(ultGaugeMax(ally), ally.ultGauge + gain);
+        });
+      log(`[Action] ${updatedSource.name} fills all allies' ultimate gauge by ${gain}.`);
+    }
+  }
+
+  // -- [VIAL] restock (Caila's Theriac): stacks of her own passive, capped.
+  const restock = skillMechanics.find((m) => m.type === "gainHealBoostStacks");
+  if (restock) {
+    const vial = findAnyPassiveMechanic(updatedSource, "healBoostStacks");
+    const gain = restock.value ?? 0;
+    if (vial && gain > 0) {
+      const current = (updatedSource.passiveState.healBoostStacks as number) || 0;
+      const next = Math.min(vial.maxStacks, current + gain);
+      updatedSource.passiveState.healBoostStacks = next;
+      log(`${updatedSource.name} gains [${vial.name ?? "Vial"}] (${next}/${vial.maxStacks}).`);
+    }
+  }
+
+  // -- STANCE-USE STACKS (green Duke's Confluence): every stance skill used
+  // raises stats, capped. One badge updated in place; ATK and DEF read it
+  // live, HP is baked by the step so expiry is never in question (it lasts
+  // all battle).
+  if (skillTypeCategory(action.skill) === "stance") {
+    const mech = findAnyPassiveMechanic(updatedSource, "stanceUseStacks");
+    if (mech) {
+      const stacks = (updatedSource.passiveState.stanceUseStacks as number) || 0;
+      const maxStacks = Math.floor(mech.maxPercent / mech.valuePercent);
+      if (stacks < maxStacks) {
+        const next = stacks + 1;
+        updatedSource.passiveState.stanceUseStacks = next;
+        const badgeName = updatedSource.passive?.name ?? "Stance stacks";
+        const badge: StatusEffect = {
+          type: "buff",
+          // HP stays listed so the row reads "basic stats"; nothing reads HP
+          // off a buff (it is baked below), so listing it changes no number.
+          stats: mech.stats,
+          valuePercent: mech.valuePercent * next,
+          uncancellable: true,
+          name: badgeName,
+        };
+        const index = updatedSource.buffs.findIndex(
+          (b) => b.name === badgeName && b.uncancellable && b.type === "buff",
+        );
+        if (index === -1) updatedSource.buffs.push(badge);
+        else updatedSource.buffs[index] = badge;
+        if (mech.stats.includes("hp")) {
+          // From +old% to +new% of the base: the ratio, not the difference.
+          const ratio =
+            (100 + mech.valuePercent * next) / (100 + mech.valuePercent * stacks);
+          Object.assign(updatedSource, scaleMaxHp(updatedSource, (ratio - 1) * 100));
+        }
+        log(
+          `${updatedSource.name}'s ${badgeName}: ${statPhrase({ stats: mech.stats })} +${mech.valuePercent * next}% (${next}/${maxStacks}).`,
+        );
+      }
+    }
   }
 
   // -- SELF BUFFS THAT REQUIRE THE HIT TO CONNECT (Part B)
@@ -1767,6 +1902,14 @@ export function executeSkill(
   // Ruling #32: Extort self-buffs live only while a linked debuff survives
   // on a living enemy (covers deaths and cleanses caused by this action)
   syncExtortLinks(updatedTeams.playerTeam, updatedTeams.enemyTeam, log);
+
+  // A unit frozen before this action and still frozen after it keeps nothing
+  // cancellable that landed meanwhile (lib/game/freeze.ts). Entries are
+  // compared by reference against the input: this function copies the status
+  // arrays, not the entries in them.
+  const settled = enforceFrozen(teams, updatedTeams);
+  updatedTeams.playerTeam = settled.playerTeam;
+  updatedTeams.enemyTeam = settled.enemyTeam;
 
   emit?.({
     kind: "action",

@@ -1,11 +1,14 @@
 import ban from "@/data/characters/ban.json";
 import batra from "@/data/characters/batra.json";
+import blueLyra from "@/data/characters/blue_lyra.json";
+import caila from "@/data/characters/caila.json";
 import chiara from "@/data/characters/chiara.json";
 import diane from "@/data/characters/diane.json";
 import duke from "@/data/characters/duke.json";
 import frost from "@/data/characters/frost.json";
 import gabrist from "@/data/characters/gabrist.json";
 import gale from "@/data/characters/gale.json";
+import greenDuke from "@/data/characters/green_duke.json";
 import iron from "@/data/characters/iron.json";
 import isolde from "@/data/characters/isolde.json";
 import gon from "@/data/characters/gon.json";
@@ -103,6 +106,15 @@ export interface CharacterData {
   lore?: string;
   /** Story-mode enemies: excluded from the practice roster and archive */
   storyOnly?: boolean;
+  /**
+   * Game-ready but not live (Tanveer, 2026-10-02: implement the new
+   * characters, *"But don't make them live in the game yet … We don't have
+   * their artworks"*). Hidden from every player-facing list on the deployed
+   * site — roster, archive, summons, team picker — and visible in local
+   * development so he can playtest them ("dev only", his pick). The engine,
+   * the simulator and the tests see them always. Remove the flag to release.
+   */
+  unreleased?: boolean;
   /** Evergreen-pool membership for the Permanent gacha banner. Flipped by
    *  hand per character (docs/superpowers/specs/2026-08-01-gacha-design.md)
    *  — never set automatically. Absent/false = not in the pool. */
@@ -131,12 +143,15 @@ export interface CharacterData {
 const rawCharacters = [
   ban,
   batra,
+  blueLyra,
+  caila,
   chiara,
   diane,
   duke,
   frost,
   gabrist,
   gale,
+  greenDuke,
   gon,
   iron,
   isolde,
@@ -187,13 +202,32 @@ const characterMap = new Map<string, CharacterData>(
 
 export const characterIds = characters.map((character) => character.id);
 
+/**
+ * Whether unreleased kits show on screens: local development only. Next.js
+ * inlines `NODE_ENV` at build time, so the deployed site never carries them,
+ * and `next dev` on his PC (the server he forwards to his phone) always does.
+ */
+export const SHOWS_UNRELEASED = process.env.NODE_ENV === "development";
+
+/** Whether a kit may appear on a player-facing screen in this build. */
+export function isVisible(character: { unreleased?: boolean }): boolean {
+  return character.unreleased !== true || SHOWS_UNRELEASED;
+}
+
+/**
+ * Every kit, released or not — for the engine, the simulator and the tests.
+ * A screen wants `getPlayableCharacters` or `isVisible`, never this.
+ */
 export function getAllCharacters(): CharacterData[] {
   return characters;
 }
 
-/** Roster shown in team select and the archive — story-only enemies hidden */
+/** Roster shown in team select and the archive — story-only enemies hidden,
+ *  and unreleased kits outside local development. */
 export function getPlayableCharacters(): CharacterData[] {
-  return characters.filter((character) => character.storyOnly !== true);
+  return characters.filter(
+    (character) => character.storyOnly !== true && isVisible(character),
+  );
 }
 
 /** Curated bosses for the practice "Boss Battle" picker (ignores storyOnly). */
@@ -205,8 +239,10 @@ export function getCharacterById(id: string): CharacterData | undefined {
   return characterMap.get(id);
 }
 
-/** Every card number, for `generateStaticParams`. */
-export const characterCardNumbers = characters.map((c) => c.cardNumber);
+/** Every visible card number, for `generateStaticParams`. */
+export const characterCardNumbers = characters
+  .filter(isVisible)
+  .map((c) => c.cardNumber);
 
 /**
  * Look a character up by the number in its archive URL.
@@ -225,7 +261,9 @@ export function getCharacterByCardNumber(
   const parsed =
     typeof cardNumber === "number" ? cardNumber : Number.parseInt(cardNumber, 10);
   if (!Number.isInteger(parsed)) return undefined;
-  return characters.find((c) => c.cardNumber === parsed);
+  // An unreleased card 404s on the deployed site rather than being reachable
+  // by guessing its number.
+  return characters.find((c) => c.cardNumber === parsed && isVisible(c));
 }
 
 /** The archive URL for a character. The one place this path is spelled. */

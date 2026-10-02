@@ -61,6 +61,13 @@ Decide the role first — it sets the whole statline.
 Dealers are glassier and hit hardest; defense units are the wall and carry the
 top DEF. Time-to-kill sits at ~4.3 hits against these numbers.
 
+**The bands step up by story position** (ruling #168). The table is the
+original Arc 1 roster. Units from **after the exam arc** sit **~5% above** it
+(*"5% works, and yes Caila counts"* — green Duke, blue Lyra, Caila), and
+**Arc 2** units sit **10–15% above** the original bands (*"arc 2 units will be
+overall 10-15% stronger in terms of stats compared to most of arc 1 units"*).
+Stats only. Read a batch's actual numbers from its kit JSON, not from here.
+
 **The bands are a tendency, not a rule.** Role is decided by *what the kit does*:
 
 - **Sara is a DPS** whose damage is a percentage of her 3500 HP, not her ATK.
@@ -82,6 +89,8 @@ bite on.
 Full playable roster: **DPS** — Batra, Seras, Duke, Meliodas, Diane, Gon,
 Killua, Sara, Ban, Master Tao. **Defense** — Mustafa, Lyra, Gabrist, Yalina.
 **Support** — Isolde, Chiara, Siddiq, Leorio. (`storyOnly` enemies unassigned.)
+Game-ready but `unreleased` (ruling #171, awaiting art): **DPS** green Duke;
+**Defense** blue Lyra (with some sub-DPS); **Support** Caila.
 
 **One scaling stat per kit** (ruling #67). ATK *or* HP *or* DEF, heals included.
 A defense unit doesn't earn its DEF back by scaling a skill off it — it earns it

@@ -267,7 +267,11 @@ yet (`drafts/`, `planned/`, `brainstorm/`), `practice/` and
   IMPORT**. Copy `drafts/<id>/kit.json` into `data/characters/`, register it
   in `lib/game/characterCatalog.ts`, give it the next free `cardNumber` (a
   999xxx number there is a sim placeholder), add art and VFX registrations or
-  fallbacks, then run `kitcheck` and `npm run check`. Its `audit` tool has
+  fallbacks, then run `kitcheck` and `npm run check`. **A kit without its art
+  lands `"unreleased": true`** (ruling #171): game-ready, shown under
+  `next dev` for his playtest, hidden on the deployed site. Releasing it is
+  adding the art and deleting the flag. Queue the art as a Category E entry in
+  `docs/ART_REQUESTS.md`. Its `audit` tool has
   already run this repo's unit suite against the draft, minus
   `characterArt` / `characterVfx` - which are exactly the tests import work
   fixes.

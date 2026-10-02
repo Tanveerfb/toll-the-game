@@ -509,6 +509,104 @@ that lands where the component expects it. What is being requested is the
 
 ---
 
+## Category E — Playable units waiting on art (the release gate)
+
+**These units are in the game but not live** (ruling #171). Their kits run,
+the engine and tests know them, and `next dev` shows them for playtesting; the
+deployed site hides them because they have no art. **Art is what releases
+them:** deliver the files, register them in `lib/game/characterArt.ts`, delete
+`"unreleased": true` from the kit, and `tests/characterArt.test.ts` then
+demands the portrait exists.
+
+**Specs for the whole category:** the ART_PIPELINE defaults — portrait
+1024×1024 (`portrait.png`), skill art 832×1216 (`skills/<slug>.png`). Skill
+backgrounds are the skill class's colour, drawn in code (ruling #133,
+`docs/design/SKILL_ART_PLAN.md`); pose and shot are free; a signature effect
+only where the moment calls for it (#161, #163). Folders follow #162 as
+amended by #171: an id that already starts with its colour is used alone.
+**Run the art method in `docs/ART_PIPELINE.md` (old method by default: batch,
+filter, he picks, then layers).**
+
+### E1 — blue_lyra — Lyra, "Grounded in Frost"
+
+- **Purpose:** portrait plus two skill arts for the exam-arc Lyra variant.
+- **The variant rule (his, 2026-09-28):** *"she basically does not use bow
+  and arrow in this variant. So everything she does is either hand to hand or
+  ice power release"*. **No bow anywhere** — not held, not on her back, not in
+  frame. Same person as red Lyra: character lock `designs/characters/lyra.md`
+  in `toll-kits`, and her LoRA (`lyra_toll`, recipe frozen).
+- **Pieces:**
+  - `portrait.png` — her, empty-handed; red-ice Toll optional.
+  - **Icefall** (attack · red), `skills/icefall.png` — canon, Ch14 vs Duke and
+    Ch15 vs Mustafa: she drops to one knee, **bare palm flat on the ground**,
+    jagged **red ice pillars erupt** from the contact point toward the enemy.
+    *Suggested:* one wall rising in front of her too, for the DEF raise.
+  - **Thermal Shock** (attack-debuff · purple), `skills/thermal-shock.png` —
+    canon, Ch14 finale: a point-blank punch, **fist lit with faintly glowing
+    red ice**. *Suggested:* the ice cracking on impact with a heat-bloom.
+  - **Latent Heat** — **not needed**: it reuses red Lyra's ult art, his call
+    (`SKILL_ART_ALIAS` in `lib/game/characterArt.ts`, already wired).
+- **Lands at:** `public/characters/blue_lyra/`; add `blue_lyra` to
+  `CHARACTERS_WITH_ART` and `blue_lyra__icefall`, `blue_lyra__thermal-shock`
+  to `SKILLS_WITH_ART`; bump `ART_VERSION` only if replacing a file in place.
+- **Fallback, already shipping:** none needed — the unit is hidden until this
+  lands; in development it renders without a portrait.
+- **Status:** `open`.
+- **Requested:** 2026-10-02, from importing the kit.
+
+### E2 — caila — Caila, "The Wandering Apothecary"
+
+- **Purpose:** portrait plus three skill arts. **A design sheet comes first:
+  Caila has no locked design.** He plans to draft designs in ComfyUI with a
+  game session (about a week after 2026-09-28) and pick one.
+- **Direction, from the story repo's `character-concepts.md`:** a plague-style
+  mask (original — Overhaul / Shie Hassaikai language), an Assassin's Creed II
+  doctor silhouette, travels light, gear in pockets and a small drawstring
+  pouch. **No poison visuals** — her poison side is a later reveal.
+- **Pieces** (all *suggested* — no canon shots yet):
+  - **Panacea** (heal · green), `skills/panacea.png` — a syringe or uncorked
+    vial, liquid Toll drawn out in a clean arc toward the team.
+  - **Soporific** (attack-debuff · purple), `skills/soporific.png` — canon
+    gear is darts: a thrown or blown dart trailing liquid Toll.
+  - **Theriac** (ultimate, free background), `skills/theriac.png` — several
+    vials uncorked at once, a fine mist over the team, her pouch refilling.
+- **Lands at:** `public/characters/red_caila/` (red, and the id does not
+  start with it); `caila` in `CHARACTERS_WITH_ART`, `caila__panacea`,
+  `caila__soporific`, `caila__theriac` in `SKILLS_WITH_ART`.
+- **Fallback:** hidden until delivered, as E1.
+- **Status:** `open` — blocked on the design sheet, which is his pick.
+- **Requested:** 2026-10-02, from importing the kit.
+
+### E3 — green_duke — Duke, "An Art Still Unfolding"
+
+- **Purpose:** new portrait plus two skill arts. His words, 2026-09-27: *"we
+  will also change it to the uh, card art too because a new variant of the
+  same character name … everything will be will be changed … except for
+  ultimate again."*
+- **Same person as blue Duke:** empty-handed fighter, water Toll; character
+  lock `designs/characters/duke.md` in `toll-kits`. No appearance change has
+  been given, so the sheet holds. This is the post-exam Duke's new options.
+- **Pieces:**
+  - `portrait.png` — new, not blue Duke's.
+  - **Pressure Point** (attack · red — cancelling is not a debuff, #133),
+    `skills/fist-of-flowing-ruin-pressure-point.png` — canon technique: water
+    pressure sent **through a contact point**, "dislocates without
+    telegraphing". *Suggested:* two fingers or a palm pressed into the target,
+    a pulse of water rippling through them, their buff glow breaking apart.
+  - **Undertow** (stance · yellow), `skills/fist-of-flowing-ruin-undertow.png`
+    — canon, Ch14: his reactive redirect stance, **water aura coating arms and
+    hands**, a guard turning the hit aside. *Suggested:* a current curling out
+    around unseen allies, for the team counter.
+  - **Fist of Flowing Ruin : Water** — **not needed**: reuses blue Duke's ult
+    art (his call, already wired through `SKILL_ART_ALIAS`).
+- **Lands at:** `public/characters/green_duke/`; `green_duke` in
+  `CHARACTERS_WITH_ART`, the two `green_duke__…` keys in `SKILLS_WITH_ART`.
+- **Fallback:** hidden until delivered, as E1.
+- **Status:** `open`.
+- **Requested:** 2026-10-02, from importing the kit.
+
+---
+
 ## Delivered
 
 ### 2026-09-21 — Lyra's recurve bow (drawn, after ComfyUI declined again)

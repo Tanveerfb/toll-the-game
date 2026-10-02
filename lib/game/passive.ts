@@ -1,9 +1,18 @@
 ﻿import { BattleCharacter } from "@/types/character";
 import { scaleMaxHp } from "@/lib/game/maxHp";
-import { passiveBlocks, findAnyPassiveMechanic } from "@/lib/game/passiveBlocks";
+import {
+  passiveBlocks,
+  passiveMechanics,
+  findAnyPassiveMechanic,
+} from "@/lib/game/passiveBlocks";
 import { entryAffectsStat, statPhrase } from "@/lib/game/stats";
+import { registerColdTiers } from "@/lib/game/cold";
 import type { QueueItem } from "@/lib/game/mechanicQueue";
-import { BattlePhase, StatusEffect } from "@/types/mechanic";
+import {
+  BattlePhase,
+  NamedAllyBonusMechanic,
+  StatusEffect,
+} from "@/types/mechanic";
 
 type RegisterFn = (item: QueueItem) => void;
 
@@ -173,6 +182,173 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
   registerCharacterSynergy(character, registerToQueue);
   registerConditionalAura(character, registerToQueue);
   registerRandomTurnEffect(character, registerToQueue);
+  registerFadingBuff(character, registerToQueue);
+  registerHealBoostGain(character, registerToQueue);
+  registerNamedAllyBonus(character, registerToQueue);
+  registerColdTiers(character, registerToQueue);
+}
+
+/** Replace the unit at `instanceId` on its team with `update(unit)`. */
+function updateUnit(
+  teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
+  source: BattleCharacter,
+  update: (unit: BattleCharacter) => BattleCharacter,
+) {
+  const teamKey = source.team === "player" ? "playerTeam" : "enemyTeam";
+  return {
+    ...teams,
+    [teamKey]: teams[teamKey].map((c) =>
+      c.instanceId === source.instanceId ? update(c) : c,
+    ),
+  };
+}
+
+// Frostline's first half (blue Lyra): a self buff that starts high and falls
+// at the end of EVERY turn, both sides' (his answer, 2026-10-02), to a floor
+// where it holds. One uncancellable entry, rewritten in place, read live by
+// effectiveStat. Field only (Tanveer, 2026-10-02: "Lyra's passive shouldn't
+// work from bench. She has to be on field to activate it."): a Lyra who starts
+// on the bench gets no battle-start buff, the default-deny every battle-start
+// passive follows.
+function registerFadingBuff(
+  character: BattleCharacter,
+  registerToQueue: RegisterFn,
+) {
+  const mech = findAnyPassiveMechanic(character, "fadingBuff");
+  if (!mech) return;
+  const badgeName = character.passive!.name;
+
+  registerToQueue({
+    id: `${character.instanceId}_passive_${badgeName}_fadingBuff_start`,
+    phase: "OnBattleStart",
+    sourceInstanceId: character.instanceId,
+    mechanicId: `${badgeName} (start)`,
+    action: async (source, teams, log) => {
+      if (source.isSub && source.passive?.worksFromSub !== true) return teams;
+      log(`${source.name}'s ${badgeName}: ${statPhrase(mech)} +${mech.valuePercent}%.`);
+      return updateUnit(teams, source, (unit) => ({
+        ...unit,
+        buffs: [
+          ...unit.buffs.filter((b) => b.name !== badgeName),
+          {
+            type: "buff",
+            stat: mech.stat,
+            valuePercent: mech.valuePercent,
+            uncancellable: true,
+            name: badgeName,
+          },
+        ],
+      }));
+    },
+  });
+
+  for (const phase of ["OnPlayerTurnEnd", "OnEnemyTurnEnd"] as const) {
+    registerToQueue({
+      id: `${character.instanceId}_passive_${badgeName}_fadingBuff_${phase}`,
+      phase,
+      sourceInstanceId: character.instanceId,
+      mechanicId: `${badgeName} (fades)`,
+      action: async (source, teams, log) => {
+        if (source.isSub && source.passive?.worksFromSub !== true) return teams;
+        const badge = source.buffs.find((b) => b.name === badgeName);
+        const current = badge?.valuePercent ?? mech.floorPercent;
+        const next = Math.max(mech.floorPercent, current - mech.stepPercent);
+        if (!badge || next === current) return teams;
+        log(`${source.name}'s ${badgeName}: ${statPhrase(mech)} falls to +${next}%.`);
+        return updateUnit(teams, source, (unit) => ({
+          ...unit,
+          buffs: unit.buffs.map((b) =>
+            b.name === badgeName ? { ...b, valuePercent: next } : b,
+          ),
+        }));
+      },
+    });
+  }
+}
+
+// Materia Medica's gain (Caila): one [Vial] at the start of each of her
+// team's turns, the first included, up to the cap. Spending them is combat's
+// job — a heal skill reads `passiveState.healBoostStacks`.
+function registerHealBoostGain(
+  character: BattleCharacter,
+  registerToQueue: RegisterFn,
+) {
+  const mech = findAnyPassiveMechanic(character, "healBoostStacks");
+  if (!mech) return;
+  const passiveName = character.passive!.name;
+
+  registerToQueue({
+    id: `${character.instanceId}_passive_${passiveName}_healBoostGain`,
+    phase: character.team === "player" ? "OnPlayerTurnStart" : "OnEnemyTurnStart",
+    sourceInstanceId: character.instanceId,
+    mechanicId: `${passiveName} (${mech.name ?? "Vial"})`,
+    action: async (source, teams, log) => {
+      if (source.isSub && source.passive?.worksFromSub !== true) return teams;
+      const stacks = (source.passiveState.healBoostStacks as number) || 0;
+      if (stacks >= mech.maxStacks) return teams;
+      log(`${source.name} gains [${mech.name ?? "Vial"}] (${stacks + 1}/${mech.maxStacks}).`);
+      return updateUnit(teams, source, (unit) => ({
+        ...unit,
+        passiveState: { ...unit.passiveState, healBoostStacks: stacks + 1 },
+      }));
+    },
+  });
+}
+
+// Confluence's bond (green Duke): a stat bonus on the OWNER while an ally with
+// a given NAME is on the team — any variant of that character, because
+// variants share a name and not an id (ruling #141; Tanveer, 2026-09-27).
+// Decided once at battle start, subs count, and it stays all fight even if
+// that ally falls. One entry per bond, uncancellable, read live.
+function registerNamedAllyBonus(
+  character: BattleCharacter,
+  registerToQueue: RegisterFn,
+) {
+  const bonds = passiveMechanics(character).filter(
+    (m): m is NamedAllyBonusMechanic => m.type === "namedAllyBonus",
+  );
+  if (bonds.length === 0) return;
+  const passiveName = character.passive!.name;
+
+  registerToQueue({
+    id: `${character.instanceId}_passive_${passiveName}_namedAllyBonus`,
+    phase: "OnBattleStart",
+    sourceInstanceId: character.instanceId,
+    mechanicId: `${passiveName} (bond)`,
+    action: async (source, teams, log) => {
+      const teamKey = source.team === "player" ? "playerTeam" : "enemyTeam";
+      const team = teams[teamKey];
+      const earned = bonds.filter((bond) =>
+        team.some(
+          (ally) =>
+            ally.instanceId !== source.instanceId &&
+            ally.name.toLowerCase() === bond.allyName.toLowerCase(),
+        ),
+      );
+      if (earned.length === 0) return teams;
+      earned.forEach((bond) =>
+        log(
+          `${source.name}'s ${passiveName}: ${bond.allyName} is here — ${statPhrase(bond)} +${bond.valuePercent}%.`,
+        ),
+      );
+      return updateUnit(teams, source, (unit) => ({
+        ...unit,
+        buffs: [
+          ...unit.buffs,
+          ...earned.map(
+            (bond): StatusEffect => ({
+              type: "buff",
+              stat: bond.stat,
+              stats: bond.stats,
+              valuePercent: bond.valuePercent,
+              uncancellable: true,
+              name: `${passiveName} (${bond.allyName})`,
+            }),
+          ),
+        ],
+      }));
+    },
+  });
 }
 
 // Kind Hearted Friend (Leorio): base +valuePercent to all allies if ANY of

@@ -6,7 +6,9 @@ import {
   getCharacterArt,
   getSkillArt,
   registeredSkillArt,
+  skillArtAliases,
 } from "@/lib/game/characterArt";
+import { characterCoinId, characterIdFromCoin } from "@/lib/game/materials";
 
 /**
  * Art registration is a hand-maintained allowlist, so a new kit silently
@@ -16,14 +18,39 @@ import {
  */
 describe("character art registration", () => {
   const dir = path.join(process.cwd(), "data", "characters");
-  const ids = fs
+  const kits = fs
     .readdirSync(dir)
     .filter((f) => f.endsWith(".json"))
-    .map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")).id);
+    .map(
+      (f) =>
+        JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")) as {
+          id: string;
+          unreleased?: boolean;
+        },
+    );
+  const ids = kits.map((k) => k.id);
 
-  it("covers every kit in data/characters", () => {
-    const unregistered = ids.filter((id) => getCharacterArt(id) === null);
+  /**
+   * An `unreleased` kit is exempt: missing art is the reason it is not live
+   * (Tanveer, 2026-10-02), and releasing it means adding the art AND removing
+   * the flag. Every live kit still has to have art.
+   */
+  it("covers every released kit in data/characters", () => {
+    const unregistered = kits
+      .filter((k) => k.unreleased !== true)
+      .map((k) => k.id)
+      .filter((id) => getCharacterArt(id) === null);
     expect(unregistered).toEqual([]);
+  });
+
+  it("points every borrowed skill art at art that exists", () => {
+    const broken = Object.entries(skillArtAliases)
+      .filter(([, target]) => !registeredSkillArt.includes(target))
+      .map(([key]) => key);
+    expect(broken).toEqual([]);
+    expect(getSkillArt("blue_lyra", "Latent Heat")).toContain(
+      "/characters/red_lyra/skills/latent-heat.png",
+    );
   });
 
   it("points every kit at a file that exists on disk", () => {
@@ -76,5 +103,19 @@ describe("per-unit art folders", () => {
     expect(getSkillArt("lyra", "Latent Heat")).toContain(
       "/characters/red_lyra/skills/latent-heat.png",
     );
+  });
+
+  // Tanveer, 2026-10-02: an id that already starts with its colour is not
+  // doubled. Pinned on both a variant and a coin, since one function names
+  // both (lib/game/unitKey.ts).
+  it("does not double a colour the id already carries", () => {
+    expect(artFolder("blue_lyra")).toBe("blue_lyra");
+    expect(artFolder("green_duke")).toBe("green_duke");
+    expect(artFolder("caila")).toBe("red_caila");
+    expect(characterCoinId({ id: "blue_lyra", color: "blue" })).toBe(
+      "blue_lyra_coin",
+    );
+    expect(characterIdFromCoin("blue_lyra_coin")).toBe("blue_lyra");
+    expect(characterIdFromCoin("red_lyra_coin")).toBe("lyra");
   });
 });

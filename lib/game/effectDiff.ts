@@ -5,6 +5,7 @@ import type {
   BattleEventEffectChange,
 } from "@/types/battleEvent";
 import { statPhrase } from "@/lib/game/stats";
+import { sealPhrase } from "@/lib/game/seal";
 
 /**
  * Status-change detection for the battle event stream (Open Issue #22).
@@ -159,6 +160,8 @@ export function diffEffectIdentities(
 
 const TYPE_LABEL: Partial<Record<BattleEventEffect["type"], string>> = {
   stun: "Stunned",
+  freeze: "Frozen",
+  cold: "Cold",
   taunt: "Taunt",
   seal: "Seal",
   ignite: "Ignite",
@@ -189,7 +192,7 @@ export function describeEventEffect(effect: BattleEventEffect): string {
       `${effect.name ? `${effect.name}: ` : ""}${stats} ${sign}${effect.valuePercent}%`,
     );
   } else if (effect.type === "seal") {
-    parts.push(`${effect.sealType ?? "attack"} skills sealed`);
+    parts.push(sealPhrase(effect.sealType));
   } else {
     const base = effect.name ?? TYPE_LABEL[effect.type] ?? effect.type;
     parts.push(

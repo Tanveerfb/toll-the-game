@@ -194,6 +194,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 65. **Skill-text house style** (2026-08-10, from the full description audit). Settled wordings, all confirmed by Tanveer:
     - **Attack seal**: "does damage equal to X and **attack seals for N turns**". Chiara is *not* the model here — she seals Debuff and Attack Debuff *skills*, a different mechanic. Fixed on Diane's Rush Rock ("applies 1 turn Attack Seal effect on the target") and Molvarr's Sunken Verdict.
     - **Lifesteal is a mechanic, not prose**: "**lifesteals** 30% of damage dealt". Same for "extorts".
+    - **Amended by #164 (2026-10-02): [Freeze] is built.** The rule stands for every other unbuilt name.
     - **Never name an unimplemented mechanic.** Frost's Glacial Bind read "Freezes them for 1 turn" while running `stun`; [Freeze] is a *future* mechanic, so the card now says "stuns". Write what the engine does today.
     - **Tier words are not mandatory** — explicit percentages are equally legal, and are correct when the tier values (30/50) are the wrong size for the skill. Leorio's 20/30/50 stands. See `docs/design/KIT_DESIGN.md`.
     - **State every duration.** Several skills hid one that existed in the data (Ban's Snatch, Road Bandit's Sand Throw, Wild Beast's Rending Claws).
@@ -206,7 +207,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
 67. **One scaling stat per kit** (2026-08-10). A character scales off ATK *or* HP *or* DEF — never a mix, and that includes heals. Tanveer: *"you can't mix two stat scaling into a single kit. if yalina does it then its wrong. she should be solely hp scaler."* Roster check found: **Isolde genuinely violates it** (heal `hp`, damage/ult `atk`) — Siddiq heals off ATK, so heals scaling ATK is the established form; direction of the fix is Tanveer's call and her numbers change either way. **Yalina** and **Iron** only declare a second stat on a *zero-damage* skill (taunt stance / defensive stance) where `statMultiplier` is inert — cosmetic. When drafting, pick the stat first and route every damaging skill through it; a defensive stat still earns its place through survivability and passive ramps, not through scaling one skill.
 
-68. **Roster stat rebalance — HP moved to the 3–4k band** (2026-08-10). Benchmarked against 7DSGC statlines Tanveer supplied: their ATK scalers sit at **HP ≈ 12.2 × ATK, DEF ≈ 0.63 × ATK**; ours were at 7.1 and 0.39, i.e. ~60% of the health and defence they should carry for their ATK. Time-to-kill was **2.1 hits** — with three actions a turn, a focused unit died before acting, which is why taunts, DR, heals and cleanses rarely got to matter. New numbers put it at **~4.3 hits** (measured through `executeSkill`, not hand-rolled).
+68. **Roster stat rebalance — HP moved to the 3–4k band** (2026-08-10). **Amended by #168 (2026-09-27/29):** post-exam-arc units sit ~5% above these bands, Arc 2 units 10–15%. Benchmarked against 7DSGC statlines Tanveer supplied: their ATK scalers sit at **HP ≈ 12.2 × ATK, DEF ≈ 0.63 × ATK**; ours were at 7.1 and 0.39, i.e. ~60% of the health and defence they should carry for their ATK. Time-to-kill was **2.1 hits** — with three actions a turn, a focused unit died before acting, which is why taunts, DR, heals and cleanses rarely got to matter. New numbers put it at **~4.3 hits** (measured through `executeSkill`, not hand-rolled).
 
     - **ATK is the anchor and barely moved** — every skill multiplier is tuned to it. HP roughly doubled, DEF ~1.6x.
     - **Role templates, not per-character ratios.** Deriving HP from ATK gave Mustafa (65 ATK) a 910 HP "tank". Bands: DPS ~2900–3600 HP / 190–300 ATK, support ~3000–3200 / 155–205, defense ~3600–4000 / 110–175 with the highest DEF.
@@ -229,7 +230,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
 74. **A boss SP Skill has to be visible in the kit** (2026-08-13). `getCharacterKit` returned skills/ultimate/passives but dropped `spSkill`, so Molvarr's auto-fired special was unreadable in both the archive and the in-battle info panel despite firing every 3rd turn. It is an action the boss takes at you; not showing it is hiding information the player needs. It renders in the SP slot with **no rank table** — SP never enters the deck, has no rank, and its `damageRanked: [0,0,0]` placeholder would otherwise print the same row three times.
 
-75. **A tanked hit carries none of its consequences, and the rule is read off the description's clause order** (2026-08-13, extends ruling #71). Tanveer's test: *"if the attack lands, will the following effect(s) land too? would it make sense?"* For *"Cancels buffs, does damage equal to 375% ATK to all enemies, greatly lowers ATK and DEF for 2 turns"*, the cancel precedes the damage clause and still fires; the ATK/DEF drop follows it and does not. So the gate is **position relative to the damage step**, not a list of mechanic types — later widenings admit more mechanics through the same door instead of rewriting it. **Covers DoTs (bleed/decay/shock/corrosion/ignite), `lowerUltGauge` and `stun`.** Stun was deferred for a few hours and then ruled in the same day — *"null them if the damage resulted in null"* — and **freeze inherits it unbuilt**: he confirmed it is a stun variant in every respect, so it joins `NULLED_BY_TANKED_HIT` the day it exists rather than being re-litigated. The plain stat debuffs are still out, unruled, and pinned by a test. Per target: an AoE nulling on one unit still applies everything to the others. A skill that never intended damage (Draw Fire) is not a null and must not read "Tanked". Evade needed no change — it returns before the mechanics loop and has always skipped them.
+75. **A tanked hit carries none of its consequences, and the rule is read off the description's clause order** (2026-08-13, extends ruling #71). **Freeze was built on 2026-10-02 (#164) and sits in the tanked set as ruled below.** Tanveer's test: *"if the attack lands, will the following effect(s) land too? would it make sense?"* For *"Cancels buffs, does damage equal to 375% ATK to all enemies, greatly lowers ATK and DEF for 2 turns"*, the cancel precedes the damage clause and still fires; the ATK/DEF drop follows it and does not. So the gate is **position relative to the damage step**, not a list of mechanic types — later widenings admit more mechanics through the same door instead of rewriting it. **Covers DoTs (bleed/decay/shock/corrosion/ignite), `lowerUltGauge` and `stun`.** Stun was deferred for a few hours and then ruled in the same day — *"null them if the damage resulted in null"* — and **freeze inherits it unbuilt**: he confirmed it is a stun variant in every respect, so it joins `NULLED_BY_TANKED_HIT` the day it exists rather than being re-litigated. The plain stat debuffs are still out, unruled, and pinned by a test. Per target: an AoE nulling on one unit still applies everything to the others. A skill that never intended damage (Draw Fire) is not a null and must not read "Tanked". Evade needed no change — it returns before the mechanics loop and has always skipped them.
 
 76. **The turn-resolution guard belongs in the store, not in a React ref** (2026-08-13, closes Open Issue #24). `resolvingRef` was per component *instance*, and BattleProvider is deliberately built to survive a remount (page reload, dev HMR). A remount handed the new instance a fresh `false` while the old instance's `runPlayerActions` loop was still awaiting playback and still saw `battlePhase === "PlayerAction"` in the shared store — so both loops resolved the same action queue. Symptoms: seven logged Lyra actions against a 3-action cap, and a report header reading **16 player turns in a 15-turn battle**. The claim is now `activeResolution` / `finishedResolutions` in `gameStore`, keyed by turn so re-entry is refused even after the first run finishes, with an ownership re-check after every await so a zombie loop stops committing. Not persisted: a reload has no live loop, and a surviving lock would deadlock the fight. The `dedupeConsecutive` mitigation in `buildBattleReport` is **kept as a regression detector** — its anomaly now reads "REGRESSION" and should be zero in every future report.
 
@@ -1447,6 +1448,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    `docs/design/research/7dsgc-skill-art.md`.
 
 162. **Art lives in one folder per unit, named `<element color>_<id>`**
+   **Amended by #171 (2026-10-02):** an id already starting with its colour is not doubled (`blue_lyra/`).
    (2026-09-27). His words: *"when we select new assets, can we organize them
    in proper structure and naming? for e.g. blue_lyra folder would have all of
    her assets in there."* Asked whether the colour meant 7DSGC-style colour
@@ -1481,3 +1483,144 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
      substitute. His words: *"Ain't you making decisions now without
      consulting. I asked for her holding bow in her hands."* Also in
      `AGENTS.md`.
+
+164. **[Freeze] is built: a stun that also strips the target and keeps it
+   stripped** (defined 2026-09-27 in the `toll-kits` workshop, built
+   2026-10-02; amends #65 and closes #75's "unbuilt"). His definition:
+   *"stun is basically incapacitates the enemy and they are not able to use
+   their skills right, but they are still prone to receiving buffs and
+   debuffs … but for freeze, yes, they will be incapacitated just like stun,
+   um, and but they are not able to gain any buffs or debuffs other than the
+   freeze debuff … both stun, stunned enemies, and frozen enemies. They are
+   still able to gather ult ultimate gauge."* The rest, in his words, settled
+   the same day:
+   - Landing strips: *"their existing buffs and debuffs are also removed and
+     only the freeze or frozen debuff remains"*, stances included; *"It's
+     only cancelable buffs and debuffs that are affected by freeze."*
+     Uncancellable entries and effects stay, and can still land while frozen.
+   - The one counter: *"there is only one way to tackle [freeze] is to have
+     debuff immunity"*. (A boss's `ccImmune` also blocks it, as it always
+     claimed to cover "stun/freeze".)
+   - *"any type of damage taken will break it. Whether it's an attack, attack
+     debuff, or a DOT."* Cleanse removes it. A plain debuff skill's Freeze
+     overrides an existing one; an attack-debuff skill's hit breaks it and its
+     own Freeze reapplies at the end of the attack.
+   - Naming: *"the mechanic is called freeze but the debuff … would be
+     called frozen … it would be frozen for x turns"*.
+   - Code: `lib/game/freeze.ts` (one module: `applyFreeze`, `breakFreeze`,
+     `isIncapacitated`, and `enforceFrozen`, the post-pass that keeps a frozen
+     unit stripped after every action and every passive). `freeze` is a skill
+     mechanic too. **#65's unbuilt list no longer holds it**
+     (`tests/kitDescriptionRules.test.ts`); "chill" stays there.
+   - Claude's inference, flagged: a tanked hit deals 0 damage, so it does not
+     break Freeze. He said "damage" breaks it; a null hit dealt none.
+
+165. **[Cold], blue Lyra's Frostline, and how it resolves** (draft
+   2026-09-27; edge cases 2026-10-02). His text: *"Every time this character
+   attacks – Applies a effect [Cold] on attacked enemy (Max 3 stacks per
+   enemy). Applies the following effects to the enemy at the end of turn,
+   based on the number of [Cold] stacks present – 1 stack : Attack and defence
+   10% down – 2 stacks : disables ultimate moves for 1 turn – 3 sracks :
+   removes all stacks and then freezes the enemy for 1 turn."* From the draft's
+   answers: tiers stack up; *"1 turn debuff yes and since she applies a
+   effect, its uncancellable"*; [Cold] stays *"until it is removed on 3rd
+   stack or lyra dies"*; *"Its an effect and uncancellable"*; an AoE gives
+   every enemy hit a stack. Tiers resolve at the end of HER team's turn —
+   *"she can't freeze anyone during ally turn. It's only at the end of the
+   turn before the start of enemy turn"*.
+   On 2026-10-02 Claude asked four edge cases as options; **these are
+   selections of Claude's labels, not his prose**:
+   - Debuff Immunity **blocks the tier effects** ("Immunity blocks them"),
+     as it blocks Freeze. [Cold] itself still lands.
+   - An immune enemy at 3 stacks: **"Stacks clear, no freeze."**
+   - **"Only on a real hit"**: neither an evaded nor a tanked attack gives
+     [Cold].
+   - The ATK decay (below) falls at the **"End of every turn"**, both sides'.
+   Frostline's other half, his: *"let's say 50% attack at the start of the
+   turn, but it decays by 20% up to a max of 40% at the end of each turn"* —
+   a `fadingBuff` mechanic (+50, falling 20 a turn, holding at +10), which the
+   parked Full Power Freeza kit is the same shape as. Code: `lib/game/cold.ts`,
+   `registerFadingBuff` in `lib/game/passive.ts`.
+   **Field only** (2026-10-02, his words): *"Lyra's passive shouldn't work
+   from bench. She has to be on field to activate it."* A blue Lyra who starts
+   on the bench gets no battle-start ATK bonus — the default-deny every
+   battle-start passive follows — and [Cold] only ever comes from her
+   attacks. Claude's reading, flagged: "activate" taken as the battle-start
+   trigger, so a sub promoted later does not start the bonus then either.
+   Also his, the same day: a tanked hit does not break Freeze (*"Correct"*).
+
+166. **An ultimate can be sealed: "disables ultimate moves"** (2026-09-26,
+   Caila's Soporific; blue Lyra's [Cold] at 2 stacks uses it too). His words:
+   *"code wise - it could be 'ult-disable' it will basically seal only
+   ultimate cards, similar to how attack or atk-debuff seals work"*, corrected
+   to the wording *"disables enemy ultimate moves for [x] turns"*, and *"the
+   disable enemy ultimate move debuff does not seal the alt gauge meter. So
+   they may still continue to lose or gain ultimate gauges"*. Built as
+   `seal` with `sealType: "ultimate"`. **Until now no seal touched an
+   ultimate** and the glossary said so; that line is gone. Which seal blocks
+   which skill is now one function, `lib/game/seal.ts`, read by the engine,
+   the AI and the hand — the AI and the hand used to check `"attack"` by name
+   and so ignored debuff and attack-debuff seals.
+
+167. **A team counter: Undertow counters an enemy who attacks any ally**
+   (2026-09-27, green Duke). His words: *"does x amount of damage to the
+   attacker who attacks any ally … his uh, attack numbers would be lower than
+   Meliodas's"* and *"it is one counter per enemy skill. Doesn't matter if
+   it's a AOE or a single target."* Off Duke's ATK; every part of Undertow is
+   a stance part (#131), its Rank 3 Debuff Immunity included, so
+   `cancelStances` takes the immunity and `cancelBuffs` does not. On
+   2026-10-02 he settled two edge cases by **selecting Claude's options**:
+   **no counter when the attacked ally dies from the hit** (on an AoE, any
+   surviving ally is enough), and **an evaded attack still counts**. Code:
+   `lib/game/counter.ts` (Meliodas's own counter moved there unchanged; a
+   team counter never doubles as an own counter).
+
+168. **Post-exam-arc units sit ~5% above the earlier bands; Arc 2 units
+   10–15% above the original Arc 1 bands** (2026-09-27 and 2026-09-29;
+   amends the bands of #68). His words: *"post exam arc characters will be
+   slightly stronger than all the characters that come before them. So
+   basically a slight power creep"*; the ~5% step was Claude's suggestion,
+   which he accepted — *"5% works, and yes Caila counts."* Then: *"arc 2
+   units will be overall 10-15% stronger in terms of stats compared to most
+   of arc 1 units"*. Stats only. The numbers live in the kit JSON
+   (`blue_lyra`, `caila`, `green_duke`), not here; the bands are
+   `docs/design/KIT_DESIGN.md` §2. Claude's reading, not his words: the
+   exam-arc batch counts among "most of Arc 1", so Arc 2's step is measured
+   from the original bands.
+
+169. **No damage reduction on an attack skill** (2026-09-27). *"normally we
+   would not put mechanics like damage reduction part uh, part of uh, attack
+   skill because that's just too much broken especially at this stage of the
+   game"* — he replaced it with a DEF raise on blue Lyra's Icefall. "At this
+   stage of the game" is his qualifier, so it may be revisited. Claude's
+   inference: damage reduction stays on stances, as on Mustafa's Fortress and
+   green Duke's Undertow.
+
+170. **Names and headings Claude suggests are not built round a comma**
+   (2026-09-27). *"I don't like your suggestions when it, there's a comma. So
+   what kneels comma rises is is the least favorite. Same for the one you
+   suggested earlier. … Red dies comma measured."* ("What Kneels, Rises",
+   "Red Ice, Measured".) Working style for naming; also in
+   `.claude/skills/kitwords/EXAMPLES.md`.
+
+171. **A kit can be game-ready but not live: `unreleased`** (2026-10-02;
+   amends #162). His instruction for the three exam-arc imports: *"Get to
+   implement the new characters. But don't make them live in the game yet.
+   Just make them game ready with their kits and mechanics. We don't have
+   their artworks so that's why not going to be live in game yet."* Offered
+   three options, he **selected "Dev only"**: hidden from every player-facing
+   list on the deployed site, visible under `next dev` so he can playtest.
+   `isVisible` / `getPlayableCharacters` in `lib/game/characterCatalog.ts`;
+   the engine, the simulator and the tests see every kit. **Releasing a kit =
+   adding its art and deleting the flag**, which is why the art test exempts
+   unreleased kits and only them.
+   **Amends #162:** offered "keep the rule" or "skip the doubled colour", he
+   **selected "Skip doubled colour"** — an id that already starts with its
+   colour is the key on its own: `blue_lyra/`, `green_duke/`, coin
+   `blue_lyra_coin`; `caila` is still `red_caila/`. One function names folder
+   and coin, `colorQualifiedId` in `lib/game/unitKey.ts`.
+   Also settled that day, as selections: Caila carries the tags Human and
+   Female; blue Lyra carries Human and Female; no lore for the three until he
+   writes it. Then, his words: *"Add it to red lyra too"* — red Lyra (`lyra`)
+   carries Female as well, so [Female] synergies now reach her. The story-only
+   `lyra_npc` was not named and is unchanged.

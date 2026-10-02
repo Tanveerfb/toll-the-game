@@ -22,6 +22,7 @@ import {
 import { ultGaugeMax } from "@/lib/game/ultGauge";
 import { actionsForTurn } from "@/lib/game/actionEconomy";
 import { bonusActionsFor } from "@/lib/game/stageEffects";
+import { incapacitationWord, isIncapacitated } from "@/lib/game/freeze";
 import type { StageEffect } from "@/types/stageEffects";
 import type { BattleOwner } from "@/types/battleOwner";
 import { useSettingsStore } from "./settingsStore";
@@ -675,8 +676,10 @@ export const useGameStore = create<BattleState>()(
 
     const card = deck[cardIndex];
     const char = playerTeam.find((c) => c.instanceId === card.sourceInstanceId);
-    if (char && char.debuffs.some((d) => d.type === "stun")) {
-      set({ interactionNotice: `${char.name} is stunned and cannot act.` });
+    if (char && isIncapacitated(char)) {
+      set({
+        interactionNotice: `${char.name} is ${incapacitationWord(char)} and cannot act.`,
+      });
       return;
     }
 

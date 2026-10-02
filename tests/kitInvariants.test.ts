@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getPlayableCharacters } from "@/lib/game/characterCatalog";
+import { getAllCharacters } from "@/lib/game/characterCatalog";
 
 /**
  * The kit-design rules, enforced (2026-08-13).
@@ -21,7 +21,10 @@ import { getPlayableCharacters } from "@/lib/game/characterCatalog";
  * those it is, is his call — not something to silently widen a band over.
  */
 
-const PLAYABLE = getPlayableCharacters();
+// Every playable kit, unreleased ones included: a kit has to satisfy the
+// rules before it goes live, not after (2026-10-02). `getPlayableCharacters`
+// hides unreleased kits outside development, tests included.
+const PLAYABLE = getAllCharacters().filter((c) => c.storyOnly !== true);
 
 /**
  * The union of the three role bands (KIT_DESIGN.md §2, post-ruling-#68):

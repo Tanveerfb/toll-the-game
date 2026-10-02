@@ -12,6 +12,8 @@ import {
   skillTypeCategory,
 } from "@/lib/game/skillTypeStyle";
 import { moveCardById } from "@/lib/game/deck";
+import { incapacitationWord, isIncapacitated } from "@/lib/game/freeze";
+import { activeSealFor } from "@/lib/game/seal";
 import {
   classifyExit,
   mergePartnerIds,
@@ -632,12 +634,10 @@ export default function Hand({
           (c) => c.instanceId === card.sourceInstanceId,
         );
         const isUlt = card.skill.type === "ultimate";
-        const isStunned = char?.debuffs.some((d) => d.type === "stun");
-        const isSealed =
-          card.skill.type === "attack" &&
-          char?.debuffs.some(
-            (d) => d.type === "seal" && d.sealType === "attack",
-          );
+        const isStunned = char ? isIncapacitated(char) : false;
+        // Every seal type, ultimates included (lib/game/seal.ts) — this used
+        // to grey out attack-sealed cards only.
+        const isSealed = activeSealFor(char, card.skill) !== undefined;
         const frame = getCardFrameStyle(card.rank, isUlt);
         const isDragged = dragId === card.id;
         const isPartner = partnerIds.has(card.id);
@@ -819,9 +819,9 @@ export default function Hand({
               </span>
             ) : null}
 
-            {isStunned ? (
+            {isStunned && char ? (
               <div className="absolute inset-0 flex items-center justify-center bg-background/60 font-body text-micro font-bold uppercase tracking-label text-foreground">
-                Stunned
+                {incapacitationWord(char) === "frozen" ? "Frozen" : "Stunned"}
               </div>
             ) : null}
 

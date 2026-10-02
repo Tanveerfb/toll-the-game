@@ -16,8 +16,12 @@ const TARGET_PATTERN = /\benem(?:y|ies)\b/i;
  * an ally means the target is already stated and the suffix must not be added
  * — "Grants all allies Debuff Immunity … to all allies" said it twice
  * (Tanveer, 2026-08-10).
+ *
+ * Was `/\ballies?\b/` until 2026-10-02 — "allie" or "allies", so the "ally"
+ * of its own example never matched. Green Duke's Undertow ("counters any enemy
+ * that attacks an ally") had "to all allies" stapled onto its Rank 1 text.
  */
-const ALLY_TARGET_PATTERN = /\ballies?\b/i;
+const ALLY_TARGET_PATTERN = /\ball(?:y|ies)\b/i;
 
 const LETTER_INDEX: Record<string, number> = {
   x: 0,
@@ -553,11 +557,53 @@ function resolveUltLevelLadders(
   } as CharacterSkillData;
 }
 
+/**
+ * A mechanic below its `minRank` does not exist at this rank, so for the text
+ * it resolves as zero and inactive: a `[type.field]` clause reads 0 and is
+ * dropped (#44), and a `[type? a : b]` conditional takes its false branch.
+ *
+ * Zeroed rather than removed, because a removed mechanic leaves its
+ * placeholder unresolvable, and an unresolvable placeholder is printed as
+ * typed — "applies Rejuvenate for [healOverTime.duration] turns" at Rank 1.
+ */
+function resolveRankGates(
+  skill: CharacterSkillData,
+  rankIndex: number,
+): CharacterSkillData {
+  if (skill.type === "ultimate") return skill;
+  const gated = (m: Record<string, unknown>) =>
+    typeof m.minRank === "number" && rankIndex + 1 < m.minRank;
+  if (!(skill.mechanics ?? []).some(gated)) return skill;
+  return {
+    ...skill,
+    mechanics: (skill.mechanics ?? []).map((m) =>
+      gated(m)
+        ? {
+            ...m,
+            active: false,
+            valueRanked: undefined,
+            stacksRanked: undefined,
+            durationRanked: undefined,
+            counterDamagePercentRanked: undefined,
+            value: 0,
+            valuePercent: 0,
+            stacks: 0,
+            duration: 0,
+            counterDamagePercent: 0,
+          }
+        : m,
+    ),
+  };
+}
+
 export function buildDescriptionForRank(
   original: CharacterSkillData,
   rankIndex: number,
 ): string {
-  const skill = resolveUltLevelLadders(original, rankIndex);
+  const skill = resolveRankGates(
+    resolveUltLevelLadders(original, rankIndex),
+    rankIndex,
+  );
   const raw = cleanText(skill.description ?? "");
   const damage = getRankDamage(skill, rankIndex);
 

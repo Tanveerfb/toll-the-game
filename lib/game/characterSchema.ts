@@ -111,6 +111,8 @@ export const characterSchema = z.looseObject({
   tags: z.array(z.string()).optional(),
   lore: z.string().optional(),
   storyOnly: z.boolean().optional(),
+  /** Game-ready, not live: shown in local development only (catalog). */
+  unreleased: z.boolean().optional(),
   permanentPool: z.boolean().optional(),
   tier: z.enum(["elite"]).optional(),
   ultGaugeMax: z.number().positive().optional(),

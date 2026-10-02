@@ -52,6 +52,7 @@ number behind it.
 | A passive's `#` headings line up with its blocks, and an unconditional block is headed `# Basic effects` | — |
 | A description promising to cancel **stances** authors `cancelStances`, and "cancels buffs and stances" needs **both** mechanics. The two reach different things — a stance survives `cancelBuffs`, a plain buff survives `cancelStances` — so a missing mechanic is a card that does not do what it says. Three shipped skills had exactly this | #132 |
 | Anything that is part of a stance is authored **on the stance skill**, so it joins that stance's group and is cancelled with it. A stat raise split onto its own non-stance skill is a separate buff and dies to `cancelBuffs` instead | #131, #132 |
+| A mechanic that only exists from some rank declares `minRank` (or `minUltLevel` on an ultimate). **A `0` in a duration ladder is not "off" for a buff or HoT:** a `buffDuration` of 0 never expires (`tick.ts`), so a `[0,1,2]` Rejuvenate ships a permanent heal at R1. Zero ladders are safe only for seals and stuns, which skip a 0 | #164–#171 batch, 2026-10-02 |
 | Passes `characterSchema.ts` | — |
 
 ## Wording checks

@@ -1,3 +1,4 @@
+import { enforceFrozen } from "@/lib/game/freeze";
 import type { BattleCharacter } from "@/types/character";
 import type { BattlePhase } from "@/types/mechanic";
 
@@ -93,7 +94,9 @@ export function createMechanicQueue(
         if (source.currentHP <= 0 && !item.runWhenDead) continue;
 
         log(`Evaluating mechanics for ${source.name} [${item.mechanicId}]`);
-        current = await item.action(source, current, log);
+        // A frozen unit gains nothing cancellable from a passive either — the
+        // same post-pass executeSkill runs (lib/game/freeze.ts).
+        current = enforceFrozen(current, await item.action(source, current, log));
 
         if (stepDelayMs > 0) {
           await new Promise((resolve) => setTimeout(resolve, stepDelayMs));

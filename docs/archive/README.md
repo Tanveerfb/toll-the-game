@@ -8,6 +8,10 @@ holds it verbatim. Moved here from `docs/STATUS.md` on 2026-09-27.
   "Working" feature log and the session logs of 2026-09-26c, 2026-09-26d and
   2026-09-27.
 
+## Session log — 2026-10-02
+
+The exam-arc kits (blue Lyra, Caila, green Duke) game-ready but unreleased; Freeze, [Cold], the ultimate seal and the team counter built; rulings #164–#171 — [`STATUS-2026-10.md`](STATUS-2026-10.md).
+
 ## Session log — 2026-09-27d
 
 Lyra's kit art finished (Latent Heat, Supercooling, Flash Point and Shatterburn redone), 7DSGC pose references, per-unit art folders, rulings #162–#163 — [`STATUS-2026-09.md`](STATUS-2026-09.md).

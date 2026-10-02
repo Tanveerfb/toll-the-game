@@ -9,6 +9,7 @@
 // the kit (data/characters/<id>.json), so a folder cannot drift from it.
 // Regeneration pipeline: docs/ART_PIPELINE.md
 import { getCharacterById } from "@/lib/game/characterCatalog";
+import { colorQualifiedId } from "@/lib/game/unitKey";
 
 // Bump when any art file is replaced in place — busts the Next.js image
 // optimizer cache and browser cache, which otherwise keep serving the old
@@ -76,11 +77,13 @@ function resolveArtId(id: string): string {
   return ART_ALIAS[id] ?? id;
 }
 
-/** The unit's art folder name: `<color>_<id>` from its kit. `sea_monster` has
- *  art but no kit (nothing renders it), so it keeps a bare `<id>` folder. */
+/** The unit's art folder name: `<color>_<id>` from its kit, or the bare id
+ *  when it already starts with its colour (`blue_lyra`, not `blue_blue_lyra`
+ *  — see `colorQualifiedId`). `sea_monster` has art but no kit (nothing
+ *  renders it), so it keeps a bare `<id>` folder. */
 export function artFolder(artId: string): string {
-  const color = getCharacterById(artId)?.color;
-  return color ? `${color}_${artId}` : artId;
+  const kit = getCharacterById(artId);
+  return kit ? colorQualifiedId(kit) : artId;
 }
 
 function artRoot(artId: string): string {
@@ -174,11 +177,26 @@ export function skillArtSlug(skillName: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/**
+ * Skill art one unit borrows from another, by `<charId>__<slug>`. A variant
+ * whose ultimate is the original's, name included, shows the original's art —
+ * his call for both exam-arc variants (2026-09-27/28: blue Lyra "reuses red
+ * Lyra's ult art", green Duke's ult "reuses blue Duke's art").
+ */
+const SKILL_ART_ALIAS: Record<string, string> = {
+  "blue_lyra__latent-heat": "lyra__latent-heat",
+  "green_duke__fist-of-flowing-ruin-water": "duke__fist-of-flowing-ruin-water",
+};
+
+/** Every borrowed key, for the test that each points at registered art. */
+export const skillArtAliases: Readonly<Record<string, string>> = SKILL_ART_ALIAS;
+
 /** Skill-specific card art, or null if none is generated yet (caller falls
  *  back to getCharacterArt). */
 export function getSkillArt(id: string, skillName: string): string | null {
-  const artId = resolveArtId(id);
-  const slug = skillArtSlug(skillName);
-  if (!SKILLS_WITH_ART.has(`${artId}__${slug}`)) return null;
+  const key = `${resolveArtId(id)}__${skillArtSlug(skillName)}`;
+  const resolved = SKILL_ART_ALIAS[key] ?? key;
+  if (!SKILLS_WITH_ART.has(resolved)) return null;
+  const [artId, slug] = resolved.split("__");
   return `${artRoot(artId)}/skills/${slug}.png?v=${ART_VERSION}`;
 }

@@ -1,4 +1,8 @@
-import { getPlayableCharacters } from "@/lib/game/characterCatalog";
+import {
+  getAllCharacters,
+  getPlayableCharacters,
+} from "@/lib/game/characterCatalog";
+import { colorQualifiedId } from "@/lib/game/unitKey";
 
 /**
  * Canonical registry of every material id the game can put in a player's
@@ -48,14 +52,25 @@ export function characterCoinId(character: {
   id: string;
   color: string;
 }): string {
-  return `${character.color}_${character.id}_coin`;
+  // `colorQualifiedId`, the same key as the art folder: an id that already
+  // carries its colour is not doubled (`blue_lyra_coin`; Tanveer, 2026-10-02).
+  return `${colorQualifiedId(character)}_coin`;
 }
 
+/** Coin id → owner id, for every kit that can own a coin. */
+const COIN_OWNERS: ReadonlyMap<string, string> = new Map(
+  getAllCharacters()
+    .filter((character) => character.storyOnly !== true)
+    .map((character) => [characterCoinId(character), character.id]),
+);
+
 /** The character a coin belongs to, or null if the id isn't a coin. Coins are
- *  spendable only on their owner, so every spend path needs this direction. */
+ *  spendable only on their owner, so every spend path needs this direction.
+ *
+ *  A lookup, not a pattern: `/^[a-z]+_(.+)_coin$/` read `blue_lyra_coin` as
+ *  red Lyra's id once the colour stopped being doubled. */
 export function characterIdFromCoin(coinId: string): string | null {
-  const match = /^[a-z]+_(.+)_coin$/.exec(coinId);
-  return match ? match[1] : null;
+  return COIN_OWNERS.get(coinId) ?? null;
 }
 
 export function isCharacterCoin(id: string): boolean {

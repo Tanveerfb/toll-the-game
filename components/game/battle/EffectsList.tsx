@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { entryTouchesStat, statPhrase } from "@/lib/game/stats";
+import { sealPhrase } from "@/lib/game/seal";
 import type { BattleCharacter } from "@/types/character";
 import type { StatusEffect } from "@/types/mechanic";
 
@@ -212,9 +213,14 @@ export function effectDescription(effect: StatusEffect): string {
   }
   if (perTurn !== undefined) return `${perTurn} damage per turn`;
   if (effect.type === "stun") return "Cannot act";
-  if (effect.type === "seal") {
-    return `${effect.sealType ?? "skill"} skills sealed`;
+  if (effect.type === "freeze") {
+    return "Cannot act or gain buffs and debuffs; damage breaks it";
   }
+  if (effect.type === "cold") {
+    const stacks = effect.stacks ?? 1;
+    return `${stacks} stack${stacks === 1 ? "" : "s"}`;
+  }
+  if (effect.type === "seal") return sealPhrase(effect.sealType);
   if (effect.type === "taunt") return "Enemies must attack this unit";
   // A counter stance's number is its counter damage, not a stat modifier, so
   // it is stored on its own field and every branch here used to miss it —

@@ -49,6 +49,7 @@ const DEBUFF_MECHANICS: ReadonlySet<string> = new Set([
   "debuff",
   "seal",
   "stun",
+  "freeze",
   "shock",
   "bleed",
   "corrosion",

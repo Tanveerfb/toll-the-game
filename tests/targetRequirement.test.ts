@@ -8,7 +8,7 @@ import {
 import {
   getCharacterById,
   getCharacterKit,
-  getPlayableCharacters,
+  getAllCharacters,
 } from "@/lib/game/characterCatalog";
 import type { ActionCard } from "@/types/action";
 
@@ -91,7 +91,10 @@ describe("every real kit, exhaustively", () => {
    * no fixture matched the shape that actually ships. This walks the real
    * catalogue instead: no ally-facing skill anywhere may be cancelled.
    */
-  const allSkills = getPlayableCharacters().flatMap((character) => {
+  // Unreleased kits included — see kitInvariants.test.ts.
+  const allSkills = getAllCharacters()
+    .filter((character) => character.storyOnly !== true)
+    .flatMap((character) => {
     const kit = getCharacterKit(character, 0);
     return [...kit.skills, ...(kit.ultimate ? [kit.ultimate] : [])];
   });
