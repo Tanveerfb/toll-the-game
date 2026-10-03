@@ -5,7 +5,9 @@ import {
   artFolder,
   getCharacterArt,
   getSkillArt,
+  getTileArt,
   registeredSkillArt,
+  registeredTileArt,
   skillArtAliases,
 } from "@/lib/game/characterArt";
 import { characterCoinId, characterIdFromCoin } from "@/lib/game/materials";
@@ -92,6 +94,15 @@ describe("per-unit art folders", () => {
         path.join(process.cwd(), "public", url.split("?")[0]),
       );
     });
+    expect(broken).toEqual([]);
+  });
+
+  it("points every frame-break tile cut-out at a file that exists on disk", () => {
+    const broken = registeredTileArt.filter((id) => {
+      const tile = getTileArt(id);
+      return tile === null || !fs.existsSync(path.join(process.cwd(), "public", tile.src.split("?")[0]));
+    });
+    expect(registeredTileArt.length).toBeGreaterThan(0);
     expect(broken).toEqual([]);
   });
 

@@ -1624,3 +1624,37 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    writes it. Then, his words: *"Add it to red lyra too"* — red Lyra (`lyra`)
    carries Female as well, so [Female] synergies now reach her. The story-only
    `lyra_npc` was not named and is unchanged.
+172. **The archive tile is the "Ink burst" frame break; only new-pipeline art
+   breaks out** (2026-10-03). He asked for Dokkan-style tiles, *"a crop of their
+   card art and then a almost square border layer and also a detail layer.
+   We are not doing ssr or UR in our game ... We can show element color tho"*.
+   The mockups were drawn in three rounds:
+   - Round 1, `archive-tile.html`: he answered *"Try a bit more creative ...
+     nameplate options are out."*
+   - Round 2, `archive-tile-v2.html`: he picked the direction, *"The direction
+     is the frame break. Lets go more creative on it."*
+   - Round 3, `archive-tile-v3.html`: he picked option 1, *"Ooo i love the ink
+     burst design."*
+
+   **Only new-pipeline art breaks out.** His words: *"only lyra and sara got
+   the new design pipeline treatment, i expect their art to pop out of frame.
+   The olders ones i am not expecting so don't try too hard with them."*
+
+   **The stars show ult level.** Offered ult level, ascension or both, he
+   **selected ult level**: *"ascension is irrelevant as the char level is
+   shown already."* **Three columns on a phone** is his selection of the
+   recommended option.
+
+   **Built:**
+   - `components/game/RosterTile.tsx`.
+   - The `tile-*` utilities in `styles/globals.css`.
+   - `getTileArt` in `lib/game/characterArt.ts`. It is the registry of
+     break-out cut-outs, and `tests/characterArt.test.ts` checks every file
+     exists.
+   - `scripts/skill_art/make_tile_cutout.py`, which makes the cut-outs. A
+     character joins the registry when its art goes through
+     `docs/CHARACTER_ART.md`.
+
+   **The tile dropped the HP, ATK and DEF bars and the name.** Sorting by stat
+   and search by name still work. That follows Dokkan, and it is Claude's
+   reading of his ask, not his words.

@@ -1,0 +1,63 @@
+{
+  "id": "sara",
+  "trigger": "saratoll",
+  "face_ref": "sara_face_ref_c14.png",
+  "out_dir": "lora_sara_v5c",
+  "identity": "masterpiece, best quality, absurdres, 1girl, solo, adult woman, late 20s, (platinum white hair:1.3), (chest length low twintails:1.3), blunt bangs, small black hair ties, (brown eyes:1.3), thin black choker, (oversized black hoodie:1.3), black cat ear hood, dark ear lining, plain hood interior, (black jogger pants:1.3), thin white side stripe, (plain white low-top sneakers:1.3), slender",
+  "identity_upper": "masterpiece, best quality, absurdres, 1girl, solo, adult woman, late 20s, (platinum white hair:1.3), (chest length low twintails:1.3), blunt bangs, small black hair ties, (brown eyes:1.3), thin black choker, (oversized black hoodie:1.3), black cat ear hood, dark ear lining, plain hood interior",
+  "negative_extra": "tail, cat tail, shark hood, white hoodie, grey hoodie, lace trim, hood drawstring ties flapping, earrings, patches, paw print, thick side stripe, short hair, bob cut, extra pockets, child, loli, teenager, chibi, (white hood lining:1.2), frills, print, logo, emblem, jacket, layered clothes, scarf, white ribbons, orange ribbons, red ribbons, pink inner ears, red eyes, grey eyes, text, sticker, white outline, colored background, (animal ears:1.4), (cat ears on head:1.4), kemonomimi, (yellow eyes:1.3), (amber eyes:1.3), (orange eyes:1.2), golden eyes, (bob cut:1.3), short hair, (bare legs:1.3), shorts, no pants, headband, (multicolored hair:1.4), (streaked hair:1.4), (two-tone hair:1.4), (black hair:1.4), dark hair, striped ribbons, blue ribbons, (stripes on sleeves:1.3), (stripes on hoodie body:1.3), (white trim on hood:1.2), large ribbons, bows, brown hoodie, brown pants, (black shoes:1.3), dark shoes, grey shoes, red shoes, high-top sneakers",
+  "style": "cel shading, thick clean lineart, anime screencap, even lighting, (plain white background:1.3), simple background",
+  "approved_refs": [],
+  "lora_use": {
+    "note": "His settings for prompting with sara_toll (step 1500), 2026-10-02.",
+    "negative_add": "large breasts",
+    "always": "state the hood: (hood up:1.2) or (hood down:1.5), bare head, hair fully visible. With no hood word she defaults to hood up.",
+    "watch": "a slight plum tint in the eyes (minor)"
+  },
+  "design_note": "LOCKED 2026-10-02 from his story session (supersedes the r1-image-1 lock and its pocket paw): face/hair anchor C14 (lora_sara_c/cand_b_polite_00002, face-only crop as the IP-Adapter ref at 0.6), proportions C11 (lora_sara_c/cand_b_front_00003). No paw print, no tail, no earrings, no patches, no scarf-like ties. Hood mostly DOWN, about 1 in 4 up. Grey-white high-tops in every image. Age 23-25, prompted 'late 20s'. Identity prompt and negative are his, verbatim, plus the age and colour guards learned in rounds A-C. v3 (2026-10-02): his identity words kept, weighted, after the unweighted v2 batch failed 48/48. v4: v3 weighted the ribbons and black bled into her hair; ribbons unweighted, hair colour guarded, hood-down pushed harder with its own negatives. v5 re-roll after his v4 review: hair ties and low-tops accepted, expressions moved out of the identity, sleeve/body stripes and hood trim negated; back skeleton enlarged.",
+  "body_shots": [
+    [
+      "b_back",
+      "(hood down:1.5), bare head, hair fully visible, full body, standing, (from behind:1.4), (back view:1.4), facing away, back of head, low twin tails with small black hair ties, sharp focus, detailed, (white background:1.4)",
+      "back"
+    ],
+    [
+      "b_down_tired",
+      "(hood down:1.5), bare head, hair fully visible, full body, standing, slouching, (tired:1.3), half-closed eyes, looking away, hands visible, (white background:1.4)"
+    ],
+    [
+      "b_down_front",
+      "(hood down:1.5), bare head, hair fully visible, full body, standing, front view, arms relaxed at sides, hands visible, slight smile, half-lidded eyes, looking at viewer, (white background:1.4)"
+    ]
+  ],
+  "face_shots": [],
+  "lora": "training/sara_toll_v1_000001500.safetensors (superseded 2026-10-03 by v2; sara_toll.safetensors is now v2 step 1500)",
+  "lora_checkpoint": 1500,
+  "hood_down_negative": "(hood up:1.4), hood on head, (cat ears:1.3)",
+  "approved": {
+    "v4#5": "output/lora_sara_v4/cand_b_down_34_00001_.png",
+    "v4#20": "output/lora_sara_v4/cand_b_down_tired_00004_.png",
+    "v4#27": "output/lora_sara_v4/cand_f_down_default_00003_.png",
+    "v4#29": "output/lora_sara_v4/cand_f_down_serious_00001_.png",
+    "v4#36": "output/lora_sara_v4/cand_f_down_surprised_00004_.png",
+    "v4#38": "output/lora_sara_v4/cand_f_down_worried_00002_.png",
+    "v4#42": "output/lora_sara_v4/cand_f_up_default_00002_.png",
+    "v4#47": "output/lora_sara_v4/cand_f_up_unimpressed_00003_.png",
+    "R1": "output/lora_sara_v5/cand_b_up_cat_00002_.png",
+    "R3": "output/lora_sara_v5b/cand_b_up_cat_00001_.png",
+    "R4": "output/lora_sara_v5b/cand_b_up_cat_00003_.png",
+    "R8": "output/lora_sara_v5/cand_b_down_laugh_00002_.png",
+    "R9": "output/lora_sara_v5/cand_b_down_laugh_00003_.png",
+    "R10": "output/lora_sara_v5/cand_f_down_worried_00001_.png",
+    "R12": "output/lora_sara_v5/cand_f_down_serious_00002_.png",
+    "R13": "output/lora_sara_v5/cand_f_down_serious_00004_.png",
+    "R15": "output/lora_sara_v5/cand_b_down_unimpressed_00001_.png",
+    "R17": "output/lora_sara_v5/cand_b_down_34_00003_.png",
+    "F1": "output/lora_sara_v5c/cand_b_back_00001_.png",
+    "F2": "output/lora_sara_v5c/cand_b_back_00003_.png",
+    "F5": "output/lora_sara_v5c/cand_b_down_front_00004_.png",
+    "F6": "output/lora_sara_v5c/cand_b_down_tired_00003_.png"
+  },
+  "seed_offset": 200,
+  "dataset": "C:\\Users\\Tanve\\.comfyui-mcp\\training\\datasets\\sara_v1 (22 images, 6 hood up; sara_12 dropped to datasets/_dropped)"
+}

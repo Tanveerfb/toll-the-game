@@ -10,7 +10,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # toll-the-game — Project Documentation
 
-Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDOFF.md` first** — context, design rulings ledger, working style. Architecture in `docs/ARCHITECTURE.md`; current state in `docs/STATUS.md` (short, rewritten each checkpoint; history in `docs/archive/`); issues in `docs/issues.md`; plan in `docs/ROADMAP.md`; art generation in `docs/ART_PIPELINE.md`. How this repo diverges from `project-rules.md` is `conventions.md`, and why is `decisions.md`.
+Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDOFF.md` first** — context, design rulings ledger, working style. Architecture in `docs/ARCHITECTURE.md`; current state in `docs/STATUS.md` (short, rewritten each checkpoint; history in `docs/archive/`); issues in `docs/issues.md`; plan in `docs/ROADMAP.md`; character, kit and card art in `docs/CHARACTER_ART.md` (walked by the `charart` skill); other art generation in `docs/ART_PIPELINE.md`. How this repo diverges from `project-rules.md` is `conventions.md`, and why is `decisions.md`.
 
 **Never block on missing art.** If a feature needs an image the game doesn't have, append a request to `docs/ART_REQUESTS.md`, ship the feature with a fallback, and move on — ComfyUI runs in its own dedicated sessions, and that file is what they read.
 
@@ -25,6 +25,7 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 | `mobilecheck` | Before shipping a screen, or when reworking one built before 2026-08-18. One screen per run |
 | `ruling` | He settles a design question. Numbered entry, his words, supersede links, propagation |
 | `comfypending` | A feature needs art the game doesn't have |
+| `charart` | Making a playable character's art: design lock, LoRA, kit/card drafts, finish, composite, lock. Enforces his approval gates; the method is `docs/CHARACTER_ART.md` |
 
 `Plans/` holds specced-but-unbuilt work — dated design files a future session can pick up cold. Tanveer builds those in their own dedicated sessions; **don't start one mid-conversation**, and don't let a plan rot silently: if the code it describes changes, the plan is stale and says so or goes.
 

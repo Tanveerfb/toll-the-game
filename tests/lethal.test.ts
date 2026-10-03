@@ -34,7 +34,7 @@ function makeChar(
 }
 
 const nineLives: import("@/types/passive").Passive = {
-  name: "Nine Lives",
+  name: "Protection of the Felines",
   trigger: "onLethalDamage",
   mechanics: [
     { type: "surviveLethal", hpConditionPercent: 30, healDamagePercent: 50 },

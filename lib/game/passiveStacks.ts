@@ -220,7 +220,7 @@ function conditionalHpReadout(unit: BattleCharacter): PassiveReadout | null {
   };
 }
 
-/** Sara's Nine Lives: a one-shot pill, stays visible (dimmed) after firing. */
+/** Sara's Protection of the Felines: a one-shot pill, stays visible (dimmed) after firing. */
 function oneShotPillReadout(unit: BattleCharacter): PassiveReadout | null {
   const mech = findAnyPassiveMechanic(unit, "surviveLethal");
   if (!mech) return null;

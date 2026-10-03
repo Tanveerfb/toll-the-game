@@ -2,7 +2,7 @@
   "id": "sara",
   "cardNumber": 100026,
   "name": "Sara",
-  "heading": "Beast Caller",
+  "heading": "Beloved of Cats",
   "color": "red",
   "tags": ["Human", "Female"],
   "lore": "Ledger exam examinee, girl, animal control theme.",
@@ -11,7 +11,7 @@
   "hp": 3500,
   "skills": [
     {
-      "skillName": "Animal Strike",
+      "skillName": "Adaptation",
       "description": "Does damage equal to HP-scaled to one enemy.",
       "characterId": "sara",
       "type": "attack",
@@ -20,7 +20,7 @@
       "mechanics": []
     },
     {
-      "skillName": "Stampede Concentrate",
+      "skillName": "Swarm",
       "description": "Does Concentrate damage equal to HP-scaled to all enemies.",
       "characterId": "sara",
       "type": "attack",
@@ -37,7 +37,7 @@
     }
   ],
   "ultimate": {
-    "skillName": "Beast Master's Fury",
+    "skillName": "Apex",
     "description": "Greatly raises HP for 1 turn; then does damage equal to HP-scaled to one enemy.",
     "characterId": "sara",
     "type": "ultimate",
@@ -55,7 +55,7 @@
     ]
   },
   "passive": {
-    "name": "Nine Lives",
+    "name": "Protection of the Felines",
     "description": "- [Female] allies damage 5% 👆 per each one in the team\n\n# When taking a lethal blow at 30% HP or higher\n- Removes all debuffs and buffs from self\n- Heals 50% of incoming attack damage (Only once)",
     "trigger": "onLethalDamage",
     "worksFromSub": false,

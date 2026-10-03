@@ -337,7 +337,7 @@ describe("Recovery Rate applied at existing heal call sites", () => {
       currentHP: 400, // >= 30% of 1000 max HP, so the condition is met
       recoveryRatePercent: 200,
       passive: {
-        name: "Nine Lives",
+        name: "Protection of the Felines",
         trigger: "onLethalDamage",
         mechanics: [
           { type: "surviveLethal", hpConditionPercent: 30, healDamagePercent: 50 },

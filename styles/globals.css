@@ -362,6 +362,36 @@ body {
   );
 }
 
+/* ── The archive's frame-break tile (his pick, 2026-10-03: "Ink burst",
+   docs/design/mockups/archive-tile-v3.html, after Dokkan's roster tiles).
+   Every colour is the unit's element, `--el`, set on the tile. ───────────── */
+
+/* The window's chamfered cut: top-left and bottom-right corners bevelled. */
+@utility tile-bevel {
+  clip-path: polygon(9% 0, 100% 0, 100% 91%, 91% 100%, 0 100%, 0 9%);
+}
+@utility tile-bevel-inner {
+  clip-path: polygon(7% 0, 100% 0, 100% 93%, 93% 100%, 0 100%, 0 7%);
+}
+
+/* The ground a cut-out stands on: a burst of the element colour - speed rays,
+   a halftone screen, bright behind the head - where Dokkan uses glitter. */
+@utility tile-burst {
+  background:
+    radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--foreground) 55%, var(--el)) 0 8%, transparent 46%),
+    radial-gradient(color-mix(in srgb, var(--card-foreground) 35%, var(--el)) 1.3px, transparent 1.8px) 0 0 / 6px 6px,
+    repeating-conic-gradient(
+      from 0deg at 50% 40%,
+      color-mix(in srgb, var(--foreground) 18%, var(--el)) 0 5deg,
+      var(--el) 5deg 12deg
+    );
+}
+
+/* An ult-level star on the tile's corner. */
+@utility tile-star {
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

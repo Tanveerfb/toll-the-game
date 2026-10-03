@@ -1,4 +1,4 @@
-# Status — 2026-10-02
+# Status — 2026-10-03
 
 **Who updates this:** every checkpoint, by **rewriting** it, never appending
 (`project-rules.md` §2; his call, `decisions.md` 2026-09-27). It holds the
@@ -10,86 +10,99 @@ current position only. A session's log goes to
 
 ## Start here
 
-**State:** Three new units are game-ready but **not live**: blue Lyra, Caila
-and green Duke (`"unreleased": true`, ruling #171). They show only under
-`next dev`. The engine gained Freeze, [Cold], the ultimate seal and a team
-counter (#164–#167). Last checkpoint: `git log -1`. This session's log:
-`docs/archive/STATUS-2026-10.md`.
+**State:** Sara is the first unit through the new character-art pipeline, end
+to end.
+- **Her kit is renamed, names only:** *Beloved of Cats*, *Adaptation*,
+  *Swarm*, *Apex*, *Protection of the Felines*.
+- **Her new art is installed:** three skill arts, the park-sunset card, and a
+  portrait cropped from it.
+- **The archive uses the "Ink burst" frame-break tile** (ruling #172). Lyra
+  and Sara break out of their frames.
+- **The three exam-arc units are still unreleased** (#171).
+- **Last checkpoint:** `git log -1`. This session's log is in
+  `docs/archive/STATUS-2026-10.md`.
 
-**Next:** his playtest of the three in practice on his local dev server, then
-their art (`docs/ART_REQUESTS.md`, Category E). Release = art + delete the
-flag.
+**Next:** his pick. Either run `charart` for the next character (step 0,
+design lock: blue Lyra, Caila or green Duke, the release gate), or look at
+Sara's new art in a battle.
 
 **Blocked on him:**
-- Caila's design sheet (E2 cannot start without it).
-- Confirming the new card texts (`.claude/skills/kitwords/EXAMPLES.md`, Open).
-- Carried over: which screens show Lyra's C4 card pose and passive art (D5);
-  his next Lyra variant (B1 reserved); Roused; the closed Orders tile; the app
-  icon recolour; the foundation audit's next section; scheduling the folder
-  migration and sentence case.
+- Which character goes through the pipeline next.
+- Caila's design sheet.
+- Whether to install Playwright's Chromium so `npm run test:browser` can run.
+- Sara's design sheet in `toll-kits` still describes a cat-ear hood. Her v2
+  lock dropped the ears and set grey-white high-tops. The sheet is his to
+  update.
+- Carried over: the new card texts (kitwords EXAMPLES, Open); Lyra's C4 and
+  passive placement (D5); Roused; the Orders tile; the app-icon recolour; the
+  foundation audit; scheduling the folder migration.
 
-**Don't trust:** no screen was opened this session. The new units, Frozen
-and [Cold] rows, and the sealed-ultimate card are verified in tests only.
+**Don't trust:**
+- Sara's skill art has not been seen in a battle. Her portrait has not been
+  seen on any screen; the archive now shows her break-out cut-out instead.
+- `test:browser` was not run.
+- Nothing from 2026-10-02 (the exam-arc units, Freeze, [Cold]) has been
+  looked at in a browser either.
 
-## The three units (all `unreleased`)
+## Where things are
 
-| Unit | Card | Role | Kit | Engine pieces |
-| --- | --- | --- | --- | --- |
-| Lyra, "Grounded in Frost" | 100032 | defense, sub-DPS | `blue_lyra.json` | Frostline: fading ATK (field only), [Cold] → Freeze |
-| Caila, "The Wandering Apothecary" | 100033 | support | `caila.json` | [Vial], ultimate seal, team gauge from Theriac |
-| Duke, "An Art Still Unfolding" | 100034 | DPS | `green_duke.json` | Undertow team counter, Confluence bonds by name |
-
-Every rule is in the ledger, #164–#171, with his words and which answers were
-selections of Claude's options. The `toll-kits` workshop is synced to this
-checkpoint (its drafts are marked imported, PENDING emptied).
+| What | Where |
+| --- | --- |
+| Character-art method (current) | `docs/CHARACTER_ART.md`, walked by the `charart` skill |
+| Its history and failures | `docs/archive/ART_PIPELINE-character-history.md` |
+| Non-character art (banners, icons, logos, coins) | `docs/ART_PIPELINE.md` |
+| Sara's lock, approvals, picks, prompting rules | `scripts/lora/characters/sara_v2.json` (v1: `sara.json`) |
+| Sara's locked art, staged, and her library | ComfyUI `output\red_sara\locked\`, `output\sara_library\` |
+| LoRAs | ComfyUI `models\loras\lyra_toll`, `sara_toll` (v2, step 1500); fallbacks in `models\loras\training\` |
+| References (7DSGC, Dokkan) | ComfyUI `output\references\`, indexed by `README.md` |
+| Pose tool | `scripts/pose/` (Blender 5.0.1 at `D:\Blender`) |
+| Archive tile | `components/game/RosterTile.tsx`, `tile-*` in `styles/globals.css`, `getTileArt` |
 
 ## Confidence and gaps
 
-### Verified on 2026-10-02, by running it
+### Verified on 2026-10-03, by running it
 
-- `npm run check`: **1,522 passed / 125 files**, typecheck and lint clean.
+- `npm run check`: **1,523 passed / 125 files**, typecheck and lint clean.
+  The new test checks that every break-out cut-out exists.
 - A scratch production build passed (`.next-verify` removed, `tsconfig.json`
   restored).
-- Proved red by breaking them: the release gate, the frozen post-pass, and
-  the blue Lyra bench rule (`tests/examArcKits.test.ts`).
-- Headless traces of blue Lyra vs red Lyra and green Duke vs blue Duke ran
-  every new path (Cold tiers, Freeze skipping a turn, team counter, stance
-  stacks) without error.
+- **The archive tile at 390×844, on the scratch dev server:**
+  - Lyra and Sara break out of their frames.
+  - Older units sit flat in theirs.
+  - Level plates and ult-level stars are correct (1 to 6).
+  - No sideways scroll.
+- Sara's rename: no old name remains outside history (battle logs, ledger,
+  archive).
+- Every composite, the card and the portrait were checked by eye. The ankle
+  transparency he found is fixed.
 
-### Believed but NOT verified
+### Not verified
 
-- Nothing was looked at in a browser: the hand's "Frozen" overlay, the effects
-  rows for [Cold]/[Frozen]/ultimate seal, the dev-only roster.
-- Sim numbers ignore ultimates: **the simulator keeps no ult gauge, so it
-  never casts one** (a task chip was raised for it). Green Duke's 0% vs blue
-  Duke and blue Lyra's 100% vs red Lyra are AI-and-format measurements, not
-  balance verdicts (#138).
+- `npm run test:browser`: Playwright's Chromium is not installed.
+- Sara's new art in battle, and on the detail page.
+- The archive tile on desktop widths (4 to 6 columns), and the NPC index's
+  tile.
 
-### Known open decisions recorded as Claude's reading
+### Recorded as Claude's reading, not his words
 
-- Frostline "field only" is read as: a Lyra who starts on the bench never
-  gets the battle-start ATK bonus, even after she is promoted (#165).
-- Green Duke's Confluence bonuses still apply when he starts on the bench —
-  he corrected Lyra's only.
-
-### Carried over, untested by anything
-
-- A reload between two trial fights loses the run; `worldBossPreview.ts` and
-  `immunity.ts` have no test; no screen flow is tested; the SFX files do not
-  exist. Lyra's new skill art has still not been seen on a game screen.
+- The tile drops the name and the HP/ATK/DEF bars, Dokkan style (#172).
+- The passive composite has a neutral dusk background. It went to the
+  library, so nothing ships with it.
 
 ### What I would check first coming back cold
 
 1. `git status` and `git log -3`.
-2. `npm run dev` on his box, practice: field the three, watch a freeze land
-   and a sealed ultimate grey out.
-3. Ledger #164–#171 before touching any of the new mechanics.
+2. `npm run dev` on his PC: open `/archive` and Sara's detail page, then field
+   her in practice to see Adaptation, Swarm and Apex.
+3. Read `docs/CHARACTER_ART.md` before any art work, and ledger #172 before
+   touching the tile.
 
 ## Outside the repo
 
-- **`toll-kits`** (`E:\Projects\toll-kits`): main now carries the merged
-  workshop branch. **The story repo `element-clash-toll`** (`E:\Toll - Web
-  toon`) has an unmerged branch `claude/pensive-brahmagupta-8yv4rd` (chapter
-  rewrites, Arc 1 renumbered to 20) and a stale merged one; untouched.
-- ComfyUI, 7DSGC references and the Lyra LoRA are as recorded in
-  `docs/ART_PIPELINE.md`.
+- **`toll-kits`:** clean on main. It picks up Sara's rename on its next sync.
+- **The story repo `element-clash-toll`** (`E:\Toll - Web toon`): its master
+  is 1 commit behind origin, because his story session pushed. Its unmerged
+  branch `claude/pensive-brahmagupta-8yv4rd` is untouched.
+- **ComfyUI:** this session started it detached. It stops when the PC
+  restarts. Start it with PowerShell `Start-Process` (see
+  `docs/CHARACTER_ART.md`).

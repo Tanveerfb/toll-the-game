@@ -1,0 +1,19 @@
+{
+  "_note": "Sara skill 2 (AoE): a hard sprint to the image right, leaning into a left turn, seen from high and three-quarter. Lead (left) knee driven forward, right heel kicked up behind, arms pumping (forward arm bent up, back arm swung behind).",
+  "pelvis": [0, 0, 0.95],
+  "spine": [0.35, 0.12, 1],
+  "hip_axis": [0, 1, 0],
+  "shoulder_axis": [0.2, 1, 0],
+  "face": [1, 0.05, -0.2],
+  "upper_arm_r": [0.45, -0.2, -0.6],
+  "forearm_r": [0.55, 0, 0.7],
+  "upper_arm_l": [-0.5, 0.1, -0.6],
+  "forearm_l": [-0.45, 0, 0.55],
+  "thigh_l": [0.7, 0.05, -0.6],
+  "shin_l": [0.15, 0, -1],
+  "foot_l": [1, 0, -0.2],
+  "thigh_r": [-0.35, -0.05, -0.95],
+  "shin_r": [-0.7, 0, -0.7],
+  "foot_r": [-0.3, 0, -1],
+  "camera": {"location": [1.6, -2.4, 2.6], "look_at": [0.15, 0.05, 1.0], "lens_mm": 40}
+}

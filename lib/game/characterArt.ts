@@ -14,7 +14,7 @@ import { colorQualifiedId } from "@/lib/game/unitKey";
 // Bump when any art file is replaced in place — busts the Next.js image
 // optimizer cache and browser cache, which otherwise keep serving the old
 // pixels for the unchanged URL.
-const ART_VERSION = 18;
+const ART_VERSION = 19;
 
 const CHARACTERS_WITH_ART = new Set([
   "ban",
@@ -96,6 +96,29 @@ export function getCharacterArt(id: string): string | null {
   return `${artRoot(artId)}/portrait.png?v=${ART_VERSION}`;
 }
 
+/**
+ * Archive frame-break art (his pick, 2026-10-03: the "Ink burst" tile). Only
+ * units with new-pipeline art and a clean cut-out break out of the frame —
+ * older portraits sit flat inside it (his call). The file is a transparent
+ * crop: a square window plus headroom above it, made by
+ * `scripts/skill_art/make_tile_cutout.py`; the value is its height / width.
+ */
+const TILE_ART: Record<string, number> = {
+  sara: 1.25,
+  lyra: 1.702,
+};
+
+/** Every unit with tile art, for the test that each file exists. */
+export const registeredTileArt: readonly string[] = Object.keys(TILE_ART);
+
+/** The frame-break cut-out and its height ratio, or null for a flat tile. */
+export function getTileArt(id: string): { src: string; ratio: number } | null {
+  const artId = resolveArtId(id);
+  const ratio = TILE_ART[artId];
+  if (ratio === undefined) return null;
+  return { src: `${artRoot(artId)}/tile.webp?v=${ART_VERSION}`, ratio };
+}
+
 // Per-skill card art (art-forward cards, spec battle-UI overhaul). One art per
 // skill/ultimate, keyed `<charId>__<slug>`. Files:
 //   playables -> public/characters/<color>_<charId>/skills/<slug>.png
@@ -142,9 +165,9 @@ const SKILLS_WITH_ART = new Set<string>([
   "mustafa__earth-shatter",
   "mustafa__earth-stance-fortress",
   "mustafa__tea-time-tremor",
-  "sara__animal-strike",
-  "sara__beast-master-s-fury",
-  "sara__stampede-concentrate",
+  "sara__adaptation",
+  "sara__apex",
+  "sara__swarm",
   "seras__chain-tempest",
   "seras__heavenfall-bolt",
   "seras__static-lance",

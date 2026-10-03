@@ -1,9 +1,26 @@
 # Character LoRA scripts
 
-The approved recipe (docs/ART_PIPELINE.md, "Character LoRA recipe", frozen
+The method is docs/CHARACTER_ART.md (steps 1-2), walked by the `charart` skill.
+The approved recipe (originally docs/ART_PIPELINE.md, "Character LoRA recipe", now in
+docs/archive/ART_PIPELINE-character-history.md; frozen
 2026-09-27) as runnable steps. One profile per character in `characters/`;
 everything else is shared, so a new character is a new profile, not new code.
-Run with ComfyUI's Python and `</dev/null`; ComfyUI must be up on :8188.
+Run with system `python` and `</dev/null`; ComfyUI must be up on :8188. (The
+embedded Python's `._pth` leaves this folder off the path, so `import common`
+fails there; `stage_dataset.py` needs Pillow, which system Python must have.)
+A profile may list its own `body_shots` / `face_shots` when he specifies the
+set (Sara's expression list, 2026-10-02). It may also set:
+- `style` and `out_dir`.
+- `seed_offset`: re-rolls a slot with fresh seeds. `gen_candidates.py <id>
+  <slug>...` queues only the named slots.
+- `hood_down_negative`: added only to shots that ask for the hood down.
+- `batch`: images per slot (default 4).
+- `hand_fix`: re-renders each hand at 512px. That queues one job per image,
+  because the hand detector refuses image batches.
+- `dataset_name`: names the staging folder (default `<id>_v1`).
+
+A body shot marked `"back"` renders without the face reference, using the
+drawn back skeleton (`common.draw_back_skeleton`).
 
 | step | script | what it does |
 | --- | --- | --- |

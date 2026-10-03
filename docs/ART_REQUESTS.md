@@ -524,8 +524,10 @@ backgrounds are the skill class's colour, drawn in code (ruling #133,
 `docs/design/SKILL_ART_PLAN.md`); pose and shot are free; a signature effect
 only where the moment calls for it (#161, #163). Folders follow #162 as
 amended by #171: an id that already starts with its colour is used alone.
-**Run the art method in `docs/ART_PIPELINE.md` (old method by default: batch,
-filter, he picks, then layers).**
+**Run the method in `docs/CHARACTER_ART.md` with the `charart` skill**
+(2026-10-03: draft-then-finish as an overnight batch, he picks, finish pass,
+composite, he locks). Only attack skills get the class background; the
+ultimate and the passive do not.
 
 ### E1 — blue_lyra — Lyra, "Grounded in Frost"
 

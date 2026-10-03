@@ -2,8 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import React from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { panelVariants } from "@/components/ui/Panel";
@@ -18,11 +16,10 @@ import {
 } from "@/components/ui/sheet";
 import { Toggle } from "@/components/ui/toggle";
 import { cn } from "@/lib/utils";
-import { getCharacterArt } from "@/lib/game/characterArt";
+import RosterTile from "@/components/game/RosterTile";
 import { archiveHref } from "@/lib/game/characterCatalog";
 import { usePlayerStore } from "@/store/playerStore";
 import { useSettingsStore } from "@/store/settingsStore";
-import { progressedStats } from "@/lib/game/progression";
 
 type CharacterColor = "light" | "red" | "blue" | "green" | "dark";
 
@@ -149,46 +146,6 @@ function FilterChip({
   );
 }
 
-/** Labelled micro-bar. The raw number stays — the bar only adds the shape. */
-function StatBar({
-  label,
-  value,
-  barValue = value,
-  max,
-  hue,
-}: {
-  label: string;
-  /** The number shown — the player's progressed stat on an owned unit. */
-  value: number;
-  /** What the bar fills from; the catalog base, so the roster comparison
-   *  stays level-invariant. See CharacterStatBars for the full reasoning. */
-  barValue?: number;
-  max: number;
-  hue: string;
-}): React.JSX.Element {
-  return (
-    // 26px, the same label column `CharacterStatBars` uses: "ATK" at the
-    // 10px floor is 24px wide and clipped the old 22px column.
-    <div className="mt-0.5 grid grid-cols-[26px_1fr_auto] items-center gap-1.5">
-      <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
-        {label}
-      </span>
-      <span className="block h-1 bg-muted">
-        <span
-          className="block h-full"
-          style={{
-            width: `${Math.min(100, Math.round((barValue / max) * 100))}%`,
-            backgroundColor: hue,
-          }}
-        />
-      </span>
-      <span className="font-body text-caption font-bold tabular-nums">
-        {value.toLocaleString()}
-      </span>
-    </div>
-  );
-}
-
 export default function CharacterBrowser({
   characters,
   ownership = true,
@@ -240,19 +197,6 @@ export default function CharacterBrowser({
     const s = new Set<string>();
     characters.forEach((c) => (c.mechanics ?? []).forEach((m) => s.add(m)));
     return [...s].sort();
-  }, [characters]);
-
-  // Bars are scaled against the whole population, never the filtered view —
-  // otherwise every filter click silently rescales the bars and a unit looks
-  // stronger just because the tanks were filtered out.
-  const statMax = React.useMemo(() => {
-    const peak = (pick: (c: CharacterBrowserItem) => number) =>
-      Math.max(1, ...characters.map(pick));
-    return {
-      hp: peak((c) => c.hp),
-      atk: peak((c) => c.atk),
-      def: peak((c) => c.def),
-    };
   }, [characters]);
 
   const toggleIn = (
@@ -504,119 +448,29 @@ export default function CharacterBrowser({
           ) : null}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        // Room above each row for a head to break out of its frame, and below
+        // for the level plate that overlaps the bottom edge.
+        <div className="grid grid-cols-3 gap-x-2.5 gap-y-8 pt-8 pb-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {filtered.map((character) => {
-            const hue = EL_HUE[character.color];
-            const art = getCharacterArt(character.id);
             const owned = hasHydrated && ownedIds.has(character.id);
             const progress = characterProgress[character.id];
-            const ultLevel = progress?.ultLevel ?? 1;
-            const level = progress?.level ?? 1;
-            const ascension = progress?.ascension ?? 0;
             // Pre-hydration we don't know what's owned, so the tile shows no
-            // state label at all rather than flashing "Locked" on an owned unit.
-            const locked = hasHydrated && !owned;
-            // The tile's numbers are what this unit actually fights at. Sort
-            // and the bar fills stay on base stats — one progression curve
-            // scales all three equally, so ordering never changes, and mixing
-            // owned and locked units on one axis would.
-            const shown =
-              owned && progress ? progressedStats(character, progress) : character;
+            // plate at all rather than flashing "Locked" on an owned unit.
+            const status = !hasHydrated
+              ? null
+              : owned
+                ? { owned: true as const, level: progress?.level ?? 1, ultLevel: progress?.ultLevel ?? 1 }
+                : { owned: false as const };
             return (
-              // `hover:border-(--el)` emits nothing: `border-` is ambiguous
-              // between width and colour, so the `color:` hint is required.
-              // `text-(--el)` below needs no hint — it defaults to colour.
-              <Link
+              <RosterTile
                 key={character.id}
+                id={character.id}
+                name={character.name}
                 href={archiveHref(character)}
-                className={cn(
-                  panelVariants({ surface: "paper", density: "none", press: true }),
-                  "group flex flex-col hover:border-(color:--el)",
-                )}
-                style={{ "--el": hue } as React.CSSProperties}
-              >
-                <div className="relative aspect-square overflow-hidden border-b-2 border-border bg-muted">
-                  {art ? (
-                    <Image
-                      src={art}
-                      alt={character.name}
-                      width={512}
-                      height={512}
-                      className={`h-full w-full object-cover transition-transform group-hover:scale-105 ${
-                        locked ? "grayscale brightness-50" : ""
-                      }`}
-                    />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center font-heading text-6xl text-muted-foreground">
-                      {character.name.charAt(0)}
-                    </span>
-                  )}
-                  <span
-                    className="absolute left-0 top-0 border-b-2 border-r-2 border-border px-1.5 py-0.5 font-body text-label font-bold tracking-label text-card-foreground"
-                    style={{ backgroundColor: hue }}
-                  >
-                    {EL_CODE[character.color]}
-                  </span>
-                  {/* This corner used to read "Active" — true but useless.
-                      The archive is the roster screen now, so it carries the
-                      investment: level, ascension band, ult rank. */}
-                  {hasHydrated ? (
-                    <span
-                      aria-label={
-                        owned
-                          ? `Level ${level}${ascension > 0 ? `, ascension ${ascension}` : ""}${ultLevel > 1 ? `, ultimate ${ultLevel}` : ""}`
-                          : "Not yet recruited"
-                      }
-                      // An ink label on the art, lettered in the element's
-                      // hue: it sits on the picture, not on paper, so the hue
-                      // reads as text here.
-                      className="absolute bottom-0 right-0 border-l-2 border-t-2 border-border bg-card-foreground/90 px-1.5 py-0.5 font-body text-label font-bold uppercase tracking-label tabular-nums"
-                      style={{
-                        color: owned ? hue : "var(--ground-dim)",
-                      }}
-                    >
-                      {owned
-                        ? `Lv ${level}${ascension > 0 ? ` · A${ascension}` : ""}${ultLevel > 1 ? ` · U${ultLevel}` : ""}`
-                        : "Locked"}
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="px-2 py-2">
-                  {/* Heading above the name (#141). This tile has a dedicated
-                      text block under the art, so the line costs ~10px and
-                      crowds nothing. */}
-                  {character.heading ? (
-                    <p className="truncate font-body text-label font-bold uppercase tracking-label text-muted-foreground">
-                      {character.heading}
-                    </p>
-                  ) : null}
-                  <p className="truncate font-heading text-lg tracking-title">
-                    {character.name}
-                  </p>
-                  <StatBar
-                    label="Hp"
-                    value={shown.hp}
-                    barValue={character.hp}
-                    max={statMax.hp}
-                    hue={hue}
-                  />
-                  <StatBar
-                    label="Atk"
-                    value={shown.atk}
-                    barValue={character.atk}
-                    max={statMax.atk}
-                    hue={hue}
-                  />
-                  <StatBar
-                    label="Def"
-                    value={shown.def}
-                    barValue={character.def}
-                    max={statMax.def}
-                    hue={hue}
-                  />
-                </div>
-              </Link>
+                hue={EL_HUE[character.color]}
+                code={EL_CODE[character.color]}
+                status={status}
+              />
             );
           })}
         </div>

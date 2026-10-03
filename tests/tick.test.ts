@@ -159,12 +159,12 @@ describe("tickTeamDebuffs (own turn end)", () => {
     expect(after.passiveState.tookDamageThisRound).toBe(true);
   });
 
-  it("lethal DoT triggers Nine Lives; the revival cleanses ALL buffs and debuffs (ruling #29)", () => {
+  it("lethal DoT triggers Protection of the Felines; the revival cleanses ALL buffs and debuffs (ruling #29)", () => {
     const sara = makeChar({
       instanceId: "sara",
       currentHP: 400,
       passive: {
-        name: "Nine Lives",
+        name: "Protection of the Felines",
         trigger: "onLethalDamage",
         mechanics: [
           { type: "surviveLethal", hpConditionPercent: 30, healDamagePercent: 50 },
@@ -183,9 +183,9 @@ describe("tickTeamDebuffs (own turn end)", () => {
     expect(after.passiveState.tookDamageThisRound).toBe(true);
   });
 
-  it("Nine Lives does not catch a lethal DoT below the HP threshold or twice", () => {
+  it("Protection of the Felines does not catch a lethal DoT below the HP threshold or twice", () => {
     const passive: import("@/types/passive").Passive = {
-      name: "Nine Lives",
+      name: "Protection of the Felines",
       trigger: "onLethalDamage",
       mechanics: [
         { type: "surviveLethal", hpConditionPercent: 30, healDamagePercent: 50 },

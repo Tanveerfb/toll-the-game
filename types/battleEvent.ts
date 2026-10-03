@@ -23,7 +23,7 @@ export interface BattleEventTarget {
   crit?: boolean;
   /** Target hit 0 HP from this action */
   killed?: boolean;
-  /** Lethal survival passive caught the hit (Nine Lives) */
+  /** Lethal survival passive caught the hit (Protection of the Felines) */
   survivedLethal?: boolean;
   /** Exact HP snapshots so the sequencer can replay bars without drift */
   hpBefore?: number;

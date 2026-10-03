@@ -8,6 +8,14 @@ holds it verbatim. Moved here from `docs/STATUS.md` on 2026-09-27.
   "Working" feature log and the session logs of 2026-09-26c, 2026-09-26d and
   2026-09-27.
 
+## Session log — 2026-10-02/03
+
+Sara's art pipeline end to end (design lock, LoRA v1→v2, kit and card art locked and installed, kit renamed), the Blender pose tool, the reference library, `docs/CHARACTER_ART.md` + the `charart` skill, and the archive's frame-break tile (#172) — [`STATUS-2026-10.md`](STATUS-2026-10.md).
+
+## Character-art history — folded 2026-10-03
+
+The old single-render prompt template, the shipped-portrait register, and the whole character-layer and LoRA history (2026-09-20 to 2026-10-03), moved verbatim out of `docs/ART_PIPELINE.md`. The current method is `docs/CHARACTER_ART.md` — [`ART_PIPELINE-character-history.md`](ART_PIPELINE-character-history.md).
+
 ## Session log — 2026-10-02
 
 The exam-arc kits (blue Lyra, Caila, green Duke) game-ready but unreleased; Freeze, [Cold], the ultimate seal and the team counter built; rulings #164–#171 — [`STATUS-2026-10.md`](STATUS-2026-10.md).

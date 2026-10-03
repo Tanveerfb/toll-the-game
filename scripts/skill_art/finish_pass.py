@@ -6,7 +6,9 @@
 3. A BiRefNet-HR-matting cut-out of the result, for the code-drawn layers (background, aura, effects).
 
 Usage: finish_pass.py <source.png> <out_prefix> <lora> <prompt_file> [denoise=0.35] [scale=1.5]
-  source    : any image path; it is copied into ComfyUI input as finish_src.png
+  source    : any image path; it is copied into ComfyUI input under a name unique to out_prefix.
+              (It used to be one shared finish_src.png: queuing several finishes at once made every
+              job read whichever source was copied last - 8 of Sara's 9 finishes, 2026-10-03.)
   out_prefix: ComfyUI output prefix, e.g. red_lyra/supercooling/final/finish
   prompt_file: text file, line 1 = positive prompt, line 2 = negative prompt
 """
@@ -28,14 +30,15 @@ def main():
         pos, neg = [ln.strip() for ln in f.read().strip().split("\n", 1)]
     w, h = Image.open(src).size
     tw, th = int(w * scale) // 8 * 8, int(h * scale) // 8 * 8
-    shutil.copyfile(src, COMFY + r"\input\finish_src.png")
+    src_name = "finish_src_" + prefix.replace("/", "_").replace("\\", "_") + ".png"
+    shutil.copyfile(src, COMFY + "\\input\\" + src_name)
     g = {
         "1": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "animagineXL40_v4Opt.safetensors"}},
         "2": {"class_type": "LoraLoader", "inputs": {"model": ["1", 0], "clip": ["1", 1], "lora_name": lora,
                                                      "strength_model": 0.9, "strength_clip": 0.9}},
         "3": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["2", 1], "text": pos}},
         "4": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["2", 1], "text": neg}},
-        "10": {"class_type": "LoadImage", "inputs": {"image": "finish_src.png"}},
+        "10": {"class_type": "LoadImage", "inputs": {"image": src_name}},
         "11": {"class_type": "UpscaleModelLoader", "inputs": {"model_name": "RealESRGAN_x4plus_anime_6B.pth"}},
         "12": {"class_type": "ImageUpscaleWithModel", "inputs": {"upscale_model": ["11", 0], "image": ["10", 0]}},
         "13": {"class_type": "ImageScale", "inputs": {"image": ["12", 0], "upscale_method": "lanczos", "width": tw,

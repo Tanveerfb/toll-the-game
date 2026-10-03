@@ -1,0 +1,188 @@
+{
+  "id": "sara_v2",
+  "trigger": "saratoll",
+  "face_ref": "sara_face_ref_c14.png",
+  "out_dir": "lora_sara_v2set_b",
+  "dataset_name": "sara_v2",
+  "batch": 3,
+  "hand_fix": true,
+  "identity": "masterpiece, best quality, absurdres, 1girl, solo, human, adult woman, late 20s, slender, petite, (platinum white hair:1.3), (chest length low twintails:1.3), blunt bangs, small black hair ties, (dark brown eyes:1.3), thin black choker, (oversized black hoodie:1.3), plain black hood, plain hood interior, (black jogger pants:1.3), thin white side stripe, (grey high-top sneakers:1.4), ankle-high sneakers, white soles",
+  "identity_upper": "masterpiece, best quality, absurdres, 1girl, solo, human, adult woman, late 20s, (platinum white hair:1.3), (chest length low twintails:1.3), blunt bangs, small black hair ties, (dark brown eyes:1.3), thin black choker, (oversized black hoodie:1.3), plain black hood, plain hood interior",
+  "negative_extra": "child, teenager, loli, chibi, baby face, large breasts, wide hips, (paw:1.3), (cat paws:1.3), animal hands, claws, kemonomimi, (animal ears:1.4), cat ears on head, tail, cat tail, (bad anatomy:1.2), twisted limbs, malformed limbs, extra limbs, extra arms, deformed, (low-top sneakers:1.2), white sneakers, black shoes, brown hoodie, purple hoodie, blue hoodie, navy hoodie, grey hoodie, white hoodie, jacket, layered clothes, orange inner ears, pink inner ears, red inner ears, white hood trim, lace trim, paw print, print, logo, emblem, (stripes on sleeves:1.3), (stripes on hoodie body:1.3), earrings, (multicolored hair:1.4), streaked hair, black hair, loose hair, bob cut, short hair, (purple eyes:1.2), plum eyes, red eyes, (yellow eyes:1.4), (amber eyes:1.4), orange eyes, gold eyes, text, sticker, white outline, multiple views, two figures, headless, (cat ear hood:1.3), cat ears, ears on hood, text on clothes, (text:1.3), letters, (low-top sneakers:1.3), (white sneakers:1.2)",
+  "style": "cel shading, thick clean lineart, anime screencap, even lighting, (plain white background:1.3), simple background",
+  "hood_down_negative": "(hood up:1.4), hood on head, (cat ears:1.3)",
+  "design_note": "v2, 2026-10-03, from his story-session handoff. He named what v1 got wrong: 'cat hands and other deformities. also inconsistency with shoes.' Follow-ups (his selections): shoes are GREY-WHITE HIGH-TOPS in every image; the other deformity is limbs/pose. So: hand pass on, simple poses, anatomy and paw negatives, high-tops forced. Canon from the handoff: pure human (ears on the hoodie only), slender 5'3\", age 23-25 prompted 'late 20s'. Hood default, outfit details, red accent and expressions are his, undecided; the set is mixed hood up/down for him to pick. v1 (sara.json, sara_v1, sara_toll) stays untouched. 2026-10-03 review: NO CAT EARS on the hoodie (his call, for consistency: \"we will just remove the cat ears from the hoodie\"). Text on the hoodie auto-excluded. 7 and 12 out. HOOD DEFAULT = UP (his call, 2026-10-03: \"her default would be hood up\"). Card and skill art draw her hood up unless a shot says otherwise.",
+  "body_shots": [
+    [
+      "bu_front",
+      "(hood up:1.3), plain black hood, no ears on hood, full body, standing, front view, arms at sides, hands visible, slight smile, looking at viewer"
+    ],
+    [
+      "bu_34",
+      "(hood up:1.3), plain black hood, no ears on hood, full body, standing, three-quarter view, arms relaxed, hands visible, calm, looking at viewer"
+    ],
+    [
+      "bu_crossed",
+      "(hood up:1.3), plain black hood, no ears on hood, full body, standing, arms crossed, unimpressed, looking at viewer"
+    ],
+    [
+      "bu_walk",
+      "(hood up:1.3), plain black hood, no ears on hood, full body, walking, hands visible, neutral expression, looking ahead"
+    ],
+    [
+      "bu_side",
+      "(hood up:1.3), plain black hood, no ears on hood, full body, standing, side view, profile, arms at sides, calm expression"
+    ],
+    [
+      "bu_pocket",
+      "(hood up:1.3), plain black hood, no ears on hood, full body, standing, hands in hoodie pocket, smug, half-lidded eyes, looking at viewer"
+    ]
+  ],
+  "face_shots": [],
+  "lora": "sara_toll.safetensors",
+  "lora_checkpoint": 1500,
+  "hood_default": "up",
+  "seed_offset": 300,
+  "approved": {
+    "s2#5": {
+      "file": "output/lora_sara_v2set/cand_b_34_up_00002_.png"
+    },
+    "s2#8": {
+      "file": "output/lora_sara_v2set/cand_b_back_down_00002_.png"
+    },
+    "s2#9": {
+      "file": "output/lora_sara_v2set/cand_b_back_down_00003_.png"
+    },
+    "s2#10": {
+      "file": "output/lora_sara_v2set/cand_b_cowboy_up_00001_.png"
+    },
+    "s2#11": {
+      "file": "output/lora_sara_v2set/cand_b_cowboy_up_00002_.png"
+    },
+    "s2#23": {
+      "file": "output/lora_sara_v2set/cand_b_pocket_up_00002_.png"
+    },
+    "s2#29": {
+      "file": "output/lora_sara_v2set/cand_b_walk_down_00002_.png"
+    },
+    "s2#30": {
+      "file": "output/lora_sara_v2set/cand_b_walk_down_00003_.png"
+    },
+    "s2#31": {
+      "file": "output/lora_sara_v2set/cand_b_wave_down_00001_.png"
+    },
+    "s2#32": {
+      "file": "output/lora_sara_v2set/cand_b_wave_down_00002_.png"
+    },
+    "s2#35": {
+      "file": "output/lora_sara_v2set/cand_f_default_down_00002_.png"
+    },
+    "s2#36": {
+      "file": "output/lora_sara_v2set/cand_f_default_down_00003_.png"
+    },
+    "s2#41": {
+      "file": "output/lora_sara_v2set/cand_f_laugh_down_00002_.png"
+    },
+    "s2#47": {
+      "file": "output/lora_sara_v2set/cand_f_sad_down_00002_.png"
+    },
+    "s2#50": {
+      "file": "output/lora_sara_v2set/cand_f_serious_up_00002_.png"
+    },
+    "s2#54": {
+      "file": "output/lora_sara_v2set/cand_f_smug_down_00003_.png"
+    },
+    "s2#55": {
+      "file": "output/lora_sara_v2set/cand_f_surprised_down_00001_.png"
+    },
+    "s2#61": {
+      "file": "output/lora_sara_v2set/cand_f_unimpressed_up_00001_.png"
+    },
+    "s2#64": {
+      "file": "output/lora_sara_v2set/cand_f_worried_down_00001_.png"
+    },
+    "s2#66": {
+      "file": "output/lora_sara_v2set/cand_f_worried_down_00003_.png"
+    },
+    "s2#12": {
+      "file": "output/lora_sara_v2set/fix12/inpaint_00003_.png"
+    },
+    "s2#44": {
+      "file": "output/lora_sara_v2set/fix44/fixed_s2_44.png"
+    },
+    "H10": {
+      "file": "output/lora_sara_v2set_b/cand_bu_pocket_00001_.png"
+    },
+    "H11": {
+      "file": "output/lora_sara_v2set_b/cand_bu_pocket_00002_.png"
+    },
+    "H12": {
+      "file": "output/lora_sara_v2set_b/cand_bu_pocket_00003_.png"
+    },
+    "H16": {
+      "file": "output/lora_sara_v2set_b/cand_bu_walk_00001_.png"
+    },
+    "H17": {
+      "file": "output/lora_sara_v2set_b/cand_bu_walk_00002_.png"
+    },
+    "H18": {
+      "file": "output/lora_sara_v2set_b/cand_bu_walk_00003_.png"
+    }
+  },
+  "dataset": "datasets/sara_v2 (28 images, 14 hood up)",
+  "lora_use": {
+    "note": "His picks for prompting with sara_toll (v2, step 1500), 2026-10-03.",
+    "negative_add": "large breasts",
+    "always": "state the hood: (hood up:1.2), plain black hood (her default) or (hood down:1.5), bare head, hair fully visible",
+    "no": "cat ears on the hood, text on clothes"
+  },
+  "art_direction": {
+    "aura": "hot pink with some red in it; she glows with it (his words, 2026-10-03: \"a hot pinkish aura with some red in it so like she will glow like that\")",
+    "skills": "pending: he is renaming her attacks and giving per-skill poses via the story session",
+    "picks_2026-10-03": {
+      "passive": "output/sara_kit2/card/drafts/card_824003_00001_.png (drafted for the card slot; his pick for passive: \"824003 is very good for passive\")",
+      "card": [
+        "output/sara_kit2/strike/drafts/strike_820003_00001_.png",
+        "output/sara_kit2/strike/drafts/strike_820002_00001_.png (drafted for strike; his pick as card art, one of the two)"
+      ],
+      "strike/hitall/ultimate": "none usable from either round (his words: \"None others could work as skill or ult arts\"); he is sending reference images to research from",
+      "skill1": "output/sara_kit3/hitall/drafts/hitall_831018 (drafted as hit-all; his: \"831018 could work as skill 1 even tho its different from og direction\")",
+      "library": "output/sara_library/ (11 renders he marked good for extras; need cleanup/composites)",
+      "rejected": "round 3 ultimate: all 24 (one-arm-up pose, forced by the skeleton); hit-all and ultimate none usable",
+      "round5": {
+        "skill2 candidates (his '1a and 6a look good to me as skills')": [
+          "sara_kit5\\skill2\\drafts\\skill2_850000_00001_.png",
+          "sara_kit5\\skill2\\drafts\\skill2_850005_00001_.png"
+        ],
+        "ult candidates ('2a, 4a, (maybe 13b) for skills')": [
+          "sara_kit5\\ult\\drafts\\ult_851001_00001_.png",
+          "sara_kit5\\ult\\drafts\\ult_851003_00001_.png",
+          "sara_kit5\\ult\\drafts\\ult_851012_00001_.png"
+        ],
+        "library": [
+          "sara_850008",
+          "sara_850017",
+          "sara_850022",
+          "sara_851022",
+          "sara_851009",
+          "sara_851002"
+        ]
+      }
+    },
+    "skill1_idea": "his ref (2026-10-03): strong diagonal, face high in frame looking down, claw-curled hand swinging big into the lower foreground, motion lines; face battle-serious or battle-smile (references/7dsgc/kit-refs_2026-10-03/SARA-SKILL1_...)",
+    "skill2_idea": "his idea (2026-10-03): AoE. Sky shot (bird's-eye) of her running in circles around the target(s), afterimages and speed lines, to show she runs around them and attacks",
+    "ultimate_idea": "his idea (2026-10-03): a pre-attack battle stance, a bit of aura, confident smile; HOOD DOWN (his call, 2026-10-03: \"I would like hood down for ult yes\")",
+    "fallback_rule": "use the skill 2 / ult ideas only if he finds nothing interesting in the round 3 drafts; never pause running generations for them",
+    "LOCKED_2026-10-03": {
+      "card": "820002 (card_b)",
+      "skill1": "831018",
+      "skill2": "850000 (skill2_a)",
+      "ultimate": "851001 (ult_a)",
+      "files": "ComfyUI output/red_sara/locked/ (not yet installed in the game repo; skill renames pending)",
+      "rest": "output/sara_library/",
+      "install": "after the skill renames land (his selection); card B ships as its own card file, portrait.png becomes a chest-up square crop of it (his selection, as Lyra C4)",
+      "installed": "2026-10-03, after his rename: skills/adaptation.png (skill 1), skills/swarm.png (skill 2), skills/apex.png (ultimate), cards/card-b.png, portrait.png = chest-up crop of card B (anime 4x upscale to 1024). ART_VERSION 19.",
+      "card_background": "park at sunset (his pick #7, seed 870020; runner-up #2 garden path 870011 in sara_library). Red gradient retired for the card (his: \"I don't like the red bg on her art\"). Portrait re-cropped from the park card."
+    }
+  }
+}

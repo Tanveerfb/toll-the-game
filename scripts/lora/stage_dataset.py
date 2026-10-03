@@ -12,7 +12,7 @@ from common import TRAINING, profile
 
 p = profile(sys.argv[1])
 subject = "1boy" if "1boy" in p["identity"] else "1girl"
-dst = os.path.join(TRAINING, "datasets", f"{p['id']}_v1")
+dst = os.path.join(TRAINING, "datasets", p.get("dataset_name", f"{p['id']}_v1"))
 os.makedirs(dst, exist_ok=True)
 assert not os.listdir(dst), f"{dst} is not empty"
 n = 0

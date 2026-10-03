@@ -3,7 +3,7 @@ import { findPassiveMechanic } from "@/lib/game/passiveBlocks";
 import { getEffectiveHealAmount } from "./heal";
 
 /**
- * Lethal-damage survival (Sara's Nine Lives), shared by direct hits
+ * Lethal-damage survival (Sara's Protection of the Felines), shared by direct hits
  * (combat.ts) and DoT procs (tick.ts) — Tanveer's ruling: DoT deaths
  * count too.
  *

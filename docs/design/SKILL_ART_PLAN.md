@@ -156,7 +156,7 @@ Order: prove the recipe on **Gon** (canon tag, easy consistency) → review with
 - [ ] **master_tao** — Flaming Palm · Inferno Consumption · Wrath of the Fire Sage (ult)
 - [ ] **meliodas** — Triple Strike · Full Counter · Evil Spirit (ult)
 - [ ] **mustafa** — Earth Stance: Fortress · Earth Shatter · Tea Time Tremor (ult)
-- [ ] **sara** — Animal Strike · Stampede Concentrate · Beast Master's Fury (ult)
+- [ ] **sara** — Adaptation · Swarm · Apex (ult) — renamed 2026-10-03; new art installed
 - [ ] **seras** — Static Lance · Chain Tempest · Heavenfall Bolt (ult)
 - [ ] **siddiq** — Nature's Strike · Cleansing Bloom · Wrath of the Wild (ult)
 - [ ] **yalina** — Attention Drawer · Unexpected Strike · Devastating Blow (ult)
