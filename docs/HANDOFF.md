@@ -898,7 +898,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 
     **One invitation-only carve-out:** he may ask for **names or kits for low-significance characters** — *"NPCs, or people who I don't feel like writing for… then I can ask for your suggestions."* By request only. It does not loosen #65, and never reaches a character who matters to the story.
 
-    **And his three engineering values, in his order:** *"consistency, modularization, and QOL."* **"It works" is not the bar** — a change adding a seventh variant of an existing button is a regression against consistency, and a fix landing in one screen rather than the shared primitive is a regression against modularization. **QOL** is specifically the affordances that make a feature usable rather than merely functional: *"when you create a new table — without QOL you don't add any search field, you don't add any filters, sort options, animations."* `components/game/CharacterBrowser.tsx` is the benchmark.
+    **A fourth value joined these on 2026-10-03: less is more (#178).** **And his three engineering values, in his order:** *"consistency, modularization, and QOL."* **"It works" is not the bar** — a change adding a seventh variant of an existing button is a regression against consistency, and a fix landing in one screen rather than the shared primitive is a regression against modularization. **QOL** is specifically the affordances that make a feature usable rather than merely functional: *"when you create a new table — without QOL you don't add any search field, you don't add any filters, sort options, animations."* `components/game/CharacterBrowser.tsx` is the benchmark.
 
 140. **A transformation shares an archive entry; a version gets its own** (2026-09-17, follows #137's vocabulary, governs `app/archive/[id]`). Asked how a multi-phase boss should appear once phases move from the character to the fight, he drew the line by example:
 
@@ -1736,3 +1736,109 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
      guarantee as its own cue; a unit breaking out of a manga panel; a NEW
      unit never hidden by skip; reduced motion shows results at once. None of
      it is his decision yet.
+
+175. **Epic Battles: story fights as endgame stages, always open, free, and
+   paying nothing on a clear** (2026-10-03; uses #136's vocabulary, where an
+   event is a folder and a stage is an entry). With story removed (#152), the
+   story's fights come back as events: *"since we removed the story, but uh,
+   that doesn't mean we can't put the story fights inside the game here."*
+   - **Shape.** A collection, **Epic Battles**, holds arcs; an arc holds
+     stages; a stage is one fight. Offered "Epic Battles", "Exam Arc only" or
+     his own name, he **selected Epic Battles** (an option label, not his
+     prose). His own words for it: *"something of that nature ... a title and
+     then we can say uh, uh, arc one. Or exam arc."* Arc 1 is the **Exam
+     Arc**: Master Tao, then Lyra (*"the first fight was against uh, Tao ...
+     And then second was ... from Duke's perspective or Lyra's perspective"*).
+     Molvarr stays the world boss.
+   - **Open, repeatable, free.** *"these stages are always open. So and they
+     are repeatable. So the players can reattempt it as much as they want ...
+     we can even remove the stamina cost for the basically cost zero
+     stamina."* So both of #127's questions answer "from rank 1", and no stage
+     waits on another.
+   - **No reward for a clear; missions later.** *"we won't give any rewards
+     for clear uh, clearing out the stage. But what we can do is add missions
+     ... clear stage one with only human team ... the uh, missions come later."*
+     So every clear is **recorded** (`epicClears`: count, first and last
+     clear, best turns, the distinct teams that cleared it), so a mission
+     added later can count clears made before it existed. That record is
+     Claude's design for his missions, not his spec.
+   - **Your own team.** Offered own team, a fixed story team, or own team
+     plus a bonus, he **selected own team** (the option Claude recommended,
+     since most players won't own Duke).
+   - **Endgame.** *"these are not for the new new players these are for
+     people who have grinded a bit and have good teams"*, after Dokkan's
+     hardest events.
+   - Where it lives: `lib/game/epicBattles.ts`, `data/arcs/exam-arc.json`,
+     `lib/game/epicClears.ts`, `components/game/events/Epic*`.
+
+176. **Boss Tao: his kit, tuned to a win-rate target in the simulator**
+   (2026-10-03). The Exam Arc's stage 1 is `master_tao_npc`, a story-only
+   elite. **His kit spec is the source; the values are in
+   `data/characters/master_tao_npc.json`**, not here (#5's guard). He gave
+   the kit as *"the minimum i want to want him to do"* and tuned it against
+   simulator runs, not by feel:
+   - **The target.** *"the turns are fine. was aiming for 5-6 turns. win rate
+     is too high. want it to be somewhere around 80 for good teams and 50 or
+     lower for bad teams"*. "Good teams" are the five he supplied, each with
+     Isolde as the sub; "bad teams" are Claude's comparison set. At 220 ATK and a 35% heal,
+     measured before the 5-hit ramp lost its HP, the sim reads about 80% for his five and 33% or lower for the
+     rest, but fights run 8–18 turns, not 5–6. The heal is the cost, and he
+     chose it knowing that.
+   - **The kill heal.** Offered three ways to keep it, he **selected B**,
+     a smaller heal at a higher ATK. Then: *"set it to 220 and 35%"*. A kill
+     is his own skill, ultimate or counter taking an enemy to 0. *"ignites are
+     debuffs. they don't damage. how can they kill?"* So no damage over time
+     earns the heal.
+   - **Smaller calls, his words:**
+     - The 5-hit ramp: *"i guess we can change it to atk and def only."*
+     - The Ignite ramp stays uncapped: *"doesn't need."*
+   - **Names.** *"changes the names but something that suits him
+     canoncially."* Claude chose **Examiner's Judgement** (skill 2) and
+     **Trial by Fire** (the passive), from his lore (the ledger exam's
+     examiner) and his ultimate (the Fire Sage). They are Claude's names,
+     made on his request, and he can replace them.
+   - **One team wins every time.** Gon, Killua and Leorio win about 100% at
+     every ATK and HP tried. Per #138, that team currently has no counter in
+     Tao's kit: Gon and Killua kill him in about 6 turns while Leorio soaks
+     his hits. Reported to him, not tuned around.
+   - **The simulator changed to measure this.** It now deals hands, fills
+     the ultimate gauge by the live rule (one shared function), seeds the
+     AI's random choices, and can report per-fight stats. Every win rate
+     quoted before 2026-10-03 was measured without ultimates or second
+     skills.
+
+177. **The events board is tabs, and it says as little as it can** (2026-10-03).
+   He asked for an events redesign. Three options were drawn in
+   `docs/design/mockups/events-redesign.html`, built from the live game's
+   markup and styles after the first hand-drawn set was *"not website
+   accurate"*:
+   - **A** World Boss / Epic Battles / Trials tabs.
+   - **B** banners.
+   - **C** an arc as a path.
+
+   He **selected A** (*"A looks good"*) and stripped it back: *"don't put
+   number of events in the tab. don't put [best 9 turns] [cleared x amounts].
+   less is more for the players. let them explore on his own."* Asked whether
+   the arc row's "1 of 2 cleared" chip goes too: *"yes"*.
+   - **No counts on the tabs. No clear count, best turns, progress or "not
+     cleared" anywhere on the board or the arc page.** Clears are still
+     recorded (#175) for missions; they are just not shown.
+   - **Not shown either:** the mockup's "Missions · later" placeholder stays
+     out until missions exist.
+   - **Made game-wide the same day by #178.** This entry first flagged "apply
+     it beyond this screen" as Claude's reading. He then said so himself.
+
+178. **Less is more is a game-wide value, the fourth beside consistency,
+   modularization and QOL** (2026-10-03; extends #139's three values; also in `AGENTS.md`).
+   *"less is more, let them explore don't just apply to events.
+   it applies game wide. the next time you audit, add that to the holy rules -
+   consistency, modularization, QoL and then "less is more" / "don't
+   state/show the obvious""*. It started on the events board (#177).
+   - **What it rules out:** counts and tallies on navigation, record readouts
+     nobody asked for, and labels repeating what the screen already shows. That
+     holds even when the data is real and kept (#175's clear record).
+   - **Every audit checks all four values**, and this is the newest of them.
+   - **Claude's reading, flagged:** it pulls against QOL. QOL adds affordances
+     a player *uses* (search, sort, filters, #139's table). Less is more removes
+     readouts a player only *reads*. Where the two meet, ask him. The
+     "uses vs reads" line is Claude's, not his.

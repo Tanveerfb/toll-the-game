@@ -80,6 +80,8 @@ interface PreviewScenario {
   targetIgniteStacks?: number;
   targetUltGauge?: number;
   targetHasDebuff?: boolean;
+  /** Distinct debuffs on the target, for Co-Destruction (`countDistinctDebuffs`). */
+  targetDebuffCount?: number;
   targetHasBuff?: boolean;
   momentumStacks?: number;
   empoweredSkillMultiplierPercent?: number;
@@ -116,6 +118,7 @@ interface NormalizedMechanic {
   counterDamagePercent?: number;
   ignoreDefensePercent?: number;
   damageBonusPercent?: number;
+  valuePercentPerDebuff?: number;
 }
 
 /**
@@ -220,6 +223,10 @@ function normalizeMechanic(
     damageBonusPercent:
       typeof mechanic.damageBonusPercent === "number"
         ? mechanic.damageBonusPercent
+        : undefined,
+    valuePercentPerDebuff:
+      typeof mechanic.valuePercentPerDebuff === "number"
+        ? mechanic.valuePercentPerDebuff
         : undefined,
   };
 }
@@ -587,6 +594,18 @@ function calculateFinalDamage(
     notes.push("Weakpoint bonus applied (x3 total damage).");
   }
 
+  const coDestruction = mechanics.find(
+    (mechanic) => mechanic.type === "coDestruction",
+  );
+  const targetDebuffCount = scenario.targetDebuffCount ?? 0;
+  if (coDestruction && targetDebuffCount > 0) {
+    const perDebuff = coDestruction.valuePercentPerDebuff ?? 0;
+    extraDamage += effectiveBaseDamage * ((perDebuff / 100) * targetDebuffCount);
+    notes.push(
+      `Co-Destruction bonus applied (+${perDebuff * targetDebuffCount}%).`,
+    );
+  }
+
   if (
     mechanics.some((mechanic) => mechanic.type === "rupture") &&
     scenario.targetHasBuff
@@ -811,6 +830,16 @@ function getExtraEffectNotes(
   if (aoeActive && damage > 0 && enemyCount > 1) {
     extraNotes.push(
       `Total damage vs ${enemyCount} dummy enemies: ${damage * enemyCount}.`,
+    );
+  }
+
+  // The table shows a clean target, so the bonus is stated rather than applied.
+  const coDestructionMechanic = mechanics.find(
+    (mechanic) => mechanic.type === "coDestruction",
+  );
+  if (coDestructionMechanic && damage > 0) {
+    extraNotes.push(
+      `Co-Destruction: +${coDestructionMechanic.valuePercentPerDebuff ?? 0}% damage for each distinct debuff on the target (Ignite counts once, at any stack count).`,
     );
   }
 

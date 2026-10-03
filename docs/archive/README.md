@@ -8,6 +8,10 @@ holds it verbatim. Moved here from `docs/STATUS.md` on 2026-09-27.
   "Working" feature log and the session logs of 2026-09-26c, 2026-09-26d and
   2026-09-27.
 
+## Session log — 2026-10-03 (cloud, part 3)
+
+Epic Battles and the Exam Arc (#175), boss Tao tuned in the simulator (#176), the simulator playing whole kits, the tabbed events board (#177) and "less is more" as a fourth value (#178) — [`STATUS-2026-10.md`](STATUS-2026-10.md).
+
 ## Session log — 2026-10-03 (cloud, part 2)
 
 The element pill moved to the tags, Lyra's ponytail cropped at her ribbon, and the summon screen rebuilt as a manga page (#174) — [`STATUS-2026-10.md`](STATUS-2026-10.md).

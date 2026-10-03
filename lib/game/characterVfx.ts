@@ -52,6 +52,7 @@ const CHARACTER_VFX: Record<string, CharacterVfx> = {
   killua: { tint: "rgba(224,242,254,0.9)", shape: "bolt" }, // blue-white lightning — near-white, away from blue
   leorio: { tint: "rgba(250,204,21,0.8)", shape: "slash" }, // yellow nen fist, away from red
   master_tao: { tint: "rgba(249,115,22,0.8)", shape: "flicker" }, // fire — orange, away from green
+  master_tao_npc: { tint: "rgba(249,115,22,0.8)", shape: "flicker" }, // boss copy, same fire
   meliodas: { tint: "rgba(147,51,234,0.8)", shape: "blot" }, // demonic aura — purple, away from red
   mustafa: { tint: "rgba(180,142,96,0.82)", shape: "quake" }, // stone — earth brown, away from green
   sara: { tint: "rgba(217,180,255,0.8)", shape: "paw" }, // spectral beast glyphs — pale violet, away from red

@@ -1,4 +1,4 @@
-# Status — 2026-10-03 (cloud, part 2)
+# Status — 2026-10-03 (cloud, part 3)
 
 **Who updates this:** every checkpoint, by **rewriting** it, never appending
 (`project-rules.md` §2; his call, `decisions.md` 2026-09-27). It holds the
@@ -11,82 +11,87 @@ current position only. A session's log goes to
 ## Start here
 
 **State:**
-- **The summon screen is a manga page** (ruling #174). The draw panel sits
-  above the tab bar, Featured and Milestone open sheets, and results show
-  units as tiles with materials grouped.
-- **Each tile unit shows one image everywhere** (#173).
-- He is in **cloud sessions** for a while, so no ComfyUI: UI and
-  implementation work only.
+- **Epic Battles is live on `/events`** (#175): Arc 1, Exam Arc, with boss Tao
+  and Lyra. Stages are always open, free and repeatable. Clears are recorded
+  but neither paid nor shown.
+- **Boss Tao is his kit, tuned in the simulator** (#176). The events board is
+  **tabs** (#177).
+- **The values are four now** (#178): consistency, modularization, QOL, and
+  less is more ("don't state or show the obvious"). See `AGENTS.md`.
+- He is in **cloud sessions**, so no ComfyUI: UI and implementation only.
 
-This session's log is the two 2026-10-03 (cloud) entries in
-`docs/archive/STATUS-2026-10.md`.
-
-**Next:** his next batch, not named yet.
+**Next:** a site-wide audit against the four values, which he asked for
+straight after this checkpoint. It is a report first; fixes are his call.
 
 **Blocked on him:**
-- Which character goes through `charart` next, at his PC.
-- Caila's design sheet.
-- Sara's design sheet in `toll-kits` still describes a cat-ear hood. Her v2
-  lock dropped the ears and set grey-white high-tops. The sheet is his to
-  update.
-- Carried over: the new card texts (kitwords EXAMPLES, Open); Lyra's C4 and
-  passive placement (D5); Roused; the Orders tile; the app-icon recolour; the
-  foundation audit; scheduling the folder migration.
-- Deferred by him: summon animations and summon art, until every kit has its
-  art (#174).
+- Missions for Epic Battles: design not started.
+- Whether Gon, Killua and Leorio (about 100% against Tao) get an answer in
+  Tao's kit (#138).
+- Carried over:
+  - which character goes through `charart` next;
+  - Caila's design sheet;
+  - Sara's sheet in `toll-kits` (it still shows the hood);
+  - the new card texts (kitwords EXAMPLES, Open), Lyra's C4 and passive
+    placement (D5), Roused, the Orders tile, the app-icon recolour and the
+    foundation audit;
+  - scheduling the folder migration.
+- Deferred by him: summon animations and art (#174).
 
 **Don't trust:**
-- **`npm run test:browser` fails as-is in the cloud container.** Playwright
-  wants Chromium headless_shell 1234; `/opt/pw-browsers` has 1194. It passes
-  only with a scratch `PLAYWRIGHT_BROWSERS_PATH` holding symlinks named
-  `chromium_headless_shell-1234` and `chromium-1234` that point at the 1194
-  builds.
-- Claiming a milestone reward and a duplicate's "+1 coin" plate were not seen
-  on screen.
+- **Sim numbers before 2026-10-03.** The simulator played first skills only,
+  with no ultimates, including `trialEncounters.ts`'s comment figures.
+- **Tao's quoted ~80% for his teams** was measured before the 5-hit ramp lost
+  its HP. A rerun was offered, not done.
+- **`npm run test:browser` fails as-is in the cloud container.** It needs a
+  scratch `PLAYWRIGHT_BROWSERS_PATH` with `chromium_headless_shell-1234` and
+  `chromium-1234` symlinked to the 1194 builds.
 
 ## Where things are
 
 | What | Where |
 | --- | --- |
-| Summon screen | `components/gacha/BannerScreen.tsx`, `PanelSheet`, `FeaturedSheet`, `MilestoneSheet`, `PullReveal`; `lib/gacha/resultSummary.ts` |
-| Its mockup | `docs/design/mockups/gacha-overhaul.html` (he picked C) |
-| Manga-page utilities | `panel-cut-*`, `ink-burst`, `speed-rays` in `styles/globals.css`; the exception in `docs/design-system.md` |
-| Shared tile face | `components/game/UnitTileFace.tsx` (archive, team picker, summon) |
-| Element hue, code and name | `lib/game/elementStyle.ts` |
-| The tile ↔ portrait rule | Ruling #173; `docs/CHARACTER_ART.md` step 6; `scripts/skill_art/make_portrait_crop.py` |
-| Crop numbers per unit | `scripts/lora/characters/lyra.json` (`portrait`, `tile`), `sara_v2.json` `portrait_recut` |
-| Fleet skills for cloud sessions | `.claude/skills/checkpoint`, `.claude/skills/relay` (masters are his user-level copies) |
-| LoRAs, locked art, references | ComfyUI on his PC (see `docs/CHARACTER_ART.md`) |
+| Epic Battles model and data | `lib/game/epicBattles.ts`, `data/arcs/exam-arc.json`, `lib/game/epicClears.ts` (`playerStore.epicClears`, cloud-synced) |
+| Epic screens | `components/game/events/Epic*`, `EnemyPanel`; board tabs in `EventsBoard` + `lib/game/eventTabs.ts`; tab memory `settingsStore.eventsTab` |
+| Boss Tao | `data/characters/master_tao_npc.json`; mechanics in `lib/game/liveBonus.ts`, `debuffCount.ts`, `onKill.ts`, `counter.ts`, `immunity.ts` |
+| Simulator | `lib/game/simulate.ts` (hands, gauge, seeded AI; limits in its header), `simStats.ts` (`collectStats`) |
+| Shared battle rules | `lib/game/ultGauge.ts` `ultGaugeAfterAction`; `lib/game/deck.ts` `dealTeamHand`, `settlePlayedCard` |
+| Events mockups | `docs/design/mockups/events-redesign.html` (built from the live CSS and markup; he picked A) |
+| Summon screen | `components/gacha/BannerScreen.tsx` and its sheets (#174) |
+| Fleet skills for cloud sessions | `.claude/skills/checkpoint`, `.claude/skills/relay` |
 
 ## Confidence and gaps
 
-### Verified on 2026-10-03 (cloud), by running it
+### Verified on 2026-10-03 (cloud, part 3), by running it
 
-- `npm run check`: **1,527 passed / 126 files**, typecheck and lint clean.
-- **The summon screen at 390×844, 390×667 and 1440×900:**
-  - No page scroll at any size.
-  - Draw ×11 sits in the bottom sixth on both phones.
-  - Driven: the featured sheet, the milestone sheet, and a real 11-pull with
-    two new units.
-- The detail page's element tag, at 390. Lyra's cropped tile in the archive,
-  at 390 and 1440.
-- Every scratch server was stopped, `.next-verify` removed, and
-  `tsconfig.json` restored.
+- `npm run check`: **1,635 passed / 134 files**, typecheck and lint clean.
+- **In Chromium at 390×844:**
+  - the three tabs (44px, no sideways scroll, remembered across a reload,
+    Epic tab on return from an arc);
+  - the arc page;
+  - the stage brief;
+  - the tab hover fix, by computed colour.
+- `BattleProvider`'s refactor onto the shared gauge and deck functions was
+  read line by line: same behaviour.
 
 ### Not verified
 
-- Claiming a milestone reward (the code is unchanged); a duplicate's results
-  tile.
-- Sara or Lyra on the dark **enemy** side of a battle (`ART_REQUESTS.md` D6).
-- Both transparent portraits are a plain Lanczos upscale, so slightly soft
-  (D6).
+- A stage won on screen, and the result screen without "Rewards".
+- Tao's live passive readout in the unit panel.
+- `test:browser` was not run this session.
+- Carried over: claiming a milestone; a duplicate's "+1 coin" tile; Sara or
+  Lyra on the dark enemy side.
 
 ### Recorded as Claude's reading, not his words
 
-- That the summon screen is the design system's *one* loud exception (#174).
-- A tile unit's portrait must be RGBA (the test's proxy for #173).
+- #178: less is more vs QOL is the line between what a player *reads* and
+  what a player *uses*.
+- #175: the shape of the clear record.
+- #176: the names "Examiner's Judgement" and "Trial by Fire", made on his
+  request.
 
 ## Outside the repo
 
-- **`toll-kits`:** untouched this session.
-- **ComfyUI:** not reachable from cloud sessions.
+- **`toll-kits`:** untouched. #175–#178 are not kit rulings, so `KIT_RULINGS`
+  needs no change. #176 is a boss kit and his call to mirror.
+- **Scratchpad only:** the Tao measurement runners (`taostats.ts`,
+  `taosweep.ts`). They are lost when the container goes.

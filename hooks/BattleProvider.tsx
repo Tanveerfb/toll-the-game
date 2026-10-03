@@ -17,8 +17,8 @@ import {
   noteAIAction,
 } from "@/lib/game/ai";
 import { registerCharacterPassives } from "@/lib/game/passive";
-import { applyAdjacentMerges } from "@/lib/game/deck";
-import { ultGaugeAfterUltimate, ultGaugeMax } from "@/lib/game/ultGauge";
+import { settlePlayedCard } from "@/lib/game/deck";
+import { ultGaugeAfterAction } from "@/lib/game/ultGauge";
 import { transitionBossPhases } from "@/lib/game/phases";
 import { applyBossTurnStart, bossForcedSpAction } from "@/lib/game/bossPassives";
 import { applyDefeatPassives } from "@/lib/game/onDefeat";
@@ -602,13 +602,7 @@ export default function BattleProvider({
       // included — `ultGaugeAfterUltimate`); normal cards grant +1.
       currentTeams.playerTeam = currentTeams.playerTeam.map((char) =>
         char.instanceId === action.sourceInstanceId
-          ? {
-              ...char,
-              ultGauge:
-                action.skill.type === "ultimate"
-                  ? ultGaugeAfterUltimate(char, action.skill.mechanics)
-                  : Math.min(ultGaugeMax(char), char.ultGauge + 1),
-            }
+          ? { ...char, ultGauge: ultGaugeAfterAction(char, action.skill) }
           : char,
       );
 
@@ -807,37 +801,16 @@ export default function BattleProvider({
       }
 
       // Consume the played card from the hand; auto-merge what it exposed
-      // (grants that enemy ult gauge, mirroring the player deck).
-      if (action.cardId) {
-        const merged = applyAdjacentMerges(
-          hand.filter((c) => c.id !== action.cardId),
-        );
-        hand = merged.deck;
-        if (merged.mergeCount > 0) {
-          currentTeams.enemyTeam = currentTeams.enemyTeam.map((char) => {
-            const gains = merged.mergeSourceIds.filter(
-              (id) => id === char.instanceId,
-            ).length;
-            return gains > 0
-              ? { ...char, ultGauge: Math.min(ultGaugeMax(char), char.ultGauge + gains) }
-              : char;
-          });
-        }
-      }
-
-      // +1 ult gauge for playing a card; an ult consumes then refills by its
-      // own gainUltGauge mechanics (Molvarr P2 = 3) — same rule the player gets.
-      currentTeams.enemyTeam = currentTeams.enemyTeam.map((char) =>
-        char.instanceId === action.sourceInstanceId
-          ? {
-              ...char,
-              ultGauge:
-                action.skill.type === "ultimate"
-                  ? ultGaugeAfterUltimate(char, action.skill.mechanics)
-                  : Math.min(ultGaugeMax(char), char.ultGauge + 1),
-            }
-          : char,
-      );
+      // (grants that enemy ult gauge, mirroring the player deck), then +1
+      // gauge for the card, or spend-and-refill for an ultimate. One shared
+      // function, which the simulator also plays by (lib/game/deck.ts).
+      const settled = settlePlayedCard({
+        team: currentTeams.enemyTeam,
+        hand,
+        action,
+      });
+      hand = settled.hand;
+      currentTeams.enemyTeam = settled.team;
 
       // Commit THIS action and let it play before the AI decides the next
       // one — the enemy turn used to resolve all three at once, so the whole

@@ -67,11 +67,15 @@ const NPC_ART = new Set([
 ]);
 
 /**
- * Ids that render another character's art file. Empty right now — the Part 2
- * rematch used to need one (`lyra_npc_2`), but that duplicate kit was replaced
- * by a stage effect on 2026-08-10 and deleted.
+ * Ids that render another character's art file. The Part 2 rematch used to
+ * need one (`lyra_npc_2`), but that duplicate kit was replaced by a stage
+ * effect on 2026-08-10 and deleted; `master_tao_npc` is the live entry.
  */
-const ART_ALIAS: Record<string, string> = {};
+const ART_ALIAS: Record<string, string> = {
+  // The Epic Battles boss Tao renders the playable card's art and skill art:
+  // same character, same kit, so no second copy of the files (2026-10-03).
+  master_tao_npc: "master_tao",
+};
 
 function resolveArtId(id: string): string {
   return ART_ALIAS[id] ?? id;
@@ -209,6 +213,9 @@ export function skillArtSlug(skillName: string): string {
 const SKILL_ART_ALIAS: Record<string, string> = {
   "blue_lyra__latent-heat": "lyra__latent-heat",
   "green_duke__fist-of-flowing-ruin-water": "duke__fist-of-flowing-ruin-water",
+  // Boss Tao's skill 2 was renamed with its new mechanic; it keeps the
+  // playable card's skill-2 art until he asks for its own (2026-10-03).
+  "master_tao__examiner-s-judgement": "master_tao__inferno-consumption",
 };
 
 /** Every borrowed key, for the test that each points at registered art. */

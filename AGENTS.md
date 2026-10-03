@@ -95,7 +95,9 @@ lib/
                       pipeline), fightRun.ts (multi-fight runs), battleLock.ts,
                       damagePreview.ts (kit preview), descriptionTranslator.ts,
                       characterCatalog.ts, characterVfx.ts, battleReport.ts,
-                      effectDiff.ts
+                      effectDiff.ts, epicBattles.ts (Epic Battles arcs and
+                      stages, zod-parsed from data/arcs/) + epicClears.ts
+                      (the clear record)
   gacha/  news/       Banner + pull logic; MDX post loading
   nav/routes.ts       GAME_ROUTES — single source of truth for what modes exist
 store/                gameStore.ts (battle + deck + battle owner), playerStore.ts,
@@ -103,6 +105,7 @@ store/                gameStore.ts (battle + deck + battle owner), playerStore.t
 content/news/         MDX patch notes (updates/ + notices/)
 data/characters/      Character kit JSON (source of truth for kits)
 data/banners/         Gacha banners; data/orders/ Bureau Orders
+data/arcs/            Epic Battles arcs (one JSON per arc, parsed by lib/game/epicBattles.ts)
 types/                Shared TypeScript contracts
 tests/                Unit tests (engine, stores, gacha, previews), plus
                       *.browser.test.tsx — component tests in real Chromium
@@ -147,8 +150,9 @@ scripts/sim.ts        Headless balance simulator (npm run sim), ruling #57
 
 ## How work is judged, and who owns what
 
-**His three values, in his order: consistency, modularization, QOL**
-(ruling #139, 2026-09-17). **Keep all three in mind on every change.** He
+**His four values, in his order: consistency, modularization, QOL, and less
+is more** (ruling #139, 2026-09-17; the fourth added by #178, 2026-10-03).
+**Keep all four in mind on every change, and audit against all four.** He
 restated them on 2026-09-26 as the things we *"should always must keep in
 mind"*. **Consistency covers design as well as code**: one look, one
 interaction and one component for one job, just as much as one implementation.
@@ -160,6 +164,15 @@ affordances that make a feature usable rather than merely functional — *"when 
 create a new table, without QOL you don't add any search field, you don't add any
 filters, sort options, animations"*. `components/game/CharacterBrowser.tsx` is the
 benchmark: search, sort, filter sheet, active-filter count.
+
+**Less is more: don't state or show the obvious** (#178). Game-wide, not one
+screen's rule. His words: *"less is more for the players. let them explore on
+his own"*, and *"it applies game wide ... 'less is more' / 'don't state/show
+the obvious'"*. A count on a tab, a clear tally, a best-turns readout or a label
+repeating what the screen already says is a regression against it, even when
+the data is real and recorded. It pulls against QOL: QOL adds the affordances a
+player *uses*, such as search, sort and filters. Less is more removes the
+readouts a player only *reads*. Where the two conflict, ask him.
 
 **The split, precisely (#139).** Claude owns **site structure and data types** —
 schemas, naming, architecture, what is measurable — and implements his UX

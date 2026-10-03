@@ -73,6 +73,46 @@ export function BossClearSummary({
 }
 
 /**
+ * An Epic Battles stage clear: the result and nothing else.
+ *
+ * A stage pays no rewards (Tanveer, 2026-10-03) - missions will, later. Per
+ * #178 (less is more) the screen does not say so either, and shows no payout
+ * list at all. The clear is already recorded when this renders, and is
+ * deliberately not shown: this fight's turns only, no counts or bests.
+ */
+export function EpicClearSummary({
+  arcLabel,
+  stageName,
+  turns,
+  onAgain,
+  onBack,
+}: {
+  arcLabel: string;
+  stageName: string;
+  /** Player turns the winning fight took. */
+  turns: number;
+  onAgain: () => void;
+  onBack: () => void;
+}): React.JSX.Element {
+  return (
+    <ClearPanel eventName={arcLabel} title={stageName}>
+      <div className="border border-rule bg-muted px-2.5">
+        <div className="flex items-baseline justify-between gap-3 py-1.5">
+          <span className="font-body text-xs">Turns</span>
+          <span className="font-heading text-base tabular-nums">{turns}</span>
+        </div>
+      </div>
+      <Button onClick={onAgain} className="mt-3">
+        Fight again
+      </Button>
+      <Button variant="outline" onClick={onBack}>
+        Back to stages
+      </Button>
+    </ClearPanel>
+  );
+}
+
+/**
  * An ascension-trial clear: no loot table at all.
  *
  * The lifted cap IS the reward, plus every rank banked while the player sat

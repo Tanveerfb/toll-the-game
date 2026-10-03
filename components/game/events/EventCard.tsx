@@ -11,23 +11,41 @@ import { cn } from "@/lib/utils";
 import { eventPhaseCount, type GameEvent } from "@/lib/game/events";
 
 /** A pill on the card's bottom row: the outline badge, in the card's ink. */
-function Chip({ children }: { children: React.ReactNode }): React.JSX.Element {
+export function Chip({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.JSX.Element {
   return <Badge variant="outline">{children}</Badge>;
 }
 
-/** One row on the operations board. */
-export default function EventCard({
-  event,
-  lockReason,
+/**
+ * One row on the operations board, whatever it opens.
+ *
+ * Extracted from `EventCard` so the Epic Battles arcs wear the same row as the
+ * events above them (ruling #139: one look for one job) instead of a second,
+ * near-identical card. The caller supplies the words and the chips; the row
+ * owns the layout, the portrait frame and the lock treatment.
+ */
+export function EventRowCard({
+  art,
+  kicker,
+  title,
+  summary,
+  chips,
+  locked = false,
   onSelect,
 }: {
-  event: GameEvent;
-  lockReason: string | null;
+  /** Portrait URL, or null for the skull placeholder. */
+  art: string | null;
+  kicker: string;
+  title: string;
+  summary: string;
+  /** The pills on the bottom row. */
+  chips: React.ReactNode;
+  locked?: boolean;
   onSelect: () => void;
 }): React.JSX.Element {
-  const art = event.enemyId ? getCharacterArt(event.enemyId) : null;
-  const phases = eventPhaseCount(event);
-  const locked = lockReason !== null;
   return (
     <button
       type="button"
@@ -66,25 +84,15 @@ export default function EventCard({
 
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
         <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
-          {event.kicker}
+          {kicker}
         </span>
         <span className="font-heading text-xl leading-tight tracking-title">
-          {event.name}
+          {title}
         </span>
         <span className="font-body text-xs text-muted-foreground">
-          {event.summary}
+          {summary}
         </span>
-        <span className="mt-1 flex flex-wrap gap-1.5">
-          {locked ? (
-            <Chip>{lockReason}</Chip>
-          ) : (
-            <>
-              <Chip>{event.staminaCost} stamina</Chip>
-              <Chip>{event.repeatable ? "Repeatable" : "One clear"}</Chip>
-              {phases > 1 ? <Chip>{phases} phases</Chip> : null}
-            </>
-          )}
-        </span>
+        <span className="mt-1 flex flex-wrap gap-1.5">{chips}</span>
       </span>
 
       <span className="flex shrink-0 items-center text-muted-foreground">
@@ -95,5 +103,41 @@ export default function EventCard({
         )}
       </span>
     </button>
+  );
+}
+
+/** One row on the operations board. */
+export default function EventCard({
+  event,
+  lockReason,
+  onSelect,
+}: {
+  event: GameEvent;
+  lockReason: string | null;
+  onSelect: () => void;
+}): React.JSX.Element {
+  const art = event.enemyId ? getCharacterArt(event.enemyId) : null;
+  const phases = eventPhaseCount(event);
+  const locked = lockReason !== null;
+  return (
+    <EventRowCard
+      art={art}
+      kicker={event.kicker}
+      title={event.name}
+      summary={event.summary}
+      locked={locked}
+      onSelect={onSelect}
+      chips={
+        locked ? (
+          <Chip>{lockReason}</Chip>
+        ) : (
+          <>
+            <Chip>{event.staminaCost} stamina</Chip>
+            <Chip>{event.repeatable ? "Repeatable" : "One clear"}</Chip>
+            {phases > 1 ? <Chip>{phases} phases</Chip> : null}
+          </>
+        )
+      }
+    />
   );
 }

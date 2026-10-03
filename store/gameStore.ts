@@ -10,6 +10,7 @@ import { ActionCard } from "@/types/action";
 import { AnyBattleEvent } from "@/types/battleEvent";
 import {
   applyAdjacentMerges,
+  dealTeamHand,
   applyAllMerges,
   canCardsAutoMerge,
   dropUnchargedUltimates,
@@ -553,24 +554,9 @@ export const useGameStore = create<BattleState>()(
 
   drawEnemyCards: () => {
     const { enemyTeam, enemyDeck } = get();
-    const living = enemyTeam.filter((c) => c.currentHP > 0 && !c.isSub);
-    const fieldCount = enemyTeam.filter((c) => !c.isSub).length;
-    const maxCapacity = maxHandCapacity(fieldCount);
-    if (enemyDeck.length >= maxCapacity || living.length === 0) return;
-
-    const result = refillHand({
-      hand: enemyDeck,
-      livingUnits: living,
-      maxCapacity,
-      reservedCards: enemyDeck,
-    });
-
-    const updatedEnemies = enemyTeam.map((c) => {
-      const gain = result.gaugeGains[c.instanceId] ?? 0;
-      return gain > 0 ? { ...c, ultGauge: Math.min(ultGaugeMax(c), c.ultGauge + gain) } : c;
-    });
-
-    set({ enemyDeck: result.deck, enemyTeam: updatedEnemies });
+    const dealt = dealTeamHand({ team: enemyTeam, hand: enemyDeck });
+    if (dealt.hand === enemyDeck) return;
+    set({ enemyDeck: dealt.hand, enemyTeam: dealt.team });
   },
 
   drawCards: () => {

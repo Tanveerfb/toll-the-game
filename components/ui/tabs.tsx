@@ -77,7 +77,10 @@ function TabsTrigger({
       className={cn(
         "relative inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-none px-3 font-body text-sm font-bold whitespace-nowrap transition-[color,background-color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         // On the ground.
-        "group-data-[variant=default]/tabs-list:ink-skew group-data-[variant=default]/tabs-list:border-2 group-data-[variant=default]/tabs-list:border-ground-line group-data-[variant=default]/tabs-list:bg-ground-raised group-data-[variant=default]/tabs-list:text-ground-dim group-data-[variant=default]/tabs-list:hover:text-foreground",
+        // Hover lightens only an INACTIVE tab: on the active (paper) tab it
+        // turned the label white on white while the pointer stayed on it, and a
+        // phone keeps hover after a tap (2026-10-03, the events board).
+        "group-data-[variant=default]/tabs-list:ink-skew group-data-[variant=default]/tabs-list:border-2 group-data-[variant=default]/tabs-list:border-ground-line group-data-[variant=default]/tabs-list:bg-ground-raised group-data-[variant=default]/tabs-list:text-ground-dim group-data-[variant=default]/tabs-list:data-[state=inactive]:hover:text-foreground",
         "group-data-[variant=default]/tabs-list:data-active:border-border group-data-[variant=default]/tabs-list:data-active:bg-card group-data-[variant=default]/tabs-list:data-active:text-card-foreground group-data-[variant=default]/tabs-list:data-active:ink-slab-primary",
         // Inside a paper panel.
         "group-data-[variant=line]/tabs-list:-mb-0.5 group-data-[variant=line]/tabs-list:border-b-2 group-data-[variant=line]/tabs-list:border-transparent group-data-[variant=line]/tabs-list:text-muted-foreground group-data-[variant=line]/tabs-list:hover:text-card-foreground",

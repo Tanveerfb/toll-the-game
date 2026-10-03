@@ -10,6 +10,18 @@ import { promoteSubs } from "@/lib/game/sub";
 import { tickTeamBuffs, tickTeamDebuffs } from "@/lib/game/tick";
 import { FIELD_CAP, TEAM_CAP } from "@/lib/game/format";
 import { buildBattleUnit } from "@/lib/game/buildUnit";
+import {
+  dealTeamHand,
+  dropUnchargedUltimates,
+  initialCardsFor,
+  settlePlayedCard,
+} from "@/lib/game/deck";
+import {
+  aggregateFights,
+  createFightRecorder,
+  type FightRecord,
+  type SimStats,
+} from "@/lib/game/simStats";
 import { bonusActionsFor } from "@/lib/game/stageEffects";
 import type { StageEffect } from "@/types/stageEffects";
 import type { BattleCharacter } from "@/types/character";
@@ -33,13 +45,24 @@ import type { BattleCharacter } from "@/types/character";
  *
  * **What it does NOT model, and you must not read past:**
  *
- *  - **Card draw.** Both sides pick from every skill their living units have,
- *    which is what `getAIMove` does natively. A human's hand is a *random*
- *    subset refilled per turn, and merging ranks cards up. So this measures
- *    kits against each other with the deck's variance removed — deliberately,
- *    because that variance is the noise you are usually trying to see past,
- *    but it means a kit whose strength is cheap repeatable cards is
- *    under-represented here.
+ *  - ~~**Card draw.**~~ **Modelled since 2026-10-03, as an approximation.**
+ *    Each side now plays from a hand, with the battle's own pure deck rules
+ *    (`lib/game/deck.ts`): one rank-1 card per skill to start, a random refill
+ *    every turn, adjacent identical cards merging up a rank, merges granting
+ *    gauge, an ultimate card dealt only at a full gauge and taken back if the
+ *    gauge is drained. The gauge itself fills by `ultGaugeAfterAction`, the
+ *    function the battle's two action loops use. What this does NOT model:
+ *    the human chooses which card to play, queues several and reorders to
+ *    set up merges (here the AI plays whatever it likes best from the hand),
+ *    and the PLAYER side refills by the enemy-side rules, with no
+ *    returned-card priority or snapshot/reset. Before this, the AI was fed
+ *    every skill with no hand, so each unit played its FIRST attack skill
+ *    forever and no gauge filled - live enemies were never affected, because
+ *    `getAIMove` with a hand already chooses among the cards in it.
+ *  - **Reproducibility.** Every random pick - the deal, the AI's unit and
+ *    target, evade and crit rolls, Chiara's roll, Tao's cleanse - draws from
+ *    the one seeded stream, so a seed gives the same numbers. A live battle
+ *    leaves each of those on `Math.random`.
  *  - **Player skill.** Both sides run the enemy AI. A result is "how these
  *    kits trade under identical, mediocre play", not "how good a player does".
  *  - ~~**Levels, ascension, ult level.** Everyone fights at catalog base
@@ -53,6 +76,11 @@ import type { BattleCharacter } from "@/types/character";
  *
  * Read a win rate as a comparison between kits under fixed conditions. Do not
  * read it as a prediction of live play.
+ *
+ * `collectStats: true` adds per-fight statistics (`SimResult.stats`, built by
+ * `simStats.ts`): damage per unit and per skill, deaths, passive telemetry.
+ * Healing there is heal SKILLS only; lifesteal and passive-queue HP changes
+ * are not counted.
  */
 
 export interface SimResult {
@@ -68,6 +96,8 @@ export interface SimResult {
   averageTurns: number;
   /** Mean surviving units on the winning side, 0–4. High means a stomp. */
   averageSurvivors: number;
+  /** Per-fight statistics, present only when `collectStats` was asked for. */
+  stats?: SimStats;
 }
 
 /**
@@ -132,6 +162,12 @@ export interface SimOptions {
   /** Deterministic runs — same seed, same result, which is what makes a
    *  before/after comparison mean anything. */
   seed?: number;
+  /**
+   * Also record per-fight statistics (`SimResult.stats`, lib/game/simStats.ts):
+   * damage per unit and per skill, deaths, ultimates, passive telemetry. Off by
+   * default, and a run without it does exactly what it always did.
+   */
+  collectStats?: boolean;
 }
 
 /**
@@ -206,6 +242,8 @@ interface BattleOutcome {
    * is live, and that is a real thing that happened rather than an error.
    */
   leftStartPool: number;
+  /** Raw per-fight statistics, when the caller asked for them. */
+  record?: FightRecord;
 }
 
 /** One fight. Returns the winner and how long it took. */
@@ -217,6 +255,7 @@ async function runOneBattle(
   rng: () => number,
   carryHp: Record<string, number> = {},
   effects?: StageEffect[],
+  collectStats = false,
 ): Promise<BattleOutcome> {
   let teams = {
     // "player"/"enemy" are engine roles, not sides of a match — a synergy that
@@ -234,7 +273,15 @@ async function runOneBattle(
    * surviving HP has to be captured at every exit, and an exit that forgot it
    * would silently hand the next fight a full-health team.
    */
+  const recorder = collectStats
+    ? createFightRecorder({
+        playerTeam: teams.playerTeam,
+        enemyTeam: teams.enemyTeam,
+      })
+    : undefined;
+
   const finish = (winner: "left" | "right" | null, turns: number): BattleOutcome => ({
+    record: recorder?.finish(winner, turns, teams),
     winner,
     turns,
     survivors:
@@ -257,7 +304,26 @@ async function runOneBattle(
   [...teams.playerTeam, ...teams.enemyTeam].forEach((unit) =>
     registerCharacterPassives(unit, queue.register),
   );
-  teams = await queue.process("OnBattleStart", teams, noop);
+  teams = await queue.process("OnBattleStart", teams, noop, rng);
+
+  // Each side plays from a hand, as the battle does (`initializeDeck` and
+  // `initializeEnemyDeck`): one rank-1 card per skill of each living field
+  // unit to start, then refilled at random on the enemy rules every turn.
+  // That is what lets a unit use its second skill and, once its gauge is full,
+  // its ultimate. See the header's limits for what this does not model.
+  const hands = {
+    player: initialCardsFor(livingOnField(teams.playerTeam)),
+    enemy: initialCardsFor(livingOnField(teams.enemyTeam)),
+  };
+  const dropDeadCards = () => {
+    const alive = new Set(
+      [...teams.playerTeam, ...teams.enemyTeam]
+        .filter((u) => u.currentHP > 0)
+        .map((u) => u.instanceId),
+    );
+    hands.player = hands.player.filter((c) => alive.has(c.sourceInstanceId));
+    hands.enemy = hands.enemy.filter((c) => alive.has(c.sourceInstanceId));
+  };
 
   for (let turn = 0; turn < maxTurns; turn += 1) {
     for (const side of ["player", "enemy"] as const) {
@@ -265,11 +331,14 @@ async function runOneBattle(
         side === "player" ? "OnPlayerTurnStart" : "OnEnemyTurnStart";
       const endPhase = side === "player" ? "OnPlayerTurnEnd" : "OnEnemyTurnEnd";
       const key = side === "player" ? "playerTeam" : "enemyTeam";
+      recorder?.setTurn(turn, side);
 
       // Buffs and HoT expire at the owner's turn START (ruling #21).
+      const beforeBuffTick = teams[key];
       teams = { ...teams, [key]: tickTeamBuffs(teams[key], noop) };
+      recorder?.ticks("Regeneration", beforeBuffTick, teams[key]);
       applyDefeatPassives(teams, noop);
-      teams = await queue.process(startPhase, teams, noop);
+      teams = await queue.process(startPhase, teams, noop, rng);
 
       teams = {
         playerTeam: promoteSubs(teams.playerTeam, noop),
@@ -282,6 +351,11 @@ async function runOneBattle(
       if (livingOnField(teams.enemyTeam).length === 0) {
         return finish("left", turn + 1);
       }
+
+      // Refill this side's hand to capacity, crediting merge gauge.
+      const dealt = dealTeamHand({ team: teams[key], hand: hands[side], rng });
+      hands[side] = dealt.hand;
+      teams = { ...teams, [key]: dealt.team };
 
       // Actions = living field members + 1, capped at 3 — both sides, same
       // rule (`actionEconomy.ts`).
@@ -297,19 +371,34 @@ async function runOneBattle(
         if (livingOnField(acting).length === 0) break;
         if (livingOnField(opposing).length === 0) break;
 
-        const move = getAIMove(acting, opposing, context);
+        const move = getAIMove(acting, opposing, context, hands[side], rng);
         if (!move) break;
         noteAIAction(context, move.skill.type);
 
         // `executeSkill` always takes { playerTeam, enemyTeam } in engine
         // terms, so the enemy side's move is passed with the same shape.
-        teams = executeSkill(move, teams, noop, i, rng);
+        teams = executeSkill(move, teams, noop, i, rng, recorder?.emit);
+        const settled = settlePlayedCard({
+          team: teams[key],
+          hand: hands[side],
+          action: move,
+        });
+        hands[side] = settled.hand;
+        teams = { ...teams, [key]: settled.team };
+        dropDeadCards();
+        recorder?.sample(teams);
       }
 
+      // A drained gauge takes its ultimate card back out of the hand.
+      hands.player = dropUnchargedUltimates(hands.player, teams.playerTeam);
+      hands.enemy = dropUnchargedUltimates(hands.enemy, teams.enemyTeam);
+
       // Debuffs and DoT proc and expire at the victim's turn END.
+      const beforeDebuffTick = teams[key];
       teams = { ...teams, [key]: tickTeamDebuffs(teams[key], noop) };
+      recorder?.ticks("DoT", beforeDebuffTick, teams[key]);
       applyDefeatPassives(teams, noop);
-      teams = await queue.process(endPhase, teams, noop);
+      teams = await queue.process(endPhase, teams, noop, rng);
 
       const phaseStep = transitionBossPhases(teams.enemyTeam, effects);
       teams = { ...teams, enemyTeam: phaseStep.team };
@@ -345,6 +434,7 @@ export async function simulate(
   let turnTotal = 0;
   let decisive = 0;
   let survivorTotal = 0;
+  const records: FightRecord[] = [];
 
   for (let i = 0; i < runs; i += 1) {
     // A fresh stream per fight, derived from the seed, so one fight's RNG
@@ -357,7 +447,11 @@ export async function simulate(
       fieldCap,
       maxTurns,
       rng,
+      {},
+      undefined,
+      options.collectStats === true,
     );
+    if (result.record) records.push(result.record);
     if (result.winner === "left") wins += 1;
     else if (result.winner === "right") losses += 1;
     else draws += 1;
@@ -376,6 +470,7 @@ export async function simulate(
     runs,
     averageTurns: decisive > 0 ? turnTotal / decisive : 0,
     averageSurvivors: decisive > 0 ? survivorTotal / decisive : 0,
+    ...(options.collectStats ? { stats: aggregateFights(records) } : {}),
   };
 }
 

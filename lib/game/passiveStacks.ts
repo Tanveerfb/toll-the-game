@@ -1,4 +1,5 @@
 import { BattleCharacter } from "@/types/character";
+import { statPhrase } from "@/lib/game/stats";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import {
   findAnyPassiveMechanic,
@@ -189,12 +190,48 @@ function bossDebuffAtkReadout(
   };
 }
 
+/**
+ * A passive carrying `liveBonus` entries (boss Master Tao): the bonuses it is
+ * granting RIGHT NOW, read off the entries `applyLiveBonuses` keeps on the
+ * unit, so the readout can never disagree with the stats. A repeating
+ * attacks-received shift on the same passive shares the row as its stack bar.
+ */
+function liveBonusReadout(unit: BattleCharacter): PassiveReadout | null {
+  if (!findAnyPassiveMechanic(unit, "liveBonus")) return null;
+  const lines = unit.buffs
+    .filter((b) => b.liveBonusKey && (b.valuePercent ?? 0) > 0)
+    .map((b) => `+${b.valuePercent}% ${statPhrase(b)}`);
+  const shift = attacksReceivedShiftReadout(unit);
+  return {
+    label: unit.passive!.name,
+    stacks: shift?.stacks,
+    note: shift?.note,
+    lines: lines.length > 0 ? lines : undefined,
+  };
+}
+
 /** Gon/Killua's Rookie Hunter/Prodigy Assassin: progress toward the one-time
  *  stat shift after `attacksRequired` attacks received. */
 function attacksReceivedShiftReadout(unit: BattleCharacter): PassiveReadout | null {
   const mech = findAnyPassiveMechanic(unit, "statShiftAfterAttacks");
   if (!mech || mech.type !== "statShiftAfterAttacks") return null;
   const required = mech.attacksRequired ?? 10;
+  const maxTriggers = mech.maxTriggers ?? 1;
+  if (maxTriggers > 1) {
+    // A repeating shift (boss Master Tao) is a stack, not a one-shot: each
+    // trigger is a step toward the cap, with the in-cycle count as the note.
+    const received = (unit.passiveState?.attacksReceived as number) || 0;
+    const triggers = (unit.passiveState?.statShiftTriggers as number) || 0;
+    return {
+      label: unit.passive!.name,
+      activationMode: "buildup",
+      stacks: { current: triggers, max: maxTriggers },
+      note:
+        triggers >= maxTriggers
+          ? "maxed"
+          : `${received % required}/${required} attacks received`,
+    };
+  }
   const fired = Boolean(unit.passiveState?.statShiftTriggered);
   const current = fired
     ? required
@@ -290,6 +327,7 @@ const NON_ALWAYS_ACTIVE_TYPES = new Set([
   "buff",
   "conditionalBuff",
   "statShiftAfterAttacks",
+  "liveBonus",
   "healLifesteal",
   "surviveLethal",
   "randomTurnEffect",
@@ -327,6 +365,7 @@ export function getPassiveReadout(
   context: PassiveReadoutContext,
 ): PassiveReadout | null {
   const bespoke =
+    liveBonusReadout(unit) ??
     deathblowReadout(unit) ??
     bossDebuffAtkReadout(unit, context) ??
     attacksReceivedShiftReadout(unit) ??

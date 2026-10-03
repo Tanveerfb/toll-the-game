@@ -193,6 +193,18 @@ Chance-tier wording (2026-07-30, `author_notes.md` idea #1): a fixed probability
 - `hooks/AuthProvider.tsx` + `lib/firebase.ts` — Firebase auth context; `/login` (email + Google) and `/profile` are built, with a guest-mode fallback when `.env.local` is absent.
 - `components/game/BattleEffectsOverlay.tsx` — visual feedback layer.
 
+## Epic Battles (`lib/game/epicBattles.ts`, `data/arcs/*.json`)
+
+A collection on `/events` (Tanveer, 2026-10-03): **arc** (`"Arc 1: Exam Arc"`) -> ordered **stages** -> each stage is **one fight** against story enemies. Authored in `data/arcs/<arc>.json` and parsed through the zod schema at module load, so a bad file throws at load naming the arc. A stage's `encounter` is the existing `RunnableEncounter` (`fightRun.ts`) and its `encounter.id` must equal the stage key `"<arcId>/<stageId>"`; the schema enforces both, plus exactly one fight.
+
+- **Always open, repeatable, zero stamina, no rewards.** There is deliberately no rank, unlock, stamina or reward field on an arc or stage. Difficulty is the only gate; the player brings their own team.
+- **Clear record** (`lib/game/epicClears.ts`, `playerStore.epicClears`, synced in `CLOUD_FIELDS`): per stage key `{ clears, firstClearAt, lastClearAt, bestTurns, teams }`, where `teams` holds the distinct sorted character-id sets that cleared it, capped at 30 (longest-unused dropped; a repeat refreshes its slot). It exists so future **missions** ("clear stage 1 with a human-only team") can be evaluated retroactively; missions are not built. `recordEpicClear` pays nothing.
+- **Battle owner:** `{ route: "/events", view: { kind: "epic", arcId, stageId } }`, resumed on reload by `resumedEventBattle`. The clear reads its team from the battle store, not the picker, so it survives a reload.
+- **The events board is three tabs** (option A of `docs/design/mockups/events-redesign.html`, Tanveer's pick): World Boss, Epic Battles, Trials (`EventsBoard`, the shadcn `Tabs`). Labels carry no counts. `lib/game/eventTabs.ts` splits events by `GameEvent.kind`, never by id. The open tab is `settingsStore.eventsTab`, a device preference that is not cloud-synced; opening an arc or resuming an epic fight sets it to Epic Battles, so the player lands back there.
+- **Clears are recorded, not shown** (his words: *"less is more for the players. let them explore on their own."*). The arc row's only chip is the stage count; a stage row shows "Stage N", name, caption and "Lv N"; the result shows this fight's turns. Do not add cleared counts or best turns to these screens.
+- **Screens** (`components/game/events/`): `EpicArcList` (the Epic Battles tab, uses `EventRowCard`), `EpicArcScreen` (stage list), `EpicStageBrief` (team picker + enter, uses `EnemyPanel`), `EpicClearSummary`, all driven by `EpicBattlesFlow`. The page holds the views, as for the boss and trials.
+- **Story enemies:** `master_tao_npc` (boss Tao, `storyOnly`, elite; Tanveer's own kit - HP 10,500, ATK 220, DEF 195, ultimate gauge 10, immune to Stun/Freeze/Attack Seals, ramping live bonuses, heals 35% of max HP on its first kill; art, skill art and VFX alias the playable card) and the existing `lyra_npc`. Stage levels (20) are provisional and Tanveer's to tune.
+
 ## Loading & Bundle Notes
 
 - **The mechanic engine is already data-driven.** `executeSkill` iterates a skill's OWN `mechanics[]` and branches (`skillMechanics.forEach(m => { if (m.type === "shock") … })`) — a 4v4 only ever executes the mechanics its 8 units carry. There is no "run all 53 mechanics" pass to optimise away.

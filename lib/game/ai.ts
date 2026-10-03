@@ -95,6 +95,9 @@ export function getAIMove(
   playerTeam: BattleCharacter[],
   context: AITurnContext = freshAITurnContext(),
   hand?: ActionCard[],
+  /** Unit and target picks. `Math.random` in a live battle; the simulator
+   *  seeds it so a run is reproducible. */
+  rng: () => number = Math.random,
 ): Action | null {
   // Subs cannot act or be targeted
   const alivePlayers = playerTeam.filter((p) => p.currentHP > 0 && !p.isSub);
@@ -171,7 +174,7 @@ export function getAIMove(
     return lowestPlayer;
   };
 
-  const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+  const pick = <T,>(arr: T[]): T => arr[Math.floor(rng() * arr.length)];
 
   const action = (
     e: BattleCharacter,

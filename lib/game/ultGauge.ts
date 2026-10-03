@@ -17,8 +17,8 @@ export function ultGaugeMax(unit: { ultGaugeMax?: number }): number {
  * Two shapes reach her: a self one (Molvarr P2 refills 3) and an `allies` one
  * (Caila's Theriac — "all allies" includes her, Tanveer 2026-09-29; the other
  * allies' share is granted in `combat.ts`). The battle screen's two action
- * loops (player and enemy) both call this, so neither can forget the second
- * shape. (The simulator keeps no gauge at all — see lib/game/simulate.ts.)
+ * loops (player and enemy) and the simulator all reach it through
+ * `ultGaugeAfterAction`, so none of them can forget the second shape.
  *
  * Reads the raw kit mechanics, resolving the ult-level ladder itself, because
  * the loop has the card, not executeSkill's normalised copy.
@@ -37,4 +37,22 @@ export function ultGaugeAfterUltimate(
     refill += mech.valueByUltLevel?.[index] ?? mech.value ?? 0;
   }
   return Math.min(ultGaugeMax(caster), refill);
+}
+
+/**
+ * The caster's gauge after it plays ANY card - the one rule the battle's two
+ * action loops and the simulator share. An ultimate spends the gauge and
+ * refills by its own mechanics (`ultGaugeAfterUltimate`); every other card
+ * grants +1, capped at the unit's maximum.
+ *
+ * Merges grant gauge as well, but that happens to the HAND (`lib/game/deck.ts`),
+ * not to the card just played.
+ */
+export function ultGaugeAfterAction(
+  caster: { ultGauge: number; ultGaugeMax?: number; ultLevel?: number },
+  skill: { type: string; mechanics?: readonly Mechanic[] },
+): number {
+  return skill.type === "ultimate"
+    ? ultGaugeAfterUltimate(caster, skill.mechanics)
+    : Math.min(ultGaugeMax(caster), caster.ultGauge + 1);
 }

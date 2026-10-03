@@ -17,6 +17,7 @@ import leorio from "@/data/characters/leorio.json";
 import lyra from "@/data/characters/lyra.json";
 import lyraNpc from "@/data/characters/lyra_npc.json";
 import masterTao from "@/data/characters/master_tao.json";
+import masterTaoNpc from "@/data/characters/master_tao_npc.json";
 import meliodas from "@/data/characters/meliodas.json";
 import molvarr from "@/data/characters/molvarr.json";
 import mustafa from "@/data/characters/mustafa.json";
@@ -120,8 +121,8 @@ export interface CharacterData {
    *  — never set automatically. Absent/false = not in the pool. */
   permanentPool?: boolean;
   /**
-   * Enemy action-economy tier. "elite" (named bosses — `lyra_npc` and
-   * `molvarr`, the only two kits carrying it; this used to claim
+   * Enemy action-economy tier. "elite" (named bosses — `lyra_npc`,
+   * `master_tao_npc` and `molvarr`, the only kits carrying it; this used to claim
    * "Tao/Seras/Lyra_npc", but Master Tao and Seras are playable kits with no
    * tier at all — the same doc-drift family as ruling #5)
    * always act 3× per turn even solo; unset/other kits are low-mid and get
@@ -160,6 +161,7 @@ const rawCharacters = [
   lyra,
   lyraNpc,
   masterTao,
+  masterTaoNpc,
   meliodas,
   molvarr,
   mustafa,

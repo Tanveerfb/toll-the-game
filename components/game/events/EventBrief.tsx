@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import { ChevronLeft } from "lucide-react";
 
 import { Alert } from "@/components/ui/alert";
@@ -14,11 +13,8 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import AutoClearConfirm from "@/components/game/AutoClearConfirm";
 import TeamPicker from "@/components/game/TeamPicker";
 import { RewardChips } from "@/components/game/events/RewardList";
-import { getCharacterArt } from "@/lib/game/characterArt";
-import {
-  getCharacterById,
-  type CharacterData,
-} from "@/lib/game/characterCatalog";
+import EnemyPanel from "@/components/game/events/EnemyPanel";
+import type { CharacterData } from "@/lib/game/characterCatalog";
 import {
   eventFightCount,
   eventLockReason,
@@ -27,7 +23,6 @@ import {
 } from "@/lib/game/events";
 import { autoClearAvailability, maxBatchSize } from "@/lib/game/autoClear";
 import { enemyLevelForDifficulty } from "@/lib/game/worldLevel";
-import { battleStats } from "@/lib/game/battleStats";
 import { tierKey } from "@/lib/game/worldBossRewards";
 import { farmablePreview, firstClearPreview } from "@/lib/game/worldBossPreview";
 
@@ -56,80 +51,16 @@ function EnemyCard({
   event: GameEvent;
   difficulty: number;
 }): React.JSX.Element {
-  const enemy = event.enemyId ? getCharacterById(event.enemyId) : null;
-  const art = event.enemyId ? getCharacterArt(event.enemyId) : null;
-  const phases = eventPhaseCount(event);
-  /**
-   * What the enemy actually fights at on this difficulty, from the same
-   * pipeline the battle builds him through. This printed the catalog
-   * statline beside "Level 26 at difficulty 2", so the brief said the level
-   * rose and showed stats that did not (Tanveer, 2026-09-26). First phase
-   * only — the phases line says there are more.
-   */
-  const stats = enemy
-    ? battleStats(enemy, {
-        progression: {
-          level: event.kind === "boss" ? enemyLevelForDifficulty(difficulty) : 1,
-          ascension: 0,
-        },
-        side: "enemy",
-      })
-    : null;
   return (
-    <Panel surface="paper" lift="slab" className="flex gap-3">
-      <span className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden border-2 border-border bg-muted">
-        {art ? (
-          <Image
-            src={art}
-            alt=""
-            fill
-            sizes="96px"
-            className="object-cover object-top"
-          />
-        ) : (
-          <span className="font-heading text-4xl text-muted-foreground">☠</span>
-        )}
-      </span>
-      <div className="min-w-0">
-        <p className="font-heading text-xl tracking-title">
-          {enemy?.name ?? event.name}
-        </p>
-        {/**
-         * Only a named enemy gets a tier line.
-         *
-         * This read `enemy?.tier === "elite" ? "Elite" : "Standard"`, and a
-         * trial resolves no enemy at all — so the First Ascension Trial
-         * announced itself as **Standard** while its last fight is Molvarr,
-         * who is `tier: "elite"`. A falsy `enemy` was being reported as a
-         * fact about the fight (browser check, 2026-09-17).
-         */}
-        {enemy ? (
-          <p className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
-            {enemy.tier === "elite" ? "Elite" : "Standard"}
-            {phases > 1 ? ` · ${phases} phases` : ""}
-          </p>
-        ) : null}
-        {stats ? (
-          <div className="mt-2 flex gap-4">
-            {(
-              [
-                ["HP", stats.hp],
-                ["ATK", stats.atk],
-                ["DEF", stats.def],
-              ] as const
-            ).map(([label, value]) => (
-              <span key={label}>
-                <span className="block font-body text-label font-bold uppercase tracking-label text-muted-foreground">
-                  {label}
-                </span>
-                <span className="block font-heading text-base tabular-nums">
-                  {value.toLocaleString()}
-                </span>
-              </span>
-            ))}
-          </div>
-        ) : null}
-        {event.kind === "boss" ? (
+    <EnemyPanel
+      enemyId={event.enemyId ?? null}
+      fallbackName={event.name}
+      // What the enemy actually fights at on this difficulty. First phase only
+      // - the phases line says there are more.
+      level={event.kind === "boss" ? enemyLevelForDifficulty(difficulty) : 1}
+      phases={eventPhaseCount(event)}
+      badge={
+        event.kind === "boss" ? (
           // The yellow badge: this line moves when the difficulty toggle
           // does, so it wears the same colour as the selected toggle.
           <Badge className="mt-2">
@@ -142,9 +73,9 @@ function EnemyCard({
           <Badge className="mt-2">
             {eventFightCount(event)} fights · one HP bar
           </Badge>
-        )}
-      </div>
-    </Panel>
+        )
+      }
+    />
   );
 }
 

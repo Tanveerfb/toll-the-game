@@ -20,6 +20,17 @@ export function isImmuneToStatDebuff(
   );
 }
 
+/**
+ * Whether a unit is permanently immune to a seal of `sealType` (`sealImmunity`,
+ * a passive). Only the listed types: a unit immune to Attack Seals is still
+ * sealed by a debuff or ultimate seal.
+ */
+export function isImmuneToSeal(unit: BattleCharacter, sealType: string): boolean {
+  return activeBossMechanics(unit).some(
+    (m) => m.type === "sealImmunity" && m.sealTypes.includes(sealType),
+  );
+}
+
 /** The stats a unit can never have lowered — for display and logging. */
 export function immuneStats(unit: BattleCharacter): string[] {
   return activeBossMechanics(unit).flatMap((m) =>

@@ -34,6 +34,9 @@ import {
   isIncapacitated,
 } from "./freeze";
 import { activeSealFor, sealName, sealPhrase } from "./seal";
+import { applyLiveBonuses } from "./liveBonus";
+import { applyKillPassives } from "./onKill";
+import { isImmuneToSeal } from "./immunity";
 import { applyColdStack } from "./cold";
 import {
   ownCounterStance,
@@ -144,10 +147,14 @@ function gainChargedStack(char: BattleCharacter, log: (e: string) => void) {
   );
 }
 
-// Rookie Hunter / Prodigy Assassin (Gon/Killua): after receiving N attacks
-// in battle (evades count — same rule as Charged), permanently shift stats
-// by a signed % of base. Fires once; baked into current stats so it can't
-// be cleansed or cancelled.
+// Rookie Hunter / Prodigy Assassin (Gon/Killua) and boss Master Tao's Hard-
+// Earned Poise: after receiving N attacks in battle (evades count - same rule
+// as Charged), permanently shift stats by a signed % of base. Baked into
+// current stats so it can't be cleansed or cancelled.
+//
+// `maxTriggers` absent or 1 is the original one-shot. Above 1 the shift REPEATS
+// every N attacks received, up to that many times - the same machinery and the
+// same `attacksReceived` counter, not a second mechanic.
 function gainAttackReceivedShift(
   char: BattleCharacter,
   log: (e: string) => void,
@@ -162,27 +169,49 @@ function gainAttackReceivedShift(
   if (char.passiveState.statShiftTriggered) return;
 
   const required = mech.attacksRequired ?? 10;
+  const maxTriggers = Math.max(1, mech.maxTriggers ?? 1);
   const count = ((char.passiveState.attacksReceived as number) || 0) + 1;
   char.passiveState.attacksReceived = count;
-  if (count < required) return;
 
-  char.passiveState.statShiftTriggered = true;
-  // trunc, not floor — floor turns -47.5 into -48 and over-penalizes
-  const atkShift = Math.trunc(char.atk * ((mech.atkShiftPercent ?? 0) / 100));
-  const defShift = Math.trunc(char.def * ((mech.defShiftPercent ?? 0) / 100));
-  char.currentAttack = Math.max(0, char.currentAttack + atkShift);
-  char.currentDefense = Math.max(0, char.currentDefense + defShift);
-  char.buffs.push({
-    type: "buff",
-    // Shifts ATK and DEF only — not HP, so not "basic stats" either.
-    stats: ["atk", "def"],
+  const fired = (char.passiveState.statShiftTriggers as number) || 0;
+  const due = Math.min(Math.floor(count / required), maxTriggers);
+  if (due <= fired) return;
+
+  char.passiveState.statShiftTriggers = due;
+  if (due >= maxTriggers) char.passiveState.statShiftTriggered = true;
+
+  for (let step = fired; step < due; step += 1) {
+    // trunc, not floor - floor turns -47.5 into -48 and over-penalizes
+    const atkShift = Math.trunc(char.atk * ((mech.atkShiftPercent ?? 0) / 100));
+    const defShift = Math.trunc(char.def * ((mech.defShiftPercent ?? 0) / 100));
+    char.currentAttack = Math.max(0, char.currentAttack + atkShift);
+    char.currentDefense = Math.max(0, char.currentDefense + defShift);
+    if (mech.hpShiftPercent) Object.assign(char, scaleMaxHp(char, mech.hpShiftPercent));
+    log(
+      `${char.name}'s ${char.passive?.name} activates! ATK ${atkShift >= 0 ? "+" : ""}${atkShift}, DEF ${defShift >= 0 ? "+" : ""}${defShift}${mech.hpShiftPercent ? `, max HP ${mech.hpShiftPercent >= 0 ? "+" : ""}${mech.hpShiftPercent}%` : ""}.`,
+    );
+  }
+
+  // One display badge, rewritten in place as the shift repeats. It is
+  // `preApplied` (the gain is already baked above), so it never counts twice.
+  const stats = mech.hpShiftPercent ? ["atk", "def", "hp"] : ["atk", "def"];
+  const badge = {
+    type: "buff" as const,
+    // ATK and DEF alone are not "basic stats"; with HP they are.
+    stats,
     uncancellable: true,
     preApplied: true,
     name: char.passive?.name,
-  });
-  log(
-    `${char.name}'s ${char.passive?.name} activates! ATK ${atkShift >= 0 ? "+" : ""}${atkShift}, DEF ${defShift >= 0 ? "+" : ""}${defShift}.`,
+    // Cumulative, shown only once the shift can repeat (Gon/Killua's single
+    // badge never carried a number and still does not).
+    valuePercent:
+      maxTriggers > 1 ? due * (mech.atkShiftPercent ?? 0) : undefined,
+  };
+  const existing = char.buffs.findIndex(
+    (b) => b.preApplied && b.uncancellable && b.name === badge.name && b.stats?.join() === stats.join(),
   );
+  if (existing >= 0) char.buffs[existing] = badge;
+  else char.buffs.push(badge);
 }
 
 // Everything that reacts to "receiving an attack" (hit OR evade)
@@ -264,7 +293,25 @@ function toPercentText(value?: number): string {
   return `${value}%`;
 }
 
+/**
+ * Resolves one action, then recounts every live bonus (`liveBonus`,
+ * lib/game/liveBonus.ts) against the field the action left behind - debuffs
+ * applied, cleansed or killed with their carrier all move those counts.
+ */
 export function executeSkill(
+  action: Action,
+  teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
+  log: (entry: string) => void,
+  actionIndex: number = 0,
+  rng: () => number = Math.random,
+  emit?: BattleEventEmitter,
+): { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] } {
+  return applyLiveBonuses(
+    resolveSkill(action, teams, log, actionIndex, rng, emit),
+  );
+}
+
+function resolveSkill(
   action: Action,
   teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
   log: (entry: string) => void,
@@ -1385,15 +1432,21 @@ export function executeSkill(
           const sealDuration = mech.duration || 0;
           if (sealDuration > 0) {
             const sealType = mech.sealType || "attack";
-            updatedTarget.debuffs.push({
-              type: "seal",
-              sealType,
-              debuffDuration: sealDuration,
-              name: sealName(sealType),
-            });
-            targetEffects.push(
-              `${sealType === "ultimate" ? "disabled ultimate moves" : `sealed ${sealType} skills`}${formatTurns(sealDuration)}`,
-            );
+            if (isImmuneToSeal(updatedTarget, sealType)) {
+              targetEffects.push(`resisted ${sealType} seal (seal immune)`);
+              updatedTarget.passiveState.sealsResisted =
+                ((updatedTarget.passiveState.sealsResisted as number) || 0) + 1;
+            } else {
+              updatedTarget.debuffs.push({
+                type: "seal",
+                sealType,
+                debuffDuration: sealDuration,
+                name: sealName(sealType),
+              });
+              targetEffects.push(
+                `${sealType === "ultimate" ? "disabled ultimate moves" : `sealed ${sealType} skills`}${formatTurns(sealDuration)}`,
+              );
+            }
           }
         }
         if (mech.type === "extort") {
@@ -1893,6 +1946,19 @@ export function executeSkill(
       );
     }
   }
+
+  // Kill credit goes to whoever struck the blow: the caster for a target its
+  // damage took to 0, and a counterer for the attacker it struck down. DoT
+  // never reaches here (see lib/game/onKill.ts).
+  const kills = new Map<string, number>();
+  const credit = (id: string) => kills.set(id, (kills.get(id) ?? 0) + 1);
+  eventTargets.forEach((t) => {
+    if (t.killed) credit(updatedSource.instanceId);
+  });
+  eventCounters.forEach((c) => {
+    if (c.killedAttacker) credit(c.byInstanceId);
+  });
+  if (kills.size > 0) applyKillPassives(updatedTeams, kills, log);
 
   // Anything this action killed gets its parting passive before the extort
   // sync, so a unit that dies here has already paid out by the time links are

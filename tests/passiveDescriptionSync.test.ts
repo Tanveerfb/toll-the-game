@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getAllCharacters } from "@/lib/game/characterCatalog";
+import { rawPassiveMechanics } from "@/lib/game/passiveBlocks";
 
 /**
  * Skill descriptions run through descriptionTranslator.ts and stay
@@ -58,8 +59,9 @@ describe("passive description percentages stay in sync with mechanic data", () =
     if (percents.length === 0) return;
 
     it(`${char.id}'s passive ("${passive.name}") description percentages are backed by real mechanic values`, () => {
-      const pool = collectNumbers(passive.mechanics ?? []);
-      collectDerivedPercents(passive.mechanics ?? [], pool);
+      const mechanics = rawPassiveMechanics(passive);
+      const pool = collectNumbers(mechanics);
+      collectDerivedPercents(mechanics, pool);
       percents.forEach((p) => {
         expect(
           pool.has(p),

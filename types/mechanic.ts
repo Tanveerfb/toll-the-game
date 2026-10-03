@@ -463,6 +463,15 @@ export interface StatShiftAfterAttacksMechanic extends MechanicBase {
   attacksRequired?: number;
   atkShiftPercent?: number;
   defShiftPercent?: number;
+  /** Max HP shift, same signed % of base. Together with ATK and DEF this is
+   *  "basic stats" (ruling #55). Absent = HP untouched (Gon, Killua). */
+  hpShiftPercent?: number;
+  /**
+   * How many times the shift may fire. Absent or 1 is the original one-shot
+   * (Gon, Killua: once, after `attacksRequired` attacks). Above 1 it repeats
+   * every `attacksRequired` attacks received, up to this many times
+   * (boss Master Tao: +5% every 5 attacks, max 10 times).
+   */
   maxTriggers?: number;
 }
 export interface SurviveLethalMechanic extends MechanicBase {
@@ -579,6 +588,56 @@ export interface StanceUseStacksMechanic extends MechanicBase {
   stats: string[];
   valuePercent: number;
   maxPercent: number;
+}
+/**
+ * Skill mechanic: the hit deals `valuePercentPerDebuff`% more damage for every
+ * DISTINCT debuff on the target, counted by `countDistinctDebuffs`
+ * (lib/game/debuffCount.ts). Boss Master Tao's [Co-Destruction].
+ */
+export interface CoDestructionMechanic extends MechanicBase {
+  type: "coDestruction";
+  valuePercentPerDebuff: number;
+}
+/**
+ * Passive: a stat bonus on the owner that tracks something on the field LIVE,
+ * recounted after every action and every turn tick, so a cleanse takes it
+ * straight back off. One uncancellable entry per mechanic, rewritten in place
+ * by `applyLiveBonuses` (lib/game/liveBonus.ts) and read through the ordinary
+ * stat pipeline.
+ *
+ * `counts` is what is counted on the OPPOSING side's living units:
+ *  - `enemyDebuffs`: distinct debuffs, per unit, summed (`countDistinctDebuffs`)
+ *  - `enemyIgniteStacks`: Ignite stacks, summed
+ *  - `enemyNamePresent`: 1 if any living enemy's name contains `enemyName`
+ *    (case-insensitive substring), else 0
+ * The bonus is `valuePercentPerCount` x count, clamped to `maxPercent`.
+ * `stats` may name `damageDealt` alongside ATK/DEF in one entry (ruling #55).
+ */
+export interface LiveBonusMechanic extends MechanicBase {
+  type: "liveBonus";
+  counts: "enemyDebuffs" | "enemyIgniteStacks" | "enemyNamePresent";
+  enemyName?: string;
+  stats: string[];
+  valuePercentPerCount: number;
+  maxPercent?: number;
+}
+/** Passive: immune to seals of the named types (`attack`, `debuff`,
+ *  `attackDebuff`, `ultimate`); any other seal still lands. */
+export interface SealImmunityMechanic extends MechanicBase {
+  type: "sealImmunity";
+  sealTypes: string[];
+}
+/** Passive: damage taken from COUNTER stances is cut by `valuePercent`%. Only
+ *  the counter strike (lib/game/counter.ts) — an ordinary hit is untouched. */
+export interface CounterDamageReductionMechanic extends MechanicBase {
+  type: "counterDamageReduction";
+  valuePercent: number;
+}
+/** Passive: at the start of the owner's team's turn, removes `count` random
+ *  cancellable debuffs from the owner. Drawn from the battle RNG. */
+export interface TurnStartCleanseMechanic extends MechanicBase {
+  type: "turnStartCleanse";
+  count?: number;
 }
 /** One option a `randomTurnEffect` passive can roll. */
 export interface RandomEffectOption {
@@ -705,6 +764,11 @@ export type Mechanic =
   | HealBoostStacksMechanic
   | NamedAllyBonusMechanic
   | StanceUseStacksMechanic
+  | CoDestructionMechanic
+  | LiveBonusMechanic
+  | SealImmunityMechanic
+  | CounterDamageReductionMechanic
+  | TurnStartCleanseMechanic
   | BossAutoSpMechanic
   | BossStatSpikeMechanic
   | BossMaxHpDrainMechanic
@@ -775,6 +839,11 @@ export const MECHANIC_TYPES = [
   "healBoostStacks",
   "namedAllyBonus",
   "stanceUseStacks",
+  "coDestruction",
+  "liveBonus",
+  "sealImmunity",
+  "counterDamageReduction",
+  "turnStartCleanse",
   "bossAutoSp",
   "bossStatSpike",
   "bossMaxHpDrain",
@@ -871,6 +940,9 @@ export interface StatusEffect {
    */
   appliedSeq?: number;
   sealType?: string;
+  /** Marks an entry as the live readout of a `liveBonus` mechanic
+   *  (lib/game/liveBonus.ts), so it is rewritten in place and never duplicated. */
+  liveBonusKey?: string;
   /** Decay: damage captured from the applying hit, dealt per tick. */
   capturedDamage?: number;
   /** Corrosion basis: true = % of MAX HP per tick (R3/ultimate only),

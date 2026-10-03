@@ -23,5 +23,9 @@ export type BattleOwner =
       route: "/events";
       view:
         | { kind: "boss"; eventId: string; difficulty: number }
-        | { kind: "trial"; eventId: string; run: FightRunState };
+        | { kind: "trial"; eventId: string; run: FightRunState }
+        // Epic Battles: a stage of an arc, not an event, so it names the arc
+        // and stage instead of an `eventId`. Nothing else is needed to rebuild
+        // it - the team is the player's own and no stamina or difficulty rides.
+        | { kind: "epic"; arcId: string; stageId: string };
     };

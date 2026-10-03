@@ -1,6 +1,7 @@
 import type { ActionCard } from "@/types/action";
 import type { BattleCharacter } from "@/types/character";
-import { ultGaugeMax } from "@/lib/game/ultGauge";
+import { ultGaugeAfterAction, ultGaugeMax } from "@/lib/game/ultGauge";
+import type { Action } from "@/types/action";
 
 // Shared deck logic for BOTH sides (7DS GC rules). The player hand lives in
 // gameStore and the enemy hand is driven by the battle loop, but the merge and
@@ -296,8 +297,11 @@ export function refillHand(params: {
   livingUnits: BattleCharacter[];
   maxCapacity: number;
   reservedCards: ActionCard[];
+  /** Draw randomness. `Math.random` in a live battle; the simulator seeds it. */
+  rng?: () => number;
 }): RefillResult {
-  const { hand, livingUnits, maxCapacity, reservedCards } = params;
+  const { hand, livingUnits, maxCapacity, reservedCards, rng = Math.random } =
+    params;
 
   let currentDeck = [...hand];
   const gaugeGains: Record<string, number> = {};
@@ -342,7 +346,7 @@ export function refillHand(params: {
         rank: 1,
       };
     }
-    const picked = pool[Math.floor(Math.random() * pool.length)];
+    const picked = pool[Math.floor(rng() * pool.length)];
     return {
       id: newCardId(),
       sourceInstanceId: picked.unitId,
@@ -369,4 +373,74 @@ export function refillHand(params: {
   }
 
   return { deck: currentDeck, gaugeGains, notices, mergeCount, steps };
+}
+
+/**
+ * Refill one team's hand the way the enemy side does at the start of its turn,
+ * and credit the gauge its merges earned. Returns the same `hand` and `team`
+ * objects when there is nothing to draw, so a caller can skip the commit.
+ *
+ * Shared by the battle (`drawEnemyCards`) and the simulator, which plays BOTH
+ * sides on the enemy rules. Capacity counts every non-bench field slot, dead or
+ * alive, exactly as the battle always has.
+ */
+export function dealTeamHand(params: {
+  team: BattleCharacter[];
+  hand: ActionCard[];
+  rng?: () => number;
+}): { hand: ActionCard[]; team: BattleCharacter[] } {
+  const { team, hand, rng } = params;
+  const living = team.filter((c) => c.currentHP > 0 && !c.isSub);
+  const fieldCount = team.filter((c) => !c.isSub).length;
+  const maxCapacity = maxHandCapacity(fieldCount);
+  if (hand.length >= maxCapacity || living.length === 0) return { hand, team };
+
+  const result = refillHand({
+    hand,
+    livingUnits: living,
+    maxCapacity,
+    reservedCards: hand,
+    rng,
+  });
+  const nextTeam = team.map((c) => {
+    const gain = result.gaugeGains[c.instanceId] ?? 0;
+    return gain > 0
+      ? { ...c, ultGauge: Math.min(ultGaugeMax(c), c.ultGauge + gain) }
+      : c;
+  });
+  return { hand: result.deck, team: nextTeam };
+}
+
+/**
+ * Settle a played card: it leaves the hand, the merges that exposes grant gauge
+ * to their owners, and the caster's own gauge moves by `ultGaugeAfterAction`.
+ * What the enemy loop did inline after every action; now also the simulator's.
+ */
+export function settlePlayedCard(params: {
+  team: BattleCharacter[];
+  hand: ActionCard[];
+  action: Pick<Action, "sourceInstanceId" | "skill" | "cardId">;
+}): { hand: ActionCard[]; team: BattleCharacter[] } {
+  const { action } = params;
+  let { team, hand } = params;
+  if (action.cardId) {
+    const merged = applyAdjacentMerges(hand.filter((c) => c.id !== action.cardId));
+    hand = merged.deck;
+    if (merged.mergeCount > 0) {
+      team = team.map((char) => {
+        const gains = merged.mergeSourceIds.filter(
+          (id) => id === char.instanceId,
+        ).length;
+        return gains > 0
+          ? { ...char, ultGauge: Math.min(ultGaugeMax(char), char.ultGauge + gains) }
+          : char;
+      });
+    }
+  }
+  team = team.map((char) =>
+    char.instanceId === action.sourceInstanceId
+      ? { ...char, ultGauge: ultGaugeAfterAction(char, action.skill) }
+      : char,
+  );
+  return { hand, team };
 }
