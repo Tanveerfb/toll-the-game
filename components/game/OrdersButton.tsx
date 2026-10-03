@@ -11,10 +11,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { NAV_CHIP } from "@/components/ui/navChip";
-import { panelVariants } from "@/components/ui/Panel";
-import { cn } from "@/lib/utils";
-import { ORDERS_CLOSED_NOTE, ORDERS_OPEN } from "@/lib/game/orders";
+import NavTile from "@/components/ui/NavTile";
+import { ORDERS_OPEN } from "@/lib/game/orders";
 
 /**
  * Bureau Orders, reachable from anywhere (Tanveer, 2026-08-13).
@@ -48,27 +48,8 @@ export default function OrdersButton({
   const [open, setOpen] = React.useState(false);
   const state = useOrdersState();
 
-  // Closed for the overhaul (ruling #159): the home tile says so, and the nav
-  // chip goes. A static row, not a button, because there is nothing to open.
-  if (!ORDERS_OPEN) {
-    if (variant !== "tile") return null;
-    return (
-      <div
-        className={cn(
-          panelVariants({ surface: "paper", density: "tight" }),
-          "flex w-full items-center gap-3",
-        )}
-      >
-        <ClipboardList className="h-5 w-5 shrink-0 text-muted-foreground" strokeWidth={2} />
-        <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="font-heading text-lg tracking-title">Bureau Orders</span>
-          <span className="font-body text-caption font-bold uppercase tracking-label text-muted-foreground">
-            {ORDERS_CLOSED_NOTE}
-          </span>
-        </span>
-      </div>
-    );
-  }
+  // Closed for the overhaul (ruling #159): both shapes render nothing.
+  if (!ORDERS_OPEN) return null;
 
   if (state.hidden) return null;
 
@@ -91,41 +72,29 @@ export default function OrdersButton({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {variant === "tile" ? (
-          <button
-            type="button"
+          // The same tile as the hub's modes (`HomeMenu`), lifted on the yellow
+          // slab when there is something to claim: yellow is the action
+          // colour, and claiming is the action.
+          <NavTile
             aria-label={label}
-            // The same tile as the hub's alerts and modes (`HomeMenu`), lifted
-            // on the yellow slab when there is something to claim: yellow is
-            // the action colour, and claiming is the action.
-            className={cn(
-              panelVariants({
-                surface: "paper",
-                density: "tight",
-                press: true,
-                lift: badge ? "primary" : "none",
-              }),
-              "flex w-full items-center gap-3",
-            )}
-          >
-            <ClipboardList className="h-5 w-5 shrink-0" strokeWidth={2} />
-            <span className="flex min-w-0 flex-col gap-0.5">
-              <span className="font-heading text-lg tracking-title">
-                Bureau Orders
-              </span>
-              <span className="font-body text-caption font-bold uppercase tracking-label text-muted-foreground">
-                {state.locked
-                  ? "Sign in to claim"
-                  : state.ready > 0
-                    ? `${state.ready} ready to claim`
-                    : `${state.claimed} of ${state.total} on this step`}
-              </span>
-            </span>
-            {badge ? (
-              <span className="ml-auto shrink-0 border border-border bg-el-light px-1.5 py-0.5 font-body text-caption font-bold leading-tight tabular-nums">
-                {badge}
-              </span>
-            ) : null}
-          </button>
+            icon={ClipboardList}
+            title="Bureau Orders"
+            subtitle={
+              state.locked
+                ? "Sign in to claim"
+                : state.ready > 0
+                  ? `${state.ready} ready to claim`
+                  : `${state.claimed} of ${state.total} on this step`
+            }
+            lift={badge ? "primary" : "none"}
+            trailing={
+              badge ? (
+                <Badge variant="reward" className="tabular-nums">
+                  {badge}
+                </Badge>
+              ) : null
+            }
+          />
         ) : (
           <button
             type="button"
@@ -136,9 +105,9 @@ export default function OrdersButton({
             <ClipboardList className="h-3 w-3 shrink-0" strokeWidth={2.4} />
             <span>Orders</span>
             {badge ? (
-              <span className="border border-border bg-el-light px-1 text-label leading-tight tabular-nums">
+              <Badge variant="reward" size="tight" className="tabular-nums">
                 {badge}
-              </span>
+              </Badge>
             ) : null}
           </button>
         )}

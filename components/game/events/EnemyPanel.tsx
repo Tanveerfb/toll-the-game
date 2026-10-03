@@ -24,6 +24,7 @@ export default function EnemyPanel({
   level,
   phases = 1,
   badge,
+  pageTitle,
 }: {
   /** Null for an event that names no single opponent (a trial). */
   enemyId: string | null;
@@ -33,8 +34,11 @@ export default function EnemyPanel({
   level: number;
   phases?: number;
   /** The yellow badge under the stats - what makes this fight this fight. */
-  badge: React.ReactNode;
-}): React.JSX.Element {
+  badge?: React.ReactNode;
+  /** The title of the page this panel sits on. The enemy's name is left out
+   *  when it would only repeat that title. */
+  pageTitle?: string;
+}):React.JSX.Element {
   const enemy = enemyId ? getCharacterById(enemyId) : null;
   const art = enemyId ? getCharacterArt(enemyId) : null;
   const stats = enemy
@@ -59,9 +63,11 @@ export default function EnemyPanel({
         )}
       </span>
       <div className="min-w-0">
-        <p className="font-heading text-xl tracking-title">
-          {enemy?.name ?? fallbackName}
-        </p>
+        {(enemy?.name ?? fallbackName) !== pageTitle ? (
+          <p className="font-heading text-xl tracking-title">
+            {enemy?.name ?? fallbackName}
+          </p>
+        ) : null}
         {/**
          * Only a named enemy gets a tier line.
          *

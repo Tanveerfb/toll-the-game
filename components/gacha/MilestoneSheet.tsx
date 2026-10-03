@@ -2,7 +2,8 @@
 
 import React from "react";
 import ClaimSection from "@/components/gacha/ClaimSection";
-import PanelSheet from "@/components/gacha/PanelSheet";
+import PanelSheet from "@/components/ui/PanelSheet";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * The milestone track and its rewards, behind the milestone panel.
@@ -48,7 +49,12 @@ export default function MilestoneSheet({
     <PanelSheet
       trigger={trigger}
       title="Milestone"
-      description={`${hasHydrated ? bar.toLocaleString() : "—"} / ${finalThreshold.toLocaleString()} ${unit} spent`}
+      description={
+        <>
+          {hasHydrated ? bar.toLocaleString() : <Skeleton className="h-3 w-8" />} /{" "}
+          {finalThreshold.toLocaleString()} {unit} spent
+        </>
+      }
       open={open}
       onOpenChange={setOpen}
     >

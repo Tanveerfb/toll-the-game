@@ -27,6 +27,7 @@ export default function MountedDialog({
   description,
   onClose,
   className,
+  showClose = true,
   children,
 }: {
   title: React.ReactNode;
@@ -35,6 +36,9 @@ export default function MountedDialog({
   onClose: () => void;
   /** Width, usually: `sm:max-w-lg` or `sm:max-w-2xl` for a wide one. */
   className?: string;
+  /** `false` drops the corner X for a dialog whose own Cancel button is the
+   *  close (the summon confirm). Backdrop and Escape still dismiss it. */
+  showClose?: boolean;
   children: React.ReactNode;
 }): React.JSX.Element {
   const onCloseAutoFocus = useFocusBackToOpener();
@@ -45,7 +49,11 @@ export default function MountedDialog({
         if (!open) onClose();
       }}
     >
-      <DialogContent className={className} onCloseAutoFocus={onCloseAutoFocus}>
+      <DialogContent
+        className={className}
+        showCloseButton={showClose}
+        onCloseAutoFocus={onCloseAutoFocus}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description ? (

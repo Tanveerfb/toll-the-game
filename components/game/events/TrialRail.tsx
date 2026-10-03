@@ -124,8 +124,8 @@ export default function TrialRail({
           )}
         >
           <div className="flex items-baseline gap-2.5">
-            <span className={cn("font-heading text-2xl leading-none tracking-title", INK_TONE.reward)}>
-              VICTORY
+            <span className={cn("font-heading text-2xl uppercase leading-none tracking-title", INK_TONE.reward)}>
+              Victory
             </span>
             <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
               Fight {lastFight.index + 1} of {fights.length}

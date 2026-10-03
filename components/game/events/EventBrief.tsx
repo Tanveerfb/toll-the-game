@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { ChevronLeft } from "lucide-react";
 
 import { Alert } from "@/components/ui/alert";
+import BackLink from "@/components/ui/BackLink";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/Panel";
@@ -36,7 +36,6 @@ export interface EventBriefState {
   difficulties: number[];
   currentStamina: number;
   accountRank: number;
-  rankCap: number;
   clearedWalls: number[];
   clearedEvents: string[];
   autoClearTickets: number;
@@ -59,15 +58,9 @@ function EnemyCard({
       // - the phases line says there are more.
       level={event.kind === "boss" ? enemyLevelForDifficulty(difficulty) : 1}
       phases={eventPhaseCount(event)}
+      pageTitle={event.name}
       badge={
-        event.kind === "boss" ? (
-          // The yellow badge: this line moves when the difficulty toggle
-          // does, so it wears the same colour as the selected toggle.
-          <Badge className="mt-2">
-            Level {enemyLevelForDifficulty(difficulty)} at difficulty{" "}
-            {difficulty}
-          </Badge>
-        ) : (
+        event.kind === "boss" ? null : (
           // A trial's enemies carry authored levels, so the world level dial
           // never reaches them. Say what the run IS.
           <Badge className="mt-2">
@@ -90,16 +83,12 @@ function DifficultyLadder({
   event,
   difficulty,
   difficulties,
-  rankCap,
-  accountRank,
   clearedEvents,
   onPick,
 }: {
   event: GameEvent;
   difficulty: number;
   difficulties: number[];
-  rankCap: number;
-  accountRank: number;
   clearedEvents: string[];
   onPick: (level: number) => void;
 }): React.JSX.Element {
@@ -136,17 +125,12 @@ function DifficultyLadder({
                   ? "Locked"
                   : clearedEvents.includes(tierKey(event.id, level))
                     ? "Cleared"
-                    : "New"}
+                    : null}
               </span>
             </ToggleGroupItem>
           );
         })}
       </ToggleGroup>
-      <p className="mt-2 font-body text-caption leading-snug text-muted-foreground">
-        World level {rankCap} is your cap at account rank {accountRank}. Each
-        difficulty is its own fight with its own one-off bundle and its own drop
-        table — and each has to be beaten before it can be auto cleared.
-      </p>
     </Panel>
   );
 }
@@ -188,11 +172,6 @@ function RewardPreview({
 
       <SectionHeader size="block" eyebrow="Every clear" rule />
       <RewardChips rows={farmablePreview(difficulty)} />
-      <p className="mt-2 font-body text-caption leading-snug text-muted-foreground">
-        {alreadyCleared
-          ? "Ranges, not promises — the roll happens on victory. This difficulty's first-clear bundle is already paid."
-          : "The bundle above is fixed and pays once, for this difficulty. Everything below rolls, every time."}
-      </p>
     </Panel>
   );
 }
@@ -228,7 +207,6 @@ export default function EventBrief({
     difficulties,
     currentStamina,
     accountRank,
-    rankCap,
     clearedWalls,
     clearedEvents,
     autoClearTickets,
@@ -274,21 +252,7 @@ export default function EventBrief({
 
   return (
     <Screen width="app">
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        {/* The primitive, not a hand-rolled link: it was a ~20px tap target
-            in a bare `<button>`, and `size="xs"` carries the 44px floor
-            (rulings #119–120). `variant="link"` keeps it reading as a
-            breadcrumb rather than an action. */}
-        <Button
-          variant="link"
-          size="xs"
-          onClick={onBack}
-          className="gap-1 px-0"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" strokeWidth={2.6} />
-          Events
-        </Button>
-      </div>
+      <BackLink label="Events" onClick={onBack} />
       <SectionHeader eyebrow={event.kicker} title={event.name} />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_20rem]">
@@ -301,8 +265,6 @@ export default function EventBrief({
                 event={event}
                 difficulty={difficulty}
                 difficulties={difficulties}
-                rankCap={rankCap}
-                accountRank={accountRank}
                 clearedEvents={clearedEvents}
                 onPick={onPickDifficulty}
               />
@@ -363,7 +325,7 @@ export default function EventBrief({
               onClick={onEnter}
               className={auto.eligible ? undefined : "ml-auto"}
             >
-              Enter battle
+              Fight
             </Button>
           </Panel>
 
@@ -378,17 +340,16 @@ export default function EventBrief({
            * line above put a `<` between the tag and the attribute and the
            * guard's walk-back landed on it (both fixed 2026-09-17).
            *
-           * Only shown when Auto Clear is eligible and blocked: an event that
-           * never offers it says nothing, and an available one needs no
-           * explanation.
+           * Only shown when Auto Clear is eligible and blocked for a reason the
+           * screen does not already show: the "locked" case (the tier is not
+           * beaten yet) is carried by the disabled button alone, and the
+           * "Cleared" chips on the ladder.
            */}
-          {auto.eligible && auto.blocker ? (
+          {auto.eligible && auto.blocker && auto.blocker !== "locked" ? (
             <Alert>
-              {auto.blocker === "locked"
-                ? `Beat ${event.name} once yourself to unlock Auto Clear. A ticket skips the fight — it never skips the stamina.`
-                : auto.blocker === "no-tickets"
-                  ? "No Auto Clear Tickets. They arrive with account ranks."
-                  : "Not enough stamina — Auto Clear still pays the full cost of every run it skips."}
+              {auto.blocker === "no-tickets"
+                ? "No Auto Clear tickets. They arrive with account ranks."
+                : "Not enough stamina — Auto Clear still pays the full cost of every run it skips."}
             </Alert>
           ) : null}
         </div>

@@ -7,7 +7,7 @@ import { getCharacterArt } from "@/lib/game/characterArt";
 import { arcLabel, type EpicArc } from "@/lib/game/epicBattles";
 
 /**
- * The Epic Battles tab of the events board: a caption, then one row per arc.
+ * The Epic Battles tab of the events board: one row per arc.
  *
  * Reuses the events' own row (`EventRowCard`) so an arc looks like the events
  * beside it. Nothing here is ever locked - every arc and stage is open from
@@ -24,9 +24,6 @@ export default function EpicArcList({
 }): React.JSX.Element {
   return (
     <div className="flex flex-col gap-2">
-      <p className="font-body text-caption text-ground-dim">
-        Always open, free to enter, no rewards yet. Bring your own team.
-      </p>
       {arcs.map((arc) => {
         const lead = arc.stages[0]?.encounter.fights[0]?.enemies[0]?.id;
         return (

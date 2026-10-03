@@ -2,8 +2,12 @@
 
 import React from "react";
 import Image from "next/image";
-import { ChevronDown, Shield, Skull, Sparkles, Wind, Zap } from "lucide-react";
+import { Shield, Skull, Sparkles, Wind, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import DisclosureRow from "@/components/ui/DisclosureRow";
+import EmptyState from "@/components/ui/EmptyState";
 import {
   Sheet,
   SheetContent,
@@ -42,6 +46,20 @@ export function groupEventsByTurn(
     .sort((a, b) => b.turn - a.turn);
 }
 
+/** An effect chip reads as a phrase ("Burn 3t"), not a label, so it drops the
+ *  badge's uppercase. */
+const EFFECT_CHIP_TEXT = "normal-case tracking-title font-semibold";
+
+/** A unit that fell, wherever the log says so. */
+function DownBadge(): React.JSX.Element {
+  return (
+    <Badge variant="destructive" size="tight" className="gap-0.5">
+      <Skull className="h-3 w-3" strokeWidth={2.6} />
+      Down
+    </Badge>
+  );
+}
+
 function TargetRow({
   name,
   damage,
@@ -66,10 +84,10 @@ function TargetRow({
       <span className="text-muted-foreground">→</span>
       <span className="min-w-0 flex-1 truncate">{name}</span>
       {evaded ? (
-        <span className="flex shrink-0 items-center gap-0.5 bg-muted px-1 font-semibold uppercase tracking-label">
+        <Badge variant="secondary" size="tight" className="gap-0.5">
           <Wind className="h-3 w-3" strokeWidth={2.6} />
           Dodged
-        </span>
+        </Badge>
       ) : null}
       {tanked ? (
         // Without this the row rendered a bare name: the damage badge is
@@ -91,24 +109,17 @@ function TargetRow({
         </span>
       ) : null}
       {crit ? (
-        <span
-          className="flex shrink-0 items-center gap-0.5 bg-el-light px-1 font-bold uppercase tracking-label"
-        >
+        <Badge variant="reward" size="tight" className="gap-0.5">
           <Zap className="h-2.5 w-2.5" strokeWidth={3} />
           Crit
-        </span>
+        </Badge>
       ) : null}
       {survivedLethal ? (
         <span className={`shrink-0 font-bold uppercase tracking-label ${INK_TONE.gain}`}>
           Survived
         </span>
       ) : null}
-      {killed ? (
-        <span className="flex shrink-0 items-center gap-0.5 bg-destructive px-1 font-bold uppercase tracking-label">
-          <Skull className="h-3 w-3" strokeWidth={2.6} />
-          Down
-        </span>
-      ) : null}
+      {killed ? <DownBadge /> : null}
     </div>
   );
 }
@@ -132,27 +143,33 @@ function EffectRow({
       <span className="shrink-0 truncate">{change.name}</span>
       <span className="flex min-w-0 flex-1 flex-wrap justify-end gap-1">
         {change.applied.map((effect, i) => (
-          <span
+          <Badge
             key={`a-${i}`}
-            className={`shrink-0 border px-1 font-semibold ${
-              effect.slot === "debuff"
-                ? "border-border bg-role-attack/35"
-                : "border-border bg-role-heal/35"
-            }`}
+            variant="fill"
+            size="tight"
+            className={cn(
+              EFFECT_CHIP_TEXT,
+              effect.slot === "debuff" ? "bg-role-attack/35" : "bg-role-heal/35",
+            )}
           >
             {describeEventEffect(effect)}
-          </span>
+          </Badge>
         ))}
         {change.removed.map((effect, i) => (
           // Losing a debuff and losing a buff read very differently to a
           // player, so the chip keeps its slot colour and only the border
           // says it went away.
-          <span
+          <Badge
             key={`r-${i}`}
-            className="shrink-0 border border-dashed border-muted-foreground px-1 text-muted-foreground line-through"
+            variant="outline"
+            size="tight"
+            className={cn(
+              EFFECT_CHIP_TEXT,
+              "border-dashed border-muted-foreground text-muted-foreground line-through",
+            )}
           >
             {describeEventEffect(effect)}
-          </span>
+          </Badge>
         ))}
       </span>
     </div>
@@ -194,9 +211,9 @@ function ActionEntry({
         </span>
         {event.isUlt ? (
           // The ultimate's five-hue frame (#133), as on its card.
-          <span className="frame-ultimate shrink-0 border-2 px-1 font-body text-label font-bold uppercase tracking-label">
+          <Badge variant="ghost" size="tight" className="frame-ultimate border-2">
             Ult
-          </span>
+          </Badge>
         ) : event.rank ? (
           <span className="shrink-0 font-body text-label font-bold uppercase tracking-label text-muted-foreground">
             R{event.rank}
@@ -224,12 +241,7 @@ function ActionEntry({
           <span className={`shrink-0 font-bold tabular-nums ${INK_TONE.loss}`}>
             −{counter.damage.toLocaleString()}
           </span>
-          {counter.killedAttacker ? (
-            <span className="flex shrink-0 items-center gap-0.5 bg-destructive px-1 font-bold uppercase tracking-label">
-              <Skull className="h-3 w-3" strokeWidth={2.6} />
-              Down
-            </span>
-          ) : null}
+          {counter.killedAttacker ? <DownBadge /> : null}
         </div>
       ))}
     </div>
@@ -268,12 +280,7 @@ function TickEntry({
               {delta < 0 ? "−" : "+"}
               {Math.abs(delta).toLocaleString()}
             </span>
-            {target.hpAfter <= 0 ? (
-              <span className="flex shrink-0 items-center gap-0.5 bg-destructive px-1 font-bold uppercase tracking-label">
-                <Skull className="h-3 w-3" strokeWidth={2.6} />
-                Down
-              </span>
-            ) : null}
+            {target.hpAfter <= 0 ? <DownBadge /> : null}
           </div>
         );
       })}
@@ -329,10 +336,10 @@ export default function BattleLogDrawer({
     >
       <SheetContent
         side="right"
-        className="gap-0 overflow-hidden data-[side=right]:w-[360px] data-[side=right]:max-w-[92vw] data-[side=right]:sm:max-w-[360px]"
+        className="gap-0 overflow-hidden data-[side=right]:w-drawer data-[side=right]:max-w-[92vw] data-[side=right]:sm:max-w-drawer"
       >
             <SheetHeader className="shrink-0 flex-row items-center justify-between gap-2 border-b-2 border-border py-2">
-              <SheetTitle>BATTLE LOG</SheetTitle>
+              <SheetTitle className="uppercase">Battle log</SheetTitle>
               <SheetDescription className="sr-only">
                 Every action and status change, newest turn first
               </SheetDescription>
@@ -362,40 +369,28 @@ export default function BattleLogDrawer({
                         </p>
                       ))
                   ) : (
-                    <p className="py-6 text-center uppercase tracking-label text-muted-foreground">
-                      No battle events yet.
-                    </p>
+                    <EmptyState>No battle events yet.</EmptyState>
                   )}
                 </div>
               ) : groups.length === 0 ? (
-                <p className="py-6 text-center font-body text-xs uppercase tracking-label text-muted-foreground">
-                  No battle events yet.
-                </p>
+                <EmptyState>No battle events yet.</EmptyState>
               ) : (
                 <div className="space-y-2">
                   {groups.map(({ turn, events: turnEvents }) => {
                     const isCollapsed = collapsed[turn] === true;
                     return (
                       <section key={turn} className="border-2 border-border">
-                        <button
-                          type="button"
-                          onClick={() =>
+                        <DisclosureRow
+                          label={`Turn ${turn + 1}`}
+                          detail={turnEvents.length}
+                          expanded={!isCollapsed}
+                          onToggle={() =>
                             setCollapsed((prev) => ({
                               ...prev,
                               [turn]: !isCollapsed,
                             }))
                           }
-                          aria-expanded={!isCollapsed}
-                          className="flex min-h-11 w-full items-center justify-between gap-2 bg-muted px-2.5 py-1.5 font-body text-label font-bold uppercase tracking-label transition-colors hover:bg-accent"
-                        >
-                          <span>Turn {turn + 1}</span>
-                          <span className="flex items-center gap-1.5 text-muted-foreground">
-                            {turnEvents.length}
-                            <ChevronDown
-                              className={`h-3.5 w-3.5 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
-                            />
-                          </span>
-                        </button>
+                        />
                         {!isCollapsed ? (
                           <div className="divide-y divide-rule px-2.5">
                             {turnEvents.map((event) =>

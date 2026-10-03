@@ -7,11 +7,8 @@ import { Button } from "@/components/ui/button";
 import { panelVariants } from "@/components/ui/Panel";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { cn } from "@/lib/utils";
-import {
-  HEAL_NUMBER_CLASS,
-  SKILL_TYPE_CHIP,
-  skillTypeCategory,
-} from "@/lib/game/skillTypeStyle";
+import SkillTypeBadge from "@/components/game/SkillTypeBadge";
+import { HEAL_NUMBER_CLASS } from "@/lib/game/skillTypeStyle";
 import { type CharacterSkillData } from "@/lib/game/characterCatalog";
 import {
   buildRankedSkillDescriptions,
@@ -138,7 +135,6 @@ export function SkillBlock({
     skill.type === "ultimate" || !ranked
       ? null
       : buildRankedSkillDescriptions(skill);
-  const chipClass = SKILL_TYPE_CHIP[skillTypeCategory(skill)];
   const numberClassName =
     skill.type === "heal" ? HEAL_NUMBER_CLASS : undefined;
 
@@ -163,11 +159,7 @@ export function SkillBlock({
     <div className={KIT_CARD}>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rule px-3 py-2">
         <div className="flex items-center gap-2">
-          <span
-            className={`border border-border px-1.5 py-0.5 font-body text-label font-bold uppercase tracking-label ${chipClass}`}
-          >
-            {tag}
-          </span>
+          <SkillTypeBadge skill={skill}>{tag}</SkillTypeBadge>
           <p className="font-heading text-lg tracking-title">
             {skill.skillName}
           </p>

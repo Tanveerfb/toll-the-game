@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import NewsKindBadge from "@/components/news/NewsKindBadge";
-import { buttonVariants } from "@/components/ui/button";
+import BackLink from "@/components/ui/BackLink";
 import { panelVariants } from "@/components/ui/Panel";
 import { Screen } from "@/components/ui/Screen";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -82,12 +82,7 @@ export default function NewsPostLayout({
     // so Screen's default `gap-3` would compound with it rather than replace
     // it. The index takes the default, because it has no rhythm of its own.
     <Screen width="read" contentClassName="gap-0">
-      <Link
-        href="/news"
-        className={cn(buttonVariants({ variant: "outline", size: "sm" }), "self-start")}
-      >
-        ← News
-      </Link>
+      <BackLink label="News" href="/news" />
 
       <header className="mt-4 flex flex-col items-start gap-2">
         <NewsKindBadge kind={kind} />

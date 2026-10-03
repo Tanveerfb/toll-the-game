@@ -19,9 +19,9 @@
   {
     "id": "first-level",
     "title": "Raise any character to level 5",
-    "hint": "Feed a Training Manual from the archive. Levels are real stats now.",
+    "hint": "Feed a Training Manual from the Characters screen. Levels are real stats now.",
     "route": "/archive",
-    "routeLabel": "Archive",
+    "routeLabel": "Characters",
     "goal": {
       "type": "characterLevel",
       "level": 5
@@ -71,7 +71,7 @@
     "title": "Ascend a character",
     "hint": "Ascension raises the level cap and the stat ceiling with it.",
     "route": "/archive",
-    "routeLabel": "Archive",
+    "routeLabel": "Characters",
     "requires": "first-boss",
     "goal": {
       "type": "characterAscension",
@@ -104,7 +104,7 @@
   },
   {
     "id": "roster-six",
-    "title": "Field a roster of six",
+    "title": "Own six characters",
     "hint": "Summons add characters. Six gives you a bench.",
     "route": "/gacha",
     "routeLabel": "Summon",

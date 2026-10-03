@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import PanelSheet from "@/components/gacha/PanelSheet";
+import PanelSheet from "@/components/ui/PanelSheet";
 import UnitTileFace from "@/components/game/UnitTileFace";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { elementCode, elementHue } from "@/lib/game/elementStyle";
@@ -14,7 +14,7 @@ import { elementCode, elementHue } from "@/lib/game/elementStyle";
  * the archive's own tile, so a unit looks the same here as everywhere it is
  * chosen (his call, 2026-10-03: a unit's tile and its portrait are one image).
  * An owned unit shows its level plate and ult stars in full colour; one you
- * have yet to pull is dimmed and reads "Not yet".
+ * have yet to pull is dimmed; the greyed art says it, no plate does.
  *
  * The tile carries no name (as in the archive), so the name is printed under
  * it: here the name is the point.
@@ -38,18 +38,8 @@ export default function FeaturedSheet({
   /** The panel that opens this sheet. */
   trigger: React.ReactNode;
 }): React.JSX.Element {
-  const ownedCount = rows.filter((row) => row.owned).length;
-
   return (
-    <PanelSheet
-      trigger={trigger}
-      title="Featured units"
-      description={
-        hasHydrated
-          ? `${ownedCount} of ${rows.length} owned`
-          : `${rows.length} units`
-      }
-    >
+    <PanelSheet trigger={trigger} title="Featured units">
       {/* Room above each row for a head to break out of its frame and below
           for the plate that overlaps the bottom edge; the sheet's own scroller
           takes a long pool (ruling #107). */}
@@ -70,7 +60,6 @@ export default function FeaturedSheet({
                 hue={character ? elementHue(character.color) : elementHue("light")}
                 code={character ? elementCode(character.color) : ""}
                 status={status}
-                plate={status && !status.owned ? "Not yet" : undefined}
                 dimmed={status !== null && !status.owned}
               />
               <span className="truncate text-center font-heading text-sm leading-tight tracking-title">

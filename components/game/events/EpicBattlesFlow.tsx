@@ -113,8 +113,7 @@ export default function EpicBattlesFlow({
         <BattleArena
           contextLabel={`${arcLabel(arc)} · ${stage.name}`}
           worldBoss={{
-            continueLabel: "CONTINUE",
-            quitLabel: "BACK TO STAGES",
+            continueLabel: "Continue",
             onContinue: () => {
               // Read from the battle store, not the picker's state: the
               // picker's team is gone after a reload, the battle's is not,
@@ -154,6 +153,7 @@ export default function EpicBattlesFlow({
     return (
       <EpicClearSummary
         arcLabel={arcLabel(arc)}
+        arcTitle={arc.title}
         stageName={stage.name}
         turns={view.turns}
         onAgain={() =>

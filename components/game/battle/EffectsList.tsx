@@ -10,6 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import DisclosureRow from "@/components/ui/DisclosureRow";
+import EmptyState from "@/components/ui/EmptyState";
 import { entryTouchesStat, statPhrase } from "@/lib/game/stats";
 import { sealPhrase } from "@/lib/game/seal";
 import type { BattleCharacter } from "@/types/character";
@@ -369,9 +371,7 @@ function EffectTable({
 }): React.JSX.Element {
   if (rows.length === 0) {
     return (
-      <p className="py-3 text-center font-body text-xs uppercase tracking-label text-muted-foreground">
-        {emptyText}
-      </p>
+      <EmptyState className="py-3">{emptyText}</EmptyState>
     );
   }
   const sourceName = (sourceId?: string): string => {
@@ -383,6 +383,7 @@ function EffectTable({
   // its own.
   const CELL = "py-1.5 pr-2 pl-0";
   return (
+    // 24rem: local floor; the table scrolls sideways below it.
     <Table className="min-w-[24rem]">
       <TableHeader>
         <TableRow>
@@ -546,17 +547,12 @@ export function EffectsTables({
 
       {grey.length > 0 ? (
         <section className="space-y-1">
-          <button
-            type="button"
-            onClick={onToggleUncancellable}
-            aria-expanded={showUncancellable}
-            className="flex min-h-11 w-full items-center justify-between border-2 border-dashed border-muted-foreground px-3 font-body text-label font-bold uppercase tracking-label text-muted-foreground transition-colors hover:border-border hover:text-card-foreground"
-          >
-            <span>
-              {grey.length} fixed effect{grey.length === 1 ? "" : "s"}
-            </span>
-            <span>{showUncancellable ? "Hide" : "Show"}</span>
-          </button>
+          <DisclosureRow
+            tone="dashed"
+            label={`${grey.length} fixed effect${grey.length === 1 ? "" : "s"}`}
+            expanded={showUncancellable}
+            onToggle={onToggleUncancellable}
+          />
           {showUncancellable ? (
             <EffectTable rows={grey} allUnits={allUnits} emptyText="None" />
           ) : null}

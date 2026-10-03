@@ -31,9 +31,6 @@ export default function SoundSettings(): React.JSX.Element {
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="font-heading text-lg tracking-title">Sound</h2>
-          <p className="font-body text-caption text-muted-foreground">
-            Mute is in the top bar on every screen.
-          </p>
         </div>
         <Toggle
           variant="outline"

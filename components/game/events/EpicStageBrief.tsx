@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { ChevronLeft } from "lucide-react";
 
+import BackLink from "@/components/ui/BackLink";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/Panel";
@@ -12,18 +12,16 @@ import TeamPicker from "@/components/game/TeamPicker";
 import EnemyPanel from "@/components/game/events/EnemyPanel";
 import type { CharacterData } from "@/lib/game/characterCatalog";
 import {
-  arcLabel,
   type EpicArc,
   type EpicStage,
 } from "@/lib/game/epicBattles";
-import { stageEnemyLine } from "@/components/game/events/EpicArcScreen";
+import { stageLevelLine } from "@/components/game/events/EpicArcScreen";
 
 /**
  * A stage's brief: the enemy, the player's own team, and the way in.
  *
- * It costs nothing and pays nothing, and says both out loud - a free,
- * rewardless fight that stayed silent about it would read as a missing cost
- * and a missing prize. Enemy stats come from `EnemyPanel`, so the figures are
+ * It costs nothing and pays nothing, and says neither (less is more, ruling
+ * #178): there is no cost bar here, only the way in. Enemy stats come from `EnemyPanel`, so the figures are
  * what the fight is built at.
  */
 export default function EpicStageBrief({
@@ -48,10 +46,7 @@ export default function EpicStageBrief({
   const lead = fights[0]?.enemies.find((pick) => pick.isSub !== true);
   return (
     <Screen width="app">
-      <Button variant="link" size="xs" onClick={onBack} className="gap-1 px-0">
-        <ChevronLeft className="h-3.5 w-3.5" strokeWidth={2.6} />
-        {arcLabel(arc)}
-      </Button>
+      <BackLink label={arc.title} onClick={onBack} />
       <SectionHeader eyebrow={`Stage ${stage.order}`} title={stage.name}>
         <p className="mt-2 font-body text-caption text-ground-dim">
           {stage.caption}
@@ -64,7 +59,12 @@ export default function EpicStageBrief({
             enemyId={lead?.id ?? null}
             fallbackName={stage.name}
             level={lead?.level ?? 1}
-            badge={<Badge className="mt-2">{stageEnemyLine(stage)}</Badge>}
+            pageTitle={stage.name}
+            badge={
+              stageLevelLine(stage) ? (
+                <Badge className="mt-2">{stageLevelLine(stage)}</Badge>
+              ) : null
+            }
           />
         </div>
 
@@ -72,22 +72,13 @@ export default function EpicStageBrief({
           <TeamPicker ownedIds={roster} team={team} onChange={onPickTeam} />
 
           <Panel surface="paper" lift="slab" className="flex items-center gap-3">
-            <span>
-              <span className="block font-body text-label font-bold uppercase tracking-label text-muted-foreground">
-                Cost
-              </span>
-              <span className="font-heading text-2xl">0</span>
-              <span className="ml-1.5 font-body text-label text-muted-foreground">
-                stamina · no rewards
-              </span>
-            </span>
             {/* The screen's one primary action, as on every event brief. */}
             <Button
               disabled={team.length === 0}
               onClick={onEnter}
               className="ml-auto"
             >
-              Enter battle
+              Fight
             </Button>
           </Panel>
         </div>

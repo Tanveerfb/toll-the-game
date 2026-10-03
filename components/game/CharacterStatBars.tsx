@@ -103,10 +103,7 @@ export default function CharacterStatBars({
   // under this (Lv · A · UL), which says it with the ult level included.
   return (
     <>
-      <p className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
-        Against the roster
-      </p>
-      <div className="mt-1 grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {STAT_ROWS.map(({ key, label }) => (
           <StatBar
             key={key}

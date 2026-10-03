@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { sortByDateDesc } from "@/lib/news/sortByDateDesc";
+import { NEWS_OPEN } from "@/lib/news/open";
 import {
   buildFeed,
   estimateReadingMinutes,
@@ -25,7 +26,8 @@ const UPDATES_DIR = path.join(process.cwd(), "content", "news", "updates");
 const NOTICES_DIR = path.join(process.cwd(), "content", "news", "notices");
 
 function listSlugs(dir: string): string[] {
-  if (!fs.existsSync(dir)) return [];
+  // Closed: no post exists as far as any caller can tell (see ./open.ts).
+  if (!NEWS_OPEN || !fs.existsSync(dir)) return [];
   return fs
     .readdirSync(dir)
     // Leading-underscore files (e.g. notices/_placeholder.mdx) are excluded

@@ -174,10 +174,11 @@ export default function KeyworkHighlighter({
           ariaLabel={`${tooltipLabel} — what it means`}
           // `align-baseline` keeps the button sitting on the text's baseline
           // instead of the inline-block default, and `py-1 -my-1` grows the
-          // tap area 8px without opening the line up. An inline word inside a
-          // sentence is the one control that can't be 44px tall without
-          // wrecking the paragraph it lives in — this is as far as it goes.
-          className={`align-baseline py-1 -my-1 ${
+          // text box 8px, and `hit-44` adds an invisible 44px target around it
+          // without opening the line up. An inline word inside a sentence is
+          // the one control that can't be 44px tall without wrecking the
+          // paragraph it lives in.
+          className={`hit-44 relative align-baseline py-1 -my-1 ${
             arrow ? "inline-flex items-center" : keywordClassName ?? KEYWORD_CLASS
           }`}
           content={

@@ -21,11 +21,7 @@ export default function Practice() {
   const ownBattle = battlePhase !== "initializing" && ownerRoute === "/practice";
 
   if (!ownBattle) {
-    return (
-      <Screen className="relative" width="none">
-        <TeamSelect onStart={startCustomBattle} />
-      </Screen>
-    );
+    return <TeamSelect onStart={startCustomBattle} />;
   }
 
   // Single-viewport battle HUD: arena fills the screen, deck docked at the

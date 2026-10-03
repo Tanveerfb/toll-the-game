@@ -384,8 +384,7 @@ export default function EventsPage(): React.JSX.Element {
         <BattleArena
           contextLabel={view.event.name}
           worldBoss={{
-            continueLabel: "CLAIM REWARDS",
-            quitLabel: "BACK TO EVENTS",
+            continueLabel: "Claim rewards",
             onContinue: () => {
               // A trial and a boss resolve differently, and the split is the
               // whole point: `clearsWall` was authored on both trials the day
@@ -466,7 +465,6 @@ export default function EventsPage(): React.JSX.Element {
             // route it already draws (option C, chosen 2026-09-20). Defeat
             // still stops on the card — losing is a decision point.
             autoContinueOnVictory: true,
-            quitLabel: "BACK TO EVENTS",
             onContinue: () => {
               const folded = foldFightFromBattle(run, useGameStore.getState());
               resetBattle();
@@ -596,7 +594,6 @@ export default function EventsPage(): React.JSX.Element {
           difficulties,
           currentStamina,
           accountRank: account.rank,
-          rankCap,
           clearedWalls: account.clearedWalls,
           clearedEvents,
           autoClearTickets,
@@ -617,9 +614,6 @@ export default function EventsPage(): React.JSX.Element {
       lockReasonFor={(event) =>
         eventLockReason(event, account.rank, account.clearedWalls)
       }
-      stamina={currentStamina}
-      accountRank={account.rank}
-      worldLevel={worldLevel}
       onSelect={(event) => {
         setDifficulty(Math.min(worldLevel, rankCap));
         setNotice(null);

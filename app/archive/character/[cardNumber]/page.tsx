@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { ProseSection } from "@/components/ui/prose";
 import SkillDocument from "@/components/game/SkillDocument";
@@ -25,7 +24,7 @@ import {
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { Screen } from "@/components/ui/Screen";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import BackLink from "@/components/ui/BackLink";
 import { panelVariants } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils";
 
@@ -92,12 +91,7 @@ export default async function CharacterDetailPage({
     // 368px, narrower than the content area of a 390px phone. `app` gives it
     // 592px. Flagged for Tanveer — it is a one-word change if he wants `read`.
     <Screen width="app">
-        <Link
-          href="/archive"
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "self-start")}
-        >
-          ← Character archive
-        </Link>
+        <BackLink label="Characters" href="/archive" />
 
         {/* `grid-cols-1` is not decoration — without it this screen scrolled
             sideways 86px at 395px (browser audit, 2026-09-01), which ruling

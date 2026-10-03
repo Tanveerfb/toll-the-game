@@ -21,21 +21,16 @@ import MilestonePicker from "@/components/gacha/MilestonePicker";
 function Row({
   threshold,
   title,
-  detail,
-  bar,
   claimable,
   claimed,
   onClaim,
 }: {
   threshold: number;
   title: string;
-  detail: string;
-  bar: number;
   claimable: boolean;
   claimed: boolean;
   onClaim: () => void;
 }): React.JSX.Element {
-  const remaining = Math.max(0, threshold - bar);
   return (
     <div
       // Claimable wears the reward gold as a wash; the rest is a quiet row.
@@ -49,13 +44,6 @@ function Row({
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-body text-sm font-bold">{title}</span>
-        <span className="block font-body text-caption text-muted-foreground">
-          {claimed
-            ? "Claimed this lap"
-            : remaining > 0
-              ? `${detail} · ${remaining.toLocaleString()} gems to go`
-              : detail}
-        </span>
       </span>
       {claimable ? (
         <Button variant="claim" size="sm" onClick={onClaim} className="shrink-0">
@@ -75,7 +63,6 @@ export default function ClaimSection({
   firstThreshold,
   finalThreshold,
   firstTitle,
-  firstDetail,
   claimableFirst,
   claimedFirst,
   claimableFinal,
@@ -88,7 +75,6 @@ export default function ClaimSection({
   firstThreshold: number | null;
   finalThreshold: number;
   firstTitle: string;
-  firstDetail: string;
   claimableFirst: boolean;
   claimedFirst: boolean;
   claimableFinal: boolean;
@@ -112,8 +98,6 @@ export default function ClaimSection({
           <Row
             threshold={firstThreshold}
             title={firstTitle}
-            detail={firstDetail}
-            bar={bar}
             claimable={claimableFirst}
             claimed={claimedFirst}
             onClaim={onClaimFirst}
@@ -122,8 +106,6 @@ export default function ClaimSection({
         <Row
           threshold={finalThreshold}
           title="Pick any featured unit"
-          detail="Your choice from the banner"
-          bar={bar}
           claimable={claimableFinal}
           claimed={claimedFinal}
           onClaim={() => setShowPicker(true)}

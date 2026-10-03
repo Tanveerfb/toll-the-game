@@ -6,7 +6,9 @@ import {
   DEFAULT_EVENTS_TAB,
   EVENTS_TABS,
   isEventsTab,
+  resolveEventsTab,
   splitEventsByTab,
+  visibleEventsTabs,
 } from "@/lib/game/eventTabs";
 import { GAME_EVENTS } from "@/lib/game/events";
 import { useSettingsStore } from "@/store/settingsStore";
@@ -77,6 +79,31 @@ describe("splitEventsByTab", () => {
     const invented = { ...GAME_EVENTS[0], id: "a-brand-new-boss", kind: "boss" as const };
     expect(splitEventsByTab([invented]).boss).toEqual([invented]);
     expect(splitEventsByTab([]).trials).toEqual([]);
+  });
+});
+
+describe("an empty tab is hidden, not drawn empty", () => {
+  const boss = GAME_EVENTS.find((e) => e.kind === "boss")!;
+  const trial = GAME_EVENTS.find((e) => e.kind === "trial")!;
+
+  it("lists only the tabs with something in them, in board order", () => {
+    expect(visibleEventsTabs([boss, trial], 1)).toEqual(["boss", "epic", "trials"]);
+    expect(visibleEventsTabs([boss], 1)).toEqual(["boss", "epic"]);
+    expect(visibleEventsTabs([boss, trial], 0)).toEqual(["boss", "trials"]);
+    expect(visibleEventsTabs([], 0)).toEqual([]);
+  });
+
+  it("falls back to the first visible tab when the remembered one is hidden", () => {
+    expect(resolveEventsTab("trials", ["boss", "epic"])).toBe("boss");
+    expect(resolveEventsTab("epic", ["boss", "epic"])).toBe("epic");
+    expect(resolveEventsTab("boss", ["epic", "trials"])).toBe("epic");
+    expect(resolveEventsTab("boss", [])).toBeNull();
+  });
+
+  it("the board renders no empty-state line", () => {
+    expect(code("components/game/events/EventsBoard.tsx")).not.toMatch(
+      /No (world boss|trials)|Climb account ranks/,
+    );
   });
 });
 

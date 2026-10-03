@@ -15,7 +15,6 @@ import { COIN_ITEM_ID, summarisePull } from "@/lib/gacha/resultSummary";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useFocusBackToOpener } from "@/hooks/useReturnFocus";
@@ -69,9 +68,6 @@ export default function PullReveal({
   const onCloseAutoFocus = useFocusBackToOpener();
 
   const summary = summarisePull(results);
-  const coinGained =
-    summary.items.find((item) => item.id === COIN_ITEM_ID)?.amount ?? 0;
-  const itemPulls = results.length - summary.characters.length;
 
   useGSAP(
     () => {
@@ -123,6 +119,8 @@ export default function PullReveal({
     >
       <DialogContent
         showCloseButton={false}
+        // The title names it; no description is read out.
+        aria-describedby={undefined}
         onEscapeKeyDown={(event) => {
           if (revealing) event.preventDefault();
         }}
@@ -137,9 +135,6 @@ export default function PullReveal({
             <DialogTitle className="text-3xl">
               {results.length} pull{results.length === 1 ? "" : "s"}
             </DialogTitle>
-            <DialogDescription className="sr-only">
-              What this summon gave you.
-            </DialogDescription>
             {revealing ? (
               <Button variant="ghost" size="xs" onClick={skip}>
                 Skip ▸▸
@@ -195,7 +190,7 @@ export default function PullReveal({
                                 : "font-body text-label font-bold uppercase tracking-label text-ground-dim"
                             }
                           >
-                            {hit.isNew ? "Joined your roster" : "Duplicate · ult coin"}
+                            {hit.isNew ? "New character" : "Duplicate · ult coin"}
                           </span>
                         </span>
                       </li>
@@ -211,9 +206,6 @@ export default function PullReveal({
                   <h3 className="font-heading text-lg leading-none tracking-title">
                     Materials
                   </h3>
-                  <span className="font-body text-label font-bold uppercase tracking-label text-ground-dim">
-                    {itemPulls} of {results.length}, grouped
-                  </span>
                 </div>
                 {/* One paper list, quantities summed. */}
                 <ul className="border-2 border-border bg-card px-2.5 py-1 text-card-foreground">
@@ -245,31 +237,6 @@ export default function PullReveal({
                 </ul>
               </section>
             ) : null}
-
-            {/* "What did that actually get me", in one line. */}
-            <p
-              data-reveal="rest"
-              className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-body text-label font-bold uppercase tracking-label text-ground-dim"
-            >
-              <span>
-                <b className="mr-1 font-heading text-xl tracking-title text-foreground">
-                  {summary.newUnits}
-                </b>
-                new
-              </span>
-              <span>
-                <b className="mr-1 font-heading text-xl tracking-title text-foreground">
-                  {summary.duplicates}
-                </b>
-                ult coin
-              </span>
-              <span>
-                <b className="mr-1 font-heading text-xl tracking-title text-foreground">
-                  +{coinGained.toLocaleString()}
-                </b>
-                coin
-              </span>
-            </p>
           </div>
 
           <div className="grid shrink-0 grid-cols-[1fr_1.6fr] gap-2.5 border-t-2 border-ground-line px-3 pt-2.5 pb-safe">

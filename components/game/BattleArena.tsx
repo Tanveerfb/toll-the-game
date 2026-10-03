@@ -54,12 +54,21 @@ import { useBattleSequencer } from "@/hooks/useBattleSequencer";
 import DuelWaitingOverlay from "@/components/game/battle/DuelWaitingOverlay";
 import { publishDuelResult } from "@/lib/duel/client";
 import { useSettingsStore } from "@/store/settingsStore";
-import { actionsForTurn } from "@/lib/game/actionEconomy";
 import {
-  bonusActionsFor,
   describeStageEffect,
   groupStageEffects,
 } from "@/lib/game/stageEffects";
+
+/**
+ * The result dialog's actions, one word per job (audit 3.9, 2026-10-03): the
+ * same three whether the player is in practice, a boss run or a stage. The
+ * launcher decides where Leave goes; this decides only what it is called.
+ */
+const RESULT_ACTION = {
+  retry: "Retry",
+  changeTeam: "Change team",
+  leave: "Leave",
+} as const;
 
 /** Stable no-op so the memoized player tiles don't re-render every frame on a
  *  fresh inline closure. Player tiles never focus-fire. */
@@ -77,7 +86,7 @@ const noop = (): void => {};
  *
  * A taller ratio at four spends that height on the portrait, so the face holds
  * its size while the tile narrows. Three and fewer are untouched — there the
- * tile is already capped at `max-w-[112px]` and the aspect fills the row.
+ * tile is already capped at `max-w-unit` and the aspect fills the row.
  *
  * Kept as a ratio rather than `h-full`: on a desktop-height field an
  * unconstrained tile would run to 400px of column, and the cap is what stops
@@ -204,7 +213,7 @@ function formatPhaseLabel(phase: string): string {
     .trim();
 }
 
-/** Swaps the result screen's default actions (Rematch/Change Teams/Main Menu)
+/** Swaps the result screen's default actions (Retry/Change team/Leave)
  *  for a caller-driven flow — used by both story mode (chapter progression)
  *  and the world-boss route (reward grant + stamina re-spend on retry). */
 export interface BattleEndHandlers {
@@ -230,8 +239,6 @@ export interface BattleEndHandlers {
    * been seen because the run was won.
    */
   continueLabel?: string;
-  /** What the defeat screen's abandon button says. See `continueLabel`. */
-  quitLabel?: string;
   /**
    * Skip the victory card and run `onContinue` as soon as the fight is won.
    *
@@ -278,7 +285,6 @@ export default function BattleArena({
   const clearInteractionNotice = useGameStore((s) => s.clearInteractionNotice);
   const actionQueue = useGameStore((s) => s.actionQueue);
   const deck = useGameStore((s) => s.deck);
-  const enemyDeck = useGameStore((s) => s.enemyDeck);
   const pendingAllyCardId = useGameStore((s) => s.pendingAllyCardId);
   const confirmAllyTarget = useGameStore((s) => s.confirmAllyTarget);
   const cancelAllyTarget = useGameStore((s) => s.cancelAllyTarget);
@@ -477,8 +483,10 @@ export default function BattleArena({
     return counts;
   }, [actionQueue]);
 
-  // Action lines are visualized by the sequencer; keep the toast overlay for
-  // DoT ticks, passive procs and phase pulses only. The `[Action]` half used to
+  // Action lines are visualized by the sequencer; the overlay keeps damage and
+  // heal floaters, `[System]` toasts and phase pulses. Passive and aura procs
+  // are untagged narration and reach the log drawer only
+  // (`BattleEffectsOverlay.classifyLogEntry`). The `[Action]` half used to
   // also feed a one-line ticker under the field — cut 2026-08-21, so the filter
   // that fed it went with it and the log drawer is the only place the full
   // history lives.
@@ -584,17 +592,12 @@ export default function BattleArena({
 
       **Known, not fixed here:** the notice branch below replaces the whole
       row, so while an auto-merge toast is up there is no Skip, no Speed and
-      no Controls — and with Controls goes Log, Foe, Team and Exit. It is
+      no Controls — and with Controls goes Log, Enemy, Team and Exit. It is
       recoverable by dismissing, but the way out of a fight should not sit
       behind a toast. Found in a browser 2026-09-01; the fix is a layout call,
       so it is Tanveer's. */
   // Readouts for the controls sheet. Cheap enough to compute every render —
   // the sheet is the only consumer and it is open for seconds at a time.
-  const sheetActionCap = actionsForTurn(
-    playerTeam,
-    bonusActionsFor(stageEffects, "player"),
-  );
-  const playerBenchCount = playerTeam.filter((u) => u.isSub).length;
   const sheetStageEffects = (() => {
     const grouped = groupStageEffects(stageEffects);
     return [
@@ -1088,37 +1091,14 @@ export default function BattleArena({
         <div
           className={`bighit-recede flex min-h-0 flex-col px-3 pt-1 transition-[opacity,transform] duration-300 ${bigHitFocus ? "scale-[0.97] opacity-50" : "scale-100 opacity-100"}`}
         >
-          <div className="mb-1 flex shrink-0 items-center justify-between gap-2">
-            <h2 className="sr-only">Enemy</h2>
-            <span aria-hidden />
-            {/* Enemy hidden deck (headless 7DS GC model): face-down cards =
-                the enemy's current hand size. */}
-            {enemyDeck.length > 0 ? (
-              <div
-                className="flex shrink-0 items-center gap-1"
-                aria-label={`Enemy hand: ${enemyDeck.length} card${enemyDeck.length > 1 ? "s" : ""}`}
-              >
-                <span className="font-body text-label font-bold uppercase tracking-label text-ground-dim">
-                  Hand {enemyDeck.length}
-                </span>
-                {enemyDeck.slice(0, 7).map((card, i) => (
-                  <span
-                    key={card.id ?? i}
-                    className="flex h-4 w-3 items-start justify-center border border-ground-line bg-ground-raised"
-                  >
-                    <span className="mt-1 block h-1 w-1 rotate-45 bg-ground-dim" />
-                  </span>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          <h2 className="sr-only">Enemy</h2>
           {/* Cards are 9:16 portrait, height-capped to the row and centered;
               a lone boss just sits alone in the middle. */}
           <div className="flex min-h-0 flex-1 items-center justify-center gap-2 overflow-hidden pb-1.5">
             {enemyOnField.map((unit) => (
               <div
                 key={unit.instanceId}
-                className={`${tileAspect(enemyOnField.length)} max-h-full min-w-0 max-w-[112px] flex-1`}
+                className={`${tileAspect(enemyOnField.length)} max-h-full min-w-0 max-w-unit flex-1`}
               >
                 <TeamUnitTile
                   unit={unit}
@@ -1159,7 +1139,7 @@ export default function BattleArena({
             {playerOnField.map((unit) => (
               <div
                 key={unit.instanceId}
-                className={`${tileAspect(playerOnField.length)} max-h-full min-w-0 max-w-[112px] flex-1`}
+                className={`${tileAspect(playerOnField.length)} max-h-full min-w-0 max-w-unit flex-1`}
               >
                 <TeamUnitTile
                   unit={unit}
@@ -1196,57 +1176,24 @@ export default function BattleArena({
             </SheetDescription>
           </SheetHeader>
 
-            {/* The readout half (Tanveer, 2026-09-01). Measured before this
-                existed: the sheet was 149px of buttons under 695px of empty
-                scrim — 82% of the screen dimmed to show four controls. Offered
-                three ways out (drop the sheet, shrink it, or fill it) and he
-                chose to fill it.
-
-                What fills it is not invented: it is what the status strip
-                shows on a wide screen and **hides on a phone**. The strip is
-                one line competing for ~390px, so it ranks what it keeps —
-                phase first, then the bar, then where you are, then the counts
-                (see the note on the strip itself). Everything it drops below
-                `sm`/`md` is here, where there is room, plus the two things
-                that were never on it at all: how many actions this turn, and
-                what the stage is doing to the fight. */}
-            <div className="mb-3 border-2 border-border bg-muted px-3 py-1">
-              <SheetStat
-                label="Turn"
-                value={`${currentTurn + 1} · ${phaseLabel}`}
-              />
-              {contextLabel ? (
-                <SheetStat label="Fight" value={contextLabel} />
-              ) : null}
-              {duelMode ? (
-                <SheetStat
-                  label="Mode"
-                  value={
-                    <span>Duel — Claude plays the foe</span>
-                  }
-                />
-              ) : null}
-              <SheetStat
-                label="Actions"
-                value={`${sheetActionCap} this turn`}
-              />
-              <SheetStat
-                label="Resolved"
-                value={`${playerTurns} player · ${enemyTurns} enemy`}
-              />
-              {/* Nothing on the battle screen says how many units are on the
-                  field versus waiting on the bench, and the bench is what the
-                  sub rule turns on — a sub enters at the start of a turn after
-                  a teammate falls (`lib/game/sub.ts`). "Team" opens the roster,
-                  but that is a tap away and this is the one number you want
-                  before deciding whether to trade. */}
-              <SheetStat
-                label="Field"
-                value={`${playerOnField.length} on field${
-                  playerBenchCount > 0 ? ` · ${playerBenchCount} benched` : ""
-                }`}
-              />
-            </div>
+            {/* Only what the screen does not already show: the fight's context
+                and the duel mode. Turn, actions, resolved and field counts were
+                readouts of things the battle screen carries (ruling #178). */}
+            {contextLabel || duelMode ? (
+              <div className="mb-3 border-2 border-border bg-muted px-3 py-1">
+                {contextLabel ? (
+                  <SheetStat label="Fight" value={contextLabel} />
+                ) : null}
+                {duelMode ? (
+                  <SheetStat
+                    label="Mode"
+                    value={
+                      <span>Duel — Claude plays the enemy</span>
+                    }
+                  />
+                ) : null}
+              </div>
+            ) : null}
 
             {/* Stage effects have never been visible once a fight starts —
                 a brief shows them beforehand and then they are gone, even
@@ -1299,7 +1246,7 @@ export default function BattleArena({
               {/* Enemies had no route into the detail panel from anywhere on
                   this screen before their stack was added. */}
               <ControlButton
-                label="Foe"
+                label="Enemy"
                 title="Enemy details"
                 onClick={() => {
                   setIsControlsOpen(false);
@@ -1355,15 +1302,21 @@ export default function BattleArena({
         >
           <p>This counts as a loss — your progress in this fight is forfeited.</p>
           <div className="flex flex-col gap-3">
-            <Button variant="destructive" size="lg" onClick={confirmExitBattle}>
-              EXIT — TAKE THE LOSS
+            <Button
+              variant="destructive"
+              size="lg"
+              className="uppercase"
+              onClick={confirmExitBattle}
+            >
+              Exit — take the loss
             </Button>
             <Button
               variant="secondary"
               size="lg"
+              className="uppercase"
               onClick={() => setIsExitConfirmOpen(false)}
             >
-              CANCEL
+              Cancel
             </Button>
           </div>
         </MountedDialog>
@@ -1383,43 +1336,49 @@ export default function BattleArena({
           >
             <DialogHeader className="items-center pr-0 text-center">
               <DialogTitle
-                className={`border-2 border-border px-5 pt-1 font-heading text-6xl tracking-label ink-skew ${battlePhase === "victory" ? "bg-el-light" : "bg-destructive"}`}
+                className={`border-2 border-border px-5 pt-1 font-heading text-6xl uppercase tracking-label ink-skew ${battlePhase === "victory" ? "bg-el-light" : "bg-destructive"}`}
               >
-                {battlePhase === "victory" ? "VICTORY" : "DEFEAT"}
+                {battlePhase === "victory" ? "Victory" : "Defeat"}
               </DialogTitle>
               <DialogDescription className="mt-2">
-                Turn {currentTurn + 1} • {playerTurns} player /{" "}
-                {enemyTurns} enemy actions resolved
+                Turn {currentTurn + 1}
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-3">
               {battleEnd && battlePhase === "victory" ? (
-                <Button size="xl" onClick={battleEnd.onContinue}>
-                  {battleEnd.continueLabel ?? "CONTINUE"}
+                <Button size="xl" className="uppercase" onClick={battleEnd.onContinue}>
+                  {battleEnd.continueLabel ?? "Continue"}
                 </Button>
               ) : null}
               {battleEnd && battlePhase === "defeat" ? (
                 <>
-                  <Button size="xl" onClick={battleEnd.onRetry}>
-                    RETRY BATTLE
+                  <Button size="xl" className="uppercase" onClick={battleEnd.onRetry}>
+                    {RESULT_ACTION.retry}
                   </Button>
                   {battleEnd.onChangeTeam ? (
                     <Button
                       variant="secondary"
                       size="xl"
+                      className="uppercase"
                       onClick={battleEnd.onChangeTeam}
                     >
-                      CHANGE TEAM
+                      {RESULT_ACTION.changeTeam}
                     </Button>
                   ) : null}
-                  <Button variant="secondary" size="xl" onClick={battleEnd.onQuit}>
-                    {battleEnd.quitLabel ?? "QUIT"}
+                  <Button
+                    variant="secondary"
+                    size="xl"
+                    className="uppercase"
+                    onClick={battleEnd.onQuit}
+                  >
+                    {RESULT_ACTION.leave}
                   </Button>
                 </>
               ) : null}
               {!battleEnd && lastBattleConfig ? (
                 <Button
                   size="xl"
+                  className="uppercase"
                   onClick={() =>
                     startCustomBattle(
                       lastBattleConfig.playerPicks,
@@ -1427,13 +1386,18 @@ export default function BattleArena({
                     )
                   }
                 >
-                  REMATCH
+                  {RESULT_ACTION.retry}
                 </Button>
               ) : null}
               {process.env.NODE_ENV !== "production" ? (
                 <>
-                  <Button variant="outline" size="xl" onClick={saveBattleLog}>
-                    SAVE BATTLE LOG
+                  <Button
+                    variant="outline"
+                    size="xl"
+                    className="uppercase"
+                    onClick={saveBattleLog}
+                  >
+                    Save battle log
                   </Button>
                   {logSaveResult ? (
                     <p className="text-center font-body text-xs uppercase tracking-label text-muted-foreground">
@@ -1444,18 +1408,24 @@ export default function BattleArena({
               ) : null}
               {!battleEnd ? (
                 <>
-                  <Button variant="secondary" size="xl" onClick={resetBattle}>
-                    CHANGE TEAMS
+                  <Button
+                    variant="secondary"
+                    size="xl"
+                    className="uppercase"
+                    onClick={resetBattle}
+                  >
+                    {RESULT_ACTION.changeTeam}
                   </Button>
                   <Button
                     variant="ghost"
                     size="xl"
+                    className="uppercase"
                     onClick={() => {
                       resetBattle();
                       router.push("/");
                     }}
                   >
-                    MAIN MENU
+                    {RESULT_ACTION.leave}
                   </Button>
                 </>
               ) : null}

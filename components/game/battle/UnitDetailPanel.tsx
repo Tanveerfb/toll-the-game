@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import EmptyState from "@/components/ui/EmptyState";
 import {
   Dialog,
   DialogContent,
@@ -62,17 +63,17 @@ function PassiveActivationTag({
 }): React.JSX.Element | null {
   if (mode === "buildup") {
     return (
-      <span className="inline-flex items-center gap-0.5 border border-border bg-card px-1 py-px">
+      <Badge variant="fill" size="tight" className="gap-0.5 bg-card">
         <InfinityIcon className="h-2.5 w-2.5" strokeWidth={2.6} />
-      </span>
+      </Badge>
     );
   }
   if (mode === "once") {
     return (
-      <span className="inline-flex items-center gap-0.5 border border-border bg-role-ultimate px-1 py-px font-body text-label font-bold">
+      <Badge variant="fill" size="tight" className="gap-0.5 bg-role-ultimate">
         <CircleAlert className="h-2.5 w-2.5" strokeWidth={2.6} />
         1×
-      </span>
+      </Badge>
     );
   }
   return null;
@@ -184,9 +185,9 @@ function PassiveReadoutRow({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {state}
         {passive.readyMessage ? (
-          <span className="bg-role-ultimate px-1 font-body text-xs font-bold uppercase tracking-label">
+          <Badge variant="fill" size="tight" className="bg-role-ultimate">
             {passive.readyMessage}
-          </span>
+          </Badge>
         ) : null}
         {passive.note ? (
           <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
@@ -759,9 +760,7 @@ function CharacterListOverlay({
   return (
     <MountedDialog title={`Tag: ${tag}`} onClose={onClose} className="sm:max-w-lg">
       {matches.length === 0 ? (
-        <p className="py-6 text-center font-body text-sm font-bold uppercase tracking-label text-muted-foreground">
-          No characters found.
-        </p>
+        <EmptyState>No characters found.</EmptyState>
       ) : (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {matches.map((char) => {

@@ -57,7 +57,7 @@ Two of those rules are **enforced in code, so don't re-implement them per screen
 - **The 44px floor lives in `components/ui/`.** `button`, `input`, `select` and `slider` all carry it, so a control built from a primitive is already touch-safe and a screen adding `h-9` to one is fighting the scale. Opting out needs `min-h-0` **and** a comment saying why. Pinned by `tests/touchTargets.test.ts`.
 - **Anything explanatory uses `components/ui/Hint.tsx`, never a `Tooltip`.** A radix `Tooltip` on a `<span>` fires on neither tap nor focus, which is how the whole mechanic glossary came to be invisible on a phone. `Hint` is a `Popover` with a real button trigger and **one interaction on every device: click, tap or keyboard**. It does *not* open on hover — that was built first and removed the same day, because a mouse fires `pointerenter` before `click`, so hovering opened it and the click closed it again (`tests/hint.browser.test.tsx`). `tests/touchTargets.test.ts` forbids `TooltipTrigger` outside the primitive — and, since **ruling #125** (2026-09-01), any `title=` on a lowercase JSX tag, which is the same hover-only failure arriving through the DOM instead of through radix. Ten of those were live, including the summon banner's twelve featured tiles, whose character names lived nowhere else on the page.
 
-**Navigation is a bottom tab bar below `sm`** (ruling #123, 2026-09-01) — five destinations in the thumb third, portalled to `<body>` because the nav's `backdrop-filter` makes `fixed` resolve against the nav rather than the viewport. It stands down while `[data-battle-active]` is on screen. Heights compose through `--tabbar-h`; `.screen-below-nav` subtracts both bars. The archive's filters moved into a sheet the same day (#124).
+**Navigation is a bottom tab bar below `sm`** (ruling #123, 2026-09-01) — four destinations (Menu, Events, Gacha, You) in the thumb third, derived from `GAME_ROUTES`'s `tab` flag since 2026-10-03, portalled to `<body>` because the nav's `backdrop-filter` makes `fixed` resolve against the nav rather than the viewport. It stands down while `[data-battle-active]` is on screen. Heights compose through `--tabbar-h`; `.screen-below-nav` subtracts both bars. The archive's filters moved into a sheet the same day (#124).
 
 **No mobile debt is outstanding.** The 2026-08-21 sweep took every screen, battle included: its controls moved off a side rail into a sheet, merge arms from a button, and press-and-hold opens a card's or a unit's details — the gesture set is **tap = act, hold = explain** (#118). `docs/design/mockups/battle-mobile.html` records those decisions, and `battle-mobile-v2.html` the 2026-09-01 revisions.
 
@@ -102,7 +102,9 @@ lib/
   nav/routes.ts       GAME_ROUTES — single source of truth for what modes exist
 store/                gameStore.ts (battle + deck + battle owner), playerStore.ts,
                       settingsStore.ts
-content/news/         MDX patch notes (updates/ + notices/)
+content/news/         MDX patch notes (updates/ + notices/). **Closed and emptied
+                      2026-10-03 (#179)**: `NEWS_OPEN` in lib/news/open.ts;
+                      /news reads "Coming soon"
 data/characters/      Character kit JSON (source of truth for kits)
 data/banners/         Gacha banners; data/orders/ Bureau Orders
 data/arcs/            Epic Battles arcs (one JSON per arc, parsed by lib/game/epicBattles.ts)

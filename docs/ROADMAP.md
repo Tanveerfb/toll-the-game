@@ -63,6 +63,17 @@ starts when he brings the design (#144: mockups first).
 - **Notices on the news screen.** Updates and Notices are both filters there,
   and no notice exists yet (`content/news/notices/` holds only a placeholder),
   so the Notices filter shows nothing. *"we'll add that later."*
+- **News returns.** Closed 2026-10-03: *"remove all posts for now. we are in the
+  middle of overhauling the game so posts are not valid until we are stable and
+  ready with the game. just put a 'Coming soon' on posts page for now. add it to
+  roadmap. We will come back to it later."* Then: *"delete the posts."* `/news`
+  says "Coming soon" behind `NEWS_OPEN = false` in `lib/news/open.ts` (the same
+  shape as `ORDERS_OPEN`); the loaders list nothing while it is off, so the
+  feed, post routes and the home alert all stand down together. The old posts
+  are restorable from git history before 2026-10-03. Reopening = fresh posts
+  written for the stable game (none of the old ones are current: the
+  2026-09-01 one still mentions Story and five tabs), then flip the switch and
+  delete the `_placeholder.mdx` files if real posts exist.
 
 ---
 

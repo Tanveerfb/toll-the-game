@@ -105,6 +105,8 @@ export default function LevelTab({
   const targets = levelTargets(progress.level, maxLevel, reachable);
 
   const xpNeeded = xpToNext(progress.level);
+  // A tier you hold none of has nothing to spend or pin, so it gets no row.
+  const heldTiers = TIERS.filter((tier) => (inventory[tier] ?? 0) > 0);
 
   return (
     <div className="flex flex-col gap-2">
@@ -156,9 +158,11 @@ export default function LevelTab({
         ))}
       </ToggleGroup>
 
-      <p className={`mt-1.5 ${GROWTH.label}`}>Spends</p>
+      {heldTiers.length > 0 ? (
+        <p className={`mt-1.5 ${GROWTH.label}`}>Spends</p>
+      ) : null}
       <div className="flex flex-col gap-1">
-        {TIERS.map((tier) => {
+        {heldTiers.map((tier) => {
           const held = inventory[tier] ?? 0;
           const using = plan?.spend[tier] ?? 0;
           const isPinned = pinned[tier] !== undefined;
@@ -198,11 +202,12 @@ export default function LevelTab({
           );
         })}
       </div>
-      <p className={GROWTH.hint}>
-        Auto spends the cheapest manuals first and keeps the rare ones.{" "}
-        <b className="text-card-foreground">Use all</b> pins a stack and the rest
-        re-solve around it.
-      </p>
+      {heldTiers.length > 0 ? (
+        <p className={GROWTH.hint}>
+          <b className="text-card-foreground">Use all</b> pins a stack and the
+          rest re-solve around it.
+        </p>
+      ) : null}
 
       {plan ? (
         <>

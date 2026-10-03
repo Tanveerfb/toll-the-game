@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,11 +22,9 @@ import {
   summariseRewards,
   type OrderContext,
   type OrderProgress,
-  type OrderReward,
 } from "@/lib/game/orders";
 import ItemIcon from "@/components/game/ItemIcon";
-import { materialLabel } from "@/lib/game/materials";
-import { getCharacterById } from "@/lib/game/characterCatalog";
+import { describeRewardPart, rewardParts } from "@/lib/game/rewardParts";
 
 /**
  * Bureau Orders on the home screen.
@@ -41,32 +40,6 @@ import { getCharacterById } from "@/lib/game/characterCatalog";
  * `Dialog`. So the text is ink, and every element hue is a FILL with ink on
  * it rather than coloured text, which on paper would not read.
  */
-
-/** One reward, split so the row can draw it. `iconId` is empty for the parts
- *  that aren't an item — a character prize is a name, not a thing you hold. */
-function rewardParts(reward: OrderReward): Array<{ iconId: string; text: string }> {
-  const parts: Array<{ iconId: string; text: string }> = [];
-  // A character leads: it's the only reward worth changing your plans for.
-  if (reward.character) {
-    parts.push({
-      iconId: "",
-      text: getCharacterById(reward.character)?.name ?? reward.character,
-    });
-  }
-  if (reward.gems) parts.push({ iconId: "gems", text: `${reward.gems} gems` });
-  if (reward.coin)
-    parts.push({ iconId: "coin", text: `${reward.coin.toLocaleString()} coin` });
-  if (reward.permanentTicket) {
-    parts.push({
-      iconId: "permanent_ticket",
-      text: `${reward.permanentTicket} ticket${reward.permanentTicket > 1 ? "s" : ""}`,
-    });
-  }
-  for (const [id, count] of Object.entries(reward.materials ?? {})) {
-    parts.push({ iconId: id, text: `${count}\u00d7 ${materialLabel(id)}` });
-  }
-  return parts;
-}
 
 function OrderRow({
   entry,
@@ -138,11 +111,11 @@ function OrderRow({
       {!claimed ? (
         <span className="order-last flex w-full shrink-0 items-center gap-2.5 pl-6 font-body text-xs font-bold tabular-nums sm:order-none sm:w-auto sm:pl-0">
           {rewardParts(order.reward).map((part) => (
-            <span key={part.text} className="flex items-center gap-1.5">
+            <span key={part.label} className="flex items-center gap-1.5">
               {part.iconId ? (
                 <ItemIcon id={part.iconId} size={20} alt="" />
               ) : null}
-              {part.text}
+              {describeRewardPart(part)}
             </span>
           ))}
         </span>
@@ -173,18 +146,18 @@ function OrderRow({
  */
 function LockedOrders({ onSignIn }: { onSignIn: () => void }): React.JSX.Element {
   const total = summariseRewards(getStarterOrders());
-  const prizes: string[] = [];
-  for (const id of total.characters) {
-    prizes.push(getCharacterById(id)?.name ?? id);
-  }
-  if (total.gems) prizes.push(`${total.gems.toLocaleString()} gems`);
-  if (total.coin) prizes.push(`${total.coin.toLocaleString()} coin`);
-  for (const [id, count] of Object.entries(total.materials)) {
-    prizes.push(`${count}× ${materialLabel(id)}`);
-  }
+  const prizes = [
+    ...total.characters.flatMap((character) => rewardParts({ character })),
+    ...rewardParts({
+      gems: total.gems,
+      coin: total.coin,
+      materials: total.materials,
+    }),
+  ].map(describeRewardPart);
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-3">
+      {/* 14rem: local floor, so the text wraps under the button, not beside it. */}
       <span className="flex min-w-[14rem] flex-1 flex-col gap-1">
         <span className="font-body text-sm">
           Create an account or log in to access Bureau Orders.
@@ -365,9 +338,9 @@ export default function OrdersBoard({
                 {!unlocked ? <Lock className="h-3 w-3" strokeWidth={2.4} /> : null}
                 Step {step}
                 {stepReady > 0 ? (
-                  <span className="border border-border bg-el-light px-1 tabular-nums text-card-foreground">
+                  <Badge variant="reward" size="tight" className="tabular-nums">
                     {stepReady}
-                  </span>
+                  </Badge>
                 ) : null}
               </TabsTrigger>
             );

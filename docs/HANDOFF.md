@@ -1842,3 +1842,59 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
      a player *uses* (search, sort, filters, #139's table). Less is more removes
      readouts a player only *reads*. Where the two meet, ask him. The
      "uses vs reads" line is Claude's, not his.
+
+179. **News is closed until the game is stable: "Coming soon"** (2026-10-03).
+   Asked what to do with old patch notes that still mention Story and five
+   tabs (audit 1.9), he went further: *"remove all posts for now. we are in
+   the middle of overhauling the game so posts are not valid until we are
+   stable and ready with the game. just put a 'Coming soon' on posts page for
+   now. add it to roadmap. We will come back to it later."*
+   - **The posts are deleted, and a switch keeps the page closed.** Claude
+     first read "remove" as "unpublish" and kept the files. He corrected
+     that: *"delete the posts."* The MDX files are gone from
+     `content/news/` and can be restored from git history. `NEWS_OPEN` in
+     `lib/news/` works like `ORDERS_OPEN`, and news comes back with fresh
+     posts.
+   - **Gone while closed:** `/news` shows "Coming soon", post pages are gone,
+     and Home's unread alert stands down. The return is on `docs/ROADMAP.md`.
+   - Same exchange, audit 1.4: the archive's Preview starts a real, locked
+     test fight. Offered rename, confirm or unlock, he **selected confirm
+     first** (an option label, not his prose).
+
+180. **The four-values audit's outcomes: what players see is now fewer
+   words, one word per job, and one component per job** (2026-10-03; applies
+   #178). A site-wide audit (`docs/archive/FOUR_VALUES_AUDIT-2026-10-03.md`,
+   43 items in four groups) was answered group by group. **Every pick below
+   is an option label he selected, not his prose,** except where quoted.
+   - **Names.** He picked **"Characters"** for the collection; routes stay
+     `/archive`. Back links read **"‹ + destination"**. One word per job:
+     **Enemy** (not Foe), **Retry / Change team / Leave** on results, and
+     **Fight** for starting any battle.
+   - **Removed:**
+     - The Home alert rows: he picked **delete**, not fold.
+     - The enemy hand readout: he picked **remove it**.
+     - The summon confirm's X: **Cancel only**.
+   - **World level appears on Profile only.**
+   - **Empty event tabs are hidden.**
+   - **Event rows show the cost only.** In his words: *"'2 Phases' don't need
+     to be shown. even 'repeatable' can be replaced with an icon that
+     indicates the same meaning."*
+   - **Growth is a bottom sheet.**
+   - **Async views show skeletons**, and "—" means no value (recorded in
+     `conventions.md`).
+   - **Archive Preview asks first** (#179). **News is closed, and its posts
+     are deleted** (#179).
+   - **Claude's calls inside his picks, reversible:**
+     - The guest-progress warning on Login was removed by an agent and
+       restored by Opus. A guest losing their save is not obvious, so it is
+       information.
+     - Kept:
+       - "Cleared" on beaten Molvarr difficulties, since Auto Clear depends
+         on it;
+       - "Elite · 2 phases" on the enemy panel;
+       - the arc's "N stages" chip;
+       - the ticket count on the summon Tickets tab (the top bar lacks it);
+       - "N of M" on the pull results' Units header;
+       - "Show locked units" (the new wording for the archive reveal
+         button).
+

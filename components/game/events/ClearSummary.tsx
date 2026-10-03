@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import BackLink from "@/components/ui/BackLink";
 import { Button } from "@/components/ui/button";
 import { INK_TONE } from "@/components/ui/inkTone";
 import { cn } from "@/lib/utils";
@@ -65,9 +66,7 @@ export function BossClearSummary({
   return (
     <ClearPanel eventName={eventName} title="Rewards">
       <RewardList rows={rewardRows(rewards)} />
-      <Button onClick={onBack} className="mt-3">
-        Back to events
-      </Button>
+      <BackLink label="Events" onClick={onBack} className="mt-3" />
     </ClearPanel>
   );
 }
@@ -82,12 +81,15 @@ export function BossClearSummary({
  */
 export function EpicClearSummary({
   arcLabel,
+  arcTitle,
   stageName,
   turns,
   onAgain,
   onBack,
 }: {
   arcLabel: string;
+  /** The arc's own name, for the way back: "Exam Arc". */
+  arcTitle: string;
   stageName: string;
   /** Player turns the winning fight took. */
   turns: number;
@@ -105,9 +107,7 @@ export function EpicClearSummary({
       <Button onClick={onAgain} className="mt-3">
         Fight again
       </Button>
-      <Button variant="outline" onClick={onBack}>
-        Back to stages
-      </Button>
+      <BackLink label={arcTitle} onClick={onBack} />
     </ClearPanel>
   );
 }
@@ -263,9 +263,7 @@ export function TrialClearSummary({
           Account rank {rankAfter}. Ranks climb again from here.
         </p>
       )}
-      <Button onClick={onBack} className="mt-3">
-        Back to events
-      </Button>
+      <BackLink label="Events" onClick={onBack} className="mt-3" />
     </ClearPanel>
   );
 }
@@ -285,14 +283,7 @@ export function TrialMissing({
         <p className="font-body text-sm">
           This trial has no encounter authored.
         </p>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={onBack}
-          className="mt-3 w-full"
-        >
-          Back to events
-        </Button>
+        <BackLink label="Events" onClick={onBack} className="mt-3" />
       </Panel>
     </Screen>
   );

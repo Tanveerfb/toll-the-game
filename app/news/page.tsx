@@ -3,11 +3,24 @@ import {
   getAllNotices,
   getLatestNewsDate,
 } from "@/lib/news/posts";
+import { NEWS_OPEN } from "@/lib/news/open";
 import NewsFeed from "@/components/news/NewsFeed";
 import { Screen } from "@/components/ui/Screen";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 
 export default async function NewsPage() {
+  // Closed while the game is overhauled (see lib/news/open.ts).
+  if (!NEWS_OPEN) {
+    return (
+      <Screen width="read">
+        <SectionHeader eyebrow="Patch notes and service notices" title="News" />
+        <p className="mt-4 font-body text-caption font-bold uppercase tracking-label text-muted-foreground">
+          Coming soon
+        </p>
+      </Screen>
+    );
+  }
+
   const [updates, notices, latestNewsDate] = await Promise.all([
     getAllUpdates(),
     getAllNotices(),

@@ -214,7 +214,7 @@ A collection on `/events` (Tanveer, 2026-10-03): **arc** (`"Arc 1: Exam Arc"`) -
 
 ## UI Layer Conventions
 
-- **`lib/nav/routes.ts` is the single source of truth for what modes exist.** `TopNav` and `HomeMenu` both render `GAME_ROUTES`. They previously kept separate lists and disagreed, leaving World Boss / Gacha / News unreachable from every page except home. Add a route here, not in a component.
+- **`lib/nav/routes.ts` is the single source of truth for what modes exist.** `TopNav` and `HomeMenu` both render `GAME_ROUTES`, and since 2026-10-03 so does the phone tab bar (the `tab` flag). They previously kept separate lists and disagreed, leaving World Boss / Gacha / News unreachable from every page except home. Add a route here, not in a component.
 - **`components/ui/prose.tsx` owns document typography** — headings, tables, lists — and is consumed by BOTH `mdx-components.tsx` (the `/news` MDX posts) and `app/archive/[id]/page.tsx`. That shared source is what makes the two pages actually match. `ProseSection` = ruled heading + optional note; `ProseTable` = horizontally scrollable table.
 - **Two kit renderers, deliberately.** `KitDetails.tsx` is the compact boxed variant used inside battle overlays; `SkillDocument.tsx` is the document variant (ruled heading + metadata line + Rank/Mult/Effect table) used on the archive. `KitPhases` takes a `variant` prop (`compact` | `document`) so a multi-phase boss matches whichever page it's on.
 - **`BattleArena.tsx` is the arena shell only.** Overlays live in `components/game/battle/`: `TeamUnitTile`, `UnitDetailPanel`, `TeamDetailsList`, `BattleLogDrawer`, `EffectsList`. It was a 1964-line monolith holding all of them.

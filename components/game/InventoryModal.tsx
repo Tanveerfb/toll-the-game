@@ -2,48 +2,19 @@
 
 import React from "react";
 import { Coins, Gem, Ticket } from "lucide-react";
+import EmptyState from "@/components/ui/EmptyState";
 import MountedDialog from "@/components/ui/MountedDialog";
 import ItemIcon from "@/components/game/ItemIcon";
 import { usePlayerStore } from "@/store/playerStore";
-import { getCharacterById } from "@/lib/game/characterCatalog";
 import { MATERIAL_IDS, materialLabel } from "@/lib/game/materials";
-import { rankProgress, MAX_ACCOUNT_RANK } from "@/lib/game/accountRank";
-import { worldLevelCapForRank, MAX_WORLD_LEVEL } from "@/lib/game/worldLevel";
-import { ASCENSION_BANDS, LEVEL_CAP } from "@/lib/game/progression";
 
 /**
  * Everything the account holds, in one place.
  *
  * The profile page used to render `MATERIAL_LABELS` in full, so a fresh
  * account met a wall of zeroes and a stocked one had to find the non-zero
- * cells inside it. Here, held materials are listed and unheld ones are
- * counted — the count still tells you the catalogue is bigger than your
- * shelf, without spending a row per empty slot.
+ * cells inside it. Here, only held materials are listed.
  */
-
-function Figure({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-}): React.JSX.Element {
-  return (
-    <div className="flex flex-col gap-0.5 border border-rule bg-muted px-3 py-2">
-      <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
-        {label}
-      </span>
-      <span className="font-heading text-xl leading-none tracking-title tabular-nums">
-        {value}
-      </span>
-      {hint ? (
-        <span className="font-body text-label text-muted-foreground">{hint}</span>
-      ) : null}
-    </div>
-  );
-}
 
 /** A held currency: icon, count, name. The icon comes from `public/items/` and
  *  falls back to the lucide glyph this panel carried before the art landed. */
@@ -96,40 +67,10 @@ export default function InventoryModal({
 }: {
   onClose: () => void;
 }): React.JSX.Element {
-  const roster = usePlayerStore((s) => s.roster);
   const currencies = usePlayerStore((s) => s.currencies);
   const inventory = usePlayerStore((s) => s.inventory);
-  const characters = usePlayerStore((s) => s.characters);
-  const account = usePlayerStore((s) => s.account);
-  const worldLevel = usePlayerStore((s) => s.worldLevel);
 
   const held = MATERIAL_IDS.filter((id) => (inventory[id] ?? 0) > 0);
-  const unheld = MATERIAL_IDS.length - held.length;
-
-  const progress = rankProgress(account, account.clearedWalls);
-  const cap = worldLevelCapForRank(account.rank);
-
-  // Investment across the roster — the "have I actually built anything"
-  // readout that no screen answered before.
-  const invested = roster.reduce(
-    (acc, id) => {
-      const p = characters[id];
-      const level = p?.level ?? 1;
-      const ascension = p?.ascension ?? 0;
-      const ultLevel = p?.ultLevel ?? 1;
-      return {
-        levels: acc.levels + (level - 1),
-        ascensions: acc.ascensions + ascension,
-        ultLevels: acc.ultLevels + (ultLevel - 1),
-        best:
-          level > acc.best.level ? { id, level } : acc.best,
-      };
-    },
-    { levels: 0, ascensions: 0, ultLevels: 0, best: { id: "", level: 0 } },
-  );
-  const bestName = invested.best.id
-    ? (getCharacterById(invested.best.id)?.name ?? invested.best.id)
-    : null;
 
   return (
     <MountedDialog
@@ -166,9 +107,7 @@ export default function InventoryModal({
         <section>
           <SectionHead>Materials</SectionHead>
           {held.length === 0 ? (
-            <p className="border-2 border-dashed border-muted-foreground px-3 py-4 text-center font-body text-xs text-muted-foreground">
-              Nothing held yet — World Boss runs and story clears drop these.
-            </p>
+            <EmptyState>Nothing held yet — World Boss runs drop these.</EmptyState>
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {held.map((id) => (
@@ -187,56 +126,6 @@ export default function InventoryModal({
               ))}
             </div>
           )}
-          {unheld > 0 ? (
-            <p className="mt-2 font-body text-caption text-muted-foreground">
-              {unheld} further material {unheld === 1 ? "kind" : "kinds"} exist
-              and aren&rsquo;t held yet.
-            </p>
-          ) : null}
-        </section>
-
-        <section>
-          <SectionHead>Account</SectionHead>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Figure
-              label="Rank"
-              value={`${account.rank}`}
-              hint={`of ${MAX_ACCOUNT_RANK}`}
-            />
-            <Figure
-              label="XP to next"
-              value={progress ? `${progress.required - progress.current}` : "—"}
-              hint={progress ? `of ${progress.required}` : "trial required"}
-            />
-            <Figure
-              label="World level"
-              value={`${worldLevel}`}
-              hint={`cap ${cap} of ${MAX_WORLD_LEVEL}`}
-            />
-            <Figure label="Roster" value={`${roster.length}`} hint="recruited" />
-          </div>
-        </section>
-
-        <section>
-          <SectionHead>Investment</SectionHead>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Figure
-              label="Levels gained"
-              value={`${invested.levels}`}
-              hint={`cap ${LEVEL_CAP} each`}
-            />
-            <Figure
-              label="Ascensions"
-              value={`${invested.ascensions}`}
-              hint={`cap ${ASCENSION_BANDS} each`}
-            />
-            <Figure label="Ult ranks" value={`${invested.ultLevels}`} />
-            <Figure
-              label="Highest"
-              value={invested.best.level > 0 ? `Lv ${invested.best.level}` : "—"}
-              hint={bestName ?? undefined}
-            />
-          </div>
         </section>
       </div>
     </MountedDialog>

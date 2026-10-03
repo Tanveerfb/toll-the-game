@@ -120,6 +120,8 @@ The operational detail is in `AGENTS.md`. What is unique to this project:
 - **He owns UI and UX direction, story, mechanics, kits and numbers; Claude
   owns structure and data types** (#139). A redesign starts with several live
   HTML mockups at 390px, and he picks (#144).
+- **Async views show a Skeleton shaped like the final content; "—" means no
+  value, never loading** (audit 4.5, 2026-10-03).
 - **Phone first**: design at 390×844, verify phone width before desktop (#107).
 - **Kits are designed in `toll-kits`**, a separate private repo, because a push
   here is a production deploy.

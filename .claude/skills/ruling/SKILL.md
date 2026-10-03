@@ -13,7 +13,7 @@ same as not having a ledger.
 ## Where the truth lives
 
 - `docs/HANDOFF.md` — the ledger itself, under `## Design Rulings Ledger`.
-  **Highest number as of 2026-10-03 is 178.** Read the actual tail before
+  **Highest number as of 2026-10-03 is 180.** Read the actual tail before
   numbering; don't trust that figure.
 - `data/characters/*.json` — the **numbers**. The ledger
   does not own them and must not restate them (see the guard below).

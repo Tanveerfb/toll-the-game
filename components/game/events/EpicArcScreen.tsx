@@ -1,29 +1,25 @@
 "use client";
 
 import React from "react";
-import { ChevronLeft } from "lucide-react";
 
 import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import BackLink from "@/components/ui/BackLink";
 import { Screen } from "@/components/ui/Screen";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Chip, EventRowCard } from "@/components/game/events/EventCard";
 import { getCharacterArt } from "@/lib/game/characterArt";
-import { getCharacterById } from "@/lib/game/characterCatalog";
 import {
   arcLabel,
   type EpicArc,
   type EpicStage,
 } from "@/lib/game/epicBattles";
 
-/** "Master Tao · Lv 20" - who the stage's first fight is against. */
-export function stageEnemyLine(stage: EpicStage): string {
+/** "Lv 20" - the level of the stage's first fight; empty when none is authored.
+ *  The name is not repeated: the page title already carries it. */
+export function stageLevelLine(stage: EpicStage): string {
   return (stage.encounter.fights[0]?.enemies ?? [])
-    .filter((pick) => pick.isSub !== true)
-    .map((pick) => {
-      const name = getCharacterById(pick.id)?.name ?? pick.id;
-      return pick.level ? `${name} · Lv ${pick.level}` : name;
-    })
+    .filter((pick) => pick.isSub !== true && pick.level)
+    .map((pick) => `Lv ${pick.level}`)
     .join(", ");
 }
 
@@ -46,10 +42,7 @@ export default function EpicArcScreen({
 }): React.JSX.Element {
   return (
     <Screen width="app">
-      <Button variant="link" size="xs" onClick={onBack} className="gap-1 px-0">
-        <ChevronLeft className="h-3.5 w-3.5" strokeWidth={2.6} />
-        Events
-      </Button>
+      <BackLink label="Events" onClick={onBack} />
       <SectionHeader eyebrow={arc.collection} title={arcLabel(arc)}>
         <p className="mt-2 font-body text-caption text-ground-dim">
           {arc.summary}

@@ -156,6 +156,10 @@ h6 {
   --container-read: 42rem;  /* prose and documents - kit pages, news posts */
   --container-app: 56rem;   /* boards and lists - events, archive, story */
   --container-panel: 28rem; /* one focused panel - results, confirmations */
+  /* Two component widths that were typed as pixels in more than one place
+     (audit 3.14, 2026-10-03). */
+  --container-unit: 7rem;   /* a battle unit tile's cap, 3 or fewer a side */
+  --container-drawer: 22.5rem; /* a side drawer - the battle log */
 
   /* Element identity. */
   --color-el-light: #e8d174;
@@ -299,6 +303,23 @@ body {
    menu covers the ring the player is being asked to watch. */
 .no-callout {
   -webkit-touch-callout: none;
+}
+
+/* A 44px touch target around a control that must look smaller (ruling #107):
+   an invisible box centred on the element. The element must already be
+   positioned (`relative` or `absolute`); this does not set it, so it can sit
+   on a control that is placed absolutely. Use only where the visual size is
+   fixed by the layout (a badge on a card, a word in a sentence). */
+@utility hit-44 {
+  &::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 2.75rem);
+    height: max(100%, 2.75rem);
+    transform: translate(-50%, -50%);
+  }
 }
 
 /* ── Shonen Ink treatments (#154) ──────────────────────────────────────────

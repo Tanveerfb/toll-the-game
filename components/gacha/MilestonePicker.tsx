@@ -4,6 +4,7 @@ import Image from "next/image";
 import React from "react";
 import MountedDialog from "@/components/ui/MountedDialog";
 import { Button } from "@/components/ui/button";
+import { SelectTile } from "@/components/ui/SelectTile";
 import { cn } from "@/lib/utils";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { getCharacterArt } from "@/lib/game/characterArt";
@@ -47,16 +48,11 @@ export default function MilestonePicker({
           const ultLevel = characters[id]?.ultLevel ?? 1;
           const active = selected === id;
           return (
-            <button
+            <SelectTile
               key={id}
-              type="button"
+              selected={active}
               onClick={() => setSelected(id)}
-              aria-pressed={active}
-              // Picked is the action yellow, as everywhere else.
-              className={cn(
-                "flex flex-col overflow-hidden border-2 bg-muted text-left transition-colors",
-                active ? "border-border ink-slab-primary" : "border-rule hover:border-border",
-              )}
+              className="flex flex-col overflow-hidden bg-muted text-left"
             >
               <span className="relative block aspect-square overflow-hidden border-b-2 border-border bg-card">
                 {art ? (
@@ -93,7 +89,7 @@ export default function MilestonePicker({
                   {owned ? `Owned · Ult ${ultLevel}` : "New unit"}
                 </span>
               </span>
-            </button>
+            </SelectTile>
           );
         })}
       </div>

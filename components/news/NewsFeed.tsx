@@ -5,6 +5,7 @@ import React from "react";
 
 import NewsKindBadge, { NEWS_KIND_LABEL } from "@/components/news/NewsKindBadge";
 import { Button } from "@/components/ui/button";
+import EmptyState from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/input";
 import { panelVariants } from "@/components/ui/Panel";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -236,16 +237,11 @@ export default function NewsFeed({
       ) : null}
 
       {items.length === 0 ? (
-        <p
-          className={cn(
-            panelVariants({ surface: "paper", density: "none" }),
-            "mt-4 px-3 py-6 text-center font-body text-xs text-muted-foreground",
-          )}
-        >
+        <EmptyState framed className="mt-4">
           {query.trim()
             ? `Nothing matches “${query.trim()}”.`
             : "Nothing here yet."}
-        </p>
+        </EmptyState>
       ) : (
         groups.map((group) => (
           <section key={group.key} className="mt-4">

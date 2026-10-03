@@ -244,3 +244,28 @@ Preview next to Growth (#157). Everything else is `secondary`, `outline` or
 a grid position) and never restates the look (#84). The dev-only gallery at
 `/dev/ui` renders every primitive in every variant: check it before and after
 touching one.
+
+**One job, one component** (audit group 3, 2026-10-03). Before hand-rolling
+any of these, use the one that exists; `tests/sharedComponents.test.ts` fails
+on the old hand-rolled patterns.
+
+| Job | Component |
+| --- | --- |
+| Back to where you came from | `BackLink` ("‹ " plus the destination: Events, Exam Arc, Characters, Menu) |
+| A tile you pick (yellow slab) | `SelectTile` |
+| A tile that goes somewhere (Home, Profile, Orders) | `NavTile` |
+| A list with nothing in it | `EmptyState` (`framed` when it sits on the ground, `action` for the way out) |
+| A chip | `Badge`; `size="tight"` inside a text-xs row, `variant="reward"` for gold, `variant="fill"` when data picks the hue; a skill's slot is `SkillTypeBadge` |
+| A show/hide header row | `DisclosureRow` |
+| A value that is still loading | `Skeleton` (`tone="ground"` on the dark ground), sized to the final number; `—` means no value, never loading |
+| A before → after spend preview | `ShiftRow` |
+| Search, filter sheet and sort for characters | `RosterToolbar` + `useRosterFilters` (`lib/game/rosterFilter.ts`): the archive and the team picker's sheet |
+| A bottom sheet opened by a button | `PanelSheet` (Filters, Growth, Featured, Milestone) |
+| The rank progress bar | `RankBar`, fed by `summariseRank` in `lib/game/accountSummary.ts` |
+| A reward as icon, name and number | `rewardParts` / `describeRewardPart` in `lib/game/rewardParts.ts` |
+
+Words: one per job. **Fight** starts a battle; a result offers **Retry**,
+**Change team** and **Leave**; the thing you fight is the **Enemy**; the
+collection is **Characters** (the route stays `/archive`); it is **ticket** or
+**tickets** by count (`ticketNoun`). Wide sizes repeated in two places are
+tokens (`max-w-unit`, `w-drawer`); a one-off stays local with a comment.

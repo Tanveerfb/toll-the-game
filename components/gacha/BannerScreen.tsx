@@ -5,6 +5,7 @@ import ItemIcon from "@/components/game/ItemIcon";
 import React from "react";
 import { usePlayerStore, type ResolvedPullOutcome } from "@/store/playerStore";
 import { getGemBanner, getTicketBanner } from "@/lib/gacha/banners";
+import { ticketNoun } from "@/lib/game/rewardParts";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import ConfirmPullModal from "@/components/gacha/ConfirmPullModal";
 import RatesModal from "@/components/gacha/RatesModal";
@@ -32,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { panelVariants } from "@/components/ui/Panel";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
@@ -98,7 +100,6 @@ export default function BannerScreen(): React.JSX.Element {
     level: characters[id]?.level ?? 1,
     ultLevel: characters[id]?.ultLevel ?? 1,
   }));
-  const ownedFeatured = featuredRows.filter((row) => row.owned).length;
   const bar = isLimited ? pity.limited.bar : pity.permanent.bar;
   const finalThreshold = isLimited
     ? LIMITED_MILESTONE_FINAL
@@ -160,8 +161,11 @@ export default function BannerScreen(): React.JSX.Element {
     setReveal({ results, count });
   };
 
+  /** "1 ticket", "10 tickets", "150 gems": the noun agrees with the count. */
+  const costText = (cost: number) =>
+    `${cost} ${isLimited ? "gems" : ticketNoun(cost)}`;
   const drawLabel = (count: 1 | 11) =>
-    `Draw ×${count} · ${count === 1 ? singleCost : multiCost} ${unit}`;
+    `Draw ×${count} · ${costText(count === 1 ? singleCost : multiCost)}`;
 
   return (
     // A flex column so the section can fill the height between the bars and
@@ -197,6 +201,7 @@ export default function BannerScreen(): React.JSX.Element {
       ) : null}
 
       {/* SPLASH — the banner, and the one panel that flexes. */}
+      {/* 28rem: local cap, so the splash does not stretch on a tall desktop. */}
       <div className="relative min-h-40 flex-1 md:max-h-[28rem]">
         <div className="panel-cut-hero absolute inset-0 overflow-hidden border-2 border-ground-line bg-card-foreground">
           {/* The art is laid out TALLER than the panel and anchored to its top,
@@ -254,8 +259,8 @@ export default function BannerScreen(): React.JSX.Element {
 
       {/* FEATURED and MILESTONE — two panels, each one tap target, tucked
           under the splash's cut. Which featured units you already have is the
-          whole reason a pull is exciting or a shrug, so the count and a row of
-          faces answer it without opening anything; the sheet answers the rest
+          whole reason a pull is exciting or a shrug, so a row of
+          faces answers it without opening anything; the sheet answers the rest
           (Tanveer, 2026-09-01: not twelve taps to read one banner). */}
       <div className="relative -mt-6 grid grid-cols-2 gap-2">
         {featured.length > 0 ? (
@@ -272,14 +277,6 @@ export default function BannerScreen(): React.JSX.Element {
               >
                 <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
                   Featured
-                </span>
-                <span className="flex items-baseline gap-1">
-                  <span className="font-heading text-3xl leading-none tabular-nums">
-                    {hasHydrated ? ownedFeatured : "—"}
-                  </span>
-                  <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
-                    / {featured.length} owned
-                  </span>
                 </span>
                 {/* Owned in full colour, the rest greyed: the glance. */}
                 <span className="flex -space-x-2">
@@ -330,7 +327,7 @@ export default function BannerScreen(): React.JSX.Element {
               </span>
               <span className="flex items-baseline gap-1">
                 <span className="font-heading text-3xl leading-none tabular-nums">
-                  {hasHydrated ? bar.toLocaleString() : "—"}
+                  {hasHydrated ? bar.toLocaleString() : <Skeleton className="h-[1em] w-10" />}
                 </span>
                 <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
                   / {finalThreshold.toLocaleString()} spent
@@ -345,7 +342,6 @@ export default function BannerScreen(): React.JSX.Element {
           firstThreshold={firstThreshold}
           finalThreshold={finalThreshold}
           firstTitle="Random featured unit"
-          firstDetail="Rolled for you from this banner"
           claimableFirst={claimableFirst}
           claimedFirst={pity.limited.claimedFirst}
           claimableFinal={claimableFinal}
@@ -373,13 +369,16 @@ export default function BannerScreen(): React.JSX.Element {
           the balance tick down afterwards. The balance lives here, once. */}
       <div className="panel-cut-action speed-rays sticky bottom-[var(--tabbar-h)] z-20 grid grid-cols-[1fr_1.5fr] gap-2.5 px-3 pb-3 pt-7 text-foreground">
         <div className="col-span-2 flex items-center gap-2">
-          <span className="flex items-center gap-1.5 bg-card-foreground px-2 py-1 font-body text-sm font-bold tabular-nums">
-            <ItemIcon id={currencyIcon} size={20} alt="" />
-            {hasHydrated ? balance.toLocaleString() : "—"}{" "}
-            <span className="font-bold uppercase tracking-label text-ground-dim">
-              {unit}
+          {/* Gems are in the top bar already; tickets are not, so theirs stays. */}
+          {!isLimited ? (
+            <span className="flex items-center gap-1.5 bg-card-foreground px-2 py-1 font-body text-sm font-bold tabular-nums">
+              <ItemIcon id={currencyIcon} size={20} alt="" />
+              {hasHydrated ? balance.toLocaleString() : <Skeleton tone="ground" className="h-3.5 w-8" />}{" "}
+              <span className="font-bold uppercase tracking-label text-ground-dim">
+                {unit}
+              </span>
             </span>
-          </span>
+          ) : null}
           <Button
             variant="link"
             size="xs"
@@ -405,7 +404,7 @@ export default function BannerScreen(): React.JSX.Element {
             >
               <span className="block">Draw ×{count}</span>
               <span className="block font-body text-label font-bold uppercase tracking-label">
-                {cost} {unit}
+                {costText(cost)}
                 {main ? " · one free pull" : ""}
               </span>
             </Button>

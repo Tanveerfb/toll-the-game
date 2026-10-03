@@ -3,14 +3,12 @@
 import React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { CloudUpload, ScrollText, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/AuthProvider";
 import { firebaseEnabled } from "@/lib/firebase";
-import { getStarterOrders, ORDERS_OPEN, summariseRewards } from "@/lib/game/orders";
-import { getCharacterById } from "@/lib/game/characterCatalog";
 import { Screen } from "@/components/ui/Screen";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Alert } from "@/components/ui/alert";
+import BackLink from "@/components/ui/BackLink";
 import { Button } from "@/components/ui/button";
 import { panelVariants } from "@/components/ui/Panel";
 
@@ -54,32 +52,6 @@ function GoogleMark(): React.JSX.Element {
   );
 }
 
-function Perk({
-  icon: Icon,
-  title,
-  detail,
-}: {
-  icon: React.ElementType;
-  title: string;
-  detail: string;
-}): React.JSX.Element {
-  return (
-    <li className="flex items-start gap-3">
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border bg-primary text-primary-foreground">
-        <Icon className="h-3.5 w-3.5" strokeWidth={2.2} />
-      </span>
-      <span className="flex min-w-0 flex-col">
-        <span className="font-body text-sm font-bold">
-          {title}
-        </span>
-        <span className="font-body text-xs leading-snug text-muted-foreground">
-          {detail}
-        </span>
-      </span>
-    </li>
-  );
-}
-
 export default function LoginPage(): React.JSX.Element {
   const { user, loginWithGoogle } = useAuth();
   const router = useRouter();
@@ -114,13 +86,6 @@ export default function LoginPage(): React.JSX.Element {
     }
   };
 
-  // The pitch, in the currency the player cares about — read from the orders
-  // themselves so it can't drift as rewards are tuned.
-  const total = summariseRewards(getStarterOrders());
-  const headline = total.characters
-    .map((id) => getCharacterById(id)?.name ?? id)
-    .join(", ");
-
   return (
     // `width="none"`: the key art and its gradient have to be full-bleed
     // children of the shell, so this screen owns its own inner column rather
@@ -145,36 +110,10 @@ export default function LoginPage(): React.JSX.Element {
           </p>
         </SectionHeader>
 
+        {firebaseEnabled || process.env.NODE_ENV === "development" ? (
         <div className={panelVariants({ surface: "paper", density: "roomy", lift: "slab" })}>
           {firebaseEnabled ? (
             <>
-              <ul className="flex flex-col gap-3">
-                {/* Promises nothing while the orders are closed for their
-                    overhaul (#159): a reward pitch for a board that cannot
-                    pay is worse than no pitch. */}
-                {ORDERS_OPEN ? (
-                  <Perk
-                    icon={ScrollText}
-                    title="Bureau Orders unlock"
-                    detail={
-                      headline
-                        ? `${headline} and ${total.gems.toLocaleString()} gems are waiting to be claimed.`
-                        : `${total.gems.toLocaleString()} gems are waiting to be claimed.`
-                    }
-                  />
-                ) : null}
-                <Perk
-                  icon={CloudUpload}
-                  title="Your save follows you"
-                  detail="Roster, ranks, materials and summons, on any device you sign in from."
-                />
-                <Perk
-                  icon={ShieldCheck}
-                  title="Nothing to fill in"
-                  detail="One tap. We read your name, email and picture — nothing else."
-                />
-              </ul>
-
               {/* Google's own button shape, not the game's: white, its mark,
                   sentence case. Their branding rules ask for it, and a
                   third-party sign-in should look like the third party. */}
@@ -182,7 +121,7 @@ export default function LoginPage(): React.JSX.Element {
                 variant="secondary"
                 onClick={signIn}
                 disabled={busy}
-                className="mt-5 min-h-12 w-full bg-white font-body text-sm font-bold normal-case hover:bg-white/90"
+                className="min-h-12 w-full bg-white font-body text-sm font-bold normal-case hover:bg-white/90"
               >
                 <GoogleMark />
                 {busy ? "Opening Google…" : "Continue with Google"}
@@ -195,6 +134,8 @@ export default function LoginPage(): React.JSX.Element {
               ) : null}
             </>
           ) : (
+            // Developer-facing: a missing Firebase config is a build problem,
+            // not something a player can act on.
             <p className="font-body text-sm leading-relaxed">
               Accounts aren&apos;t configured on this build, so Bureau Orders
               stay open and progress is saved on this device only. Everything
@@ -202,17 +143,24 @@ export default function LoginPage(): React.JSX.Element {
             </p>
           )}
         </div>
+        ) : null}
 
         <div className="flex flex-col items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
-            {firebaseEnabled ? "Play as a guest" : "Back to the menu"}
-          </Button>
           {firebaseEnabled ? (
-            <p className="max-w-xs text-center font-body text-caption leading-snug text-ground-dim">
-              Guest progress lives in this browser and is lost if you clear
-              site data. You can sign in later and keep playing.
-            </p>
-          ) : null}
+            <>
+              <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
+                Play as a guest
+              </Button>
+              {/* Kept under #178: a guest losing their save is not obvious, so
+                  this is information, not restated copy. */}
+              <p className="max-w-xs text-center font-body text-caption leading-snug text-ground-dim">
+                Guest progress lives in this browser and is lost if you clear
+                site data. You can sign in later and keep playing.
+              </p>
+            </>
+          ) : (
+            <BackLink label="Menu" href="/" className="self-center" />
+          )}
         </div>
       </section>
     </Screen>

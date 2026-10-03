@@ -2,13 +2,13 @@
 
 import React from "react";
 import Image from "next/image";
-import { ChevronRight, Lock } from "lucide-react";
+import { ChevronRight, Lock, Repeat } from "lucide-react";
 
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { Badge } from "@/components/ui/badge";
 import { panelVariants } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils";
-import { eventPhaseCount, type GameEvent } from "@/lib/game/events";
+import type { GameEvent } from "@/lib/game/events";
 
 /** A pill on the card's bottom row: the outline badge, in the card's ink. */
 export function Chip({
@@ -57,7 +57,7 @@ export function EventRowCard({
         locked && "opacity-55",
       )}
     >
-      <span className="relative flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden border-2 border-border bg-muted">
+      <span className="relative flex size-18 shrink-0 items-center justify-center overflow-hidden border-2 border-border bg-muted">
         {art ? (
           <Image
             src={art}
@@ -117,7 +117,6 @@ export default function EventCard({
   onSelect: () => void;
 }): React.JSX.Element {
   const art = event.enemyId ? getCharacterArt(event.enemyId) : null;
-  const phases = eventPhaseCount(event);
   const locked = lockReason !== null;
   return (
     <EventRowCard
@@ -133,8 +132,15 @@ export default function EventCard({
         ) : (
           <>
             <Chip>{event.staminaCost} stamina</Chip>
-            <Chip>{event.repeatable ? "Repeatable" : "One clear"}</Chip>
-            {phases > 1 ? <Chip>{phases} phases</Chip> : null}
+            {event.repeatable ? (
+              <span
+                role="img"
+                aria-label="Repeatable"
+                className="inline-flex items-center text-muted-foreground"
+              >
+                <Repeat className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+              </span>
+            ) : null}
           </>
         )
       }

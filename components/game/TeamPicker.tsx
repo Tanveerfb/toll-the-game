@@ -5,6 +5,7 @@ import Image from "next/image";
 import PresetNameDialog from "@/components/game/PresetNameDialog";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import EmptyState from "@/components/ui/EmptyState";
 import {
   Dialog,
   DialogContent,
@@ -14,12 +15,16 @@ import {
 } from "@/components/ui/dialog";
 import { panelVariants } from "@/components/ui/Panel";
 import { Toggle } from "@/components/ui/toggle";
+import RosterToolbar from "@/components/game/RosterToolbar";
 import { useReturnFocus } from "@/hooks/useReturnFocus";
+import { useRosterFilters } from "@/hooks/useRosterFilters";
+import type { RosterFilterItem } from "@/lib/game/rosterFilter";
 import { cn } from "@/lib/utils";
 import UnitTileFace, { unitTileWrapperClass } from "@/components/game/UnitTileFace";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { elementCode, elementHue } from "@/lib/game/elementStyle";
 import {
+  getCharacterMechanics,
   getPlayableCharacters,
   type CharacterData,
 } from "@/lib/game/characterCatalog";
@@ -52,6 +57,11 @@ import { usePlayerStore } from "@/store/playerStore";
  * sit on the ground). Its two overlays are the shadcn `Dialog`, the preset
  * chips are the shadcn `Toggle`, and every other control is a `Button`.
  */
+
+/** One character on the roster sheet, with the numbers it is searched and sorted by. */
+interface PickerRow extends RosterFilterItem {
+  character: CharacterData;
+}
 
 export interface TeamPickerProps {
   team: CharacterData[];
@@ -90,7 +100,7 @@ function PresetFaces({ ids }: { ids: string[] }): React.JSX.Element {
         return (
           <span
             key={`${id}-${i}`}
-            className="block size-[18px] overflow-hidden border border-border bg-muted"
+            className="block size-4.5 overflow-hidden border border-border bg-muted"
           >
             {art ? (
               <Image
@@ -162,19 +172,39 @@ export default function TeamPicker({
   );
 
   /**
-   * The stats a unit will actually field, through the battle's own pipeline.
-   * This printed the catalog statline, so a Lv30 unit read the same as a
-   * fresh pull on the one screen used to choose between them (2026-09-26).
+   * The roster sheet's rows, carrying the stats a unit will actually field,
+   * through the battle's own pipeline. This printed the catalog statline, so a
+   * Lv30 unit read the same as a fresh pull on the one screen used to choose
+   * between them (2026-09-26). The search and sorts read the same numbers the
+   * tiles show.
    */
-  const fightStats = (character: CharacterData) => {
-    const saved = side === "player" ? progress[character.id] : undefined;
-    return battleStats(character, {
-      progression: saved
-        ? { level: saved.level, ascension: saved.ascension }
-        : undefined,
-      side,
-    });
-  };
+  const rows = React.useMemo<PickerRow[]>(
+    () =>
+      selectable.map((character) => {
+        const saved = side === "player" ? progress[character.id] : undefined;
+        const stats = battleStats(character, {
+          progression: saved
+            ? { level: saved.level, ascension: saved.ascension }
+            : undefined,
+          side,
+        });
+        return {
+          character,
+          id: character.id,
+          name: character.name,
+          color: character.color,
+          atk: stats.atk,
+          def: stats.def,
+          hp: stats.hp,
+          tags: character.tags ?? [],
+          mechanics: getCharacterMechanics(character),
+          // The plate's level: none for an enemy, or a unit not in the save.
+          level: saved?.level,
+        };
+      }),
+    [selectable, progress, side],
+  );
+  const filters = useRosterFilters(rows);
 
   const byId = React.useCallback(
     (ids: string[]) =>
@@ -256,12 +286,6 @@ export default function TeamPicker({
       <div className={panelVariants({ surface: "paper", density: "none", lift: "slab" })}>
         <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-border px-3 py-2">
           <h3 className="font-heading text-lg tracking-label">{title}</h3>
-          <span className="font-body text-caption font-bold uppercase tracking-label tabular-nums">
-            {`${team.length} / ${TEAM_CAP}`}
-            <span className="ml-2 text-muted-foreground">
-              {fieldCap} on field
-            </span>
-          </span>
         </div>
 
         {showPresets ? (
@@ -291,14 +315,6 @@ export default function TeamPicker({
             >
               + Save current
             </Button>
-            {/* With nothing saved, the row was a bare label and a dashed `+`,
-                which reads as a missing feature rather than an empty one
-                (Tanveer, 2026-08-13). Say what a preset is for instead. */}
-            {presets.length === 0 ? (
-              <span className="font-body text-caption text-muted-foreground">
-                Save a team here to load it in any battle.
-              </span>
-            ) : null}
             {presets.length > 0 ? (
               <Button
                 variant="outline"
@@ -369,7 +385,7 @@ export default function TeamPicker({
               const name =
                 catalog.find((c) => c.id === issue.characterId)?.name ??
                 issue.characterId;
-              return `${name} isn't on your roster. `;
+              return `${name} isn't one of your characters.`;
             })}
             Those slots were left open — the preset itself is unchanged.
           </Alert>
@@ -383,63 +399,85 @@ export default function TeamPicker({
         >
           <DialogHeader>
             <DialogTitle>
-              {source === "catalog" ? "All characters" : "Your roster"}
+              {source === "catalog" ? "All characters" : "Your characters"}
             </DialogTitle>
             <DialogDescription className="text-caption font-bold uppercase tracking-eyebrow">
               Tap to add or remove · {team.length}/{TEAM_CAP} picked
             </DialogDescription>
           </DialogHeader>
           {selectable.length === 0 ? (
-            <p className="py-8 text-center font-body text-sm text-muted-foreground">
-              No characters available yet.
-            </p>
+            <EmptyState>No characters available yet.</EmptyState>
           ) : (
-            <div className="grid grid-cols-3 gap-x-3.5 gap-y-7 pt-5 sm:grid-cols-4">
-              {selectable.map((character) => {
-                const pickIndex = team.findIndex((c) => c.id === character.id);
-                const isPicked = pickIndex !== -1;
-                const disabled = !isPicked && team.length >= TEAM_CAP;
-                const stats = fightStats(character);
-                return (
-                  <button
-                    key={character.id}
-                    type="button"
-                    disabled={disabled}
-                    aria-pressed={isPicked}
-                    aria-label={`${character.name}, attack ${stats.atk}, defense ${stats.def}, health ${stats.hp}`}
-                    onClick={() => toggle(character)}
-                    className={cn(
-                      unitTileWrapperClass,
-                      disabled && "cursor-not-allowed opacity-40",
-                    )}
-                  >
-                    <UnitTileFace
-                      id={character.id}
-                      name={character.name}
-                      hue={elementHue(character.color)}
-                      code={elementCode(character.color)}
-                      picked={isPicked}
-                      pickNumber={isPicked ? pickIndex + 1 : undefined}
-                    />
-                    {/* The name and statline sit under the tile, which carries
-                        neither. Heading above the name (#141). */}
-                    <span className="mt-3.5 block text-center">
-                      {character.heading ? (
-                        <span className="block truncate font-body text-micro font-bold uppercase tracking-label text-muted-foreground">
-                          {character.heading}
+            <>
+              <RosterToolbar
+                filters={filters}
+                sortFields={
+                  side === "player"
+                    ? ["level", "atk", "def", "hp"]
+                    : ["atk", "def", "hp"]
+                }
+                surface="paper"
+              />
+              {filters.filtered.length === 0 ? (
+                <EmptyState
+                  action={
+                    <Button variant="secondary" size="sm" onClick={filters.clearAll}>
+                      Clear
+                    </Button>
+                  }
+                >
+                  No units match this query.
+                </EmptyState>
+              ) : (
+                <div className="grid grid-cols-3 gap-x-3.5 gap-y-7 pt-5 sm:grid-cols-4">
+                  {filters.filtered.map(({ character, atk, def, hp }) => {
+                    const pickIndex = team.findIndex((c) => c.id === character.id);
+                    const isPicked = pickIndex !== -1;
+                    const disabled = !isPicked && team.length >= TEAM_CAP;
+                    return (
+                      <button
+                        key={character.id}
+                        type="button"
+                        disabled={disabled}
+                        aria-pressed={isPicked}
+                        aria-label={`${character.name}, attack ${atk}, defense ${def}, health ${hp}`}
+                        onClick={() => toggle(character)}
+                        className={cn(
+                          unitTileWrapperClass,
+                          disabled && "cursor-not-allowed opacity-40",
+                        )}
+                      >
+                        <UnitTileFace
+                          id={character.id}
+                          name={character.name}
+                          hue={elementHue(character.color)}
+                          code={elementCode(character.color)}
+                          picked={isPicked}
+                          pickNumber={isPicked ? pickIndex + 1 : undefined}
+                        />
+                        {/* The name and statline sit under the tile, which carries
+                            neither. The heading (#141) wraps rather than
+                            truncating: two Dukes differed only by where their
+                            subtitle was cut (audit 4.1). */}
+                        <span className="mt-3.5 block text-center">
+                          {character.heading ? (
+                            <span className="line-clamp-2 block font-body text-micro font-bold uppercase tracking-label text-muted-foreground">
+                              {character.heading}
+                            </span>
+                          ) : null}
+                          <span className="block truncate font-heading text-sm tracking-title">
+                            {character.name}
+                          </span>
+                          <span className="block font-body text-micro font-bold uppercase tracking-label tabular-nums text-muted-foreground">
+                            {atk} / {def} / {hp}
+                          </span>
                         </span>
-                      ) : null}
-                      <span className="block truncate font-heading text-sm tracking-title">
-                        {character.name}
-                      </span>
-                      <span className="block font-body text-micro font-bold uppercase tracking-label tabular-nums text-muted-foreground">
-                        {stats.atk} / {stats.def} / {stats.hp}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </DialogContent>
       </Dialog>
