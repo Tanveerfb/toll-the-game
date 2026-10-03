@@ -1695,3 +1695,44 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    profile). `tests/characterArt.test.ts` fails if a tile unit's portrait is
    opaque. Open: the 4x-upscaled redo, and whether Sara's dark hood reads on
    the dark battle ground (`docs/ART_REQUESTS.md` D6).
+
+   **Same day, two corrections from him:**
+   - **The detail page dropped the element pill on the portrait**: *"you can
+     remove that pill ... The background does the job."* Claude raised that
+     the pill was the only place the element was named in words (colour
+     alone fails red/green colour blindness). He replied *"we can move it
+     somewhere else, but uh, not we can't leave it at the same place."* It
+     is now the first tag beside the unit's tags (`elementName`).
+   - **Lyra's tile was cropped at her red ribbon**: *"Look at Lyra's ponytail.
+     It is so long ... you can crop her ponytail up until, you know, the red
+     ribbon you see."* The rule that a break-out stops at a natural edge is
+     in `docs/CHARACTER_ART.md` step 6.
+
+174. **The summon screen is a manga page, and it is the one screen allowed to
+   be loud all over** (2026-10-03). He found the gacha page *"still looks very
+   generic-ish to me"* and asked for it *"properly built out with our theme"*.
+   Three options were drawn in `docs/design/mockups/gacha-overhaul.html`
+   (A poster, B collection board, C manga page). He **selected C**: *"i like C
+   actually. adds energy to the page"*.
+   - **Draw panel anchored to the bottom**, above the tab bar, so the screen
+     fits one phone viewport and the draw buttons sit in the thumb zone
+     (#107). As drawn, C put them mid-screen; Claude proposed the fix and he
+     accepted it: *"go with your fix. i trust you."*
+   - **The results screen** (the mockup's shared overlay) shows units first,
+     as archive tiles with a "New!" or "+1 coin" plate, and groups the
+     materials into one list. It applies whichever option was picked.
+   - **This is the exception to the design system's "loud parts on headers
+     and primary actions only"** (`docs/design-system.md`, itself Claude's
+     rule under #154). The summon is the game's big moment, so it takes the
+     slant, the speed rays and the yellow across the screen. Every other
+     screen keeps the rule. That framing is Claude's reading of his pick.
+   - **Deferred, his call:** summon animations and any new summon art. *"I'd
+     rather have the summon animations generated when we have everyone's uh,
+     got like proper kits generated ... kit artworks generated."* He also did
+     not want the ComfyUI backlog to grow (*"we have such a backlog of uh,
+     comfy generations"*). The brainstorm for later: escalation by what a pull
+     is, since the game has no rarity (#172), climbing from materials to a
+     duplicate to a NEW unit to a NEW featured unit, with the milestone
+     guarantee as its own cue; a unit breaking out of a manga panel; a NEW
+     unit never hidden by skip; reduced motion shows results at once. None of
+     it is his decision yet.

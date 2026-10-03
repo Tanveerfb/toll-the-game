@@ -362,6 +362,46 @@ body {
   );
 }
 
+/* ── The summon screen's manga page (his pick, 2026-10-03: Option C of
+   docs/design/mockups/gacha-overhaul.html). A panel's slanted edge is a
+   `clip-path`, so it also clips that panel's own border and outline on the cut
+   side: a panel wearing one of these carries its focus mark as an inset ring. */
+
+/* The splash: a straight top, the bottom edge cut falling to the left. */
+@utility panel-cut-hero {
+  clip-path: polygon(0 0, 100% 0, 100% 86%, 0 100%);
+}
+/* A small panel tucked under the splash, its top edge rising to the right... */
+@utility panel-cut-rise {
+  clip-path: polygon(0 12%, 100% 0, 100% 100%, 0 100%);
+}
+/* ...and the one beside it, falling to the right, so the two cuts meet in a V. */
+@utility panel-cut-fall {
+  clip-path: polygon(0 0, 100% 12%, 100% 100%, 0 100%);
+}
+/* The action panel at the foot of the page. */
+@utility panel-cut-action {
+  clip-path: polygon(0 8%, 100% 0, 100% 100%, 0 100%);
+}
+
+/* The "5% featured!" callout: a sixteen-point shout bubble. */
+@utility ink-burst {
+  clip-path: polygon(0 20%, 12% 0, 30% 14%, 50% 0, 66% 14%, 86% 0, 100% 22%, 92% 50%, 100% 78%, 84% 100%, 64% 86%, 46% 100%, 28% 86%, 12% 100%, 0 78%, 8% 50%);
+}
+
+/* Speed rays in action yellow, fanning from the draw buttons, on an ink
+   ground. The loud sibling of `speed-lines`; behind the primary action and
+   never behind text that is read, so the balance and costs sit on the buttons
+   and on an ink chip, not on the rays. */
+@utility speed-rays {
+  background-color: var(--card-foreground);
+  background-image: repeating-conic-gradient(
+    from 0deg at 75% 60%,
+    color-mix(in srgb, var(--primary) 22%, var(--card-foreground)) 0 4deg,
+    var(--card-foreground) 4deg 11deg
+  );
+}
+
 /* ── The archive's frame-break tile (his pick, 2026-10-03: "Ink burst",
    docs/design/mockups/archive-tile-v3.html, after Dokkan's roster tiles).
    Every colour is the unit's element, `--el`, set on the tile. ───────────── */

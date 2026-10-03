@@ -42,6 +42,10 @@ export interface UnitTileFaceProps {
   /** Replaces the status plate's text ("Lv 12", "Sub"); shows a plate even
    *  when `status` is null. */
   plate?: string;
+  /** `highlight` fills the plate in the action yellow, for a plate that says
+   *  something happened to this unit ("New!" in the summon results) rather than
+   *  what it is. Default: the element's own colours. */
+  plateTone?: "element" | "highlight";
   /** Greyed and darkened: a locked unit, or the bench slot. */
   dimmed?: boolean;
   /** Ringed in the action yellow: the unit is in the team. */
@@ -62,6 +66,7 @@ export default function UnitTileFace({
   code,
   status = null,
   plate,
+  plateTone = "element",
   dimmed = false,
   picked = false,
   pickNumber,
@@ -155,7 +160,14 @@ export default function UnitTileFace({
           ) : null}
 
           {plateText ? (
-            <span className="ink-skew absolute -bottom-3 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap border-2 border-(color:--el) bg-card-foreground px-2 pt-0.5 font-heading text-sm leading-none tracking-title text-(--el)">
+            <span
+              className={cn(
+                "ink-skew absolute -bottom-3 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap border-2 px-2 pt-0.5 font-heading text-sm leading-none tracking-title",
+                plateTone === "highlight"
+                  ? "border-border bg-primary text-primary-foreground"
+                  : "border-(color:--el) bg-card-foreground text-(--el)",
+              )}
+            >
               {plateText}
             </span>
           ) : null}

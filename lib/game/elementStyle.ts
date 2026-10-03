@@ -33,6 +33,19 @@ export function elementHue(color: string): string {
   return isElement(color) ? EL_HUE[color] : EL_HUE.light;
 }
 
+export const EL_NAME: Record<ElementColor, string> = {
+  light: "Light",
+  red: "Red",
+  blue: "Blue",
+  green: "Green",
+  dark: "Dark",
+};
+
+/** The element's name in words, or the raw string for an unknown colour. */
+export function elementName(color: string): string {
+  return isElement(color) ? EL_NAME[color] : color;
+}
+
 /** The element's three-letter code, or the raw string for an unknown colour. */
 export function elementCode(color: string): string {
   return isElement(color) ? EL_CODE[color] : color;

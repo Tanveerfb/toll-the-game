@@ -14,7 +14,7 @@ import { colorQualifiedId } from "@/lib/game/unitKey";
 // Bump when any art file is replaced in place — busts the Next.js image
 // optimizer cache and browser cache, which otherwise keep serving the old
 // pixels for the unchanged URL.
-const ART_VERSION = 20;
+const ART_VERSION = 21;
 
 const CHARACTERS_WITH_ART = new Set([
   "ban",
@@ -105,7 +105,7 @@ export function getCharacterArt(id: string): string | null {
  */
 const TILE_ART: Record<string, number> = {
   sara: 1.25,
-  lyra: 1.702,
+  lyra: 1.225,
 };
 
 /** Every unit with tile art, for the test that each file exists. */

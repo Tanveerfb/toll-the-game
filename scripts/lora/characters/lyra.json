@@ -11,5 +11,6 @@
   ],
   "lora": "lyra_toll.safetensors",
   "lora_checkpoint": 1500,
-  "portrait": "2026-10-03, his call: tile and portrait are one image, transparent (the old portrait was a different picture from her C4 tile). portrait.png = make_portrait_crop.py public/characters/red_lyra/cards/pose-c4.png x0 150 y0 150 side 460 (his pick 'B' of two crops, 2.23x Lanczos). ART_VERSION 20. Open: a 4x-upscaled recrop (ART_REQUESTS D6)."
+  "portrait": "2026-10-03, his call: tile and portrait are one image, transparent (the old portrait was a different picture from her C4 tile). portrait.png = make_portrait_crop.py public/characters/red_lyra/cards/pose-c4.png x0 150 y0 150 side 460 (his pick 'B' of two crops, 2.23x Lanczos). ART_VERSION 20. Open: a 4x-upscaled recrop (ART_REQUESTS D6).",
+  "tile": "2026-10-03, his call: the break-out ponytail was too long and ran into the tile above. tile.webp cropped at y=229 of the old 480x817 cut-out, 12px above the red ribbon, so the ponytail ends at the ribbon. Now 480x588, TILE_ART ratio 1.225 (was 1.702). ART_VERSION 21. A redo of the tile from a sharper source keeps the ribbon as its top edge."
 }

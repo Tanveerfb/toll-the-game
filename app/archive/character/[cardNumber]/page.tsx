@@ -10,7 +10,7 @@ import {
   getCharacterPhases,
   getPlayableCharacters,
 } from "@/lib/game/characterCatalog";
-import { elementCode, elementHue } from "@/lib/game/elementStyle";
+import { elementHue, elementName } from "@/lib/game/elementStyle";
 import KitPhases from "@/components/game/KitPhases";
 import KitNumbers from "@/components/game/KitNumbers";
 import PreviewButton from "@/components/game/PreviewButton";
@@ -144,12 +144,6 @@ export default async function CharacterDetailPage({
                     {character.name.charAt(0)}
                   </span>
                 )}
-                <span
-                  className="absolute left-0 top-0 border-b-2 border-r-2 border-border px-2 py-0.5 font-body text-caption font-bold tracking-label text-card-foreground"
-                  style={{ backgroundColor: hue }}
-                >
-                  {elementCode(character.color)}
-                </span>
               </div>
 
               <div className="min-w-0 px-3 py-2.5">
@@ -172,15 +166,20 @@ export default async function CharacterDetailPage({
                 <p className="mt-0.5 font-body text-caption font-bold uppercase tracking-eyebrow text-muted-foreground tabular-nums">
                   No. {character.cardNumber}
                 </p>
-                {Array.isArray(character.tags) && character.tags.length > 0 ? (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {character.tags.map((tag) => (
-                      <Badge key={tag} variant="outline">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                ) : null}
+                {/* The element leads the tags. It sat as a pill on the
+                    portrait until the burst behind the portrait took over
+                    that job (his call, 2026-10-03); it stays in words here
+                    so the element never rests on colour alone. */}
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <Badge variant="outline">{elementName(character.color)}</Badge>
+                  {Array.isArray(character.tags)
+                    ? character.tags.map((tag) => (
+                        <Badge key={tag} variant="outline">
+                          {tag}
+                        </Badge>
+                      ))
+                    : null}
+                </div>
               </div>
               </div>
 

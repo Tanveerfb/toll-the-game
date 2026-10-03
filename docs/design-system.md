@@ -38,6 +38,11 @@ at all, and the kit document is the densest text in the game.
 *This rule is Claude's, proposed with the mockup (#154 flags it), not his
 words. He can overrule it.*
 
+**One exception: the summon screen** (ruling #174, his pick of the "manga
+page" mockup, 2026-10-03). It is built as slanted panels with speed rays and
+spends the loud parts across the screen, because summoning is the game's big
+moment. Its results list and every other screen still follow the rule.
+
 **One exception, his pick (ruling #155): the keyword marker.** In kit text a
 tappable keyword wears `ink-marker`, a yellow highlighter stroke across the
 lower half of the word. Yellow there is the interaction cue ("tap this"), the
@@ -140,6 +145,7 @@ values from 7px to 17px.
 | **Offset slab shadow**, 4–5px down-right | A paper panel lifted off the ground; the primary button | Stacked on every card in a list |
 | **Halftone** | The ground | Paper |
 | **Speed lines** | Behind a hero image (a boss, a pull reveal) | Behind text |
+| **Panel cuts** (`panel-cut-*`), burst, speed rays | The summon screen only: a manga page of slanted panels, a shout bubble, rays behind the draw buttons (his pick, 2026-10-03) | Other screens; reading panels |
 | **Section label** | `SectionHeader size="page"` (h1) or `"section"` (h2): a skewed paper label on a yellow slab, on the ground | Inside a paper panel |
 
 ---
