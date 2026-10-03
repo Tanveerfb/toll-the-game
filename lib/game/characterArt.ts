@@ -14,7 +14,7 @@ import { colorQualifiedId } from "@/lib/game/unitKey";
 // Bump when any art file is replaced in place — busts the Next.js image
 // optimizer cache and browser cache, which otherwise keep serving the old
 // pixels for the unchanged URL.
-const ART_VERSION = 19;
+const ART_VERSION = 20;
 
 const CHARACTERS_WITH_ART = new Set([
   "ban",

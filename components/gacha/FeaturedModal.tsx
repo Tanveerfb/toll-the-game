@@ -5,7 +5,7 @@ import React from "react";
 import MountedDialog from "@/components/ui/MountedDialog";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { getCharacterById } from "@/lib/game/characterCatalog";
-import type { Color } from "@/types/color";
+import { EL_CODE, EL_HUE } from "@/lib/game/elementStyle";
 
 /**
  * The banner's pool, as a table.
@@ -24,20 +24,6 @@ import type { Color } from "@/types/color";
  * code. On paper the code is a fill with ink on it (ruling #154), and
  * "Owned" is the action yellow, the game's "yours" everywhere else.
  */
-const EL_HUE: Record<Color, string> = {
-  light: "var(--color-el-light)",
-  red: "var(--color-el-red)",
-  blue: "var(--color-el-blue)",
-  green: "var(--color-el-green)",
-  dark: "var(--color-el-dark)",
-};
-const EL_CODE: Record<Color, string> = {
-  light: "LGT",
-  red: "RED",
-  blue: "BLU",
-  green: "GRN",
-  dark: "DRK",
-};
 
 export interface FeaturedRow {
   id: string;

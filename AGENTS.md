@@ -26,6 +26,10 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 | `ruling` | He settles a design question. Numbered entry, his words, supersede links, propagation |
 | `comfypending` | A feature needs art the game doesn't have |
 | `charart` | Making a playable character's art: design lock, LoRA, kit/card drafts, finish, composite, lock. Enforces his approval gates; the method is `docs/CHARACTER_ART.md` |
+| `relay` | Starting a session: load `docs/STATUS.md`, then check it against the repo before any work |
+| `checkpoint` | Ending a session: `checkpoint` / `git checkpoint` / `git checkpoint max` (project-rules §28) |
+
+`relay` and `checkpoint` are **fleet skills, copied here (2026-10-03) for cloud sessions**, which can't see his PC's `~/.claude/skills/`. The master copies are the user-level ones. Improve those and re-copy; never edit these in place.
 
 `Plans/` holds specced-but-unbuilt work — dated design files a future session can pick up cold. Tanveer builds those in their own dedicated sessions; **don't start one mid-conversation**, and don't let a plan rot silently: if the code it describes changes, the plan is stale and says so or goes.
 

@@ -1658,3 +1658,40 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    **The tile dropped the HP, ATK and DEF bars and the name.** Sorting by stat
    and search by name still work. That follows Dokkan, and it is Claude's
    reading of his ask, not his words.
+
+   **Amended by #173 (2026-10-03):** the tile is now also the team picker's
+   slot and roster tile, and a tile unit's portrait is cut from the same
+   cut-out.
+
+173. **A unit's archive tile and its portrait are the same image; the team
+   picker uses the tile; the detail page puts the portrait on the element
+   burst** (2026-10-03, amends #172). He spotted that Lyra's tile (her C4 card
+   pose) and her portrait (an older picture) differed: *"we have to make sure
+   this ... inconsistent consistency doesn't happen so instead of changing the
+   tile which i like the tile version better so just make sure her official
+   art is also the same as the tile one"*.
+   - **The portrait is a transparent crop of the tile's cut-out.** On the
+     background: *"just uh, use the transparent background it's fine uh, we can
+     work on a background later once i have access to my own pc"*. For Sara:
+     *"on the battlefield, she would have basically the same kind of version,
+     but without the background."* Of two drawn crops of Lyra he **selected
+     "B"** (the wider one), *"especially on the battlefield. I didn't think I
+     didn't think it would look that good."* He supplied Sara's transparent card figure
+     himself (`public/characters/red_sara/cards/card-b-cutout.webp`).
+   - **Detail page:** *"So for each character, they'll have just the background
+     there and then the transparent portrait there"*, meaning the element-colour
+     background the tile uses. It applies to every character; older opaque
+     portraits cover it (Claude's note, shown to him in the mockup).
+   - **Team picker:** *"those tiles will replace uh, the the generic boxes on
+     the team picker."* He **selected** both sets of boxes (the four slots and
+     the roster dialog) and, in the roster dialog, the name and ATK / DEF / HP
+     line under each tile. Those were option labels Claude wrote.
+   - **Battle tile unchanged**: it shows the transparent portrait on its own
+     dark ground.
+
+   **Mockup:** `docs/design/mockups/lyra-portrait.html` (v3, his approval:
+   *"I think I like this one now"*). **The method** is step 6 of
+   `docs/CHARACTER_ART.md` (`make_portrait_crop.py`, crop numbers in each
+   profile). `tests/characterArt.test.ts` fails if a tile unit's portrait is
+   opaque. Open: the 4x-upscaled redo, and whether Sara's dark hood reads on
+   the dark battle ground (`docs/ART_REQUESTS.md` D6).

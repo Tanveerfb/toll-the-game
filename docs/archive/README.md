@@ -8,6 +8,10 @@ holds it verbatim. Moved here from `docs/STATUS.md` on 2026-09-27.
   "Working" feature log and the session logs of 2026-09-26c, 2026-09-26d and
   2026-09-27.
 
+## Session log — 2026-10-03 (cloud)
+
+A unit's tile and portrait made one image (Lyra and Sara re-cut as transparent portraits), the element burst on the detail page, and the archive tile in the team picker (#173) — [`STATUS-2026-10.md`](STATUS-2026-10.md).
+
 ## Session log — 2026-10-02/03
 
 Sara's art pipeline end to end (design lock, LoRA v1→v2, kit and card art locked and installed, kit renamed), the Blender pose tool, the reference library, `docs/CHARACTER_ART.md` + the `charart` skill, and the archive's frame-break tile (#172) — [`STATUS-2026-10.md`](STATUS-2026-10.md).

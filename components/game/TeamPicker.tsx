@@ -16,7 +16,9 @@ import { panelVariants } from "@/components/ui/Panel";
 import { Toggle } from "@/components/ui/toggle";
 import { useReturnFocus } from "@/hooks/useReturnFocus";
 import { cn } from "@/lib/utils";
+import UnitTileFace, { unitTileWrapperClass } from "@/components/game/UnitTileFace";
 import { getCharacterArt } from "@/lib/game/characterArt";
+import { elementCode, elementHue } from "@/lib/game/elementStyle";
 import {
   getPlayableCharacters,
   type CharacterData,
@@ -74,34 +76,6 @@ export interface TeamPickerProps {
    * shows exactly what the unit will field.
    */
   side?: "player" | "enemy";
-}
-
-function Portrait({
-  character,
-  className = "",
-}: {
-  character: CharacterData;
-  className?: string;
-}): React.JSX.Element {
-  const art = getCharacterArt(character.id);
-  if (!art) {
-    return (
-      <span
-        className={`flex items-center justify-center bg-muted font-heading text-2xl text-muted-foreground ${className}`}
-      >
-        {character.name.charAt(0)}
-      </span>
-    );
-  }
-  return (
-    <Image
-      src={art}
-      alt=""
-      width={256}
-      height={256}
-      className={`object-cover object-top ${className}`}
-    />
-  );
 }
 
 /** Member faces on a preset chip — a team is recognised faster than its name
@@ -338,9 +312,13 @@ export default function TeamPicker({
           </div>
         ) : null}
 
-        <div className="grid grid-cols-4 gap-2 p-3">
+        {/* Room above for the break-out heads and below for the plates, which
+            both overhang their tile. */}
+        <div className="grid grid-cols-4 gap-3 px-3.5 pb-6 pt-10">
           {Array.from({ length: TEAM_CAP }).map((_, index) => {
             const character = team[index];
+            // The bench is real now that three units take the field, so the
+            // fourth slot says so rather than looking identical.
             const benched = index >= fieldCap;
             if (!character) {
               return (
@@ -348,40 +326,38 @@ export default function TeamPicker({
                   key={`empty-${index}`}
                   type="button"
                   onClick={openRoster}
-                  className="flex h-24 flex-col items-center justify-center border-2 border-dashed border-muted-foreground text-3xl leading-none text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-card-foreground"
+                  aria-label={benched ? "Add a sub" : "Add a unit"}
+                  className={unitTileWrapperClass}
                 >
-                  +
-                  {benched ? (
-                    <span className="mt-1 font-body text-micro font-bold uppercase tracking-label">
-                      Sub
-                    </span>
-                  ) : null}
+                  <UnitTileFace id="" name="" hue="" code="" empty plate={benched ? "Sub" : undefined} />
                 </button>
               );
             }
+            // The player fields at the save's progression; an enemy has no
+            // level to show (the same rule `fightStats` applies).
+            const saved = side === "player" ? progress[character.id] : undefined;
+            const plate = benched ? "Sub" : saved ? `Lv ${saved.level}` : undefined;
+            const label = benched
+              ? `${character.name}, sub`
+              : saved
+                ? `${character.name}, level ${saved.level}`
+                : character.name;
             return (
               <button
                 key={`${character.id}-${index}`}
                 type="button"
                 onClick={openRoster}
-                className={`relative flex h-24 flex-col justify-end overflow-hidden border-2 bg-muted ${benched ? "border-rule" : "border-border"}`}
+                aria-label={label}
+                className={unitTileWrapperClass}
               >
-                <Portrait
-                  character={character}
-                  className={`absolute inset-0 h-full w-full ${benched ? "opacity-70 grayscale" : ""}`}
+                <UnitTileFace
+                  id={character.id}
+                  name={character.name}
+                  hue={elementHue(character.color)}
+                  code={elementCode(character.color)}
+                  plate={plate}
+                  dimmed={benched}
                 />
-                {/* The bench is real now that three units take the field, so
-                    the fourth slot says so rather than looking identical. */}
-                {benched ? (
-                  <span className="absolute left-0 top-0 z-10 bg-card-foreground/85 px-1.5 py-0.5 font-body text-micro font-bold uppercase tracking-label text-card">
-                    Sub
-                  </span>
-                ) : null}
-                {/* An ink strip lettered in paper: it sits on the portrait,
-                    not on the panel. */}
-                <span className="relative z-10 w-full bg-card-foreground/80 px-1 py-0.5 text-center font-heading text-xs tracking-title text-card">
-                  {character.name}
-                </span>
               </button>
             );
           })}
@@ -418,7 +394,7 @@ export default function TeamPicker({
               No characters available yet.
             </p>
           ) : (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-3 gap-x-3.5 gap-y-7 pt-5 sm:grid-cols-4">
               {selectable.map((character) => {
                 const pickIndex = team.findIndex((c) => c.id === character.id);
                 const isPicked = pickIndex !== -1;
@@ -430,40 +406,33 @@ export default function TeamPicker({
                     type="button"
                     disabled={disabled}
                     aria-pressed={isPicked}
+                    aria-label={`${character.name}, attack ${stats.atk}, defense ${stats.def}, health ${stats.hp}`}
                     onClick={() => toggle(character)}
-                    // Picked is the action yellow, the same as every other
-                    // "selected" in the game.
                     className={cn(
-                      "relative flex h-32 flex-col justify-end overflow-hidden border-2 bg-muted text-left transition-colors",
-                      isPicked
-                        ? "border-border ink-slab-primary"
-                        : disabled
-                          ? "cursor-not-allowed border-rule opacity-40"
-                          : "border-rule hover:border-border",
+                      unitTileWrapperClass,
+                      disabled && "cursor-not-allowed opacity-40",
                     )}
                   >
-                    <Portrait
-                      character={character}
-                      className="absolute inset-0 h-full w-full"
+                    <UnitTileFace
+                      id={character.id}
+                      name={character.name}
+                      hue={elementHue(character.color)}
+                      code={elementCode(character.color)}
+                      picked={isPicked}
+                      pickNumber={isPicked ? pickIndex + 1 : undefined}
                     />
-                    {isPicked ? (
-                      <span className="absolute right-0 top-0 z-10 border-b-2 border-l-2 border-border bg-primary px-1.5 py-0.5 font-body text-label font-bold tabular-nums text-primary-foreground">
-                        {pickIndex + 1}
-                      </span>
-                    ) : null}
-                    <span className="relative z-10 w-full bg-card-foreground/85 px-1.5 py-1 text-card">
-                      {/* Heading above the name (#141). The roster picker's
-                          tile already carries a stat line, so this is a third
-                          line on a small tile - flagged for his eye. */}
+                    {/* The name and statline sit under the tile, which carries
+                        neither. Heading above the name (#141). */}
+                    <span className="mt-3.5 block text-center">
                       {character.heading ? (
-                        <span className="block truncate font-body text-micro font-bold uppercase tracking-label opacity-70">
+                        <span className="block truncate font-body text-micro font-bold uppercase tracking-label text-muted-foreground">
                           {character.heading}
                         </span>
                       ) : null}
                       <span className="block truncate font-heading text-sm tracking-title">
                         {character.name}
                       </span>
-                      <span className="block font-body text-micro font-bold uppercase tracking-label tabular-nums opacity-80">
+                      <span className="block font-body text-micro font-bold uppercase tracking-label tabular-nums text-muted-foreground">
                         {stats.atk} / {stats.def} / {stats.hp}
                       </span>
                     </span>

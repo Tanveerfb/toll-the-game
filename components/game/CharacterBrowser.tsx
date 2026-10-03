@@ -18,6 +18,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { cn } from "@/lib/utils";
 import RosterTile from "@/components/game/RosterTile";
 import { archiveHref } from "@/lib/game/characterCatalog";
+import { EL_CODE, EL_HUE } from "@/lib/game/elementStyle";
 import { usePlayerStore } from "@/store/playerStore";
 import { useSettingsStore } from "@/store/settingsStore";
 
@@ -70,20 +71,6 @@ const SORT_FIELDS: Array<{ id: Exclude<SortField, "none">; label: string }> = [
 // One hue per element, and nothing else in the UI is allowed to use them —
 // system chrome is the action yellow (ruling #154). The 3-letter codes ride in the tile corner
 // where the word wouldn't fit at a 5-column density.
-const EL_HUE: Record<CharacterColor, string> = {
-  light: "var(--color-el-light)",
-  red: "var(--color-el-red)",
-  blue: "var(--color-el-blue)",
-  green: "var(--color-el-green)",
-  dark: "var(--color-el-dark)",
-};
-const EL_CODE: Record<CharacterColor, string> = {
-  light: "LGT",
-  red: "RED",
-  blue: "BLU",
-  green: "GRN",
-  dark: "DRK",
-};
 
 function toTitleCase(value: string): string {
   return value

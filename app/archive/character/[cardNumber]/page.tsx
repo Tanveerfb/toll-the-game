@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { ProseSection } from "@/components/ui/prose";
 import SkillDocument from "@/components/game/SkillDocument";
 import {
@@ -10,6 +10,7 @@ import {
   getCharacterPhases,
   getPlayableCharacters,
 } from "@/lib/game/characterCatalog";
+import { elementCode, elementHue } from "@/lib/game/elementStyle";
 import KitPhases from "@/components/game/KitPhases";
 import KitNumbers from "@/components/game/KitNumbers";
 import PreviewButton from "@/components/game/PreviewButton";
@@ -45,21 +46,6 @@ interface CharacterPageProps {
   params: Promise<{ cardNumber: string }>;
 }
 
-const EL_HUE: Record<string, string> = {
-  light: "var(--color-el-light)",
-  red: "var(--color-el-red)",
-  blue: "var(--color-el-blue)",
-  green: "var(--color-el-green)",
-  dark: "var(--color-el-dark)",
-};
-const EL_CODE: Record<string, string> = {
-  light: "LGT",
-  red: "RED",
-  blue: "BLU",
-  green: "GRN",
-  dark: "DRK",
-};
-
 // Stat bars read against the playable roster's peak, not against this
 // character — a 245 ATK bar meaning "middling attacker" is the thing a raw
 // number never told you. NPC/boss kits sit above the playable ceiling, so the
@@ -91,7 +77,7 @@ export default async function CharacterDetailPage({
     notFound();
   }
 
-  const hue = EL_HUE[character.color] ?? EL_HUE.light;
+  const hue = elementHue(character.color);
   const art = getCharacterArt(character.id);
   const passive = character.passive as KitPassiveView | undefined;
   const previewRows = buildCharacterDamagePreview(character);
@@ -136,7 +122,14 @@ export default async function CharacterDetailPage({
                 491px. */}
             <div className={PAPER}>
               <div className="grid grid-cols-[118px_minmax(0,1fr)]">
-              <div className="relative aspect-[3/4] overflow-hidden border-r-2 border-border bg-muted">
+              <div
+                className="relative aspect-[3/4] overflow-hidden border-r-2 border-border bg-muted"
+                style={{ "--el": hue } as CSSProperties}
+              >
+                {/* The element burst sits behind every portrait. Lyra's and
+                    Sara's are transparent cut-outs and stand on it; an older
+                    opaque portrait simply covers it (his call, 2026-10-03). */}
+                <span aria-hidden className="tile-burst absolute inset-0" />
                 {art ? (
                   <Image
                     src={art}
@@ -144,10 +137,10 @@ export default async function CharacterDetailPage({
                     width={1024}
                     height={1024}
                     priority
-                    className="h-full w-full object-cover object-[50%_12%]"
+                    className="relative h-full w-full object-cover object-[50%_12%]"
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center font-heading text-6xl text-muted-foreground">
+                  <span className="relative flex h-full w-full items-center justify-center font-heading text-6xl text-card-foreground">
                     {character.name.charAt(0)}
                   </span>
                 )}
@@ -155,7 +148,7 @@ export default async function CharacterDetailPage({
                   className="absolute left-0 top-0 border-b-2 border-r-2 border-border px-2 py-0.5 font-body text-caption font-bold tracking-label text-card-foreground"
                   style={{ backgroundColor: hue }}
                 >
-                  {EL_CODE[character.color] ?? character.color}
+                  {elementCode(character.color)}
                 </span>
               </div>
 

@@ -20,7 +20,7 @@ the method changed five times on Sara alone.
 - `scripts/pose/` (`mannequin.py`, `draw_pose.py`, `poses/*.json`): the Blender
   mannequin.
 - `scripts/skill_art/` (`finish_pass.py`, `draw_class_bg.py`,
-  `compose_<id>.py`).
+  `compose_<id>.py`, `make_tile_cutout.py`, `make_portrait_crop.py`).
 - ComfyUI `output\references\README.md`: his reference library.
 - History, read only for the reason behind a rule:
   `docs/archive/ART_PIPELINE-character-history.md`.
@@ -74,6 +74,11 @@ A **gate** is his word in chat. Without it, stop and ask; do not assume.
   - matte is clean.
 - **Before overwriting a LoRA or a locked file:** a byte-identical backup
   exists.
+- **At install:** the archive tile and `portrait.png` are cut from **the same
+  transparent cut-out**, and the portrait stays transparent (step 6). Put the
+  tile and the portrait side by side before calling the install done. Lyra
+  shipped with a tile and a portrait that were two different pictures, and he
+  caught it, not the check.
 
 ## Things only he decides
 

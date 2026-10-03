@@ -10,5 +10,6 @@
     "input/lyra_v7_pick.png"
   ],
   "lora": "lyra_toll.safetensors",
-  "lora_checkpoint": 1500
+  "lora_checkpoint": 1500,
+  "portrait": "2026-10-03, his call: tile and portrait are one image, transparent (the old portrait was a different picture from her C4 tile). portrait.png = make_portrait_crop.py public/characters/red_lyra/cards/pose-c4.png x0 150 y0 150 side 460 (his pick 'B' of two crops, 2.23x Lanczos). ART_VERSION 20. Open: a 4x-upscaled recrop (ART_REQUESTS D6)."
 }

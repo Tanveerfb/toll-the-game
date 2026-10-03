@@ -507,6 +507,27 @@ that lands where the component expects it. What is being requested is the
   portrait as fallback) waits on that answer.
 - **Requested:** 2026-09-27, from his review of the Lyra card-pose pass.
 
+### D6 — lyra-sara-portrait-sharpen — redo both transparent portraits at full quality
+
+- **Purpose:** Lyra's and Sara's `portrait.png` are now chest-up crops of the
+  same transparent cut-out as their archive tiles (his call, 2026-10-03). They
+  were made in a cloud session with a plain Lanczos upscale (Lyra 2.23x from
+  `cards/pose-c4.png`, Sara 1.97x from `cards/card-b-cutout.webp`), so they are
+  slightly soft. Redo both with the anime 4x upscaler.
+- **Specs:** 1024×1024 RGBA, **transparent background kept**. Same framing:
+  reuse the crop numbers in each profile (`scripts/lora/characters/lyra.json`
+  `portrait`, `sara_v2.json` `portrait_recut`). Sara's sharper source is her
+  full-size cut-out in `output\red_sara\locked\`; scale the numbers to it.
+- **Prompt notes:** none. This is a crop and upscale, not a generation.
+- **Lands at:** `public/characters/red_lyra/portrait.png` and
+  `public/characters/red_sara/portrait.png`, via
+  `scripts/skill_art/make_portrait_crop.py`. Bump `ART_VERSION`.
+- **Also check:** Sara's dark hood against the battle field's dark ground. If
+  its edge is lost, raise a thin light rim with him first; do not add one
+  unasked.
+- **Status:** open
+- **Requested:** 2026-10-03, from the portrait/tile consistency fix.
+
 ---
 
 ## Category E — Playable units waiting on art (the release gate)
