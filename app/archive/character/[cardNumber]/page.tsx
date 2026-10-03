@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { ProseSection } from "@/components/ui/prose";
 import SkillDocument from "@/components/game/SkillDocument";
 import {
@@ -10,6 +9,7 @@ import {
   getCharacterPhases,
   getPlayableCharacters,
 } from "@/lib/game/characterCatalog";
+import { elementHue, elementName } from "@/lib/game/elementStyle";
 import KitPhases from "@/components/game/KitPhases";
 import KitNumbers from "@/components/game/KitNumbers";
 import PreviewButton from "@/components/game/PreviewButton";
@@ -24,7 +24,7 @@ import {
 import { getCharacterArt } from "@/lib/game/characterArt";
 import { Screen } from "@/components/ui/Screen";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import BackLink from "@/components/ui/BackLink";
 import { panelVariants } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils";
 
@@ -44,21 +44,6 @@ interface CharacterPageProps {
    */
   params: Promise<{ cardNumber: string }>;
 }
-
-const EL_HUE: Record<string, string> = {
-  light: "var(--color-el-light)",
-  red: "var(--color-el-red)",
-  blue: "var(--color-el-blue)",
-  green: "var(--color-el-green)",
-  dark: "var(--color-el-dark)",
-};
-const EL_CODE: Record<string, string> = {
-  light: "LGT",
-  red: "RED",
-  blue: "BLU",
-  green: "GRN",
-  dark: "DRK",
-};
 
 // Stat bars read against the playable roster's peak, not against this
 // character — a 245 ATK bar meaning "middling attacker" is the thing a raw
@@ -91,7 +76,7 @@ export default async function CharacterDetailPage({
     notFound();
   }
 
-  const hue = EL_HUE[character.color] ?? EL_HUE.light;
+  const hue = elementHue(character.color);
   const art = getCharacterArt(character.id);
   const passive = character.passive as KitPassiveView | undefined;
   const previewRows = buildCharacterDamagePreview(character);
@@ -106,12 +91,7 @@ export default async function CharacterDetailPage({
     // 368px, narrower than the content area of a 390px phone. `app` gives it
     // 592px. Flagged for Tanveer — it is a one-word change if he wants `read`.
     <Screen width="app">
-        <Link
-          href="/archive"
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "self-start")}
-        >
-          ← Character archive
-        </Link>
+        <BackLink label="Characters" href="/archive" />
 
         {/* `grid-cols-1` is not decoration — without it this screen scrolled
             sideways 86px at 395px (browser audit, 2026-09-01), which ruling
@@ -136,7 +116,14 @@ export default async function CharacterDetailPage({
                 491px. */}
             <div className={PAPER}>
               <div className="grid grid-cols-[118px_minmax(0,1fr)]">
-              <div className="relative aspect-[3/4] overflow-hidden border-r-2 border-border bg-muted">
+              <div
+                className="relative aspect-[3/4] overflow-hidden border-r-2 border-border bg-muted"
+                style={{ "--el": hue } as CSSProperties}
+              >
+                {/* The element burst sits behind every portrait. Lyra's and
+                    Sara's are transparent cut-outs and stand on it; an older
+                    opaque portrait simply covers it (his call, 2026-10-03). */}
+                <span aria-hidden className="tile-burst absolute inset-0" />
                 {art ? (
                   <Image
                     src={art}
@@ -144,19 +131,13 @@ export default async function CharacterDetailPage({
                     width={1024}
                     height={1024}
                     priority
-                    className="h-full w-full object-cover object-[50%_12%]"
+                    className="relative h-full w-full object-cover object-[50%_12%]"
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center font-heading text-6xl text-muted-foreground">
+                  <span className="relative flex h-full w-full items-center justify-center font-heading text-6xl text-card-foreground">
                     {character.name.charAt(0)}
                   </span>
                 )}
-                <span
-                  className="absolute left-0 top-0 border-b-2 border-r-2 border-border px-2 py-0.5 font-body text-caption font-bold tracking-label text-card-foreground"
-                  style={{ backgroundColor: hue }}
-                >
-                  {EL_CODE[character.color] ?? character.color}
-                </span>
               </div>
 
               <div className="min-w-0 px-3 py-2.5">
@@ -179,15 +160,20 @@ export default async function CharacterDetailPage({
                 <p className="mt-0.5 font-body text-caption font-bold uppercase tracking-eyebrow text-muted-foreground tabular-nums">
                   No. {character.cardNumber}
                 </p>
-                {Array.isArray(character.tags) && character.tags.length > 0 ? (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {character.tags.map((tag) => (
-                      <Badge key={tag} variant="outline">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                ) : null}
+                {/* The element leads the tags. It sat as a pill on the
+                    portrait until the burst behind the portrait took over
+                    that job (his call, 2026-10-03); it stays in words here
+                    so the element never rests on colour alone. */}
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <Badge variant="outline">{elementName(character.color)}</Badge>
+                  {Array.isArray(character.tags)
+                    ? character.tags.map((tag) => (
+                        <Badge key={tag} variant="outline">
+                          {tag}
+                        </Badge>
+                      ))
+                    : null}
+                </div>
               </div>
               </div>
 

@@ -82,6 +82,13 @@ export interface ScreenProps
    * arena, a full-bleed stage backdrop.
    */
   width?: ScreenWidth;
+  /**
+   * Leave room under the content for a bar pinned to the bottom edge (the
+   * practice bench's action bar). The bottom padding is the bar's height plus
+   * a margin, so the last row can scroll clear of it. Ignored when
+   * `width="none"`.
+   */
+  pinnedBar?: boolean;
   /** Extra classes for the inner column. Ignored when `width="none"`. */
   contentClassName?: string;
 }
@@ -89,6 +96,7 @@ export interface ScreenProps
 export function Screen({
   variant,
   width = "app",
+  pinnedBar = false,
   className,
   contentClassName,
   children,
@@ -105,6 +113,7 @@ export function Screen({
             // `w-full` before the cap so the column fills a 390px phone and
             // only narrows once the viewport passes the token.
             "mx-auto flex w-full flex-col gap-3 px-4 py-6 md:px-8",
+            pinnedBar && "pb-28",
             inner,
             contentClassName,
           )}

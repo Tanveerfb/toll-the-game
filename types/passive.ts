@@ -24,6 +24,10 @@ export const PASSIVE_TRIGGERS = [
    *  surviving a killing blow rather than failing to. */
   "onDefeat",
   "onDamageDealt",
+  /** Fires when THIS character's direct damage (skill, ultimate or counter)
+   *  takes an enemy to 0 HP. Damage over time does not count. See
+   *  lib/game/onKill.ts. */
+  "onKill",
   "onRoundEnd",
   "onNewTurn",
   "onIgniteConsume",

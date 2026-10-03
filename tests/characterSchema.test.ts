@@ -84,7 +84,7 @@ describe("boss roster (practice Boss Battle picker)", () => {
   it("returns the curated bosses, all flagged boss:true", () => {
     const bosses = getBossCharacters();
     const ids = bosses.map((b) => b.id).sort();
-    expect(ids).toEqual(["lyra_npc", "molvarr"]);
+    expect(ids).toEqual(["lyra_npc", "master_tao_npc", "molvarr"]);
     expect(bosses.every((b) => b.boss === true)).toBe(true);
   });
 
@@ -92,6 +92,7 @@ describe("boss roster (practice Boss Battle picker)", () => {
     const playable = getPlayableCharacters().map((c) => c.id);
     expect(playable).not.toContain("molvarr");
     expect(playable).not.toContain("lyra_npc");
+    expect(playable).not.toContain("master_tao_npc");
   });
 });
 

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { spendStamina, STAMINA_CAP } from "@/lib/game/stamina";
 import { AUTO_CLEAR_TICKETS_PER_RANK } from "@/lib/game/autoClear";
+import { applyEpicClear, type EpicClears } from "@/lib/game/epicClears";
 import { planLevelUp, type ManualSpend } from "@/lib/game/leveling";
 import {
   ascensionBlocker,
@@ -104,6 +105,13 @@ export interface PlayerState {
    * itself. Recorded on a real victory only.
    */
   clearedEvents: string[];
+  /**
+   * Epic Battles clear record, per stage key. Kept for missions that will be
+   * evaluated retroactively - see `lib/game/epicClears.ts`. Synced: a second
+   * device must not lose it, and nothing is paid from it, so a double-count
+   * cannot hurt.
+   */
+  epicClears: EpicClears;
   characters: Record<string, CharacterProgress>;
   /** Saved loadouts, shared by every mode. See lib/game/teamPresets.ts. */
   presets: TeamPreset[];
@@ -143,6 +151,12 @@ export interface PlayerState {
   grantAutoClearTickets: (count: number) => void;
   /** Records a MANUAL clear. Auto Clear must never call this. */
   recordManualClear: (eventId: string) => void;
+  /** Records one Epic Battles stage clear. Pays nothing. */
+  recordEpicClear: (
+    stageKey: string,
+    teamIds: readonly string[],
+    turns: number,
+  ) => void;
   /**
    * Spend one ticket and one fight's stamina, atomically.
    *
@@ -230,6 +244,7 @@ export type PersistedPlayerData = Omit<
   | "claimLimitedFinal"
   | "claimPermanentFinal"
   | "claimOrder"
+  | "recordEpicClear"
 >;
 
 export const DEFAULT_PITY = {
@@ -298,6 +313,7 @@ export const DEFAULT_PLAYER_STATE = {
   claimedOrders: {} as Record<string, boolean>,
   autoClearTickets: 0,
   clearedEvents: [] as string[],
+  epicClears: {} as EpicClears,
   pity: DEFAULT_PITY,
 };
 
@@ -338,6 +354,7 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     claimedOrders: {} as Record<string, boolean>,
     autoClearTickets: 0,
     clearedEvents: [] as string[],
+    epicClears: {} as EpicClears,
     pity: DEFAULT_PITY,
     ...state,
   };
@@ -516,10 +533,20 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     state = { ...state, characters, inventory };
   }
 
+  if (version < 10) {
+    // v9 → v10: Epic Battles. `epicClears` is purely additive and the
+    // defensive baseline already supplied `{}`; stated here so the version
+    // bump has a step to point at.
+    state = {
+      ...state,
+      epicClears: (state.epicClears as EpicClears | undefined) ?? {},
+    };
+  }
+
   return state as unknown as PersistedPlayerData;
 }
 
-export const CURRENT_PLAYER_STATE_VERSION = 9;
+export const CURRENT_PLAYER_STATE_VERSION = 10;
 
 export const usePlayerStore = create<PlayerState>()(
   persist(
@@ -574,6 +601,17 @@ export const usePlayerStore = create<PlayerState>()(
             ? {}
             : { clearedEvents: [...state.clearedEvents, eventId] },
         ),
+
+      recordEpicClear: (stageKey, teamIds, turns) =>
+        set((state) => ({
+          epicClears: applyEpicClear(
+            state.epicClears,
+            stageKey,
+            teamIds,
+            turns,
+            Date.now(),
+          ),
+        })),
 
       spendAutoClearRun: (staminaCost) => {
         const state = get();

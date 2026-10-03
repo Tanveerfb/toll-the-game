@@ -1,67 +1,39 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Boxes, ChevronRight, UserCog } from "lucide-react";
+import { Boxes, UserCog } from "lucide-react";
 import ItemIcon from "@/components/game/ItemIcon";
 import { useAuth } from "@/hooks/AuthProvider";
 import { usePlayerStore } from "@/store/playerStore";
 import { useSettingsStore } from "@/store/settingsStore";
-import { getCurrentStamina, STAMINA_CAP } from "@/lib/game/stamina";
-import { getPlayableCharacters } from "@/lib/game/characterCatalog";
-import { MAX_ACCOUNT_RANK, rankProgress } from "@/lib/game/accountRank";
-import { MAX_WORLD_LEVEL, worldLevelCapForRank } from "@/lib/game/worldLevel";
-import { RANK_WALLS } from "@/lib/game/accountRank";
+import { summariseRank, summariseWorldLevel } from "@/lib/game/accountSummary";
+import RankBar from "@/components/game/RankBar";
 import PlayerAvatar from "@/components/game/PlayerAvatar";
 import InventoryModal from "@/components/game/InventoryModal";
 import AccountModal from "@/components/game/AccountModal";
 import DevGrantPanel from "@/components/game/DevGrantPanel";
 import SoundSettings from "@/components/game/SoundSettings";
+import NavTile from "@/components/ui/NavTile";
 import { Screen } from "@/components/ui/Screen";
+import { Skeleton } from "@/components/ui/skeleton";
 import { panelVariants } from "@/components/ui/Panel";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-
-/** A tile on this page that goes somewhere (ruling #154). */
-const PROFILE_TILE = panelVariants({ surface: "paper", density: "none", press: true });
-
-const PLAYABLE_COUNT = getPlayableCharacters().length;
-
-/** Stamina regenerates on a clock; floored to the tick window so repeated
- *  snapshot reads return an identical value. */
-const CLOCK_TICK_MS = 30_000;
-function subscribeClock(onStoreChange: () => void): () => void {
-  const id = setInterval(onStoreChange, CLOCK_TICK_MS);
-  return () => clearInterval(id);
-}
-function getClockSnapshot(): number {
-  return Math.floor(Date.now() / CLOCK_TICK_MS) * CLOCK_TICK_MS;
-}
-function getServerClockSnapshot(): number {
-  return 0;
-}
 
 function Resource({
   label,
   iconId,
   value,
-  suffix,
-  percent,
 }: {
   label: string;
-  /** Currency/material id whose icon sits beside the name. Omitted for the
-   *  figures that aren't things you hold (roster count). */
+  /** Currency/material id whose icon sits beside the name. */
   iconId?: string;
-  value: string;
-  suffix?: string;
-  /** Adds a fill bar — only worth it for a value that refills on its own. */
-  percent?: number;
+  value: React.ReactNode;
 }): React.JSX.Element {
   return (
     <div
       className={cn(
         panelVariants({ surface: "paper", density: "tight" }),
+        // 8rem: local floor, so two readouts share a row at 390px.
         "flex min-w-[8rem] flex-1 flex-col gap-1",
       )}
     >
@@ -71,24 +43,17 @@ function Resource({
       </span>
       <span className="font-heading text-xl leading-none tracking-title tabular-nums">
         {value}
-        {suffix ? (
-          <span className="font-body text-xs font-bold text-muted-foreground">
-            {suffix}
-          </span>
-        ) : null}
       </span>
-      {percent !== undefined ? <Progress value={percent} /> : null}
     </div>
   );
 }
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+  // A guest is a player too: this page renders for them, and the Account
+  // dialog carries the sign-in button (a guest was redirected away before).
+  const { user } = useAuth();
   const hasHydrated = usePlayerStore((s) => s.hasHydrated);
-  const roster = usePlayerStore((s) => s.roster);
   const currencies = usePlayerStore((s) => s.currencies);
-  const stamina = usePlayerStore((s) => s.stamina);
   const account = usePlayerStore((s) => s.account);
   const worldLevel = usePlayerStore((s) => s.worldLevel);
   const avatarId = useSettingsStore((s) => s.avatarCharacterId);
@@ -96,37 +61,15 @@ export default function ProfilePage() {
   const [showInventory, setShowInventory] = React.useState(false);
   const [showAccount, setShowAccount] = React.useState(false);
 
-  const now = React.useSyncExternalStore(
-    subscribeClock,
-    getClockSnapshot,
-    getServerClockSnapshot,
-  );
-
-  React.useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login");
-    }
-  }, [loading, user, router]);
-
-  if (!loading && !user) {
-    return null;
-  }
-
-  const ready = hasHydrated && now !== 0;
-  const dash = "—";
-  const currentStamina = ready ? getCurrentStamina(stamina, now) : 0;
+  const ready = hasHydrated;
   const displayName =
     user?.displayName || user?.email?.split("@")[0] || "Guest";
 
-  // `null` means walled: XP banks but the rank can't rise until the band's
-  // ascension trial is cleared. A bar pinned at 100% with no explanation is
+  // Walled means XP banks but the rank can't rise until the band's ascension
+  // trial is cleared. A bar pinned at 100% with no explanation is
   // indistinguishable from a bug, so the walled case says so.
-  const progress = rankProgress(account, account.clearedWalls);
-  const rankPercent = progress
-    ? Math.min(100, (progress.current / progress.required) * 100)
-    : 100;
-  const cap = worldLevelCapForRank(account.rank);
-  const nextWall = RANK_WALLS.find((wall) => wall > account.rank);
+  const rank = summariseRank(account);
+  const worldCap = summariseWorldLevel(account.rank);
 
   return (
     <Screen width="app">
@@ -165,22 +108,19 @@ export default function ProfilePage() {
               Account rank
             </span>
             <span className="font-heading text-3xl leading-none">
-              {ready ? account.rank : dash}
+              {ready ? account.rank : <Skeleton className="h-[1em] w-8" />}
             </span>
-            {/* Walled (XP banking, rank capped until the trial) fills gold
-                rather than yellow: a full bar that never moves reads as a
-                state, not a bug. */}
-            <span className="block h-2 w-36 overflow-hidden border border-border bg-muted">
-              <span
-                className={`block h-full transition-[width] duration-500 ${progress ? "bg-primary" : "bg-el-light"}`}
-                style={{ width: ready ? `${rankPercent}%` : "0%" }}
-              />
-            </span>
+            <RankBar
+              percent={rank.percent}
+              walled={rank.walled}
+              ready={ready}
+              className="w-36"
+            />
             <span className="font-body text-label font-bold text-muted-foreground">
               {!ready
                 ? " "
-                : progress
-                  ? `${progress.current} / ${progress.required} xp to rank ${Math.min(account.rank + 1, MAX_ACCOUNT_RANK)}`
+                : rank.progress
+                  ? `${rank.progress.current} / ${rank.progress.required} xp to rank ${rank.nextRank}`
                   : "Clear the ascension trial to rank up"}
             </span>
           </div>
@@ -190,99 +130,58 @@ export default function ProfilePage() {
               World level
             </span>
             <span className="font-heading text-3xl leading-none">
-              {ready ? worldLevel : dash}
+              {ready ? worldLevel : <Skeleton className="h-[1em] w-8" />}
             </span>
             <span className="max-w-[16ch] font-body text-label font-bold leading-snug text-muted-foreground">
               {!ready
                 ? " "
-                : cap >= MAX_WORLD_LEVEL
+                : worldCap.atMaximum
                   ? "At the current maximum"
-                  : nextWall
-                    ? `Capped at ${cap} until rank ${nextWall}`
-                    : `Capped at ${cap}`}
+                  : worldCap.nextWall
+                    ? `Capped at ${worldCap.cap} until rank ${worldCap.nextWall}`
+                    : `Capped at ${worldCap.cap}`}
             </span>
           </div>
         </header>
 
         <div className="mt-3 flex flex-wrap gap-2">
           <Resource
-            label="Stamina"
-            iconId="stamina"
-            value={ready ? `${currentStamina}` : dash}
-            suffix={`/${STAMINA_CAP}`}
-            percent={ready ? (currentStamina / STAMINA_CAP) * 100 : 0}
-          />
-          <Resource
-            label="Gems"
-            iconId="gems"
-            value={ready ? currencies.gems.toLocaleString() : dash}
-          />
-          <Resource
             label="Coin"
             iconId="coin"
-            value={ready ? currencies.coin.toLocaleString() : dash}
-          />
-          <Resource
-            label="Roster"
-            value={ready ? `${roster.length}` : dash}
-            suffix={`/${PLAYABLE_COUNT}`}
+            value={
+              ready ? (
+                currencies.coin.toLocaleString()
+              ) : (
+                <Skeleton className="h-[1em] w-16" />
+              )
+            }
           />
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <button
-            type="button"
+          <NavTile
+            icon={Boxes}
+            title="Inventory"
+            chevron
             onClick={() => setShowInventory(true)}
-            className={cn(PROFILE_TILE, "flex items-center gap-3 px-4 py-3")}
-          >
-            <Boxes className="h-5 w-5 shrink-0" strokeWidth={2} />
-            <span className="min-w-0 flex-1">
-              <span className="block font-heading text-lg tracking-title">
-                Inventory
-              </span>
-              <span className="block font-body text-caption text-muted-foreground">
-                Currencies, materials and what you&rsquo;ve invested
-              </span>
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-          </button>
-          <button
-            type="button"
+          />
+          <NavTile
+            icon={UserCog}
+            title="Account"
+            chevron
             onClick={() => setShowAccount(true)}
-            className={cn(PROFILE_TILE, "flex items-center gap-3 px-4 py-3")}
-          >
-            <UserCog className="h-5 w-5 shrink-0" strokeWidth={2} />
-            <span className="min-w-0 flex-1">
-              <span className="block font-heading text-lg tracking-title">
-                Account
-              </span>
-              <span className="block font-body text-caption text-muted-foreground">
-                Sign-in, cloud save and display picture
-              </span>
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-          </button>
+          />
         </div>
 
-        {/* The roster listing lives in the archive now — it has the portraits,
-            the filters and the element data this page never had (Tanveer,
-            2026-08-11). This is the pointer, not a second copy of it. */}
-        <Link
+        {/* The character listing lives under Characters — it has the
+            portraits, the filters and the element data this page never had
+            (Tanveer, 2026-08-11). This is the pointer, not a second copy. */}
+        <NavTile
           href="/archive"
-          className={cn(PROFILE_TILE, "mt-2 flex items-center gap-3 px-4 py-3")}
-        >
-          <span className="min-w-0 flex-1">
-            <span className="block font-heading text-lg tracking-title">
-              Your characters
-            </span>
-            <span className="block font-body text-caption text-muted-foreground">
-              {ready
-                ? `${roster.length} recruited — levels, ascension and kits in the archive`
-                : "Levels, ascension and kits in the archive"}
-            </span>
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-        </Link>
+          title="Characters"
+          chevron
+          className="mt-2"
+        />
 
         <div className="mt-4">
           <SoundSettings />

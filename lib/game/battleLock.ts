@@ -1,3 +1,9 @@
+import {
+  getArc,
+  getStage,
+  type EpicArc,
+  type EpicStage,
+} from "@/lib/game/epicBattles";
 import { getEvent, type GameEvent } from "@/lib/game/events";
 import type { FightRunState } from "@/lib/game/fightRun";
 import { isRouteActive } from "@/lib/nav/routes";
@@ -6,7 +12,8 @@ import type { BattleOwner } from "@/types/battleOwner";
 /** An events-board battle to resume, resolved to its event. */
 export type ResumedEventBattle =
   | { kind: "boss"; event: GameEvent; difficulty: number }
-  | { kind: "trial"; event: GameEvent; run: FightRunState };
+  | { kind: "trial"; event: GameEvent; run: FightRunState }
+  | { kind: "epic"; arc: EpicArc; stage: EpicStage };
 
 /**
  * The events-board battle that is still live, if there is one — what the
@@ -23,6 +30,13 @@ export function resumedEventBattle(
   owner: BattleOwner | null,
 ): ResumedEventBattle | null {
   if (battlePhase === "initializing" || owner?.route !== "/events") return null;
+  if (owner.view.kind === "epic") {
+    // An arc or stage removed between the save and the reload resolves to
+    // nothing, and the board is the honest fallback - same as a retired event.
+    const arc = getArc(owner.view.arcId);
+    const stage = getStage(owner.view.arcId, owner.view.stageId);
+    return arc && stage ? { kind: "epic", arc, stage } : null;
+  }
   const event = getEvent(owner.view.eventId);
   if (!event) return null;
   return owner.view.kind === "boss"

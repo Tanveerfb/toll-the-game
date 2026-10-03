@@ -1,0 +1,145 @@
+{
+  "id": "master_tao_npc",
+  "cardNumber": 100035,
+  "name": "Master Tao",
+  "heading": "The Examiner",
+  "color": "green",
+  "storyOnly": true,
+  "boss": true,
+  "tier": "elite",
+  "ccImmune": true,
+  "ultGaugeMax": 10,
+  "tags": ["Human"],
+  "lore": "Story-battle version of Master Tao, the examiner of the ledger exam. A boss's stamina and a boss's kit - a longer, multi-turn duel. Elite tier: acts three times per turn even alone.",
+  "atk": 220,
+  "def": 195,
+  "hp": 10500,
+  "skills": [
+    {
+      "skillName": "Flaming Palm",
+      "description": "Does damage equal to ATK-scaled to one enemy; applies [ignite.stacks] Ignite.",
+      "characterId": "master_tao_npc",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [195, 240, 300],
+      "mechanics": [
+        {
+          "type": "ignite",
+          "stacksRanked": [1, 1, 3]
+        }
+      ]
+    },
+    {
+      "skillName": "Examiner's Judgement",
+      "description": "Does Co-Destruction damage equal to ATK-scaled to one enemy.",
+      "characterId": "master_tao_npc",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [145, 180, 225],
+      "mechanics": [
+        {
+          "type": "coDestruction",
+          "valuePercentPerDebuff": 40
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Wrath of the Fire Sage",
+    "description": "Applies [ignite.stacks] Ignite to all enemies; then does damage equal to ATK-scaled to all enemies.",
+    "characterId": "master_tao_npc",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 300,
+    "damageByUltLevel": [300, 325, 350, 375, 400, 500],
+    "mechanics": [
+      {
+        "type": "aoe"
+      },
+      {
+        "type": "ignite",
+        "stacks": 3
+      }
+    ]
+  },
+  "passive": {
+    "name": "Trial by Fire",
+    "description": "# Basic effects\n- Immune to Stun, Freeze and Attack Seals\n- Damage taken from counterattacks 50% 👇\n- DEF 10% 👆 per debuff on the enemy team (Max 50%, Uncancellable)\n- ATK and damage dealt 5% 👆 per [Ignite] stack on the enemy team (Uncancellable)\n\n# While an enemy named Duke is on the field\n- Damage dealt 20% 👆 (Uncancellable)\n\n# Every time this character receives 5 attacks\n- ATK and DEF 5% 👆 (Max 10 times, Uncancellable)\n\n# At the start of this character's turn\n- Removes 1 random debuff from self\n\n# When this character defeats an enemy\n- Heals 35% of max HP (Only once)",
+    "blocks": [
+      {
+        "trigger": "always",
+        "heading": "Basic effects",
+        "mechanics": [
+          {
+            "type": "sealImmunity",
+            "sealTypes": ["attack"]
+          },
+          {
+            "type": "counterDamageReduction",
+            "valuePercent": 50
+          },
+          {
+            "type": "liveBonus",
+            "counts": "enemyDebuffs",
+            "stats": ["def"],
+            "valuePercentPerCount": 10,
+            "maxPercent": 50
+          },
+          {
+            "type": "liveBonus",
+            "counts": "enemyIgniteStacks",
+            "stats": ["atk", "damageDealt"],
+            "valuePercentPerCount": 5
+          }
+        ]
+      },
+      {
+        "trigger": "always",
+        "heading": "While an enemy named Duke is on the field",
+        "mechanics": [
+          {
+            "type": "liveBonus",
+            "counts": "enemyNamePresent",
+            "enemyName": "Duke",
+            "stats": ["damageDealt"],
+            "valuePercentPerCount": 20
+          }
+        ]
+      },
+      {
+        "trigger": "onAttackReceived",
+        "heading": "Every time this character receives 5 attacks",
+        "mechanics": [
+          {
+            "type": "statShiftAfterAttacks",
+            "attacksRequired": 5,
+            "atkShiftPercent": 5,
+            "defShiftPercent": 5,
+            "maxTriggers": 10
+          }
+        ]
+      },
+      {
+        "trigger": "always",
+        "heading": "At the start of this character's turn",
+        "mechanics": [
+          {
+            "type": "turnStartCleanse",
+            "count": 1
+          }
+        ]
+      },
+      {
+        "trigger": "onKill",
+        "heading": "When this character defeats an enemy",
+        "mechanics": [
+          {
+            "type": "heal",
+            "valuePercent": 35,
+            "maxTriggers": 1
+          }
+        ]
+      }
+    ]
+  }
+}

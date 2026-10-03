@@ -898,7 +898,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 
     **One invitation-only carve-out:** he may ask for **names or kits for low-significance characters** — *"NPCs, or people who I don't feel like writing for… then I can ask for your suggestions."* By request only. It does not loosen #65, and never reaches a character who matters to the story.
 
-    **And his three engineering values, in his order:** *"consistency, modularization, and QOL."* **"It works" is not the bar** — a change adding a seventh variant of an existing button is a regression against consistency, and a fix landing in one screen rather than the shared primitive is a regression against modularization. **QOL** is specifically the affordances that make a feature usable rather than merely functional: *"when you create a new table — without QOL you don't add any search field, you don't add any filters, sort options, animations."* `components/game/CharacterBrowser.tsx` is the benchmark.
+    **A fourth value joined these on 2026-10-03: less is more (#178).** **And his three engineering values, in his order:** *"consistency, modularization, and QOL."* **"It works" is not the bar** — a change adding a seventh variant of an existing button is a regression against consistency, and a fix landing in one screen rather than the shared primitive is a regression against modularization. **QOL** is specifically the affordances that make a feature usable rather than merely functional: *"when you create a new table — without QOL you don't add any search field, you don't add any filters, sort options, animations."* `components/game/CharacterBrowser.tsx` is the benchmark.
 
 140. **A transformation shares an archive entry; a version gets its own** (2026-09-17, follows #137's vocabulary, governs `app/archive/[id]`). Asked how a multi-phase boss should appear once phases move from the character to the fight, he drew the line by example:
 
@@ -1658,3 +1658,243 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    **The tile dropped the HP, ATK and DEF bars and the name.** Sorting by stat
    and search by name still work. That follows Dokkan, and it is Claude's
    reading of his ask, not his words.
+
+   **Amended by #173 (2026-10-03):** the tile is now also the team picker's
+   slot and roster tile, and a tile unit's portrait is cut from the same
+   cut-out.
+
+173. **A unit's archive tile and its portrait are the same image; the team
+   picker uses the tile; the detail page puts the portrait on the element
+   burst** (2026-10-03, amends #172). He spotted that Lyra's tile (her C4 card
+   pose) and her portrait (an older picture) differed: *"we have to make sure
+   this ... inconsistent consistency doesn't happen so instead of changing the
+   tile which i like the tile version better so just make sure her official
+   art is also the same as the tile one"*.
+   - **The portrait is a transparent crop of the tile's cut-out.** On the
+     background: *"just uh, use the transparent background it's fine uh, we can
+     work on a background later once i have access to my own pc"*. For Sara:
+     *"on the battlefield, she would have basically the same kind of version,
+     but without the background."* Of two drawn crops of Lyra he **selected
+     "B"** (the wider one), *"especially on the battlefield. I didn't think I
+     didn't think it would look that good."* He supplied Sara's transparent card figure
+     himself (`public/characters/red_sara/cards/card-b-cutout.webp`).
+   - **Detail page:** *"So for each character, they'll have just the background
+     there and then the transparent portrait there"*, meaning the element-colour
+     background the tile uses. It applies to every character; older opaque
+     portraits cover it (Claude's note, shown to him in the mockup).
+   - **Team picker:** *"those tiles will replace uh, the the generic boxes on
+     the team picker."* He **selected** both sets of boxes (the four slots and
+     the roster dialog) and, in the roster dialog, the name and ATK / DEF / HP
+     line under each tile. Those were option labels Claude wrote.
+   - **Battle tile unchanged**: it shows the transparent portrait on its own
+     dark ground.
+
+   **Mockup:** `docs/design/mockups/lyra-portrait.html` (v3, his approval:
+   *"I think I like this one now"*). **The method** is step 6 of
+   `docs/CHARACTER_ART.md` (`make_portrait_crop.py`, crop numbers in each
+   profile). `tests/characterArt.test.ts` fails if a tile unit's portrait is
+   opaque. Open: the 4x-upscaled redo, and whether Sara's dark hood reads on
+   the dark battle ground (`docs/ART_REQUESTS.md` D6).
+
+   **Same day, two corrections from him:**
+   - **The detail page dropped the element pill on the portrait**: *"you can
+     remove that pill ... The background does the job."* Claude raised that
+     the pill was the only place the element was named in words (colour
+     alone fails red/green colour blindness). He replied *"we can move it
+     somewhere else, but uh, not we can't leave it at the same place."* It
+     is now the first tag beside the unit's tags (`elementName`).
+   - **Lyra's tile was cropped at her red ribbon**: *"Look at Lyra's ponytail.
+     It is so long ... you can crop her ponytail up until, you know, the red
+     ribbon you see."* The rule that a break-out stops at a natural edge is
+     in `docs/CHARACTER_ART.md` step 6.
+
+174. **The summon screen is a manga page, and it is the one screen allowed to
+   be loud all over** (2026-10-03). He found the gacha page *"still looks very
+   generic-ish to me"* and asked for it *"properly built out with our theme"*.
+   Three options were drawn in `docs/design/mockups/gacha-overhaul.html`
+   (A poster, B collection board, C manga page). He **selected C**: *"i like C
+   actually. adds energy to the page"*.
+   - **Draw panel anchored to the bottom**, above the tab bar, so the screen
+     fits one phone viewport and the draw buttons sit in the thumb zone
+     (#107). As drawn, C put them mid-screen; Claude proposed the fix and he
+     accepted it: *"go with your fix. i trust you."*
+   - **The results screen** (the mockup's shared overlay) shows units first,
+     as archive tiles with a "New!" or "+1 coin" plate, and groups the
+     materials into one list. It applies whichever option was picked.
+   - **This is the exception to the design system's "loud parts on headers
+     and primary actions only"** (`docs/design-system.md`, itself Claude's
+     rule under #154). The summon is the game's big moment, so it takes the
+     slant, the speed rays and the yellow across the screen. Every other
+     screen keeps the rule. That framing is Claude's reading of his pick.
+   - **Deferred, his call:** summon animations and any new summon art. *"I'd
+     rather have the summon animations generated when we have everyone's uh,
+     got like proper kits generated ... kit artworks generated."* He also did
+     not want the ComfyUI backlog to grow (*"we have such a backlog of uh,
+     comfy generations"*). The brainstorm for later: escalation by what a pull
+     is, since the game has no rarity (#172), climbing from materials to a
+     duplicate to a NEW unit to a NEW featured unit, with the milestone
+     guarantee as its own cue; a unit breaking out of a manga panel; a NEW
+     unit never hidden by skip; reduced motion shows results at once. None of
+     it is his decision yet.
+
+175. **Epic Battles: story fights as endgame stages, always open, free, and
+   paying nothing on a clear** (2026-10-03; uses #136's vocabulary, where an
+   event is a folder and a stage is an entry). With story removed (#152), the
+   story's fights come back as events: *"since we removed the story, but uh,
+   that doesn't mean we can't put the story fights inside the game here."*
+   - **Shape.** A collection, **Epic Battles**, holds arcs; an arc holds
+     stages; a stage is one fight. Offered "Epic Battles", "Exam Arc only" or
+     his own name, he **selected Epic Battles** (an option label, not his
+     prose). His own words for it: *"something of that nature ... a title and
+     then we can say uh, uh, arc one. Or exam arc."* Arc 1 is the **Exam
+     Arc**: Master Tao, then Lyra (*"the first fight was against uh, Tao ...
+     And then second was ... from Duke's perspective or Lyra's perspective"*).
+     Molvarr stays the world boss.
+   - **Open, repeatable, free.** *"these stages are always open. So and they
+     are repeatable. So the players can reattempt it as much as they want ...
+     we can even remove the stamina cost for the basically cost zero
+     stamina."* So both of #127's questions answer "from rank 1", and no stage
+     waits on another.
+   - **No reward for a clear; missions later.** *"we won't give any rewards
+     for clear uh, clearing out the stage. But what we can do is add missions
+     ... clear stage one with only human team ... the uh, missions come later."*
+     So every clear is **recorded** (`epicClears`: count, first and last
+     clear, best turns, the distinct teams that cleared it), so a mission
+     added later can count clears made before it existed. That record is
+     Claude's design for his missions, not his spec.
+   - **Your own team.** Offered own team, a fixed story team, or own team
+     plus a bonus, he **selected own team** (the option Claude recommended,
+     since most players won't own Duke).
+   - **Endgame.** *"these are not for the new new players these are for
+     people who have grinded a bit and have good teams"*, after Dokkan's
+     hardest events.
+   - Where it lives: `lib/game/epicBattles.ts`, `data/arcs/exam-arc.json`,
+     `lib/game/epicClears.ts`, `components/game/events/Epic*`.
+
+176. **Boss Tao: his kit, tuned to a win-rate target in the simulator**
+   (2026-10-03). The Exam Arc's stage 1 is `master_tao_npc`, a story-only
+   elite. **His kit spec is the source; the values are in
+   `data/characters/master_tao_npc.json`**, not here (#5's guard). He gave
+   the kit as *"the minimum i want to want him to do"* and tuned it against
+   simulator runs, not by feel:
+   - **The target.** *"the turns are fine. was aiming for 5-6 turns. win rate
+     is too high. want it to be somewhere around 80 for good teams and 50 or
+     lower for bad teams"*. "Good teams" are the five he supplied, each with
+     Isolde as the sub; "bad teams" are Claude's comparison set. At 220 ATK and a 35% heal,
+     measured before the 5-hit ramp lost its HP, the sim reads about 80% for his five and 33% or lower for the
+     rest, but fights run 8–18 turns, not 5–6. The heal is the cost, and he
+     chose it knowing that.
+   - **The kill heal.** Offered three ways to keep it, he **selected B**,
+     a smaller heal at a higher ATK. Then: *"set it to 220 and 35%"*. A kill
+     is his own skill, ultimate or counter taking an enemy to 0. *"ignites are
+     debuffs. they don't damage. how can they kill?"* So no damage over time
+     earns the heal.
+   - **Smaller calls, his words:**
+     - The 5-hit ramp: *"i guess we can change it to atk and def only."*
+     - The Ignite ramp stays uncapped: *"doesn't need."*
+   - **Names.** *"changes the names but something that suits him
+     canoncially."* Claude chose **Examiner's Judgement** (skill 2) and
+     **Trial by Fire** (the passive), from his lore (the ledger exam's
+     examiner) and his ultimate (the Fire Sage). They are Claude's names,
+     made on his request, and he can replace them.
+   - **One team wins every time.** Gon, Killua and Leorio win about 100% at
+     every ATK and HP tried. Per #138, that team currently has no counter in
+     Tao's kit: Gon and Killua kill him in about 6 turns while Leorio soaks
+     his hits. Reported to him, not tuned around.
+   - **The simulator changed to measure this.** It now deals hands, fills
+     the ultimate gauge by the live rule (one shared function), seeds the
+     AI's random choices, and can report per-fight stats. Every win rate
+     quoted before 2026-10-03 was measured without ultimates or second
+     skills.
+
+177. **The events board is tabs, and it says as little as it can** (2026-10-03).
+   He asked for an events redesign. Three options were drawn in
+   `docs/design/mockups/events-redesign.html`, built from the live game's
+   markup and styles after the first hand-drawn set was *"not website
+   accurate"*:
+   - **A** World Boss / Epic Battles / Trials tabs.
+   - **B** banners.
+   - **C** an arc as a path.
+
+   He **selected A** (*"A looks good"*) and stripped it back: *"don't put
+   number of events in the tab. don't put [best 9 turns] [cleared x amounts].
+   less is more for the players. let them explore on his own."* Asked whether
+   the arc row's "1 of 2 cleared" chip goes too: *"yes"*.
+   - **No counts on the tabs. No clear count, best turns, progress or "not
+     cleared" anywhere on the board or the arc page.** Clears are still
+     recorded (#175) for missions; they are just not shown.
+   - **Not shown either:** the mockup's "Missions · later" placeholder stays
+     out until missions exist.
+   - **Made game-wide the same day by #178.** This entry first flagged "apply
+     it beyond this screen" as Claude's reading. He then said so himself.
+
+178. **Less is more is a game-wide value, the fourth beside consistency,
+   modularization and QOL** (2026-10-03; extends #139's three values; also in `AGENTS.md`).
+   *"less is more, let them explore don't just apply to events.
+   it applies game wide. the next time you audit, add that to the holy rules -
+   consistency, modularization, QoL and then "less is more" / "don't
+   state/show the obvious""*. It started on the events board (#177).
+   - **What it rules out:** counts and tallies on navigation, record readouts
+     nobody asked for, and labels repeating what the screen already shows. That
+     holds even when the data is real and kept (#175's clear record).
+   - **Every audit checks all four values**, and this is the newest of them.
+   - **Claude's reading, flagged:** it pulls against QOL. QOL adds affordances
+     a player *uses* (search, sort, filters, #139's table). Less is more removes
+     readouts a player only *reads*. Where the two meet, ask him. The
+     "uses vs reads" line is Claude's, not his.
+
+179. **News is closed until the game is stable: "Coming soon"** (2026-10-03).
+   Asked what to do with old patch notes that still mention Story and five
+   tabs (audit 1.9), he went further: *"remove all posts for now. we are in
+   the middle of overhauling the game so posts are not valid until we are
+   stable and ready with the game. just put a 'Coming soon' on posts page for
+   now. add it to roadmap. We will come back to it later."*
+   - **The posts are deleted, and a switch keeps the page closed.** Claude
+     first read "remove" as "unpublish" and kept the files. He corrected
+     that: *"delete the posts."* The MDX files are gone from
+     `content/news/` and can be restored from git history. `NEWS_OPEN` in
+     `lib/news/` works like `ORDERS_OPEN`, and news comes back with fresh
+     posts.
+   - **Gone while closed:** `/news` shows "Coming soon", post pages are gone,
+     and Home's unread alert stands down. The return is on `docs/ROADMAP.md`.
+   - Same exchange, audit 1.4: the archive's Preview starts a real, locked
+     test fight. Offered rename, confirm or unlock, he **selected confirm
+     first** (an option label, not his prose).
+
+180. **The four-values audit's outcomes: what players see is now fewer
+   words, one word per job, and one component per job** (2026-10-03; applies
+   #178). A site-wide audit (`docs/archive/FOUR_VALUES_AUDIT-2026-10-03.md`,
+   43 items in four groups) was answered group by group. **Every pick below
+   is an option label he selected, not his prose,** except where quoted.
+   - **Names.** He picked **"Characters"** for the collection; routes stay
+     `/archive`. Back links read **"‹ + destination"**. One word per job:
+     **Enemy** (not Foe), **Retry / Change team / Leave** on results, and
+     **Fight** for starting any battle.
+   - **Removed:**
+     - The Home alert rows: he picked **delete**, not fold.
+     - The enemy hand readout: he picked **remove it**.
+     - The summon confirm's X: **Cancel only**.
+   - **World level appears on Profile only.**
+   - **Empty event tabs are hidden.**
+   - **Event rows show the cost only.** In his words: *"'2 Phases' don't need
+     to be shown. even 'repeatable' can be replaced with an icon that
+     indicates the same meaning."*
+   - **Growth is a bottom sheet.**
+   - **Async views show skeletons**, and "—" means no value (recorded in
+     `conventions.md`).
+   - **Archive Preview asks first** (#179). **News is closed, and its posts
+     are deleted** (#179).
+   - **Claude's calls inside his picks, reversible:**
+     - The guest-progress warning on Login was removed by an agent and
+       restored by Opus. A guest losing their save is not obvious, so it is
+       information.
+     - Kept:
+       - "Cleared" on beaten Molvarr difficulties, since Auto Clear depends
+         on it;
+       - "Elite · 2 phases" on the enemy panel;
+       - the arc's "N stages" chip;
+       - the ticket count on the summon Tickets tab (the top bar lacks it);
+       - "N of M" on the pull results' Units header;
+       - "Show locked units" (the new wording for the archive reveal
+         button).
+

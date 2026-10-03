@@ -2,7 +2,7 @@
 
 import React from "react";
 
-import { Button } from "@/components/ui/button";
+import BackLink from "@/components/ui/BackLink";import { Button } from "@/components/ui/button";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/Panel";
 import { Screen } from "@/components/ui/Screen";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -83,6 +83,8 @@ export default function AutoClearResults({
           />
         </PanelHeader>
 
+        {/* 26rem: local floor; the table scrolls sideways below it rather
+            than crushing its columns. */}
         <Table className="min-w-[26rem]">
           <TableHeader>
             <TableRow>
@@ -131,9 +133,7 @@ export default function AutoClearResults({
         </Table>
 
         <PanelBody>
-          <Button onClick={onBack} className="w-full">
-            Back to events
-          </Button>
+          <BackLink label="Events" onClick={onBack} />
         </PanelBody>
       </Panel>
 

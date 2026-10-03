@@ -3,14 +3,7 @@
 import React from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import PanelSheet from "@/components/ui/PanelSheet";
 import { panelVariants } from "@/components/ui/Panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -20,7 +13,6 @@ import UltimateTab from "@/components/game/growth/UltimateTab";
 import { usePlayerStore, progressFromMap } from "@/store/playerStore";
 import { getCharacterById } from "@/lib/game/characterCatalog";
 import { maxLevelForAscension } from "@/lib/game/ascension";
-import { MAX_ULT_LEVEL } from "@/lib/gacha/dupes";
 
 type TabId = "level" | "ascend" | "ultimate";
 
@@ -111,8 +103,9 @@ function GrowthTabs({
  * Was an always-expanded card that ate most of the sidebar and rendered for
  * EVERY character — unowned ones and story-only NPCs included, offering to
  * level things the player has no claim to. Now it's a single button that only
- * appears for a character the player owns, opening the tabs in the shadcn
- * `Dialog` (the shared `DetailOverlay` until 2026-09-26).
+ * appears for a character the player owns, opening the tabs in a bottom
+ * `PanelSheet` like the Filters sheet (his call, 2026-10-03; it was a
+ * centred dialog until then).
  *
  * Ownership is read after `hasHydrated` so the server render and the first
  * client render agree (the roster lives in localStorage).
@@ -151,27 +144,23 @@ export default function CharacterProgressionPanel({
   const progress = progressFromMap(characters, characterId);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {/* The primary on this page (his pick, 2026-09-27: "especially the
-            growth one"). It states where the character stands, so the modal
-            is worth opening rather than being the only way to find out. */}
+    <PanelSheet
+      open={open}
+      onOpenChange={setOpen}
+      title="Growth"
+      trigger={
+        // The primary on this page (his pick, 2026-09-27: "especially the
+        // growth one"). It states where the character stands, so the sheet is
+        // worth opening rather than being the only way to find out.
         <Button size="lg" className="h-auto w-full flex-col gap-0 py-1.5">
           <span className="text-xl leading-none">Growth</span>
           <span className="whitespace-normal font-body text-label font-bold uppercase tracking-label">
             Lv {progress.level} · A{progress.ascension} · UL{progress.ultLevel}
           </span>
         </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Growth</DialogTitle>
-          <DialogDescription className="text-caption font-bold uppercase tracking-eyebrow">
-            Max ult level {MAX_ULT_LEVEL}
-          </DialogDescription>
-        </DialogHeader>
-        <GrowthTabs characterId={characterId} />
-      </DialogContent>
-    </Dialog>
+      }
+    >
+      <GrowthTabs characterId={characterId} />
+    </PanelSheet>
   );
 }

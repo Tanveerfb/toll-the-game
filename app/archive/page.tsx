@@ -32,7 +32,7 @@ export default function ArchivePage() {
       <header className="flex flex-wrap items-end gap-x-4 gap-y-3">
         {/* This page took the roster listing over from `/profile` on
             2026-08-11, which is why it opens on what you own. */}
-        <SectionHeader eyebrow="Bureau roster index" title="Character Archive" />
+        <SectionHeader title="Characters" />
         <Link
           href="/archive/npc"
           className={cn(buttonVariants({ variant: "outline", size: "sm" }), "ml-auto")}

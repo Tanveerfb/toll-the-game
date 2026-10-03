@@ -2,9 +2,13 @@
 
 import React from "react";
 import Image from "next/image";
+import { Info } from "lucide-react";
 import TeamPicker from "@/components/game/TeamPicker";
 import { Button } from "@/components/ui/button";
 import { panelVariants } from "@/components/ui/Panel";
+import { Screen } from "@/components/ui/Screen";
+import { SelectTile } from "@/components/ui/SelectTile";
+import Hint from "@/components/ui/Hint";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
@@ -82,16 +86,11 @@ function BossPicker({
           const active = selected?.id === boss.id;
           const phases = phaseCount(boss);
           return (
-            <button
+            <SelectTile
               key={boss.id}
-              type="button"
+              selected={active}
               onClick={() => onSelect(boss)}
-              aria-pressed={active}
-              // Selected is the action yellow, as everywhere else.
-              className={cn(
-                "relative flex h-28 flex-col justify-end overflow-hidden border-2 bg-muted text-left transition-colors",
-                active ? "border-border ink-slab-primary" : "border-rule hover:border-border",
-              )}
+              className="relative flex h-28 flex-col justify-end overflow-hidden bg-muted text-left"
             >
               {art ? (
                 <Image
@@ -110,7 +109,7 @@ function BossPicker({
               <span className="relative z-10 w-full bg-card-foreground/85 px-1.5 py-1 font-heading text-sm tracking-title text-card">
                 {boss.name}
               </span>
-            </button>
+            </SelectTile>
           );
         })}
       </div>
@@ -162,17 +161,19 @@ export default function TeamSelect({
   };
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 md:px-8">
+    // `gap-0`: this screen spaces its blocks with its own `mt-4`s, which
+    // `Screen`'s default `gap-3` would compound.
+    <Screen width="app" pinnedBar contentClassName="gap-0">
       {/* Masthead — the page header every other screen opens on. */}
       <SectionHeader
         eyebrow="Practice bench"
         title={isBossMode ? "Boss Battle" : "Team Select"}
       >
-        <p className="mt-2 max-w-[68ch] font-body text-sm leading-relaxed text-ground-dim">
-          {isBossMode
-            ? "Build a team, then pick one boss. Bosses act three times a turn."
-            : "Any character in the game, owned or not. Nothing here touches your save."}
-        </p>
+        {isBossMode ? (
+          <p className="mt-2 max-w-[68ch] font-body text-sm leading-relaxed text-ground-dim">
+            Build a team, then pick one boss. Bosses act three times a turn.
+          </p>
+        ) : null}
       </SectionHeader>
 
       {/* Setup strip. Mode and format are settings, not actions — they used to
@@ -219,12 +220,22 @@ export default function TeamSelect({
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
+          {/* The format's rule is an explanation, so it lives behind the
+              explanatory primitive rather than on the page. */}
+          <Hint
+            ariaLabel="About formats"
+            content={
+              <span>
+                {FORMATS[format].hint}. A sub&apos;s passive works from the
+                bench; it enters at the start of a new turn after a teammate
+                falls.
+              </span>
+            }
+            className="inline-flex min-h-11 min-w-11 items-center justify-center text-muted-foreground"
+          >
+            <Info className="size-4" strokeWidth={2.2} aria-hidden />
+          </Hint>
         </Setting>
-
-        <p className="min-w-[18rem] flex-1 font-body text-caption leading-snug text-muted-foreground">
-          {FORMATS[format].hint}. A sub&apos;s passive works from the bench; it
-          enters at the start of a new turn after a teammate falls.
-        </p>
       </div>
 
       {/* The matchup. Two identical pickers read as two equal teams, so a VS
@@ -325,7 +336,7 @@ export default function TeamSelect({
         {/* `pb-safe` replaces the bottom half of `py-3`: this bar is pinned to
             the screen edge, and START would otherwise sit under the iOS home
             indicator. */}
-        <div className="pb-safe mx-auto flex w-full max-w-6xl items-center gap-3 px-4 pt-3 md:px-8">
+        <div className="pb-safe mx-auto flex w-full max-w-app items-center gap-3 px-4 pt-3 md:px-8">
           <span className="min-w-0 font-body text-caption leading-snug text-muted-foreground">
             {canStart ? (
               <>
@@ -353,11 +364,11 @@ export default function TeamSelect({
             Clear all
           </Button>
           <Button size="lg" disabled={!canStart} onClick={handleStart} className="px-8">
-            {isBossMode ? "Start boss battle" : "Start battle"}
+            Fight
           </Button>
         </div>
       </div>
-    </section>
+    </Screen>
   );
 }
 
@@ -404,14 +415,15 @@ function QuickAction({
   );
 }
 
-/** Says what's still missing rather than leaving a disabled button unexplained. */
+/** Says which opposing pick is still missing; silent on an empty own team. */
 function missingLabel(
   isBossMode: boolean,
   playerCount: number,
   enemyCount: number,
   boss: CharacterData | null,
 ): string {
-  if (playerCount === 0) return "Pick at least one unit for your team";
+  // No empty-team sentence: the empty slots and the disabled Start say it.
+  if (playerCount === 0) return "";
   if (isBossMode && !boss) return "Pick a boss to fight";
   if (!isBossMode && enemyCount === 0) return "Pick at least one opponent";
   return "";

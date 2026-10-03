@@ -9,6 +9,7 @@ import {
   getDamageReductionMultiplier,
 } from "./stats";
 import { getEffectiveCritDamage } from "./substats";
+import { countDistinctDebuffs } from "./debuffCount";
 
 export interface DamageCalculationParams {
   baseDamage: number; // Pre-calculated (e.g. source.currentAttack * skill multiplier)
@@ -65,6 +66,18 @@ export function calculateDamage({ baseDamage, skillMechanics, target, attackerCo
     if (hasDebuff) {
       extraDamage += effectiveBaseDamage * 2.0; // Base(1x) + Extra(2x) = 3x total
     }
+  }
+
+  // Co-Destruction: +N% damage per DISTINCT debuff on the target, additive on
+  // the effective base like Ignite above. The counting rule is
+  // `countDistinctDebuffs` (Ignite at any stack count is one, uncancellable
+  // effects are not debuffs).
+  const coDestruction = skillMechanics.find((m) => m.type === "coDestruction");
+  if (coDestruction) {
+    extraDamage +=
+      effectiveBaseDamage *
+      ((coDestruction.valuePercentPerDebuff / 100) *
+        countDistinctDebuffs(target));
   }
 
   // Rupture Calculation (x2 total damage if target has >= 1 buff)

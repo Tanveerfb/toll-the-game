@@ -106,6 +106,22 @@ describe("per-unit art folders", () => {
     expect(broken).toEqual([]);
   });
 
+  // His call, 2026-10-03: a unit's tile and its portrait are the same image.
+  // A unit with tile art therefore has a portrait re-cut from the tile's
+  // transparent cut-out, and the background behind it comes from the screen
+  // (the detail page's element burst, the battle's ground). An opaque portrait
+  // here would paint a box over both. PNG colour type is byte 25 of the file:
+  // 6 is RGBA, 2 is opaque RGB.
+  it("cuts the portrait of every unit with tile art as a transparent RGBA PNG", () => {
+    const opaque = registeredTileArt.filter((id) => {
+      const url = getCharacterArt(id);
+      if (url === null) return true;
+      const file = fs.readFileSync(path.join(process.cwd(), "public", url.split("?")[0]));
+      return file[25] !== 6;
+    });
+    expect(opaque).toEqual([]);
+  });
+
   it("names the folder after the kit's colour", () => {
     expect(artFolder("lyra")).toBe("red_lyra");
     expect(getCharacterArt("lyra")).toContain(

@@ -5,7 +5,7 @@ import React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import MountedDialog from "@/components/ui/MountedDialog";
-import { cn } from "@/lib/utils";
+import { SelectTile } from "@/components/ui/SelectTile";
 import PlayerAvatar from "@/components/game/PlayerAvatar";
 import { useAuth } from "@/hooks/AuthProvider";
 import { usePlayerStore } from "@/store/playerStore";
@@ -115,38 +115,25 @@ export default function AccountModal({
           {/* A portrait picker, not an upload: there's no storage bucket to
               upload to, and pretending otherwise would be a dead button. */}
           <div className="flex flex-wrap gap-1.5">
-            <button
-              type="button"
+            <SelectTile
+              selected={avatarId === null}
               onClick={() => setAvatarId(null)}
-              aria-pressed={avatarId === null}
               aria-label="Use the initial instead"
-              // Picked is the action yellow, as everywhere else.
-              className={cn(
-                "flex h-12 w-12 items-center justify-center border-2 font-heading text-lg transition-colors",
-                avatarId === null
-                  ? "border-border bg-primary text-primary-foreground"
-                  : "border-rule text-muted-foreground hover:border-border",
-              )}
+              className="flex h-12 w-12 items-center justify-center font-heading text-lg text-muted-foreground"
             >
               {displayName.charAt(0).toUpperCase()}
-            </button>
+            </SelectTile>
             {roster.map((id) => {
               const art = getCharacterArt(id);
               const name = getCharacterById(id)?.name ?? id;
               const active = avatarId === id;
               return (
-                <button
+                <SelectTile
                   key={id}
-                  type="button"
+                  selected={active}
                   onClick={() => setAvatarId(id)}
-                  aria-pressed={active}
                   aria-label={name}
-                  className={cn(
-                    "relative h-12 w-12 overflow-hidden border-2 transition-colors",
-                    active
-                      ? "border-border ink-slab-primary"
-                      : "border-rule hover:border-border",
-                  )}
+                  className="relative h-12 w-12 overflow-hidden"
                 >
                   {art ? (
                     <Image
@@ -161,7 +148,7 @@ export default function AccountModal({
                       {name.charAt(0)}
                     </span>
                   )}
-                </button>
+                </SelectTile>
               );
             })}
           </div>

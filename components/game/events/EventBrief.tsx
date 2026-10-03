@@ -1,10 +1,9 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
-import { ChevronLeft } from "lucide-react";
 
 import { Alert } from "@/components/ui/alert";
+import BackLink from "@/components/ui/BackLink";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/Panel";
@@ -14,11 +13,8 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import AutoClearConfirm from "@/components/game/AutoClearConfirm";
 import TeamPicker from "@/components/game/TeamPicker";
 import { RewardChips } from "@/components/game/events/RewardList";
-import { getCharacterArt } from "@/lib/game/characterArt";
-import {
-  getCharacterById,
-  type CharacterData,
-} from "@/lib/game/characterCatalog";
+import EnemyPanel from "@/components/game/events/EnemyPanel";
+import type { CharacterData } from "@/lib/game/characterCatalog";
 import {
   eventFightCount,
   eventLockReason,
@@ -27,7 +23,6 @@ import {
 } from "@/lib/game/events";
 import { autoClearAvailability, maxBatchSize } from "@/lib/game/autoClear";
 import { enemyLevelForDifficulty } from "@/lib/game/worldLevel";
-import { battleStats } from "@/lib/game/battleStats";
 import { tierKey } from "@/lib/game/worldBossRewards";
 import { farmablePreview, firstClearPreview } from "@/lib/game/worldBossPreview";
 
@@ -41,7 +36,6 @@ export interface EventBriefState {
   difficulties: number[];
   currentStamina: number;
   accountRank: number;
-  rankCap: number;
   clearedWalls: number[];
   clearedEvents: string[];
   autoClearTickets: number;
@@ -56,95 +50,25 @@ function EnemyCard({
   event: GameEvent;
   difficulty: number;
 }): React.JSX.Element {
-  const enemy = event.enemyId ? getCharacterById(event.enemyId) : null;
-  const art = event.enemyId ? getCharacterArt(event.enemyId) : null;
-  const phases = eventPhaseCount(event);
-  /**
-   * What the enemy actually fights at on this difficulty, from the same
-   * pipeline the battle builds him through. This printed the catalog
-   * statline beside "Level 26 at difficulty 2", so the brief said the level
-   * rose and showed stats that did not (Tanveer, 2026-09-26). First phase
-   * only — the phases line says there are more.
-   */
-  const stats = enemy
-    ? battleStats(enemy, {
-        progression: {
-          level: event.kind === "boss" ? enemyLevelForDifficulty(difficulty) : 1,
-          ascension: 0,
-        },
-        side: "enemy",
-      })
-    : null;
   return (
-    <Panel surface="paper" lift="slab" className="flex gap-3">
-      <span className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden border-2 border-border bg-muted">
-        {art ? (
-          <Image
-            src={art}
-            alt=""
-            fill
-            sizes="96px"
-            className="object-cover object-top"
-          />
-        ) : (
-          <span className="font-heading text-4xl text-muted-foreground">☠</span>
-        )}
-      </span>
-      <div className="min-w-0">
-        <p className="font-heading text-xl tracking-title">
-          {enemy?.name ?? event.name}
-        </p>
-        {/**
-         * Only a named enemy gets a tier line.
-         *
-         * This read `enemy?.tier === "elite" ? "Elite" : "Standard"`, and a
-         * trial resolves no enemy at all — so the First Ascension Trial
-         * announced itself as **Standard** while its last fight is Molvarr,
-         * who is `tier: "elite"`. A falsy `enemy` was being reported as a
-         * fact about the fight (browser check, 2026-09-17).
-         */}
-        {enemy ? (
-          <p className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
-            {enemy.tier === "elite" ? "Elite" : "Standard"}
-            {phases > 1 ? ` · ${phases} phases` : ""}
-          </p>
-        ) : null}
-        {stats ? (
-          <div className="mt-2 flex gap-4">
-            {(
-              [
-                ["HP", stats.hp],
-                ["ATK", stats.atk],
-                ["DEF", stats.def],
-              ] as const
-            ).map(([label, value]) => (
-              <span key={label}>
-                <span className="block font-body text-label font-bold uppercase tracking-label text-muted-foreground">
-                  {label}
-                </span>
-                <span className="block font-heading text-base tabular-nums">
-                  {value.toLocaleString()}
-                </span>
-              </span>
-            ))}
-          </div>
-        ) : null}
-        {event.kind === "boss" ? (
-          // The yellow badge: this line moves when the difficulty toggle
-          // does, so it wears the same colour as the selected toggle.
-          <Badge className="mt-2">
-            Level {enemyLevelForDifficulty(difficulty)} at difficulty{" "}
-            {difficulty}
-          </Badge>
-        ) : (
+    <EnemyPanel
+      enemyId={event.enemyId ?? null}
+      fallbackName={event.name}
+      // What the enemy actually fights at on this difficulty. First phase only
+      // - the phases line says there are more.
+      level={event.kind === "boss" ? enemyLevelForDifficulty(difficulty) : 1}
+      phases={eventPhaseCount(event)}
+      pageTitle={event.name}
+      badge={
+        event.kind === "boss" ? null : (
           // A trial's enemies carry authored levels, so the world level dial
           // never reaches them. Say what the run IS.
           <Badge className="mt-2">
             {eventFightCount(event)} fights · one HP bar
           </Badge>
-        )}
-      </div>
-    </Panel>
+        )
+      }
+    />
   );
 }
 
@@ -159,16 +83,12 @@ function DifficultyLadder({
   event,
   difficulty,
   difficulties,
-  rankCap,
-  accountRank,
   clearedEvents,
   onPick,
 }: {
   event: GameEvent;
   difficulty: number;
   difficulties: number[];
-  rankCap: number;
-  accountRank: number;
   clearedEvents: string[];
   onPick: (level: number) => void;
 }): React.JSX.Element {
@@ -205,17 +125,12 @@ function DifficultyLadder({
                   ? "Locked"
                   : clearedEvents.includes(tierKey(event.id, level))
                     ? "Cleared"
-                    : "New"}
+                    : null}
               </span>
             </ToggleGroupItem>
           );
         })}
       </ToggleGroup>
-      <p className="mt-2 font-body text-caption leading-snug text-muted-foreground">
-        World level {rankCap} is your cap at account rank {accountRank}. Each
-        difficulty is its own fight with its own one-off bundle and its own drop
-        table — and each has to be beaten before it can be auto cleared.
-      </p>
     </Panel>
   );
 }
@@ -257,11 +172,6 @@ function RewardPreview({
 
       <SectionHeader size="block" eyebrow="Every clear" rule />
       <RewardChips rows={farmablePreview(difficulty)} />
-      <p className="mt-2 font-body text-caption leading-snug text-muted-foreground">
-        {alreadyCleared
-          ? "Ranges, not promises — the roll happens on victory. This difficulty's first-clear bundle is already paid."
-          : "The bundle above is fixed and pays once, for this difficulty. Everything below rolls, every time."}
-      </p>
     </Panel>
   );
 }
@@ -297,7 +207,6 @@ export default function EventBrief({
     difficulties,
     currentStamina,
     accountRank,
-    rankCap,
     clearedWalls,
     clearedEvents,
     autoClearTickets,
@@ -343,21 +252,7 @@ export default function EventBrief({
 
   return (
     <Screen width="app">
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        {/* The primitive, not a hand-rolled link: it was a ~20px tap target
-            in a bare `<button>`, and `size="xs"` carries the 44px floor
-            (rulings #119–120). `variant="link"` keeps it reading as a
-            breadcrumb rather than an action. */}
-        <Button
-          variant="link"
-          size="xs"
-          onClick={onBack}
-          className="gap-1 px-0"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" strokeWidth={2.6} />
-          Events
-        </Button>
-      </div>
+      <BackLink label="Events" onClick={onBack} />
       <SectionHeader eyebrow={event.kicker} title={event.name} />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_20rem]">
@@ -370,8 +265,6 @@ export default function EventBrief({
                 event={event}
                 difficulty={difficulty}
                 difficulties={difficulties}
-                rankCap={rankCap}
-                accountRank={accountRank}
                 clearedEvents={clearedEvents}
                 onPick={onPickDifficulty}
               />
@@ -432,7 +325,7 @@ export default function EventBrief({
               onClick={onEnter}
               className={auto.eligible ? undefined : "ml-auto"}
             >
-              Enter battle
+              Fight
             </Button>
           </Panel>
 
@@ -447,17 +340,16 @@ export default function EventBrief({
            * line above put a `<` between the tag and the attribute and the
            * guard's walk-back landed on it (both fixed 2026-09-17).
            *
-           * Only shown when Auto Clear is eligible and blocked: an event that
-           * never offers it says nothing, and an available one needs no
-           * explanation.
+           * Only shown when Auto Clear is eligible and blocked for a reason the
+           * screen does not already show: the "locked" case (the tier is not
+           * beaten yet) is carried by the disabled button alone, and the
+           * "Cleared" chips on the ladder.
            */}
-          {auto.eligible && auto.blocker ? (
+          {auto.eligible && auto.blocker && auto.blocker !== "locked" ? (
             <Alert>
-              {auto.blocker === "locked"
-                ? `Beat ${event.name} once yourself to unlock Auto Clear. A ticket skips the fight — it never skips the stamina.`
-                : auto.blocker === "no-tickets"
-                  ? "No Auto Clear Tickets. They arrive with account ranks."
-                  : "Not enough stamina — Auto Clear still pays the full cost of every run it skips."}
+              {auto.blocker === "no-tickets"
+                ? "No Auto Clear tickets. They arrive with account ranks."
+                : "Not enough stamina — Auto Clear still pays the full cost of every run it skips."}
             </Alert>
           ) : null}
         </div>

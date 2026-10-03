@@ -1,16 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronRight } from "lucide-react";
 import ItemIcon from "@/components/game/ItemIcon";
 import React from "react";
 import { usePlayerStore, type ResolvedPullOutcome } from "@/store/playerStore";
 import { getGemBanner, getTicketBanner } from "@/lib/gacha/banners";
+import { ticketNoun } from "@/lib/game/rewardParts";
 import { getCharacterArt } from "@/lib/game/characterArt";
 import ConfirmPullModal from "@/components/gacha/ConfirmPullModal";
 import RatesModal from "@/components/gacha/RatesModal";
-import FeaturedModal from "@/components/gacha/FeaturedModal";
-import ClaimSection from "@/components/gacha/ClaimSection";
+import FeaturedSheet from "@/components/gacha/FeaturedSheet";
+import MilestoneSheet from "@/components/gacha/MilestoneSheet";
 import PullReveal from "@/components/gacha/PullReveal";
 import {
   canClaimLimitedFinal,
@@ -29,22 +29,37 @@ import {
 } from "@/lib/gacha/cost";
 import { Screen } from "@/components/ui/Screen";
 import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { panelVariants } from "@/components/ui/Panel";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 type Tab = "limited" | "permanent";
 
-/** Where a milestone marker sits on the track, as a percentage. */
-function markerAt(threshold: number, final: number): number {
-  return Math.min(100, (threshold / final) * 100);
-}
+/** How many portraits the featured panel shows as a glance. */
+const FEATURED_FACES = 6;
 
+/**
+ * The summon screen is a manga page (Tanveer's pick, 2026-10-03: Option C of
+ * docs/design/mockups/gacha-overhaul.html): slanted panels with ink gutters, the
+ * banner as the splash, featured and milestone as two small panels, and the
+ * draw as the action panel at the foot.
+ *
+ * **One screen, no page scroll, the draw buttons in the thumb zone.** The page
+ * is a column at least as tall as the space between the bars; the splash is the
+ * one flexible part, so it absorbs whatever height is left and the draw panel
+ * lands at the bottom, directly above the tab bar. The draw panel is `sticky`
+ * to `--tabbar-h`, so on a phone too short for the splash's minimum height the
+ * page scrolls and the buttons stay pinned where the thumb is rather than
+ * clipping. On a tall desktop the splash stops growing (it is a 2:1 plate) and
+ * the page sits at the top of the same centred column.
+ */
 export default function BannerScreen(): React.JSX.Element {
   const [tab, setTab] = React.useState<Tab>("limited");
   const [showRates, setShowRates] = React.useState(false);
-  const [showFeatured, setShowFeatured] = React.useState(false);
   // A draw is confirmed before it rolls: 50 gems is ten Molvarr first clears,
   // and it used to fire on one tap of a button whose only warning was its own
   // label (Tanveer, 2026-08-13).
@@ -77,14 +92,14 @@ export default function BannerScreen(): React.JSX.Element {
 
   const isLimited = tab === "limited";
   const featured = isLimited ? gemBanner.featured : ticketBanner.featured;
-  // Ownership of the featured pool, resolved once for both the summary row and
-  // the modal's table.
+  // Ownership of the featured pool, resolved once for both the panel and the
+  // sheet it opens.
   const featuredRows = featured.map((id) => ({
     id,
     owned: hasHydrated && roster.includes(id),
+    level: characters[id]?.level ?? 1,
     ultLevel: characters[id]?.ultLevel ?? 1,
   }));
-  const ownedFeatured = featuredRows.filter((row) => row.owned).length;
   const bar = isLimited ? pity.limited.bar : pity.permanent.bar;
   const finalThreshold = isLimited
     ? LIMITED_MILESTONE_FINAL
@@ -103,6 +118,7 @@ export default function BannerScreen(): React.JSX.Element {
   /** The banner's currency, as a material id - what its icon resolves from. */
   const currencyIcon = isLimited ? "gems" : "permanent_ticket";
   const unit = isLimited ? "gems" : "tickets";
+  const bannerName = isLimited ? gemBanner.name : "Permanent Banner";
 
   // The permanent pool is every character flagged `permanentPool`, which is
   // currently none — the tab used to render a live Draw button over an empty
@@ -127,6 +143,9 @@ export default function BannerScreen(): React.JSX.Element {
   const claimableFinal = isLimited
     ? canClaimLimitedFinal(pity.limited.bar, pity.limited.claimedFinal)
     : canClaimPermanentFinal(pity.permanent.bar, pity.permanent.claimedFinal);
+  // The panel says so itself: a reward behind a tap that nothing points at is
+  // a reward the player does not collect.
+  const claimable = hasHydrated && (claimableFirst || claimableFinal);
 
   const draw = (count: 1 | 11) => {
     const results = isLimited ? pullLimited(count) : pullPermanent(count);
@@ -142,267 +161,256 @@ export default function BannerScreen(): React.JSX.Element {
     setReveal({ results, count });
   };
 
+  /** "1 ticket", "10 tickets", "150 gems": the noun agrees with the count. */
+  const costText = (cost: number) =>
+    `${cost} ${isLimited ? "gems" : ticketNoun(cost)}`;
   const drawLabel = (count: 1 | 11) =>
-    `Draw ×${count} · ${count === 1 ? singleCost : multiCost} ${unit}`;
+    `Draw ×${count} · ${costText(count === 1 ? singleCost : multiCost)}`;
 
   return (
-    <Screen width="app">
-        {ticketBannerAvailable ? (
-          // The shadcn tabs (ruling #154), on the ground.
-          <Tabs
-            value={tab}
-            onValueChange={(value) => {
-              setTab(value as Tab);
-              setNotice(null);
-            }}
-          >
-            <TabsList>
-              {(["limited", "permanent"] as const).map((t) => (
-                <TabsTrigger key={t} value={t} className="uppercase tracking-label">
-                  <ItemIcon
-                    id={t === "limited" ? "gems" : "permanent_ticket"}
-                    size={18}
-                    alt=""
-                  />
-                  {t === "limited" ? "Gems" : "Tickets"}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        ) : null}
+    // A flex column so the section can fill the height between the bars and
+    // the splash inside it can take whatever is left (`min-` height, so a short
+    // phone grows the page instead of clipping it).
+    <Screen
+      width="app"
+      className="flex flex-col"
+      contentClassName="flex-1 gap-2 py-3 md:py-6"
+    >
+      {ticketBannerAvailable ? (
+        // The shadcn tabs (ruling #154), on the ground.
+        <Tabs
+          value={tab}
+          onValueChange={(value) => {
+            setTab(value as Tab);
+            setNotice(null);
+          }}
+        >
+          <TabsList>
+            {(["limited", "permanent"] as const).map((t) => (
+              <TabsTrigger key={t} value={t} className="uppercase tracking-label">
+                <ItemIcon
+                  id={t === "limited" ? "gems" : "permanent_ticket"}
+                  size={18}
+                  alt=""
+                />
+                {t === "limited" ? "Gems" : "Tickets"}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      ) : null}
 
-        {/* BANNER */}
-        {/* The banner is a hero image, so it gets the motif's speed lines
-            (docs/design-system.md: behind a hero, never behind text). */}
-        <div className="relative h-40 overflow-hidden border-2 border-ground-line bg-ground-raised ink-slab md:h-48">
-          <Image
-            src={
-              isLimited
-                ? "/banners/debut-2026-08.png"
-                : "/banners/debut-2026-08-placeholder.svg"
-            }
-            alt=""
-            fill
-            priority
-            sizes="(max-width: 768px) 100vw, 672px"
-            // `object-top`, not the default centre. The plate has its own title
-            // painted into the bottom of the artwork — "V1. BETA ROSTER BANNER"
-            // in gold, source y 672-724 of 768 — and `BannerScreen` renders
-            // that same string as the heading laid over it, so the screen
-            // showed the banner's name twice, the second time as a half-cut
-            // band of art. Found in a browser 2026-09-01. A textless
-            // re-render is queued as D2 in docs/ART_REQUESTS.md; this pair of
-            // workarounds holds until it lands, and both go when it does.
-            //
-            // `object-top` alone does not do it, which is worth writing down
-            // because the arithmetic is not obvious: the image box is 349 wide
-            // inside the section's padding, not the 393 of the viewport, so a
-            // 2:1 source covering a 159-tall box shows source y 0..700 — still
-            // 28px into the band. Hence the scrim below as well.
-            className="object-cover object-top opacity-55"
-          />
-          <span className="absolute inset-0 speed-lines" />
-          <span className="absolute inset-0 bg-linear-to-r from-background via-background/70 to-transparent" />
-          {/* Buries whatever of the wordmark the crop leaves. Deliberately
-              generous: the exact overlap moves with the container's width, and
-              a scrim that is too tall costs nothing here — the plate's own
-              composition puts its characters in the upper two thirds, and the
-              screen already reads this art through two other gradients. */}
-          <span className="absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-background via-background/85 to-transparent" />
-          <div className="relative flex h-full max-w-[70%] flex-col justify-center gap-1 px-5">
-            <span className="font-body text-label font-bold uppercase tracking-eyebrow text-primary">
+      {/* SPLASH — the banner, and the one panel that flexes. */}
+      {/* 28rem: local cap, so the splash does not stretch on a tall desktop. */}
+      <div className="relative min-h-40 flex-1 md:max-h-[28rem]">
+        <div className="panel-cut-hero absolute inset-0 overflow-hidden border-2 border-ground-line bg-card-foreground">
+          {/* The art is laid out TALLER than the panel and anchored to its top,
+              so the bottom of the plate falls outside the panel and is cut by
+              `overflow-hidden`. The plate has its own title painted into the
+              bottom of the artwork — "V1. BETA ROSTER BANNER" in gold, source y
+              672-724 of 768, which is 87.5% of the image's height — and the
+              caption box below already names the banner, so the screen showed
+              it twice, the second time as a half-cut band of art (found in a
+              browser 2026-09-01). At 120% of the panel's height that band
+              starts at 105% of it, below the edge, however tall the panel
+              grows. This replaces the old crop-plus-scrim pair, which only
+              worked at one container width. A textless re-render is queued as
+              D2 in docs/ART_REQUESTS.md; this goes when it lands. */}
+          <div className="absolute inset-x-0 top-0 h-[120%]">
+            <Image
+              src={
+                isLimited
+                  ? "/banners/debut-2026-08.png"
+                  : "/banners/debut-2026-08-placeholder.svg"
+              }
+              alt=""
+              fill
+              priority
+              sizes="(max-width: 896px) 100vw, 896px"
+              className="object-cover object-top"
+            />
+          </div>
+          <div className="absolute left-2.5 top-2.5 flex max-w-[70%] flex-col gap-0.5 border-2 border-border bg-card px-2.5 py-1.5 text-card-foreground ink-slab-sm">
+            <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
               {/* No end date and no "Limited" — the beta roster was always
                   meant to be permanent (Tanveer, 2026-08-13). */}
-              Permanent · {isLimited ? "gems" : "tickets"}
+              Permanent · {unit}
             </span>
-            <span className="font-heading text-2xl leading-tight tracking-title md:text-3xl">
-              {isLimited ? gemBanner.name : "Permanent Banner"}
+            <span className="font-heading text-2xl leading-none tracking-title">
+              {bannerName}
             </span>
-            <span className="font-body text-xs text-ground-dim">
-              {isLimited
-                ? `${(gemBanner.rate * 100).toFixed(0)}% featured · ${featured.length} units`
-                : poolEmpty
-                  ? "No units in the pool yet"
-                  : `${featured.length} units · every pull is a character`}
-            </span>
-          </div>
-        </div>
-
-        {/* FEATURED — which of these you already have is the whole reason a
-            pull is exciting or a shrug.
-
-            A row that opens a table, not a grid of portraits (Tanveer,
-            2026-09-01). The grid was twelve 44px tiles whose name and ownership
-            each sat behind a `Hint`: correct under ruling #125 — a tap opens
-            it, unlike the `title=` it replaced — but twelve taps to read one
-            banner. The count answers the usual question without opening
-            anything, and `FeaturedModal` answers the rest in one place. */}
-        {featured.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => setShowFeatured(true)}
-            className={cn(
-              panelVariants({ surface: "paper", density: "tight", press: true }),
-              "flex w-full items-center gap-3",
-            )}
-          >
-            <span className="flex min-w-0 flex-col gap-0.5">
-              <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
-                Featured
-              </span>
-              <span className="font-body text-sm">
-                {hasHydrated
-                  ? `${ownedFeatured} of ${featured.length} owned`
-                  : `${featured.length} units`}
-              </span>
-            </span>
-            {/* The portraits still carry the glance — five of them, as a
-                sample, so the row says what kind of units these are without
-                pretending to be the full list. */}
-            <span className="ml-auto flex shrink-0 -space-x-2">
-              {featured.slice(0, 5).map((id) => {
-                const art = getCharacterArt(id);
-                const owned = hasHydrated && roster.includes(id);
-                return (
-                  <span
-                    key={id}
-                    className={`relative h-9 w-9 overflow-hidden border-2 bg-muted ${
-                      owned ? "border-border" : "border-rule opacity-45"
-                    }`}
-                  >
-                    {art ? (
-                      <Image
-                        src={art}
-                        alt=""
-                        fill
-                        sizes="36px"
-                        className="object-cover object-top"
-                      />
-                    ) : null}
-                  </span>
-                );
-              })}
-            </span>
-            <ChevronRight
-              className="h-4 w-4 shrink-0 text-muted-foreground"
-              strokeWidth={2}
-            />
-          </button>
-        ) : null}
-
-        {/* MILESTONE TRACK */}
-        <div className={panelVariants({ surface: "paper", density: "default" })}>
-          <div className="flex items-baseline justify-between">
-            <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
-              Milestone
-            </span>
-            <span className="font-heading text-lg leading-none tracking-title tabular-nums">
-              {hasHydrated ? bar.toLocaleString() : "—"}
-              <span className="ml-1 font-body text-label font-bold text-muted-foreground">
-                / {finalThreshold.toLocaleString()} {unit} spent
-              </span>
-            </span>
-          </div>
-          <div className="relative mt-2 mb-5 h-2.5 border border-border bg-muted">
-            <span
-              className="block h-full bg-primary transition-[width] duration-500"
-              style={{ width: hasHydrated ? `${barPercent}%` : "0%" }}
-            />
-            {firstThreshold !== null ? (
-              <span
-                className="absolute -top-1 h-4.5 w-0.5 bg-border"
-                style={{ left: `${markerAt(firstThreshold, finalThreshold)}%` }}
-              >
-                <span className="absolute left-1/2 top-5 -translate-x-1/2 font-body text-label font-bold tabular-nums text-muted-foreground">
-                  {firstThreshold}
-                </span>
+            {poolEmpty ? (
+              <span className="font-body text-caption text-muted-foreground">
+                No units in the pool yet
               </span>
             ) : null}
-            <span className="absolute -top-1 right-0 h-4.5 w-1 border border-border bg-el-light">
-              <span className="absolute left-1/2 top-5 -translate-x-1/2 font-body text-label font-bold tabular-nums text-muted-foreground">
-                {finalThreshold}
-              </span>
-            </span>
           </div>
-
-          <ClaimSection
-            bar={bar}
-            firstThreshold={firstThreshold}
-            finalThreshold={finalThreshold}
-            firstTitle="Random featured unit"
-            firstDetail="Rolled for you from this banner"
-            claimableFirst={claimableFirst}
-            claimedFirst={pity.limited.claimedFirst}
-            claimableFinal={claimableFinal}
-            claimedFinal={
-              isLimited ? pity.limited.claimedFinal : pity.permanent.claimedFinal
-            }
-            featured={featured}
-            onClaimFirst={() => {
-              const result = claimLimitedFirst();
-              if (result) setReveal({ results: [result], count: 1 });
-            }}
-            onClaimFinal={(characterId) => {
-              const result = isLimited
-                ? claimLimitedFinal(characterId)
-                : claimPermanentFinal(characterId);
-              if (result) setReveal({ results: [result], count: 1 });
-            }}
-          />
         </div>
+        {/* A sibling of the clipped panel, not a child: the burst overhangs
+            its cut edge. */}
+        {!poolEmpty ? (
+          <span className="ink-burst pointer-events-none absolute bottom-9 right-3 z-10 bg-primary px-3.5 py-2.5 font-heading text-base leading-none tracking-title text-primary-foreground">
+            {isLimited
+              ? `${(gemBanner.rate * 100).toFixed(0)}% featured!`
+              : "Every pull a unit!"}
+          </span>
+        ) : null}
+      </div>
 
-        {notice ? (
-          <Alert variant="destructive">{notice}</Alert>
+      {/* FEATURED and MILESTONE — two panels, each one tap target, tucked
+          under the splash's cut. Which featured units you already have is the
+          whole reason a pull is exciting or a shrug, so a row of
+          faces answers it without opening anything; the sheet answers the rest
+          (Tanveer, 2026-09-01: not twelve taps to read one banner). */}
+      <div className="relative -mt-6 grid grid-cols-2 gap-2">
+        {featured.length > 0 ? (
+          <FeaturedSheet
+            rows={featuredRows}
+            hasHydrated={hasHydrated}
+            trigger={
+              <button
+                type="button"
+                className={cn(
+                  panelVariants({ surface: "paper", density: "none", press: true }),
+                  "panel-cut-rise flex min-w-0 flex-col gap-1.5 px-2.5 pb-2.5 pt-8 outline-none focus-visible:inset-ring-4 focus-visible:inset-ring-ring",
+                )}
+              >
+                <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
+                  Featured
+                </span>
+                {/* Owned in full colour, the rest greyed: the glance. */}
+                <span className="flex -space-x-2">
+                  {featured.slice(0, FEATURED_FACES).map((id) => {
+                    const art = getCharacterArt(id);
+                    const owned = hasHydrated && roster.includes(id);
+                    return (
+                      <span
+                        key={id}
+                        className={cn(
+                          "relative size-7 overflow-hidden border-2 border-border bg-muted",
+                          !owned && "grayscale opacity-50",
+                        )}
+                      >
+                        {art ? (
+                          <Image
+                            src={art}
+                            alt=""
+                            fill
+                            sizes="28px"
+                            className="object-cover object-top"
+                          />
+                        ) : null}
+                      </span>
+                    );
+                  })}
+                </span>
+              </button>
+            }
+          />
         ) : null}
 
-        {/* DRAW — the cost is on the button. It used to be discovered by
-            watching the balance tick down afterwards. */}
-        <div className="flex gap-2">
-          {([1, MULTI_PULL_COUNT] as const).map((count) => {
-            const cost = count === 1 ? singleCost : multiCost;
-            const main = count !== 1;
-            // The multi-draw is the screen's primary action (the slanted
-            // yellow button); the single draw is the paper one beside it.
-            return (
-              <Button
-                key={count}
-                variant={main ? "default" : "secondary"}
-                size="xl"
-                disabled={!canAfford(cost)}
-                onClick={() => setPendingDraw(count === 1 ? 1 : 11)}
-                className="h-auto flex-1 flex-col gap-0 py-2.5"
-              >
-                <span className="block">Draw ×{count}</span>
-                <span className="block font-body text-label font-bold uppercase tracking-label">
-                  {cost} {unit}
-                  {main ? " · one free pull" : ""}
+        <MilestoneSheet
+          trigger={
+            <button
+              type="button"
+              className={cn(
+                panelVariants({ surface: "paper", density: "none", press: true }),
+                "panel-cut-fall flex min-w-0 flex-col gap-1.5 bg-muted px-2.5 pb-2.5 pt-8 outline-none hover:bg-card focus-visible:inset-ring-4 focus-visible:inset-ring-ring",
+                featured.length === 0 && "col-span-2",
+              )}
+            >
+              <span className="flex items-center justify-between gap-2">
+                <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
+                  Milestone
                 </span>
-              </Button>
-            );
-          })}
-        </div>
+                {claimable ? <Badge>Claim</Badge> : null}
+              </span>
+              <span className="flex items-baseline gap-1">
+                <span className="font-heading text-3xl leading-none tabular-nums">
+                  {hasHydrated ? bar.toLocaleString() : <Skeleton className="h-[1em] w-10" />}
+                </span>
+                <span className="font-body text-label font-bold uppercase tracking-label text-muted-foreground">
+                  / {finalThreshold.toLocaleString()} spent
+                </span>
+              </span>
+              <Progress value={hasHydrated ? barPercent : 0} />
+            </button>
+          }
+          hasHydrated={hasHydrated}
+          unit={unit}
+          bar={bar}
+          firstThreshold={firstThreshold}
+          finalThreshold={finalThreshold}
+          firstTitle="Random featured unit"
+          claimableFirst={claimableFirst}
+          claimedFirst={pity.limited.claimedFirst}
+          claimableFinal={claimableFinal}
+          claimedFinal={
+            isLimited ? pity.limited.claimedFinal : pity.permanent.claimedFinal
+          }
+          featured={featured}
+          onClaimFirst={() => {
+            const result = claimLimitedFirst();
+            if (result) setReveal({ results: [result], count: 1 });
+          }}
+          onClaimFinal={(characterId) => {
+            const result = isLimited
+              ? claimLimitedFinal(characterId)
+              : claimPermanentFinal(characterId);
+            if (result) setReveal({ results: [result], count: 1 });
+          }}
+        />
+      </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="flex items-center gap-1.5 font-body text-sm font-bold tabular-nums">
-            <ItemIcon id={currencyIcon} size={22} alt="" />
-            {hasHydrated ? balance.toLocaleString() : "—"}{" "}
-            <span className="font-bold uppercase tracking-label text-ground-dim">
-              {unit}
+      {notice ? <Alert variant="destructive">{notice}</Alert> : null}
+
+      {/* DRAW — the action panel, on speed rays, pinned directly above the tab
+          bar. The cost is on the button: it used to be discovered by watching
+          the balance tick down afterwards. The balance lives here, once. */}
+      <div className="panel-cut-action speed-rays sticky bottom-[var(--tabbar-h)] z-20 grid grid-cols-[1fr_1.5fr] gap-2.5 px-3 pb-3 pt-7 text-foreground">
+        <div className="col-span-2 flex items-center gap-2">
+          {/* Gems are in the top bar already; tickets are not, so theirs stays. */}
+          {!isLimited ? (
+            <span className="flex items-center gap-1.5 bg-card-foreground px-2 py-1 font-body text-sm font-bold tabular-nums">
+              <ItemIcon id={currencyIcon} size={20} alt="" />
+              {hasHydrated ? balance.toLocaleString() : <Skeleton tone="ground" className="h-3.5 w-8" />}{" "}
+              <span className="font-bold uppercase tracking-label text-ground-dim">
+                {unit}
+              </span>
             </span>
-          </span>
-          <span className="flex-1" />
-          <Button variant="outline" size="xs" onClick={() => setShowRates(true)}>
+          ) : null}
+          <Button
+            variant="link"
+            size="xs"
+            onClick={() => setShowRates(true)}
+            className="ml-auto bg-card-foreground text-foreground underline"
+          >
             Rates &amp; pool
           </Button>
         </div>
-
-      {showFeatured ? (
-        <FeaturedModal
-          rows={featuredRows}
-          hasHydrated={hasHydrated}
-          onClose={() => setShowFeatured(false)}
-        />
-      ) : null}
+        {([1, MULTI_PULL_COUNT] as const).map((count) => {
+          const cost = count === 1 ? singleCost : multiCost;
+          const main = count !== 1;
+          // The multi-draw is the screen's primary action (the slanted
+          // yellow button); the single draw is the paper one beside it.
+          return (
+            <Button
+              key={count}
+              variant={main ? "default" : "secondary"}
+              size="xl"
+              disabled={!canAfford(cost)}
+              onClick={() => setPendingDraw(count === 1 ? 1 : 11)}
+              className="h-auto flex-col gap-0 py-2.5"
+            >
+              <span className="block">Draw ×{count}</span>
+              <span className="block font-body text-label font-bold uppercase tracking-label">
+                {costText(cost)}
+                {main ? " · one free pull" : ""}
+              </span>
+            </Button>
+          );
+        })}
+      </div>
 
       {showRates ? (
         <RatesModal
@@ -419,7 +427,7 @@ export default function BannerScreen(): React.JSX.Element {
 
       {pendingDraw !== null ? (
         <ConfirmPullModal
-          bannerName={isLimited ? gemBanner.name : "Permanent Banner"}
+          bannerName={bannerName}
           count={pendingDraw}
           cost={pendingDraw === 1 ? singleCost : multiCost}
           unit={unit}
@@ -444,6 +452,7 @@ export default function BannerScreen(): React.JSX.Element {
       {reveal ? (
         <PullReveal
           results={reveal.results}
+          bannerName={bannerName}
           drawLabel={drawLabel(reveal.count)}
           canDrawAgain={canAfford(reveal.count === 1 ? singleCost : multiCost)}
           onDrawAgain={() => {

@@ -42,6 +42,9 @@ export const CLOUD_FIELDS = [
   "claimedOrders",
   "clearedEvents",
   "autoClearTickets",
+  // Epic Battles clear record (2026-10-03). Synced so a second device or a
+  // sign-out/in does not drop the history missions will be judged from.
+  "epicClears",
 ] as const;
 
 export type CloudField = (typeof CLOUD_FIELDS)[number];

@@ -290,3 +290,23 @@ describe("explanations are reachable without a pointer", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe("controls that must look small carry a 44px hit area", () => {
+  const read = (rel: string) => fs.readFileSync(rel, "utf8");
+
+  it("defines the hit-44 utility as a 44px box", () => {
+    const css = read("styles/globals.css");
+    const block = css.slice(css.indexOf("@utility hit-44"));
+    expect(block.slice(0, 400)).toMatch(/2\.75rem/);
+  });
+
+  it("the hand's Merge/Pick badge uses it", () => {
+    expect(read("components/game/battle/Hand.tsx")).toMatch(/hit-44 absolute/);
+  });
+
+  it("an inline keyword hint uses it", () => {
+    expect(read("components/ui/KeyworkHighlighter.tsx")).toMatch(
+      /hit-44 relative/,
+    );
+  });
+});

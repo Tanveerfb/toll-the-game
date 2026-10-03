@@ -17,16 +17,20 @@ import {
   Zap,
 } from "lucide-react";
 import AudioControl from "@/components/ui/AudioControl";
+import { Badge } from "@/components/ui/badge";
 import ItemIcon from "@/components/game/ItemIcon";
 import OrdersButton from "@/components/game/OrdersButton";
 import Hint from "@/components/ui/Hint";
 import { NAV_CHIP } from "@/components/ui/navChip";
+import { Skeleton } from "@/components/ui/skeleton";
 import { GAME_ROUTES, isRouteActive } from "@/lib/nav/routes";
 import { useAuth } from "@/hooks/AuthProvider";
 import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
 import { getCurrentStamina, STAMINA_CAP } from "@/lib/game/stamina";
-import { rankProgress } from "@/lib/game/accountRank";
+import { summariseRank } from "@/lib/game/accountSummary";
+import RankBar from "@/components/game/RankBar";
+import { useNow } from "@/hooks/useNow";
 import { claimableCount, evaluateOrders, ORDERS_OPEN } from "@/lib/game/orders";
 import { firebaseEnabled } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
@@ -36,22 +40,8 @@ import { cn } from "@/lib/utils";
  *  snapshot differ, which is how a client-only branch stays hydration-safe. */
 const NO_SUBSCRIBE = () => () => {};
 
-/** Stamina regenerates 1 per 5 minutes; re-reading every 30s keeps the bar
- *  honest without a per-second timer nobody is watching. Floored to the tick
- *  window so repeated snapshot reads return an identical value. */
-const CLOCK_TICK_MS = 30_000;
-function subscribeClock(onStoreChange: () => void): () => void {
-  const id = setInterval(onStoreChange, CLOCK_TICK_MS);
-  return () => clearInterval(id);
-}
-function getClockSnapshot(): number {
-  return Math.floor(Date.now() / CLOCK_TICK_MS) * CLOCK_TICK_MS;
-}
-function getServerClockSnapshot(): number {
-  return 0;
-}
-
 const ROUTE_ICON: Record<string, React.ElementType> = {
+  "/": Home,
   "/events": Skull,
   "/gacha": Sparkles,
   "/archive": BookOpen,
@@ -59,11 +49,6 @@ const ROUTE_ICON: Record<string, React.ElementType> = {
   "/news": Newspaper,
   "/profile": UserIcon,
 };
-
-/** Chosen when Archive and Story would otherwise both have been `BookOpen`.
- *  Story was removed on 2026-09-26; whether Archive takes `BookOpen` back is
- *  a visual call, so it is left as it was. */
-const ARCHIVE_ICON = Coins;
 
 /** The wordmark: a skewed paper label with a yellow slab, the mockup's
  *  (`docs/design/mockups/motif-options.html`). */
@@ -91,7 +76,7 @@ function Resource({
    *  exists. Falls back to `icon` on its own, so a counter with no art yet
    *  looks exactly as it did before. */
   iconId?: string;
-  value: string;
+  value: React.ReactNode;
   suffix?: string;
   title: string;
 }): React.JSX.Element {
@@ -161,13 +146,12 @@ export default function TopNav() {
     [stats, presets.length, roster.length, account.rank, characters, claimedOrders],
   );
 
-  const now = React.useSyncExternalStore(
-    subscribeClock,
-    getClockSnapshot,
-    getServerClockSnapshot,
-  );
+  // Stamina regenerates 1 per 5 minutes; the shared 30s clock keeps the bar
+  // honest without a per-second timer nobody is watching.
+  const now = useNow();
   const ready = mounted && hasHydrated && now !== 0;
-  const dash = "—";
+  // A block the size of the number, not a dash: "—" means no value (conventions.md).
+  const pending = <Skeleton className="h-3.5 w-6" />;
 
   // The resource strip stands down during a fight: the battle screen is the
   // one place that needs every pixel, and none of these numbers change mid-
@@ -177,10 +161,9 @@ export default function TopNav() {
   const rows = inBattle ? 1 : 2;
 
   const currentStamina = ready ? getCurrentStamina(stamina, now) : 0;
-  // `null` means the rank is walled — XP is banking but the rank can't rise
-  // until the ascension trial for this band is cleared. A full bar that never
-  // moves would read as a bug, so the walled case gets its own marker.
-  const progress = rankProgress(account, account.clearedWalls);
+  // A walled rank (XP banking until the band's trial is cleared) gets its own
+  // marker on the bar; see `summariseRank`.
+  const rank = summariseRank(account);
 
   // Gated on `ready` for the same reason as the resource strip: the store
   // rehydrates from localStorage, and a badge that appears and then vanishes
@@ -193,9 +176,6 @@ export default function TopNav() {
   // And on the board being open at all: closed for the overhaul (#159).
   const readyOrders =
     ORDERS_OPEN && ready && canClaimOrders ? claimableCount(orderBoard) : 0;
-  const rankPercent = progress
-    ? Math.min(100, (progress.current / progress.required) * 100)
-    : 100;
 
   const nav = (
     <nav
@@ -237,9 +217,13 @@ export default function TopNav() {
               that goes there. Without it a claimable reward is invisible from
               every other screen. */}
           {readyOrders > 0 ? (
-            <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center border border-border bg-el-light px-1 font-body text-label font-bold tabular-nums leading-none text-card-foreground">
+            <Badge
+              variant="reward"
+              size="tight"
+              className="absolute -right-2 -top-1 h-4 min-w-4 justify-center leading-none tabular-nums"
+            >
               {readyOrders}
-            </span>
+            </Badge>
           ) : null}
         </Link>
         )}
@@ -254,10 +238,7 @@ export default function TopNav() {
         >
           {GAME_ROUTES.filter((route) => route.href !== "/").map((route) => {
             const active = isRouteActive(route.href, pathname);
-            const Icon =
-              route.href === "/archive"
-                ? ARCHIVE_ICON
-                : (ROUTE_ICON[route.href] ?? Swords);
+            const Icon = ROUTE_ICON[route.href] ?? Swords;
             return (
               <Link
                 key={route.href}
@@ -288,21 +269,23 @@ export default function TopNav() {
         {/* The two numbers that move while you play. Coin does not — it is a
             spend-screen figure — and Orders keeps the badge on the wordmark
             above, which is the link that goes to the screen holding them. */}
-        <div className="flex items-center gap-1.5 sm:hidden">
-          <Resource
-            icon={Zap}
-            iconId="stamina"
-            title="Stamina — spent entering World Boss runs"
-            value={ready ? `${currentStamina}` : dash}
-            suffix={`/${STAMINA_CAP}`}
-          />
-          <Resource
-            icon={Gem}
-            iconId="gems"
-            title="Gems — premium summon currency"
-            value={ready ? currencies.gems.toLocaleString() : dash}
-          />
-        </div>
+        {inBattle ? null : (
+          <div className="flex items-center gap-1.5 sm:hidden">
+            <Resource
+              icon={Zap}
+              iconId="stamina"
+              title="Stamina — spent entering World Boss runs"
+              value={ready ? `${currentStamina}` : pending}
+              suffix={`/${STAMINA_CAP}`}
+            />
+            <Resource
+              icon={Gem}
+              iconId="gems"
+              title="Gems — premium summon currency"
+              value={ready ? currencies.gems.toLocaleString() : pending}
+            />
+          </div>
+        )}
         <AudioControl />
       </div>
 
@@ -320,20 +303,20 @@ export default function TopNav() {
               icon={Zap}
               iconId="stamina"
               title="Stamina — spent entering World Boss runs"
-              value={ready ? `${currentStamina}` : dash}
+              value={ready ? `${currentStamina}` : pending}
               suffix={`/${STAMINA_CAP}`}
             />
             <Resource
               icon={Gem}
               iconId="gems"
               title="Gems — premium summon currency"
-              value={ready ? currencies.gems.toLocaleString() : dash}
+              value={ready ? currencies.gems.toLocaleString() : pending}
             />
             <Resource
               icon={Coins}
               iconId="coin"
               title="Coin — spent on levelling and ascension"
-              value={ready ? currencies.coin.toLocaleString() : dash}
+              value={ready ? currencies.coin.toLocaleString() : pending}
             />
             {/* Orders sits with the counters, not with the account chrome — it
                 is something you have progress on, not a setting. */}
@@ -351,24 +334,21 @@ export default function TopNav() {
             className={cn(NAV_CHIP, "gap-2")}
           >
             <span className="tracking-title">
-              {ready ? `R${account.rank}` : "R—"}
+              {ready ? `R${account.rank}` : <Skeleton className="h-3.5 w-5" />}
             </span>
-            {/* Walled (XP banking, rank capped until the trial) fills gold
-                rather than yellow, so a full bar that never moves reads as
-                a state, not a bug. */}
-            <span className="block h-2 w-10 overflow-hidden border border-border bg-muted sm:w-14">
-              <span
-                className={`block h-full transition-[width] duration-500 ${ready && !progress ? "bg-el-light" : "bg-primary"}`}
-                style={{ width: ready ? `${rankPercent}%` : "0%" }}
-              />
-            </span>
+            <RankBar
+              percent={rank.percent}
+              walled={rank.walled}
+              ready={ready}
+              className="w-10 sm:w-14"
+            />
           </Link>
           <Hint
             ariaLabel="World level"
             content="World level — the difficulty everything scales to"
             className={cn(NAV_CHIP, "hidden cursor-help sm:flex")}
           >
-            World {ready ? worldLevel : dash}
+            World {ready ? worldLevel : pending}
           </Hint>
           <Link
             href={user ? "/profile" : "/login"}
@@ -412,20 +392,20 @@ export default function TopNav() {
 /**
  * Primary navigation on a phone.
  *
- * Five destinations, every one visible, every one in the thumb third — which
- * is the half of ruling #107 a horizontal scroller can never satisfy however
- * big its targets are. Measured on the live build 2026-09-01: the strip this
+ * Every destination visible, every one in the thumb third — which is the half
+ * of ruling #107 a horizontal scroller can never satisfy however big its
+ * targets are. Measured on the live build 2026-09-01: the strip this
  * replaces was 234px wide holding 332px of routes, so News and Profile were
  * off-screen at rest behind a swipe with no affordance, and the short labels
  * written in `routes.ts` for exactly this width were `hidden sm:inline` and
  * had never rendered on a phone at all.
  *
- * **Archive, Practice and News do not get a slot.** Five is the number that
- * fits at 390 without the labels shrinking below legibility, and those three
- * are already tiles on the hub — which is what `Menu` opens.
- *
- * **Four since 2026-09-26**, when story mode was removed and took its tab
- * with it. What, if anything, fills the fifth slot is his call.
+ * **The tabs are the `GAME_ROUTES` entries flagged `tab`**, not a list of
+ * their own. Five is the most that fits at 390 without the labels shrinking
+ * below legibility; there are four since 2026-09-26, when story mode was
+ * removed and took its tab with it. Characters, Practice and News have no
+ * slot: they are tiles on the hub, which is what `Menu` opens. What, if
+ * anything, fills the fifth slot is his call.
  */
 function BottomTabs({
   pathname,
@@ -434,16 +414,12 @@ function BottomTabs({
   pathname: string;
   signedIn: boolean;
 }): React.JSX.Element {
-  const tabs = [
-    { href: "/", label: "Menu", icon: Home },
-    { href: "/events", label: "Events", icon: Skull },
-    { href: "/gacha", label: "Gacha", icon: Sparkles },
-    {
-      href: signedIn ? "/profile" : "/login",
-      label: "You",
-      icon: UserIcon,
-    },
-  ];
+  const tabs = GAME_ROUTES.filter((route) => route.tab).map((route) => ({
+    // A guest's "You" tab leads to the sign-in screen, not a profile.
+    href: route.href === "/profile" && !signedIn ? "/login" : route.href,
+    label: route.tabLabel ?? route.navLabel ?? route.label,
+    icon: ROUTE_ICON[route.href] ?? Swords,
+  }));
 
   return (
     <div

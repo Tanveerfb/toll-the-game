@@ -1,12 +1,10 @@
 "use client";
 
 import React from "react";
-import { ArrowRight } from "lucide-react";
 import ItemIcon from "@/components/game/ItemIcon";
 import { Button } from "@/components/ui/button";
 import MountedDialog from "@/components/ui/MountedDialog";
-import { INK_TONE } from "@/components/ui/inkTone";
-import { cn } from "@/lib/utils";
+import ShiftRow from "@/components/ui/ShiftRow";
 import { Slider } from "@/components/ui/slider";
 
 /**
@@ -30,48 +28,6 @@ import { Slider } from "@/components/ui/slider";
  * `MountedDialog`: the caller mounts it only while open, and focus goes back
  * to the Auto clear button that opened it.
  */
-
-function ShiftRow({
-  label,
-  iconId,
-  before,
-  after,
-  unit,
-}: {
-  label: string;
-  /** The resource being spent, for its icon. */
-  iconId: string;
-  before: number;
-  after: number;
-  unit: string;
-}): React.JSX.Element {
-  const delta = after - before;
-  return (
-    <div className="flex items-center gap-2 border border-rule bg-muted px-3 py-2">
-      <ItemIcon id={iconId} size={20} alt="" />
-      <span className="min-w-0 flex-1 truncate font-body text-label font-bold uppercase tracking-label text-muted-foreground">
-        {label}
-      </span>
-      <span className="shrink-0 font-body text-sm tabular-nums text-muted-foreground">
-        {before.toLocaleString()}
-      </span>
-      <ArrowRight
-        className="h-3 w-3 shrink-0 text-muted-foreground"
-        strokeWidth={2.4}
-        aria-hidden
-      />
-      <span className="shrink-0 font-body text-sm font-bold tabular-nums">
-        {after.toLocaleString()}
-      </span>
-      <span className={cn("shrink-0 font-body text-xs font-bold tabular-nums", INK_TONE.loss)}>
-        {delta.toLocaleString()}
-      </span>
-      <span className="shrink-0 font-body text-label uppercase tracking-label text-muted-foreground">
-        {unit}
-      </span>
-    </div>
-  );
-}
 
 export default function AutoClearConfirm({
   eventName,
@@ -149,6 +105,7 @@ export default function AutoClearConfirm({
           before={stamina}
           after={stamina - staminaSpent}
           unit="stamina"
+          tone="spend"
         />
         <ShiftRow
           label="Tickets"
@@ -156,6 +113,7 @@ export default function AutoClearConfirm({
           before={tickets}
           after={tickets - safeRuns}
           unit="tickets"
+          tone="spend"
         />
       </div>
 

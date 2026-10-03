@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ChevronDown } from "lucide-react";
+import DisclosureRow from "@/components/ui/DisclosureRow";
 import type { BattleCharacter } from "@/types/character";
 import {
   getEffectiveCritDamage,
@@ -31,17 +31,11 @@ export default function SubstatDrawer({
 
   return (
     <div className="border-2 border-border bg-muted">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="flex w-full min-h-11 items-center justify-between px-3 py-2 font-body text-caption font-bold uppercase tracking-label transition-colors hover:bg-card"
-      >
-        <span>Substats</span>
-        <ChevronDown
-          className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
-        />
-      </button>
+      <DisclosureRow
+        label="Substats"
+        expanded={open}
+        onToggle={() => setOpen((v) => !v)}
+      />
       {open ? (
         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-rule px-3 py-2">
           {rows.map((row) => (

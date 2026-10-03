@@ -14,6 +14,10 @@ import {
   TrialClearSummary,
   TrialMissing,
 } from "@/components/game/events/ClearSummary";
+import EpicBattlesFlow, {
+  type EpicFlowPhase,
+  type EpicFlowStart,
+} from "@/components/game/events/EpicBattlesFlow";
 import EventBrief from "@/components/game/events/EventBrief";
 import EventsBoard from "@/components/game/events/EventsBoard";
 import TrialRail from "@/components/game/events/TrialRail";
@@ -21,6 +25,7 @@ import { useBattleContext } from "@/hooks/BattleProvider";
 import { useScreenMusic } from "@/hooks/useScreenMusic";
 import { useGameStore } from "@/store/gameStore";
 import { usePlayerStore } from "@/store/playerStore";
+import { useSettingsStore } from "@/store/settingsStore";
 import { getCurrentStamina } from "@/lib/game/stamina";
 import {
   addRewards,
@@ -51,6 +56,7 @@ import {
 } from "@/lib/game/fightRun";
 import { foldFightFromBattle } from "@/lib/game/fightDriver";
 import { getTrialEncounter } from "@/lib/game/trialEncounters";
+import { listArcs } from "@/lib/game/epicBattles";
 import { resumedEventBattle } from "@/lib/game/battleLock";
 
 /**
@@ -108,7 +114,14 @@ type View =
       event: GameEvent;
       rewards: WorldBossRewards;
       runs: AutoClearRun[];
-    };
+    }
+  /**
+   * Epic Battles (Tanveer, 2026-10-03). One view, because the whole sequence
+   * (stage list, brief, fight, result) lives in `EpicBattlesFlow`: a stage is
+   * not a `GameEvent` - always open, no stamina, no rewards - so none of this
+   * page's event machinery applies to it.
+   */
+  | { kind: "epic"; start: EpicFlowStart };
 
 export default function EventsPage(): React.JSX.Element {
   const { startCustomBattle } = useBattleContext();
@@ -128,6 +141,8 @@ export default function EventsPage(): React.JSX.Element {
   const clearRankWall = usePlayerStore((s) => s.clearRankWall);
   const hasHydrated = usePlayerStore((s) => s.hasHydrated);
   const spendAutoClearRun = usePlayerStore((s) => s.spendAutoClearRun);
+  const eventsTab = useSettingsStore((s) => s.eventsTab);
+  const setEventsTab = useSettingsStore((s) => s.setEventsTab);
 
   /**
    * The board lists what the player may *see*; `eventLockReason` then decides
@@ -150,13 +165,24 @@ export default function EventsPage(): React.JSX.Element {
   const [team, setTeam] = React.useState<CharacterData[]>([]);
   const [difficulty, setDifficulty] = React.useState<number>(worldLevel);
   const [notice, setNotice] = React.useState<string | null>(null);
+  const [epicPhase, setEpicPhase] = React.useState<EpicFlowPhase>("menu");
+
+  // Anywhere in Epic Battles - an arc opened, a fight resumed after a reload -
+  // the board the player returns to is the Epic Battles tab.
+  const inEpic = view.kind === "epic";
+  React.useEffect(() => {
+    if (inEpic) setEventsTab("epic");
+  }, [inEpic, setEventsTab]);
 
   useScreenMusic(
-    view.kind === "battle" || view.kind === "trialBattle"
+    view.kind === "battle" ||
+      view.kind === "trialBattle" ||
+      (view.kind === "epic" && epicPhase === "battle")
       ? "battle"
       : view.kind === "results" ||
           view.kind === "autoResults" ||
-          view.kind === "trialResults"
+          view.kind === "trialResults" ||
+          (view.kind === "epic" && epicPhase === "results")
         ? "victory"
         : "menu",
   );
@@ -340,9 +366,14 @@ export default function EventsPage(): React.JSX.Element {
   if (resumed) {
     if (resumed.kind === "boss") setDifficulty(resumed.difficulty);
     setView(
-      resumed.kind === "boss"
-        ? { kind: "battle", event: resumed.event }
-        : { kind: "trialBattle", event: resumed.event, run: resumed.run },
+      resumed.kind === "epic"
+        ? {
+            kind: "epic",
+            start: { phase: "battle", arc: resumed.arc, stage: resumed.stage },
+          }
+        : resumed.kind === "boss"
+          ? { kind: "battle", event: resumed.event }
+          : { kind: "trialBattle", event: resumed.event, run: resumed.run },
     );
     return <Screen width="none" />;
   }
@@ -353,8 +384,7 @@ export default function EventsPage(): React.JSX.Element {
         <BattleArena
           contextLabel={view.event.name}
           worldBoss={{
-            continueLabel: "CLAIM REWARDS",
-            quitLabel: "BACK TO EVENTS",
+            continueLabel: "Claim rewards",
             onContinue: () => {
               // A trial and a boss resolve differently, and the split is the
               // whole point: `clearsWall` was authored on both trials the day
@@ -435,7 +465,6 @@ export default function EventsPage(): React.JSX.Element {
             // route it already draws (option C, chosen 2026-09-20). Defeat
             // still stops on the card — losing is a decision point.
             autoContinueOnVictory: true,
-            quitLabel: "BACK TO EVENTS",
             onContinue: () => {
               const folded = foldFightFromBattle(run, useGameStore.getState());
               resetBattle();
@@ -506,6 +535,16 @@ export default function EventsPage(): React.JSX.Element {
     );
   }
 
+  if (view.kind === "epic") {
+    return (
+      <EpicBattlesFlow
+        start={view.start}
+        onExit={backToBoard}
+        onPhase={setEpicPhase}
+      />
+    );
+  }
+
   if (view.kind === "autoResults") {
     return (
       <AutoClearResults
@@ -555,7 +594,6 @@ export default function EventsPage(): React.JSX.Element {
           difficulties,
           currentStamina,
           accountRank: account.rank,
-          rankCap,
           clearedWalls: account.clearedWalls,
           clearedEvents,
           autoClearTickets,
@@ -576,14 +614,18 @@ export default function EventsPage(): React.JSX.Element {
       lockReasonFor={(event) =>
         eventLockReason(event, account.rank, account.clearedWalls)
       }
-      stamina={currentStamina}
-      accountRank={account.rank}
-      worldLevel={worldLevel}
       onSelect={(event) => {
         setDifficulty(Math.min(worldLevel, rankCap));
         setNotice(null);
         setView({ kind: "brief", event });
       }}
+      epic={{
+        arcs: listArcs(),
+        onSelectArc: (arc) =>
+          setView({ kind: "epic", start: { phase: "arc", arc } }),
+      }}
+      tab={eventsTab}
+      onTabChange={setEventsTab}
     />
   );
 }

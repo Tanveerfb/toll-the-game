@@ -226,10 +226,23 @@ caught.
 3. **Install after the kit's skill names are final:**
    - skill and ultimate art: `public/characters/<color>_<id>/skills/<slug>.png`
      at 832×1216;
-   - the card: **its own card file**, with `portrait.png` as a chest-up
-     1024² crop;
-   - register in `lib/game/characterArt.ts` (bump `ART_VERSION` only when
-     replacing a file in place);
+   - the card: **its own card file**, plus **its transparent cut-out** in
+     `cards/` (Lyra: `pose-c4.png`; Sara: `card-b-cutout.webp`). The cut-out
+     is the source for the two files below, so keep it in the repo;
+   - **the archive tile and `portrait.png` come from that one cut-out**
+     (his call, 2026-10-03, after Lyra's tile and portrait were two different
+     pictures). The tile is `make_tile_cutout.py`. **Its headroom stops at a
+     natural edge, so nothing long runs into the tile above:** Lyra's
+     ponytail did, and he had it cut at her red ribbon. The portrait is
+     `make_portrait_crop.py`: a chest-up 1024² crop that **keeps the
+     transparency**, framed like Lyra's (head about half the frame). Never
+     crop the portrait from a composite or the card with its background: the
+     detail page lays it on the element burst, the battle on its own dark
+     ground. Write the crop numbers into the profile, so a sharper source
+     reuses the framing. `tests/characterArt.test.ts` fails if a unit with
+     tile art has an opaque portrait;
+   - register in `lib/game/characterArt.ts`, including `TILE_ART` (bump
+     `ART_VERSION` only when replacing a file in place);
    - then `npm run check`.
 
 ---

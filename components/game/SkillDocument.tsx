@@ -1,11 +1,8 @@
 import type { ReactNode } from "react";
 import KeyworkHighlighter from "@/components/ui/KeyworkHighlighter";
 import { PROSE, ProseTable } from "@/components/ui/prose";
-import {
-  HEAL_NUMBER_CLASS,
-  SKILL_TYPE_CHIP,
-  skillTypeCategory,
-} from "@/lib/game/skillTypeStyle";
+import SkillTypeBadge from "@/components/game/SkillTypeBadge";
+import { HEAL_NUMBER_CLASS } from "@/lib/game/skillTypeStyle";
 import type { CharacterSkillData } from "@/lib/game/characterCatalog";
 import {
   buildRankedSkillDescriptions,
@@ -77,20 +74,13 @@ export default function SkillDocument({
   const metaParts = [...new Set([skill.type, ...getMechanicTypes(skill)])]
     .filter((part) => !(isUlt && part === "ultimate"))
     .map(toTitleCase);
-  // The slot as a chip in the class's hue with ink on it (ruling #154): this
-  // renders on the archive's paper sheet, where the hue as text would not read.
-  const chip = SKILL_TYPE_CHIP[skillTypeCategory(skill)];
   const numberClassName =
     skill.type === "heal" ? HEAL_NUMBER_CLASS : undefined;
 
   return (
     <div className="mt-5 first:mt-0">
       <h3 className="flex flex-wrap items-center gap-x-2 font-heading text-lg tracking-title">
-        <span
-          className={`border border-border px-1.5 py-0.5 font-body text-label font-bold uppercase tracking-label ${chip}`}
-        >
-          {slot}
-        </span>
+        <SkillTypeBadge skill={skill}>{slot}</SkillTypeBadge>
         {skill.skillName}
       </h3>
 

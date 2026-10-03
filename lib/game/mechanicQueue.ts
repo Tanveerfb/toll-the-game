@@ -1,4 +1,5 @@
 import { enforceFrozen } from "@/lib/game/freeze";
+import { applyLiveBonuses } from "@/lib/game/liveBonus";
 import type { BattleCharacter } from "@/types/character";
 import type { BattlePhase } from "@/types/mechanic";
 
@@ -25,6 +26,9 @@ export type QueueAction = (
   source: BattleCharacter,
   teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
   log: (entry: string) => void,
+  /** The battle's RNG. Seeded by the simulator, `Math.random` in a live
+   *  battle - the same split `executeSkill` already has. */
+  rng?: () => number,
 ) => Promise<{ playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] }>;
 
 export interface QueueItem {
@@ -46,6 +50,7 @@ export interface MechanicQueue {
     phase: BattlePhase,
     teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
     log: (entry: string) => void,
+    rng?: () => number,
   ) => Promise<{
     playerTeam: BattleCharacter[];
     enemyTeam: BattleCharacter[];
@@ -79,7 +84,7 @@ export function createMechanicQueue(
       items = [];
     },
 
-    async process(phase, teams, log) {
+    async process(phase, teams, log, rng = Math.random) {
       const due = items.filter((q) => q.phase === phase);
       let current = { ...teams };
 
@@ -96,14 +101,19 @@ export function createMechanicQueue(
         log(`Evaluating mechanics for ${source.name} [${item.mechanicId}]`);
         // A frozen unit gains nothing cancellable from a passive either — the
         // same post-pass executeSkill runs (lib/game/freeze.ts).
-        current = enforceFrozen(current, await item.action(source, current, log));
+        current = enforceFrozen(
+          current,
+          await item.action(source, current, log, rng),
+        );
 
         if (stepDelayMs > 0) {
           await new Promise((resolve) => setTimeout(resolve, stepDelayMs));
         }
       }
 
-      return current;
+      // Passives and ticks both move what live bonuses count (a debuff just
+      // applied, one just expired), so every phase ends with a recount.
+      return applyLiveBonuses(current);
     },
   };
 }

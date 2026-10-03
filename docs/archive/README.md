@@ -8,6 +8,22 @@ holds it verbatim. Moved here from `docs/STATUS.md` on 2026-09-27.
   "Working" feature log and the session logs of 2026-09-26c, 2026-09-26d and
   2026-09-27.
 
+## Session log — 2026-10-03 (cloud, part 4)
+
+The four-values audit end to end: 43 findings in four groups, fixed in order. News is closed and its posts are deleted (#179), the audit picks are #180, and new shared UI components were added — [`STATUS-2026-10.md`](STATUS-2026-10.md); the audit itself is [`FOUR_VALUES_AUDIT-2026-10-03.md`](FOUR_VALUES_AUDIT-2026-10-03.md).
+
+## Session log — 2026-10-03 (cloud, part 3)
+
+Epic Battles and the Exam Arc (#175), boss Tao tuned in the simulator (#176), the simulator playing whole kits, the tabbed events board (#177) and "less is more" as a fourth value (#178) — [`STATUS-2026-10.md`](STATUS-2026-10.md).
+
+## Session log — 2026-10-03 (cloud, part 2)
+
+The element pill moved to the tags, Lyra's ponytail cropped at her ribbon, and the summon screen rebuilt as a manga page (#174) — [`STATUS-2026-10.md`](STATUS-2026-10.md).
+
+## Session log — 2026-10-03 (cloud)
+
+A unit's tile and portrait made one image (Lyra and Sara re-cut as transparent portraits), the element burst on the detail page, and the archive tile in the team picker (#173) — [`STATUS-2026-10.md`](STATUS-2026-10.md).
+
 ## Session log — 2026-10-02/03
 
 Sara's art pipeline end to end (design lock, LoRA v1→v2, kit and card art locked and installed, kit renamed), the Blender pose tool, the reference library, `docs/CHARACTER_ART.md` + the `charart` skill, and the archive's frame-break tile (#172) — [`STATUS-2026-10.md`](STATUS-2026-10.md).

@@ -134,6 +134,10 @@ describe("the events screen is decomposed, not a monolith", () => {
    * A line count is a crude proxy, and it is used deliberately: the failure
    * this guards against is the file quietly growing markup back, and that is
    * exactly what a line count notices.
+   *
+   * Limit raised 600 -> 650 on 2026-10-03 for Epic Battles, which adds ONE
+   * view, one board prop and its resume branch (~40 lines). Its four screens
+   * live in `EpicBattlesFlow`, not here; the page grew by wiring only.
    */
   it("the page stays a state machine", () => {
     const lines = read("app/events/page.tsx").split("\n").length;
@@ -141,7 +145,7 @@ describe("the events screen is decomposed, not a monolith", () => {
       lines,
       "app/events/page.tsx is growing markup again — the view branches belong " +
         "in components/game/events/.",
-    ).toBeLessThan(600);
+    ).toBeLessThan(650);
   });
 
   it("reward rows have one implementation", () => {

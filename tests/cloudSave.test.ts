@@ -46,6 +46,15 @@ const LOCAL = {
   claimedOrders: { "first-chapter": true, "first-boss": true },
   autoClearTickets: 7,
   clearedEvents: ["molvarr::hell"],
+  epicClears: {
+    "exam-arc/master-tao": {
+      clears: 2,
+      firstClearAt: 1,
+      lastClearAt: 2,
+      bestTurns: 6,
+      teams: [["duke", "lyra"]],
+    },
+  },
 } as unknown as PlayerState;
 
 describe("what gets written", () => {

@@ -26,6 +26,10 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 | `ruling` | He settles a design question. Numbered entry, his words, supersede links, propagation |
 | `comfypending` | A feature needs art the game doesn't have |
 | `charart` | Making a playable character's art: design lock, LoRA, kit/card drafts, finish, composite, lock. Enforces his approval gates; the method is `docs/CHARACTER_ART.md` |
+| `relay` | Starting a session: load `docs/STATUS.md`, then check it against the repo before any work |
+| `checkpoint` | Ending a session: `checkpoint` / `git checkpoint` / `git checkpoint max` (project-rules §28) |
+
+`relay` and `checkpoint` are **fleet skills, copied here (2026-10-03) for cloud sessions**, which can't see his PC's `~/.claude/skills/`. The master copies are the user-level ones. Improve those and re-copy; never edit these in place.
 
 `Plans/` holds specced-but-unbuilt work — dated design files a future session can pick up cold. Tanveer builds those in their own dedicated sessions; **don't start one mid-conversation**, and don't let a plan rot silently: if the code it describes changes, the plan is stale and says so or goes.
 
@@ -53,7 +57,7 @@ Two of those rules are **enforced in code, so don't re-implement them per screen
 - **The 44px floor lives in `components/ui/`.** `button`, `input`, `select` and `slider` all carry it, so a control built from a primitive is already touch-safe and a screen adding `h-9` to one is fighting the scale. Opting out needs `min-h-0` **and** a comment saying why. Pinned by `tests/touchTargets.test.ts`.
 - **Anything explanatory uses `components/ui/Hint.tsx`, never a `Tooltip`.** A radix `Tooltip` on a `<span>` fires on neither tap nor focus, which is how the whole mechanic glossary came to be invisible on a phone. `Hint` is a `Popover` with a real button trigger and **one interaction on every device: click, tap or keyboard**. It does *not* open on hover — that was built first and removed the same day, because a mouse fires `pointerenter` before `click`, so hovering opened it and the click closed it again (`tests/hint.browser.test.tsx`). `tests/touchTargets.test.ts` forbids `TooltipTrigger` outside the primitive — and, since **ruling #125** (2026-09-01), any `title=` on a lowercase JSX tag, which is the same hover-only failure arriving through the DOM instead of through radix. Ten of those were live, including the summon banner's twelve featured tiles, whose character names lived nowhere else on the page.
 
-**Navigation is a bottom tab bar below `sm`** (ruling #123, 2026-09-01) — five destinations in the thumb third, portalled to `<body>` because the nav's `backdrop-filter` makes `fixed` resolve against the nav rather than the viewport. It stands down while `[data-battle-active]` is on screen. Heights compose through `--tabbar-h`; `.screen-below-nav` subtracts both bars. The archive's filters moved into a sheet the same day (#124).
+**Navigation is a bottom tab bar below `sm`** (ruling #123, 2026-09-01) — four destinations (Menu, Events, Gacha, You) in the thumb third, derived from `GAME_ROUTES`'s `tab` flag since 2026-10-03, portalled to `<body>` because the nav's `backdrop-filter` makes `fixed` resolve against the nav rather than the viewport. It stands down while `[data-battle-active]` is on screen. Heights compose through `--tabbar-h`; `.screen-below-nav` subtracts both bars. The archive's filters moved into a sheet the same day (#124).
 
 **No mobile debt is outstanding.** The 2026-08-21 sweep took every screen, battle included: its controls moved off a side rail into a sheet, merge arms from a button, and press-and-hold opens a card's or a unit's details — the gesture set is **tap = act, hold = explain** (#118). `docs/design/mockups/battle-mobile.html` records those decisions, and `battle-mobile-v2.html` the 2026-09-01 revisions.
 
@@ -91,14 +95,19 @@ lib/
                       pipeline), fightRun.ts (multi-fight runs), battleLock.ts,
                       damagePreview.ts (kit preview), descriptionTranslator.ts,
                       characterCatalog.ts, characterVfx.ts, battleReport.ts,
-                      effectDiff.ts
+                      effectDiff.ts, epicBattles.ts (Epic Battles arcs and
+                      stages, zod-parsed from data/arcs/) + epicClears.ts
+                      (the clear record)
   gacha/  news/       Banner + pull logic; MDX post loading
   nav/routes.ts       GAME_ROUTES — single source of truth for what modes exist
 store/                gameStore.ts (battle + deck + battle owner), playerStore.ts,
                       settingsStore.ts
-content/news/         MDX patch notes (updates/ + notices/)
+content/news/         MDX patch notes (updates/ + notices/). **Closed and emptied
+                      2026-10-03 (#179)**: `NEWS_OPEN` in lib/news/open.ts;
+                      /news reads "Coming soon"
 data/characters/      Character kit JSON (source of truth for kits)
 data/banners/         Gacha banners; data/orders/ Bureau Orders
+data/arcs/            Epic Battles arcs (one JSON per arc, parsed by lib/game/epicBattles.ts)
 types/                Shared TypeScript contracts
 tests/                Unit tests (engine, stores, gacha, previews), plus
                       *.browser.test.tsx — component tests in real Chromium
@@ -143,8 +152,9 @@ scripts/sim.ts        Headless balance simulator (npm run sim), ruling #57
 
 ## How work is judged, and who owns what
 
-**His three values, in his order: consistency, modularization, QOL**
-(ruling #139, 2026-09-17). **Keep all three in mind on every change.** He
+**His four values, in his order: consistency, modularization, QOL, and less
+is more** (ruling #139, 2026-09-17; the fourth added by #178, 2026-10-03).
+**Keep all four in mind on every change, and audit against all four.** He
 restated them on 2026-09-26 as the things we *"should always must keep in
 mind"*. **Consistency covers design as well as code**: one look, one
 interaction and one component for one job, just as much as one implementation.
@@ -156,6 +166,15 @@ affordances that make a feature usable rather than merely functional — *"when 
 create a new table, without QOL you don't add any search field, you don't add any
 filters, sort options, animations"*. `components/game/CharacterBrowser.tsx` is the
 benchmark: search, sort, filter sheet, active-filter count.
+
+**Less is more: don't state or show the obvious** (#178). Game-wide, not one
+screen's rule. His words: *"less is more for the players. let them explore on
+his own"*, and *"it applies game wide ... 'less is more' / 'don't state/show
+the obvious'"*. A count on a tab, a clear tally, a best-turns readout or a label
+repeating what the screen already says is a regression against it, even when
+the data is real and recorded. It pulls against QOL: QOL adds the affordances a
+player *uses*, such as search, sort and filters. Less is more removes the
+readouts a player only *reads*. Where the two conflict, ask him.
 
 **The split, precisely (#139).** Claude owns **site structure and data types** —
 schemas, naming, architecture, what is measurable — and implements his UX

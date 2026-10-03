@@ -100,12 +100,8 @@ export default function KitNumbers({
                     {ability.phaseLabel}
                   </span>
                 ) : null}
-                <span className="block truncate font-heading text-base tracking-title">
+                <span className="line-clamp-2 block font-heading text-base tracking-title">
                   {ability.name}
-                </span>
-                <span className="block font-body text-label uppercase tracking-label text-muted-foreground">
-                  {ability.rows.length} step
-                  {ability.rows.length === 1 ? "" : "s"}
                 </span>
               </span>
               <span className="shrink-0 text-right font-heading text-sm tabular-nums">

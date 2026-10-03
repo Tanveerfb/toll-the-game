@@ -2,6 +2,8 @@ export const mechanicGlossary = {
   amplify: "Increases by +10% for each buff on self",
   combustion:
     "Consumes all Ignite stacks on target, gains +20% ATK per stack consumed",
+  "co-destruction":
+    "Deals +40% damage for each distinct debuff on the target; Ignite counts once, however many stacks",
   concentrate: "Damage increases by 50/20/10/0% for 1/2/3/4 enemies present",
   stuns: "Prevents target from acting for the listed duration.",
   stun: "Prevents the target from acting for the listed duration.",
@@ -194,6 +196,7 @@ export type KeywordCategory =
 export const keywordCategories: Record<MechanicKeyword, KeywordCategory> = {
   amplify: "offense",
   combustion: "offense",
+  "co-destruction": "offense",
   concentrate: "offense",
   pierce: "offense",
   spite: "offense",

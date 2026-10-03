@@ -1,4 +1,4 @@
-# Status — 2026-10-03
+# Status — 2026-10-03 (cloud, part 4)
 
 **Who updates this:** every checkpoint, by **rewriting** it, never appending
 (`project-rules.md` §2; his call, `decisions.md` 2026-09-27). It holds the
@@ -10,99 +10,86 @@ current position only. A session's log goes to
 
 ## Start here
 
-**State:** Sara is the first unit through the new character-art pipeline, end
-to end.
-- **Her kit is renamed, names only:** *Beloved of Cats*, *Adaptation*,
-  *Swarm*, *Apex*, *Protection of the Felines*.
-- **Her new art is installed:** three skill arts, the park-sunset card, and a
-  portrait cropped from it.
-- **The archive uses the "Ink burst" frame-break tile** (ruling #172). Lyra
-  and Sara break out of their frames.
-- **The three exam-arc units are still unreleased** (#171).
-- **Last checkpoint:** `git log -1`. This session's log is in
-  `docs/archive/STATUS-2026-10.md`.
+**State:**
+- **The four-values audit is finished.** All 43 items are done or superseded
+  (#180; the record is `docs/archive/FOUR_VALUES_AUDIT-2026-10-03.md`).
+- The UI says less and uses the new shared components (see "Where things
+  are").
+- **News is closed and its posts are deleted** (#179).
+- **Epic Battles** (#175) and boss Tao (#176) are live on `/events`.
+- He is in **cloud sessions**, so no ComfyUI: UI and implementation only.
 
-**Next:** his pick. Either run `charart` for the next character (step 0,
-design lock: blue Lyra, Caila or green Duke, the release gate), or look at
-Sara's new art in a battle.
+**Next:** his next batch, not named yet.
 
 **Blocked on him:**
-- Which character goes through the pipeline next.
-- Caila's design sheet.
-- Whether to install Playwright's Chromium so `npm run test:browser` can run.
-- Sara's design sheet in `toll-kits` still describes a cat-ear hood. Her v2
-  lock dropped the ears and set grey-white high-tops. The sheet is his to
-  update.
-- Carried over: the new card texts (kitwords EXAMPLES, Open); Lyra's C4 and
-  passive placement (D5); Roused; the Orders tile; the app-icon recolour; the
-  foundation audit; scheduling the folder migration.
+- **Try the Merge badge on a phone.** Its 44px hit area overlaps the card's
+  name strip, so a tap just above or below it merges instead of playing.
+- Approve or reverse Claude's calls inside his audit picks (#180, last
+  bullet).
+- Missions for Epic Battles; an answer to Gon, Killua and Leorio against Tao
+  (#138); an optional Tao rerun after his ramp lost its HP.
+- Carried over:
+  - which character goes through `charart` next;
+  - the Caila and Sara design sheets;
+  - the new card texts (kitwords EXAMPLES, Open);
+  - Lyra's C4 and passive placement (D5);
+  - Roused;
+  - the Orders tile;
+  - the app-icon recolour;
+  - the foundation audit;
+  - the folder migration;
+  - summon animations (#174).
 
 **Don't trust:**
-- Sara's skill art has not been seen in a battle. Her portrait has not been
-  seen on any screen; the archive now shows her break-out cut-out instead.
-- `test:browser` was not run.
-- Nothing from 2026-10-02 (the exam-arc units, Freeze, [Cold]) has been
-  looked at in a browser either.
+- Sim numbers from before 2026-10-03, which were measured without
+  ultimates or second skills.
+- **`npm run test:browser` needs the workaround in the cloud container:**
+  `PLAYWRIGHT_BROWSERS_PATH` pointing at a folder with
+  `chromium_headless_shell-1234` and `chromium-1234` symlinked to the 1194
+  builds.
 
 ## Where things are
 
 | What | Where |
 | --- | --- |
-| Character-art method (current) | `docs/CHARACTER_ART.md`, walked by the `charart` skill |
-| Its history and failures | `docs/archive/ART_PIPELINE-character-history.md` |
-| Non-character art (banners, icons, logos, coins) | `docs/ART_PIPELINE.md` |
-| Sara's lock, approvals, picks, prompting rules | `scripts/lora/characters/sara_v2.json` (v1: `sara.json`) |
-| Sara's locked art, staged, and her library | ComfyUI `output\red_sara\locked\`, `output\sara_library\` |
-| LoRAs | ComfyUI `models\loras\lyra_toll`, `sara_toll` (v2, step 1500); fallbacks in `models\loras\training\` |
-| References (7DSGC, Dokkan) | ComfyUI `output\references\`, indexed by `README.md` |
-| Pose tool | `scripts/pose/` (Blender 5.0.1 at `D:\Blender`) |
-| Archive tile | `components/game/RosterTile.tsx`, `tile-*` in `styles/globals.css`, `getTileArt` |
+| Shared UI parts (new 2026-10-03) | `components/ui/`: `BackLink`, `SelectTile`, `EmptyState`, `NavTile`, `DisclosureRow`, `PanelSheet`, `ShiftRow`, `skeleton`; `Badge` sizes; listed in `docs/design-system.md` |
+| Shared game parts | `components/game/RankBar`, `SkillTypeBadge`, `RosterToolbar`; `lib/game/accountSummary.ts`, `rewardParts.ts`, `rosterFilter.ts`; `hooks/useNow`, `useOverlayOpen`, `useRosterFilters` |
+| Guards against the old patterns | `tests/sharedComponents.test.ts`, `tests/touchTargets.test.ts` (`hit-44`), `tests/tabsHover.test.ts` |
+| Nav source of truth | `lib/nav/routes.ts`; the phone tab bar is derived from its `tab` flag |
+| News switch | `lib/news/open.ts` (`NEWS_OPEN = false`); the return is on `ROADMAP.md` |
+| Epic Battles and boss Tao | `lib/game/epicBattles.ts`, `data/arcs/`, `data/characters/master_tao_npc.json` |
+| Simulator | `lib/game/simulate.ts` (limits in its header), `simStats.ts` |
 
 ## Confidence and gaps
 
-### Verified on 2026-10-03, by running it
+### Verified on 2026-10-03 (part 4), by running it
 
-- `npm run check`: **1,523 passed / 125 files**, typecheck and lint clean.
-  The new test checks that every break-out cut-out exists.
-- A scratch production build passed (`.next-verify` removed, `tsconfig.json`
-  restored).
-- **The archive tile at 390×844, on the scratch dev server:**
-  - Lyra and Sara break out of their frames.
-  - Older units sit flat in theirs.
-  - Level plates and ult-level stars are correct (1 to 6).
-  - No sideways scroll.
-- Sara's rename: no old name remains outside history (battle logs, ledger,
-  archive).
-- Every composite, the card and the portrait were checked by eye. The ankle
-  transparency he found is fixed.
+- `npm run check`: **1,675 passed / 137 files**, typecheck and lint clean.
+- `test:browser`: **17 passed / 3 files**.
+- `next build`: clean.
+- **16 screens on the production build at 390×844:**
+  - no horizontal overflow;
+  - nothing interactive under 44px in both dimensions;
+  - no page errors, except Vercel's analytics scripts, which 404 off Vercel.
 
 ### Not verified
 
-- `npm run test:browser`: Playwright's Chromium is not installed.
-- Sara's new art in battle, and on the detail page.
-- The archive tile on desktop widths (4 to 6 columns), and the NPC index's
-  tile.
+- A battle won on the production build, and the passive-toast filter in a
+  live fight.
+- The skeletons on a slow connection.
+- The Merge overlap on a real phone.
+- Carried over: claiming a milestone; a duplicate's "+1 coin" tile.
 
 ### Recorded as Claude's reading, not his words
 
-- The tile drops the name and the HP/ATK/DEF bars, Dokkan style (#172).
-- The passive composite has a neutral dusk background. It went to the
-  library, so nothing ships with it.
-
-### What I would check first coming back cold
-
-1. `git status` and `git log -3`.
-2. `npm run dev` on his PC: open `/archive` and Sara's detail page, then field
-   her in practice to see Adaptation, Swarm and Apex.
-3. Read `docs/CHARACTER_ART.md` before any art work, and ledger #172 before
-   touching the tile.
+- The calls inside his picks listed in #180, including the restored
+  guest-progress warning.
+- #178's line between what a player *reads* and what a player *uses*.
 
 ## Outside the repo
 
-- **`toll-kits`:** clean on main. It picks up Sara's rename on its next sync.
-- **The story repo `element-clash-toll`** (`E:\Toll - Web toon`): its master
-  is 1 commit behind origin, because his story session pushed. Its unmerged
-  branch `claude/pensive-brahmagupta-8yv4rd` is untouched.
-- **ComfyUI:** this session started it detached. It stops when the PC
-  restarts. Start it with PowerShell `Start-Process` (see
-  `docs/CHARACTER_ART.md`).
+- **`toll-kits`:** untouched. None of #175–#180 is a kit ruling.
+- **Scratchpad only, lost with the container:**
+  - the Tao measurement runners (`taostats.ts`, `taosweep.ts`);
+  - the sweep script (`sweep.mjs`);
+  - the `pw/` browser symlink folder.

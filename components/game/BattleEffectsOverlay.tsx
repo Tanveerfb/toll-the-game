@@ -48,6 +48,13 @@ function classifyLogEntry(
     };
   }
 
+  // Text toasts are for the engine's own `[System]` announcements. Untagged
+  // prose is narration - passive and aura procs ("Isolde gained 10% lifesteal
+  // from Isolde's Aura!"), a roll's outcome - and goes to the log drawer only:
+  // at turn 1 a stack of those covered the enemy HP bars (ruling #178). The
+  // player's own actions are `[Action]` lines, which never reach this overlay.
+  if (!entry.startsWith("[System] ")) return null;
+
   const statusByName = entry.match(/^(.+?)\s+(is|was)\s+/i);
   if (statusByName) {
     return {

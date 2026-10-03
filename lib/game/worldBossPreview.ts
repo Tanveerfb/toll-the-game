@@ -1,5 +1,6 @@
 import { getBossTier, type WorldBossRewards } from "@/lib/game/worldBossRewards";
 import { materialLabel } from "@/lib/game/materials";
+import { rewardParts } from "@/lib/game/rewardParts";
 
 /**
  * Reward payouts and previews, as rows a list component can render.
@@ -31,40 +32,26 @@ export type PreviewRow = [string, string, string];
  * be forgotten twice.
  */
 export function rewardRows(rewards: WorldBossRewards): RewardRow[] {
-  const rows: RewardRow[] = [
-    [
-      "sea_monster_eye",
-      materialLabel("sea_monster_eye"),
-      rewards.sea_monster_eye,
-    ],
-    [
-      "corroded_seaweed",
-      materialLabel("corroded_seaweed"),
-      rewards.corroded_seaweed,
-    ],
-    [
-      "training_manual",
-      materialLabel("training_manual"),
-      rewards.training_manual,
-    ],
-    [
-      "training_manual_advanced",
-      materialLabel("training_manual_advanced"),
-      rewards.training_manual_advanced,
-    ],
-    [
-      "training_manual_premium",
-      materialLabel("training_manual_premium"),
-      rewards.training_manual_premium,
-    ],
-    ["coin", "Coin", rewards.coin],
-    ["gems", "Gems", rewards.gems],
-    ["permanent_ticket", "Permanent Ticket", rewards.permanentTicket],
-    // Account XP is a number, not a thing you hold — no icon exists and none
-    // should, so its id is empty and `ItemIcon` renders nothing for it.
-    ["", "Account XP", rewards.accountXp],
-  ];
-  return rows.filter(([, , value]) => value > 0);
+  const parts = rewardParts({
+    coin: rewards.coin,
+    gems: rewards.gems,
+    permanentTicket: rewards.permanentTicket,
+    accountXp: rewards.accountXp,
+    materials: {
+      sea_monster_eye: rewards.sea_monster_eye,
+      corroded_seaweed: rewards.corroded_seaweed,
+      training_manual: rewards.training_manual,
+      training_manual_advanced: rewards.training_manual_advanced,
+      training_manual_premium: rewards.training_manual_premium,
+    },
+  });
+  // A boss list leads with what it drops (materials), then what it pays.
+  const rank = (kind: string): number => (kind === "material" ? 0 : 1);
+  // Account XP has no icon: it is a number, not a thing you hold, so its id
+  // is empty and `ItemIcon` renders nothing for it (see `rewardParts`).
+  return [...parts]
+    .sort((a, b) => rank(a.kind) - rank(b.kind))
+    .map((part): RewardRow => [part.iconId, part.label, part.amount]);
 }
 
 /**

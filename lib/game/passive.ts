@@ -7,6 +7,7 @@ import {
 } from "@/lib/game/passiveBlocks";
 import { entryAffectsStat, statPhrase } from "@/lib/game/stats";
 import { registerColdTiers } from "@/lib/game/cold";
+import { removeRandomDebuffs } from "@/lib/game/debuffCount";
 import type { QueueItem } from "@/lib/game/mechanicQueue";
 import {
   BattlePhase,
@@ -186,6 +187,50 @@ export function registerCharacterPassives(character: BattleCharacter, registerTo
   registerHealBoostGain(character, registerToQueue);
   registerNamedAllyBonus(character, registerToQueue);
   registerColdTiers(character, registerToQueue);
+  registerTurnStartCleanse(character, registerToQueue);
+}
+
+// Turn-start self cleanse (boss Master Tao): at the start of the owner's team's
+// turn, removes `count` random distinct debuffs from the owner. The pick comes
+// from the battle RNG the queue hands every action, so a seeded simulation
+// removes the same debuff every time.
+function registerTurnStartCleanse(
+  character: BattleCharacter,
+  registerToQueue: RegisterFn,
+) {
+  const mech = findAnyPassiveMechanic(character, "turnStartCleanse");
+  if (!mech) return;
+  const passiveName = character.passive!.name;
+
+  registerToQueue({
+    id: `${character.instanceId}_passive_${passiveName}_turnStartCleanse`,
+    phase: character.team === "player" ? "OnPlayerTurnStart" : "OnEnemyTurnStart",
+    sourceInstanceId: character.instanceId,
+    mechanicId: `${passiveName} (cleanse)`,
+    action: async (source, teams, log, rng = Math.random) => {
+      if (source.isSub && source.passive?.worksFromSub !== true) return teams;
+      const { debuffs, removed, kinds } = removeRandomDebuffs(
+        source,
+        mech.count ?? 1,
+        rng,
+      );
+      if (removed.length === 0) return teams;
+      log(
+        `${source.name}'s ${passiveName} removes ${removed[0].name ?? removed[0].type} from self.`,
+      );
+      // The running total rides in `passiveState` so the simulator's stats can
+      // read it off the real unit.
+      return updateUnit(teams, source, (unit) => ({
+        ...unit,
+        debuffs,
+        passiveState: {
+          ...unit.passiveState,
+          debuffsCleansed:
+            ((unit.passiveState.debuffsCleansed as number) || 0) + kinds,
+        },
+      }));
+    },
+  });
 }
 
 /** Replace the unit at `instanceId` on its team with `update(unit)`. */
@@ -722,7 +767,7 @@ function registerRandomTurnEffect(
       character.team === "player" ? "OnPlayerTurnStart" : "OnEnemyTurnStart",
     sourceInstanceId: character.instanceId,
     mechanicId: `${character.passive!.name} (roll)`,
-    action: async (source, teams, log) => {
+    action: async (source, teams, log, rng = Math.random) => {
       const teamKey = source.team === "player" ? "playerTeam" : "enemyTeam";
       const enemyKey = source.team === "player" ? "enemyTeam" : "playerTeam";
       const selfNow =
@@ -730,7 +775,7 @@ function registerRandomTurnEffect(
         source;
       if (selfNow.currentHP <= 0 || selfNow.isSub) return teams;
 
-      const picked = options[Math.floor(Math.random() * options.length)];
+      const picked = options[Math.floor(rng() * options.length)];
       const badgeName = `${character.passive!.name}: ${picked.kind === "buff" ? "+" : "-"}${picked.valuePercent}% ${picked.stat}`;
 
       let team = teams[teamKey];

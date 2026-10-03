@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/store/gameStore";
 import { useSettingsStore } from "@/store/settingsStore";
+import { useOverlayOpen } from "@/hooks/useOverlayOpen";
 import { actionsForTurn } from "@/lib/game/actionEconomy";
 import { bonusActionsFor } from "@/lib/game/stageEffects";
 import { mergePartnerIds } from "@/lib/game/handTransition";
@@ -210,6 +211,7 @@ export default function BattleCoach(): React.JSX.Element | null {
   }, [stepId, context, markSeen]);
 
   const [box, setBox] = React.useState<Box | null>(null);
+  const overlayOpen = useOverlayOpen();
 
   const anchor = step?.anchor ?? null;
 
@@ -237,7 +239,12 @@ export default function BattleCoach(): React.JSX.Element | null {
     };
   }, [anchor]);
 
-  if (!step || !box || typeof document === "undefined") return null;
+  // Stands down (hidden, not dismissed or advanced) while any sheet or dialog
+  // is open: the spotlight would frame the wrong thing and the card would sit
+  // on top of it. The tracker keeps measuring, so it re-anchors on close.
+  if (!step || !box || overlayOpen || typeof document === "undefined") {
+    return null;
+  }
 
   const index = TUTORIAL_STEPS.findIndex((entry) => entry.id === step.id);
 

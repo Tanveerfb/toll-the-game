@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { DEFAULT_EVENTS_TAB, type EventsTab } from "@/lib/game/eventTabs";
 
 /**
  * Small persisted-forever settings slice, separate from gameStore (which
@@ -64,6 +65,12 @@ interface SettingsState {
   /** Skip All: no coach marks, ever, until this is turned back off. */
   tutorialDismissed: boolean;
   setTutorialDismissed: (dismissed: boolean) => void;
+  /**
+   * The events board's open tab (World Boss / Epic Battles / Trials). UI state
+   * for this device, not account data: it lives here and is never cloud-synced.
+   */
+  eventsTab: EventsTab;
+  setEventsTab: (tab: EventsTab) => void;
   /** Show them again from the start — the way back from Skip All, and what a
    *  playtester needs after seeing them once. */
   resetTutorial: () => void;
@@ -103,6 +110,8 @@ export const useSettingsStore = create<SettingsState>()(
                 },
               },
         ),
+      eventsTab: DEFAULT_EVENTS_TAB,
+      setEventsTab: (tab) => set({ eventsTab: tab }),
       tutorialDismissed: false,
       setTutorialDismissed: (dismissed) =>
         set({ tutorialDismissed: dismissed }),

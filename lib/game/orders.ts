@@ -110,9 +110,6 @@ const ORDERS: Order[] = z
  */
 export const ORDERS_OPEN = false;
 
-/** What the home tile says while `ORDERS_OPEN` is false. */
-export const ORDERS_CLOSED_NOTE = "Being overhauled. Back in a later update.";
-
 /** Every authored step, ascending. */
 export const ORDER_STEPS: readonly number[] = [
   ...new Set(ORDERS.map((order) => order.step)),

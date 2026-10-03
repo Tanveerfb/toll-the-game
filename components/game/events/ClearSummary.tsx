@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import BackLink from "@/components/ui/BackLink";
 import { Button } from "@/components/ui/button";
 import { INK_TONE } from "@/components/ui/inkTone";
 import { cn } from "@/lib/utils";
@@ -65,9 +66,48 @@ export function BossClearSummary({
   return (
     <ClearPanel eventName={eventName} title="Rewards">
       <RewardList rows={rewardRows(rewards)} />
-      <Button onClick={onBack} className="mt-3">
-        Back to events
+      <BackLink label="Events" onClick={onBack} className="mt-3" />
+    </ClearPanel>
+  );
+}
+
+/**
+ * An Epic Battles stage clear: the result and nothing else.
+ *
+ * A stage pays no rewards (Tanveer, 2026-10-03) - missions will, later. Per
+ * #178 (less is more) the screen does not say so either, and shows no payout
+ * list at all. The clear is already recorded when this renders, and is
+ * deliberately not shown: this fight's turns only, no counts or bests.
+ */
+export function EpicClearSummary({
+  arcLabel,
+  arcTitle,
+  stageName,
+  turns,
+  onAgain,
+  onBack,
+}: {
+  arcLabel: string;
+  /** The arc's own name, for the way back: "Exam Arc". */
+  arcTitle: string;
+  stageName: string;
+  /** Player turns the winning fight took. */
+  turns: number;
+  onAgain: () => void;
+  onBack: () => void;
+}): React.JSX.Element {
+  return (
+    <ClearPanel eventName={arcLabel} title={stageName}>
+      <div className="border border-rule bg-muted px-2.5">
+        <div className="flex items-baseline justify-between gap-3 py-1.5">
+          <span className="font-body text-xs">Turns</span>
+          <span className="font-heading text-base tabular-nums">{turns}</span>
+        </div>
+      </div>
+      <Button onClick={onAgain} className="mt-3">
+        Fight again
       </Button>
+      <BackLink label={arcTitle} onClick={onBack} />
     </ClearPanel>
   );
 }
@@ -223,9 +263,7 @@ export function TrialClearSummary({
           Account rank {rankAfter}. Ranks climb again from here.
         </p>
       )}
-      <Button onClick={onBack} className="mt-3">
-        Back to events
-      </Button>
+      <BackLink label="Events" onClick={onBack} className="mt-3" />
     </ClearPanel>
   );
 }
@@ -245,14 +283,7 @@ export function TrialMissing({
         <p className="font-body text-sm">
           This trial has no encounter authored.
         </p>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={onBack}
-          className="mt-3 w-full"
-        >
-          Back to events
-        </Button>
+        <BackLink label="Events" onClick={onBack} className="mt-3" />
       </Panel>
     </Screen>
   );

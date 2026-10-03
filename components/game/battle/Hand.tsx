@@ -656,8 +656,16 @@ export default function Hand({
               else nodes.current.delete(card.id);
             }}
             onPointerDown={(e) => handlePointerDown(e, card)}
-            onMouseEnter={() => onPreviewStart(card)}
-            onMouseLeave={onPreviewEnd}
+            // Hover preview is for a real mouse only. A touch tap makes the
+            // browser emulate mouseenter and never sends the matching leave,
+            // so `onMouseEnter` left the explain panel open over the team row
+            // after a tap. Tap acts, hold explains (#118).
+            onPointerEnter={(e) => {
+              if (e.pointerType === "mouse") onPreviewStart(card);
+            }}
+            onPointerLeave={(e) => {
+              if (e.pointerType === "mouse") onPreviewEnd();
+            }}
             onFocus={() => onPreviewStart(card)}
             onBlur={onPreviewEnd}
             // A long press is the details gesture now, and on touch the OS
@@ -803,7 +811,8 @@ export default function Hand({
                 // with a reason; this is the reason. The card is what would
                 // have to grow, and it can't without the hand scrolling
                 // further than one swipe.
-                className={`absolute bottom-6 right-0.5 h-5 min-h-0 px-1 py-0 text-micro tracking-title ${
+                // `hit-44` gives it the 44px target the badge itself can't be.
+                className={`hit-44 absolute bottom-6 right-0.5 h-5 min-h-0 px-1 py-0 text-micro tracking-title ${
                   armed === card.id ? "bg-primary text-primary-foreground" : ""
                 }`}
               >

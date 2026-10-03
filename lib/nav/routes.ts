@@ -13,20 +13,27 @@ export interface GameRoute {
   label: string;
   /** Shorter name for the h-11 nav bar, where 8 links have to fit. */
   navLabel?: string;
+  /** Gets a slot in the phone's bottom tab bar. The tab shows `navLabel`
+   *  (else `label`) unless `tabLabel` says otherwise. */
+  tab?: boolean;
+  /** The tab bar's own word for this route, where it differs. */
+  tabLabel?: string;
 }
 
 // Typed as `readonly GameRoute[]` rather than `as const` so consumers see
 // `navLabel` as an optional field on every entry, not per-literal.
 export const GAME_ROUTES: readonly GameRoute[] = [
-  { href: "/", label: "Main Menu", navLabel: "Menu" },
+  { href: "/", label: "Main Menu", navLabel: "Menu", tab: true },
   // Main Story was removed on 2026-09-26 (story mode parked; restorable
   // from commit `2f6b016`).
-  { href: "/events", label: "Events", navLabel: "Events" },
-  { href: "/gacha", label: "Gacha" },
-  { href: "/archive", label: "Character Archive", navLabel: "Archive" },
+  { href: "/events", label: "Events", navLabel: "Events", tab: true },
+  { href: "/gacha", label: "Gacha", tab: true },
+  // The collection is "Characters" everywhere the player reads it; the route
+  // stays `/archive` because a URL is not copy (his call, 2026-10-03).
+  { href: "/archive", label: "Characters" },
   { href: "/practice", label: "Practice" },
   { href: "/news", label: "News" },
-  { href: "/profile", label: "Profile" },
+  { href: "/profile", label: "Profile", tab: true, tabLabel: "You" },
 ];
 
 /** `/` matches exactly; everything else matches its subtree. */

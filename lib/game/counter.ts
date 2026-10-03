@@ -1,6 +1,7 @@
 import { applyHeal } from "@/lib/game/heal";
 import { calculateDamage } from "@/lib/game/damage";
 import { getEffectiveAttack } from "@/lib/game/stats";
+import { activeBossMechanics } from "@/lib/game/bossPassives";
 import { getEffectiveLifesteal } from "@/lib/game/substats";
 import type { BattleCharacter } from "@/types/character";
 import type { BattleEventCounter } from "@/types/battleEvent";
@@ -45,7 +46,13 @@ export function strikeBack(
   log: (entry: string) => void,
 ): BattleEventCounter {
   const counterBase = (getEffectiveAttack(counterer) * percent) / 100;
-  const counterDamage = Math.floor(
+  // The struck unit's `counterDamageReduction` passive cuts the counter and
+  // nothing else; the multiplier is applied to the finished damage, so it
+  // composes with DEF, type and damage-reduction effects like any final cut.
+  const reduction = activeBossMechanics(attacker)
+    .filter((m) => m.type === "counterDamageReduction")
+    .reduce((mult, m) => mult * (1 - m.valuePercent / 100), 1);
+  const fullCounter = Math.floor(
     calculateDamage({
       baseDamage: counterBase,
       skillMechanics: [],
@@ -54,6 +61,13 @@ export function strikeBack(
       attacker: counterer,
     }),
   );
+  const counterDamage = Math.floor(fullCounter * reduction);
+  if (counterDamage < fullCounter) {
+    // Running total of what the passive saved, kept for the simulator's stats.
+    attacker.passiveState.counterDamagePrevented =
+      ((attacker.passiveState.counterDamagePrevented as number) || 0) +
+      (fullCounter - counterDamage);
+  }
   attacker.currentHP = Math.max(0, attacker.currentHP - counterDamage);
   if (counterDamage > 0) {
     attacker.passiveState.tookDamageThisRound = true;

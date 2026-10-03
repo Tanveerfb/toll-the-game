@@ -4,7 +4,7 @@
     "title": "Raise any character to level 20",
     "hint": "Level 20 is the first ascension wall. You will feel it before you see it.",
     "route": "/archive",
-    "routeLabel": "Archive",
+    "routeLabel": "Characters",
     "goal": { "type": "characterLevel", "level": 20 },
     "reward": {
       "gems": 50,
@@ -17,7 +17,7 @@
     "title": "Take a character to ascension 2",
     "hint": "Band two costs 6 eyes and 15 seaweed. Plan the runs.",
     "route": "/archive",
-    "routeLabel": "Archive",
+    "routeLabel": "Characters",
     "goal": { "type": "characterAscension", "ascension": 2 },
     "reward": { "gems": 100, "autoClearTickets": 2 },
     "step": 2
@@ -47,7 +47,7 @@
   },
   {
     "id": "s2-roster-ten",
-    "title": "Field a roster of ten",
+    "title": "Own ten characters",
     "hint": "Ten is enough to answer any element a fight throws at you.",
     "route": "/gacha",
     "routeLabel": "Summon",
@@ -80,7 +80,7 @@
     "title": "Take a character to ascension 3",
     "hint": "Band three is 10 eyes and 25 seaweed — the longest stretch so far.",
     "route": "/archive",
-    "routeLabel": "Archive",
+    "routeLabel": "Characters",
     "requires": "s2-ascend-two",
     "goal": { "type": "characterAscension", "ascension": 3 },
     "reward": {

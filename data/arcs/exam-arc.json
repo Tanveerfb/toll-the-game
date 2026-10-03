@@ -1,0 +1,29 @@
+{
+  "id": "exam-arc",
+  "collection": "Epic Battles",
+  "order": 1,
+  "title": "Exam Arc",
+  "summary": "The ledger exam: Master Tao examines in phase 1, and Lyra stands in the way of Duke's exam.",
+  "stages": [
+    {
+      "id": "master-tao",
+      "order": 1,
+      "name": "Master Tao",
+      "caption": "Phase 1 of the ledger exam — Master Tao, the examiner",
+      "encounter": {
+        "id": "exam-arc/master-tao",
+        "fights": [{ "enemies": [{ "id": "master_tao_npc", "level": 20 }] }]
+      }
+    },
+    {
+      "id": "lyra",
+      "order": 2,
+      "name": "Lyra",
+      "caption": "Duke's exam — Lyra stands in the way",
+      "encounter": {
+        "id": "exam-arc/lyra",
+        "fights": [{ "enemies": [{ "id": "lyra_npc", "level": 20 }] }]
+      }
+    }
+  ]
+}

@@ -57,7 +57,7 @@ export const TUTORIAL_STEPS: readonly StepDefinition[] = [
     id: "merge",
     anchor: "hand",
     title: "Two of a kind",
-    body: "Drag one card onto its match to merge them. The result hits harder — and every merge feeds that character's ultimate gauge.",
+    body: "Tap Merge on a card to fuse it with its match. The result hits harder — and every merge feeds that character's ultimate gauge.",
     // Only when a pair is actually there. Telling someone to merge a hand
     // that can't merge is worse than saying nothing.
     when: (c) => c.mergeAvailable,

@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils"
  * element hue is a fill or a frame, never the text (docs/design-system.md).
  */
 const badgeVariants = cva(
-  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-none border px-1.5 py-0 font-body text-label font-bold uppercase tracking-label whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-ring [&>svg]:pointer-events-none [&>svg]:size-3!",
+  "group/badge inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-none border py-0 font-body text-label font-bold uppercase tracking-label whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-ring [&>svg]:pointer-events-none [&>svg]:size-3!",
   {
     variants: {
       variant: {
@@ -27,12 +27,29 @@ const badgeVariants = cva(
         outline: "border-current bg-transparent",
         ink: "ink-skew border-card-foreground bg-card-foreground text-card",
         destructive: "border-border bg-destructive text-card-foreground",
+        /** Something owed or gained: the reward gold, ink on it (audit 3.4). */
+        reward: "border-border bg-el-light text-card-foreground",
+        /**
+         * The caller supplies the fill, because the hue is keyed off game data
+         * (a skill's class, a status effect's slot) and cannot be a static
+         * variant. Ink on it, so it reads on the ground and on paper alike.
+         */
+        fill: "border-border text-card-foreground",
         ghost: "border-transparent bg-transparent",
         link: "border-transparent underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-5 px-1.5",
+        /**
+         * The battle log's chips: they sit inside a `text-xs` row, so they
+         * grow with their line instead of fixing a height, and pad tighter.
+         */
+        tight: "h-auto px-1 py-px text-xs",
       },
     },
     defaultVariants: {
       variant: "default",
+      size: "default",
     },
   }
 )
@@ -40,6 +57,7 @@ const badgeVariants = cva(
 function Badge({
   className,
   variant = "default",
+  size = "default",
   asChild = false,
   ...props
 }: React.ComponentProps<"span"> &
@@ -50,7 +68,7 @@ function Badge({
     <Comp
       data-slot="badge"
       data-variant={variant}
-      className={cn(badgeVariants({ variant }), className)}
+      className={cn(badgeVariants({ variant, size }), className)}
       {...props}
     />
   )

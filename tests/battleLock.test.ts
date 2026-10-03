@@ -58,7 +58,7 @@ describe("resumedEventBattle", () => {
     // would otherwise reset to the account's world level.
     const resumed = resumedEventBattle("PlayerAction", BOSS);
     expect(resumed?.kind).toBe("boss");
-    expect(resumed?.event.id).toBe("molvarr");
+    expect(resumed?.kind === "boss" && resumed.event.id).toBe("molvarr");
     expect(resumed?.kind === "boss" && resumed.difficulty).toBe(2);
   });
 
@@ -69,6 +69,27 @@ describe("resumedEventBattle", () => {
       view: { kind: "trial", eventId: "trial-rank-20", run },
     });
     expect(resumed?.kind === "trial" && resumed.run.fightIndex).toBe(1);
+  });
+
+  it("rebuilds a live Epic Battles stage from its arc and stage ids", () => {
+    const resumed = resumedEventBattle("PlayerAction", {
+      route: "/events",
+      view: { kind: "epic", arcId: "exam-arc", stageId: "lyra" },
+    });
+    expect(resumed?.kind).toBe("epic");
+    expect(resumed?.kind === "epic" && resumed.stage.id).toBe("lyra");
+    expect(resumed?.kind === "epic" && resumed.arc.id).toBe("exam-arc");
+  });
+
+  it("falls back to the board for an arc or stage that no longer exists", () => {
+    for (const view of [
+      { kind: "epic", arcId: "gone-arc", stageId: "lyra" },
+      { kind: "epic", arcId: "exam-arc", stageId: "gone-stage" },
+    ] as const) {
+      expect(
+        resumedEventBattle("PlayerAction", { route: "/events", view }),
+      ).toBeNull();
+    }
   });
 
   it("keeps a finished fight's card, so its rewards can still be claimed", () => {
