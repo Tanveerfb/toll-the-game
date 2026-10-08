@@ -26,6 +26,7 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 | `ruling` | He settles a design question. Numbered entry, his words, supersede links, propagation |
 | `comfypending` | A feature needs art the game doesn't have |
 | `charart` | Making a playable character's art: design lock, LoRA, kit/card drafts, finish, composite, lock. Enforces his approval gates; the method is `docs/CHARACTER_ART.md` |
+| `dokkanartresearch` | Pose research for kit art: find a Dokkan card on dokkandb.com, view it, save it to the reference library. Pose and composition only; saving asks first |
 | `relay` | Starting a session: load `docs/STATUS.md`, then check it against the repo before any work |
 | `checkpoint` | Ending a session: `checkpoint` / `git checkpoint` / `git checkpoint max` (project-rules §28) |
 

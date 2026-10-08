@@ -1430,6 +1430,8 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    can be any color any pose ... it's only the skills that reflect the
    type"*. The map is #133's (`lib/game/skillTypeStyle.ts`). **Replaces the
    element-colour background of `docs/design/SKILL_ART_PLAN.md`.**
+   **Ultimate half amended by #184 (2026-10-08):** an ultimate gets a scenic background
+   with its toll-power elements scattered through it, not a free colour.
    - **Layered, with the background drawn in code:** offered layered or
      prompted, he chose layered, *"better quality and more consistency across
      the game"* (a selection among options Claude offered). The drawer is
@@ -1898,3 +1900,110 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
        - "Show locked units" (the new wording for the archive reveal
          button).
 
+
+181. **Duke has no blue hair streak: black hair with ash-grey highlights** (2026-10-07,
+   amends his 2026-10-02 design lock in `toll-kits` `brainstorm/duke-design-lock.md`).
+   Mid-run, while the step-0 design round was rendering: *"i don't like the blue
+   hair streak. can we lose that from the design while we are here? Instead we
+   can change to black hair with ash color highlights. similar to the image
+   attached."* The image is a barber photo of a textured, wavy cut swept up and
+   back, tapered fade at the sides, ash-grey highlights running through the top
+   (chat only; Claude cannot copy a chat attachment into the reference library).
+   - **What it replaces:** the one bold water-blue front streak. That streak was
+     a call Claude made on his delegation (2026-10-02), so this is him
+     reversing a delegated call, not one of his own locks.
+   - **What stands:** the rest of the 2026-10-02 lock (swept back, short tapered
+     sides, dark brown eyes, light-medium brown skin, compact lean build, 5'10",
+     short-sleeve fitted black top, charcoal trousers, black boots, blue wrist
+     bands).
+   - **Claude's reading, not his words:** the water-blue accent is now carried
+     by the wrist bands alone. He has not said whether the accent should move
+     anywhere else.
+   - **Where it lives:** `scripts/lora/characters/duke.json` (`identity`,
+     `design_note`). Round 1, drawn with the blue streak, is archived in
+     ComfyUI `output\lora_duke_design_r1_bluestreak`. The `toll-kits` lock still
+     says streak until its next session updates it.
+
+182. **Duke is redesigned across the story and the game; he is an adult frame of
+   average-to-above-average bulk** (base lock 2026-10-02, filed here 2026-10-07 from
+   `toll-kits` `decisions/PENDING.md`; amended by #181 and by the build revision
+   below). On whether it replaces the game's Duke: *"Does it also replace? Yes. Since
+   we are actually deciding on his design here so his design is actually operated
+   across the story and across the game too but we'll have to obviously do the lora
+   work"*. His locked parts, in his words: *"swept back with short tapered side"*;
+   *"Dark brown is fine. It over a cannon blue. That's fine."* (eyes);
+   *"5'10 can be the height, sure. He has to be a bit slightly taller than Lyra."*
+   Outfit answers: *"Short sleeves can work."*; *"Boots."*; *"No need for magenta. We
+   can have 10% accent of a water blue."*; *"We can add blue wrist bands that match
+   with the hair blue accent."* He then delegated the small details (*"you can also
+   decide the small details"*), so the charcoal loose trousers, black ankle boots
+   and fitted black crew-neck tee are Claude's calls, which he can change.
+   - **Hair:** black with ash-grey highlights, not blue (#181). So the blue accent is
+     now the wrist bands alone (Claude's reading).
+   - **Build revised 2026-10-07**, replacing the 2026-10-02 *"Lean, muscular, like a
+     compact, fit body, but not bulky body, and definitely not slim body. So it's a
+     compact build."* He saw the first dataset images and said: *"for most of the
+     images he reads as a teen or young adult. He is 26 in the story i think no? Give
+     him a adult frame and avg to above average bulk. A bit less muscular version of
+     Garou from OPM."* So the working reading is an adult face and frame, broad,
+     with more bulk than before and less than Garou; the 5'10" stands.
+   - **Face:** his own, changed a little, main-character energy. The locked face
+     reference is design-round image D22 (2026-10-07), picked through the question
+     tool: *"Lock it, face from D22"* is an option label he selected, not his prose.
+   - **What it changes:** the game's `blue_duke` and `green_duke` art, once his LoRA
+     exists (`scripts/lora/characters/duke.json`; method `docs/CHARACTER_ART.md`).
+     Not his kit. The game-owned design sheet `designs/characters/duke.md` in
+     `toll-kits` is stale (bulkier, dark blue quiff, teal eyes).
+   - **Still to do outside this repo:** delete the filed entries from
+     `toll-kits` `decisions/PENDING.md` and add this number to `KIT_RULINGS` in its
+     `tools/sync.mjs`. Not done here: that is another repo, and git is his call.
+
+183. **A redesign or LoRA sets a character's look everywhere; Batra is redesigned, and
+   the 2026-10-07 round locked his outfit and face** (standing rule 2026-10-02, filed
+   here 2026-10-07 from `toll-kits` `decisions/PENDING.md`). The standing rule:
+   *"Not just batra but each of the redesigns or lora we build for a character will
+   affect their presence canonically everywhere, in game and in story."* So when a
+   design is locked in the workshop and its LoRA is built, that look is canon in the
+   game art and the story for every character, and the game's art for that
+   character is regenerated from the LoRA.
+   - **His 2026-10-02 decisions:** age 26 and 6'1" (*"height would be 6'1""*), bulky,
+     a full beard (*"Beard match yes but can give it a bit more volumne if needed."*),
+     a kesari turban in the small close-fitting style of his own photo, no turban
+     emblem, a plain steel kada on the right and one gold bracer on the left
+     (*"Right arm. Gold one on left."*), forearm sleeves (*"Sleeve length to the
+     forearm sure."*), no scar, the bead necklace dropped (*"Drop it."*), black as
+     the secondary colour (*"Black secondary color"*). The small details (warm dark
+     brown eyes, medium warm brown skin, mid-thigh tunic with side slits) were
+     delegated to Claude and he can change any.
+   - **2026-10-07 design round 1:** he liked B5, B11 (*"lose the tree ofc"*), B22,
+     B28 and B36 (*"For batra, b5, b11(lose the tree ofc), b22, 28, b36"*). Through
+     the question tool he then selected, in Claude's option wording: **black sash as
+     written**, **keep the ivory cross-strap**, **forearm sleeves**, **brown boots**.
+     Two of those change the written lock: the **ivory cross-strap** is a new garment
+     (his picks B5, B22 and B28 all show it), and **brown boots replace the written
+     black** (Claude's delegated call). **Face reference: B36** (*"36 for face
+     refs."*).
+   - **Care with the turban** is Claude's caution, not his words: draw a neatly
+     wound turban, never a hat or cap, never knocked off, burning or mocked, and keep
+     fire clear of it. His real-life reference photos stay out of the repos and out
+     of training.
+   - **Where it lives:** `scripts/lora/characters/batra.json` (`lock`, `design_note`).
+     The old `blue_batra` art is superseded by the LoRA work. Same outside-the-repo
+     follow-up as #182 (`toll-kits` PENDING and `KIT_RULINGS`).
+
+184. **An ultimate's art is a scenic background with the unit's toll-power elements scattered
+   through it, and the aura stays where the power is** (2026-10-08, amends #161's "ultimate
+   can be any colour"). His words: *"Normally i would put toll power elements scattered in the
+   background and a scenic background. for duke, small droplets of varying size, a snow
+   mountain like background? with his thin aura only on hands (light blue/water)"*. So an
+   ultimate is no longer a flat colour field with a ray burst (what Sonnet built for Duke on
+   2026-10-08, violet plus attack-style speed lines): it is a place, plus the unit's element
+   scattered as particles. **Duke:** a snowy-mountain backdrop, water droplets of varying size,
+   a thin light-blue water aura on the hands only. Attack skills keep #161's class colour.
+   - **Same session, through the question tool (option labels are Claude's wording, his
+     selections):** Duke's Slide is a drop kick with **the soles toward the lens**; Duke's
+     card setting is **riverside / water**; the strand by his ear is removed by **cleaning
+     the dataset and retraining** the LoRA (he had asked twice to lose it, *"its the spiky
+     hair strand near the ear. don't want it."*), not by patching each picture.
+   - **Where it lives:** `scripts/lora/characters/duke.json` (`kit_art`),
+     `docs/CHARACTER_ART.md` rule 5.

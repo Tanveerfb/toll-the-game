@@ -1,0 +1,93 @@
+{
+  "_note": "Slide variant A: a low leg sweep to the image right, seen from the side so the legs do not overlap. Hips almost on the ground, torso leaning forward, the subject's left hand reaching down ahead, the right leg swept straight out low, the left knee folded up. No wrist above the shoulders.",
+  "pelvis": [
+    0,
+    0,
+    0.38
+  ],
+  "spine": [
+    0.5,
+    0,
+    1
+  ],
+  "hip_axis": [
+    0,
+    1,
+    0
+  ],
+  "shoulder_axis": [
+    0,
+    1,
+    0
+  ],
+  "face": [
+    1,
+    -0.1,
+    -0.1
+  ],
+  "upper_arm_l": [
+    0.6,
+    0.2,
+    -0.6
+  ],
+  "forearm_l": [
+    0.5,
+    0,
+    -0.7
+  ],
+  "upper_arm_r": [
+    -0.7,
+    -0.3,
+    -0.4
+  ],
+  "forearm_r": [
+    -0.7,
+    0,
+    0.2
+  ],
+  "thigh_l": [
+    0.6,
+    0.3,
+    0.45
+  ],
+  "shin_l": [
+    -0.2,
+    0,
+    -1
+  ],
+  "foot_l": [
+    0.5,
+    0,
+    -0.3
+  ],
+  "thigh_r": [
+    1,
+    -0.1,
+    -0.15
+  ],
+  "shin_r": [
+    1,
+    0,
+    -0.25
+  ],
+  "foot_r": [
+    0.3,
+    0,
+    1
+  ],
+  "camera": {
+    "location": [
+      0.5,
+      -4.2,
+      0.6
+    ],
+    "look_at": [
+      0.5,
+      0,
+      0.45
+    ],
+    "lens_mm": 40
+  },
+  "height": 1.1,
+  "thickness": 1.35
+}

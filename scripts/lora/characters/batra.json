@@ -1,0 +1,113 @@
+{
+  "id": "batra",
+  "trigger": "batratoll",
+  "face_ref": "batra_face_ref_b36.png",
+  "out_dir": "lora_batra_set_a",
+  "dataset_name": "batra_v1",
+  "batch": 3,
+  "hand_fix": true,
+  "seed_offset": 200,
+  "identity": "masterpiece, best quality, absurdres, 1boy, solo, human, adult man, 26 years old, tall, bulky muscular build, (full black beard, medium full, dense, neat moustache, clean cheek line:1.3), (saffron orange turban, compact close-fitting wrap, crossed front folds, neatly wound:1.3), (steel bangle on right wrist:1.2), (gold bracer on left wrist:1.2), (saffron orange tunic, mid-thigh length, side slits, plain stand-up collar, (long sleeves to the forearm:1.3)), (ivory cross-strap over the tunic, two ivory straps crossing the chest from the shoulders to the waist:1.3), (black cloth sash at the waist with a thin saffron edge stripe:1.3), (loose black trousers gathered at the lower leg, tucked into boots:1.2), (brown mid-calf boots, heavy soles:1.3), (warm dark brown eyes:1.1), (medium warm brown skin:1.1)",
+  "identity_upper": "masterpiece, best quality, absurdres, 1boy, solo, human, adult man, 26 years old, bulky muscular build, (full black beard, medium full, dense, neat moustache, clean cheek line:1.3), (saffron orange turban, compact close-fitting wrap, crossed front folds, neatly wound:1.3), (saffron orange tunic, plain stand-up collar:1.2), (ivory strap crossing the chest over the tunic:1.2), (warm dark brown eyes:1.1), (medium warm brown skin:1.1)",
+  "negative_extra": "child, teenager, shota, (thin:1.2), (long beard:1.2), (no beard:1.3), (cap:1.3), (hat:1.3), (turban emblem:1.3), (jewel on turban:1.2), (loose hair:1.2), (scar:1.2), (sleeveless:1.2), (bare arms:1.2), (purple sash:1.4), (purple:1.3), (black boots:1.2), (short sleeves:1.3), (fur collar:1.3), (crowd:1.3), (multiple people:1.3), (textured background:1.3), (hay:1.2), (rocks:1.2), (bushes:1.2), (cliff:1.2), landscape, (bead necklace:1.2), (turban on fire:1.3), fire, flames, aura, sword, kirpan, (text:1.2), logo, red eyes, pale skin",
+  "style": "cel shading, thick clean lineart, anime screencap, even lighting, (plain light grey background:1.2), simple background",
+  "design_note": "Step 0 design round, 2026-10-07. Source: toll-kits branch claude/pensive-brahmagupta-8yv4rd, brainstorm/batra-design-lock.md and batra-lora-brief.md (his decisions 2026-10-02; small details delegated to Claude and he can change any). Age 26, 6'1\", bulky, full medium-full black beard, kesari turban (compact, close-fitting, crossed front folds, NO emblem), steel kada on the RIGHT wrist, gold bracer on the LEFT, forearm sleeves, kesari primary and black secondary, no scar, no kirpan, no bead necklace. Respect the turban: always a neatly wound turban, never a hat or cap, never knocked off, burning or mocked; no fire in the base design. His real-life reference photos stay out of the repos and out of training. The identity prompt is Claude's draft and needs his approval. No face reference in this round. ROUND 1 (output\\lora_batra_design, B1 to B36): he liked B5, B11 (without the tree), B22, B28, B36. Through the question tool (option labels are Claude's wording, his selections) he then chose: BLACK sash as written, KEEP the ivory cross-strap (a new garment, not in the 2026-10-02 lock), FOREARM sleeves, BROWN boots (replacing the written black). Round 2 (output\\lora_batra_design_r2) applies those.",
+  "body_shots": [
+    [
+      "front_grin",
+      "full body, standing, front view, arms at sides, hands visible, wide friendly grin, looking at viewer"
+    ],
+    [
+      "front_calm",
+      "full body, standing, front view, arms at sides, hands visible, calm confident expression, looking at viewer"
+    ],
+    [
+      "three_quarter_l",
+      "full body, standing, three-quarter view, body turned left, arms at sides, hands visible, easygoing smile, looking at viewer"
+    ],
+    [
+      "three_quarter_r",
+      "full body, standing, three-quarter view, body turned right, arms at sides, hands visible, calm expression, looking at viewer"
+    ],
+    [
+      "side_view",
+      "full body, standing, side view, profile, arms at sides, calm expression"
+    ],
+    [
+      "back_view",
+      "full body, standing, from behind, back view, arms at sides, hands visible, turban visible from behind",
+      "back"
+    ],
+    [
+      "over_shoulder",
+      "upper body, from behind, looking back over shoulder, grin"
+    ],
+    [
+      "arms_crossed",
+      "cowboy shot, arms crossed, confident smirk, looking at viewer"
+    ],
+    [
+      "hand_on_hip",
+      "cowboy shot, one hand on hip, other arm at side, joking grin, looking at viewer"
+    ],
+    [
+      "walking",
+      "full body, walking, relaxed stride, arms swinging at sides, looking ahead, grin"
+    ],
+    [
+      "fist_guard",
+      "cowboy shot, front view, both fists clenched in front of chest, fighting stance, resolute stare, looking at viewer"
+    ]
+  ],
+  "face_shots": [
+    [
+      "face_grin",
+      "facing viewer, looking at viewer, wide friendly grin"
+    ],
+    [
+      "face_34l_resolute",
+      "three-quarter view, head turned left, looking at viewer, resolute stare"
+    ],
+    [
+      "face_34r_focus",
+      "three-quarter view, head turned right, looking to the side, focused calm expression"
+    ],
+    [
+      "face_laugh",
+      "facing viewer, looking at viewer, laughing, open mouth"
+    ],
+    [
+      "face_profile",
+      "profile, side view, looking to the side, calm expression"
+    ],
+    [
+      "face_smirk",
+      "facing viewer, looking at viewer, smirk, one eyebrow raised"
+    ],
+    [
+      "face_calm",
+      "facing viewer, looking at viewer, calm composed expression"
+    ],
+    [
+      "face_rage",
+      "facing viewer, shouting, open mouth, intense eyes, furious"
+    ],
+    [
+      "face_up",
+      "looking up, slightly from below, confident expression"
+    ],
+    [
+      "face_down",
+      "looking down, from above, pensive expression"
+    ]
+  ],
+  "approved": {},
+  "lora_use": null,
+  "art_direction": null,
+  "lock": {
+    "date": "2026-10-07",
+    "how": "From design round 1 he liked B5, B11 (without the tree), B22, B28, B36; chose via the question tool (option labels are Claude's wording): black sash, ivory cross-strap kept, forearm sleeves, brown boots. Then: 'for face refs' B36.",
+    "face_source": "output/lora_batra_design/cand_face_focus_00003_.png (B36, seed 922003); face-only crop (turban, face, beard; background and most collar whitened) saved as ComfyUI input/batra_face_ref_b36.png"
+  },
+  "status": "HELD 2026-10-07: step 1 (dataset). Round rendered to output/lora_batra_set_a and NOT reviewed or sent. Known problems: the B36 face reference draws a bandana-like turban, and the strap wording draws crosses. Needs options for him before any further batch. Nothing approved, no LoRA."
+}

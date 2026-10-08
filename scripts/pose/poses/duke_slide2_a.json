@@ -1,0 +1,93 @@
+{
+  "_note": "Slide sweep: ground-level camera in front, the swept leg stretching toward the lens.",
+  "pelvis": [
+    0,
+    0,
+    0.38
+  ],
+  "spine": [
+    0.5,
+    0,
+    1
+  ],
+  "hip_axis": [
+    0,
+    1,
+    0
+  ],
+  "shoulder_axis": [
+    0,
+    1,
+    0
+  ],
+  "face": [
+    1,
+    -0.1,
+    -0.1
+  ],
+  "upper_arm_l": [
+    0.6,
+    0.2,
+    -0.6
+  ],
+  "forearm_l": [
+    0.5,
+    0,
+    -0.7
+  ],
+  "upper_arm_r": [
+    -0.7,
+    -0.3,
+    -0.4
+  ],
+  "forearm_r": [
+    -0.7,
+    0,
+    0.2
+  ],
+  "thigh_l": [
+    0.6,
+    0.3,
+    0.45
+  ],
+  "shin_l": [
+    -0.2,
+    0,
+    -1
+  ],
+  "foot_l": [
+    0.5,
+    0,
+    -0.3
+  ],
+  "thigh_r": [
+    1,
+    -0.1,
+    -0.15
+  ],
+  "shin_r": [
+    1,
+    0,
+    -0.25
+  ],
+  "foot_r": [
+    0.3,
+    0,
+    1
+  ],
+  "camera": {
+    "location": [
+      2.4,
+      -0.6,
+      0.3
+    ],
+    "look_at": [
+      0.2,
+      0,
+      0.5
+    ],
+    "lens_mm": 24
+  },
+  "height": 1.1,
+  "thickness": 1.35
+}

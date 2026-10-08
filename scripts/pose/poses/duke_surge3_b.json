@@ -1,0 +1,99 @@
+{
+  "height": 1.1,
+  "thickness": 1.35,
+  "_note": "Surge, from the LR PHY UI Goku power-up card: floating, knees bent apart, fists at the chest, elbows out, head thrown back.",
+  "pelvis": [
+    0,
+    0,
+    1.15
+  ],
+  "spine": [
+    0,
+    0.12,
+    1
+  ],
+  "neck": [
+    0,
+    0.3,
+    1
+  ],
+  "hip_axis": [
+    1,
+    0,
+    0
+  ],
+  "shoulder_axis": [
+    1,
+    0,
+    0
+  ],
+  "face": [
+    0,
+    -0.8,
+    0.55
+  ],
+  "upper_arm_l": [
+    0.6,
+    0.1,
+    -0.8
+  ],
+  "forearm_l": [
+    -0.7,
+    -0.2,
+    0.3
+  ],
+  "upper_arm_r": [
+    -0.6,
+    0.1,
+    -0.8
+  ],
+  "forearm_r": [
+    0.7,
+    -0.2,
+    0.3
+  ],
+  "thigh_l": [
+    0.5,
+    -0.1,
+    -0.9
+  ],
+  "shin_l": [
+    -0.1,
+    0.3,
+    -1
+  ],
+  "foot_l": [
+    0,
+    -0.4,
+    -1
+  ],
+  "thigh_r": [
+    -0.5,
+    -0.1,
+    -0.9
+  ],
+  "shin_r": [
+    0.1,
+    0.3,
+    -1
+  ],
+  "foot_r": [
+    0,
+    -0.4,
+    -1
+  ],
+  "camera": {
+    "location": [
+      1.5,
+      -2.6,
+      0.9
+    ],
+    "look_at": [
+      0,
+      0,
+      1.4
+    ],
+    "lens_mm": 30,
+    "roll_deg": -6
+  }
+}

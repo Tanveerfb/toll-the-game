@@ -20,8 +20,12 @@ def profile(char_id):
 
 
 def queue(graph):
-    """POST an API-format graph to ComfyUI; return the prompt id."""
-    body = json.dumps({"prompt": graph}).encode()
+    """POST an API-format graph to ComfyUI; return the prompt id. With the env var
+    COMFY_FRONT set, the job goes to the front of the queue (later jobs run first)."""
+    payload = {"prompt": graph}
+    if os.environ.get("COMFY_FRONT"):
+        payload["front"] = True
+    body = json.dumps(payload).encode()
     req = urllib.request.Request("http://127.0.0.1:8188/prompt", data=body,
                                  headers={"Content-Type": "application/json"})
     return json.loads(urllib.request.urlopen(req).read())["prompt_id"]
@@ -90,7 +94,7 @@ HAND_NEG = "(paw:1.3), (cat paw:1.3), animal hand, claws, mitten hands, fused fi
 
 
 def base_graph(pos, neg, w, h, seed, prefix, batch=4, face_ref=None, lora=None, lora_strength=0.9, pose=None,
-               hand_fix=False):
+               hand_fix=False, hand_extra="", hand_denoise=0.55):
     """Animagine txt2img with either an IP-Adapter face ref or a LoRA, an
     optional OpenPose skeleton (an input/ filename) at strength 0.6, and an
     optional hand pass (`hand_fix`): each detected hand re-rendered at 512px
@@ -132,13 +136,14 @@ def base_graph(pos, neg, w, h, seed, prefix, batch=4, face_ref=None, lora=None, 
         g["31"] = {"class_type": "BboxDetectorSEGS", "inputs": {
             "bbox_detector": ["30", 0], "image": out, "threshold": 0.35, "dilation": 16, "crop_factor": 3.0,
             "drop_size": 8, "labels": "all"}}
-        g["32"] = {"class_type": "CLIPTextEncode", "inputs": {"clip": ["1", 1], "text": HAND_POS}}
+        g["32"] = {"class_type": "CLIPTextEncode", "inputs": {"clip": ["1", 1],
+                                                        "text": f"{HAND_POS}, {hand_extra}" if hand_extra else HAND_POS}}
         g["33"] = {"class_type": "CLIPTextEncode", "inputs": {"clip": ["1", 1], "text": f"{HAND_NEG}, {neg}"}}
         g["34"] = {"class_type": "DetailerForEach", "inputs": {
             "image": out, "segs": ["31", 0], "model": ["1", 0], "clip": ["1", 1], "vae": ["1", 2],
             "guide_size": 512, "guide_size_for": True, "max_size": 1024, "seed": seed, "steps": 24, "cfg": 6.0,
             "sampler_name": "euler_ancestral", "scheduler": "normal", "positive": ["32", 0], "negative": ["33", 0],
-            "denoise": 0.55, "feather": 8, "noise_mask": True, "force_inpaint": True, "wildcard": "", "cycle": 1,
+            "denoise": hand_denoise, "feather": 8, "noise_mask": True, "force_inpaint": True, "wildcard": "", "cycle": 1,
             "noise_mask_feather": 20}}
         out = ["34", 0]
     g["7"] = {"class_type": "SaveImage", "inputs": {"images": out, "filename_prefix": prefix}}

@@ -1,0 +1,264 @@
+{
+  "id": "duke",
+  "trigger": "duketoll",
+  "face_ref": "duke_face_ref_d22.png",
+  "out_dir": "lora_duke_set_f",
+  "dataset_name": "duke_v1",
+  "batch": 3,
+  "hand_fix": false,
+  "seed_offset": 800,
+  "identity": "masterpiece, best quality, absurdres, 1boy, solo, human, adult man, (adult man, 26 years old:1.2), (athletic muscular build, broad shoulders, defined arms:1.25), (mature face:1.1), (dark brown eyes:1.2), (black hair swept back and up, textured wavy top, short tapered fade on the sides:1.2), (ash grey highlights, silver ash streaks through the top hair:1.3), (light medium brown skin:1.3), defined brow, (black shirt:1.6), (fitted black short sleeve crew neck shirt:1.5), (dark clothing:1.3), (loose dark charcoal trousers, relaxed fit, tapered legs:1.3), (black ankle boots, laced, boot tops under the trouser hems:1.3), (blue wristbands, narrow blue sweatbands on both wrists:1.2), bare hands",
+  "identity_upper": "masterpiece, best quality, absurdres, 1boy, solo, human, (adult man, 26 years old:1.2), (broad shoulders:1.1), (dark brown eyes:1.2), (black hair swept back and up, textured wavy top, short tapered fade on the sides:1.2), (ash grey highlights, silver ash streaks through the top hair:1.3), (light medium brown skin:1.3), defined brow, (black shirt:1.6), (fitted black short sleeve crew neck shirt:1.5), (dark clothing:1.3)",
+  "negative_extra": "child, teenager, shota, (bodybuilder:1.4), (extremely muscular:1.3), (thin:1.2), (spiky hair:1.2), (robe:1.3), (magenta:1.3), (pink:1.2), (sleeveless:1.2), (long sleeves:1.2), (hand wraps:1.1), (blue hair:1.4), (blue hair streak:1.4), (blue sash:1.3), (cloth tied around waist:1.3), waist tie, (white shirt:1.4), (grey shirt:1.3), (navy shirt:1.2), (stripe on trousers:1.3), (side stripe:1.3), (logo:1.2), (emblem:1.2), ponytail, long hair, (white hair:1.2), (fully grey hair:1.2), red hair, pale skin, blue eyes, teal eyes, beard, stubble, facial hair, glasses, text, (white shirt:1.6), (grey shirt:1.5), (light colored shirt:1.4), (white clothes:1.3), (brown trousers:1.4), (light grey trousers:1.3), (slim:1.2), (skinny:1.3), (young:1.3), (youthful:1.3), (boyish:1.4), (teen:1.4), (young adult:1.2), (baby face:1.3), (slender:1.3), (lanky:1.3), (hyper muscular:1.5), (huge muscles:1.4), (thick neck:1.3), (fangs:1.5), (sharp teeth:1.5), (angry:1.3), (scowl:1.3), (long neck:1.3), (pink skin:1.3), (pale skin:1.3), (gaunt:1.2), (boyish:1.3), (slender:1.3), (crouching:1.4), (squatting:1.4), (kneeling:1.3), (sitting:1.3), tying shoelaces, leaning forward, (cord between ankles:1.5), (rope:1.4), (strap between legs:1.4), (drawstring at ankles:1.4), (shoelaces tied together:1.5), (trailing laces:1.3), (ribbon:1.3), (chain:1.3), (necklace:1.3), (knee-high boots:1.3), (tall boots:1.3), dress pants, pleated trousers, slacks, grey shoes, sneakers, white soles",
+  "style": "cel shading, thick clean lineart, anime screencap, even lighting, (plain light grey background:1.2), simple background",
+  "design_note": "Step 0 design round, 2026-10-07. Source: toll-kits branch claude/pensive-brahmagupta-8yv4rd, brainstorm/duke-design-lock.md and duke-lora-brief.md (his decisions 2026-10-02; the small details were delegated to Claude). CHANGED 2026-10-07 by him: no blue hair streak. Hair is black with ash-grey highlights (his words: \"black hair with ash color highlights\"), textured, swept back and up, short tapered fade; he attached a barber photo of that cut as the reference (chat only, not stored). The only water-blue left is the wristbands. Round 1 (blue streak) is archived at output\\lora_duke_design_r1_bluestreak; round 2 (ash highlights, 36 images) is output\\lora_duke_design. The identity prompt is Claude's draft and still needs his approval.",
+  "lock": {
+    "date": "2026-10-07",
+    "how": "He liked D10, D22 and D20 from design round 2, then picked via the question tool: lock it, face from D22; outfit = black tee, charcoal trousers with no stripe, black laced ankle boots. Those option labels are Claude's wording, his selections.",
+    "face_source": "output/lora_duke_design/cand_resolute_fist_00001_.png (D22, seed 910107); face-only crop (ellipse, shirt whitened) saved as ComfyUI input/duke_face_ref_d22.png",
+    "liked": {
+      "D10": "output/lora_duke_design/cand_arms_crossed_00001_.png (seed 910103)",
+      "D20": "output/lora_duke_design/cand_walking_00002_.png (seed 911106)",
+      "D22": "output/lora_duke_design/cand_resolute_fist_00001_.png (seed 910107)"
+    },
+    "dropped": "D22's navy tee, D20's side stripe on the trousers",
+    "known_drift": "Set A (output\\lora_duke_set_a) came back with white and grey tees on almost every image, thin bodies and two-headed or twisted poses, and was not sent. A 12-image test (output\\lora_duke_teetest) fixed the tee: black shirt weighted 1.6, white and grey shirts in the negatives, a light grey background instead of white (white bleeds into the clothes), face reference kept. Build and trouser weights added after.",
+    "build_revision": {
+      "date": "2026-10-07",
+      "his_words": "for most of the images he reads as a teen or young adult. He is 26 in the story i think no? Give him a adult frame and avg to above average bulk. A bit less muscular version of Garou from OPM.",
+      "replaces": "the 2026-10-02 'compact, lean, muscular' build",
+      "note": "Set B (output\\lora_duke_set_b_oldbuild, 15 images, stopped) was rendered with the old build and is not used.",
+      "tests": "Set B (output\\lora_duke_set_b) came back far too bulky (the words 'average to above average bulk' and 'thick neck' gave a bodybuilder), the close-ups all scowled with fangs ('strong jaw', 'mature face', 'sharp brow') and the skin drifted pink. Tests output\\lora_duke_buildtest and lora_duke_buildtest2: variant 'vc' (athletic muscular build, broad shoulders, defined arms at 1.25, adult man 1.2) is the middle; 'vd' (1.35) is too bulky; milder 'athletic build' alone reads boyish. The hand pass (hand_fix) makes pale, glowing hands on his brown skin even with a skin-tone hand prompt and denoise 0.4, so it is off for Duke. Set C close-ups came back as blurry blobs: '(mature face:1.1)' in identity_upper blurs a face-focus 1024 render (diagnosed with output\\lora_duke_facediag; removing it fixed it, with or without the face reference). It stays in the full-body identity, where it does no harm."
+    }
+  },
+  "body_shots": [
+    [
+      "front_half_smile",
+      "full body, standing, front view, arms at sides, hands visible, relaxed confident half-smile, looking at viewer"
+    ],
+    [
+      "front_calm",
+      "full body, standing, front view, arms at sides, hands visible, calm expression, looking at viewer"
+    ],
+    [
+      "three_quarter_l",
+      "full body, standing, three-quarter view, body turned left, arms at sides, hands visible, slight smile, looking at viewer"
+    ],
+    [
+      "three_quarter_r",
+      "full body, standing, three-quarter view, body turned right, arms at sides, hands visible, calm confident expression, looking at viewer"
+    ],
+    [
+      "side_view",
+      "full body, standing, side view, profile, arms at sides, focused calm expression"
+    ],
+    [
+      "back_view",
+      "full body, standing, from behind, back view, arms at sides, hands visible",
+      "back"
+    ],
+    [
+      "over_shoulder",
+      "upper body, standing, back turned to viewer, looking back over shoulder, half-smile"
+    ],
+    [
+      "arms_crossed",
+      "upper body, standing upright, arms crossed over chest, confident smirk, looking at viewer"
+    ],
+    [
+      "hand_on_hip",
+      "upper body, standing upright, one hand on hip, other arm at side, easygoing smile, looking at viewer"
+    ],
+    [
+      "walking",
+      "full body, standing upright, walking forward, relaxed stride, arms swinging at sides, looking ahead, half-smile"
+    ],
+    [
+      "fist_guard",
+      "upper body, standing upright, fighting stance, both fists raised in front of chest, guard up, resolute stare, looking at viewer"
+    ]
+  ],
+  "face_shots": [
+    [
+      "face_half_smile",
+      "facing viewer, looking at viewer, relaxed confident half-smile"
+    ],
+    [
+      "face_34l_resolute",
+      "three-quarter view, head turned left, looking at viewer, resolute stare"
+    ],
+    [
+      "face_34r_focus",
+      "three-quarter view, head turned right, looking to the side, focused calm expression"
+    ],
+    [
+      "face_grin",
+      "facing viewer, looking at viewer, teasing grin"
+    ],
+    [
+      "face_profile",
+      "profile, side view, looking to the side, calm expression"
+    ],
+    [
+      "face_grief",
+      "facing viewer, (crying:1.3), tears, (sad:1.3), downcast eyes, furrowed brows, grief"
+    ],
+    [
+      "face_scream",
+      "facing viewer, (screaming:1.4), (wide open mouth:1.3), shouting, intense eyes, anguish"
+    ],
+    [
+      "face_up",
+      "looking up, slightly from below, confident expression"
+    ],
+    [
+      "face_down",
+      "looking down, from above, pensive expression"
+    ],
+    [
+      "face_smirk",
+      "facing viewer, looking at viewer, smirk, one eyebrow raised"
+    ]
+  ],
+  "approved": {
+    "E3": {
+      "file": "lora_duke_fixes2/E3_charcoal.png",
+      "caption": "full body, standing, three-quarter view, arms at sides, slight smile, looking at viewer"
+    },
+    "E7": {
+      "file": "lora_duke_fixes2/E7_charcoal.png",
+      "caption": "full body, standing, three-quarter view, arms at sides, calm expression, looking at viewer"
+    },
+    "E22": {
+      "file": "lora_duke_fixes2/E22_charcoal.png",
+      "caption": "cowboy shot, standing, arms crossed, smug smile, looking at viewer"
+    },
+    "E26": {
+      "file": "lora_duke_fixes2/E26_charcoal.png",
+      "caption": "cowboy shot, standing, hand in pocket, calm expression, looking at viewer"
+    },
+    "E33": {
+      "file": "lora_duke_fixes2/E33_charcoal.png",
+      "caption": "cowboy shot, standing, hands together in front, serious, looking at viewer"
+    },
+    "F3": {
+      "file": "lora_duke_set_f/cand_front_half_smile_00003_.png",
+      "caption": "full body, standing, three-quarter view, arms at sides, slight smile, looking at viewer"
+    },
+    "F10": {
+      "file": "lora_duke_set_f/cand_three_quarter_r_00001_.png",
+      "caption": "full body, standing, three-quarter view, arms at sides, calm expression, looking at viewer"
+    },
+    "F20": {
+      "file": "lora_duke_set_f/cand_over_shoulder_00002_.png",
+      "caption": "cowboy shot, standing, body turned to the side, one hand behind, serious, looking at viewer"
+    },
+    "F24": {
+      "file": "lora_duke_fixes3/F24_strand_00001_.png",
+      "caption": "cowboy shot, standing, arms crossed, from above, serious, looking at viewer"
+    },
+    "F26": {
+      "file": "lora_duke_set_f/cand_hand_on_hip_00002_.png",
+      "caption": "cowboy shot, standing, one hand at side, calm expression, looking at viewer"
+    },
+    "A47": {
+      "file": "lora_duke_set_c/cand_face_profile_00002_.png",
+      "caption": "portrait, head and shoulders, three-quarter view, head turned, serious, looking to the side"
+    },
+    "A49": {
+      "file": "lora_duke_set_c/cand_face_grief_00001_.png",
+      "caption": "portrait, head and shoulders, three-quarter view, sad, frown, looking at viewer"
+    },
+    "A58": {
+      "file": "lora_duke_set_c/cand_face_down_00001_.png",
+      "caption": "portrait, head and shoulders, head tilted down, calm, looking to the side"
+    },
+    "A60": {
+      "file": "lora_duke_set_c/cand_face_down_00003_.png",
+      "caption": "portrait, head and shoulders, head tilted down, slight smile, looking to the side"
+    },
+    "E34": {
+      "file": "lora_duke_set_d/cand_face_half_smile_00001_.png",
+      "caption": "portrait, head and shoulders, three-quarter view, neutral expression, looking to the side"
+    },
+    "E37": {
+      "file": "lora_duke_set_d/cand_face_34l_resolute_00001_.png",
+      "caption": "portrait, head and shoulders, three-quarter view, serious, half-lidded eyes, looking to the side"
+    },
+    "E39": {
+      "file": "lora_duke_set_d/cand_face_34l_resolute_00003_.png",
+      "caption": "portrait, head and shoulders, head tilted down, serious, looking at viewer"
+    },
+    "E54": {
+      "file": "lora_duke_set_d/cand_face_up_00003_.png",
+      "caption": "portrait, head and shoulders, head turned, from below, serious, looking to the side"
+    },
+    "E55": {
+      "file": "lora_duke_set_d/cand_face_smirk_00001_.png",
+      "caption": "portrait, head and shoulders, head tilted down, smirk, looking at viewer"
+    },
+    "E56": {
+      "file": "lora_duke_set_d/cand_face_smirk_00002_.png",
+      "caption": "portrait, head and shoulders, smirk, looking at viewer"
+    },
+    "E57": {
+      "file": "lora_duke_set_d/cand_face_smirk_00003_.png",
+      "caption": "portrait, head and shoulders, smirk, half-lidded eyes, looking at viewer"
+    }
+  },
+  "lora_use": {
+    "note": "2026-10-07, from the checkpoint tests.",
+    "prompt": "USE THE PLAIN SHORT PROMPT, not the weighted identity prompt. 'duketoll, 1boy, solo, human, adult man, black hair, ash grey highlights, dark brown eyes, black short sleeve t-shirt' for close-ups, plus 'dark grey trousers, black boots, blue wristbands' for full body.",
+    "why": "The weighted identity_upper prompt (many (term:1.2-1.6) groups) plus the trigger turns every 1024 close-up into a blurry blob with the LoRA on, at every step. The long negative is not the cause (bisected). The same weighted prompt works with the IP-Adapter and no LoRA.",
+    "negative_add": "(white shirt:1.6), (grey shirt:1.5), (blue hair:1.4), beard, glasses",
+    "strength": "0.9 default; 0.65 while drafting action (per docs/CHARACTER_ART.md step 3)",
+    "watch": "trousers drift mid-grey; shoes can lace to the knee; highlights vary in amount"
+  },
+  "art_direction": null,
+  "approvals_note": "2026-10-07: 21 images. From his picks: bodies E3, E7, E22, E26, E33 (E-round, trousers neutralised to charcoal in output/lora_duke_fixes2), F3, F10, F20, F24 (ear hair redone, output/lora_duke_fixes3), F26; close-ups A47, A49, A58, A60, E34, E37, E39, E54, E55, E56, E57. Dropped after his 'black boots only, fix or remove rest': the six A-series bodies (A1, A6, A7, A14, A22, A27), A53 and E52. All matted onto white in output/lora_duke_matte (BiRefNet_toonout). 21 is under the recipe's 24 to 28. Captions are Claude's, awaiting his correction.",
+  "ankle_cord_note": "2026-10-07: every full-body image in sets A-C showed a black cord running between the two ankles (a drawstring cuff plus laces). Cause: his 2026-10-02 delegated trouser detail 'tapering to a gathered ankle' (Claude's call) rendered as drawstring cuffs, plus 'laced'. Prompt now says the trouser hems rest over the boot tops. Approved images that show it are inpainted before staging (output\\lora_duke_fixes).",
+  "dataset": "datasets/duke_v1 (21 images, not yet staged)",
+  "boots_lock": "2026-10-07, his words: 'Black boots only.' Black laced ankle boots on every full-body image. The 'fix or remove rest' pass: inpainting the grey and sneaker shoes and the neck chain came back neon (heavy-weighted negatives) and then with blue neck rings, so every A-series body and the A53 and A60 close-ups were removed instead of fixed.",
+  "lora": "duke_toll.safetensors",
+  "training": {
+    "run": "duke_toll_v1, 21 images, frozen recipe (rank 32, 2000 steps, lr 2e-4), started 2026-10-07 18:27 on his 'train', finished 19:19",
+    "checkpoints": "ComfyUI models/loras/training/duke_toll_v1_000000750 ... 000002000 (the final save has no step number; it is step 2000)",
+    "test_sheet": "output/lora_test/duke2_<step>_<scene>_*.png (short prompt); duke_<step>_* is the weighted prompt (blurs close-ups)"
+  },
+  "lora_checkpoint": 1750,
+  "lora_pick": "2026-10-07, his words: '1250 looked best to me. 1500 had some anatomy issues in some of the images.' My own recommendation had been 1500; his pick overrides it. Installed byte-identical from models/loras/training/duke_toll_v1_000001250.safetensors. No earlier duke_toll existed to back up. (An older, superseded file duke_v1_500_steps_00001_.safetensors also sits in models/loras; it was trained on unapproved images and is not used.)",
+  "kit_art": {
+    "date": "2026-10-08",
+    "note": "Candidates, NOT locked and NOT installed. Staged in ComfyUI output/blue_duke/candidates. He locks, then installs (docs/CHARACTER_ART.md step 6).",
+    "picks": {
+      "surge": "S2 (drafts duke_surge3_a seed 880001)",
+      "slide": "K4 or K10 (drop kick, soles to lens; duke_drop_e seeds 882003 / 882009). L12 (flying front kick) is retired: he wants a drop kick.",
+      "ult": "U19 (duke_ult3_c seed 881002)"
+    },
+    "picks_words": "S2 over S3 would be better, and S21. L2/11/12. U1/12/15/19/21. Picked S2, L12, U19 for blue Duke; the rest saved to output/duke_library.",
+    "official_method": "img2img from his draft + mannequin depth/openpose ControlNets + LoRA 0.9 at denoise 0.72 and 0.82, 4 seeds each (output/duke_official3); 0.82 redraws the hair on-model. Then finish_pass 0.3, then compose_duke.py (ult: --bg=<snow plate> --recolour).",
+    "chosen_renders": {
+      "surge": "d72_surge_890000",
+      "slide": "d72_slide_890000",
+      "ult": "d72_ult_890005"
+    },
+    "backgrounds": "surge and slide: red attack-class background (his words: 'surge stays red'). ult: scenic snowy-mountain plate (ruling #184), candidates output/duke_backdrop/ult_snow (M2, M3, M6 usable; M1, M4, M5 are split panels). Card: riverside (his pick), output/duke_backdrop/card_river (R2, R5, R6 best).",
+    "known_gap": "Card art and passive art not started. Tile and portrait not started.",
+    "skill_names": "Slide may be renamed (his words); do not register art under a name until it is final.",
+    "status_2026_10_08": "SUPERSEDED: the three composites in output/blue_duke/candidates (Sonnet session, 2026-10-08 early) are off-model (Surge and Ultimate have long spiky hair from the drafts) and the ultimate uses the old violet + burst background. Do not lock them. Current: official renders with LoRA v2 step 1750 in output/duke_official3/<slot>/ (script scripts/skill_art/duke/official_render.py), sent to him as sheets off3_S2/K4/K10/U19, NOT yet picked.",
+    "official3_findings": "K4 O5/O8 and K10 O5-O8 (d82) on-model; K4 O3 has a smear. S2: hair still leaks from the long-haired draft at both levels (needs a head repaint with the v2 LoRA or a new draft). U19: trousers come out grey-purple (code recolour), O7 adds a waist tie, O8 changed the pose."
+  },
+  "revision_2026_10_08": {
+    "why": "Opus took over from a Sonnet session. Surge and Ultimate officials (blue_duke/candidates) came out with long spiky hair leaked from the drafts, off the locked look; Slide was the only on-model one. The grey lock hanging in front of the ear is in the dataset, so the LoRA draws it everywhere.",
+    "ear_lock": "His words: 'its the spiky hair strand near the ear. don't want it.' Shown A (grey lock hanging in front of the ear) vs B (curled nape wisps), he picked ONLY A. The nape curls stay. Fix chosen (question tool): clean the dataset and retrain. Masks hand-placed per image (scratchpad lock_masks.json), base-model inpaint, output/lora_duke_v2_lock. output/lora_duke_v2_clean_curls_wrong removed the curls too and is NOT used.",
+    "ultimate_direction": "Ruling #184. His words: 'Normally i would put toll power elements scattered in the background and a scenic background. for duke, small droplets of varying size, a snow mountain like background? with his thin aura only on hands (light blue/water)'. Replaces the violet + speed-line composite.",
+    "slide_framing": "Drop kick, soles toward the lens (question-tool pick). Mannequin poses duke_drop_e / duke_drop_f.",
+    "card_setting": "Riverside / water (question-tool pick).",
+    "slide_drop_picks": "His words: \"k13-24 aren't dropkicks, they are only him falling down. K4 and 10 have promise but they do need cleanup and fixing. especially the desig consistency issue\". K4 = duke_drop_e seed 882003, K10 = duke_drop_e seed 882009 (output/duke_kit/slide_drop/drafts). Camera f (K13-24) is a dead pose.",
+    "dataset_v2": "datasets/duke_v2: 20 images (D07 dropped), 16 with the grey lock repainted, collar trim painted black on D01/08/10/14/17/19/20 (his OK). Training duke_toll_v2 started 2026-10-08 on his answer \"Paint collar black, then train\". Training restarted after the skin pass (first run aborted at ~step 750, deleted).",
+    "skin": "His words: \"keep skin even\". The set was paler (lit ~242,199,170) than the locked D22 face (236,163,124); shown A (set average) vs B (D22 brown), he picked A. All 20 images evened to A (backups datasets/duke_v2_preskin). Do not prompt \"light medium brown skin\" any more; it pulls toward B.",
+    "surge_background": "His words: \"surge stays red\"."
+  },
+  "lora_pick_v2": "2026-10-08, his words: \"1750 seems best to me. 1500 has that extra hand artifact\". My recommendation had been 1500. Installed byte-identical (sha256 c2557683f42c...) from models/loras/training/duke_toll_v2_000001750.safetensors as models/loras/duke_toll.safetensors. The v1 step-1250 file is kept byte-identical as models/loras/duke_toll_v1_1250.safetensors (sha256 9e07579e9ba7...).",
+  "training_v2": "duke_toll_v2, datasets/duke_v2 (20 images: grey ear lock repainted, collar trim black, skin evened to the set average), frozen recipe, 2026-10-08. Test sheet: output/lora_test/duke3_*."
+}

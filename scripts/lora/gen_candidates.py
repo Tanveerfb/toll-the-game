@@ -52,14 +52,18 @@ def hood_neg(clause):
     return f", {p['hood_down_negative']}" if "hood down" in clause and p.get("hood_down_negative") else ""
 
 
-def submit(slug, pos, shot_neg, w, h, seed, **kw):
+def submit(slug, pos, shot_neg, w, h, seed, hand_pass=None, **kw):
     """Queue `batch` images of one slot. The hand detector refuses image batches
-    (Impact Pack), so with the hand pass on each image is its own job, seed + 1000*k."""
-    if not hands:
+    (Impact Pack), so with the hand pass on each image is its own job, seed + 1000*k.
+    Close-ups skip the hand pass unless the profile sets `face_hand_fix`: Duke's
+    head shots came back with burnt neon skin and hard edges with it on (2026-10-07)."""
+    hand_pass = hands if hand_pass is None else hand_pass
+    if not hand_pass:
         print(slug, queue(base_graph(pos, shot_neg, w, h, seed, out + slug, batch=batch, **kw)))
         return
     for k in range(batch):
-        print(slug, k, queue(base_graph(pos, shot_neg, w, h, seed + 1000 * k, out + slug, batch=1, hand_fix=True, **kw)))
+        print(slug, k, queue(base_graph(pos, shot_neg, w, h, seed + 1000 * k, out + slug, batch=1, hand_fix=True,
+                                        hand_extra=p.get("hand_extra", ""), **kw)))
 
 for i, (slug, clause, *flags) in enumerate(BODY):
     if only and slug not in only:
@@ -78,4 +82,4 @@ for i, (slug, clause) in enumerate(FACE):
     if only and slug not in only:
         continue
     pos = f"{p['identity_upper']}, {clause}, portrait, head and shoulders, face focus, {STYLE}"
-    submit(slug, pos, face_neg + hood_neg(clause), 1024, 1024, 920000 + seed0 + i, face_ref=p["face_ref"])
+    submit(slug, pos, face_neg + hood_neg(clause), 1024, 1024, 920000 + seed0 + i, hand_pass=hands and p.get("face_hand_fix", False), face_ref=p["face_ref"])

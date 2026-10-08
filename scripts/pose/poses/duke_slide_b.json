@@ -1,0 +1,93 @@
+{
+  "_note": "Slide variant B: the same sweep mirrored, to the image left, seen from a lower camera.",
+  "pelvis": [
+    0,
+    0,
+    0.38
+  ],
+  "spine": [
+    -0.5,
+    0,
+    1
+  ],
+  "hip_axis": [
+    0,
+    -1,
+    0
+  ],
+  "shoulder_axis": [
+    0,
+    -1,
+    0
+  ],
+  "face": [
+    -1,
+    -0.1,
+    -0.1
+  ],
+  "upper_arm_l": [
+    0.7,
+    -0.3,
+    -0.4
+  ],
+  "forearm_l": [
+    0.7,
+    0,
+    0.2
+  ],
+  "upper_arm_r": [
+    -0.6,
+    0.2,
+    -0.6
+  ],
+  "forearm_r": [
+    -0.5,
+    0,
+    -0.7
+  ],
+  "thigh_l": [
+    -1,
+    -0.1,
+    -0.15
+  ],
+  "shin_l": [
+    -1,
+    0,
+    -0.25
+  ],
+  "foot_l": [
+    -0.3,
+    0,
+    1
+  ],
+  "thigh_r": [
+    -0.6,
+    0.3,
+    0.45
+  ],
+  "shin_r": [
+    0.2,
+    0,
+    -1
+  ],
+  "foot_r": [
+    -0.5,
+    0,
+    -0.3
+  ],
+  "camera": {
+    "location": [
+      -0.5,
+      -4.2,
+      0.6
+    ],
+    "look_at": [
+      -0.5,
+      0,
+      0.45
+    ],
+    "lens_mm": 40
+  },
+  "height": 1.1,
+  "thickness": 1.35
+}

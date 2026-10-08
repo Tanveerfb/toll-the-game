@@ -1,0 +1,99 @@
+{
+  "height": 1.1,
+  "thickness": 1.35,
+  "_note": "Slide, 7DSGC low slide kick: skidding low, torso leaning back, the left hand planted behind, the right leg a long low diagonal to the lens side, the left leg folded.",
+  "pelvis": [
+    0,
+    0,
+    0.3
+  ],
+  "spine": [
+    -0.25,
+    0,
+    1
+  ],
+  "neck": [
+    0,
+    -0.1,
+    1
+  ],
+  "hip_axis": [
+    0,
+    1,
+    0
+  ],
+  "shoulder_axis": [
+    0.1,
+    1,
+    0
+  ],
+  "face": [
+    1,
+    -0.4,
+    -0.1
+  ],
+  "upper_arm_l": [
+    -0.5,
+    0.2,
+    -0.8
+  ],
+  "forearm_l": [
+    -0.5,
+    0,
+    -0.8
+  ],
+  "upper_arm_r": [
+    0.5,
+    -0.3,
+    -0.5
+  ],
+  "forearm_r": [
+    0.6,
+    -0.4,
+    0.2
+  ],
+  "thigh_r": [
+    1,
+    -0.35,
+    0.1
+  ],
+  "shin_r": [
+    1,
+    -0.35,
+    0.0
+  ],
+  "foot_r": [
+    0,
+    -0.5,
+    1
+  ],
+  "thigh_l": [
+    0.4,
+    0.5,
+    0.5
+  ],
+  "shin_l": [
+    -0.7,
+    0.4,
+    -0.5
+  ],
+  "foot_l": [
+    0.5,
+    0,
+    -0.5
+  ],
+  "camera": {
+    "location": [
+      0.4,
+      -2.1,
+      1.0
+    ],
+    "look_at": [
+      0.5,
+      -0.1,
+      0.3
+    ],
+    "lens_mm": 26,
+    "roll_deg": -8
+  }
+}

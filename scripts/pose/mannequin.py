@@ -28,6 +28,9 @@ L = {"spine": 0.48, "neck": 0.14, "shoulder": 0.17, "hip": 0.09, "upper_arm": 0.
 R = {"upper_arm": 0.045, "forearm": 0.037, "thigh": 0.07, "shin": 0.05, "hand": 0.04, "head": 0.105}
 
 
+THICK = 1.0  # set per pose from "thickness": limb and torso radius multiplier (1.0 = the slim default figure)
+
+
 def unit(v):
     v = Vector(v)
     return v.normalized()
@@ -82,10 +85,10 @@ def build(J):
     # torso: a stack of capsules from the hips to the shoulders, wider at chest and hips
     for t, r in ((0.0, 0.12), (0.35, 0.11), (0.7, 0.13), (1.0, 0.12)):
         c = J["pelvis"].lerp(J["neck"], t)
-        bpy.ops.mesh.primitive_uv_sphere_add(radius=r, location=c, segments=24, ring_count=12)
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=r * THICK, location=c, segments=24, ring_count=12)
         bpy.context.object.scale = (1.25, 0.8, 1.0)
-    capsule(J["pelvis"], J["neck"], 0.11, "torso")
-    capsule(J["neck"], J["head"], 0.045, "neck")
+    capsule(J["pelvis"], J["neck"], 0.11 * THICK, "torso")
+    capsule(J["neck"], J["head"], 0.045 * THICK, "neck")
     bpy.ops.mesh.primitive_uv_sphere_add(radius=R["head"], location=J["head"], segments=32, ring_count=16)
     bpy.context.object.scale = (0.92, 1.0, 1.08)
 
@@ -114,6 +117,15 @@ COCO = ["nose", "neck", "sho_r", "elb_r", "wri_r", "sho_l", "elb_l", "wri_l", "h
 def main():
     pose_file, out_dir = sys.argv[sys.argv.index("--") + 1:][:2]
     p = json.load(open(pose_file, encoding="utf-8"))
+    # Optional body scale, added for Duke (2026-10-07): the default figure is a slim 5'3" woman, and a slim
+    # depth map made every Duke draft read as a thin teenager. "height" scales every bone length,
+    # "thickness" scales limb, torso and (a third as much) head radius.
+    global THICK
+    for k in L:
+        L[k] *= p.get("height", 1.0)
+    THICK = p.get("thickness", 1.0)
+    for k in R:
+        R[k] *= (1 + (THICK - 1) * 0.3) if k == "head" else THICK
     name = os.path.splitext(os.path.basename(pose_file))[0]
     w, h = p.get("size", (832, 1216))
     bpy.ops.wm.read_factory_settings(use_empty=True)

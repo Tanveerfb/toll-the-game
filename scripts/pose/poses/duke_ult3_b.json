@@ -1,0 +1,104 @@
+{
+  "height": 1.1,
+  "thickness": 1.35,
+  "_note": "Ultimate: Garou's water-stream stance (his pencil sketch) with Buu's wide low stance: hunched, the lead right hand open toward the lens, the rear left hand drawn back.",
+  "pelvis": [
+    0,
+    0,
+    0.62
+  ],
+  "spine": [
+    -0.15,
+    -0.45,
+    1
+  ],
+  "neck": [
+    0,
+    -0.6,
+    0.6
+  ],
+  "hip_axis": [
+    1,
+    0,
+    0
+  ],
+  "shoulder_axis": [
+    1,
+    -0.2,
+    0
+  ],
+  "face": [
+    0,
+    -1,
+    -0.35
+  ],
+  "upper_arm_r": [
+    -0.35,
+    -0.5,
+    -0.5
+  ],
+  "forearm_r": [
+    -0.1,
+    -0.95,
+    0.15
+  ],
+  "hand_r": [
+    -0.1,
+    -1,
+    0.1
+  ],
+  "upper_arm_l": [
+    0.6,
+    0.5,
+    -0.4
+  ],
+  "forearm_l": [
+    0.4,
+    0.7,
+    0.1
+  ],
+  "thigh_r": [
+    -0.8,
+    -0.2,
+    -0.55
+  ],
+  "shin_r": [
+    -0.2,
+    0,
+    -1
+  ],
+  "foot_r": [
+    -0.4,
+    -0.7,
+    -0.1
+  ],
+  "thigh_l": [
+    0.85,
+    0.1,
+    -0.5
+  ],
+  "shin_l": [
+    0.4,
+    0.1,
+    -1
+  ],
+  "foot_l": [
+    0.4,
+    -0.7,
+    -0.1
+  ],
+  "camera": {
+    "location": [
+      0.5,
+      -2.4,
+      1.7
+    ],
+    "look_at": [
+      0,
+      0,
+      0.6
+    ],
+    "lens_mm": 28,
+    "roll_deg": -7
+  }
+}

@@ -1,4 +1,4 @@
-# Status — 2026-10-03 (cloud, part 4)
+# Status — 2026-10-08 (his PC, ComfyUI)
 
 **Who updates this:** every checkpoint, by **rewriting** it, never appending
 (`project-rules.md` §2; his call, `decisions.md` 2026-09-27). It holds the
@@ -10,86 +10,82 @@ current position only. A session's log goes to
 
 ## Start here
 
-**State:**
-- **The four-values audit is finished.** All 43 items are done or superseded
-  (#180; the record is `docs/archive/FOUR_VALUES_AUDIT-2026-10-03.md`).
-- The UI says less and uses the new shared components (see "Where things
-  are").
-- **News is closed and its posts are deleted** (#179).
-- **Epic Battles** (#175) and boss Tao (#176) are live on `/events`.
-- He is in **cloud sessions**, so no ComfyUI: UI and implementation only.
+**State:** blue Duke is at `charart` **step 4**. LoRA v2 (step 1750, his pick)
+is installed. Official renders of his picks are in ComfyUI
+`output\duke_official3` and **four sheets went to him** (S2, K4, K10, U19). He
+has not picked yet. Nothing is locked or in the game. The game code is
+unchanged since `aaae4e2`. Last session's log: `docs/archive/STATUS-2026-10.md`,
+2026-10-07/08.
 
-**Next:** his next batch, not named yet.
+**Next:** get his picks from the `off3_*` sheets, then finish and composite them
+(`docs/CHARACTER_ART.md` steps 4–5; the ultimate uses `compose_duke.py --bg=`
+with a snow plate). Surge's hair still leaks from its draft, so offer options.
 
 **Blocked on him:**
-- **Try the Merge badge on a phone.** Its 44px hit area overlaps the card's
-  name strip, so a tap just above or below it merges instead of playing.
-- Approve or reverse Claude's calls inside his audit picks (#180, last
-  bullet).
-- Missions for Epic Battles; an answer to Gon, Killua and Leorio against Tao
-  (#138); an optional Tao rerun after his ramp lost its HP.
-- Carried over:
-  - which character goes through `charart` next;
-  - the Caila and Sara design sheets;
-  - the new card texts (kitwords EXAMPLES, Open);
-  - Lyra's C4 and passive placement (D5);
-  - Roused;
-  - the Orders tile;
-  - the app-icon recolour;
-  - the foundation audit;
-  - the folder migration;
-  - summon animations (#174).
+- **Duke:** picks from the official sheets, a snow plate (M2/M3/M6) and a river
+  plate (R2/R5/R6); the Slide skill name (he may rename it).
+- **Batra:** held at step 1. The `lora_batra_set_a` round is unreviewed: the
+  B36 face reference draws a bandana-like turban, and the straps draw crosses.
+  Bring him options.
+- From 2026-10-03, still open:
+  - try the Merge badge on a phone (its 44px hit area overlaps the name strip);
+  - approve or reverse Claude's calls in #180;
+  - missions for Epic Battles, the Gon/Killua/Leorio answer to Tao (#138), an
+    optional Tao rerun;
+  - the Caila and Sara design sheets, the new card texts, Lyra's C4 and passive
+    placement, Roused, the Orders tile, the app-icon recolour, the foundation
+    audit, the folder migration, summon animations (#174).
 
 **Don't trust:**
-- Sim numbers from before 2026-10-03, which were measured without
-  ultimates or second skills.
-- **`npm run test:browser` needs the workaround in the cloud container:**
-  `PLAYWRIGHT_BROWSERS_PATH` pointing at a folder with
-  `chromium_headless_shell-1234` and `chromium-1234` symlinked to the 1194
-  builds.
+- `output\blue_duke\candidates`: Sonnet's composites, off-model and on the old
+  ultimate background. **Superseded, never lock them.**
+- Sim numbers from before 2026-10-03.
+- In the cloud container, `npm run test:browser` needs the Playwright symlink
+  workaround (`PLAYWRIGHT_BROWSERS_PATH` with the 1194 builds linked as 1234).
 
 ## Where things are
 
 | What | Where |
 | --- | --- |
-| Shared UI parts (new 2026-10-03) | `components/ui/`: `BackLink`, `SelectTile`, `EmptyState`, `NavTile`, `DisclosureRow`, `PanelSheet`, `ShiftRow`, `skeleton`; `Badge` sizes; listed in `docs/design-system.md` |
-| Shared game parts | `components/game/RankBar`, `SkillTypeBadge`, `RosterToolbar`; `lib/game/accountSummary.ts`, `rewardParts.ts`, `rosterFilter.ts`; `hooks/useNow`, `useOverlayOpen`, `useRosterFilters` |
-| Guards against the old patterns | `tests/sharedComponents.test.ts`, `tests/touchTargets.test.ts` (`hit-44`), `tests/tabsHover.test.ts` |
-| Nav source of truth | `lib/nav/routes.ts`; the phone tab bar is derived from its `tab` flag |
-| News switch | `lib/news/open.ts` (`NEWS_OPEN = false`); the return is on `ROADMAP.md` |
-| Epic Battles and boss Tao | `lib/game/epicBattles.ts`, `data/arcs/`, `data/characters/master_tao_npc.json` |
-| Simulator | `lib/game/simulate.ts` (limits in its header), `simStats.ts` |
+| The art method and its dead ends | `docs/CHARACTER_ART.md`, walked by the `charart` skill |
+| Duke's state, decisions and his quotes | `scripts/lora/characters/duke.json` (`lock`, `revision_2026_10_08`, `kit_art`, `lora_pick_v2`) |
+| Batra's state | `scripts/lora/characters/batra.json` (`status`) |
+| Duke's run scripts | `scripts/skill_art/duke/` (README), `scripts/skill_art/compose_duke.py` |
+| Cleaning a trait out of a dataset | `scripts/lora/duke_v2_fix/` (README) |
+| LoRA files | ComfyUI `models\loras\duke_toll.safetensors` (v2 step 1750); `duke_toll_v1_1250.safetensors` (backup); steps in `models\loras\training\` |
+| Training sets | `C:\Users\Tanve\.comfyui-mcp\training\datasets\duke_v2` (backups `duke_v2_precollar`, `duke_v2_preskin`); config `configs\duke_v2_sdxl_lora.yaml` |
+| References | ComfyUI `output\references\README.md`; the Dokkan sets via the `dokkanartresearch` skill |
+| Rulings | `docs/HANDOFF.md`; newest is #184 (an ultimate's background) |
 
 ## Confidence and gaps
 
-### Verified on 2026-10-03 (part 4), by running it
+### Verified on 2026-10-08, by running it
 
-- `npm run check`: **1,675 passed / 137 files**, typecheck and lint clean.
-- `test:browser`: **17 passed / 3 files**.
-- `next build`: clean.
-- **16 screens on the production build at 390×844:**
-  - no horizontal overflow;
-  - nothing interactive under 44px in both dimensions;
-  - no page errors, except Vercel's analytics scripts, which 404 off Vercel.
+- `npm run check`: **1,675 passed / 137 files**, exit 0 (typecheck and lint
+  included). No game code changed in this session.
+- The LoRA install: the sha256 of `duke_toll.safetensors` matches
+  `training\duke_toll_v2_000001750` (`c2557683f42c…`), and the v1 backup is a
+  separate hash (`9e07579e9ba7…`).
+- Every sheet sent was looked at by Claude first. No text on clothes, no arm-up
+  pose.
 
 ### Not verified
 
-- A battle won on the production build, and the passive-toast filter in a
-  live fight.
-- The skeletons on a slow connection.
-- The Merge overlap on a real phone.
-- Carried over: claiming a milestone; a duplicate's "+1 coin" tile.
+- The new ultimate layers on an **on-model** render. They were tested only on
+  Sonnet's off-model render.
+- Whether the v2 LoRA's short grey wisp on front-facing close-ups bothers him.
+- The promoted scripts in `scripts/skill_art/duke/` and `scripts/lora/duke_v2_fix/`
+  parse, but were not re-run from their new folders.
 
 ### Recorded as Claude's reading, not his words
 
-- The calls inside his picks listed in #180, including the restored
-  guest-progress warning.
-- #178's line between what a player *reads* and what a player *uses*.
+- The A/B rule, the "check the head against the dataset" step, and the dead
+  ends added to `docs/CHARACTER_ART.md` are Claude's method notes from this
+  session's failures.
 
 ## Outside the repo
 
-- **`toll-kits`:** untouched. None of #175–#180 is a kit ruling.
-- **Scratchpad only, lost with the container:**
-  - the Tao measurement runners (`taostats.ts`, `taosweep.ts`);
-  - the sweep script (`sweep.mjs`);
-  - the `pw/` browser symlink folder.
+- **`toll-kits`:** #181–#184 are **not yet** in its `KIT_RULINGS`, and its
+  `decisions/PENDING.md` entries for #182/#183 are not yet deleted. Next session
+  with git access there.
+- **ComfyUI output folders** hold all the images; nothing is in git.
