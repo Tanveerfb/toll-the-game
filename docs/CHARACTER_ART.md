@@ -191,6 +191,22 @@ not hold. Clean the dataset, he re-approves, retrain:
 **Action needs all three of these.** The calm LoRA alone produces
 photoshoots ("Is she doing Kung fu?").
 
+**Before any of them: the slot plan** (`kitart` step 3a, 2026-10-13). One line
+per slot, shown to him before any GPU time: what the skill does, the moment to
+draw, the pose's job, the reference, the pose control. Sara's rounds 1 to 4
+were lost for want of it, and he had to re-explain the dynamic poses each
+time. Lyra's pieces had it from the start, and that is the difference between
+her kit and those rounds, more than any setting below.
+
+**Two recipes are on record, and this one is the default.** Lyra's kit
+(2026-09-27) was drafted at LoRA **0.9** with the full weighted identity, a
+drawn archer skeleton at openpose 0.78 / end 0.85 or prompt only, and
+`(simple white background:1.4)`, and it held its poses. Her dataset included
+her C4 action pose and an A-pose; Sara's and Duke's calm sets did not.
+**Whether an action pose in the dataset is what lets a LoRA hold poses at
+0.9 is an open question for him**, not a rule. Do not mix the two recipes in
+one batch; if this one fails a character, put both to him.
+
 1. **LoRA at about 0.65** while drafting. It was trained on calm images and
    pulls every pose back to standing at 0.9. Identity comes back in Step 4.
 2. **Action wording:**

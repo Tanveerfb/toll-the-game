@@ -25,7 +25,10 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 | `mobilecheck` | Before shipping a screen, or when reworking one built before 2026-08-18. One screen per run |
 | `ruling` | He settles a design question. Numbered entry, his words, supersede links, propagation |
 | `comfypending` | A feature needs art the game doesn't have |
-| `charart` | Making a playable character's art: design lock, LoRA, kit/card drafts, finish, composite, lock. Enforces his approval gates; the method is `docs/CHARACTER_ART.md` |
+| `charart` | Any character-art ask. Orients (ComfyUI, the profile, which step), enforces his gates, routes to the step skill below. The method is `docs/CHARACTER_ART.md` |
+| `charlora` | Steps 0–2: lock the design, the dataset he approves by number, the frozen training recipe, the checkpoint he picks. His PC only |
+| `kitart` | Steps 3–5: the **slot plan he OKs before any GPU time** (what the skill does → the moment → the pose's job → the reference), drafts, official render, finish, composite. Carries both recipes. His PC only |
+| `artinstall` | Step 6: lock, library, install into the game (skills, card + cut-out, tile and portrait from that one cut-out, registry, tests). A cloud session can do it |
 | `dokkanartresearch` | Pose research for kit art: find a Dokkan card on dokkandb.com, view it, save it to the reference library. Pose and composition only; saving asks first |
 | `redesign` | He wants a screen to look different: ask what works first, capture the live screens, draw options from the live anatomy, measure, publish an artifact when he is on his phone, record the pick (#144, #185) |
 | `savefield` | Adding, renaming or reshaping a persisted player-save field: the cloud-sync decision, the migration, the Firestore shape rules, the guard tests |

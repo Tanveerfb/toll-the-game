@@ -4,8 +4,10 @@ Layers, back to front: background -> aura -> motion effects -> afterimages -> he
 - Background: ONLY attack-class skill art gets the red class background (draw_class_bg.py, radial speed
   lines converging on her action). His rule, 2026-10-03: "only skill arts only needed with red bg (attack
   skills) Passive and ultimate not." The ultimate picks its own (#161): a violet night, so the pink aura
-  reads. The passive must NOT get red (v1 here gave it a red gradient; that was wrong). The card uses her
-  element red as a plain gradient - he locked Card B with it.
+  reads. The passive must NOT get red (v1 here gave it a red gradient; that was wrong). The card
+  branch below still draws the red gradient he later rejected ("I don't like the red bg on her art");
+  rule 5 of docs/CHARACTER_ART.md now makes a card an environment plate, composited with a contact
+  shadow. Rerunning the card piece here reproduces the retired look, not the shipped one.
 - Aura: hot pink with hints of red (his pick, 2026-10-03) - a soft glow grown out of her own silhouette.
   One aura per character, and not on every piece at full strength.
 - Skill 2 (AoE): afterimages - fading copies of her cut-out trailing back along her path - plus streaks.

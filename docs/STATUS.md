@@ -11,7 +11,7 @@ to `docs/archive/STATUS-YYYY-MM.md` with a line in
 
 ## Start here
 
-**State:** three things landed on 2026-10-13 and all three wait on him.
+**State:** four things landed on 2026-10-13; the first three wait on him.
 
 1. **The audit** is `docs/GAME_AUDIT_2026-10-13.md`. Its headline: the cloud
    save has one confirmed breaking defect (issue #28, nested arrays in
@@ -30,6 +30,17 @@ to `docs/archive/STATUS-YYYY-MM.md` with a line in
 3. **The rules** are v3.4.0 (`decisions.md` 2026-10-13). One step is his:
    the `fleet` plugin block in `.claude/settings.json`, which the session
    could not write.
+4. **Cleanup and skills**, while he thinks about the theme. Removed what
+   knip proved unused (`tailwind-variants`, four dead hook/lib files);
+   closed audits and finished plans archived; `Plans/README.md` rewritten.
+   Seven project skills added: `redesign`, `savefield`, `importkit`, and the
+   art pipeline split into `charart` (routes) → `charlora` / `kitart` /
+   `artinstall`, with `kitart` carrying the **slot plan he OKs before any
+   GPU time** and both drafting recipes (Lyra's at 0.9, the doc's at 0.65).
+   `scripts/skill_art/README.md` and `scripts/pose/README.md` are new;
+   `lyra.json` gained a reconstructed `lora_use` / `kit_art`. Still to ask
+   him: `public/unreleased/` (7.3 MB), `lib/duel`, gsap, the MDX stack for
+   the closed news, `docs/design/characters` (11 MB), 49 unused exports.
 
 **Game code is unchanged since `aaae4e2`.** Blue Duke's art is where the
 2026-10-08 status left it: `charart` step 4, LoRA v2 installed, four official

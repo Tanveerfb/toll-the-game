@@ -1420,8 +1420,10 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    and never generated. **The bow hand is not a fist.** His correction on
    Shatterburn: *"her left hand should be holding the center of the bow and
    not be a fist"*. The working method is to render the character holding a
-   bow, then swap the model's bow for the drawn one (`docs/ART_PIPELINE.md`,
-   "The bow hand").
+   bow, then swap the model's bow for the drawn one (rule 6 in
+   `docs/CHARACTER_ART.md`; the history is "The bow hand" in
+   `docs/archive/ART_PIPELINE-character-history.md`; the scripts are
+   `scripts/skill_art/bow_swap.py` and `grip_hand.py`).
 
 161. **A skill card's background is its skill class's colour; ultimates and
    passives are free** (2026-09-27, from 7DSGC, walked through on his
