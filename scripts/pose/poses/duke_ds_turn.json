@@ -1,0 +1,94 @@
+{
+  "_note": "Duke LoRA v3 dataset, action slot (ruling #186): spinning round mid-turn on the planted left foot, right knee raised and swinging, torso twisted to the lens, right arm flung out at shoulder height, left arm across the chest. The first version (a twist on two feet) read as standing, 2026-10-14.",
+  "height": 1.1,
+  "thickness": 1.35,
+  "pelvis": [
+    0,
+    0,
+    0.95
+  ],
+  "spine": [
+    0.15,
+    0.05,
+    1
+  ],
+  "hip_axis": [
+    0.3,
+    1,
+    0
+  ],
+  "shoulder_axis": [
+    0.9,
+    0.45,
+    0.1
+  ],
+  "face": [
+    0.1,
+    -1,
+    0.05
+  ],
+  "upper_arm_r": [
+    -1,
+    -0.2,
+    -0.1
+  ],
+  "forearm_r": [
+    -1,
+    -0.1,
+    0.05
+  ],
+  "upper_arm_l": [
+    -0.2,
+    -0.6,
+    -0.6
+  ],
+  "forearm_l": [
+    -0.9,
+    -0.2,
+    0.2
+  ],
+  "thigh_l": [
+    0.1,
+    0.05,
+    -1
+  ],
+  "shin_l": [
+    -0.05,
+    0.1,
+    -1
+  ],
+  "foot_l": [
+    0.8,
+    -0.3,
+    -0.2
+  ],
+  "thigh_r": [
+    0.5,
+    -0.5,
+    -0.4
+  ],
+  "shin_r": [
+    -0.2,
+    0.3,
+    -1
+  ],
+  "foot_r": [
+    0.3,
+    0,
+    -1
+  ],
+  "camera": {
+    "location": [
+      1.2,
+      -3.3,
+      1.2
+    ],
+    "look_at": [
+      0,
+      0,
+      0.9
+    ],
+    "lens_mm": 32,
+    "roll_deg": 5
+  }
+}

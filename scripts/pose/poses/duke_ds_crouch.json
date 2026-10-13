@@ -1,0 +1,99 @@
+{
+  "_note": "Duke LoRA v3 dataset, action slot (ruling #186): crouching low, ready to spring. Rear knee near the ground, near (right) hand down to the ground, other arm back for balance, looking up at the viewer from a low camera.",
+  "height": 1.1,
+  "thickness": 1.35,
+  "pelvis": [
+    0,
+    0,
+    0.42
+  ],
+  "spine": [
+    0,
+    -0.8,
+    0.6
+  ],
+  "neck": [
+    0,
+    -0.5,
+    1
+  ],
+  "hip_axis": [
+    1,
+    0,
+    0
+  ],
+  "shoulder_axis": [
+    1,
+    0,
+    0
+  ],
+  "face": [
+    0,
+    -1,
+    0.45
+  ],
+  "upper_arm_r": [
+    -0.1,
+    -0.4,
+    -0.9
+  ],
+  "forearm_r": [
+    0,
+    -0.2,
+    -1
+  ],
+  "upper_arm_l": [
+    0.4,
+    0.5,
+    -0.6
+  ],
+  "forearm_l": [
+    0.2,
+    0.6,
+    0.1
+  ],
+  "thigh_l": [
+    0.35,
+    -0.9,
+    0.05
+  ],
+  "shin_l": [
+    0,
+    0.3,
+    -1
+  ],
+  "foot_l": [
+    0,
+    -1,
+    -0.2
+  ],
+  "thigh_r": [
+    -0.3,
+    -0.4,
+    -0.85
+  ],
+  "shin_r": [
+    0,
+    1,
+    0.05
+  ],
+  "foot_r": [
+    0,
+    0.2,
+    -1
+  ],
+  "camera": {
+    "location": [
+      0.5,
+      -2.8,
+      0.45
+    ],
+    "look_at": [
+      0,
+      -0.3,
+      0.5
+    ],
+    "lens_mm": 34,
+    "roll_deg": -6
+  }
+}

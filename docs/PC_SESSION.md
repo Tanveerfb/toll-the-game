@@ -5,106 +5,67 @@ the same change, and a cloud session that queues PC-only work appends to it.
 The PC session rewrites the file at its checkpoint; **when the list is
 empty, delete the file** (project-rules §DOCS: no document without content).
 `docs/STATUS.md` stays the record of where the work is; this is only the
-order of the work that needs his PC (ComfyUI, the trainer, `.claude/settings.json`).
+order of the work that needs his PC (ComfyUI, the trainer).
 
-Written 2026-10-13 from his phone message after the art-skills session:
-*"Write a file specifically targeting PC session and telling it what to do
-next time I start the PC session ... so that it is a priority. First things
-first."*
+**The web game is discontinued (2026-10-14, his call; a Godot adaptation is
+planned in other sessions).** What is left here is art-pipeline work: ComfyUI,
+the LoRAs and the scripts in `scripts/lora/`, `scripts/skill_art/`,
+`scripts/pose/` still make the characters' art until that pipeline moves.
+The game-side items this file used to carry (the Firestore save check, the
+theme pick, the audit decisions, the rules conflicts, the `toll-kits`
+template line) went with the web game; their history is in `docs/STATUS.md`.
 
 Start with `relay`, then this list.
 
-## 1. Enable the `fleet` plugin
+## 1. Duke v3: his picks, then train
 
-The 2026-10-13 cloud session was refused the write to `.claude/settings.json`.
-Add the `extraKnownMarketplaces` / `enabledPlugins` block the fleet
-`sync-standards` skill gives (`fleet@tanveerfb`, from
-`Tanveerfb/fleet-standards`). Then, in a fresh session, confirm
-`fleet:checkpoint` and `fleet:relay` appear and **delete
-`.claude/skills/checkpoint` and `.claude/skills/relay` in the same commit**
-(AGENTS.md says the local copies live only until then). Update the
-"Not yet enabled here" paragraph in `CLAUDE.md` and the `decisions.md`
-2026-10-13 entry.
+Ruling #186 (a dataset must carry action shots). Round 1, mannequin poses
+through `gen_candidates.py`, was **rejected by him** (*"more like dance poses
+rather than anything else"*). Round 2 is done and waiting on him: 13 action
+shots made from his 7DS and Dokkan references, sheet
+`output\duke_v3_action\sheet_v3_action_round2.png`, the images in
+`output\duke_v3_action\final\` (`A01`–`A13`). Method:
+`docs/CHARACTER_ART.md` step 1, "How to make action shots"; record:
+`duke.json` `dataset_v3_note`.
 
-## 1b. Node 24 on the PC
+1. **Gate: he picks by number.**
+2. Captions for the picks (the v2 captions are in the `duke_v2` dataset
+   folder), **gate: he corrects them**.
+3. Stage a new `dataset_name` (`duke_v3`): the 20 approved, cleaned v2
+   images plus his picks.
+4. Train `duke_toll_v3` with the frozen recipe (`charlora` step 2); he picks
+   the step; back up `duke_toll.safetensors` under its own name before
+   `Copy-Item -Force`. Record `training_v3` and `lora_pick_v3` in `duke.json`.
+5. Then `kitart` from step 3a. His 2026-10-08 concepts are kept as drafts in
+   `output\duke_kit\` (S2 surge, K4/K10 drop kick with the soles to the lens,
+   U19 ultimate). Redraft them with `scripts/skill_art/kit_drafts.py` (its
+   first real run; set `kit_prompt.lora` and `draft_lora_strength` 0.9 after
+   the retrain), then `official_render.py`.
 
-Node is pinned to 24.x (`package.json` `engines`, `.nvmrc`), the Vercel
-project's runtime (his "24?", confirmed from the project settings, #188).
-If the PC runs another major, switch with the version manager before
-building; §RUNTIME says a mismatch is a finding, not a warning. The cloud
-container runs 22 and cannot be changed from a session.
+## 2. Model cleanup (his: "models can be deleted later")
 
-## 2. Duke: rebuild the dataset with action shots, retrain, then redraft
+List what is unused and let him pick. On the box: Animagine XL 4.0 (in use)
+and 3.1, Pony, SDXL base, Illustrious-XL v2.0 (**every render green here;
+cause unresolved**), Flux.dev fp8 + its encoders (works; vector LoRAs for
+icons), Qwen-Image-Edit 2511 (in use), Wan 2.1 i2v, Hunyuan3D, the five
+vector LoRAs. Check the licence before keeping anything for a sold game.
 
-His decision, 2026-10-13: *"we will have to rebuild Duke's data set and then
-retrain the LoRa because obviously that is no-no considering what we need
-for the game."* Ruling #186: a dataset must carry action shots; Duke's v1 and
-v2 sets were calm, front-facing standing figures.
+## 3. Sara's LoRA (only if he wants pieces redone)
 
-Run `charart`, which routes to `charlora`:
-
-- Step 1 again with action shots: about a third of the body shots as
-  actions, each different, posed with the mannequin or a reference skeleton.
-  Put the shot list and the count to him before generating.
-  `new_profile.py`'s default body-shot list has five action slots; copy
-  those into `duke.json`'s `body_shots` (keep his approved calm slots that
-  the v2 set fixed), then `check_profile.py duke` stops warning.
-  `gen_candidates.py` has no mannequin input yet: the action clauses carry
-  the motion in words, and a slot that comes back standing is re-rolled
-  or, better, given a `pose` key that `gen_candidates.py` learns to read
-  (depth + openpose from `scripts/pose/`, the same `union()` the drafts
-  use). That addition is small and worth doing before the batch. Keep what the
-  v2 set fixed (the ear strand is gone; `scripts/lora/duke_v2_fix/`), the
-  boots lock and the skin tone. He approves by number, then the captions.
-- Step 2: a new `dataset_name`, the frozen recipe, `duke_toll_v3`; back up
-  `duke_toll.safetensors` under its own name before `Copy-Item -Force`.
-- Then `kitart` from step 3a. The slot plan is not from scratch: his picks
-  from 2026-10-08 (S2 surge, a drop kick with soles to the lens for the
-  slide, U19 for the ultimate) are the concepts; redraft them at **0.9**
-  with the `duke_drop_e` mannequin and the surge and ult poses. The
-  2026-10-08 official candidates in ComfyUI `output\blue_duke\candidates`
-  are superseded by this decision; do not lock them.
-
-Record the v3 training and the pick in `scripts/lora/characters/duke.json`
-(`training_v3`, `lora_pick_v3`), as v2 is recorded.
-
-## 3. Generic `kit_drafts.py` and `official_render.py`
-
-His answer on 2026-10-13 read as yes (*"Kit drafts and official render.
-Yep. Generic."*; speech-to-text, confirm in one line before building).
-`scripts/skill_art/README.md` "Queued" has the shape: `kit_drafts.py <id>
-<slot> --pose <name> --n 24` reading `lora_use` and `art_direction` from
-the profile, `union()` moved into `scripts/lora/common.py`,
-`official_render.py <id> <slot> <draft.png>` the same way. Duke's redraft
-in item 2 is the first run of the generic scripts, so build them before it
-rather than copying `duke/kit_drafts.py` a third time. Keep Duke's files
-until the generic ones have produced one locked piece, then delete them and
-update the README.
-
-## 4. Sara's LoRA (only if he wants pieces redone)
-
-Same rule as Duke, lower priority: her kit is shipped. A retrain on an
+Same rule as Duke, lower priority: her kit is locked. A retrain on an
 action-bearing set only matters when he asks for a Sara piece to be redone.
 
-## Not PC-only, listed so the order is complete
+## Done 2026-10-14 (kept as the record)
 
-- ~~**The save fix** (issues #28, #30, #31)~~ **Done in the cloud,
-  2026-10-13**, on his go. Not verified against a real Firestore: the first
-  PC or phone session that signs in should clear an Epic stage, reload,
-  and check the record survived (`docs/STATUS.md`, "Not verified").
-  **Same session, check the v12 migration on his real account**: sign in,
-  confirm the six collab units are gone from the roster, presets and
-  inventory, and that nothing else moved (ruling #187).
-- ~~**Area `CLAUDE.md` files**~~ **Done 2026-10-13**: `lib/game/CLAUDE.md`
-  and `scripts/skill_art/CLAUDE.md`; the engine rules left `AGENTS.md`.
-- ~~The schema question~~ **Answered 2026-10-13**: a schema for drafting a
-  new character's art profile so it does not start from Duke's file.
-  `scripts/lora/characters/profile.schema.json`, `new_profile.py`,
-  `check_profile.py`. He then said the kit JSON too: `data/kit.schema.json`,
-  `data/kit.template.json`, `npm run newkit`, `data/characters/README.md`
-  (synced into `toll-kits/kits/`). One line in `toll-kits/CLAUDE.md` still
-  says *"Copy the shape of the closest shipped kit"*; it should point at the
-  template. That file is toll-kits-owned and a push there needs his word.
-- **Still his:** the theme pick (round two did not click; he will look on
-  the PC), the eight audit decisions (Part 5), the two rules conflicts in
-  `conventions.md`.
+- **The `fleet` plugin**: enabled at user level on his PC; he said the
+  project block is not needed (`decisions.md`). The local `checkpoint` and
+  `relay` copies stay for cloud sessions.
+- **Node 24**: the PC runs v24.21.0, matching `.nvmrc`.
+- **Generic `kit_drafts.py` and `official_render.py`**: read the profile's
+  `kit_prompt` block; checked without ComfyUI against the 2026-10-08 graphs
+  (72 drafts, 24 renders identical). Not yet run against ComfyUI.
+- **ComfyUI folders cleaned** (his ask: *"cleanup the comfy folder. And
+  delete all rejected images or assets"*): everything went to the Recycle
+  Bin, not deleted. What went and what stayed is `duke.json`
+  `output_cleanup_note`. The bin still holds about 2.2 GB from this and the
+  13.7 GB ACE-Step model; emptying it is his.

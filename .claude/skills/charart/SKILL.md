@@ -84,8 +84,14 @@ in *Dead ends* in `docs/CHARACTER_ART.md` and a line in the step skill's
 
 ## Environment traps (every step)
 
-- **Never pipe into `python -`** or `python - </dev/null`: it hangs on this
-  PC. A command shaped like that sat all night. Write a scratchpad `.py`.
+- **Never type `python -` at all**, in any form (`python -`, `python - </dev/null`,
+  `python - 2>/dev/null`): it hangs on this PC. A command shaped like that sat
+  all night (2026-10-08), and it was typed twice more by reflex on 2026-10-14
+  despite this line. Write a scratchpad `.py`; for a one-liner use `python -c`,
+  and put anything with regex escapes in a file (shell quoting mangles them).
+- **No weighted colour words in a negative** (`(pink skin:1.4)`): every image
+  comes out neon. It was listed for inpainting and re-made in a draft batch on
+  2026-10-14.
 - **Run scripts with system `python`**; ComfyUI's embedded Python cannot
   `import common`. Face boxes (`ultralytics`) are the one job that needs the
   embedded Python.

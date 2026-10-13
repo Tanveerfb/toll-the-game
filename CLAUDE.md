@@ -5,14 +5,18 @@
 (from v2.4.0; section references in the live docs were translated with the
 map in the fleet `CHANGELOG.md`). The master copy is
 `standards/project-rules.md` in `github.com/Tanveerfb/fleet-standards`, which
-also ships as the `fleet` Claude Code plugin. **Not yet enabled here**: the
-2026-10-13 cloud session was refused the write to `.claude/settings.json`,
-so the `extraKnownMarketplaces` / `enabledPlugins` block from the
-`sync-standards` skill is still his to add. `sync-standards` brings this copy up to date;
+also ships as the `fleet` Claude Code plugin. **Enabled at user level on his
+PC, not in this repo's `.claude/settings.json`** (his call, 2026-10-14: the
+plugin is installed and the desktop app loads it, so the project block is not
+needed; `decisions.md`). A cloud session does not get it, which is why the
+local `checkpoint` and `relay` copies stay. `sync-standards` brings this copy up to date;
 `propose-standard` sends a fix back. Never edit this copy in place.
 
 ## Project identity
 
+- **Status: the web game is discontinued (2026-10-14, his call)** in favour of a Godot
+  adaptation planned in other sessions (`decisions.md`). This repo is the record of the
+  web game; the art pipeline in it (`docs/PC_SESSION.md`) is still in use.
 - **Name**: toll-the-game (Toll, the Element Clash card battle game)
 - **Repo**: `Tanveerfb/toll-the-game`, branch `master`
 - **Deploys**: Vercel, from `master`, **auto-deploys on every push**. Live at

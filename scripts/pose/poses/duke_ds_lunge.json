@@ -1,0 +1,99 @@
+{
+  "_note": "Duke LoRA v3 dataset, action slot (ruling #186): a deep lunge forward, seen from the side so the stride reads (the front-on version read as standing, 2026-10-14). Lead (left, near-camera) arm reaching forward, rear arm back, face turned toward the lens.",
+  "height": 1.1,
+  "thickness": 1.35,
+  "pelvis": [
+    0,
+    0,
+    0.75
+  ],
+  "spine": [
+    0,
+    -0.45,
+    1
+  ],
+  "neck": [
+    0,
+    -0.2,
+    1
+  ],
+  "hip_axis": [
+    1,
+    0,
+    0
+  ],
+  "shoulder_axis": [
+    1,
+    0.15,
+    0
+  ],
+  "face": [
+    0.5,
+    -0.85,
+    0.05
+  ],
+  "upper_arm_l": [
+    0.1,
+    -1,
+    0.1
+  ],
+  "forearm_l": [
+    0,
+    -1,
+    0.15
+  ],
+  "upper_arm_r": [
+    -0.3,
+    0.7,
+    -0.6
+  ],
+  "forearm_r": [
+    -0.1,
+    0.8,
+    -0.2
+  ],
+  "thigh_l": [
+    0.1,
+    -0.8,
+    -0.6
+  ],
+  "shin_l": [
+    0,
+    -0.1,
+    -1
+  ],
+  "foot_l": [
+    0,
+    -1,
+    -0.2
+  ],
+  "thigh_r": [
+    -0.1,
+    0.6,
+    -0.8
+  ],
+  "shin_r": [
+    0,
+    0.8,
+    -0.6
+  ],
+  "foot_r": [
+    0,
+    -0.5,
+    -0.9
+  ],
+  "camera": {
+    "location": [
+      3.4,
+      -0.9,
+      1.0
+    ],
+    "look_at": [
+      0,
+      -0.35,
+      0.8
+    ],
+    "lens_mm": 32,
+    "roll_deg": 5
+  }
+}

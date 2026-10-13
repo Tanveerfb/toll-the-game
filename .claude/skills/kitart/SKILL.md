@@ -95,9 +95,10 @@ recorded so a session knows it exists and can ask.
 calm-set LoRA (Sara's and Duke's current ones) takes the 0.65 route, which is
 a workaround, not the preferred path. Do not mix them in one batch. If a
 calm-set LoRA keeps failing, the fix is `charlora` (action shots, retrain),
-not a third recipe. The worked script is `scripts/skill_art/duke/kit_drafts.py`
-(Duke-specific; copy it per character until a generic one exists, see the
-README). Body size for the mannequin: `height` and `thickness` in the pose
+not a third recipe. The script is `scripts/skill_art/kit_drafts.py <id>
+<slot>`: write the approved slot plan into the profile's `kit_prompt`
+(`slots`, one variant per pose with its clause; schema beside the profile),
+run it with `--dry-run` first, then for real. Body size for the mannequin: `height` and `thickness` in the pose
 JSON (Duke 1.1 / 1.35; the default figure is a slim 5'3" woman).
 
 Sheets: one per slot, numbered, seed on every image. Remove **only** text on
@@ -114,8 +115,9 @@ consistent"*).
    ControlNets at **0.6 / 0.65, `end_percent` 0.85**, LoRA **0.9**, the
    profile's `lora_use` prompt with hair and garments stated. Two denoise
    levels, four seeds each: **0.72** keeps the draft (and its off-model hair),
-   **0.82** lets the LoRA redraw the hair and still holds the pose. The worked
-   script is `scripts/skill_art/duke/official_render.py`. Text-to-image with
+   **0.82** lets the LoRA redraw the hair and still holds the pose. The
+   script is `scripts/skill_art/official_render.py <id> <slot> <draft> --key
+   <label>`, reading `kit_prompt.official`. Text-to-image with
    the ControlNets alone kept the face and lost the pose.
 2. **Check the head against two approved dataset images before anything
    else**: hair, skin, ear. Sonnet shipped Duke with the drafts' spiky hair

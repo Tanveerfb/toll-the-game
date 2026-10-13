@@ -21,8 +21,8 @@ python scripts/pose/draw_pose.py <out_dir> <name> [<name> ...]
 `<name>_joints.json` (COCO-18 2D pixel coordinates, visible joints only).
 `draw_pose.py` draws the OpenPose image and copies both into ComfyUI `input/`
 as `pose3d_<name>_depth.png` and `pose3d_<name>_pose.png`, which is what the
-draft scripts load (`scripts/skill_art/duke/kit_drafts.py`, `union()` at depth
-0.55 and openpose 0.6, `end_percent` 0.7). Run with system `python`; never
+draft scripts load (`scripts/skill_art/kit_drafts.py`, `common.apply_pose()`
+at depth 0.55 and openpose 0.6, `end_percent` 0.7). Run with system `python`; never
 pipe into `python -`.
 
 **Preview the depth map before any GPU run.** One bad joint ruins all 24

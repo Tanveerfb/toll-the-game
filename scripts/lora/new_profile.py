@@ -84,6 +84,7 @@ def main():
         "approved": {},
         "lora_use": None,
         "art_direction": None,
+        "kit_prompt": None,
         "status": f"Created by new_profile.py; step 0 (design lock) not started. Fill the TODO fields from toll-kits/designs/characters/{args.id}.md, then check_profile.py.",
     }
     with open(path, "w", encoding="utf-8", newline="\n") as f:

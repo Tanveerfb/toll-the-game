@@ -9,157 +9,145 @@ added to at the top, newest first. Logs older than the current month are in
 
 ## Start here
 
-**State:** the 2026-10-13 cloud session took the game from "audited" to
-"cleaned up and decided": the cloud save is fixed (v11, v12), the six collab
-units are gone (#187), the project skills exist (eleven, `AGENTS.md`), every
-open decision he was asked has an answer (#186 to #190, `decisions.md`), and
-the dead code, the duel tool, the MDX news stack and gsap are out. **Merged to
-`master` on 2026-10-13 on his `git checkpoint and merge`, which deploys to
-production**; the branch's preview build of b4035ca was READY on Vercel before
-the merge.
+**State:** **the web game is discontinued** (2026-10-14, his call): he is
+moving to a Godot adaptation, planned in other sessions (`decisions.md`,
+2026-10-14). This is the repo's final game-side checkpoint; no game code
+changed in it. What is still live here is the **art pipeline**: Duke's LoRA v3
+dataset is one gate from training.
 
-**Next:** on his PC, `docs/PC_SESSION.md` in order: enable the `fleet` plugin,
-Node 24, then rebuild Duke's dataset with action shots and retrain (#186),
-with the generic draft and render scripts built first. In the cloud, nothing
-is queued; the next design work is the theme round three, which starts from
-whatever he says about round two.
+**Next:** on his PC, `docs/PC_SESSION.md` item 1: his picks from Duke's 13
+round-2 action shots (`output\duke_v3_action\sheet_v3_action_round2.png`),
+then captions, staging and training `duke_toll_v3`.
 
-**Blocked on him:**
-- The theme: round two (`docs/design/mockups/screens-from-characters.html`)
-  did not click; he picks or says what missed, on the PC.
-- The art: Duke's action-shot list and count, then the LoRA v3 step; the
-  Slide name; Batra's options.
-- The sign-in conflict dialog: a mockup round (`docs/specs/save-conflict.md`).
-- From 2026-10-03, still open: the Merge badge on a phone; #180's calls; the
-  Caila and Sara sheets; the new card texts; Lyra's C4 and passive placement;
-  Roused; the Orders tile; the app-icon recolour; the foundation audit; the
-  folder migration; summon animations (#174).
+**Blocked on him:** those picks; the model cleanup (*"models can be deleted
+later"*); emptying the Recycle Bin (about 16 GB of recycled outputs and the
+ACE-Step model).
 
 **Don't trust:**
-- Any claim that the cloud save works end to end against a real Firestore:
-  v11 (keyed teams, the shape guard) and v12 (the collab units dropped) are
-  fixed in code and **not yet seen working on his account**.
-- A roster count, a kit list or a mockup path from before 2026-10-13: the
-  collab six are gone, twelve mockups moved to `docs/design/`, five drafts
-  were deleted.
-- `output\blue_duke\candidates` on his PC: superseded by the retrain (#186).
-- Sim numbers from before 2026-10-03.
+- The generic `kit_drafts.py` / `official_render.py` / `qwen_edit.py` /
+  `ref_pose_maps.py` against a real ComfyUI run beyond what this file says ran
+  ("Verified this checkpoint").
+- Illustrious-XL v2.0 on this PC: every render is green, cause unknown.
+- `npm run check` as written fails on his PC until `.next/dev/types` is
+  regenerated (see "Verified").
+- Anything in the session log below about the web game's next steps: those
+  plans ended with the discontinuation.
 
-> **Things that will save a session:** in the cloud container `next build`
-> fails on Google Fonts (the sandbox, not the code) and `npm run test:browser`
-> needs a Playwright symlink workaround (the port agent's note, 2026-10-13:
-> build revision 1234's layout from the 1194 files in `/opt/pw-browsers` and
-> point `PLAYWRIGHT_BROWSERS_PATH` at it). Heredocs are blocked by a hook.
-> 55 of the source files are CRLF: patch with a script that keeps endings.
-> Node is pinned to 24; the container runs 22.
+> **Things that will save a session:** heredocs are blocked by a hook; never
+> type `python -` on his PC (it hangs; it was typed by reflex twice on
+> 2026-10-14); 55 source files are CRLF, so patch with a script that keeps
+> endings; no weighted colour words in an image negative (neon).
 
 ---
 
 ## What this project is
 
-Toll, a turn-based card battler for the Element Clash IP: Next.js 16, a pure
-battle engine in `lib/game/`, Zustand saves synced to Firestore, a gacha, a
-world boss, ascension trials and Epic Battles, 29 kits of which 12 are
-playable. Tanveer owns design, mechanics, numbers and characters; Claude owns
-structure, schemas and measurement (`AGENTS.md`). Deploys to Vercel from
-`master` on every push; no real players yet.
+Toll, a turn-based card battler for the Element Clash IP, built as a web game:
+Next.js 16, a pure battle engine in `lib/game/`, Zustand saves synced to
+Firestore, a gacha, a world boss, ascension trials and Epic Battles, 29 kits
+in `data/characters/` (12 playable; 14 story-only enemies, 3 unreleased). **Discontinued 2026-10-14 for a Godot
+adaptation.** Tanveer owned design, mechanics, numbers and characters; Claude
+owned structure, schemas and measurement (`AGENTS.md`). `master` deploys to
+Vercel on every push (`https://toll-the-game.vercel.app/`, left up); there
+were never real players.
+
+**What carries over to the Godot work, Claude's reading** (his plan is
+elsewhere): the kits and arcs as JSON (`data/kit.schema.json` describes the
+kit shape), the rulings ledger (`docs/HANDOFF.md`), `docs/design/KIT_DESIGN.md`,
+the engine's 1,622 unit tests as a specification for a port, and the whole
+art pipeline.
 
 ---
 
-## What shipped in this checkpoint (2026-10-13, cloud, one long session)
+## What this checkpoint holds (2026-10-14, his PC)
 
-- **The audit** (`docs/GAME_AUDIT_2026-10-13.md`) and his answers to its
-  eight decisions (`decisions.md` 2026-10-13, rulings #189, #190).
-- **The save:** `teamKey` replaces nested team arrays (v11); `cloudSync.ts`
-  decides when a write happens; `resetBattle()` on sign-out; `cloudStatus`
-  on `/profile`; an unreadable save starts on defaults. Issues #28, #30, #31.
-- **The collab six deleted** (#187): kits, art, registrations; eight
-  mechanics kept behind `tests/fixtures/characters/`; v12 migration;
-  `toll-kits` cleaned (its `main`, two commits).
-- **Skills:** `redesign`, `savefield`, `importkit`, `newevent`, and the art
-  pipeline split into `charart` → `charlora` / `kitart` / `artinstall`.
-- **Schemas and templates:** the art profile (`scripts/lora/characters/
-  profile.schema.json`, `new_profile.py`, `check_profile.py`) and the kit
-  (`data/kit.schema.json` from the zod schema, `data/kit.template.json`,
-  `npm run newkit`, `data/characters/README.md`).
-- **Conventions (#188):** this file's two zones; mockups to
-  `docs/design/<name>.html` with drafts gitignored; no Trello; Node 24.
-- **Cleanup:** `tailwind-variants`, four dead hooks, the duel tool, the MDX
-  news stack (`/news` is static), gsap (PullReveal on framer-motion, with a
-  browser test), 48 unused exports and 30 unused types, `lib/pagination.ts`;
-  `knip.json` ignores the four files knip cannot see the use of.
-- **Starter gems 500** (#190), registered in `docs/demo-shortcuts.md`.
-- **Area files** `lib/game/CLAUDE.md`, `scripts/skill_art/CLAUDE.md`.
-- **The rules** synced to v3.4.0; the plugin block is his to add.
+All art pipeline and documentation; nothing in `app/`, `components/`, `lib/`,
+`data/`, `store/` or `hooks/` changed.
+
+- **Generic kit-art scripts:** `scripts/skill_art/kit_drafts.py` and
+  `official_render.py` read a new `kit_prompt` block in the character profile
+  (schema in `scripts/lora/characters/profile.schema.json`, Duke's filled in);
+  `scripts/lora/common.py` gained `union`, `apply_pose`, `pose_files`,
+  `missing_inputs`. Duke's copies in `scripts/skill_art/duke/` are marked
+  superseded.
+- **New tools:** `scripts/skill_art/qwen_edit.py` (instruction edits with
+  Qwen-Image-Edit 2511), `scripts/skill_art/ref_pose_maps.py` (pose and depth
+  maps from his references), `scripts/lora/tag_candidates.py` (WD14 QC pass,
+  `qc_tags` in the profile). `gen_candidates.py` accepts a `pose:<name>` flag.
+- **Duke's v3 dataset round:** round 1 (mannequin poses) rejected by him;
+  round 2 (his references) made, 13 finals waiting on his picks. Duke's run is
+  `scripts/skill_art/duke/v3_*.py`; the six round-1 mannequin poses are
+  `scripts/pose/poses/duke_ds_*.json`.
+- **Models (his PC, outside git):** downloaded the WD14 tagger, Depth Anything
+  V2 Small and Illustrious-XL v2.0; ACE-Step sent to the Recycle Bin. Flux runs
+  (the `ART_PIPELINE.md` claim that it could not was corrected).
+- **ComfyUI cleaned (outside git):** output 3.3 GB to 763 MB, input 353 MB to
+  233 MB, 2,118 items to the Recycle Bin (`duke.json` `output_cleanup_note`).
+- **Docs and skills:** `docs/CHARACTER_ART.md` (Environment rows for the new
+  tools and licences, the action-shot method, seven new dead ends),
+  `docs/ART_PIPELINE.md` (Flux), `docs/PC_SESSION.md` (rewritten for the art
+  work only), `charlora`, `charart` and `kitart` skills, the script READMEs,
+  `CLAUDE.md` and `AGENTS.md` (the fleet plugin stays at user level; the
+  discontinuation), `decisions.md` (both).
 
 ---
 
 ## Open items
 
-1. **Duke's retrain on an action-bearing dataset** (#186), on the PC. Blocks
-   his kit art.
-2. **The theme, round three or a pick** (#185). Blocks the component round.
-3. **The sign-in conflict dialog** (`docs/specs/save-conflict.md`): pure half
-   built, dialog needs a mockup round.
-4. **Issue #29**: a stale device's whole snapshot still wins (`onSnapshot`
-   and a diffed write).
-5. **A PvE content phase** after the foundation: gem source, day-two hook,
-   hub lead, Second Trial, Molvarr tiers 2 to 4 (`docs/ROADMAP.md`).
-6. **The news overhaul** (`docs/ROADMAP.md`).
-7. **`lib/env.ts`** and the rest of §RUNTIME; the folder migration; sentence
-   case (`conventions.md`, all queued).
+1. **Duke v3: his picks, captions, train** (`docs/PC_SESSION.md` item 1).
+2. **Model cleanup**, his call when (`docs/PC_SESSION.md` item 2).
+3. **`.next/dev/types` on his PC** still names routes deleted on 2026-10-13
+   (`app/news/notices/[slug]`, `app/news/updates/[slug]`, `app/api/dev/duel`),
+   so `tsc` and `next build` fail locally. Restarting his dev server
+   regenerates it, or delete `.next/dev`; it is his dev server's folder, so it
+   was left alone.
+
+**Retired with the web game (2026-10-14):** the theme round three (#185), the
+sign-in conflict dialog (`docs/specs/save-conflict.md`), issue #29, the PvE
+content phase, the news overhaul, `lib/env.ts`, the folder migration, the
+Firestore save check on his account, the eight audit decisions, the two rules
+conflicts in `conventions.md`, and the `toll-kits` template line. They stay
+in the session log as history.
 
 ---
 
-## Verified this checkpoint, by measurement
+## Verified this checkpoint, by running it
 
-- `npm run check` after the final change: **135 files, 1,622 tests**, exit 0
-  (typecheck and lint included).
-- `npx knip`: nothing reported, with `knip.json` ignoring four files whose
-  use knip cannot see (a hook, the service worker, a vitest stub, a tool).
-- The browser suite after the gsap port: 4 files, 19 tests, in Chromium with
-  the symlink workaround; the two PullReveal guards were proved red first.
-- The cloud-save shape guard was proved red on the old nested-array fixture
-  before the shape changed; the trial encounter's replacement team measured
-  100% at Lv20 on three seeds, 0% at Lv1.
-- Both mockup rounds, in Chromium at 390px: every control ≥ 44px, no broken
-  art.
-- The Vercel project reads `nodeVersion: 24.x` (read through the Vercel
-  tools, not assumed), and the preview deployment of b4035ca on the session
-  branch reports READY: the tree builds on the platform even though
-  `next build` cannot run in the container.
-
-**The mistake worth keeping.** The first theme round was drawn from a motif
-catalogue without looking at the one screen he liked; he called it generic,
-and the `redesign` skill now opens with "ask what works". Separately, the
-first knip pass was launched while the save fix was mid-flight and had to be
-rerun after a usage-limit stop; nothing was lost, but the order (finish one
-batch, then fan out) is the right one.
-
----
-
-## Assumed, not verified
-
-- The cloud save against a real Firestore (v11 and v12 both).
-- `next build` in the container: it cannot fetch Google Fonts; the Vercel
-  preview build stands in for it.
-- That the `fleet` plugin loads in a cloud session once enabled.
-- The audit's findings other than #28, #30 and #31 were *read*, not
-  reproduced; severities are stated per finding.
-- The Node mismatch (container 22, pin 24) has changed nothing shipped so
-  far; nothing has been built on 24 from this session.
+- `npx vitest run --project unit`: **1,622 passed, 135 files**.
+- `npx eslint`: clean, exit 0.
+- `npx tsc --noEmit`: **3 errors, all in the generated
+  `.next/dev/types/validator.ts`** (the deleted routes above); **0 in the
+  source**. So `npm run check` exits non-zero on his PC for that reason only.
+- `next build` on a scratch dist dir (`NEXT_DIST_DIR=.next-verify`) with
+  `.next/dev/types` left out of `tsconfig.json` for that one build: compiled,
+  41 static pages, exit 0. `tsconfig.json` restored with `git checkout`,
+  `.next-verify` removed. A fresh clone (Vercel) has no `.next/dev`.
+- Python: every changed script compiles (`py_compile`; the tagger under
+  ComfyUI's embedded Python); `check_profile.py` passes all five profiles (Sara
+  and Batra warn about calm shot lists, as expected under #186).
+- `kit_drafts.py` and `official_render.py` reproduced Duke's 2026-10-08 graphs
+  exactly (72 drafts, 24 renders), checked before `duke_drop_f` was removed
+  from his `kit_prompt`; the test was red first on one negative word.
+- `qwen_edit.py`, `ref_pose_maps.py`, `tag_candidates.py` and the v3 scripts
+  ran against ComfyUI and produced the images described in the session log.
 
 ---
 
 ## Confidence and gaps
 
-- **His words versus Claude's reading:** every ruling from #185 to #190
-  marks the inference seam; the mockup notes and the audit's severities are
-  Claude's.
-- **Outside the repo:** `toll-kits` is at f135700 (its `main`); its
-  `KIT_RULINGS` still lacks #181 to #190, and its `decisions/PENDING.md`
-  entries for #182/#183 are not yet deleted. ComfyUI output folders on his
-  PC hold every image; nothing is in git.
+- **His words versus Claude's reading:** the discontinuation and the model
+  choices quote him (`decisions.md`); "what carries over to Godot" and the
+  choice of Illustrious over NoobAI are Claude's.
+- **Not run against ComfyUI:** `kit_drafts.py`, `official_render.py` (graphs
+  checked only), and `gen_candidates.py`'s `pose:` flag beyond the 2026-10-14
+  mannequin round.
+- **Taste is his:** every image claim in the log was looked at by Claude; none
+  is his approval until he picks.
+- **Outside the repo:** ComfyUI's folders and models on his PC, the training
+  datasets in `C:\Users\Tanve\.comfyui-mcp\training\datasets\`, and the
+  Recycle Bin hold state no commit records.
+- **Not folded:** this file is past the skill's ~800-line fold line, but
+  ruling #188 keeps the current month's logs here, so October stays.
 
 ---
 
@@ -167,6 +155,94 @@ batch, then fan out) is the right one.
 
 *Newest first, added at the top (project-rules §DOCS, his call 2026-10-13,
 ruling #188). Logs older than this month are in `docs/archive/`.*
+
+## Session log — 2026-10-14 (his PC, ComfyUI, overnight): the generic art scripts, Duke's v3 action shots, new models, the cleanup, and the end of the web game
+
+**What he asked:** `git pull`, `relay`, then `docs/PC_SESSION.md` with no
+ComfyUI at first; later *"start comfy UI and start working"* overnight with
+the PC kept awake; which Hugging Face models would help; then a ComfyUI
+cleanup and this final `git checkpoint max`.
+
+**PC_SESSION items:**
+- **The `fleet` plugin:** the write to `.claude/settings.json` was refused as
+  self-modification (the same as on 2026-10-13). He: the plugin *"is already
+  installed ... available to you via the desktop app. I think you don't need
+  to actually put ... anything inside the settings JSON"*. Recorded in
+  `CLAUDE.md`, `AGENTS.md`, `decisions.md`; the local skill copies stay.
+- **Node 24:** v24.21.0 on the PC.
+- **Generic draft and render scripts** (his *"do all the other stuff"*):
+  `kit_drafts.py <id> <slot>`, `official_render.py <id> <slot> <draft> --key`,
+  reading `kit_prompt`; both reproduced the 2026-10-08 graphs exactly. The
+  equivalence test went red first on one dropped negative word (`text`),
+  which was restored so old seeds reproduce. `check_profile.py` gained the
+  `number` type.
+
+**Duke's v3 dataset (#186):**
+- He approved a shot list (the 11 calm v2 shots plus six actions). Six
+  mannequin poses were made (`duke_ds_*`), the lunge and turn redone after
+  they read as standing, and `gen_candidates.py` learned `pose:<name>`.
+- A smoke test showed drift: capri and teal trousers, grey sleeve trim, the
+  ear lock back (from the D22 face reference). Duke's `negative_extra` and
+  `identity` were tightened (`v3_prompt_note`).
+- **He rejected round 1:** *"they are not good ... not consistent and also
+  they don't have good poses ... more like dance poses rather than anything
+  else"*, and pointed at the 7DS and Dokkan references and at a prompt-only
+  Animagine drop kick he liked (`base_ab/dropkick_anim_501`, since recycled).
+- Claude also found the calm shots need no re-render: v3 = the 20 approved v2
+  images plus new action shots. The calm re-renders had drifted (bulky,
+  harem trousers, back views facing front).
+- **Round 2:** 19 references to pose and depth maps (`ref_pose_maps.py`), 76
+  prompt-only drafts, 20 picked, Duke's LoRA put on by img2img at 0.82 with
+  the draft's own DWPose, a BiRefNet cut-out onto white (four needed
+  `qwen_edit.py` to clear swirls touching the figure, one a trouser mark), 13
+  finals on a sheet sent to him. **Not picked yet.**
+- **Failures on the way:**
+  - the first 76-draft batch came out neon from weighted colour negatives
+    (`(pink skin:1.4)`), a dead end already listed for inpainting. A full
+    ComfyUI restart proved it was the graph, not state;
+  - unmasked depth maps drew halos;
+  - Qwen identity transfer from reference images copied their standing pose;
+  - Gotenks references gave child proportions;
+  - a reference's sword came through the depth map as a prop.
+
+**Models** (his *"do download number five and number six. Number seven,
+maybe"*, then *"do use 1/2/4 ... delete number 3"*):
+- **Downloaded:** WD14 `wd-eva02-large-tagger-v3` (1.26 GB, Apache-2.0),
+  Depth Anything V2 **Small** (99 MB, Apache-2.0; Base, Large and Giant are
+  CC-BY-NC), Illustrious-XL v2.0 (6.94 GB, OpenRAIL-M; NoobAI-XL skipped for
+  its licence).
+- **Illustrious** renders green on every run, with its own VAE and with the
+  SDXL base VAE alike, so it was not adopted.
+- **Qwen-Image-Edit 2511** (installed 2026-10-09 by another session) does
+  single fixes in about 40 s: trouser colour, sleeve trim, the ear lock, a
+  raised arm lowered, swirls cleared. Several fixes in one instruction
+  overreach.
+- **Flux** runs now that its encoders are on the box (`ART_PIPELINE.md`
+  corrected); its vector LoRA draws clean flat icons.
+- **ACE-Step** (13.7 GB) to the Recycle Bin.
+
+**The web game:** he: *"i am discontinuing the web game and instead moving to
+a godot adapation"*, planned with other sessions (*"Dw about details"*).
+Recorded in `decisions.md` and `CLAUDE.md`.
+
+**Cleanup** (his *"cleanup the comfy folder. And delete all rejected images or
+assets"*, models later): everything to the Recycle Bin, never a hard delete.
+- **Tier 1:** whole folders (tests, rejected rounds, off-model work, collab
+  units).
+- **Tier 2:** dataset candidate folders, keeping every profile-approved
+  original.
+- **Tier 3:** his picks from a question (unpicked kit drafts, `_unsorted`,
+  Duke's superseded v2 work).
+- **Input:** the staging copies.
+- **Guard:** every list was checked against every path the profiles name. It
+  caught three Sara picks in a folder marked rejected.
+- **Kept:** Sara's finish and matte pairs for her locked pieces, so they can be
+  re-composited.
+
+**Mistakes:** `python -` typed twice by reflex (stopped at once; nothing lost);
+the neon batch. Both are now at the top of the `charart` traps.
+
+**Verified:** see the snapshot, "Verified this checkpoint".
 
 ## Session log — 2026-10-13 (cloud): the senior-dev audit, three theme options, and the rules synced to v3.4.0
 
@@ -288,6 +364,10 @@ locked mockups moved to `docs/design/`, five drafts deleted, this file took
 the fleet shape with the month's log folded back in.
 
 ## Session log — 2026-10-07/08 (his PC, ComfyUI): blue Duke's design, LoRA v1 and v2, and his kit art to the official render
+
+**Partly retired 2026-10-14:** the official renders (`duke_official3`) and Sonnet's off-model
+candidates below were superseded by the v3 retrain (#186) and sent to the Recycle Bin with the
+ComfyUI cleanup; his S2/K4/K10/U19 concept drafts and the snow and river plates were kept.
 
 One long session on his PC, partly from his phone. Rulings #181–#184. Nothing in
 `app/`, `components/`, `lib/` or `data/` changed; this is art pipeline work. The

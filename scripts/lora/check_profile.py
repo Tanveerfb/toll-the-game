@@ -26,6 +26,7 @@ ACTION_WORDS = (
 TYPES = {
     "string": str,
     "integer": int,
+    "number": (int, float),
     "boolean": bool,
     "array": list,
     "object": dict,
@@ -37,7 +38,7 @@ def type_ok(value, schema_type):
     kinds = schema_type if isinstance(schema_type, list) else [schema_type]
     for kind in kinds:
         py = TYPES[kind]
-        if kind == "integer" and isinstance(value, bool):
+        if kind in ("integer", "number") and isinstance(value, bool):
             continue
         if isinstance(value, py):
             return True

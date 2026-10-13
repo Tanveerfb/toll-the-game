@@ -148,3 +148,39 @@ def base_graph(pos, neg, w, h, seed, prefix, batch=4, face_ref=None, lora=None, 
         out = ["34", 0]
     g["7"] = {"class_type": "SaveImage", "inputs": {"images": out, "filename_prefix": prefix}}
     return g
+
+
+UNION_CN = "controlnet-union-sdxl-promax.safetensors"
+
+
+def union(g, prev_pos, prev_neg, image, kind, strength, ids, end=0.7):
+    """Chain one union-ControlNet hint (`kind` "depth" or "openpose", `image` an
+    input/ filename) after the conditioning pair `prev_pos`/`prev_neg`; `ids` are
+    four free node ids. Returns the new (positive, negative) pair."""
+    a, b, c, d = ids
+    g[a] = {"class_type": "ControlNetLoader", "inputs": {"control_net_name": UNION_CN}}
+    g[b] = {"class_type": "SetUnionControlNetType", "inputs": {"control_net": [a, 0], "type": kind}}
+    g[c] = {"class_type": "LoadImage", "inputs": {"image": image}}
+    g[d] = {"class_type": "ControlNetApplyAdvanced", "inputs": {
+        "positive": prev_pos, "negative": prev_neg, "control_net": [b, 0], "image": [c, 0],
+        "strength": strength, "start_percent": 0.0, "end_percent": end}}
+    return [d, 0], [d, 1]
+
+
+def pose_files(pose):
+    """The mannequin's two ControlNet inputs for a pose name (scripts/pose/README.md)."""
+    return f"pose3d_{pose}_depth.png", f"pose3d_{pose}_pose.png"
+
+
+def apply_pose(g, pose, depth, openpose, end, sampler="5"):
+    """Wire a mannequin pose (depth then openpose, both union ControlNet) between
+    the prompt pair (nodes 2 and 3) and the sampler. Node ids 40-47 are used."""
+    d_img, p_img = pose_files(pose)
+    pos, neg = union(g, ["2", 0], ["3", 0], d_img, "depth", depth, ("40", "41", "42", "43"), end)
+    pos, neg = union(g, pos, neg, p_img, "openpose", openpose, ("44", "45", "46", "47"), end)
+    g[sampler]["inputs"]["positive"], g[sampler]["inputs"]["negative"] = pos, neg
+
+
+def missing_inputs(names):
+    """The names in `names` not present in ComfyUI input/ (checked before queueing)."""
+    return [n for n in names if not os.path.exists(os.path.join(COMFY, "input", n))]

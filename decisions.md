@@ -332,3 +332,45 @@ knip's "unused files": `.claude/hooks/block-heredoc.mjs` (a hook, wired in
 settings), `public/sw.js` (registered by a string, not an import),
 `tests/stubs/next-image.tsx` (a vitest alias) and `scripts/capture-screens.mjs`
 (a tool); knip cannot see any of those four uses.
+
+## 2026-10-14 — The fleet plugin stays at user level
+
+`docs/PC_SESSION.md` item 1 asked for the `extraKnownMarketplaces` /
+`enabledPlugins` block in `.claude/settings.json`. The PC session's write was
+refused as self-modification, the same wall as 2026-10-13. His answer, by
+speech-to-text: the plugin *"is already installed ... and available to you via
+the desktop app. I think you don't need to actually put ... anything inside
+the settings JSON"*. Checked: `~/.claude/settings.json` enables
+`fleet@tanveerfb` and the plugin cache holds its `checkpoint` and `relay`.
+
+So the project block is **not** added. Consequence, Claude's reading: a cloud
+session sees only the repo, so it does not get the plugin, and the local
+`.claude/skills/checkpoint` and `relay` copies **stay** rather than being
+deleted as the 2026-10-13 entry planned. `AGENTS.md` and `CLAUDE.md` say so.
+
+## 2026-10-14 — The web game is discontinued; the art pipeline stays
+
+His message, 2026-10-14: *"Good news is that we don't have to work hard on
+artworks and game. Bad news is that i am discontinuing the web game and
+instead moving to a godot adapation."* Then: *"Dw about details. I already
+planned with other web session that handles toll kits and story docs."* The
+Godot plan lives in those sessions, not here; this repo is the record of the
+web game. Its last checkpoint is the commit after `e6d656d`. `master` still
+auto-deploys to Vercel and the site was left up (he did not ask for it to come
+down).
+
+What stays useful from here, Claude's reading: the kits and arcs as JSON, the
+rulings ledger, the engine's test suite as a spec for a port, and the whole
+ComfyUI art pipeline (`docs/CHARACTER_ART.md`, `scripts/lora/`,
+`scripts/skill_art/`, `scripts/pose/`, the profiles). `docs/PC_SESSION.md`
+keeps the art work in order.
+
+Same day, his model choices: he okayed the downloads of the WD14 tagger
+(`SmilingWolf/wd-eva02-large-tagger-v3`, Apache-2.0), Depth Anything V2
+(**Small**, Apache-2.0; Base, Large and Giant are CC-BY-NC and were not taken)
+and a pose-friendly base model, for which Claude chose Illustrious-XL v2.0
+(CreativeML OpenRAIL-M) over NoobAI-XL (a custom licence). He asked for the
+already-installed Qwen-Image-Edit, Flux and Wan to be used, and for the
+ACE-Step music model to go (*"its a dead model, don't need it"*; sent to the
+Recycle Bin). The rule kept from it: a model goes on the box only if its licence
+allows selling the output.

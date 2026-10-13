@@ -2,14 +2,14 @@
   "id": "duke",
   "trigger": "duketoll",
   "face_ref": "duke_face_ref_d22.png",
-  "out_dir": "lora_duke_set_f",
+  "out_dir": "lora_duke_v3",
   "dataset_name": "duke_v1",
   "batch": 3,
   "hand_fix": false,
   "seed_offset": 800,
-  "identity": "masterpiece, best quality, absurdres, 1boy, solo, human, adult man, (adult man, 26 years old:1.2), (athletic muscular build, broad shoulders, defined arms:1.25), (mature face:1.1), (dark brown eyes:1.2), (black hair swept back and up, textured wavy top, short tapered fade on the sides:1.2), (ash grey highlights, silver ash streaks through the top hair:1.3), (light medium brown skin:1.3), defined brow, (black shirt:1.6), (fitted black short sleeve crew neck shirt:1.5), (dark clothing:1.3), (loose dark charcoal trousers, relaxed fit, tapered legs:1.3), (black ankle boots, laced, boot tops under the trouser hems:1.3), (blue wristbands, narrow blue sweatbands on both wrists:1.2), bare hands",
+  "identity": "masterpiece, best quality, absurdres, 1boy, solo, human, adult man, (adult man, 26 years old:1.2), (athletic muscular build, broad shoulders, defined arms:1.25), (mature face:1.1), (dark brown eyes:1.2), (black hair swept back and up, textured wavy top, short tapered fade on the sides:1.2), (ash grey highlights, silver ash streaks through the top hair:1.3), (light medium brown skin:1.3), defined brow, (black shirt:1.6), (fitted black short sleeve crew neck shirt:1.5), (dark clothing:1.3), (loose dark charcoal full length trousers, relaxed fit, tapered legs:1.4), (black ankle boots, laced, boot tops under the trouser hems:1.3), (blue wristbands, narrow blue sweatbands on both wrists:1.2), bare hands",
   "identity_upper": "masterpiece, best quality, absurdres, 1boy, solo, human, (adult man, 26 years old:1.2), (broad shoulders:1.1), (dark brown eyes:1.2), (black hair swept back and up, textured wavy top, short tapered fade on the sides:1.2), (ash grey highlights, silver ash streaks through the top hair:1.3), (light medium brown skin:1.3), defined brow, (black shirt:1.6), (fitted black short sleeve crew neck shirt:1.5), (dark clothing:1.3)",
-  "negative_extra": "child, teenager, shota, (bodybuilder:1.4), (extremely muscular:1.3), (thin:1.2), (spiky hair:1.2), (robe:1.3), (magenta:1.3), (pink:1.2), (sleeveless:1.2), (long sleeves:1.2), (hand wraps:1.1), (blue hair:1.4), (blue hair streak:1.4), (blue sash:1.3), (cloth tied around waist:1.3), waist tie, (white shirt:1.4), (grey shirt:1.3), (navy shirt:1.2), (stripe on trousers:1.3), (side stripe:1.3), (logo:1.2), (emblem:1.2), ponytail, long hair, (white hair:1.2), (fully grey hair:1.2), red hair, pale skin, blue eyes, teal eyes, beard, stubble, facial hair, glasses, text, (white shirt:1.6), (grey shirt:1.5), (light colored shirt:1.4), (white clothes:1.3), (brown trousers:1.4), (light grey trousers:1.3), (slim:1.2), (skinny:1.3), (young:1.3), (youthful:1.3), (boyish:1.4), (teen:1.4), (young adult:1.2), (baby face:1.3), (slender:1.3), (lanky:1.3), (hyper muscular:1.5), (huge muscles:1.4), (thick neck:1.3), (fangs:1.5), (sharp teeth:1.5), (angry:1.3), (scowl:1.3), (long neck:1.3), (pink skin:1.3), (pale skin:1.3), (gaunt:1.2), (boyish:1.3), (slender:1.3), (crouching:1.4), (squatting:1.4), (kneeling:1.3), (sitting:1.3), tying shoelaces, leaning forward, (cord between ankles:1.5), (rope:1.4), (strap between legs:1.4), (drawstring at ankles:1.4), (shoelaces tied together:1.5), (trailing laces:1.3), (ribbon:1.3), (chain:1.3), (necklace:1.3), (knee-high boots:1.3), (tall boots:1.3), dress pants, pleated trousers, slacks, grey shoes, sneakers, white soles",
+  "negative_extra": "child, teenager, shota, (bodybuilder:1.4), (extremely muscular:1.3), (thin:1.2), (spiky hair:1.2), (robe:1.3), (magenta:1.3), (pink:1.2), (sleeveless:1.2), (long sleeves:1.2), (hand wraps:1.1), (blue hair:1.4), (blue hair streak:1.4), (blue sash:1.3), (cloth tied around waist:1.3), waist tie, (white shirt:1.4), (grey shirt:1.3), (navy shirt:1.2), (stripe on trousers:1.3), (side stripe:1.3), (logo:1.2), (emblem:1.2), ponytail, long hair, (white hair:1.2), (fully grey hair:1.2), red hair, pale skin, blue eyes, teal eyes, beard, stubble, facial hair, glasses, text, (white shirt:1.6), (grey shirt:1.5), (light colored shirt:1.4), (white clothes:1.3), (brown trousers:1.4), (light grey trousers:1.3), (slim:1.2), (skinny:1.3), (young:1.3), (youthful:1.3), (boyish:1.4), (teen:1.4), (young adult:1.2), (baby face:1.3), (slender:1.3), (lanky:1.3), (hyper muscular:1.5), (huge muscles:1.4), (thick neck:1.3), (fangs:1.5), (sharp teeth:1.5), (angry:1.3), (scowl:1.3), (long neck:1.3), (pink skin:1.3), (pale skin:1.3), (gaunt:1.2), (boyish:1.3), (slender:1.3), (crouching:1.4), (squatting:1.4), (kneeling:1.3), (sitting:1.3), tying shoelaces, leaning forward, (cord between ankles:1.5), (rope:1.4), (strap between legs:1.4), (drawstring at ankles:1.4), (shoelaces tied together:1.5), (trailing laces:1.3), (ribbon:1.3), (chain:1.3), (necklace:1.3), (knee-high boots:1.3), (tall boots:1.3), dress pants, pleated trousers, slacks, grey shoes, sneakers, white soles, (hair strand in front of ear:1.3), (sideburns:1.3), (rolled up trousers:1.4), (capri pants:1.4), (cropped trousers:1.4), (shorts:1.3), (bare shins:1.3), (sleeve trim:1.3), (raglan sleeves:1.3), (two-tone shirt:1.3), (teal trousers:1.4), (blue trousers:1.4), (green trousers:1.3), (mid grey trousers:1.3), (maroon shirt:1.3), (red shirt:1.3), (mesh shirt:1.3)",
   "style": "cel shading, thick clean lineart, anime screencap, even lighting, (plain light grey background:1.2), simple background",
   "design_note": "Step 0 design round, 2026-10-07. Source: toll-kits branch claude/pensive-brahmagupta-8yv4rd, brainstorm/duke-design-lock.md and duke-lora-brief.md (his decisions 2026-10-02; the small details were delegated to Claude). CHANGED 2026-10-07 by him: no blue hair streak. Hair is black with ash-grey highlights (his words: \"black hair with ash color highlights\"), textured, swept back and up, short tapered fade; he attached a barber photo of that cut as the reference (chat only, not stored). The only water-blue left is the wristbands. Round 1 (blue streak) is archived at output\\lora_duke_design_r1_bluestreak; round 2 (ash highlights, 36 images) is output\\lora_duke_design. The identity prompt is Claude's draft and still needs his approval.",
   "lock": {
@@ -76,6 +76,36 @@
     [
       "fist_guard",
       "upper body, standing upright, fighting stance, both fists raised in front of chest, guard up, resolute stare, looking at viewer"
+    ],
+    [
+      "action_lunge",
+      "full body, lunging forward, mid-motion, deep low stance, front knee bent, back leg straight, lead arm reaching forward, side view, clothes fluttering, intense expression, looking at viewer",
+      "pose:duke_ds_lunge"
+    ],
+    [
+      "action_sprint",
+      "full body, sprinting, mid-stride, leaning in, speed lines, clothes fluttering, determined expression, looking at viewer",
+      "pose:duke_ds_sprint"
+    ],
+    [
+      "action_strike",
+      "full body, striking, straight punch with the near arm, mid-motion, body twisted, motion lines, fierce expression, looking at viewer",
+      "pose:duke_ds_strike"
+    ],
+    [
+      "action_turn",
+      "full body, spinning around, mid-turn, one knee raised, arm flung out, body twisted, clothes fluttering, alert expression, looking at viewer",
+      "pose:duke_ds_turn"
+    ],
+    [
+      "action_crouch",
+      "full body, crouching low, one hand on the ground, ready to spring, low angle, looking up at viewer",
+      "pose:duke_ds_crouch"
+    ],
+    [
+      "action_kick",
+      "full body, roundhouse kick, mid-motion, kicking leg extended at waist height, standing on one leg, motion lines, fierce expression",
+      "pose:duke_ds_kick"
     ]
   ],
   "face_shots": [
@@ -215,6 +245,79 @@
     "watch": "trousers drift mid-grey; shoes can lace to the knee; highlights vary in amount"
   },
   "art_direction": null,
+  "qc_tags": {
+    "ban": [
+      "shorts",
+      "grey_shorts",
+      "capri_pants",
+      "bare_legs",
+      "medium_hair",
+      "long_hair",
+      "aged_down",
+      "sleeveless",
+      "long_sleeves",
+      "white_shirt",
+      "grey_shirt",
+      "raglan_sleeves",
+      "blue_pants",
+      "red_shirt",
+      "ponytail"
+    ],
+    "expect": [
+      "black_shirt",
+      "short_sleeves"
+    ]
+  },
+  "kit_prompt": {
+    "note": "2026-10-14, transcribed from scripts/skill_art/duke/kit_drafts.py, drop_drafts.py and official_render.py (the 2026-10-08 runs) so the generic scripts reproduce them. The LoRA is v2 (calm set); after the v3 retrain (#186, docs/PC_SESSION.md item 2) set lora, draft_lora_strength 0.9, and revisit the bodies with the slot plan. Slide carries duke_drop_e only (his K4/K10); duke_drop_f hides the face and is dead. The slot plan for the redraft adds the other variants. Equivalence with the 2026-10-08 graphs was checked with both drop poses before _f was removed.",
+    "lora": "duke_toll.safetensors",
+    "draft_lora_strength": 0.65,
+    "draft": {
+      "body": "duketoll, 1boy, solo, human, (adult man:1.1), (broad shoulders:1.1), black hair, ash grey highlights, dark brown eyes, plain black short sleeve t-shirt, dark charcoal loose trousers, black boots, blue wristbands",
+      "negative": "child, teenager, (robe:1.3), (magenta:1.3), (blue hair:1.4), (white shirt:1.6), (grey shirt:1.5), beard, glasses, (weapon:1.3), multiple boys, (slim:1.2), (skinny:1.3), (thin:1.2), (boyish:1.3), (slacks:1.2), (tall boots:1.2)"
+    },
+    "official": {
+      "body": "duketoll, 1boy, solo, human, (adult man, 26 years old:1.1), (broad shoulders:1.1), (short black hair swept back:1.25), ash grey highlights in the top layer, short curled tufts at the nape, ears visible, no strand in front of the ears, dark brown eyes, plain black short sleeve crew neck t-shirt, (dark charcoal loose trousers:1.2), black ankle boots, blue wristbands, bare hands",
+      "negative": "child, teenager, (robe:1.3), (blue hair:1.4), (white shirt:1.6), (grey shirt:1.5), beard, glasses, necklace, slim, skinny, boyish, (long hair:1.5), (spiky hair:1.4), (hair standing up:1.3), (sideburns:1.3), (hair strand in front of ear:1.3), flowing hair, white hair, sleeveless, (blue trousers:1.4), (green trousers:1.4), (jeans:1.4), (shorts:1.4), (bare legs:1.4), (light grey trousers:1.3), (white collar:1.3), multiple boys"
+    },
+    "slots": {
+      "surge": [
+        {
+          "pose": "duke_surge3_a",
+          "clause": "upper body, (gathering strength:1.2), (both fists clenched at chest height:1.3), elbows out, head thrown back, screaming, open mouth, intense eyes, from below"
+        },
+        {
+          "pose": "duke_surge3_b",
+          "clause": "upper body, (gathering strength:1.2), (both fists clenched at chest height:1.3), elbows out, head thrown back, screaming, open mouth, intense eyes, from below"
+        },
+        {
+          "pose": "duke_surge3_c",
+          "clause": "upper body, (gathering strength:1.2), (both fists clenched at chest height:1.3), elbows out, head thrown back, screaming, open mouth, intense eyes, from below"
+        }
+      ],
+      "slide": [
+        {
+          "pose": "duke_drop_e",
+          "clause": "full body, (drop kick:1.35), airborne, body horizontal, (both feet together:1.2), (soles of the boots toward the viewer:1.3), both legs thrust straight at the viewer, (extreme foreshortening:1.2), boots huge in the foreground, torso and face behind the boots, arms back for balance, gritted teeth, intense eyes on the viewer",
+          "official_clause": "full body, (drop kick:1.3), airborne, (both feet together:1.2), (soles of the boots toward the viewer:1.3), extreme foreshortening, boots huge in the foreground, torso and face behind the boots, arms back for balance, gritted teeth, intense eyes on the viewer"
+        }
+      ],
+      "ult": [
+        {
+          "pose": "duke_ult3_a",
+          "clause": "full body, (wide low stance:1.3), hunched forward, head low, looking up at the viewer, (open palm toward the viewer:1.3), other hand drawn back, fierce glare, martial arts stance, from the front"
+        },
+        {
+          "pose": "duke_ult3_b",
+          "clause": "full body, (wide low stance:1.3), hunched forward, head low, looking up at the viewer, (open palm toward the viewer:1.3), other hand drawn back, fierce glare, martial arts stance, from the front"
+        },
+        {
+          "pose": "duke_ult3_c",
+          "clause": "full body, (wide low stance:1.3), hunched forward, head low, looking up at the viewer, (open palm toward the viewer:1.3), other hand drawn back, fierce glare, martial arts stance, from the front"
+        }
+      ]
+    }
+  },
   "approvals_note": "2026-10-07: 21 images. From his picks: bodies E3, E7, E22, E26, E33 (E-round, trousers neutralised to charcoal in output/lora_duke_fixes2), F3, F10, F20, F24 (ear hair redone, output/lora_duke_fixes3), F26; close-ups A47, A49, A58, A60, E34, E37, E39, E54, E55, E56, E57. Dropped after his 'black boots only, fix or remove rest': the six A-series bodies (A1, A6, A7, A14, A22, A27), A53 and E52. All matted onto white in output/lora_duke_matte (BiRefNet_toonout). 21 is under the recipe's 24 to 28. Captions are Claude's, awaiting his correction.",
   "ankle_cord_note": "2026-10-07: every full-body image in sets A-C showed a black cord running between the two ankles (a drawstring cuff plus laces). Cause: his 2026-10-02 delegated trouser detail 'tapering to a gathered ankle' (Claude's call) rendered as drawstring cuffs, plus 'laced'. Prompt now says the trouser hems rest over the boot tops. Approved images that show it are inpainted before staging (output\\lora_duke_fixes).",
   "dataset": "datasets/duke_v1 (21 images, not yet staged)",
@@ -260,5 +363,9 @@
     "surge_background": "His words: \"surge stays red\"."
   },
   "lora_pick_v2": "2026-10-08, his words: \"1750 seems best to me. 1500 has that extra hand artifact\". My recommendation had been 1500. Installed byte-identical (sha256 c2557683f42c...) from models/loras/training/duke_toll_v2_000001750.safetensors as models/loras/duke_toll.safetensors. The v1 step-1250 file is kept byte-identical as models/loras/duke_toll_v1_1250.safetensors (sha256 9e07579e9ba7...).",
-  "training_v2": "duke_toll_v2, datasets/duke_v2 (20 images: grey ear lock repainted, collar trim black, skin evened to the set average), frozen recipe, 2026-10-08. Test sheet: output/lora_test/duke3_*."
+  "training_v2": "duke_toll_v2, datasets/duke_v2 (20 images: grey ear lock repainted, collar trim black, skin evened to the set average), frozen recipe, 2026-10-08. Test sheet: output/lora_test/duke3_*.",
+  "out_dir_v3_note": "2026-10-14: the v3 dataset round (ruling #186) renders to output/lora_duke_v3; his pick: keep the 11 calm body shots and add six action shots (lunge, sprint, strike, turn, crouch, roundhouse kick), each held by a mannequin pose scripts/pose/poses/duke_ds_*.json (previews in output/duke_pose_ds). Not generated yet: no ComfyUI this session. The v2 set's fixes (ear lock, collar, skin) and the boots lock carry over.",
+  "v3_prompt_note": "2026-10-14, from the v3 smoke test (action_kick, action_crouch at seed_offset 800): action wording rolled the trousers to capri length and turned them teal, put grey trim on the sleeves, and the grey lock in front of the ear returned on one close crop. Added to negative_extra: the ear lock, sideburns, rolled/capri/cropped trousers, shorts, bare shins, sleeve trim, raglan, two-tone shirt, teal/blue/green trousers; 'full length' added to the trouser clause in identity. Second test: trousers read mid-grey (trouser weight 1.3 -> 1.4, 'mid grey trousers' negative); one crouch drew a maroon shirt and one a mesh one (negatives added). Lunge and turn poses redone: the lunge is seen from the side, the turn is a spin with a knee raised.",
+  "dataset_v3_note": "2026-10-14 (his PC, overnight). Ruling #186 dataset rebuild. The v3 set = the 20 approved, cleaned v2 images (training/datasets/duke_v2) + new action shots; calm and face shots are not re-rendered. Round 1, gen_candidates.py with mannequin poses (output/lora_duke_v3, sheet_v3_action.png): REJECTED by him, his words: 'they are not good ... not consistent and also they don't have good poses ... more like dance poses rather than anything else. They don't look like actual poses.' He liked a prompt-only Animagine drop kick (output/base_ab/dropkick_anim_501) and asked for the 7DS and Dokkan references to be used. Round 2: 19 references -> scripts/skill_art/ref_pose_maps.py -> 76 prompt-only drafts (output/duke_refpose, no LoRA, no face ref; _neon* subfolders are the failed weighted-negative runs) -> 20 picked by Claude -> identity pass, LoRA 0.9 img2img at 0.82 with the draft's DWPose (output/duke_identity) -> qwen_edit.py fixes -> sheet for him. The body_shots action rows with pose:duke_ds_* flags are round 1's and are superseded by round 2.",
+  "output_cleanup_note": "2026-10-14, his ask (\"cleanup the comfy folder. And delete all rejected images or assets\"; models later). Sent to the Recycle Bin, not deleted: ComfyUI output 3.3 GB -> 763 MB, input 353 -> ~227 MB. Gone: tests and diagnostics, rounds he rejected, Sonnet's off-model Duke renders (duke_official/2, headfix, composite, final, finish, blue_duke/candidates), duke_official3 and duke_pose (superseded by the v3 retrain), the six collab units (#187), _unsorted, unpicked kit drafts and Lyra's work/ iterations, unapproved dataset candidates, input staging copies. Kept: references, refpose maps, every locked/final/library folder, every profile-approved original, his picks, Sara's finish+matte pairs for the locked pieces and the passive, Duke's S2/K4/K10/U19 concept drafts, the snow and river plates, Batra (held), story backgrounds, last night's v3 candidates, and the face references."
 }

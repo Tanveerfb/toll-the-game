@@ -185,12 +185,14 @@ With both applied, `a single stone gateway arch, centered, closed barrier pole,
 glowing cyan lantern` produced a clean single centred object on black, first
 roll. It was still not used — see below.
 
-**Flux is not usable on this install.** `flux1-dev-fp8-e4m3fn.safetensors` sits
-in `checkpoints/` but is **UNet-only**: it fails at `CLIPTextEncode` with
-`clip input is invalid: None`. There are no Flux text encoders (`umt5_xxl` is
-WAN's) and no Flux VAE. All five vector/icon LoRAs — `Simple_Vector_Flux_v2`,
-`flux_vector_style`, `Icon-Kit`, `DD-vector-v2`, `Vector_lora_weights` — are
-behind that same ~10GB download and are equally unavailable until it happens.
+**Flux runs now (corrected 2026-10-14).** This paragraph used to say Flux was
+unusable: the UNet-only `flux1-dev-fp8-e4m3fn.safetensors` had no text encoders
+and no VAE. `clip_l`, `t5xxl_fp8_e4m3fn` and `flux_ae` have been in `models/`
+since 2026-09-21, and a test on 2026-10-14 rendered with `UNETLoader` (fp8) +
+`DualCLIPLoader` (type `flux`) + `flux_ae`, `FluxGuidance` 3.5, 20 steps, cfg 1,
+about 40 s at 1024². With `Simple_Vector_Flux_v2` the result was a clean flat
+icon; without a LoRA it came out soft. The other four vector/icon LoRAs are
+untested. The test graph is the shape to start from for UI icons.
 
 **Why the good roll still lost.** It is an *illustration*, and an illustration
 dies at 48px: thin columns, fine lineart and lantern detail all collapse into

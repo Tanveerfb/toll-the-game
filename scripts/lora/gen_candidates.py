@@ -11,10 +11,17 @@ A body shot may carry a third element:
   "noref" - render without the face reference.
   "back"  - a back view: no face reference, plus the drawn back skeleton
             (common.draw_back_skeleton). Prompting alone turns her round.
+  "pose:<name>" - an action shot held by the Blender mannequin
+            (scripts/pose/poses/<name>.json, rendered to ComfyUI input/ first):
+            union ControlNet depth 0.55 + openpose 0.6, end 0.7, the kit-draft
+            strengths. Ruling #186: an action clause alone often comes back standing.
 Usage: gen_candidates.py <id> [slug ...]
 """
 import sys
-from common import BACK_POSE, NEG_BASE, base_graph, draw_back_skeleton, profile, queue
+from common import (BACK_POSE, NEG_BASE, apply_pose, base_graph, draw_back_skeleton, missing_inputs, pose_files,
+                    profile, queue)
+
+MANNEQUIN = (0.55, 0.6, 0.7)  # depth, openpose, end_percent: as scripts/skill_art/kit_drafts.py
 
 BODY = [
     ("cowboy_stand", "cowboy shot, standing, arms at sides, calm expression, looking at viewer"),
@@ -52,18 +59,37 @@ def hood_neg(clause):
     return f", {p['hood_down_negative']}" if "hood down" in clause and p.get("hood_down_negative") else ""
 
 
-def submit(slug, pos, shot_neg, w, h, seed, hand_pass=None, **kw):
+def submit(slug, pos, shot_neg, w, h, seed, hand_pass=None, mannequin=None, **kw):
     """Queue `batch` images of one slot. The hand detector refuses image batches
     (Impact Pack), so with the hand pass on each image is its own job, seed + 1000*k.
     Close-ups skip the hand pass unless the profile sets `face_hand_fix`: Duke's
-    head shots came back with burnt neon skin and hard edges with it on (2026-10-07)."""
+    head shots came back with burnt neon skin and hard edges with it on (2026-10-07).
+    `mannequin` is a pose name wired in by common.apply_pose."""
     hand_pass = hands if hand_pass is None else hand_pass
+
+    def build(**extra):
+        g = base_graph(pos, shot_neg, w, h, **extra, **kw)
+        if mannequin:
+            apply_pose(g, mannequin, *MANNEQUIN)
+        return g
+
     if not hand_pass:
-        print(slug, queue(base_graph(pos, shot_neg, w, h, seed, out + slug, batch=batch, **kw)))
+        print(slug, queue(build(seed=seed, prefix=out + slug, batch=batch)))
         return
     for k in range(batch):
-        print(slug, k, queue(base_graph(pos, shot_neg, w, h, seed + 1000 * k, out + slug, batch=1, hand_fix=True,
-                                        hand_extra=p.get("hand_extra", ""), **kw)))
+        print(slug, k, queue(build(seed=seed + 1000 * k, prefix=out + slug, batch=1, hand_fix=True,
+                                   hand_extra=p.get("hand_extra", ""))))
+
+
+def pose_flag(flags):
+    names = [f.split(":", 1)[1] for f in flags if f.startswith("pose:")]
+    return names[0] if names else None
+
+
+wanted = [pose_flag(f) for s, _, *f in BODY if pose_flag(f) and (not only or s in only)]
+missing = missing_inputs([n for name in wanted for n in pose_files(name)])
+if missing:
+    sys.exit("missing in ComfyUI input/: " + ", ".join(missing) + " (render the poses first: scripts/pose/README.md)")
 
 for i, (slug, clause, *flags) in enumerate(BODY):
     if only and slug not in only:
@@ -76,7 +102,8 @@ for i, (slug, clause, *flags) in enumerate(BODY):
     # A back view with no face ref drifts to dark grounds (Sara v5: 3 of 4).
     back_neg = ", face, looking at viewer, looking back, (dark background:1.3), grey background"
     shot_neg = neg + (back_neg if back else "") + hood_neg(clause)
-    submit(slug, pos, shot_neg, 832, 1216, 910000 + seed0 + i, face_ref=ref, pose=BACK_POSE if back else None)
+    submit(slug, pos, shot_neg, 832, 1216, 910000 + seed0 + i, face_ref=ref, pose=BACK_POSE if back else None,
+           mannequin=pose_flag(flags))
 face_neg = f"{neg}, (multiple views:1.3), lower body, legs, skirt"
 for i, (slug, clause) in enumerate(FACE):
     if only and slug not in only:

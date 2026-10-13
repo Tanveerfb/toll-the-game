@@ -35,7 +35,7 @@
     "body_shots": {
       "type": "array",
       "minItems": 1,
-      "description": "The full-body dataset slots as [slug, clause] or [slug, clause, flag] rows; flag is 'noref' (no face reference) or 'back' (no face reference, the drawn back skeleton). Ruling #186: about a third of these are action shots (a lunge, a sprint, a strike, a turn, a crouch), each different, and the calm front-facing standing figure is a few slots, never the set. Read by gen_candidates.py.",
+      "description": "The full-body dataset slots as [slug, clause] or [slug, clause, flag] rows; flag is 'noref' (no face reference), 'back' (no face reference, the drawn back skeleton) or 'pose:<name>' (the Blender mannequin holds an action shot; gen_candidates.py). Ruling #186: about a third of these are action shots (a lunge, a sprint, a strike, a turn, a crouch), each different, and the calm front-facing standing figure is a few slots, never the set. Read by gen_candidates.py.",
       "items": {
         "type": "array",
         "minItems": 2,
@@ -43,7 +43,7 @@
         "items": [
           { "type": "string", "pattern": "^[a-z0-9_]+$", "description": "slug: the file name stem" },
           { "type": "string", "description": "clause: framing, pose, expression, hood state; written from what the image should show" },
-          { "type": "string", "enum": ["noref", "back"] }
+          { "type": "string", "pattern": "^(noref|back|pose:[a-z0-9_]+)$", "description": "noref, back, or pose:<name> (a mannequin pose in scripts/pose/poses/)" }
         ]
       }
     },
@@ -179,6 +179,58 @@
       "properties": {
         "aura": { "type": "string" },
         "skills": { "type": "string" }
+      }
+    },
+    "qc_tags": {
+      "type": ["object", "null"],
+      "description": "Danbooru tags for scripts/lora/tag_candidates.py (the WD14 QC pass): `ban` flags an image that carries one (this character's drift), `expect` flags one that lacks it. A filter for Claude before a sheet, never a verdict.",
+      "properties": {
+        "ban": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9_()'-]+$" } },
+        "expect": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9_()'-]+$" } }
+      }
+    },
+    "kit_prompt": {
+      "type": ["object", "null"],
+      "description": "Machine-readable prompts for scripts/skill_art/kit_drafts.py and official_render.py. The recipe (action wording, style, ControlNet strengths, the generic negatives) lives in the scripts; this block holds only what is this character's. Null until the LoRA is installed and the slot plan is approved.",
+      "required": ["lora", "draft", "official", "slots"],
+      "properties": {
+        "lora": { "type": "string", "description": "The installed LoRA file in models/loras." },
+        "draft_lora_strength": { "type": "number", "description": "0.65 for a LoRA trained on a calm set; 0.9 once the set carries action shots (ruling #186). Default 0.65." },
+        "draft": {
+          "type": "object",
+          "required": ["body", "negative"],
+          "properties": {
+            "body": { "type": "string", "description": "Trigger plus the short plain identity the LoRA wants (see lora_use)." },
+            "negative": { "type": "string", "description": "This character's drift words only; NEG_BASE and the recipe negative are added by the script." }
+          }
+        },
+        "official": {
+          "type": "object",
+          "required": ["body", "negative"],
+          "properties": {
+            "body": { "type": "string", "description": "The identity with hair and every garment stated (step 4)." },
+            "negative": { "type": "string", "description": "This character's drift words for the official render, hair drift included." }
+          }
+        },
+        "slots": {
+          "type": "object",
+          "description": "Slot name to its pose variants, from the slot plan he approved (kitart step 3a).",
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["clause"],
+              "properties": {
+                "pose": { "type": "string", "description": "A mannequin pose in scripts/pose/poses/ (rendered to ComfyUI input/)." },
+                "skeleton": { "type": "string", "description": "A DWPose reference skeleton file in ComfyUI input/." },
+                "name": { "type": "string", "description": "A label for a prompt-only variant." },
+                "clause": { "type": "string", "description": "The draft's action clause: the moment, as a verb." },
+                "official_clause": { "type": "string", "description": "The official render's clause, if it differs." }
+              }
+            }
+          }
+        }
       }
     },
     "kit_art": {

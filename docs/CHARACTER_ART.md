@@ -72,6 +72,11 @@ clean lineart, vibrant colour.
 | Installing a LoRA | ComfyUI keeps a loaded LoRA open, so Git Bash `cp` over it fails with *Permission denied* even after `/free`. PowerShell `Copy-Item -Force` works. Back up first, then compare `sha256sum` of source, installed file and backup |
 | Blender | `D:\Blender\blender.exe` 5.0.1, used headless for the pose mannequin |
 | Sleep | Ask the app to keep the PC awake (`request_keep_awake`, `session_idle`) before long runs |
+| Instruction edit | **Qwen-Image-Edit 2511** (Q4 GGUF + the 4-step Lightning LoRA), `scripts/skill_art/qwen_edit.py`. About 40 s an edit. Fixes a garment colour, a sleeve trim or a stray lock without a mask and keeps the art style (first used 2026-10-14). **One fix per instruction, and name what stays**: three fixes in one sentence turned short sleeves long and took every grey highlight. Chain single fixes, two seeds each, and look at every result: one seed of the ear-lock edit rewrote the whole hairstyle |
+| QC tagger | WD14 `wd-eva02-large-tagger-v3` (Apache-2.0) in `models/wd14_tagger/`, `scripts/lora/tag_candidates.py`, run with the **embedded** Python (it has onnxruntime). About 2 s an image. Flags the profile's `qc_tags`: it caught every capri-trouser and loose-lock image Duke's v3 round had, and **missed a lettered sleeve patch**, so it filters for Claude and never replaces looking |
+| Depth from a reference | Depth Anything V2 **Small** (Apache-2.0) in the ControlNet preprocessor pack's `ckpts/`. Use the node with `depth_anything_v2_vits.pth`; **Base, Large and Giant are CC-BY-NC**, not for a game that will be sold |
+| Model licences | A model goes on this box only if its licence allows commercial use of the output (the game will be monetised). Checked 2026-10-14: Animagine 4.0 OpenRAIL++, Illustrious-XL v2.0 CreativeML OpenRAIL-M, WD14 Apache-2.0, Depth Anything V2 Small Apache-2.0. NoobAI-XL (custom licence) was skipped |
+| Base model under test | `Illustrious-XL-v2.0.safetensors` (downloaded 2026-10-14, his yes) for an A/B against Animagine on dynamic poses. **Not adopted**: changing the base model changes the frozen recipe and every LoRA, and is his call after the comparison. **On this install every Illustrious render comes out green** (2026-10-14): not the VAE (the SDXL base VAE gives the same) and not only CFG (4 softens it). Unresolved, so no comparison yet; Animagine prompt-only drew the poses he liked |
 
 **Working folders** (ComfyUI `output\`): `<color>_<id>\` for a unit's pieces,
 `lora_<id>*\` for dataset candidates, `<id>_kit*\` for kit drafts,
@@ -110,7 +115,8 @@ image (a recoloured ribbon or collar) is done in code, not by a re-roll.
    IP-Adapter `PLUS FACE` 0.6. Leave out hood and outfit, or their colours
    bleed in.
 3. **Mark back views `"back"`.** They get the drawn back skeleton and no face
-   reference.
+   reference. **Mark action shots `"pose:<name>"`** with a mannequin pose
+   (`scripts/pose/`): the words alone often come back standing (#186).
 4. **Name the hood state in every shot.** Hood down needs
    `(hood down:1.5), bare head, hair fully visible`, plus
    `hood_down_negative`.
@@ -125,6 +131,31 @@ image (a recoloured ribbon or collar) is done in code, not by a re-roll.
      turn, a crouch), each different, posed with the mannequin or a
      reference skeleton like a draft, and keep the calm front-facing figure
      to a few shots. The exact count is his call when the set is planned.
+   - **How to make action shots that he accepts** (Duke v3, 2026-10-14). The
+     mannequin poses came back on-model-ish but he rejected them: *"more like
+     dance poses rather than anything else. They don't look like actual
+     poses"*. What he liked instead was a prompt-only Animagine drop kick
+     (no LoRA, no face reference, no mannequin). So the action shots are made
+     in two passes, not by `gen_candidates.py`:
+     1. **Pose from his references.** `scripts/skill_art/ref_pose_maps.py`
+        turns a 7DS or Dokkan reference into a DWPose skeleton and a Depth
+        Anything V2 Small depth silhouette (masked to the figure). Drafts are
+        Animagine **without the LoRA or the face reference**, the outfit in
+        words, skeleton 0.65 (end 0.75) + depth 0.4 (end 0.45), or depth 0.5
+        alone where DWPose found nothing (about half the Dokkan cards).
+        **Unweighted negatives only.** Pick the poses that read as a real
+        move; depth carries costume shape (Hit's robe became a hakama).
+     2. **Identity onto the pose.** img2img from the picked draft with the
+        LoRA at 0.9, the draft's own DWPose skeleton at 0.6 (end 0.8),
+        `kit_prompt.official` body, denoise 0.82 (0.72 keeps more of the
+        draft's hair). Then `qwen_edit.py` single fixes, including lowering a
+        raised arm into a guard (it worked on the drop kick and produced odd
+        hands on the lunge: look at every one).
+     Duke's run is `scripts/skill_art/duke/v3_*.py` (README there); make them generic
+     when a second character needs them, as `kit_drafts.py` was.
+     3. **Clean the ground:** a BiRefNet cut-out onto white keeps the character's
+        pixels exactly; where ink swirls touch the figure, `qwen_edit.py` "remove
+        the brush strokes ... plain white background" worked on all four tried.
 6. **Send full sheets; he approves by number.**
    - Re-roll weak slots with `seed_offset` plus slot names.
    - Fix small defects in code: inpaint a hood corner, matte a background
@@ -146,6 +177,9 @@ example is `scripts/lora/duke_v2_fix/`, with its own README). If a trait shows
 in every render, it is in the dataset, and patching each finished picture will
 not hold. Clean the dataset, he re-approves, retrain:
 1. **Mark what he means on one image and ask** (rule 3).
+   **Try `qwen_edit.py` first** (2026-10-14): *"Remove only the grey strands of hair that hang down in front
+   of his ears ... keep the ash grey highlights on the top of his hair"* did in one pass what steps 2
+   and 3 did by hand for v2. Steps 2 and 3 stay as the fallback for an image the edit cannot fix.
 2. **Hand-place a mask per image** on a gridded head crop. Colour detection
    missed most of the locks, and a broad side-of-head ellipse also took the
    nape curls he wanted kept.
@@ -267,7 +301,7 @@ build drift. **He expects every pick redrawn on-model** (*"for the ones i
 picked, ofc you would properly generate the official versions yes? character
 must be consistent"*).
 
-1. **Official render** (Duke's is `scripts/skill_art/duke/official_render.py`):
+1. **Official render** (`scripts/skill_art/official_render.py`, from the profile's `kit_prompt`):
    img2img **from his picked draft**, plus the same mannequin depth and
    openpose ControlNets (0.6 / 0.65, `end_percent` 0.85), plus the LoRA at
    0.9. Use the short plain prompt with the hair and garments stated. Run two
@@ -420,3 +454,10 @@ caught.
 | A drop-kick camera below the boots | Face hidden; *"only him falling down"* | Camera on the leg axis with the face in view (step 3) |
 | A trait in the dataset, patched per picture | Comes back in every render | Clean the dataset images, he re-approves, retrain |
 | Fisher Pose / Qwen-Image pose transfer | Researched, not tried: photoreal-only and about 20 GB | Revisit only if the mannequin fails |
+| Weighted colour words in a negative, anywhere (`(pink skin:1.4)`, `(blonde hair:1.4)`) | Every draft neon: green and yellow skin, glowing outlines. Re-made 2026-10-14 in a txt2img draft after it was already listed here for inpainting | Unweighted negatives, no colour words |
+| Depth Anything map used as is | The model shades the empty background as a grey glow; the ControlNet drew it as halos round the figure | Mask the depth to the figure (`ref_pose_maps.py`) |
+| Mannequin poses for dataset action shots (Duke v3) | He read them as *"dance poses"*, not real moves | Poses from his 7DS and Dokkan references (Step 1, action shots) |
+| Qwen-Image-Edit identity transfer from reference images ("redraw the man in image 1 as the man in image 2") | It copied image 2's standing pose, or merged the two figures | LoRA img2img at 0.82 on the draft (Step 1, action shots) |
+| Several fixes in one Qwen-Image-Edit instruction | Short sleeves turned long; every grey highlight went with the ear lock | One fix per pass, chained, naming what stays |
+| Re-rendering a whole dataset to add action shots (Duke v3) | The calm shots came back bulkier, harem-cut and with back views facing front; and they were already approved in v2 | Render only the new slots; the new set is the approved old set plus them |
+| A mannequin lunge or turn seen front-on | Both read as standing | A lunge from the side; a turn as a spin with one knee raised |

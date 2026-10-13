@@ -10,9 +10,13 @@ repo root; the scripts import `scripts/lora/common.py` (`base_graph`, `queue`,
 
 | Script | Step | Usage | Notes |
 | --- | --- | --- | --- |
-| `duke/kit_drafts.py` | 3 drafts | no arguments; edit `PLAN` (slot, clause, pose name, count) | **The worked example of the doc recipe**: LoRA 0.65, action wording, `simple background`, hand pass off, union ControlNet depth 0.55 + openpose 0.6 end 0.7. Duke's prompts, LoRA and repo path are hardcoded: copy it per character until a generic `kit_drafts.py <id> <slot> --pose <name> --n 24` reading the profile exists (queued, see below) |
+| `kit_drafts.py` | 3 drafts | `kit_drafts.py <id> <slot> [--pose NAME ...] [--n 24] [--seed N] [--dry-run]` | **The draft recipe for every character** (doc step 3): reads the profile's `kit_prompt` (LoRA, draft body and negative, the slot's pose variants), adds the action wording, `simple background`, the recipe negative, LoRA at `draft_lora_strength`, and per variant the mannequin (union depth 0.55 + openpose 0.6, end 0.7), a DWPose skeleton (0.45) or prompt only. `--n` is split across the variants. Output `output/<id>_kit/<slot>/drafts/`, run list `runs.json` beside it. `--dry-run` checks the inputs and prints the prompts |
+| `ref_pose_maps.py` | 1, 3 | `ref_pose_maps.py <name> <reference> [...]` | A DWPose skeleton and a Depth Anything V2 Small depth silhouette (masked to the figure) from one of his references, padded to 832x1216 into ComfyUI input as `refpose_<name>_pose/depth.png`, with a preview in `output/refpose/`. The reference art never reaches a sampler |
+| `qwen_edit.py` | 1, 4, 5 | `qwen_edit.py <image> "<instruction>" <out_prefix> [--seeds 2] [--ref <image2>]` | Qwen-Image-Edit 2511, 4 steps: a written fix (garment colour, a stray lock, a trim) without a mask. One fix per instruction, naming what stays; look at every seed (`docs/CHARACTER_ART.md`, Environment) |
+| `official_render.py` | 4 | `official_render.py <id> <slot> <draft.png> --key S2 [--pose NAME \| --no-pose] [--lora F] [--dry-run]` | img2img from his pick + both ControlNets 0.6/0.65 end 0.85 + LoRA 0.9, the profile's `kit_prompt.official` prompt, denoise 0.72 and 0.82, four seeds. The pose is read from the draft's file name. Output `output/<id>_official/<slot>/` |
+| `duke/kit_drafts.py` | 3 drafts | no arguments; edit `PLAN` | **Superseded by `kit_drafts.py`**, which reproduces its graphs from `duke.json`'s `kit_prompt` (checked 2026-10-14, every graph). Kept until the generic script has produced one locked piece; do not copy it |
 | `duke/drop_poses.py` | 3 poses | no arguments | Writes `scripts/pose/poses/duke_drop_*.json`, renders them, builds a preview sheet. The model for a foreshortened pose |
-| `duke/official_render.py` | 4 | `official_render.py <lora file>` | img2img from his pick + both ControlNets 0.6/0.65 end 0.85 + LoRA 0.9, denoise 0.72 and 0.82, four seeds. Duke's `JOBS` hardcoded |
+| `duke/official_render.py` | 4 | `official_render.py <lora file>` | **Superseded by `official_render.py`** (same graphs, checked 2026-10-14). Kept until the generic one has produced a locked piece |
 | `duke/backdrops.py` | 5 | no arguments | Scenic plates rendered without the character (snow, river) for the ultimate and the card |
 | `finish_pass.py` | 4 | `finish_pass.py <src.png> <out_prefix> <lora> <prompt_file> [denoise=0.35] [scale]` | Anime 4x upscale to 1.5x, img2img at LoRA 0.9, BiRefNet cut-out. **0.3 on an official render.** One input file per run |
 | `draw_class_bg.py` | 5 | see docstring | The attack-class background (radial speed lines), #161 |
@@ -25,9 +29,8 @@ repo root; the scripts import `scripts/lora/common.py` (`base_graph`, `queue`,
 
 ## Queued
 
-- **A generic `kit_drafts.py` and `official_render.py`** (his yes,
-  2026-10-13; `docs/PC_SESSION.md` item 3, built before Duke's redraft) that take `<id>`,
-  `<slot>`, `--pose` and read `lora_use` and `art_direction` from the profile,
-  with `union()` moved into `scripts/lora/common.py`. Until then, Duke's
-  files are copied per character, which is how the recipe drifts.
+- **Retire `duke/kit_drafts.py`, `drop_drafts.py` and `official_render.py`**
+  once the generic scripts have produced one locked piece (Duke's redraft,
+  `docs/PC_SESSION.md` item 2). `drop_drafts.py` execs `duke/kit_drafts.py`,
+  so they go together.
 - `backdrops.py <id> <kind>` the same way.

@@ -16,9 +16,10 @@ Added 2026-10-13, his yes.
   `queue`, `NEG_BASE`, `COMFY`); the character's state is
   `scripts/lora/characters/<id>.json` (schema beside it). A script reads
   the profile rather than carrying a character's prompts inline.
-- `duke/` is the worked example of the current recipe and is copied per
-  character **only until the generic `kit_drafts.py` / `official_render.py`
-  exist** (`docs/PC_SESSION.md` item 3). Do not copy it a third time.
+- **Drafts and official renders are `kit_drafts.py` and `official_render.py`
+  for every character** (2026-10-14). A new character needs a `kit_prompt`
+  block in its profile, not a new script. `duke/` is kept only until the
+  generic scripts produce a locked piece; never copy it.
 - The `lyra_*`, `bow_*`, `grip_hand.py`, `paint_out.py` and
   `compose_latent_heat.py` / `compose_supercooling.py` scripts are the record
   of the quality bar (Lyra, 2026-09). Read them; do not modify them.

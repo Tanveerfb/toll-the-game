@@ -27,12 +27,18 @@ set (Sara's expression list, 2026-10-02). It may also set:
 - `dataset_name`: names the staging folder (default `<id>_v1`).
 
 A body shot marked `"back"` renders without the face reference, using the
-drawn back skeleton (`common.draw_back_skeleton`).
+drawn back skeleton (`common.draw_back_skeleton`). One marked
+`"pose:<name>"` is held by the Blender mannequin (`scripts/pose/`, rendered
+to ComfyUI `input/` first) through `common.apply_pose`, at the kit-draft
+strengths; use it for the action shots ruling #186 asks for, which come back
+standing from the words alone. A missing pose file stops the run before
+anything is queued.
 
 | step | script | what it does |
 | --- | --- | --- |
 | 1 | `gen_candidates.py <id>` | Queues body shots (832×1216) and head-and-shoulders close-ups (1024², lower-body garments dropped) with the identity prompt plus IP-Adapter face ref at 0.6. Output: ComfyUI `output/lora_<id>/` |
 | 2 | Claude filters for defects, he approves by number | never skipped |
+| 1b | `tag_candidates.py <id> <folder or images>` (embedded Python) | WD14 tags on every candidate; flags the profile's `qc_tags.ban` and missing `expect`. Claude's filter before a sheet, not a verdict |
 | 3 | `stage_dataset.py <id> <manifest>` | Flattens approved images onto white and writes captions `<trigger>, 1girl, solo, <variable>, white background` |
 | 4 | `C:\Users\Tanve\.comfyui-mcp\training\train.sh configs/<id>_sdxl_lora.yaml` | Copy `sdxl_character.yaml`, set name, trigger and dataset path only |
 | 5 | `test_checkpoints.py <id> <lora,...>` | Identity prompt plus trigger in three situations absent from the dataset, same seeds, against today's IP-Adapter method |

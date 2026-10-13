@@ -55,10 +55,20 @@ environment traps first.
    and her LoRA drafted at 0.9; Sara's and Duke's were calm, front-facing
    standing figures and their LoRAs pull every draft to standing. His words:
    *"the front facing normal standing poses were a very major issue for
-   me"*. Plan about a third of the body shots as actions, each different
-   (lunge, sprint, strike, turn, crouch), posed with the mannequin or a
-   reference skeleton; keep the calm front-facing figure to a few. Put the
-   count to him with the shot list.
+   me"*. Plan about a third of the body shots as actions, each different;
+   keep the calm front-facing figure to a few. Put the shot list and count
+   to him first.
+   **Make the action shots from his references, not with
+   `gen_candidates.py`** (Duke v3, 2026-10-14). The mannequin version came
+   back stiff and he rejected it: *"more like dance poses rather than
+   anything else"*. What he accepted: poses from his 7DS and Dokkan
+   references (`ref_pose_maps.py`), drafted on Animagine **without the LoRA
+   or the face reference**, then the LoRA put onto each pick by img2img at
+   0.82, then single `qwen_edit.py` fixes and a white ground. The full method
+   is `docs/CHARACTER_ART.md` step 1, "How to make action shots"; Duke's run is
+   `scripts/skill_art/duke/v3_*.py`. **The new set is the old approved set
+   plus the new shots**: never re-render calm shots he already approved.
+   Run `tag_candidates.py` (embedded Python) before any sheet.
 5. **Scan the approved set for a detail that repeats** and is not in the lock
    (a strand, a collar trim, a waistband, a skin tone drifting between
    close-ups and full bodies). A LoRA folds whatever recurs into the trigger
@@ -102,7 +112,10 @@ run is training, stop the run and delete its run folder and `_latent_cache`.
 6. Write `lora_use` in the profile: the prompt that works with this LoRA
    (Duke: **the short plain prompt only**; the weighted identity blurs every
    close-up), what to always state (Sara: the hood), what to add to the
-   negative, what to watch for.
+   negative, what to watch for. Then turn it into the `kit_prompt` block
+   (`lora`, `draft_lora_strength`: 0.9 for a set with action shots, #186;
+   `draft` and `official` body and negative), which `kitart`'s scripts read.
+   `slots` is filled at the slot plan.
 
 ## Do not (the dead ends for these steps)
 
@@ -113,7 +126,12 @@ run is training, stop the run and delete its run folder and `_latent_cache`.
 - The hand pass on a brown-skinned character.
 - `gathered at the ankle` plus `laced` in a boots prompt: it draws a cord
   between the ankles. Write `boot tops under the trouser hems`.
-- Negatives weighted 1.4–1.6 in an inpaint: neon patches. Light negatives.
+- **Weighted colour words in any negative** (`(pink skin:1.4)`): neon
+  images, in an inpaint and in a txt2img draft alike. Light, unweighted negatives.
+- Mannequin poses for dataset action shots: read as dance (his words).
+- A Depth Anything map used unmasked: grey halos round the figure.
+- Qwen-Image-Edit identity transfer from reference images: copies their pose.
+- Several fixes in one `qwen_edit.py` instruction: it overreaches.
 - A colour-detected mask for a hair lock, or a broad side-of-head mask.
 - Masked inpaint at 0.92 on a small mask: blobs. 0.85, four seeds.
 - Patching a trait picture by picture: it returns in every render. Clean the
