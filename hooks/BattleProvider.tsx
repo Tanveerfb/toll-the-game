@@ -736,7 +736,7 @@ export default function BattleProvider({
     // rather than per action. `null` back — aborted, timed out, or an invalid
     // move — means the AI plays the turn exactly as it always has, which is
     // what keeps a battle from ever getting stuck.
-    // Spec: docs/superpowers/specs/2026-08-09-claude-duel-mode-design.md
+    // Spec: docs/archive/superpowers/specs/2026-08-09-claude-duel-mode-design.md
     let duelActions: Array<Action | null> | null = null;
     if (useSettingsStore.getState().duelMode) {
       duelActions = await requestDuelMove({

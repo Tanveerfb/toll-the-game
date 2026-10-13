@@ -117,7 +117,7 @@ export interface CharacterData {
    */
   unreleased?: boolean;
   /** Evergreen-pool membership for the Permanent gacha banner. Flipped by
-   *  hand per character (docs/superpowers/specs/2026-08-01-gacha-design.md)
+   *  hand per character (docs/archive/superpowers/specs/2026-08-01-gacha-design.md)
    *  — never set automatically. Absent/false = not in the pool. */
   permanentPool?: boolean;
   /**

@@ -20,7 +20,7 @@ anime card art.
 
 It replaces **Combat Terminal** (2026-08-11), a tactical-HUD look of hairlines,
 chamfers and cyan. **Its tokens and classes were deleted on 2026-09-27**
-(phase 5 of `Plans/2026-09-26-shonen-ink-foundation.md`), and
+(phase 5 of `Plans/completed/2026-09-26-shonen-ink-foundation.md`), and
 `tests/uiTokens.test.ts` fails the build if any of them returns. The same file
 forbids a hand-written font size anywhere and a raw hex colour in `app/` or
 `components/`; the two exemptions (Google's logo, the install manifest) are

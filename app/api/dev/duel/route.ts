@@ -15,7 +15,7 @@ import path from "path";
  *
  * Development only, enforced server-side on every verb: this must not exist in
  * a production build no matter what a client sends. Spec:
- * docs/superpowers/specs/2026-08-09-claude-duel-mode-design.md
+ * docs/archive/superpowers/specs/2026-08-09-claude-duel-mode-design.md
  */
 
 const DUEL_DIR = ".duel";

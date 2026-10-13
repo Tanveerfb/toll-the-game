@@ -1,8 +1,8 @@
 # Gacha / Summon Design
 
 > Status: BUILT 2026-08-02 (code complete, awaiting Tanveer's commit/deploy). Drafted 2026-07-18,
-> resolved into an implementation spec 2026-08-01 (`docs/superpowers/specs/2026-08-01-gacha-design.md`).
-> Part of the monetization core (see PRODUCT_AUDIT.md).
+> resolved into an implementation spec 2026-08-01 (`docs/archive/superpowers/specs/2026-08-01-gacha-design.md`).
+> Part of the monetization core (see docs/archive/PRODUCT_AUDIT-2026-07-18.md, superseded by docs/GAME_AUDIT_2026-10-13.md).
 
 ## Banners
 
@@ -153,7 +153,7 @@ coin/permanentTicket); pull = single or 11-for-10(ish) multi on both banners; fa
 tickets on World Boss clears; free chars Duke (start) + Lyra (Ch2) unchanged and stack with gacha as
 dupes.
 
-## Reuse notes (from PRODUCT_AUDIT) — all landed as planned
+## Reuse notes (from the archived PRODUCT_AUDIT) — all landed as planned
 - Archive/codex -> gacha pool browser (owned/unowned + Ultimate Level badge). **Built.**
 - Ult cut-in / cinematics tech -> summon reveal animations (GSAP timeline, not the framer-motion
   cut-in directly, but the same visual language). **Built.**

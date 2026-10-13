@@ -5,7 +5,7 @@ import path from "node:path";
 /**
  * The layout primitives, and a ratchet that stops them being bypassed.
  *
- * Measured 2026-09-17 (`Plans/2026-09-17-layout-system.md`): **eight spellings
+ * Measured 2026-09-17 (`Plans/completed/2026-09-17-layout-system.md`): **eight spellings
  * of three page shells** and **ten content widths with no rule for choosing
  * one**. Two of those eight shells were the *same CSS in a different word
  * order* — nothing catches that by eye, and nothing ever will.

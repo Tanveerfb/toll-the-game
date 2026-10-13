@@ -8,15 +8,25 @@ does today with file:line, what is already done so nobody redoes it, what is
 still his to decide, and how to verify. A plan whose code has since changed is
 **stale and says so, or goes** — same rule as the project skills.
 
-## Open
+**`project-rules.md` §SPECS (v3.4.0) names `docs/specs/` for this job.** The
+next plan is written there; this folder moves when it is next emptied
+(`conventions.md`, "v3 sections").
 
-Nothing. All five specs written 2026-08-20 were built the same day and moved to
-[`completed/`](completed/).
+## Open — sorted 2026-10-13
+
+| Plan | Status | What is left |
+| --- | --- | --- |
+| [`2026-09-16-pve-structure.md`](2026-09-16-pve-structure.md) | **His vision, in his words.** Not a build plan | Read before any PvE content work. Nothing to build from it directly |
+| [`2026-09-17-character-headings.md`](2026-09-17-character-headings.md) | 23 of 31 approved, 2 in workshop, 6 open (the generics) | His picks on the open eight; then the data change |
+| [`2026-09-17-code-quality-audit.md`](2026-09-17-code-quality-audit.md) | Measured 2026-09-17; the layout items (L1–L7) are built, the rest is queued in `conventions.md` (M2, S2, Q1…) | Nothing to pick up on its own: `conventions.md` is the live queue |
+| [`2026-09-17-fight-phases.md`](2026-09-17-fight-phases.md) | Approved in principle, not built | The build, in a dedicated session |
+| [`2026-09-17-growth-modal.md`](2026-09-17-growth-modal.md) | Proposal, nothing built. Growth became a bottom sheet on 2026-10-03 (#180), which changes the page the proposal measured | Re-measure before building; may be moot |
+| [`2026-09-26-foundation-audit.md`](2026-09-26-foundation-audit.md) | F1–F5, S1, L2–L3 done; **S2, S3-rest, P1–P3, L1, T1, Q1, Q4, C2 open** | He takes them one section at a time |
 
 ## Completed
 
-Built 2026-08-20, in this order. Each file is kept as written — the record of
-what was decided and why — and none describes unbuilt work any more.
+Each file is kept as written — the record of what was decided and why — and
+none describes unbuilt work any more.
 
 | Spec | What shipped |
 |---|---|
@@ -25,6 +35,8 @@ what was decided and why — and none describes unbuilt work any more.
 | [guard-and-effective](completed/2026-08-20-guard-and-effective.md) | `resolveTypeModifier` (ruling #111). Guard on the defender, Effective on the skill, both cancelling to 1.0; `critical` bypasses both by construction. **No kit authors either word — that is his call** |
 | [passive-structure](completed/2026-08-20-passive-structure.md) | One passive made of blocks, one registration per block, `lib/game/passiveBlocks.ts` as the only reader. Plus `targetTagBonus`, an attacker's passive reading the target's tags (ruling #114) |
 | [mechanic-application](completed/2026-08-20-mechanic-application.md) | **Part A** `applyTo` / `applyToRanked` with self as the default audience (ruling #112); **Part B** `requiresDamage`, a self buff that lands after the hit and only once (ruling #113) |
+| [layout-system](completed/2026-09-17-layout-system.md) | `Screen`, `Panel`, `SectionHeader`, the width and tracking tokens; every screen renders through `Screen` (2026-09-26). Its Q-a to Q-d were folded into the 2026-10-03 four-values audit |
+| [shonen-ink-foundation](completed/2026-09-26-shonen-ink-foundation.md) | One token set, shadcn for every control, Combat Terminal deleted (2026-09-27). The look itself is under redesign since 2026-10-13 (#185); the foundation stands |
 
 ### Deliberately left out of those builds
 
@@ -56,10 +68,15 @@ recorded as roadmap rather than as a gap.
 
 ## Verification, for anything new
 
-- `npm run check` — baseline **1,270 passing / 101 files** as of 2026-08-20,
-  after the five builds.
+- `npm run check` — the baseline is in `docs/STATUS.md` ("Verified").
 - Build with `NEXT_DIST_DIR` set. **:3000 is his dev server — never start or kill
   one.**
 - **The visual pass is his.** Several of these touch `lib/game/combat.ts`, the
   most ruling-dense file in the repo; a green suite is necessary and not
   sufficient there.
+
+## Moved out
+
+- `2026-09-20-arc-one-manifest-rework.md` → `docs/archive/` (2026-10-13): story
+  mode was removed on 2026-09-26 (#152), so the manifest it reworks has no
+  consumer until story returns.

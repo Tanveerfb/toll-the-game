@@ -85,7 +85,7 @@ export default async function CharacterDetailPage({
   const isMultiPhase = getCharacterPhases(character).length > 1;
 
   return (
-    // `app`, not `read`, deliberately. Plans/2026-09-17-layout-system.md files
+    // `app`, not `read`, deliberately. Plans/completed/2026-09-17-layout-system.md files
     // "kit pages" under `read` (42rem), but that was written before this screen
     // gained its 290px stat sidebar: at 42rem the main column resolves to
     // 368px, narrower than the content area of a 390px phone. `app` gives it

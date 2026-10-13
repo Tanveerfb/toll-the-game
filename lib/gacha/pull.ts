@@ -52,7 +52,7 @@ export function rollUniformFromPool(pool: string[], rng: () => number = Math.ran
  *  one of 3 equally-weighted item categories (currency / level-mat /
  *  local-specialty-mat). Currency and specialty-mat split evenly within
  *  themselves; level-mat is weighted by tier (see `LEVEL_MAT_TIERS`). See
- *  "The other 95%" in docs/superpowers/specs/2026-08-01-gacha-design.md.
+ *  "The other 95%" in docs/archive/superpowers/specs/2026-08-01-gacha-design.md.
  *  Calls `rng()` 2 times on a hit (hit-check, then featured-index pick), and
  *  3 times on a miss (hit-check, category pick, then an in-category pick —
  *  bundle amount / manual tier / featured-index-for-specialty-mat). */
