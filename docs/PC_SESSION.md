@@ -84,6 +84,9 @@ action-bearing set only matters when he asks for a Sara piece to be redone.
   2026-10-13**, on his go. Not verified against a real Firestore: the first
   PC or phone session that signs in should clear an Epic stage, reload,
   and check the record survived (`docs/STATUS.md`, "Not verified").
+  **Same session, check the v12 migration on his real account**: sign in,
+  confirm the six collab units are gone from the roster, presets and
+  inventory, and that nothing else moved (ruling #187).
 - ~~**Area `CLAUDE.md` files**~~ **Done 2026-10-13**: `lib/game/CLAUDE.md`
   and `scripts/skill_art/CLAUDE.md`; the engine rules left `AGENTS.md`.
 - ~~The schema question~~ **Answered 2026-10-13**: a schema for drafting a

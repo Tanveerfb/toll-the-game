@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { registerCharacterPassives } from "@/lib/game/passive";
 import { statPhrase } from "@/lib/game/stats";
 import type { BattleCharacter } from "@/types/character";
-import gonData from "@/data/characters/gon.json";
-import killuaData from "@/data/characters/killua.json";
+import rookieData from "@/tests/fixtures/characters/fx_rookie.json";
+import prodigyData from "@/tests/fixtures/characters/fx_prodigy.json";
 import serasData from "@/data/characters/seras.json";
 import saraData from "@/data/characters/sara.json";
 import isoldeData from "@/data/characters/isolde.json";
@@ -16,6 +16,10 @@ import isoldeData from "@/data/characters/isolde.json";
  * ["atk","def","hp"]` with no `stat`, and `passive.ts` copied only `stat` onto
  * the buff — so those synergies were display badges that moved no stat at all.
  * STATUS.md recorded "the buff works"; it did not (2026-08-13).
+ *
+ * The two [Squad] carriers are fixtures (`tests/fixtures/characters/`):
+ * the kits that first carried the tag left the game on 2026-10-13
+ * (ruling #187) and the mechanic stayed.
  */
 
 function fromData(
@@ -65,42 +69,42 @@ async function runBattleStart(units: BattleCharacter[], log: (e: string) => void
 
 describe("a tag synergy declared with `stats` actually moves those stats", () => {
   it("raises ATK, DEF and max HP for a lone carrier", async () => {
-    const gon = fromData(gonData, "player", "p1_gon");
-    const teams = await runBattleStart([gon], () => {});
+    const rookie = fromData(rookieData, "player", "p1_rookie");
+    const teams = await runBattleStart([rookie], () => {});
     const buffed = teams.playerTeam[0];
 
     // flatBonus: true, so 5% regardless of carrier count (ruling #35).
-    expect(buffed.buffs.some((b) => b.name === "[Collab] Synergy")).toBe(true);
-    expect(buffed.currentAttack).toBe(gon.atk + Math.floor(gon.atk * 0.05));
-    expect(buffed.currentDefense).toBe(gon.def + Math.floor(gon.def * 0.05));
+    expect(buffed.buffs.some((b) => b.name === "[Squad] Synergy")).toBe(true);
+    expect(buffed.currentAttack).toBe(rookie.atk + Math.floor(rookie.atk * 0.05));
+    expect(buffed.currentDefense).toBe(rookie.def + Math.floor(rookie.def * 0.05));
     // `hp` is max HP; scaleMaxHp raises it and carries current HP with it.
-    expect(buffed.hp).toBe(Math.floor(gon.hp * 1.05 + 1e-9));
+    expect(buffed.hp).toBe(Math.floor(rookie.hp * 1.05 + 1e-9));
   });
 
   it("stacks once per carrying source, not once per team", async () => {
-    // Gon and Killua each own a [Collab] synergy and each applies it to every
-    // carrier, so a two-Collab team pays 5% twice. That is the pre-existing
+    // Rookie and Prodigy each own a [Squad] synergy and each applies it to every
+    // carrier, so a two-Squad team pays 5% twice. That is the pre-existing
     // shape of the mechanic — it only became observable once the buff started
     // moving stats at all.
-    const gon = fromData(gonData, "player", "p1_gon");
-    const killua = fromData(killuaData, "player", "p2_killua");
+    const rookie = fromData(rookieData, "player", "p1_rookie");
+    const prodigy = fromData(prodigyData, "player", "p2_prodigy");
 
-    const teams = await runBattleStart([gon, killua], () => {});
+    const teams = await runBattleStart([rookie, prodigy], () => {});
     const buffed = teams.playerTeam[0];
 
-    expect(buffed.currentAttack).toBe(gon.atk + 2 * Math.floor(gon.atk * 0.05));
+    expect(buffed.currentAttack).toBe(rookie.atk + 2 * Math.floor(rookie.atk * 0.05));
     expect(buffed.currentDefense).toBe(
-      gon.def + 2 * Math.floor(gon.def * 0.05),
+      rookie.def + 2 * Math.floor(rookie.def * 0.05),
     );
   });
 
   it("carries `stats` onto the buff so entryAffectsStat can see it", async () => {
     const teams = await runBattleStart(
-      [fromData(gonData, "player", "p1_gon")],
+      [fromData(rookieData, "player", "p1_rookie")],
       () => {},
     );
     const synergy = teams.playerTeam[0].buffs.find(
-      (b) => b.name === "[Collab] Synergy",
+      (b) => b.name === "[Squad] Synergy",
     );
     expect(synergy).toBeDefined();
     expect(synergy!.stats).toEqual(["atk", "def", "hp"]);
@@ -131,8 +135,8 @@ describe("the synergy and aura log lines name their stats (issue #26)", () => {
     const lines: string[] = [];
     await runBattleStart(
       [
-        fromData(gonData, "player", "p1_gon"),
-        fromData(killuaData, "player", "p2_killua"),
+        fromData(rookieData, "player", "p1_rookie"),
+        fromData(prodigyData, "player", "p2_prodigy"),
       ],
       (e) => lines.push(e),
     );

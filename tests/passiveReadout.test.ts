@@ -5,18 +5,18 @@ import type { SkillCard } from "@/types/skillCard";
 import dukeData from "@/data/characters/duke.json";
 import serasData from "@/data/characters/seras.json";
 import yalinaData from "@/data/characters/yalina.json";
-import dianeData from "@/data/characters/diane.json";
-import banData from "@/data/characters/ban.json";
+import colossusData from "@/tests/fixtures/characters/fx_colossus.json";
+import thiefData from "@/tests/fixtures/characters/fx_thief.json";
 import masterTaoData from "@/data/characters/master_tao.json";
-import gonData from "@/data/characters/gon.json";
-import killuaData from "@/data/characters/killua.json";
+import rookieData from "@/tests/fixtures/characters/fx_rookie.json";
+import prodigyData from "@/tests/fixtures/characters/fx_prodigy.json";
 import siddiqData from "@/data/characters/siddiq.json";
 import saraData from "@/data/characters/sara.json";
 import gabristData from "@/data/characters/gabrist.json";
 import isoldeData from "@/data/characters/isolde.json";
 import mustafaData from "@/data/characters/mustafa.json";
 import batraData from "@/data/characters/batra.json";
-import leorioData from "@/data/characters/leorio.json";
+import medicData from "@/tests/fixtures/characters/fx_medic.json";
 import chiaraData from "@/data/characters/chiara.json";
 import molvarrData from "@/data/characters/molvarr.json";
 import frostData from "@/data/characters/frost.json";
@@ -25,18 +25,18 @@ type CharData =
   | typeof dukeData
   | typeof serasData
   | typeof yalinaData
-  | typeof dianeData
-  | typeof banData
+  | typeof colossusData
+  | typeof thiefData
   | typeof masterTaoData
-  | typeof gonData
-  | typeof killuaData
+  | typeof rookieData
+  | typeof prodigyData
   | typeof siddiqData
   | typeof saraData
   | typeof gabristData
   | typeof isoldeData
   | typeof mustafaData
   | typeof batraData
-  | typeof leorioData
+  | typeof medicData
   | typeof chiaraData
   | typeof molvarrData
   | typeof frostData;
@@ -108,7 +108,7 @@ describe("Stack badge + ready tick (Duke, Yalina)", () => {
   });
 });
 
-describe("Stack badge, no ready tick (Seras, Diane, Ban)", () => {
+describe("Stack badge, no ready tick (Seras, Colossus, Thief)", () => {
   it("Seras: at max Charged stacks, no ready tick, buildup tag", () => {
     const seras = fromData(serasData, {
       passiveState: { chargedStacks: 6 },
@@ -119,20 +119,20 @@ describe("Stack badge, no ready tick (Seras, Diane, Ban)", () => {
     expect(readout?.activationMode).toBe("buildup");
   });
 
-  it("Diane: 3/5 Giant's Will stacks, buildup tag", () => {
-    const diane = fromData(dianeData, {
+  it("Colossus: 3/5 Mounting Fury stacks, buildup tag", () => {
+    const colossus = fromData(colossusData, {
       passiveState: { turnRampStacks: 3 },
     });
-    const readout = getPassiveReadout(diane, noContext);
+    const readout = getPassiveReadout(colossus, noContext);
     expect(readout?.stacks).toEqual({ current: 3, max: 5 });
     expect(readout?.activationMode).toBe("buildup");
   });
 
-  it("Ban: 2/5 Extort Life stacks, buildup tag", () => {
-    const ban = fromData(banData, {
+  it("Thief: 2/5 Bleed Them Dry stacks, buildup tag", () => {
+    const thief = fromData(thiefData, {
       passiveState: { maxHpShredStacks: 2 },
     });
-    const readout = getPassiveReadout(ban, noContext);
+    const readout = getPassiveReadout(thief, noContext);
     expect(readout?.stacks).toEqual({ current: 2, max: 5 });
     expect(readout?.activationMode).toBe("buildup");
   });
@@ -149,31 +149,31 @@ describe("Master Tao: Healing Flames counter (no activation tag — a fired-coun
   });
 });
 
-describe("Progress-to-once counter (Gon, Killua)", () => {
-  it("Gon: 4/10 attacks received, not yet fired", () => {
-    const gon = fromData(gonData, {
+describe("Progress-to-once counter (Rookie, Prodigy)", () => {
+  it("Rookie: 4/10 attacks received, not yet fired", () => {
+    const rookie = fromData(rookieData, {
       passiveState: { attacksReceived: 4 },
     });
-    const readout = getPassiveReadout(gon, noContext);
+    const readout = getPassiveReadout(rookie, noContext);
     expect(readout?.progress).toEqual({ current: 4, required: 10 });
     expect(readout?.fired).toBe(false);
     expect(readout?.activationMode).toBe("once");
   });
 
-  it("Gon: fired after the 10th attack — progress locks at 10/10, ACTIVE", () => {
-    const gon = fromData(gonData, {
+  it("Rookie: fired after the 10th attack — progress locks at 10/10, ACTIVE", () => {
+    const rookie = fromData(rookieData, {
       passiveState: { attacksReceived: 10, statShiftTriggered: true },
     });
-    const readout = getPassiveReadout(gon, noContext);
+    const readout = getPassiveReadout(rookie, noContext);
     expect(readout?.progress).toEqual({ current: 10, required: 10 });
     expect(readout?.fired).toBe(true);
   });
 
-  it("Killua: same pattern as Gon, independently", () => {
-    const killua = fromData(killuaData, {
+  it("Prodigy: same pattern as Rookie, independently", () => {
+    const prodigy = fromData(prodigyData, {
       passiveState: { attacksReceived: 7 },
     });
-    const readout = getPassiveReadout(killua, noContext);
+    const readout = getPassiveReadout(prodigy, noContext);
     expect(readout?.progress).toEqual({ current: 7, required: 10 });
     expect(readout?.fired).toBe(false);
   });
@@ -243,12 +243,12 @@ describe("Always-active marker (Gabrist, Isolde, Mustafa, Batra's synergy half) 
   });
 });
 
-describe("Multi-tick row (Leorio) — independently-lit ticks", () => {
-  it("Bond active, Together inactive when only one of Gon/Killua is present", () => {
-    const leorio = fromData(leorioData);
-    const gon = fromData(gonData, { instanceId: "gon" });
-    const readout = getPassiveReadout(leorio, {
-      playerTeam: [leorio, gon],
+describe("Multi-tick row (Medic) — independently-lit ticks", () => {
+  it("Bond active, Together inactive when only one of Rookie/Prodigy is present", () => {
+    const medic = fromData(medicData);
+    const rookie = fromData(rookieData, { instanceId: "rookie" });
+    const readout = getPassiveReadout(medic, {
+      playerTeam: [medic, rookie],
       enemyTeam: [],
       currentTurn: 0,
     });
@@ -258,12 +258,12 @@ describe("Multi-tick row (Leorio) — independently-lit ticks", () => {
     ]);
   });
 
-  it("Both ticks active when Gon and Killua are both alive and on-field", () => {
-    const leorio = fromData(leorioData);
-    const gon = fromData(gonData, { instanceId: "gon" });
-    const killua = fromData(killuaData, { instanceId: "killua" });
-    const readout = getPassiveReadout(leorio, {
-      playerTeam: [leorio, gon, killua],
+  it("Both ticks active when Rookie and Prodigy are both alive and on-field", () => {
+    const medic = fromData(medicData);
+    const rookie = fromData(rookieData, { instanceId: "rookie" });
+    const prodigy = fromData(prodigyData, { instanceId: "prodigy" });
+    const readout = getPassiveReadout(medic, {
+      playerTeam: [medic, rookie, prodigy],
       enemyTeam: [],
       currentTurn: 0,
     });
@@ -274,11 +274,11 @@ describe("Multi-tick row (Leorio) — independently-lit ticks", () => {
   });
 
   it("Together drops when one of them dies, Bond still holds", () => {
-    const leorio = fromData(leorioData);
-    const gon = fromData(gonData, { instanceId: "gon", currentHP: 0 });
-    const killua = fromData(killuaData, { instanceId: "killua" });
-    const readout = getPassiveReadout(leorio, {
-      playerTeam: [leorio, gon, killua],
+    const medic = fromData(medicData);
+    const rookie = fromData(rookieData, { instanceId: "rookie", currentHP: 0 });
+    const prodigy = fromData(prodigyData, { instanceId: "prodigy" });
+    const readout = getPassiveReadout(medic, {
+      playerTeam: [medic, rookie, prodigy],
       enemyTeam: [],
       currentTurn: 0,
     });

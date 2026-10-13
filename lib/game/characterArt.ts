@@ -17,12 +17,6 @@ import { colorQualifiedId } from "@/lib/game/unitKey";
 const ART_VERSION = 21;
 
 const CHARACTERS_WITH_ART = new Set([
-  "ban",
-  "diane",
-  "gon",
-  "killua",
-  "leorio",
-  "meliodas",
   "duke",
   "lyra",
   "master_tao",
@@ -131,41 +125,22 @@ export function getTileArt(id: string): { src: string; ratio: number } | null {
 // character portrait for any skill without its own art yet, so art ships
 // incrementally with no broken images. See docs/design/SKILL_ART_PLAN.md.
 const SKILLS_WITH_ART = new Set<string>([
-  // Gon proof batch (2026-07-25)
-  "gon__jajanken-rock",
-  "gon__jajanken-round-2",
-  "gon__jajanken-combo",
-  // Full roster batch (2026-07-25) — 15 playables x 3 + Molvarr x 8
-  "ban__drain",
-  "ban__fox-hunt",
-  "ban__snatch",
+  // Full roster batch (2026-07-25); the six collab units' rows left with their kits (2026-10-13, #187)
   "batra__khalsa-flame",
   "batra__lion-s-charge",
   "batra__roar-of-spite",
-  "diane__ground-gladius",
-  "diane__mother-earth-catastrophe",
-  "diane__rush-rock",
   "duke__fist-of-flowing-ruin-slide",
   "duke__fist-of-flowing-ruin-water",
   "duke__fist-of-flowing-ruin-weaken",
   "gabrist__erase",
   "gabrist__ink-slash",
   "gabrist__masterpiece-unveiled",
-  "killua__lightning-palm",
-  "killua__speed-of-lightning",
-  "killua__thunderbolt",
-  "leorio__member-of-the-zodiac",
-  "leorio__remote-punch",
-  "leorio__switchblade-attack",
   "lyra__latent-heat",
   "lyra__flash-point",
   "lyra__shatterburn",
   "master_tao__flaming-palm",
   "master_tao__inferno-consumption",
   "master_tao__wrath-of-the-fire-sage",
-  "meliodas__evil-spirit",
-  "meliodas__full-counter",
-  "meliodas__triple-strike",
   "mustafa__earth-shatter",
   "mustafa__earth-stance-fortress",
   "mustafa__tea-time-tremor",

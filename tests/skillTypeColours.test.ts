@@ -8,6 +8,9 @@ import {
   SKILL_TYPE_TEXT,
   skillTypeCategory,
 } from "@/lib/game/skillTypeStyle";
+// The counter stance and the cancel-then-stun ultimate lived on a collab kit
+// until 2026-10-13 (ruling #187); the mechanics stayed, on this fixture.
+import reaverData from "@/tests/fixtures/characters/fx_reaver.json";
 
 /**
  * Ruling #133 (Tanveer, 2026-09-16) — what a skill DOES reads as a colour,
@@ -25,21 +28,26 @@ import {
  * normal attack skill … as long as they don't apply debuff on the enemy"*.
  */
 
-function skillOf(characterId: string, skillName: string) {
-  const c = getAllCharacters().find(
-    (x) => (x as unknown as { id?: string }).id === characterId,
-  );
-  if (!c) throw new Error(`no character ${characterId}`);
-  const raw = c as unknown as Record<string, unknown>;
+function skillFrom(raw: Record<string, unknown>, skillName: string) {
   const acts = [
     ...(((raw.skills as unknown[]) ?? []) as Record<string, unknown>[]),
     raw.ultimate as Record<string, unknown>,
     raw.spSkill as Record<string, unknown>,
   ].filter(Boolean);
   const a = acts.find((x) => x.skillName === skillName);
-  if (!a) throw new Error(`no skill ${characterId}/${skillName}`);
+  if (!a) throw new Error(`no skill ${raw.id}/${skillName}`);
   return a as never;
 }
+
+function skillOf(characterId: string, skillName: string) {
+  const c = getAllCharacters().find(
+    (x) => (x as unknown as { id?: string }).id === characterId,
+  );
+  if (!c) throw new Error(`no character ${characterId}`);
+  return skillFrom(c as unknown as Record<string, unknown>, skillName);
+}
+
+const reaver = reaverData as unknown as Record<string, unknown>;
 
 describe("#133 — the split he drew, on his own examples", () => {
   it("damage that also afflicts is an attack-debuff", () => {
@@ -58,7 +66,6 @@ describe("#133 — the split he drew, on his own examples", () => {
   it("every stance in the game classifies as a stance", () => {
     const stances: [string, string][] = [
       ["iron", "Iron Wall"],
-      ["meliodas", "Full Counter"],
       ["mustafa", "Earth Stance: Fortress"],
       ["toll_collector", "State Your Business"],
       ["yalina", "Attention Drawer"],
@@ -66,6 +73,8 @@ describe("#133 — the split he drew, on his own examples", () => {
     for (const [id, name] of stances) {
       expect(skillTypeCategory(skillOf(id, name))).toBe("stance");
     }
+    // The counter stance, the one typed `stance` in its JSON.
+    expect(skillTypeCategory(skillFrom(reaver, "Mirror Stance"))).toBe("stance");
   });
 
   it("a stance mechanic beats a disagreeing skill.type", () => {
@@ -83,7 +92,7 @@ describe("#133 — the split he drew, on his own examples", () => {
   it("an ultimate is classified by what it does, not by being an ultimate", () => {
     // Isolde's Starbound Ward is a pure team buff and used to carry a sword.
     expect(skillTypeCategory(skillOf("isolde", "Starbound Ward"))).toBe("buff");
-    expect(skillTypeCategory(skillOf("meliodas", "Evil Spirit"))).toBe(
+    expect(skillTypeCategory(skillFrom(reaver, "Black Flare"))).toBe(
       "attackDebuff",
     );
     expect(skillTypeCategory(skillOf("yalina", "Devastating Blow"))).toBe(

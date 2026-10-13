@@ -300,7 +300,7 @@ yet (`drafts/`, `planned/`, `brainstorm/`), `practice/` and
 Changing a mirrored file here changes it there on the next session start, so
 nothing in this repo needs to know about the sync. **`author_notes.md` lives
 there now, not here.** It was copied verbatim and split by stage into
-`planned/` (Knuckle, Netero) and `brainstorm/` (the DBZ set), and this repo's
+`planned/` (Knuckle and Netero, **deleted 2026-10-13 with the collab units, ruling #187**) and `brainstorm/` (the DBZ set, kept for later), and this repo's
 copy was **retired on 2026-09-27**, his call, after every line was checked
 present in the two copies. Its processing log moved to
 `docs/archive/author_notes_report.md`. Kit ideas he has not made official go

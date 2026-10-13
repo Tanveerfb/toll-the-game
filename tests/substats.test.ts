@@ -13,7 +13,19 @@ import { getEvadeChance } from "@/lib/game/evade";
 import { getCritChance } from "@/lib/game/combat";
 import chiara from "@/data/characters/chiara.json";
 import { scaleMaxHp, inverseHpPercent } from "@/lib/game/maxHp";
-import { getCharacterById } from "@/lib/game/characterCatalog";
+import {
+  getCharacterById,
+  type CharacterData,
+} from "@/lib/game/characterCatalog";
+// The six units whose synergies were retargeted to basic stats on 2026-08-09
+// left the game on 2026-10-13 (ruling #187). The passives stayed, carried by
+// the fixtures in tests/fixtures/characters/ with the same numbers.
+import fxThief from "@/tests/fixtures/characters/fx_thief.json";
+import fxColossus from "@/tests/fixtures/characters/fx_colossus.json";
+import fxReaver from "@/tests/fixtures/characters/fx_reaver.json";
+import fxRookie from "@/tests/fixtures/characters/fx_rookie.json";
+import fxProdigy from "@/tests/fixtures/characters/fx_prodigy.json";
+import fxMedic from "@/tests/fixtures/characters/fx_medic.json";
 import type { BattleCharacter } from "@/types/character";
 import type { SkillCard } from "@/types/skillCard";
 import { getEffectiveHealAmount, applyHeal } from "@/lib/game/heal";
@@ -443,16 +455,25 @@ describe("max-HP changes unwind when their effect expires", () => {
   });
 });
 
+/** The fixtures as the catalog type, keyed by name for the it.each titles. */
+const fixtures: [string, CharacterData][] = (
+  [fxThief, fxColossus, fxRookie, fxProdigy, fxMedic, fxReaver] as unknown[]
+).map((f) => {
+  const c = f as CharacterData;
+  return [c.name, c];
+});
+
 describe("synergies target basic stats; only Seras and Batra reach substats", () => {
-  const synergyOf = (id: string) =>
-    (getCharacterById(id)?.passive?.mechanics ?? []).find(
+  const synergyIn = (c: CharacterData | undefined) =>
+    (c?.passive?.mechanics ?? []).find(
       (m) => m.type === "synergy" || m.type === "characterSynergy",
     ) as { stat?: string; stats?: string[] } | undefined;
+  const synergyOf = (id: string) => synergyIn(getCharacterById(id));
 
-  it.each(["ban", "diane", "gon", "killua", "leorio", "meliodas"])(
-    "%s's synergy names basic stats, not 'all'",
-    (id) => {
-      const m = synergyOf(id);
+  it.each(fixtures)(
+    "the %s fixture's synergy names basic stats, not 'all'",
+    (_name, c) => {
+      const m = synergyIn(c);
       expect(m?.stat).toBeUndefined();
       expect(m?.stats).toEqual(["atk", "def", "hp"]);
     },
@@ -471,11 +492,15 @@ describe("synergies target basic stats; only Seras and Batra reach substats", ()
   });
 });
 
-describe("Kind Hearted Friend's two halves target differently", () => {
+describe("Sworn Companions' two halves target differently", () => {
+  // The character-synergy passive: the Medic fixture, which needs the Rookie
+  // and Prodigy fixtures on the team.
+  const medic = fxMedic as unknown as CharacterData;
+
   it("the base bond names basic stats and the both-alive bonus names all", () => {
     // Tanveer, 2026-08-09: the bond's base is basic stats, but the both-alive
     // half is restrictive enough to justify reaching substats.
-    const m = (getCharacterById("leorio")?.passive?.mechanics ?? []).find(
+    const m = (medic.passive?.mechanics ?? []).find(
       (x) => x.type === "characterSynergy",
     ) as { stats?: string[]; bothAliveStat?: string };
     expect(m.stats).toEqual(["atk", "def", "hp"]);
@@ -483,19 +508,19 @@ describe("Kind Hearted Friend's two halves target differently", () => {
   });
 
   it("the passive wording matches what each half actually targets", () => {
-    const text = getCharacterById("leorio")?.passive?.description ?? "";
+    const text = medic.passive?.description ?? "";
     // Base bond
     expect(text).toContain("All allies' basic stats 10%");
     // Both-alive bonus
     expect(text).toContain("All allies' all stats 10%");
-    // And the [Collab] tag synergy is basic like every other tag synergy
-    expect(text).toContain("[Collab] allies' basic stats 5%");
+    // And the [Squad] tag synergy is basic like every other tag synergy
+    expect(text).toContain("[Squad] allies' basic stats 5%");
   });
 
-  it.each(["ban", "diane", "gon", "killua", "meliodas"])(
-    "%s's passive says 'basic stats', matching its retargeted synergy",
-    (id) => {
-      expect(getCharacterById(id)?.passive?.description).toContain("basic stats");
+  it.each(fixtures.filter(([name]) => name !== "Medic"))(
+    "the %s fixture's passive says 'basic stats', matching its retargeted synergy",
+    (_name, c) => {
+      expect(c.passive?.description).toContain("basic stats");
     },
   );
 

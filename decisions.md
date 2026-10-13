@@ -275,3 +275,20 @@ copied (§SCALE), and the root `AGENTS.md` keeps a pointer. The root file is
 still long; the next candidates to move are the mobile rules (to
 `components/CLAUDE.md`) and the kit-import block (to `data/characters/`),
 not done because neither folder had a session touching it.
+
+## 2026-10-13 — The collab units are deleted, and the mechanics they carried are kept
+
+Ruling #187 has his words. The four choices the question tool put to him and
+what each cost: **keep the mechanics** (Extort, Lifesteal, max-HP shred,
+Deathblow, Detonate, Rupture, turn ramp, characterSynergy) rather than delete
+them with the kits, so the engine keeps its vocabulary for a later kit and the
+price is six neutral fixtures in `tests/fixtures/characters/` that exercise
+them; **drop silently** from saves (v12 migration), because nobody paid for
+them; **delete the Knuckle and Netero file in `toll-kits` from this cloud
+session**, a push to that repo's `main` on his explicit pick; **keep the
+KIT_DESIGN prose** that cites them as illustrations. The fixtures are not
+kits: same numbers and mechanics, new names, card numbers in the sim
+placeholder range, never in the catalog. `lib/game/removedCharacters.ts` is
+append-only, because a pre-removal save can arrive from any device at any
+time. Not asked and not done: the `Demon` and `Giant` tags remain valid tag
+strings (tags are free text), and the DBZ brainstorm stays for later.

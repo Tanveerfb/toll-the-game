@@ -3,8 +3,11 @@ import {
   buildDescriptionForRank,
   buildSkillKeywordGlossary,
 } from "@/lib/game/descriptionTranslator";
-import meliodasData from "@/data/characters/meliodas.json";
-import gonData from "@/data/characters/gon.json";
+// The counter stance and the buff-before-hit skills these pin lived on two
+// collab kits that left the game on 2026-10-13 (ruling #187). The mechanics
+// stayed, carried by the fixtures in tests/fixtures/characters/.
+import reaverData from "@/tests/fixtures/characters/fx_reaver.json";
+import rookieData from "@/tests/fixtures/characters/fx_rookie.json";
 import chiaraData from "@/data/characters/chiara.json";
 import isoldeData from "@/data/characters/isolde.json";
 import type { CharacterSkillData } from "@/lib/game/characterCatalog";
@@ -13,12 +16,12 @@ describe("description placeholders", () => {
   it("resolves arbitrary ranked mechanic fields like counterDamagePercent", () => {
     // The assertion used to read "250% of his ATK". The possessive went with
     // #134's rewrite — #26 forbids naming the caster in its own card text, and
-    // Full Counter was the only description in the game that did.
-    const fullCounter = meliodasData.skills[1] as CharacterSkillData;
-    expect(buildDescriptionForRank(fullCounter, 0)).toContain(
+    // the counter stance was the only description in the game that did.
+    const mirrorStance = reaverData.skills[1] as CharacterSkillData;
+    expect(buildDescriptionForRank(mirrorStance, 0)).toContain(
       "damage equal to 250% ATK",
     );
-    expect(buildDescriptionForRank(fullCounter, 2)).toContain(
+    expect(buildDescriptionForRank(mirrorStance, 2)).toContain(
       "damage equal to 400% ATK",
     );
   });
@@ -26,38 +29,38 @@ describe("description placeholders", () => {
   it("resolves [type.duration] per rank", () => {
     // Was "lasts 1 turn" in a trailing third sentence. #134 moved the duration
     // to the front, onto the stance, where its parts inherit it.
-    const fullCounter = meliodasData.skills[1] as CharacterSkillData;
-    expect(buildDescriptionForRank(fullCounter, 0)).toContain(
+    const mirrorStance = reaverData.skills[1] as CharacterSkillData;
+    expect(buildDescriptionForRank(mirrorStance, 0)).toContain(
       "stance for 1 turn:",
     );
-    expect(buildDescriptionForRank(fullCounter, 2)).toContain(
+    expect(buildDescriptionForRank(mirrorStance, 2)).toContain(
       "stance for 2 turns:",
     );
   });
 
   it("builds tiered-wording glossary entries with the skill's real numbers", () => {
     // Value only — duration/cancel flags live in the description text
-    const rock = buildSkillKeywordGlossary(
-      gonData.skills[0] as CharacterSkillData,
+    const windUp = buildSkillKeywordGlossary(
+      rookieData.skills[0] as CharacterSkillData,
       0,
     );
     // Pill spans the stat too: "Greatly raises ATK" (50% = greatly tier)
-    expect(rock["greatly raises atk"]).toBe("Increases ATK by 50%");
-    expect(rock["greatly raises"]).toBe("Increases ATK by 50%"); // loose-wording fallback
+    expect(windUp["greatly raises atk"]).toBe("Increases ATK by 50%");
+    expect(windUp["greatly raises"]).toBe("Increases ATK by 50%"); // loose-wording fallback
 
-    // Gon ult: a permanent +30% ATK and a 1-turn +50% DEF, side by side in
+    // Rookie ult: a permanent +30% ATK and a 1-turn +50% DEF, side by side in
     // one sentence. Since 2026-08-19 the permanent one carries no "permanently"
     // prefix — in the text or in the key — so the two pills are "raises" and
     // "greatly raises". They share a substring and that is fine: they sit at
     // different positions, and the extractor matches longest-first without
     // overlapping.
-    const combo = buildSkillKeywordGlossary(
-      gonData.ultimate as CharacterSkillData,
+    const allIn = buildSkillKeywordGlossary(
+      rookieData.ultimate as CharacterSkillData,
       0,
     );
-    expect(combo["raises atk"]).toBe("Increases ATK by 30%");
-    expect(combo["greatly raises def"]).toBe("Increases DEF by 50%");
-    expect(Object.keys(combo).some((k) => k.includes("permanently"))).toBe(
+    expect(allIn["raises atk"]).toBe("Increases ATK by 30%");
+    expect(allIn["greatly raises def"]).toBe("Increases DEF by 50%");
+    expect(Object.keys(allIn).some((k) => k.includes("permanently"))).toBe(
       false,
     );
   });
@@ -150,7 +153,7 @@ describe("description placeholders", () => {
     );
   });
 
-  it("a permanent multi-stat raise keys off the bare tier word (Killua ult)", () => {
+  it("a permanent multi-stat raise keys off the bare tier word (the Prodigy fixture's ult)", () => {
     const skill = {
       skillName: "T",
       characterId: "t",
@@ -195,9 +198,9 @@ describe("description placeholders", () => {
     });
 
     it("joins three clauses as 'A, B and C'", () => {
-      const evilSpirit = meliodasData.ultimate as unknown as CharacterSkillData;
-      expect(buildDescriptionForRank(evilSpirit, 2)).toBe(
-        // Index 2 is ult level 3, where Meliodas reads 540 — an ultimate
+      const blackFlare = reaverData.ultimate as unknown as CharacterSkillData;
+      expect(buildDescriptionForRank(blackFlare, 2)).toBe(
+        // Index 2 is ult level 3, where the Reaver reads 540 — an ultimate
         // renders at the index it is given, and for an ultimate that index is
         // the ult level rather than a card rank.
         "Cancels buffs and stances, does damage equal to 540% ATK to one enemy and stuns for 2 turns.",

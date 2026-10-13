@@ -14,12 +14,12 @@ const opts = { runs: RUNS, seed: 1, fieldCap: 1, collectStats: true };
 
 describe("simulate({ collectStats })", () => {
   it("is opt-in and does not change the fight", async () => {
-    const plain = await simulate(["gon"], ["wild_beast"], {
+    const plain = await simulate(["batra"], ["wild_beast"], {
       runs: RUNS,
       seed: 1,
       fieldCap: 1,
     });
-    const counted = await simulate(["gon"], ["wild_beast"], opts);
+    const counted = await simulate(["batra"], ["wild_beast"], opts);
     expect(plain.stats).toBeUndefined();
     expect(counted.stats).toBeDefined();
     const { stats, ...rest } = counted;
@@ -28,7 +28,7 @@ describe("simulate({ collectStats })", () => {
   });
 
   it("agrees with the result it rides on", async () => {
-    const result = await simulate(["gon"], ["wild_beast"], opts);
+    const result = await simulate(["batra"], ["wild_beast"], opts);
     const stats = result.stats!;
     expect(stats.runs).toBe(RUNS);
     expect(stats.outcomes).toEqual({
@@ -41,7 +41,7 @@ describe("simulate({ collectStats })", () => {
   });
 
   it("balances: what one side deals the other takes, less damage over time", async () => {
-    const { stats } = await simulate(["gon", "killua"], ["wild_beast", "raider"], {
+    const { stats } = await simulate(["batra", "seras"], ["wild_beast", "raider"], {
       ...opts,
       fieldCap: 2,
     });
@@ -61,7 +61,7 @@ describe("simulate({ collectStats })", () => {
   });
 
   it("accounts for overkill: reported damage includes it, effective damage does not", async () => {
-    const { stats } = await simulate(["gon"], ["wild_beast"], opts);
+    const { stats } = await simulate(["batra"], ["wild_beast"], opts);
     const beast = stats!.units.find((u) => u.team === "enemy")!;
     expect(beast.overkillTaken.mean).toBeGreaterThanOrEqual(0);
     expect(beast.overkillTaken.mean).toBeLessThanOrEqual(beast.damageTaken.mean);
@@ -72,7 +72,7 @@ describe("simulate({ collectStats })", () => {
   });
 
   it("splits damage by skill so the pieces add to the total", async () => {
-    const { stats } = await simulate(["gon", "killua"], ["wild_beast", "raider"], {
+    const { stats } = await simulate(["batra", "seras"], ["wild_beast", "raider"], {
       ...opts,
       fieldCap: 2,
     });
@@ -83,7 +83,7 @@ describe("simulate({ collectStats })", () => {
   });
 
   it("counts deaths: in a decisive 1v1 exactly one unit falls per fight", async () => {
-    const result = await simulate(["gon"], ["wild_beast"], opts);
+    const result = await simulate(["batra"], ["wild_beast"], opts);
     const [player, enemy] = ["player", "enemy"].map(
       (team) => result.stats!.units.find((u) => u.team === team)!,
     );
@@ -94,8 +94,8 @@ describe("simulate({ collectStats })", () => {
   });
 
   it("is deterministic for a seed", async () => {
-    const a = await simulate(["gon"], ["wild_beast"], opts);
-    const b = await simulate(["gon"], ["wild_beast"], opts);
+    const a = await simulate(["batra"], ["wild_beast"], opts);
+    const b = await simulate(["batra"], ["wild_beast"], opts);
     expect(a.stats).toEqual(b.stats);
   });
 });

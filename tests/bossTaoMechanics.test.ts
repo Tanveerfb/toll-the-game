@@ -19,6 +19,10 @@ import {
 } from "@/lib/game/stats";
 import type { BattleCharacter } from "@/types/character";
 import type { StatusEffect } from "@/types/mechanic";
+// The one-shot stat shift Tao's repeating one is contrasted with lived on a
+// collab kit until 2026-10-13 (ruling #187); the mechanic stayed, on this
+// fixture.
+import rookieData from "@/tests/fixtures/characters/fx_rookie.json";
 
 /** Boss Tao's catalog ATK, read rather than restated so a retune moves one file. */
 const TAO_ATK = getCharacterById("master_tao_npc")!.atk;
@@ -184,7 +188,7 @@ describe("live bonuses", () => {
   it("raises ATK and damage dealt 5% per Ignite stack, summed over enemies", () => {
     const boss = bossOf(
       field([
-        unit("gon", "player", { debuffs: [ignite(3)] }),
+        unit("sara", "player", { debuffs: [ignite(3)] }),
         unit("lyra", "player", { debuffs: [ignite(2)] }),
       ]),
     );
@@ -196,8 +200,8 @@ describe("live bonuses", () => {
     const boss = bossOf(
       field(
         [1, 2, 3, 4].map((n) =>
-          unit("gon", "player", {
-            instanceId: `g${n}`,
+          unit("sara", "player", {
+            instanceId: `s${n}`,
             debuffs: [ignite(6)],
           }),
         ),
@@ -405,13 +409,13 @@ describe("basic stats after every 5 attacks received", () => {
     ).toHaveLength(1);
   });
 
-  it("leaves Gon's one-shot alone: one trigger, ever", () => {
-    // Gon authors no maxTriggers, so the repeat path must stay closed to him.
-    const gon = getCharacterById("gon");
-    expect(gon).toBeDefined();
-    const mech = (gon?.passive?.mechanics ?? []).find(
+  it("leaves the Rookie fixture's one-shot alone: one trigger, ever", () => {
+    // The fixture authors no maxTriggers, so the repeat path must stay closed
+    // to it.
+    const mech = rookieData.passive.mechanics.find(
       (m) => m.type === "statShiftAfterAttacks",
-    );
+    ) as { maxTriggers?: number } | undefined;
+    expect(mech).toBeDefined();
     expect(mech?.maxTriggers).toBeUndefined();
   });
 });

@@ -1,5 +1,11 @@
 # Skill Art Generation Plan (ComfyUI)
 
+> **2026-10-13:** the six collab units (Ban, Diane, Meliodas, Gon, Killua,
+> Leorio) left the game with their art (ruling #187). Their rows below are the
+> record of the July 2026 batch and nothing in them is live; the method notes
+> (IP-Adapter lock, sampler fix, palette bleed) still apply to the units that
+> stayed.
+
 > **Background colour = skill class** (Tanveer, 2026-09-27, walking Claude
 > through 7DSGC's skill art on his Discord). *"if you look at a red one that
 > means it's an attack skill ... if it's a yellow ... that's a stance skill

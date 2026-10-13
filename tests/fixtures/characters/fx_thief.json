@@ -1,23 +1,21 @@
 {
-  "id": "ban",
-  "cardNumber": 100001,
-  "name": "Ban",
-  "heading": "Fox Sin of Greed",
+  "id": "fx_thief",
+  "cardNumber": 999901,
+  "name": "Thief",
+  "heading": "Fixture: Extort, Lifesteal, max-HP shred",
   "color": "green",
   "tags": [
-    "Collab",
-    "Human",
-    "Seven Deadly Sins"
+    "Fixture",
+    "Human"
   ],
-  "lore": "Fox Sin of Greed. An undying human who takes what he wants — including your stats. Collab unit.",
   "atk": 190,
   "def": 80,
   "hp": 3600,
   "skills": [
     {
-      "skillName": "Drain",
+      "skillName": "Leech Sweep",
       "description": "Does damage equal to ATK-scaled to all enemies; lifesteals [lifesteal.valuePercent]% of damage dealt.",
-      "characterId": "ban",
+      "characterId": "fx_thief",
       "type": "attack",
       "statMultiplier": "atk",
       "damageRanked": [
@@ -36,9 +34,9 @@
       ]
     },
     {
-      "skillName": "Snatch",
+      "skillName": "Grand Larceny",
       "description": "Applies [extort.value]% Extort effect to all enemies for [extort.duration] turns.",
-      "characterId": "ban",
+      "characterId": "fx_thief",
       "type": "debuff",
       "statMultiplier": "atk",
       "damageRanked": [
@@ -67,9 +65,9 @@
     }
   ],
   "ultimate": {
-    "skillName": "Fox Hunt",
+    "skillName": "Pickpocket",
     "description": "Does damage equal to ATK-scaled to one enemy; extorts [extort.value]% of their ATK and DEF for [extort.duration] turns.",
-    "characterId": "ban",
+    "characterId": "fx_thief",
     "type": "ultimate",
     "statMultiplier": "atk",
     "damage": 400,
@@ -90,7 +88,7 @@
     ]
   },
   "passive": {
-    "name": "Extort Life",
+    "name": "Bleed Them Dry",
     "description": "- [Human] allies' basic stats 5% 👆 during battle\n\n# When finishing a turn without receiving damage\n- All enemies max HP 8% 👇 (Max 5 times) (Uncancellable)\n-- Effects reset after receiving damage",
     "trigger": "onRoundEnd",
     "worksFromSub": false,

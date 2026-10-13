@@ -55,17 +55,17 @@ describe("applyEpicClear", () => {
     expect(teamKey(["b", "a", "b"])).toBe("a|b");
     expect(teamIds("a|b")).toEqual(["a", "b"]);
     expect(teamIds("")).toEqual([]);
-    let clears: EpicClears = applyEpicClear({}, KEY, ["gon", "killua"], 5, 1);
-    clears = applyEpicClear(clears, KEY, ["killua", "gon"], 5, 2);
-    clears = applyEpicClear(clears, KEY, ["killua", "gon", "gon"], 5, 3);
-    expect(clears[KEY].teams).toEqual(["gon|killua"]);
+    let clears: EpicClears = applyEpicClear({}, KEY, ["duke", "lyra"], 5, 1);
+    clears = applyEpicClear(clears, KEY, ["lyra", "duke"], 5, 2);
+    clears = applyEpicClear(clears, KEY, ["lyra", "duke", "duke"], 5, 3);
+    expect(clears[KEY].teams).toEqual(["duke|lyra"]);
     expect(clears[KEY].clears).toBe(3);
   });
 
   it("keeps different teams as different entries", () => {
-    let clears: EpicClears = applyEpicClear({}, KEY, ["gon"], 5, 1);
-    clears = applyEpicClear(clears, KEY, ["gon", "killua"], 5, 2);
-    expect(clears[KEY].teams).toEqual(["gon", "gon|killua"]);
+    let clears: EpicClears = applyEpicClear({}, KEY, ["duke"], 5, 1);
+    clears = applyEpicClear(clears, KEY, ["duke", "lyra"], 5, 2);
+    expect(clears[KEY].teams).toEqual(["duke", "duke|lyra"]);
   });
 
   it("caps the teams, dropping the longest unused", () => {

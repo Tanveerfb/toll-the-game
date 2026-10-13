@@ -1,3 +1,13 @@
+/**
+ * Fixture-based mechanic tests: Deathblow, counter stance, Lifesteal,
+ * Extort, max-HP shred, Rupture, Attack Seal, turn ramp and sub-passive
+ * gating.
+ *
+ * These were written against the 7DS collab kits, which left the game on
+ * 2026-10-13 (ruling #187). The mechanics stayed, so the tests now run on
+ * the neutral fixtures in tests/fixtures/characters/ — the same numbers
+ * and mechanics under new names (see that folder's README).
+ */
 import { describe, expect, it } from "vitest";
 import { executeSkill, getCritChance } from "@/lib/game/combat";
 import { calculateDamage } from "@/lib/game/damage";
@@ -7,10 +17,10 @@ import { registerCharacterPassives } from "@/lib/game/passive";
 import type { BattleCharacter } from "@/types/character";
 import type { SkillCard } from "@/types/skillCard";
 import type { BattleActionEvent } from "@/types/battleEvent";
-import meliodasData from "@/data/characters/meliodas.json";
-import banData from "@/data/characters/ban.json";
-import dianeData from "@/data/characters/diane.json";
-import leorioData from "@/data/characters/leorio.json";
+import reaverData from "@/tests/fixtures/characters/fx_reaver.json";
+import thiefData from "@/tests/fixtures/characters/fx_thief.json";
+import colossusData from "@/tests/fixtures/characters/fx_colossus.json";
+import medicData from "@/tests/fixtures/characters/fx_medic.json";
 
 const noopLog = () => {};
 
@@ -144,24 +154,24 @@ describe("effective stats (buffs/debuffs finally count)", () => {
   });
 });
 
-describe("Meliodas — Deathblow + Full Counter", () => {
+describe("Reaver fixture — Deathblow + Mirror Stance", () => {
   it("crit chance rises 2% per 3% HP lost, from a 0 base", () => {
-    const mel = fromData(meliodasData, "player");
-    expect(getCritChance(mel)).toBe(0);
-    mel.currentHP = Math.floor(mel.hp * 0.7); // 30% lost -> 10 steps -> 20%
-    expect(getCritChance(mel)).toBe(20);
+    const reaver = fromData(reaverData, "player");
+    expect(getCritChance(reaver)).toBe(0);
+    reaver.currentHP = Math.floor(reaver.hp * 0.7); // 30% lost -> 10 steps -> 20%
+    expect(getCritChance(reaver)).toBe(20);
   });
 
   it("deathblow is inactive from the sub position", () => {
-    const mel = fromData(meliodasData, "player");
-    mel.isSub = true;
-    mel.currentHP = Math.floor(mel.hp * 0.5);
-    expect(getCritChance(mel)).toBe(0);
+    const reaver = fromData(reaverData, "player");
+    reaver.isSub = true;
+    reaver.currentHP = Math.floor(reaver.hp * 0.5);
+    expect(getCritChance(reaver)).toBe(0);
   });
 
   it("a crit applies the CRITICAL package", () => {
-    const mel = fromData(meliodasData, "player");
-    mel.currentHP = 1; // ~100% lost -> guaranteed crit territory
+    const reaver = fromData(reaverData, "player");
+    reaver.currentHP = 1; // ~100% lost -> guaranteed crit territory
     const target = makeChar({
       instanceId: "t",
       team: "enemy",
@@ -171,11 +181,11 @@ describe("Meliodas — Deathblow + Full Counter", () => {
     });
     const result = executeSkill(
       {
-        sourceInstanceId: "meliodas",
-        skill: meliodasData.skills[0] as any,
+        sourceInstanceId: "fx_reaver",
+        skill: reaverData.skills[0] as any,
         targetInstanceId: "t",
       },
-      { playerTeam: [mel], enemyTeam: [target] },
+      { playerTeam: [reaver], enemyTeam: [target] },
       noopLog,
       0,
       () => 0.0, // crit roll always procs
@@ -187,17 +197,17 @@ describe("Meliodas — Deathblow + Full Counter", () => {
     expect(hpLost).toBeGreaterThan(400);
   });
 
-  it("Full Counter stance counters a survivor's attacker; lethal hit is not countered", () => {
-    const mel = fromData(meliodasData, "player");
+  it("Mirror Stance counters a survivor's attacker; lethal hit is not countered", () => {
+    const reaver = fromData(reaverData, "player");
     // Put up the stance (rank 3: 400%, 2 turns)
     let teams = executeSkill(
       {
-        sourceInstanceId: "meliodas",
-        skill: meliodasData.skills[1] as any,
-        targetInstanceId: "meliodas",
+        sourceInstanceId: "fx_reaver",
+        skill: reaverData.skills[1] as any,
+        targetInstanceId: "fx_reaver",
         rank: 3,
       },
-      { playerTeam: [mel], enemyTeam: [makeChar({ instanceId: "e", team: "enemy" })] },
+      { playerTeam: [reaver], enemyTeam: [makeChar({ instanceId: "e", team: "enemy" })] },
       noopLog,
     );
     const stance = teams.playerTeam[0].buffs.find(
@@ -206,13 +216,13 @@ describe("Meliodas — Deathblow + Full Counter", () => {
     expect(stance?.counterDamagePercent).toBe(400);
     expect(stance?.buffDuration).toBe(2);
 
-    // Enemy attacks Meliodas -> takes 400% of his effective ATK back
+    // Enemy attacks the Reaver -> takes 400% of his effective ATK back
     const events: BattleActionEvent[] = [];
     teams = executeSkill(
       {
         sourceInstanceId: "e",
         skill: dummySkill(),
-        targetInstanceId: "meliodas",
+        targetInstanceId: "fx_reaver",
       },
       teams,
       noopLog,
@@ -221,39 +231,39 @@ describe("Meliodas — Deathblow + Full Counter", () => {
       (e) => events.push(e),
     );
     const enemy = teams.enemyTeam[0];
-    const melAfter = teams.playerTeam[0];
+    const reaverAfter = teams.playerTeam[0];
     // The event stream snapshots the target's hp immediately after the
     // incoming hit resolves — BEFORE the counter (and its lifesteal
     // overheal) fires — so this is the one place that still proves the
-    // enemy's attack actually dealt damage, independent of where Meliodas
+    // enemy's attack actually dealt damage, independent of where the Reaver
     // ends up after he counters and heals back off it.
-    const melHitEvent = events[0].targets.find(
-      (t) => t.instanceId === "meliodas",
+    const reaverHitEvent = events[0].targets.find(
+      (t) => t.instanceId === "fx_reaver",
     );
-    expect(melHitEvent?.damage).toBeGreaterThan(0); // he really took the hit
-    expect(melHitEvent?.hpAfter).toBeLessThan(mel.hp);
-    // Lifesteal substat (Task 6): Meliodas's counter deals a massive 400%-ATK
+    expect(reaverHitEvent?.damage).toBeGreaterThan(0); // he really took the hit
+    expect(reaverHitEvent?.hpAfter).toBeLessThan(reaver.hp);
+    // Lifesteal substat (Task 6): the Reaver's counter deals a massive 400%-ATK
     // hit back, and his own base lifestealPercent (default 5%) heals him for
     // 5% of THAT counter damage — comfortably more than the modest hit he
     // took from the enemy's plain attack, so he lands back at full (clamped)
     // HP instead of staying strictly below max.
-    expect(melAfter.currentHP).toBe(melAfter.hp); // took the hit, then fully lifestole back via the counter
+    expect(reaverAfter.currentHP).toBe(reaverAfter.hp); // took the hit, then fully lifestole back via the counter
     expect(enemy.currentHP).toBeLessThan(1000); // counter landed
 
     // Lethal hit: no counter
-    const glassCannon = fromData(meliodasData, "player", "mel2");
+    const glassCannon = fromData(reaverData, "player", "reaver2");
     glassCannon.currentHP = 1;
     glassCannon.buffs.push({
       type: "stance",
       counterDamagePercent: 400,
-      name: "Full Counter",
+      name: "Mirror Stance",
     });
     const killer = makeChar({ instanceId: "killer", team: "enemy" });
     const after = executeSkill(
       {
         sourceInstanceId: "killer",
         skill: dummySkill(),
-        targetInstanceId: "mel2",
+        targetInstanceId: "reaver2",
       },
       { playerTeam: [glassCannon], enemyTeam: [killer] },
       noopLog,
@@ -262,21 +272,21 @@ describe("Meliodas — Deathblow + Full Counter", () => {
     expect(after.enemyTeam[0].currentHP).toBe(1000); // no counter from the dead
   });
 
-  it("Evil Spirit cancels the stance BEFORE damage — no counter", () => {
+  it("Black Flare cancels the stance BEFORE damage — no counter", () => {
     const counterer = makeChar({ instanceId: "c", team: "enemy" });
     counterer.buffs.push({
       type: "stance",
       counterDamagePercent: 400,
-      name: "Full Counter",
+      name: "Mirror Stance",
     });
-    const mel = fromData(meliodasData, "player");
+    const reaver = fromData(reaverData, "player");
     const after = executeSkill(
       {
-        sourceInstanceId: "meliodas",
-        skill: meliodasData.ultimate as any,
+        sourceInstanceId: "fx_reaver",
+        skill: reaverData.ultimate as any,
         targetInstanceId: "c",
       },
-      { playerTeam: [mel], enemyTeam: [counterer] },
+      { playerTeam: [reaver], enemyTeam: [counterer] },
       noopLog,
       0,
       () => 0.99, // no crit
@@ -289,35 +299,35 @@ describe("Meliodas — Deathblow + Full Counter", () => {
   });
 });
 
-describe("Ban — Lifesteal, Extort, Extort Life", () => {
-  it("Drain heals 30% of damage dealt", () => {
-    const ban = fromData(banData, "player");
-    ban.currentHP = 500;
+describe("Thief fixture — Lifesteal, Extort, Bleed Them Dry", () => {
+  it("Leech Sweep heals 30% of damage dealt", () => {
+    const thief = fromData(thiefData, "player");
+    thief.currentHP = 500;
     const target = makeChar({ instanceId: "t", team: "enemy", color: "green" });
     const after = executeSkill(
       {
-        sourceInstanceId: "ban",
-        skill: banData.skills[0] as any,
+        sourceInstanceId: "fx_thief",
+        skill: thiefData.skills[0] as any,
         targetInstanceId: "t",
         rank: 3,
       },
-      { playerTeam: [ban], enemyTeam: [target] },
+      { playerTeam: [thief], enemyTeam: [target] },
       noopLog,
     );
     // ATK * 400% dealt vs 0 DEF -> 30% healed (data-driven so rebalances don't break this)
     const dealt =
-      banData.atk * ((banData.skills[0].damageRanked[2] as number) / 100);
+      thiefData.atk * ((thiefData.skills[0].damageRanked[2] as number) / 100);
     expect(after.enemyTeam[0].currentHP).toBe(1000 - dealt);
-    // Lifesteal substat (Task 6): on top of Drain's own skill-level 30%
-    // lifesteal mechanic, Ban also gets his base lifestealPercent substat
-    // (undefined on ban.json -> defaults to 5%) applied additively.
+    // Lifesteal substat (Task 6): on top of Leech Sweep's own skill-level 30%
+    // lifesteal mechanic, the Thief also gets its base lifestealPercent substat
+    // (undefined on fx_thief.json -> defaults to 5%) applied additively.
     expect(after.playerTeam[0].currentHP).toBe(
       500 + Math.floor(dealt * 0.3) + Math.floor(dealt * 0.05),
     );
   });
 
-  it("Snatch extorts per-stat and refreshes instead of stacking", () => {
-    const ban = fromData(banData, "player");
+  it("Grand Larceny extorts per-stat and refreshes instead of stacking", () => {
+    const thief = fromData(thiefData, "player");
     const e1 = makeChar({
       instanceId: "e1",
       team: "enemy",
@@ -327,27 +337,27 @@ describe("Ban — Lifesteal, Extort, Extort Life", () => {
     });
     let teams = executeSkill(
       {
-        sourceInstanceId: "ban",
-        skill: banData.skills[1] as any,
+        sourceInstanceId: "fx_thief",
+        skill: thiefData.skills[1] as any,
         targetInstanceId: "e1",
         rank: 3, // 50%, 2 turns
       },
-      { playerTeam: [ban], enemyTeam: [e1] },
+      { playerTeam: [thief], enemyTeam: [e1] },
       noopLog,
     );
-    const banAfter = teams.playerTeam[0];
+    const thiefAfter = teams.playerTeam[0];
     const enemyAfter = teams.enemyTeam[0];
-    // enemy: -50% ATK/DEF entries; Ban: +50 ATK, +25 DEF flat
+    // enemy: -50% ATK/DEF entries; Thief: +50 ATK, +25 DEF flat
     expect(getEffectiveAttack(enemyAfter)).toBe(50);
     expect(getEffectiveDefense(enemyAfter)).toBe(25);
-    expect(getEffectiveAttack(banAfter)).toBe(banData.atk + 50);
-    expect(getEffectiveDefense(banAfter)).toBe(banData.def + 25);
+    expect(getEffectiveAttack(thiefAfter)).toBe(thiefData.atk + 50);
+    expect(getEffectiveDefense(thiefAfter)).toBe(thiefData.def + 25);
 
-    // recast: still exactly one Extort buff pair on Ban
+    // recast: still exactly one Extort buff pair on the Thief
     teams = executeSkill(
       {
-        sourceInstanceId: "ban",
-        skill: banData.skills[1] as any,
+        sourceInstanceId: "fx_thief",
+        skill: thiefData.skills[1] as any,
         targetInstanceId: "e1",
         rank: 1,
       },
@@ -360,18 +370,18 @@ describe("Ban — Lifesteal, Extort, Extort Life", () => {
     expect(extortBuffs).toHaveLength(2); // one ATK + one DEF, not four
   });
 
-  it("Extort Life shreds enemy max HP on untouched rounds and fully reverts on damage", async () => {
-    const ban = fromData(banData, "player");
+  it("Bleed Them Dry shreds enemy max HP on untouched rounds and fully reverts on damage", async () => {
+    const thief = fromData(thiefData, "player");
     const enemy = makeChar({ instanceId: "e", team: "enemy" });
 
     const items: any[] = [];
-    registerCharacterPassives(ban, (item) => items.push(item));
+    registerCharacterPassives(thief, (item) => items.push(item));
     const shred = items.find((i) => i.id.includes("shred"));
     expect(shred.phase).toBe("OnEnemyTurnEnd");
 
     // Round 1: untouched -> -8%
-    let teams = { playerTeam: [ban], enemyTeam: [enemy] };
-    teams = await shred.action(ban, teams, noopLog);
+    let teams = { playerTeam: [thief], enemyTeam: [enemy] };
+    teams = await shred.action(thief, teams, noopLog);
     expect(teams.enemyTeam[0].hp).toBe(920);
     expect(teams.enemyTeam[0].currentHP).toBe(920);
 
@@ -379,7 +389,7 @@ describe("Ban — Lifesteal, Extort, Extort Life", () => {
     teams = await shred.action(teams.playerTeam[0], teams, noopLog);
     expect(teams.enemyTeam[0].hp).toBe(840);
 
-    // Ban takes damage -> next check fully restores enemy max HP (no heal)
+    // the Thief takes damage -> next check fully restores enemy max HP (no heal)
     teams.playerTeam[0].passiveState.tookDamageThisRound = true;
     teams = await shred.action(teams.playerTeam[0], teams, noopLog);
     expect(teams.enemyTeam[0].hp).toBe(1000);
@@ -388,7 +398,7 @@ describe("Ban — Lifesteal, Extort, Extort Life", () => {
   });
 });
 
-describe("Diane — Rupture, Attack Seal, Giant's Will", () => {
+describe("Colossus fixture — Rupture, Attack Seal, Mounting Fury", () => {
   it("Rupture doubles damage against buffed targets only", () => {
     const clean = makeChar({ instanceId: "t", team: "enemy" });
     const buffed = makeChar({ instanceId: "t2", team: "enemy" });
@@ -410,30 +420,30 @@ describe("Diane — Rupture, Attack Seal, Giant's Will", () => {
     ).toBe(400);
   });
 
-  it("Rush Rock seals attack skills at rank 2+, not at rank 1", () => {
-    const diane = fromData(dianeData, "player");
+  it("Boulder Charge seals attack skills at rank 2+, not at rank 1", () => {
+    const colossus = fromData(colossusData, "player");
     const target = makeChar({ instanceId: "t", team: "enemy", color: "blue" });
 
     const r1 = executeSkill(
       {
-        sourceInstanceId: "diane",
-        skill: dianeData.skills[1] as any,
+        sourceInstanceId: "fx_colossus",
+        skill: colossusData.skills[1] as any,
         targetInstanceId: "t",
         rank: 1,
       },
-      { playerTeam: [diane], enemyTeam: [target] },
+      { playerTeam: [colossus], enemyTeam: [target] },
       noopLog,
     );
     expect(r1.enemyTeam[0].debuffs.some((d) => d.type === "seal")).toBe(false);
 
     const r3 = executeSkill(
       {
-        sourceInstanceId: "diane",
-        skill: dianeData.skills[1] as any,
+        sourceInstanceId: "fx_colossus",
+        skill: colossusData.skills[1] as any,
         targetInstanceId: "t",
         rank: 3,
       },
-      { playerTeam: [diane], enemyTeam: [makeChar({ instanceId: "t", team: "enemy", color: "blue" })] },
+      { playerTeam: [colossus], enemyTeam: [makeChar({ instanceId: "t", team: "enemy", color: "blue" })] },
       noopLog,
     );
     const seal = r3.enemyTeam[0].debuffs.find((d) => d.type === "seal");
@@ -463,56 +473,56 @@ describe("Diane — Rupture, Attack Seal, Giant's Will", () => {
     expect(move).not.toBeNull();
   });
 
-  it("Giant's Will ramps +10% base ATK per turn passed, max 5, skipping turn 1", async () => {
-    const diane = fromData(dianeData, "player");
+  it("Mounting Fury ramps +10% base ATK per turn passed, max 5, skipping turn 1", async () => {
+    const colossus = fromData(colossusData, "player");
     const items: any[] = [];
-    registerCharacterPassives(diane, (item) => items.push(item));
+    registerCharacterPassives(colossus, (item) => items.push(item));
     const ramp = items.find((i) => i.id.includes("turnRamp"));
     expect(ramp.phase).toBe("OnPlayerTurnStart");
 
-    let teams = { playerTeam: [diane], enemyTeam: [] as BattleCharacter[] };
+    let teams = { playerTeam: [colossus], enemyTeam: [] as BattleCharacter[] };
     teams = await ramp.action(teams.playerTeam[0], teams, noopLog); // turn 1: no stack
-    expect(teams.playerTeam[0].currentAttack).toBe(dianeData.atk);
+    expect(teams.playerTeam[0].currentAttack).toBe(colossusData.atk);
 
     for (let i = 0; i < 7; i++) {
       teams = await ramp.action(teams.playerTeam[0], teams, noopLog);
     }
     // capped at 5 stacks of floor(base ATK * 10%)
     expect(teams.playerTeam[0].currentAttack).toBe(
-      dianeData.atk + 5 * Math.floor(dianeData.atk * 0.1),
+      colossusData.atk + 5 * Math.floor(colossusData.atk * 0.1),
     );
     expect(teams.playerTeam[0].passiveState.turnRampStacks).toBe(5);
   });
 
-  it("Giant's Will does not ramp while Diane is benched", async () => {
-    const diane = fromData(dianeData, "player");
-    diane.isSub = true;
+  it("Mounting Fury does not ramp while the Colossus is benched", async () => {
+    const colossus = fromData(colossusData, "player");
+    colossus.isSub = true;
     const items: any[] = [];
-    registerCharacterPassives(diane, (item) => items.push(item));
+    registerCharacterPassives(colossus, (item) => items.push(item));
     const ramp = items.find((i) => i.id.includes("turnRamp"));
 
-    let teams = { playerTeam: [diane], enemyTeam: [] as BattleCharacter[] };
+    let teams = { playerTeam: [colossus], enemyTeam: [] as BattleCharacter[] };
     teams = await ramp.action(teams.playerTeam[0], teams, noopLog);
     teams = await ramp.action(teams.playerTeam[0], teams, noopLog);
-    expect(teams.playerTeam[0].currentAttack).toBe(dianeData.atk);
+    expect(teams.playerTeam[0].currentAttack).toBe(colossusData.atk);
     expect(teams.playerTeam[0].passiveState.turnRampStacks).toBeUndefined();
   });
 
-  it("Giant's Will synergy (Collab/Giant tag buff) does not apply while benched", async () => {
-    const diane = fromData(dianeData, "player");
-    diane.isSub = true;
+  it("Mounting Fury synergy (Giant tag buff) does not apply while benched", async () => {
+    const colossus = fromData(colossusData, "player");
+    colossus.isSub = true;
     const ally = makeChar({
       instanceId: "ally",
       team: "player",
       tags: ["Giant"],
     });
     const items: any[] = [];
-    registerCharacterPassives(diane, (item) => items.push(item));
-    const synergy = items.find((i) => i.id.includes("passive_Giant's Will"));
+    registerCharacterPassives(colossus, (item) => items.push(item));
+    const synergy = items.find((i) => i.id.includes("passive_Mounting Fury"));
 
     const teams = await synergy.action(
-      diane,
-      { playerTeam: [diane, ally], enemyTeam: [] },
+      colossus,
+      { playerTeam: [colossus, ally], enemyTeam: [] },
       noopLog,
     );
     expect(teams.playerTeam[1].buffs).toHaveLength(0);
@@ -520,39 +530,39 @@ describe("Diane — Rupture, Attack Seal, Giant's Will", () => {
 });
 
 describe("Sub-passive gating (worksFromSub)", () => {
-  it("Extort Life does not shred while Ban is benched", async () => {
-    const ban = fromData(banData, "player");
-    ban.isSub = true;
+  it("Bleed Them Dry does not shred while the Thief is benched", async () => {
+    const thief = fromData(thiefData, "player");
+    thief.isSub = true;
     const enemy = makeChar({ instanceId: "e", team: "enemy" });
     const items: any[] = [];
-    registerCharacterPassives(ban, (item) => items.push(item));
+    registerCharacterPassives(thief, (item) => items.push(item));
     const shred = items.find((i) => i.id.includes("shred"));
 
     const teams = await shred.action(
-      ban,
-      { playerTeam: [ban], enemyTeam: [enemy] },
+      thief,
+      { playerTeam: [thief], enemyTeam: [enemy] },
       noopLog,
     );
     expect(teams.enemyTeam[0].hp).toBe(1000);
   });
 
-  it("Kind Hearted Friend's Collab synergy still applies while Leorio is benched (worksFromSub: true)", async () => {
-    const leorio = fromData(leorioData, "player");
-    leorio.isSub = true;
+  it("Sworn Companions' Squad synergy still applies while the Medic is benched (worksFromSub: true)", async () => {
+    const medic = fromData(medicData, "player");
+    medic.isSub = true;
     const ally = makeChar({
       instanceId: "ally",
       team: "player",
-      tags: ["Collab"],
+      tags: ["Squad"],
     });
     const items: any[] = [];
-    registerCharacterPassives(leorio, (item) => items.push(item));
+    registerCharacterPassives(medic, (item) => items.push(item));
     const synergy = items.find((i) =>
-      i.id.includes("passive_Kind Hearted Friend"),
+      i.id.includes("passive_Sworn Companions"),
     );
 
     const teams = await synergy.action(
-      leorio,
-      { playerTeam: [leorio, ally], enemyTeam: [] },
+      medic,
+      { playerTeam: [medic, ally], enemyTeam: [] },
       noopLog,
     );
     expect(teams.playerTeam[1].buffs).toHaveLength(1);

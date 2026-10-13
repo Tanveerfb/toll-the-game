@@ -1,9 +1,7 @@
-import ban from "@/data/characters/ban.json";
 import batra from "@/data/characters/batra.json";
 import blueLyra from "@/data/characters/blue_lyra.json";
 import caila from "@/data/characters/caila.json";
 import chiara from "@/data/characters/chiara.json";
-import diane from "@/data/characters/diane.json";
 import duke from "@/data/characters/duke.json";
 import frost from "@/data/characters/frost.json";
 import gabrist from "@/data/characters/gabrist.json";
@@ -11,14 +9,10 @@ import gale from "@/data/characters/gale.json";
 import greenDuke from "@/data/characters/green_duke.json";
 import iron from "@/data/characters/iron.json";
 import isolde from "@/data/characters/isolde.json";
-import gon from "@/data/characters/gon.json";
-import killua from "@/data/characters/killua.json";
-import leorio from "@/data/characters/leorio.json";
 import lyra from "@/data/characters/lyra.json";
 import lyraNpc from "@/data/characters/lyra_npc.json";
 import masterTao from "@/data/characters/master_tao.json";
 import masterTaoNpc from "@/data/characters/master_tao_npc.json";
-import meliodas from "@/data/characters/meliodas.json";
 import molvarr from "@/data/characters/molvarr.json";
 import mustafa from "@/data/characters/mustafa.json";
 import prism from "@/data/characters/prism.json";
@@ -142,27 +136,21 @@ export interface CharacterData {
 }
 
 const rawCharacters = [
-  ban,
   batra,
   blueLyra,
   caila,
   chiara,
-  diane,
   duke,
   frost,
   gabrist,
   gale,
   greenDuke,
-  gon,
   iron,
   isolde,
-  killua,
-  leorio,
   lyra,
   lyraNpc,
   masterTao,
   masterTaoNpc,
-  meliodas,
   molvarr,
   mustafa,
   prism,

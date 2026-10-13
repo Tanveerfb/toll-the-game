@@ -68,13 +68,13 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
     **Skills and ultimates raise crit chance too, not only passives** (Tanveer, 2026-08-19): *"skills or ults can also increase crit chance, just like how chiara increases her evade chance."* This entry used to end "currently sourced by Meliodas's Deathblow", which described the roster rather than the rule — and `getCritChance` had been written to match it, summing the Deathblow passive and returning. **Any authored crit-chance buff was therefore inert**: it would sit in the data, render on the card, and never reach the roll. Now routed through `effectiveSubstat`, the same path crit damage, lifesteal and recovery rate already used, so buffs and debuffs both count, `stats` arrays are honoured and the value clamps at 0. Crit chance is inside "all stats"; evade is not (#55). Pinned by `tests/substats.test.ts`.
 17. **Counters** (Full Counter): the attacked unit still takes the damage, then counters — unless the hit killed it. Counters don't chain.
-18. **Extort**: per-stat mapping (stolen ATK→ATK, stolen DEF→DEF), self-gain lasts as long as the enemy debuff, recasting refreshes (never stacks). Ult Extort = 50% for 2 turns.
-19. **Extort Life**: full revert — taking ANY damage (incl. DoT/counters) restores enemy max HP and zeroes the stacks; no free heal on revert (current HP keeps its clamped value).
+18. **Kit retired by #187 (2026-10-13); the mechanic stays in the engine, exercised by `tests/fixtures/characters/`.** **Extort**: per-stat mapping (stolen ATK→ATK, stolen DEF→DEF), self-gain lasts as long as the enemy debuff, recasting refreshes (never stacks). Ult Extort = 50% for 2 turns.
+19. **Kit retired by #187 (2026-10-13); the mechanic stays in the engine, exercised by `tests/fixtures/characters/`.** **Extort Life**: full revert — taking ANY damage (incl. DoT/counters) restores enemy max HP and zeroes the stacks; no free heal on revert (current HP keeps its clamped value).
 20. **Stat buffs/debuffs are real**: effective ATK/DEF (`lib/game/stats.ts`) = current stat × percent entries + flat entries. `preApplied` entries are display badges for already-baked gains (synergy, ramps) and are skipped.
 21. **Literal effect durations** (2026-07-11, replaces old tick semantics): "N turns" means exactly N procs / N blocked turns. Harmful effects (debuffs, DoT, stun, seal) tick at the END of the victim's team turn — the victim always gets their own turn to cleanse before a proc lands. Beneficial effects (buffs, stances, HoT) tick at the START of the owner's team turn — a 1-turn buff protects through the whole opposing turn. His walkthrough: "t1 player (applies debuff) -> t1 enemy -> debuff procs once -> t2 player -> t2 enemy -> debuff procs and then expires -> t3 player".
 22. **Self-buff-then-hit order** (2026-07-11): a skill that raises the caster's stats and deals damage applies the buff BEFORE the damage calc — the same strike benefits (Gon's Jajanken Rock, both HxH ults).
-23. **Undurationed ult stat raises are permanent** (2026-07-11): Gon/Killua ult +30% raises last the rest of the battle and stack.
-24. **Kind Hearted Friend semantics** (2026-07-11): base +10% is decided once at battle start if Gon OR Killua is a team member (sub counts, survives their death); the extra +10% is dynamic — active only while both are alive on the field, drops when one dies. **The two halves target different stats** (2026-08-09): the base bond raises **basic stats**, the both-alive bonus raises **all stats** (substats included) — it's restrictive enough to earn it. `stats` / `bothAliveStat` on the mechanic; the passive wording states each half explicitly.
+23. **Kit retired by #187 (2026-10-13); the mechanic stays in the engine, exercised by `tests/fixtures/characters/`.** **Undurationed ult stat raises are permanent** (2026-07-11): Gon/Killua ult +30% raises last the rest of the battle and stack.
+24. **Kit retired by #187 (2026-10-13); the mechanic stays in the engine, exercised by `tests/fixtures/characters/`.** **Kind Hearted Friend semantics** (2026-07-11): base +10% is decided once at battle start if Gon OR Killua is a team member (sub counts, survives their death); the extra +10% is dynamic — active only while both are alive on the field, drops when one dies. **The two halves target different stats** (2026-08-09): the base bond raises **basic stats**, the both-alive bonus raises **all stats** (substats included) — it's restrictive enough to earn it. `stats` / `bothAliveStat` on the mechanic; the passive wording states each half explicitly.
 25. **Effect pill colors on hover keywords** (2026-07-11): red = attack-based effects, purple = debuffs (incl. attack-applied ones), green = heals + cleanses, yellow = stances, white = cancels. S1/S2 chips follow the same scheme; ULT stays yellow. Keep skill text short — mechanics stay a mystery for players to discover.
 26. **Dokkan description wording** (2026-07-11): tiered words replace numbers — "raises" (<50%), "greatly raises" (50–79%), "massively raises" (80%+), same tiers for "lowers". Hovering the word shows that skill's exact values (per-rank dynamic glossary). No "own" — a raise always means the skill user. Effects are cancellable and stackable by default; exceptions are called out in the description text. Hover tooltips show the percentage ONLY (e.g. "Increases ATK by 30%") — duration and flags belong to the text.
 27. **One pill per unique effect** (2026-07-11): a skill description gets exactly one hover pill per distinct effect/modifier — phrase-level keys ("cancels buffs and stances", "cancels stances") instead of pilling every word; generic words like "stance" are not glossary keys. **Pierce is a flat 50% DEF ignore for every card** — no per-card pierce values anymore.
@@ -85,13 +85,13 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 29. **Lethal survival catches DoT deaths; revivals cleanse everything** (2026-07-11): Nine Lives triggers on lethal DoT procs too (`trySurviveLethal` in `lib/game/lethal.ts`, shared by combat.ts and tick.ts). On ANY revival/survival trigger the unit loses ALL buffs and debuffs, uncancellable included — the rule applies to every future revival mechanic.
 30. **Uncancellable entries are "effects", not buffs/debuffs** (2026-07-11, playtest): synergy bonuses, ramp stacks, and every other uncancellable entry don't count for buff/debuff-counting mechanics (Rupture, Amplify, Weakpoint), can't be cleansed, and don't trigger AI cleanse decisions. They still modify stats. UI shows them grey (◆ counter, "Effects" section) — helpers in `lib/game/effects.ts`.
 31. **Cancelling stances breaks the target's taunts** (2026-07-11, playtest; **structural since #131 and narrowed by #132, both 2026-09-16** — the taunt lives on the taunter now, so the cross-team sweep this entry describes is gone, and **`cancelBuffs` no longer breaks a taunt at all**; only `cancelStances` does): cancelStances/cancelBuffs on a unit also removes every taunt redirect marker that unit authored (taunt debuffs on the opposing team with its sourceId). Yalina's Attention Drawer is a real stance now.
-32. **Extort is a linked pair** (2026-07-11, playtest): the thief's self-buff lives only while at least one LIVING enemy still carries a matching Extort debuff (tagged with the thief's sourceId). Death, cleanse, or expiry of the last debuff drops the buff — `syncExtortLinks`, run after every action and every debuff tick.
+32. **Kit retired by #187 (2026-10-13); the mechanic stays in the engine, exercised by `tests/fixtures/characters/`.** **Extort is a linked pair** (2026-07-11, playtest): the thief's self-buff lives only while at least one LIVING enemy still carries a matching Extort debuff (tagged with the thief's sourceId). Death, cleanse, or expiry of the last debuff drops the buff — `syncExtortLinks`, run after every action and every debuff tick.
 33. **Deck QoL** (2026-07-11, playtest): Reset Hand button rewinds the hand to the turn start — queued actions return, selection-time merges are reversed, merge-granted ult gauge is refunded (`snapshotHand`/`resetHand`, snapshot taken as PlayerAction opens). Leftover cards auto-merge whenever queuing/unqueuing makes identical neighbors adjacent (same rule as draws). Battle screen page gets a user-friendliness overhaul in a future batch, once all mechanics work as expected.
 34. **Momentum is field-only, fed by every card** (2026-07-11, playtest 2): Yalina gains a Momentum stack from EVERY card her team plays — including her own — but only while she is on the field (not benched) and alive.
 35. **Tag synergies without `flatBonus` scale per carrier** (2026-07-11, playtest 2, confirms existing data): Sara's [Female] synergy is 5% damageDealt × number of Female carriers (15% with 3 Females), applied to every carrier. Synergy entries are named `[Tag] Synergy` in the UI (typed `buff`, never `amplify`).
 36. **damageDealt / damageReduction stack multiplicatively** (2026-07-11, closes old STATUS #19): the damage engine consumes both — outgoing damage × ∏(1 + damageDealt%/100) from the attacker's entries, then × ∏(1 − damageReduction%/100) from the target's (`getDamageDealtMultiplier`/`getDamageReductionMultiplier` in `lib/game/stats.ts`, applied at the end of `calculateDamage`, counters included). Two 40% DRs = 64% total reduction, diminishing returns.
-37. **"Permanently" implies cancel-proof** (2026-07-11, closes old STATUS #17): permanent stat raises (Gon/Killua ults) stay `uncancellable` in data — buff-cancels can't strip them, and they render as grey effects per ruling #30. Text needs no extra "(cannot be cancelled)".
-38. **Extort recasts OVERWRITE, never stack** (2026-07-11, playtest 2): a new Extort strips the thief's previous Extort debuffs from every opposing unit before applying — even if the old steal was more potent. The self-buff is rebuilt from the new steal only.
+37. **Kit retired by #187 (2026-10-13); the mechanic stays in the engine, exercised by `tests/fixtures/characters/`.** **"Permanently" implies cancel-proof** (2026-07-11, closes old STATUS #17): permanent stat raises (Gon/Killua ults) stay `uncancellable` in data — buff-cancels can't strip them, and they render as grey effects per ruling #30. Text needs no extra "(cannot be cancelled)".
+38. **Kit retired by #187 (2026-10-13); the mechanic stays in the engine, exercised by `tests/fixtures/characters/`.** **Extort recasts OVERWRITE, never stack** (2026-07-11, playtest 2): a new Extort strips the thief's previous Extort debuffs from every opposing unit before applying — even if the old steal was more potent. The self-buff is rebuilt from the new steal only.
 39. **Enemy actions scale with living field members** (2026-07-11, playtest 2, amends #4): the enemy side takes 1 action per living field member, capped at 3 (`enemyActionsForTurn`). Subs grant no actions.
 40. **Identical tag synergies stack across carriers** (2026-07-11): each carrier's [Tag] synergy is its own effect — the HxH trio's three 5% [Collab] synergies give everyone tagged +15% all, on top of Leorio's bond. Intended; rewards full collab teams.
 41. **Cancel-then-hit** (2026-07-11): a cancel+damage skill strips stances/buffs BEFORE its own damage calc — cancel skills punch through defensive stances (Killua's Lightning Palm hits Yalina at full power after breaking her stance). Confirmed current behavior.
@@ -2079,3 +2079,36 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    - **Where it lives:** `docs/CHARACTER_ART.md` (steps 1 and 3, dead ends),
      `.claude/skills/charlora/SKILL.md`, `.claude/skills/kitart/SKILL.md`,
      `scripts/lora/characters/lyra.json` (`lora_use`).
+
+187. **The collab units are deleted, not archived; the roster is the IP's own**
+     (2026-10-13). The six 7DS and HxH kits (Ban, Diane, Meliodas, Gon,
+     Killua, Leorio) leave the game. His words: *"remove the collab units
+     from the game roster and basically delete them not archive them delete
+     them it's because at the time when I was building the game when I you
+     know drafted their pairs I was still learning how to make the game how
+     to make the mechanics ... at the time I just took like you know
+     fictional characters inspiration and then factored them in ... it's only
+     seven deadly sins and hunter hunter ones also remove the drafts of netero
+     and knuckle too as well because I will not be implementing them either
+     but those were good concepts ... but what we will do is dragon ball z
+     characters the goku vegeta frieza ones that's fine we'll probably do them
+     later not now But as for everything else we'll have to remove it."*
+   - **Four selections from the question tool (option labels are Claude's
+     wording, his picks):** the eight engine mechanics only those kits used
+     (Extort, Lifesteal, max-HP shred, Deathblow, Detonate, Rupture, turn
+     ramp, characterSynergy) **stay**; saves that hold the units are cleaned
+     **silently** (v12 migration, no refund: they were never in a banner,
+     issue #32); the Knuckle and Netero planned file in `toll-kits` is
+     deleted **from this session** (pushed to its `main`); the Knuckle and
+     Netero examples in `KIT_DESIGN.md` **stay as prose**.
+   - **What changed:** six kit JSONs, their catalog, art and VFX
+     registrations and ~28 MB of art deleted; `lib/game/removedCharacters.ts`
+     names the ids for the migration; the mechanics are exercised by neutral
+     fixtures in `tests/fixtures/characters/` (`fx_thief`, `fx_colossus`,
+     `fx_reaver`, `fx_rookie`, `fx_prodigy`, `fx_medic`), same numbers, new
+     names; 25 test files repointed. `[Collab]` is no longer a tag the roster
+     carries. #18, #19, #23, #24, #32, #37 and #38 are marked kit-retired,
+     mechanic kept. The DBZ brainstorm in `toll-kits` stays for later.
+   - **Claude's reading, flagged as an inference:** *"everything else"* is
+     the two series he named and the two drafts; design-sheet inspirations
+     (Master Tao's Netero-inspired look) are not kits and were not touched.

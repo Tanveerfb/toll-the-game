@@ -37,8 +37,8 @@ Two banner categories, not one:
 **Duke and Lyra** keep their existing free-grant paths (Duke = starter, Lyra = Chapter 2 reward) *in
 addition to* being pullable on the debut banner — pulling either is just a dupe.
 
-The 6 collab characters (Meliodas/Ban/Diane, Gon/Killua/Leorio) are **deliberately excluded** from the
-debut banner, reserved for their own future collab banners.
+The 6 collab characters were deliberately excluded from the debut banner and reserved for their own
+future collab banners. **They left the game on 2026-10-13 (ruling #187)**; no collab banner will exist.
 
 ## Rarity is gone
 The old **Premium/Standard** rarity split (a power/prestige tier, never a rate difference) has been
@@ -52,8 +52,6 @@ existed between characters stays exactly as it was.
 | Batra / Gabrist | Batra, Gabrist |
 | Sara / Yalina | Sara, Yalina |
 | Mustafa / Siddiq | Mustafa, Siddiq |
-| 7DS collab | Meliodas, Ban, Diane |
-| HxH collab | Gon, Killua, Leorio |
 
 These pairs already appeared together on the debut banner once; future *reruns* of them as their own
 dedicated 2-3-unit Limited banners use the rate rule below, not the debut's 5%-flat one-off.
@@ -146,7 +144,8 @@ categories (~31.67% each), each split evenly within itself:
 Two banner categories (Limited rotating + Permanent evergreen); rarity/Premium-Standard dropped
 entirely (labeling only, no rebalance); milestone-bar pity (300/600, independent claims, reset-only-
 on-claim, loops) replaces hard/soft pity; debut banner = 12 non-collab characters at a one-off 5% flat
-rate; collab characters held back for their own banners; non-featured Limited pull = currency/mats/
+rate; collab characters held back for their own banners (and removed from the game on 2026-10-13,
+#187); non-featured Limited pull = currency/mats/
 specialty-mats only (3-way even split); 4 shared specialty materials grouped by color tag; dupes ->
 Ultimate Level 1/6->6/6 (stat/multiplier bump mechanic built, numbers still open); 3 currencies (gems/
 coin/permanentTicket); pull = single or 11-for-10(ish) multi on both banners; faucet = small gems/

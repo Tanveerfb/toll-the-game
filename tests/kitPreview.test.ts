@@ -4,8 +4,12 @@ import {
   getCharacterById,
   getCharacterKit,
   getCharacterPhases,
+  type CharacterData,
 } from "@/lib/game/characterCatalog";
 import { buildCharacterDamagePreview } from "@/lib/game/damagePreview";
+// A ranked buff that merges two sibling stats. Lived on a collab kit until
+// 2026-10-13 (ruling #187); the mechanic stayed, on a fixture.
+import medicData from "@/tests/fixtures/characters/fx_medic.json";
 
 const characters = getAllCharacters();
 
@@ -127,8 +131,8 @@ describe("kit preview coverage", () => {
 describe("kit preview correctness", () => {
   it("never reports damage for a skill with no damage multiplier", () => {
     // The engine's max(1, base - def) floor used to leak out as "1 damage"
-    // on pure buff/stance skills — Mustafa's Fortress and Leorio's Member of
-    // the Zodiac both read "1 damage" with empty notes.
+    // on pure buff/stance skills — Mustafa's Fortress and a collab kit's team
+    // buff (since removed, #187) both read "1 damage" with empty notes.
     const bad = characters.flatMap((c) =>
       buildCharacterDamagePreview(c)
         .filter((r) => r.multiplierLabel === "—" && /\d+ damage/.test(r.resultLabel))
@@ -147,11 +151,12 @@ describe("kit preview correctness", () => {
   });
 
   it("merges sibling stat buffs sharing an amount and duration", () => {
-    // Leorio buffs ATK and DEF by the same amount — two rows read as one line.
-    const zodiac = rowsFor("leorio").filter(
-      (r) => r.abilityName === "Member of the Zodiac",
-    );
-    expect(zodiac[2].resultLabel).toBe("ATK · DEF +50% (2 turns)");
+    // The Medic fixture's Field Orders buffs ATK and DEF by the same amount —
+    // two rows read as one line.
+    const orders = buildCharacterDamagePreview(
+      medicData as unknown as CharacterData,
+    ).filter((r) => r.abilityName === "Field Orders");
+    expect(orders[2].resultLabel).toBe("ATK · DEF +50% (2 turns)");
   });
 
   it("puts the healed amount in the result, not buried in the notes", () => {
@@ -182,7 +187,7 @@ describe("kit preview correctness", () => {
   });
 
   it("never repeats an effect the prose notes already narrate", () => {
-    // "Stuns for 2 turns. … Stuns (2 turns)." on Leorio's ultimate. The prose
+    // "Stuns for 2 turns. … Stuns (2 turns)." on a stunning ultimate. The prose
     // form reads "…for N turns."; the summariser's form is parenthesised, so
     // the two co-occurring in one cell is the duplicate. Matching on the verb
     // alone would flag Chiara's House Rules, which genuinely applies two

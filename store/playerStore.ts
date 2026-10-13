@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { spendStamina, STAMINA_CAP } from "@/lib/game/stamina";
 import { AUTO_CLEAR_TICKETS_PER_RANK } from "@/lib/game/autoClear";
-import { applyEpicClear, teamKey, type EpicClears } from "@/lib/game/epicClears";
+import { applyEpicClear, teamIds, teamKey, type EpicClears } from "@/lib/game/epicClears";
+import { isRemovedCharacterId, REMOVED_COIN_IDS } from "@/lib/game/removedCharacters";
 import { planLevelUp, type ManualSpend } from "@/lib/game/leveling";
 import {
   ascensionBlocker,
@@ -565,10 +566,45 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     state = { ...state, epicClears };
   }
 
+  if (version < 12) {
+    // v11 → v12: the six collab units left the game (2026-10-13, ruling
+    // #187). A save still naming one would crash every catalog lookup, so
+    // they are dropped from the roster, progress, presets, the last team, the
+    // coin inventory and the epic clear teams. Nothing is refunded: they were
+    // never in a banner (issue #32). `lib/game/removedCharacters.ts` is the
+    // list; a save from before the removal can still arrive from any device.
+    const keep = (id: string) => !isRemovedCharacterId(id);
+    const roster = ((state.roster as string[] | undefined) ?? []).filter(keep);
+    const characters = Object.fromEntries(
+      Object.entries(
+        (state.characters as Record<string, CharacterProgress> | undefined) ?? {},
+      ).filter(([id]) => keep(id)),
+    );
+    const presets = ((state.presets as TeamPreset[] | undefined) ?? [])
+      .map((preset) => ({ ...preset, memberIds: preset.memberIds.filter(keep) }))
+      .filter((preset) => preset.memberIds.length > 0);
+    const lastTeam = ((state.lastTeam as string[] | undefined) ?? []).filter(keep);
+    const inventory = Object.fromEntries(
+      Object.entries((state.inventory as Record<string, number> | undefined) ?? {}).filter(
+        ([id]) => !REMOVED_COIN_IDS.includes(id),
+      ),
+    );
+    const epicClears: EpicClears = {};
+    for (const [stage, record] of Object.entries(
+      (state.epicClears as EpicClears | undefined) ?? {},
+    )) {
+      const teams = [
+        ...new Set(record.teams.map((key) => teamKey(teamIds(key).filter(keep)))),
+      ].filter((key) => key !== "");
+      epicClears[stage] = { ...record, teams };
+    }
+    state = { ...state, roster, characters, presets, lastTeam, inventory, epicClears };
+  }
+
   return state as unknown as PersistedPlayerData;
 }
 
-export const CURRENT_PLAYER_STATE_VERSION = 11;
+export const CURRENT_PLAYER_STATE_VERSION = 12;
 
 export const usePlayerStore = create<PlayerState>()(
   persist(

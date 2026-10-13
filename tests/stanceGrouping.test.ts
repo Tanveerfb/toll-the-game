@@ -12,6 +12,8 @@ import { getCharacterById } from "@/lib/game/characterCatalog";
 import type { BattleCharacter } from "@/types/character";
 import type { SkillCard } from "@/types/skillCard";
 import type { StatusEffect } from "@/types/mechanic";
+import reaverData from "@/tests/fixtures/characters/fx_reaver.json";
+import rookieData from "@/tests/fixtures/characters/fx_rookie.json";
 
 /**
  * Ruling #131 (Tanveer, 2026-09-16). Two halves.
@@ -71,6 +73,23 @@ function skillOf(characterId: string, skillName: string): SkillCard {
   return found;
 }
 
+/**
+ * A skill from one of the mechanic fixtures (tests/fixtures/characters).
+ * The counter stance and the plain self-buff below were pinned on the 7DS
+ * and HxH collab kits, which left the game on 2026-10-13 (ruling #187);
+ * the mechanics stayed and the fixtures carry them under neutral names.
+ */
+function fixtureSkillOf(
+  data: { skills: unknown[] },
+  skillName: string,
+): SkillCard {
+  const found = (data.skills as SkillCard[]).find(
+    (s) => s.skillName === skillName,
+  );
+  if (!found) throw new Error(`no fixture skill ${skillName}`);
+  return found;
+}
+
 /** The rows the panel would draw, flattened to readable strings. */
 function panel(unit: BattleCharacter): string[] {
   const out: string[] = [];
@@ -123,20 +142,20 @@ describe("#131 — a stance lists its parts under its own name", () => {
     }
   });
 
-  it("Meliodas's Full Counter is a named group, not a row called 'Stance'", () => {
-    const meliodas = makeChar({ instanceId: "meliodas", team: "player" });
+  it("a counter stance (Mirror Stance) is a named group, not a row called 'Stance'", () => {
+    const reaver = makeChar({ instanceId: "reaver", team: "player" });
     const enemy = makeChar({ instanceId: "enemy", team: "enemy" });
     const result = executeSkill(
       {
-        sourceInstanceId: "meliodas",
-        skill: skillOf("meliodas", "Full Counter"),
+        sourceInstanceId: "reaver",
+        skill: fixtureSkillOf(reaverData, "Mirror Stance"),
         targetInstanceId: "enemy",
         rank: 1,
       },
-      { playerTeam: [meliodas], enemyTeam: [enemy] },
+      { playerTeam: [reaver], enemyTeam: [enemy] },
       noopLog,
     );
-    expect(panel(result.playerTeam[0])).toEqual(["[Full Counter]", "  stance"]);
+    expect(panel(result.playerTeam[0])).toEqual(["[Mirror Stance]", "  stance"]);
   });
 
   it("a stance applied to ALLIES is grouped on each of them", () => {
@@ -164,16 +183,16 @@ describe("#131 — a stance lists its parts under its own name", () => {
   it("an ordinary self-buff is NOT grouped — the change is scoped to stances", () => {
     // Heading every buff row with its skill name would restyle the whole
     // panel for no gain; the ask was about stances specifically.
-    const gon = makeChar({ instanceId: "gon", team: "player" });
+    const rookie = makeChar({ instanceId: "rookie", team: "player" });
     const enemy = makeChar({ instanceId: "enemy", team: "enemy" });
     const result = executeSkill(
       {
-        sourceInstanceId: "gon",
-        skill: skillOf("gon", "Jajanken: Rock"),
+        sourceInstanceId: "rookie",
+        skill: fixtureSkillOf(rookieData, "Wind-Up Punch"),
         targetInstanceId: "enemy",
         rank: 1,
       },
-      { playerTeam: [gon], enemyTeam: [enemy] },
+      { playerTeam: [rookie], enemyTeam: [enemy] },
       noopLog,
     );
     const grouped = result.playerTeam[0].buffs.filter((b) => b.groupId);
@@ -186,12 +205,12 @@ describe("#131 — every stance row says what it does", () => {
     // This row was BLANK before #131. `effectDescription` had branches for
     // corrosion, DoTs, stun, seal, taunt, flatValue and valuePercent, and a
     // counter stance carries none of those — its number lives on
-    // `counterDamagePercent` — so Meliodas's Full Counter rendered a named
-    // row with an empty value for the whole time it was up.
+    // `counterDamagePercent` — so the counter stance rendered a named row
+    // with an empty value for the whole time it was up.
     expect(
       effectDescription({
         type: "stance",
-        name: "Full Counter",
+        name: "Mirror Stance",
         counterDamagePercent: 250,
         buffDuration: 1,
       } as StatusEffect),
@@ -240,13 +259,11 @@ describe("#134 — every stance card reads the same way", () => {
    * which reads as though it governed only the last clause rather than the
    * whole stance.
    */
-  const render = (id: string, name: string) =>
-    [0, 1, 2].map((r) =>
-      buildDescriptionForRank(skillOf(id, name) as never, r),
-    );
+  const render = (skill: SkillCard) =>
+    [0, 1, 2].map((r) => buildDescriptionForRank(skill as never, r));
 
   it("Yalina's taunt stance", () => {
-    expect(render("yalina", "Attention Drawer")).toEqual([
+    expect(render(skillOf("yalina", "Attention Drawer"))).toEqual([
       "Assumes a stance for 1 turn: taunts all enemies and reduces damage taken by 25%.",
       "Assumes a stance for 1 turn: taunts all enemies and reduces damage taken by 40%.",
       "Assumes a stance for 2 turns: taunts all enemies and reduces damage taken by 60%.",
@@ -254,15 +271,16 @@ describe("#134 — every stance card reads the same way", () => {
   });
 
   it("Mustafa's team stance", () => {
-    expect(render("mustafa", "Earth Stance: Fortress")[2]).toBe(
+    expect(render(skillOf("mustafa", "Earth Stance: Fortress"))[2]).toBe(
       "Assumes a stance for 2 turns: reduces allies' damage taken by 60%.",
     );
   });
 
-  it("Meliodas's counter stance states its counter, and names no one", () => {
-    // Was three sentences that called the caster by name ("Meliodas counters
-    // with … his ATK") — the only card in the game that did.
-    expect(render("meliodas", "Full Counter")[2]).toBe(
+  it("the counter stance states its counter, and names no one", () => {
+    // Was three sentences that called the caster by name — the only card in
+    // the game that did. That kit is gone (2026-10-13, ruling #187); the
+    // fixture's Mirror Stance carries the same mechanic and the same text.
+    expect(render(fixtureSkillOf(reaverData, "Mirror Stance"))[2]).toBe(
       "Assumes a stance for 2 turns: counters attackers for damage equal to 400% ATK.",
     );
   });
@@ -270,21 +288,21 @@ describe("#134 — every stance card reads the same way", () => {
   it("the toll collector's taunt now says how far it reaches", () => {
     // #131 made its bare "Taunts" untrue — that was one enemy under the old
     // engine and is all of them now.
-    expect(render("toll_collector", "State Your Business")[0]).toBe(
+    expect(render(skillOf("toll_collector", "State Your Business"))[0]).toBe(
       "Assumes a stance for 1 turn: taunts all enemies and reduces damage taken by 35%.",
     );
   });
 
   it("every stance card opens the same way", () => {
-    const all: [string, string][] = [
-      ["yalina", "Attention Drawer"],
-      ["mustafa", "Earth Stance: Fortress"],
-      ["toll_collector", "State Your Business"],
-      ["iron", "Iron Wall"],
-      ["meliodas", "Full Counter"],
+    const all: SkillCard[] = [
+      skillOf("yalina", "Attention Drawer"),
+      skillOf("mustafa", "Earth Stance: Fortress"),
+      skillOf("toll_collector", "State Your Business"),
+      skillOf("iron", "Iron Wall"),
+      fixtureSkillOf(reaverData, "Mirror Stance"),
     ];
-    for (const [id, name] of all) {
-      for (const line of render(id, name)) {
+    for (const skill of all) {
+      for (const line of render(skill)) {
         expect(line).toMatch(/^Assumes an? (?:\w+ )?stance for \d+ turns?: /);
       }
     }

@@ -1,24 +1,23 @@
 {
-  "id": "killua",
-  "cardNumber": 100015,
-  "name": "Killua Zoldyck",
-  "heading": "Heir of the Zoldyck Clan",
+  "id": "fx_prodigy",
+  "cardNumber": 999905,
+  "name": "Prodigy",
+  "heading": "Fixture: Detonate, rank-gated stun, stat shift",
   "color": "blue",
   "tags": [
-    "Collab",
+    "Fixture",
     "Human",
     "Male",
-    "Hunter x Hunter"
+    "Squad"
   ],
-  "lore": "Heir of the Zoldyck assassin family. Nen type: Transmuter — his aura becomes electricity. Collab unit.",
   "atk": 235,
   "def": 160,
   "hp": 3450,
   "skills": [
     {
-      "skillName": "Lightning Palm",
+      "skillName": "Static Palm",
       "description": "Cancels stances; does damage equal to ATK-scaled to one enemy; stuns for [stun.duration] turn(s).",
-      "characterId": "killua",
+      "characterId": "fx_prodigy",
       "type": "attack",
       "statMultiplier": "atk",
       "damageRanked": [
@@ -41,9 +40,9 @@
       ]
     },
     {
-      "skillName": "Thunderbolt",
+      "skillName": "Arc Strike",
       "description": "Does Detonate damage equal to ATK-scaled to one enemy.",
-      "characterId": "killua",
+      "characterId": "fx_prodigy",
       "type": "attack",
       "statMultiplier": "atk",
       "damageRanked": [
@@ -59,9 +58,9 @@
     }
   ],
   "ultimate": {
-    "skillName": "Speed of Lightning",
+    "skillName": "Overclock",
     "description": "Raises ATK and DEF; then does damage equal to ATK-scaled to one enemy.",
-    "characterId": "killua",
+    "characterId": "fx_prodigy",
     "type": "ultimate",
     "statMultiplier": "atk",
     "damage": 350,
@@ -87,8 +86,8 @@
     ]
   },
   "passive": {
-    "name": "Prodigy Assassin",
-    "description": "- [Collab] allies' basic stats 5% 👆 during battle\n\n# After receiving 10 attacks during battle\n- DEF 50% 👇 (Activates only once, Uncancellable)\n- ATK 100% 👆 (Activates only once, Uncancellable)",
+    "name": "Glass Cannon",
+    "description": "- [Squad] allies' basic stats 5% 👆 during battle\n\n# After receiving 10 attacks during battle\n- DEF 50% 👇 (Activates only once, Uncancellable)\n- ATK 100% 👆 (Activates only once, Uncancellable)",
     "trigger": "onAttackReceived",
     "worksFromSub": false,
     "mechanics": [
@@ -101,7 +100,7 @@
       {
         "type": "synergy",
         "conditionTags": [
-          "Collab"
+          "Squad"
         ],
         "valuePercent": 5,
         "flatBonus": true,

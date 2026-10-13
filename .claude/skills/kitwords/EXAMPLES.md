@@ -1,5 +1,7 @@
 # Confirmed card text
 
+> **2026-10-13:** the collab kits some rows cite (Gon, Killua, Leorio, Meliodas, Ban, Diane) left the game (ruling #187). The rows stand as wording precedent: what he confirmed or rejected about a sentence shape does not depend on the kit that carried it.
+
 Lines Tanveer has ruled on. The `kitwords` skill reads this before writing
 anything, and appends to it every time he confirms or rejects a wording.
 

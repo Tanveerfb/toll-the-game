@@ -1,12 +1,23 @@
+/**
+ * Fixture-based mechanic tests: buff-before-hit, gainUltGauge, the
+ * stat shift after N attacks, permanent ult raises, rank-gated stun,
+ * the ranked ally buff, Bleed, and the characterSynergy bond.
+ *
+ * These were the HxH kit tests. The HxH kits left the game on
+ * 2026-10-13 (ruling #187, his call); the engine mechanics they carried
+ * stayed, so the same numbers now ride on the neutral fixtures in
+ * `tests/fixtures/characters/` (Rookie, Prodigy, Medic). Nothing here
+ * pins a kit's identity, only what the mechanics do.
+ */
 import { describe, expect, it } from "vitest";
 import { getEffectiveAttack, getEffectiveDefense } from "@/lib/game/stats";
 import { executeSkill } from "@/lib/game/combat";
 import { registerCharacterPassives } from "@/lib/game/passive";
 import type { BattleCharacter } from "@/types/character";
 import type { SkillCard } from "@/types/skillCard";
-import gonData from "@/data/characters/gon.json";
-import killuaData from "@/data/characters/killua.json";
-import leorioData from "@/data/characters/leorio.json";
+import rookieData from "@/tests/fixtures/characters/fx_rookie.json";
+import prodigyData from "@/tests/fixtures/characters/fx_prodigy.json";
+import medicData from "@/tests/fixtures/characters/fx_medic.json";
 
 const noopLog = () => {};
 
@@ -67,22 +78,22 @@ function fromData(
   } as any);
 }
 
-describe("Gon", () => {
-  it("Jajanken: Rock buffs ATK BEFORE the hit — the same strike is boosted", () => {
-    const gon = fromData(gonData, "player");
+describe("Rookie (fx_rookie)", () => {
+  it("Wind-Up Punch buffs ATK BEFORE the hit — the same strike is boosted", () => {
+    const rookie = fromData(rookieData, "player");
     const target = makeChar({ instanceId: "t", team: "enemy", color: "green" });
     const after = executeSkill(
       {
-        sourceInstanceId: "gon",
-        skill: gonData.skills[0] as any,
+        sourceInstanceId: "fx_rookie",
+        skill: rookieData.skills[0] as any,
         targetInstanceId: "t",
         rank: 1,
       },
-      { playerTeam: [gon], enemyTeam: [target] },
+      { playerTeam: [rookie], enemyTeam: [target] },
       noopLog,
     );
-    // Rock now greatly raises ATK (+50%) before an R1 195% hit
-    const boosted = Math.floor(gonData.atk * 1.5);
+    // Wind-Up Punch greatly raises ATK (+50%) before an R1 195% hit
+    const boosted = Math.floor(rookieData.atk * 1.5);
     const expected = Math.floor((boosted * 195) / 100);
     expect(after.enemyTeam[0].currentHP).toBe(1000 - expected);
     // the buff itself: 1 turn, uncancellable, stackable
@@ -91,24 +102,24 @@ describe("Gon", () => {
     expect(buff?.uncancellable).toBe(true);
   });
 
-  it("Jajanken: Round 2 fills own ultimate gauge by rank (1/1/2)", () => {
-    const gon = fromData(gonData, "player");
+  it("Second Wind fills own ultimate gauge by rank (1/1/2)", () => {
+    const rookie = fromData(rookieData, "player");
     const target = makeChar({ instanceId: "t", team: "enemy", color: "green" });
     let teams = executeSkill(
       {
-        sourceInstanceId: "gon",
-        skill: gonData.skills[1] as any,
+        sourceInstanceId: "fx_rookie",
+        skill: rookieData.skills[1] as any,
         targetInstanceId: "t",
         rank: 1,
       },
-      { playerTeam: [gon], enemyTeam: [target] },
+      { playerTeam: [rookie], enemyTeam: [target] },
       noopLog,
     );
     expect(teams.playerTeam[0].ultGauge).toBe(1);
     teams = executeSkill(
       {
-        sourceInstanceId: "gon",
-        skill: gonData.skills[1] as any,
+        sourceInstanceId: "fx_rookie",
+        skill: rookieData.skills[1] as any,
         targetInstanceId: "t",
         rank: 3,
       },
@@ -119,14 +130,14 @@ describe("Gon", () => {
   });
 
   it("ultimate ATK raise is permanent (no duration) and stacks; DEF raise lasts 1 turn", () => {
-    const gon = fromData(gonData, "player");
+    const rookie = fromData(rookieData, "player");
     const target = makeChar({ instanceId: "t", team: "enemy", color: "green" });
-    let teams = { playerTeam: [gon], enemyTeam: [target] };
+    let teams = { playerTeam: [rookie], enemyTeam: [target] };
     for (let i = 0; i < 2; i++) {
       teams = executeSkill(
         {
-          sourceInstanceId: "gon",
-          skill: gonData.ultimate as any,
+          sourceInstanceId: "fx_rookie",
+          skill: rookieData.ultimate as any,
           targetInstanceId: "t",
           rank: 1,
         },
@@ -141,8 +152,8 @@ describe("Gon", () => {
     expect(defBuff?.buffDuration).toBe(1);
   });
 
-  it("Rookie Hunter: 10th attack received flips -50% ATK / +100% DEF exactly once", () => {
-    let gon = fromData(gonData, "player");
+  it("Late Bloomer: 10th attack received flips -50% ATK / +100% DEF exactly once", () => {
+    let rookie = fromData(rookieData, "player");
     const attacker = makeChar({
       instanceId: "att",
       team: "enemy",
@@ -155,29 +166,29 @@ describe("Gon", () => {
         {
           sourceInstanceId: "att",
           skill: dummySkill(),
-          targetInstanceId: "gon",
+          targetInstanceId: "fx_rookie",
         },
-        { playerTeam: [gon], enemyTeam: [attacker] },
+        { playerTeam: [rookie], enemyTeam: [attacker] },
         noopLog,
       );
-      gon = teams.playerTeam[0];
+      rookie = teams.playerTeam[0];
     }
-    expect(gon.currentAttack).toBe(
-      gonData.atk - Math.floor(gonData.atk * 0.5),
+    expect(rookie.currentAttack).toBe(
+      rookieData.atk - Math.floor(rookieData.atk * 0.5),
     );
-    expect(gon.currentDefense).toBe(
-      gonData.def + Math.floor(gonData.def * 1.0),
+    expect(rookie.currentDefense).toBe(
+      rookieData.def + Math.floor(rookieData.def * 1.0),
     );
-    expect(gon.passiveState.statShiftTriggered).toBe(true);
+    expect(rookie.passiveState.statShiftTriggered).toBe(true);
     expect(
-      gon.buffs.filter((b) => b.name === "Rookie Hunter"),
+      rookie.buffs.filter((b) => b.name === "Late Bloomer"),
     ).toHaveLength(1); // once per battle
   });
 });
 
-describe("Killua", () => {
-  it("Lightning Palm cancels stances and stuns only at rank 2+ (0/1/2 turns)", () => {
-    const killua = fromData(killuaData, "player");
+describe("Prodigy (fx_prodigy)", () => {
+  it("Static Palm cancels stances and stuns only at rank 2+ (0/1/2 turns)", () => {
+    const prodigy = fromData(prodigyData, "player");
     const makeTarget = () => {
       const t = makeChar({ instanceId: "t", team: "enemy", color: "blue" });
       t.buffs.push({ type: "stance", counterDamagePercent: 100 });
@@ -186,12 +197,12 @@ describe("Killua", () => {
     const cast = (rank: 1 | 2 | 3) =>
       executeSkill(
         {
-          sourceInstanceId: "killua",
-          skill: killuaData.skills[0] as any,
+          sourceInstanceId: "fx_prodigy",
+          skill: prodigyData.skills[0] as any,
           targetInstanceId: "t",
           rank,
         },
-        { playerTeam: [killua], enemyTeam: [makeTarget()] },
+        { playerTeam: [prodigy], enemyTeam: [makeTarget()] },
         noopLog,
       ).enemyTeam[0];
 
@@ -206,17 +217,17 @@ describe("Killua", () => {
     expect(r3.debuffs.find((d) => d.type === "stun")?.debuffDuration).toBe(2);
   });
 
-  it("Speed of Lightning grants permanent stackable ATK and DEF raises", () => {
-    const killua = fromData(killuaData, "player");
+  it("Overclock grants permanent stackable ATK and DEF raises", () => {
+    const prodigy = fromData(prodigyData, "player");
     const target = makeChar({ instanceId: "t", team: "enemy", color: "blue" });
     const teams = executeSkill(
       {
-        sourceInstanceId: "killua",
-        skill: killuaData.ultimate as any,
+        sourceInstanceId: "fx_prodigy",
+        skill: prodigyData.ultimate as any,
         targetInstanceId: "t",
         rank: 1,
       },
-      { playerTeam: [killua], enemyTeam: [target] },
+      { playerTeam: [prodigy], enemyTeam: [target] },
       noopLog,
     );
     const buffs = teams.playerTeam[0].buffs;
@@ -228,52 +239,52 @@ describe("Killua", () => {
     expect(buffs.every((b) => b.uncancellable)).toBe(true);
 
     // ...and the single entry still has to move both stats.
-    const killuaAfter = teams.playerTeam[0];
-    expect(getEffectiveAttack(killuaAfter)).toBeGreaterThan(
-      killuaAfter.currentAttack,
+    const prodigyAfter = teams.playerTeam[0];
+    expect(getEffectiveAttack(prodigyAfter)).toBeGreaterThan(
+      prodigyAfter.currentAttack,
     );
-    expect(getEffectiveDefense(killuaAfter)).toBeGreaterThan(
-      killuaAfter.currentDefense,
+    expect(getEffectiveDefense(prodigyAfter)).toBeGreaterThan(
+      prodigyAfter.currentDefense,
     );
   });
 });
 
-describe("Leorio", () => {
-  it("Member of the Zodiac buffs one ally at rank 1, all allies at rank 3", () => {
-    const leorio = fromData(leorioData, "player");
+describe("Medic (fx_medic)", () => {
+  it("Field Orders buffs one ally at rank 1, all allies at rank 3", () => {
+    const medic = fromData(medicData, "player");
     const ally1 = makeChar({ instanceId: "a1", team: "player" });
     const ally2 = makeChar({ instanceId: "a2", team: "player" });
     const enemy = makeChar({ instanceId: "e", team: "enemy" });
 
     const r1 = executeSkill(
       {
-        sourceInstanceId: "leorio",
-        skill: leorioData.skills[0] as any,
+        sourceInstanceId: "fx_medic",
+        skill: medicData.skills[0] as any,
         targetInstanceId: "a1",
         rank: 1,
       },
-      { playerTeam: [leorio, ally1, ally2], enemyTeam: [enemy] },
+      { playerTeam: [medic, ally1, ally2], enemyTeam: [enemy] },
       noopLog,
     );
     const buffed = r1.playerTeam.find((c) => c.instanceId === "a1")!;
     const notBuffed = r1.playerTeam.find((c) => c.instanceId === "a2")!;
     // "increases ATK and DEF" is ONE entry covering both stats, not a pair
     // (Tanveer, 2026-08-09).
-    const zodiacBuffs = buffed.buffs.filter((b) => b.type === "buff");
-    expect(zodiacBuffs).toHaveLength(1);
-    expect(zodiacBuffs[0].stats).toEqual(["atk", "def"]);
-    expect(zodiacBuffs[0].valuePercent).toBe(20);
-    expect(zodiacBuffs[0].buffDuration).toBe(1);
+    const orderBuffs = buffed.buffs.filter((b) => b.type === "buff");
+    expect(orderBuffs).toHaveLength(1);
+    expect(orderBuffs[0].stats).toEqual(["atk", "def"]);
+    expect(orderBuffs[0].valuePercent).toBe(20);
+    expect(orderBuffs[0].buffDuration).toBe(1);
     expect(notBuffed.buffs).toHaveLength(0);
 
     const r3 = executeSkill(
       {
-        sourceInstanceId: "leorio",
-        skill: leorioData.skills[0] as any,
+        sourceInstanceId: "fx_medic",
+        skill: medicData.skills[0] as any,
         targetInstanceId: "a1",
         rank: 3,
       },
-      { playerTeam: [leorio, ally1, ally2], enemyTeam: [enemy] },
+      { playerTeam: [medic, ally1, ally2], enemyTeam: [enemy] },
       noopLog,
     );
     for (const c of r3.playerTeam) {
@@ -285,7 +296,7 @@ describe("Leorio", () => {
       expect(buff?.buffDuration).toBe(2);
       // ...and the single entry has to actually move a stat. The dummy allies
       // are built with def 0, where a percentage buff is unprovable, so assert
-      // on ATK for everyone and DEF on Leorio, who has a real one.
+      // on ATK for everyone and DEF on the Medic, who has a real one.
       expect(getEffectiveAttack(c)).toBeGreaterThan(c.currentAttack);
       if (c.currentDefense > 0) {
         expect(getEffectiveDefense(c)).toBeGreaterThan(c.currentDefense);
@@ -293,17 +304,17 @@ describe("Leorio", () => {
     }
   });
 
-  it("Switchblade Attack applies Bleed worth 90% of the hit as an independent DoT", () => {
-    const leorio = fromData(leorioData, "player");
+  it("Scalpel Rush applies Bleed worth 90% of the hit as an independent DoT", () => {
+    const medic = fromData(medicData, "player");
     const target = makeChar({ instanceId: "t", team: "enemy", color: "red" });
     const teams = executeSkill(
       {
-        sourceInstanceId: "leorio",
-        skill: leorioData.skills[1] as any,
+        sourceInstanceId: "fx_medic",
+        skill: medicData.skills[1] as any,
         targetInstanceId: "t",
         rank: 3,
       },
-      { playerTeam: [leorio], enemyTeam: [target] },
+      { playerTeam: [medic], enemyTeam: [target] },
       noopLog,
     );
     const dealt = 1000 - teams.enemyTeam[0].currentHP;
@@ -312,8 +323,8 @@ describe("Leorio", () => {
     expect(bleed?.debuffDuration).toBe(2); // rank 3
   });
 
-  it("Remote Punch cancels buffs and stances, then stuns for 2 turns", () => {
-    const leorio = fromData(leorioData, "player");
+  it("Long Reach cancels buffs and stances, then stuns for 2 turns", () => {
+    const medic = fromData(medicData, "player");
     const target = makeChar({ instanceId: "t", team: "enemy", color: "red" });
     target.buffs.push(
       { type: "buff", stat: "atk", valuePercent: 30 },
@@ -321,12 +332,12 @@ describe("Leorio", () => {
     );
     const teams = executeSkill(
       {
-        sourceInstanceId: "leorio",
-        skill: leorioData.ultimate as any,
+        sourceInstanceId: "fx_medic",
+        skill: medicData.ultimate as any,
         targetInstanceId: "t",
         rank: 1,
       },
-      { playerTeam: [leorio], enemyTeam: [target] },
+      { playerTeam: [medic], enemyTeam: [target] },
       noopLog,
     );
     expect(teams.enemyTeam[0].buffs).toHaveLength(0);
@@ -336,12 +347,12 @@ describe("Leorio", () => {
     ).toBe(2);
   });
 
-  it("Kind Hearted Friend: base +10% is static, extra +10% drops when one dies", async () => {
-    const leorio = fromData(leorioData, "player");
-    const gon = fromData(gonData, "player");
-    const killua = fromData(killuaData, "player");
+  it("Sworn Companions: base +10% is static, extra +10% drops when one dies", async () => {
+    const medic = fromData(medicData, "player");
+    const rookie = fromData(rookieData, "player");
+    const prodigy = fromData(prodigyData, "player");
     const items: any[] = [];
-    registerCharacterPassives(leorio, (item) => items.push(item));
+    registerCharacterPassives(medic, (item) => items.push(item));
 
     const base = items.find((i) => i.mechanicId?.includes("(base)"));
     const extras = items.filter((i) => i.mechanicId?.includes("(extra)"));
@@ -349,72 +360,72 @@ describe("Leorio", () => {
     expect(extras.length).toBeGreaterThan(0);
 
     let teams = {
-      playerTeam: [leorio, gon, killua],
+      playerTeam: [medic, rookie, prodigy],
       enemyTeam: [] as BattleCharacter[],
     };
     teams = await base.action(teams.playerTeam[0], teams, noopLog);
     const afterBase = teams.playerTeam[0];
     expect(afterBase.currentAttack).toBe(
-      leorioData.atk + Math.floor(leorioData.atk * 0.1),
+      medicData.atk + Math.floor(medicData.atk * 0.1),
     );
 
     // both alive on field -> extra kicks in
     teams = await extras[0].action(teams.playerTeam[0], teams, noopLog);
     const afterExtra = teams.playerTeam[0];
     const withExtra =
-      afterBase.currentAttack + Math.floor(leorioData.atk * 0.1);
+      afterBase.currentAttack + Math.floor(medicData.atk * 0.1);
     expect(afterExtra.currentAttack).toBe(withExtra);
 
-    // Gon dies -> next recheck removes ONLY the extra bonus
+    // Rookie dies -> next recheck removes ONLY the extra bonus
     teams.playerTeam = teams.playerTeam.map((c) =>
-      c.instanceId === "gon" ? { ...c, currentHP: 0 } : c,
+      c.instanceId === "fx_rookie" ? { ...c, currentHP: 0 } : c,
     );
     teams = await extras[0].action(teams.playerTeam[0], teams, noopLog);
     expect(teams.playerTeam[0].currentAttack).toBe(afterBase.currentAttack);
     expect(
       teams.playerTeam[0].buffs.some(
-        (b) => b.name === "Kind Hearted Friend (bond)",
+        (b) => b.name === "Sworn Companions (bond)",
       ),
     ).toBe(true); // base survives the death
   });
 
-  it("base bonus survives the Collab synergy badge sharing the passive's name (regression)", async () => {
-    // In-game the passive's own [Collab] synergy runs first and pushes buffs
-    // named "Kind Hearted Friend" — the bond bonus must not mistake that
+  it("base bonus survives the Squad synergy badge sharing the passive's name (regression)", async () => {
+    // In-game the passive's own [Squad] synergy runs first and pushes buffs
+    // named "Sworn Companions" — the bond bonus must not mistake that
     // badge for itself and skip.
-    const leorio = fromData(leorioData, "player");
-    const gon = fromData(gonData, "player");
+    const medic = fromData(medicData, "player");
+    const rookie = fromData(rookieData, "player");
     const items: any[] = [];
-    registerCharacterPassives(leorio, (item) => items.push(item));
+    registerCharacterPassives(medic, (item) => items.push(item));
     const main = items.find(
-      (i) => i.id === "leorio_passive_Kind Hearted Friend",
+      (i) => i.id === "fx_medic_passive_Sworn Companions",
     );
     const base = items.find((i) => i.mechanicId?.includes("(base)"));
 
     let teams = {
-      playerTeam: [leorio, gon],
+      playerTeam: [medic, rookie],
       enemyTeam: [] as BattleCharacter[],
     };
     teams = await main.action(teams.playerTeam[0], teams, noopLog);
     const afterSynergy = teams.playerTeam[0].currentAttack;
     teams = await base.action(teams.playerTeam[0], teams, noopLog);
     expect(teams.playerTeam[0].currentAttack).toBe(
-      afterSynergy + Math.floor(leorioData.atk * 0.1),
+      afterSynergy + Math.floor(medicData.atk * 0.1),
     );
   });
 
-  it("Kind Hearted Friend base does NOT apply without Gon or Killua on the team", async () => {
-    const leorio = fromData(leorioData, "player");
+  it("Sworn Companions base does NOT apply without Rookie or Prodigy on the team", async () => {
+    const medic = fromData(medicData, "player");
     const stranger = makeChar({ instanceId: "x", team: "player" });
     const items: any[] = [];
-    registerCharacterPassives(leorio, (item) => items.push(item));
+    registerCharacterPassives(medic, (item) => items.push(item));
     const base = items.find((i) => i.mechanicId?.includes("(base)"));
 
     let teams = {
-      playerTeam: [leorio, stranger],
+      playerTeam: [medic, stranger],
       enemyTeam: [] as BattleCharacter[],
     };
     teams = await base.action(teams.playerTeam[0], teams, noopLog);
-    expect(teams.playerTeam[0].currentAttack).toBe(leorioData.atk);
+    expect(teams.playerTeam[0].currentAttack).toBe(medicData.atk);
   });
 });

@@ -11,7 +11,10 @@ to `docs/archive/STATUS-YYYY-MM.md` with a line in
 
 ## Start here
 
-**State:** four things landed on 2026-10-13; the first three wait on him.
+**State:** five things landed on 2026-10-13; the first three wait on him.
+The fifth is the biggest change to the game since story mode left: **the six
+collab units are deleted** (ruling #187, his call), the engine mechanics they
+carried stay, and a v12 migration cleans any save that still names one.
 
 1. **The audit** is `docs/GAME_AUDIT_2026-10-13.md`. Its headline: the cloud
    save has one confirmed breaking defect (issue #28, nested arrays in
@@ -54,7 +57,9 @@ to `docs/archive/STATUS-YYYY-MM.md` with a line in
    him: `public/unreleased/` (7.3 MB), `lib/duel`, gsap, the MDX stack for
    the closed news, `docs/design/characters` (11 MB), 49 unused exports.
 
-**Game code is unchanged since `aaae4e2`.** Blue Duke's art is where the
+**Game code changed on 2026-10-13**: the save fix (v11), the collab removal
+(v12; `lib/game/removedCharacters.ts`; `tests/fixtures/characters/` carry the
+kept mechanics). Before that it was unchanged since `aaae4e2`. Blue Duke's art is where the
 2026-10-08 status left it: `charart` step 4, LoRA v2 installed, four official
 sheets with him (S2, K4, K10, U19), not picked. Batra held at step 1.
 
@@ -91,6 +96,8 @@ wins). His: the theme, the audit decisions.
 - Any claim that the cloud save works end to end for a signed-in player who
   has cleared an Epic stage: #28 is fixed in code (v11, keyed teams, the
   shape guard) and **not yet seen working against a real Firestore**.
+- A roster count or a kit list from before 2026-10-13: the collab six are
+  gone (#187). `docs/ARCHITECTURE.md` has the recount.
 - `output\blue_duke\candidates` on his PC: superseded, never lock them.
 - Sim numbers from before 2026-10-03.
 - In the cloud container: `next build` fails on Google Fonts (the sandbox,

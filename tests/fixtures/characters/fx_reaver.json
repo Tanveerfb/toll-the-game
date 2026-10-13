@@ -1,23 +1,21 @@
 {
-  "id": "meliodas",
-  "cardNumber": 100020,
-  "name": "Meliodas",
-  "heading": "Captain of the Sins",
+  "id": "fx_reaver",
+  "cardNumber": 999903,
+  "name": "Reaver",
+  "heading": "Fixture: Deathblow, counter stance, weakpoint",
   "color": "red",
   "tags": [
-    "Collab",
-    "Demon",
-    "Seven Deadly Sins"
+    "Fixture",
+    "Demon"
   ],
-  "lore": "Captain of the Seven Deadly Sins. A demon wielding dark purgatory energy. Collab unit.",
   "atk": 285,
   "def": 155,
   "hp": 3200,
   "skills": [
     {
-      "skillName": "Triple Strike",
+      "skillName": "Three-Cut",
       "description": "Does Weakpoint damage equal to ATK-scaled to one enemy.",
-      "characterId": "meliodas",
+      "characterId": "fx_reaver",
       "type": "attack",
       "statMultiplier": "atk",
       "damageRanked": [
@@ -32,9 +30,9 @@
       ]
     },
     {
-      "skillName": "Full Counter",
+      "skillName": "Mirror Stance",
       "description": "Assumes a stance for [stance.duration] turns: counters attackers for damage equal to [stance.counterDamagePercent]% ATK.",
-      "characterId": "meliodas",
+      "characterId": "fx_reaver",
       "type": "stance",
       "statMultiplier": "atk",
       "damageRanked": [
@@ -46,7 +44,7 @@
         {
           "type": "stance",
           "targetSelf": true,
-          "name": "Full Counter",
+          "name": "Mirror Stance",
           "counterDamagePercentRanked": [
             250,
             300,
@@ -62,9 +60,9 @@
     }
   ],
   "ultimate": {
-    "skillName": "Evil Spirit",
+    "skillName": "Black Flare",
     "description": "Cancels buffs and stances; does damage equal to ATK-scaled to one enemy; stuns for 2 turns.",
-    "characterId": "meliodas",
+    "characterId": "fx_reaver",
     "type": "ultimate",
     "statMultiplier": "atk",
     "damage": 450,

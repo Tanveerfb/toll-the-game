@@ -49,7 +49,7 @@ if (seed) {
     if (!raw) return "no storage yet";
     const data = JSON.parse(raw);
     const s = data.state;
-    const own = ["duke", "lyra", "sara", "batra", "yalina", "seras", "meliodas"];
+    const own = ["duke", "lyra", "sara", "batra", "yalina", "seras", "mustafa"];
     const levels = [12, 20, 8, 1, 15, 5, 30];
     const ults = [2, 3, 1, 0, 2, 0, 5];
     s.roster = Array.from(new Set([...(s.roster || []), ...own]));

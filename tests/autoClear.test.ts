@@ -177,7 +177,8 @@ describe("the store", () => {
   });
 
   it("is on the current persisted version", () => {
-    // 11 since 2026-10-13: epic clear teams became keyed strings (issue #28).
-    expect(CURRENT_PLAYER_STATE_VERSION).toBe(11);
+    // 11 (2026-10-13): epic clear teams became keyed strings (issue #28).
+    // 12 (2026-10-13): the six collab units left the game (ruling #187).
+    expect(CURRENT_PLAYER_STATE_VERSION).toBe(12);
   });
 });

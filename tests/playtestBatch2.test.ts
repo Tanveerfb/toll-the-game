@@ -12,7 +12,7 @@ import type { SkillCard } from "@/types/skillCard";
 import serasData from "@/data/characters/seras.json";
 import saraData from "@/data/characters/sara.json";
 import yalinaData from "@/data/characters/yalina.json";
-import leorioData from "@/data/characters/leorio.json";
+import medicData from "@/tests/fixtures/characters/fx_medic.json";
 
 const noopLog = () => {};
 
@@ -70,7 +70,7 @@ const plainAttack: SkillCard = {
 };
 
 const extortSkill: SkillCard = {
-  skillName: "Snatch",
+  skillName: "Pickpocket",
   characterId: "thief",
   type: "attack",
   statMultiplier: "atk",
@@ -117,7 +117,7 @@ describe("synergies apply battle-wide (playtest 2026-07-11, match 2)", () => {
   it("tag synergies reach subs, enemies, and every carrier — named [tag] Synergy", async () => {
     const players = [
       makeChar({ instanceId: "p1" }),
-      fromData(leorioData, "player", "p4_leorio", true),
+      fromData(medicData, "player", "p4_medic", true),
     ];
     const enemies = [
       fromData(serasData, "enemy", "e1_seras"),
@@ -134,10 +134,10 @@ describe("synergies apply battle-wide (playtest 2026-07-11, match 2)", () => {
       enemyTeam: enemies,
     });
 
-    // Leorio's [Collab] synergy self-applies even from the bench
-    const leorio = teams.playerTeam[1];
+    // the Medic's [Squad] synergy self-applies even from the bench
+    const medic = teams.playerTeam[1];
     expect(
-      leorio.buffs.some((b) => b.name === "[Collab] Synergy"),
+      medic.buffs.some((b) => b.name === "[Squad] Synergy"),
     ).toBe(true);
 
     // Seras: her own [Powerful Opponent] + Sara's [Female]
@@ -351,26 +351,28 @@ describe("damage-modifier stats consumed multiplicatively (ruling #36)", () => {
   });
 });
 
-describe("Kind Hearted Friend extra fades even after Leorio dies (ruling #24)", () => {
+describe("Sworn Companions extra fades even after the Medic dies (ruling #24)", () => {
   it("removes the extra bonus from survivors when the recheck source is dead", async () => {
-    // Playtest log 2026-07-11 evening: Gon/Killua/Leorio all died, promoted
-    // Lyra kept the +10% extra — the recheck was skipped for a dead source.
-    const gonStub = makeChar({ instanceId: "gon" });
-    const killuaStub = makeChar({ instanceId: "killua" });
-    const leorio = fromData(leorioData, "player", "leorio");
+    // Playtest log 2026-07-11 evening: the whole bond trio died, and the
+    // promoted Lyra kept the +10% extra — the recheck was skipped for a
+    // dead source. The trio is the Medic fixture and two stubs carrying
+    // the ids its bond requires (the bond matches on `id`).
+    const rookieStub = makeChar({ instanceId: "fx_rookie" });
+    const prodigyStub = makeChar({ instanceId: "fx_prodigy" });
+    const medic = fromData(medicData, "player", "fx_medic");
     const bystander = makeChar({ instanceId: "lyra" });
 
     const items: Parameters<typeof runPhase>[0] = [];
-    registerCharacterPassives(leorio, (item) => items.push(item));
+    registerCharacterPassives(medic, (item) => items.push(item));
     const extraItems = items.filter((i) =>
-      i.sourceInstanceId === "leorio" &&
+      i.sourceInstanceId === "fx_medic" &&
       (i as { mechanicId?: string }).mechanicId?.includes("(extra)"),
     );
     expect(extraItems.length).toBeGreaterThan(0);
     expect(extraItems.every((i) => i.runWhenDead === true)).toBe(true);
 
     let teams = await runPhase(items, "OnBattleStart", {
-      playerTeam: [gonStub, killuaStub, leorio, bystander],
+      playerTeam: [rookieStub, prodigyStub, medic, bystander],
       enemyTeam: [],
     });
     expect(
@@ -378,7 +380,7 @@ describe("Kind Hearted Friend extra fades even after Leorio dies (ruling #24)", 
     ).toBe(true);
 
     // Whole trio dies; recheck at the next turn start must still fade it
-    for (const id of ["gon", "killua", "leorio"]) {
+    for (const id of ["fx_rookie", "fx_prodigy", "fx_medic"]) {
       const unit = teams.playerTeam.find((c) => c.instanceId === id)!;
       unit.currentHP = 0;
     }
@@ -390,39 +392,43 @@ describe("Kind Hearted Friend extra fades even after Leorio dies (ruling #24)", 
 });
 
 describe("zero-value clauses hidden per rank (STATUS #16)", () => {
-  it("Killua's stun clause is hidden at rank 1, shown at rank 2+", async () => {
+  it("the Prodigy's stun clause is hidden at rank 1, shown at rank 2+", async () => {
     const { buildDescriptionForRank } = await import(
       "@/lib/game/descriptionTranslator"
     );
-    const killua = (await import("@/data/characters/killua.json")).default;
-    const lightningPalm = killua.skills[0] as never;
+    const prodigy = (
+      await import("@/tests/fixtures/characters/fx_prodigy.json")
+    ).default;
+    const staticPalm = prodigy.skills[0] as never;
 
-    const r1 = buildDescriptionForRank(lightningPalm, 0);
+    const r1 = buildDescriptionForRank(staticPalm, 0);
     expect(r1).not.toMatch(/stun/i);
     expect(r1).not.toMatch(/0 turn/);
     expect(r1).toMatch(/Cancels stances/);
 
-    const r2 = buildDescriptionForRank(lightningPalm, 1);
+    const r2 = buildDescriptionForRank(staticPalm, 1);
     expect(r2).toMatch(/stuns for 1 turn/);
-    const r3 = buildDescriptionForRank(lightningPalm, 2);
+    const r3 = buildDescriptionForRank(staticPalm, 2);
     expect(r3).toMatch(/stuns for 2 turn/);
   });
 
-  it("Diane's Attack Seal clause is hidden at rank 1", async () => {
+  it("the Colossus's Attack Seal clause is hidden at rank 1", async () => {
     const { buildDescriptionForRank } = await import(
       "@/lib/game/descriptionTranslator"
     );
-    const diane = (await import("@/data/characters/diane.json")).default;
-    const rushRock = diane.skills.find(
-      (s: { skillName: string }) => s.skillName === "Rush Rock",
+    const colossus = (
+      await import("@/tests/fixtures/characters/fx_colossus.json")
+    ).default;
+    const boulderCharge = colossus.skills.find(
+      (s: { skillName: string }) => s.skillName === "Boulder Charge",
     ) as never;
 
-    const r1 = buildDescriptionForRank(rushRock, 0);
+    const r1 = buildDescriptionForRank(boulderCharge, 0);
     expect(r1).not.toMatch(/attack seals/i);
     expect(r1).not.toMatch(/0 turn/);
 
     // House style is "attack seals for N turns" (ruling #65, 2026-08-10).
-    const r2 = buildDescriptionForRank(rushRock, 1);
+    const r2 = buildDescriptionForRank(boulderCharge, 1);
     expect(r2).toMatch(/attack seals for 1 turn\b/i);
   });
 });

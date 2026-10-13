@@ -1,24 +1,23 @@
 {
-  "id": "leorio",
-  "cardNumber": 100016,
-  "name": "Leorio Paradinight",
-  "heading": "Aspiring Doctor",
+  "id": "fx_medic",
+  "cardNumber": 999906,
+  "name": "Medic",
+  "heading": "Fixture: character synergy, Bleed, Pierce, ranked AoE buff",
   "color": "red",
   "tags": [
-    "Collab",
+    "Fixture",
     "Human",
     "Male",
-    "Hunter x Hunter"
+    "Squad"
   ],
-  "lore": "Aspiring doctor and member of the Zodiacs. Nen type: Emitter. Collab unit.",
   "atk": 190,
   "def": 150,
   "hp": 3150,
   "skills": [
     {
-      "skillName": "Member of the Zodiac",
+      "skillName": "Field Orders",
       "description": "[aoeRanked? Targets all allies and raises their : Targets one chosen ally and raises that ally's] ATK and DEF by [buff.value]% for [buff.duration] turns.",
-      "characterId": "leorio",
+      "characterId": "fx_medic",
       "type": "buff",
       "statMultiplier": "atk",
       "damageRanked": [
@@ -60,9 +59,9 @@
       ]
     },
     {
-      "skillName": "Switchblade Attack",
+      "skillName": "Scalpel Rush",
       "description": "Does Pierce damage equal to ATK-scaled to one enemy; applies Bleed.",
-      "characterId": "leorio",
+      "characterId": "fx_medic",
       "type": "attack",
       "statMultiplier": "atk",
       "damageRanked": [
@@ -83,9 +82,9 @@
     }
   ],
   "ultimate": {
-    "skillName": "Remote Punch",
+    "skillName": "Long Reach",
     "description": "Cancels buffs and stances; does damage equal to ATK-scaled to one enemy; stuns for 2 turns.",
-    "characterId": "leorio",
+    "characterId": "fx_medic",
     "type": "ultimate",
     "statMultiplier": "atk",
     "damage": 325,
@@ -111,16 +110,16 @@
     ]
   },
   "passive": {
-    "name": "Kind Hearted Friend",
-    "description": "- [Collab] allies' basic stats 5% 👆 during battle\n\n# When the ally team includes a character whose name includes 'Gon' or 'Killua'\n- All allies' basic stats 10% 👆\n\n# When the team includes both characters 'Gon' and 'Killua'\n- All allies' all stats 10% 👆",
+    "name": "Sworn Companions",
+    "description": "- [Squad] allies' basic stats 5% 👆 during battle\n\n# When the ally team includes a character whose name includes 'Rookie' or 'Prodigy'\n- All allies' basic stats 10% 👆\n\n# When the team includes both characters 'Rookie' and 'Prodigy'\n- All allies' all stats 10% 👆",
     "trigger": "onBattleStart",
     "worksFromSub": true,
     "mechanics": [
       {
         "type": "characterSynergy",
         "requiredCharacterIds": [
-          "gon",
-          "killua"
+          "fx_rookie",
+          "fx_prodigy"
         ],
         "valuePercent": 10,
         "bothAliveBonusPercent": 10,
@@ -134,7 +133,7 @@
       {
         "type": "synergy",
         "conditionTags": [
-          "Collab"
+          "Squad"
         ],
         "valuePercent": 5,
         "flatBonus": true,

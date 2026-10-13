@@ -1,23 +1,21 @@
 {
-  "id": "diane",
-  "cardNumber": 100006,
-  "name": "Diane",
-  "heading": "Serpent Sin of Envy",
+  "id": "fx_colossus",
+  "cardNumber": 999902,
+  "name": "Colossus",
+  "heading": "Fixture: Rupture, Attack Seal, turn ramp",
   "color": "blue",
   "tags": [
-    "Collab",
-    "Giant",
-    "Seven Deadly Sins"
+    "Fixture",
+    "Giant"
   ],
-  "lore": "Serpent Sin of Envy. A giant commanding the earth itself. Collab unit.",
   "atk": 260,
   "def": 150,
   "hp": 3200,
   "skills": [
     {
-      "skillName": "Ground Gladius",
+      "skillName": "Fault Line",
       "description": "Does Rupture damage equal to ATK-scaled to all enemies.",
-      "characterId": "diane",
+      "characterId": "fx_colossus",
       "type": "attack",
       "statMultiplier": "atk",
       "damageRanked": [
@@ -35,9 +33,9 @@
       ]
     },
     {
-      "skillName": "Rush Rock",
+      "skillName": "Boulder Charge",
       "description": "Does damage equal to ATK-scaled to one enemy; attack seals for [seal.duration] turns.",
-      "characterId": "diane",
+      "characterId": "fx_colossus",
       "type": "attack",
       "statMultiplier": "atk",
       "damageRanked": [
@@ -59,9 +57,9 @@
     }
   ],
   "ultimate": {
-    "skillName": "Mother Earth Catastrophe",
+    "skillName": "Tectonic Ruin",
     "description": "Does Rupture damage equal to ATK-scaled to all enemies.",
-    "characterId": "diane",
+    "characterId": "fx_colossus",
     "type": "ultimate",
     "statMultiplier": "atk",
     "damage": 400,
@@ -83,7 +81,7 @@
     ]
   },
   "passive": {
-    "name": "Giant's Will",
+    "name": "Mounting Fury",
     "description": "- [Giant] allies' basic stats 5% 👆 during battle\n\n# At the start of every turn\n- ATK 10% 👆 (Max 5 times) (Uncancellable)",
     "trigger": "onNewTurn",
     "worksFromSub": false,

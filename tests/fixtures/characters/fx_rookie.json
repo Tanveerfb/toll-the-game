@@ -1,24 +1,23 @@
 {
-  "id": "gon",
-  "cardNumber": 100012,
-  "name": "Gon Freecss",
-  "heading": "Rookie Hunter",
+  "id": "fx_rookie",
+  "cardNumber": 999904,
+  "name": "Rookie",
+  "heading": "Fixture: buff-before-hit, gainUltGauge, stat shift",
   "color": "green",
   "tags": [
-    "Collab",
+    "Fixture",
     "Human",
     "Male",
-    "Hunter x Hunter"
+    "Squad"
   ],
-  "lore": "A rookie Hunter with monstrous potential. Nen type: Enhancer. Collab unit.",
   "atk": 230,
   "def": 155,
   "hp": 3400,
   "skills": [
     {
-      "skillName": "Jajanken: Rock",
+      "skillName": "Wind-Up Punch",
       "description": "Greatly raises ATK for 1 turn; then does damage equal to ATK-scaled to one enemy.",
-      "characterId": "gon",
+      "characterId": "fx_rookie",
       "type": "attack",
       "statMultiplier": "atk",
       "damageRanked": [
@@ -38,9 +37,9 @@
       ]
     },
     {
-      "skillName": "Jajanken: Round 2",
+      "skillName": "Second Wind",
       "description": "Does damage equal to ATK-scaled to one enemy; fills ultimate gauge by [gainUltGauge.value].",
-      "characterId": "gon",
+      "characterId": "fx_rookie",
       "type": "attack",
       "statMultiplier": "atk",
       "damageRanked": [
@@ -61,9 +60,9 @@
     }
   ],
   "ultimate": {
-    "skillName": "Jajanken Combo",
+    "skillName": "All In",
     "description": "Raises ATK; greatly raises DEF for 1 turn; then does damage equal to ATK-scaled to one enemy.",
-    "characterId": "gon",
+    "characterId": "fx_rookie",
     "type": "ultimate",
     "statMultiplier": "atk",
     "damage": 350,
@@ -93,8 +92,8 @@
     ]
   },
   "passive": {
-    "name": "Rookie Hunter",
-    "description": "- [Collab] allies' basic stats 5% 👆 during battle\n\n# After receiving 10 attacks during battle\n- ATK 50% 👇 (Activates only once, Uncancellable)\n- DEF 100% 👆 (Activates only once, Uncancellable)",
+    "name": "Late Bloomer",
+    "description": "- [Squad] allies' basic stats 5% 👆 during battle\n\n# After receiving 10 attacks during battle\n- ATK 50% 👇 (Activates only once, Uncancellable)\n- DEF 100% 👆 (Activates only once, Uncancellable)",
     "trigger": "onAttackReceived",
     "worksFromSub": false,
     "mechanics": [
@@ -107,7 +106,7 @@
       {
         "type": "synergy",
         "conditionTags": [
-          "Collab"
+          "Squad"
         ],
         "valuePercent": 5,
         "flatBonus": true,
