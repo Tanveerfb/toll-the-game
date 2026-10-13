@@ -24,7 +24,7 @@ import { useSettingsStore } from "@/store/settingsStore";
  * of the turn's waits so the remaining actions resolve without animating.
  */
 
-export interface SequencerGhost {
+interface SequencerGhost {
   key: number;
   fromX: number;
   fromY: number;
@@ -35,7 +35,7 @@ export interface SequencerGhost {
   isUlt: boolean;
 }
 
-export interface SequencerCutIn {
+interface SequencerCutIn {
   key: number;
   characterId: string;
   name: string;
@@ -57,7 +57,7 @@ export interface SequencerFlash {
 }
 
 // Expanding impact ring at the hit point (juice on damage).
-export interface SequencerBurst {
+interface SequencerBurst {
   key: number;
   x: number;
   y: number;
@@ -72,7 +72,7 @@ export interface SequencerBurst {
 // use this for a caster -> target "beam" even on single-target hits
 // (source instance included in the anchor list) — `strong` renders it as
 // the thicker/brighter beam rather than the thin AoE streak.
-export interface SequencerSweep {
+interface SequencerSweep {
   key: number;
   x: number;
   y: number;
@@ -84,7 +84,7 @@ export interface SequencerSweep {
 
 // Whole-arena flash, reserved for R2 (brightness pulse), R3 (brief flash)
 // and ultimate (full white flash) — distinct from the per-tile SequencerFlash.
-export interface SequencerScreenFlash {
+interface SequencerScreenFlash {
   key: number;
   kind: "pulse" | "brief" | "white";
   color: Color;
@@ -747,8 +747,8 @@ export function useBattleSequencer(
   }, [battleEvents, runQueue, clearAllTimeouts]);
 
   // Mount/unmount: tell the playback gate whether anyone is animating. With
-  // no sequencer on screen the resolvers must not wait at all — tests and the
-  // duel watcher drive battles headlessly and would otherwise stall.
+  // no sequencer on screen the resolvers must not wait at all — tests drive
+  // battles headlessly and would otherwise stall.
   // Unmount also invalidates the running generation, cancels every in-flight
   // fire-and-forget timer (floater/burst/sweep/flash cleanup) so none of them
   // can call setState after this component is gone, and clears the shared

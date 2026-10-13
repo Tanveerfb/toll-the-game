@@ -108,7 +108,7 @@ export function canClaimPermanentFinal(
 }
 
 /** Permanent has a single milestone, so "reached and taken" is just that one. */
-export function isPermanentLapComplete(state: PermanentPityState): boolean {
+function isPermanentLapComplete(state: PermanentPityState): boolean {
   return state.bar >= PERMANENT_MILESTONE_FINAL && state.claimedFinal;
 }
 

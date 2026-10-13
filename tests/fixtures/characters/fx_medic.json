@@ -1,0 +1,148 @@
+{
+  "id": "fx_medic",
+  "cardNumber": 999906,
+  "name": "Medic",
+  "heading": "Fixture: character synergy, Bleed, Pierce, ranked AoE buff",
+  "color": "red",
+  "tags": [
+    "Fixture",
+    "Human",
+    "Male",
+    "Squad"
+  ],
+  "atk": 190,
+  "def": 150,
+  "hp": 3150,
+  "skills": [
+    {
+      "skillName": "Field Orders",
+      "description": "[aoeRanked? Targets all allies and raises their : Targets one chosen ally and raises that ally's] ATK and DEF by [buff.value]% for [buff.duration] turns.",
+      "characterId": "fx_medic",
+      "type": "buff",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        0,
+        0,
+        0
+      ],
+      "mechanics": [
+        {
+          "type": "aoeRanked",
+          "ranks": [
+            false,
+            true,
+            true
+          ]
+        },
+        {
+          "type": "buff",
+          "applyToRanked": [
+            "oneAlly",
+            "allies",
+            "allies"
+          ],
+          "stats": [
+            "atk",
+            "def"
+          ],
+          "valueRanked": [
+            20,
+            30,
+            50
+          ],
+          "durationRanked": [
+            1,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "skillName": "Scalpel Rush",
+      "description": "Does Pierce damage equal to ATK-scaled to one enemy; applies Bleed.",
+      "characterId": "fx_medic",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        195,
+        240,
+        300
+      ],
+      "mechanics": [
+        {
+          "type": "pierce"
+        },
+        {
+          "type": "bleed",
+          "damagePercent": 90,
+          "duration": 2
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Long Reach",
+    "description": "Cancels buffs and stances; does damage equal to ATK-scaled to one enemy; stuns for 2 turns.",
+    "characterId": "fx_medic",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 325,
+    "damageByUltLevel": [
+      325,
+      360,
+      395,
+      430,
+      465,
+      525
+    ],
+    "mechanics": [
+      {
+        "type": "cancelBuffs"
+      },
+      {
+        "type": "cancelStances"
+      },
+      {
+        "type": "stun",
+        "duration": 2
+      }
+    ]
+  },
+  "passive": {
+    "name": "Sworn Companions",
+    "description": "- [Squad] allies' basic stats 5% 👆 during battle\n\n# When the ally team includes a character whose name includes 'Rookie' or 'Prodigy'\n- All allies' basic stats 10% 👆\n\n# When the team includes both characters 'Rookie' and 'Prodigy'\n- All allies' all stats 10% 👆",
+    "trigger": "onBattleStart",
+    "worksFromSub": true,
+    "mechanics": [
+      {
+        "type": "characterSynergy",
+        "requiredCharacterIds": [
+          "fx_rookie",
+          "fx_prodigy"
+        ],
+        "valuePercent": 10,
+        "bothAliveBonusPercent": 10,
+        "stats": [
+          "atk",
+          "def",
+          "hp"
+        ],
+        "bothAliveStat": "all"
+      },
+      {
+        "type": "synergy",
+        "conditionTags": [
+          "Squad"
+        ],
+        "valuePercent": 5,
+        "flatBonus": true,
+        "stats": [
+          "atk",
+          "def",
+          "hp"
+        ]
+      }
+    ]
+  }
+}

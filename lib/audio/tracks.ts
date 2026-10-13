@@ -28,5 +28,3 @@ export const MUSIC_TRACKS: Record<MusicRole, MusicTrack> = {
   // Not looped: a completion sting should land once and get out of the way.
   victory: { src: "/audio/victory.ogg", gain: 1, loop: false },
 };
-
-export const MUSIC_ROLES = Object.keys(MUSIC_TRACKS) as MusicRole[];

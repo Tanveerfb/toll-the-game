@@ -257,15 +257,6 @@ export function previewCardsFor(livingUnits: BattleCharacter[]): ActionCard[] {
   return cards;
 }
 
-/** Per-source ult-gauge gains from a set of merges. */
-export function gaugeGainsFromMerges(mergeSourceIds: string[]): Record<string, number> {
-  const gains: Record<string, number> = {};
-  mergeSourceIds.forEach((id) => {
-    gains[id] = (gains[id] ?? 0) + 1;
-  });
-  return gains;
-}
-
 export interface RefillResult {
   deck: ActionCard[];
   gaugeGains: Record<string, number>;

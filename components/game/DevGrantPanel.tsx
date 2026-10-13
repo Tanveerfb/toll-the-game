@@ -19,7 +19,6 @@ import {
 } from "@/lib/gacha/milestone";
 import { usePlayerStore } from "@/store/playerStore";
 import { getPlayableCharacters } from "@/lib/game/characterCatalog";
-import DuelToggle from "@/components/ui/DuelToggle";
 
 const MATERIAL_IDS = [
   "sea_monster_eye",
@@ -72,15 +71,6 @@ export default function DevGrantPanel(): React.JSX.Element | null {
         <h2 className="font-heading text-lg tracking-label">Dev grant panel</h2>
       </div>
       <div className="flex flex-col gap-3 p-4">
-        {/* Moved off TopNav 2026-09-01 (Tanveer) — developer tooling was
-            holding permanent width in a 390px bar. The setting is global; only
-            its control lives here. */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-rule pb-3">
-          <span className="font-body text-label font-bold uppercase tracking-eyebrow text-muted-foreground">
-            Enemy AI
-          </span>
-          <DuelToggle />
-        </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => grantCurrency({ gems: 1000 })}>+1000 Gems</Button>
           <Button variant="outline" onClick={() => grantCurrency({ coin: 50000 })}>+50000 Coin</Button>

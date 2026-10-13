@@ -1,0 +1,121 @@
+{
+  "id": "fx_rookie",
+  "cardNumber": 999904,
+  "name": "Rookie",
+  "heading": "Fixture: buff-before-hit, gainUltGauge, stat shift",
+  "color": "green",
+  "tags": [
+    "Fixture",
+    "Human",
+    "Male",
+    "Squad"
+  ],
+  "atk": 230,
+  "def": 155,
+  "hp": 3400,
+  "skills": [
+    {
+      "skillName": "Wind-Up Punch",
+      "description": "Greatly raises ATK for 1 turn; then does damage equal to ATK-scaled to one enemy.",
+      "characterId": "fx_rookie",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        195,
+        240,
+        300
+      ],
+      "mechanics": [
+        {
+          "type": "buff",
+          "targetSelf": true,
+          "stat": "atk",
+          "valuePercent": 50,
+          "duration": 1,
+          "uncancellable": true
+        }
+      ]
+    },
+    {
+      "skillName": "Second Wind",
+      "description": "Does damage equal to ATK-scaled to one enemy; fills ultimate gauge by [gainUltGauge.value].",
+      "characterId": "fx_rookie",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        230,
+        280,
+        350
+      ],
+      "mechanics": [
+        {
+          "type": "gainUltGauge",
+          "valueRanked": [
+            1,
+            1,
+            2
+          ]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "All In",
+    "description": "Raises ATK; greatly raises DEF for 1 turn; then does damage equal to ATK-scaled to one enemy.",
+    "characterId": "fx_rookie",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 350,
+    "damageByUltLevel": [
+      350,
+      400,
+      450,
+      500,
+      550,
+      625
+    ],
+    "mechanics": [
+      {
+        "type": "buff",
+        "targetSelf": true,
+        "stat": "atk",
+        "valuePercent": 30,
+        "uncancellable": true
+      },
+      {
+        "type": "buff",
+        "targetSelf": true,
+        "stat": "def",
+        "valuePercent": 50,
+        "duration": 1
+      }
+    ]
+  },
+  "passive": {
+    "name": "Late Bloomer",
+    "description": "- [Squad] allies' basic stats 5% 👆 during battle\n\n# After receiving 10 attacks during battle\n- ATK 50% 👇 (Activates only once, Uncancellable)\n- DEF 100% 👆 (Activates only once, Uncancellable)",
+    "trigger": "onAttackReceived",
+    "worksFromSub": false,
+    "mechanics": [
+      {
+        "type": "statShiftAfterAttacks",
+        "attacksRequired": 10,
+        "atkShiftPercent": -50,
+        "defShiftPercent": 100
+      },
+      {
+        "type": "synergy",
+        "conditionTags": [
+          "Squad"
+        ],
+        "valuePercent": 5,
+        "flatBonus": true,
+        "stats": [
+          "atk",
+          "def",
+          "hp"
+        ]
+      }
+    ]
+  }
+}

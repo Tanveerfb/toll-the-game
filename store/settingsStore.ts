@@ -19,10 +19,6 @@ interface SettingsState {
   setMusicVolume: (volume: number) => void;
   musicMuted: boolean;
   setMusicMuted: (muted: boolean) => void;
-  /** Dev-only: Claude plays the enemy side instead of the scripted AI.
-   *  Persisted so it survives the reloads a dev session is full of. */
-  duelMode: boolean;
-  setDuelMode: (on: boolean) => void;
   /**
    * Show the grey "effect" entries — the uncancellable ones (ruling #30).
    * Off by default: nothing about them is actionable, and they crowded out
@@ -89,8 +85,6 @@ export const useSettingsStore = create<SettingsState>()(
         set({ musicVolume: Math.max(0, Math.min(1, volume)) }),
       musicMuted: false,
       setMusicMuted: (muted) => set({ musicMuted: muted }),
-      duelMode: false,
-      setDuelMode: (on) => set({ duelMode: on }),
       showUncancellableEffects: false,
       setShowUncancellableEffects: (show) =>
         set({ showUncancellableEffects: show }),

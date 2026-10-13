@@ -24,10 +24,11 @@ describe("migratePlayerState — v1 (inventory.gems) to v2 (currencies split)", 
     });
   });
 
-  it("defaults gems to 1000 if the v1 inventory had none", () => {
+  it("defaults gems to the starter amount if the v1 inventory had none", () => {
+    // 500 since 2026-10-13 (ruling #190); it was 1,000.
     const v1 = { uid: null, roster: ["duke"], inventory: {}, pity: { standard: 0, limited: 0 } };
     const result = migratePlayerState(v1, 1);
-    expect(result.currencies.gems).toBe(1000);
+    expect(result.currencies.gems).toBe(500);
     expect(result.currencies.permanentTicket).toBe(0);
   });
 

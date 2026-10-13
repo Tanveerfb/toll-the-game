@@ -20,7 +20,7 @@ import type { StatusEffect } from "@/types/mechanic";
  * engine half needed no change; the hand and the AI did, and checked "attack"
  * by name.
  */
-export const DEBUFF_CATEGORY_MECHANICS: ReadonlySet<string> = new Set([
+const DEBUFF_CATEGORY_MECHANICS: ReadonlySet<string> = new Set([
   "debuff",
   "stun",
   "freeze",
@@ -40,7 +40,7 @@ interface SkillLike {
 }
 
 /** Whether one seal entry blocks `skill`. */
-export function sealBlocks(seal: StatusEffect, skill: SkillLike): boolean {
+function sealBlocks(seal: StatusEffect, skill: SkillLike): boolean {
   if (seal.type !== "seal") return false;
   if (seal.sealType === "attackDebuff") {
     return (

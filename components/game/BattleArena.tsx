@@ -51,9 +51,6 @@ import UnitDetailPanel from "@/components/game/battle/UnitDetailPanel";
 import BattleLogDrawer from "@/components/game/battle/BattleLogDrawer";
 import { buildBattleReport } from "@/lib/game/battleReport";
 import { useBattleSequencer } from "@/hooks/useBattleSequencer";
-import DuelWaitingOverlay from "@/components/game/battle/DuelWaitingOverlay";
-import { publishDuelResult } from "@/lib/duel/client";
-import { useSettingsStore } from "@/store/settingsStore";
 import {
   describeStageEffect,
   groupStageEffects,
@@ -302,8 +299,6 @@ export default function BattleArena({
   // (lib/game/sub.ts), at which point they appear here on their own.
   const playerOnField = playerTeam.filter((u) => !u.isSub);
   const enemyOnField = enemyTeam.filter((u) => !u.isSub);
-  // Dev-only duel mode: shows who is actually piloting the enemy side.
-  const duelMode = useSettingsStore((s) => s.duelMode);
   const stageEffects = useGameStore((s) => s.stageEffects);
 
   // Exit Battle (player-initiated forfeit) — ends the fight as a loss. Ordinary
@@ -362,27 +357,6 @@ export default function BattleArena({
 
     return () => window.clearTimeout(timer);
   }, [battlePhase, resolveEnemyTurnWrapper, battleSpeed]);
-
-  // A finished duel writes no further state, so without this the watcher on
-  // the other side waits forever and never learns the result (hit in the first
-  // duel, 2026-08-09). Fires once per battle.
-  const duelResultSentRef = React.useRef(false);
-  React.useEffect(() => {
-    if (!duelMode) return;
-    if (battlePhase !== "victory" && battlePhase !== "defeat") {
-      duelResultSentRef.current = false;
-      return;
-    }
-    if (duelResultSentRef.current) return;
-    duelResultSentRef.current = true;
-    void publishDuelResult({
-      outcome: battlePhase,
-      enemyTeam,
-      playerTeam,
-      turn: currentTurn,
-      recentEvents: battleLog.slice(-15),
-    });
-  }, [duelMode, battlePhase, enemyTeam, playerTeam, currentTurn, battleLog]);
 
   // Auto-dismiss the phase-break flourish after it plays
   React.useEffect(() => {
@@ -671,7 +645,6 @@ export default function BattleArena({
       data-battle-active=""
       className={`relative flex min-h-0 flex-1 flex-col ${screenShakeClass}`}
     >
-      <DuelWaitingOverlay />
       <BattleEffectsOverlay
         battleLog={overlayLog}
         battlePhase={battlePhase}
@@ -1036,11 +1009,6 @@ export default function BattleArena({
           TURN {currentTurn + 1}
         </span>
         <Badge className="ink-skew truncate">{phaseLabel}</Badge>
-        {duelMode ? (
-          <Badge variant="outline" className="hidden shrink-0 sm:inline-flex">
-            Duel
-          </Badge>
-        ) : null}
         {/* Breakpoints on a readout row, deliberately (2026-08-21). This strip
             is one line and everything in it competes for the same ~390px, so
             the question isn't "does it fit" but "what gets truncated to make
@@ -1176,22 +1144,12 @@ export default function BattleArena({
             </SheetDescription>
           </SheetHeader>
 
-            {/* Only what the screen does not already show: the fight's context
-                and the duel mode. Turn, actions, resolved and field counts were
-                readouts of things the battle screen carries (ruling #178). */}
-            {contextLabel || duelMode ? (
+            {/* Only what the screen does not already show: the fight's context.
+                Turn, actions, resolved and field counts were readouts of things
+                the battle screen carries (ruling #178). */}
+            {contextLabel ? (
               <div className="mb-3 border-2 border-border bg-muted px-3 py-1">
-                {contextLabel ? (
-                  <SheetStat label="Fight" value={contextLabel} />
-                ) : null}
-                {duelMode ? (
-                  <SheetStat
-                    label="Mode"
-                    value={
-                      <span>Duel — Claude plays the enemy</span>
-                    }
-                  />
-                ) : null}
+                <SheetStat label="Fight" value={contextLabel} />
               </div>
             ) : null}
 

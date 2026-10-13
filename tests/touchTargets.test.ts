@@ -266,7 +266,7 @@ describe("explanations are reachable without a pointer", () => {
         // — except JSX props are full of arrow functions, and `=>` carries a
         // `>`. Testing for it naively made this check skip **every element
         // with an `onClick` before its `title`**, which is most of them: it is
-        // how `DuelToggle`'s title survived the 2026-09-01 sweep that was
+        // how a dev toggle's title survived the 2026-09-01 sweep that was
         // written to catch exactly that. Strip the arrows first.
         const between = before.slice(open).replace(/=>/g, "");
         if (between.includes(">")) continue;

@@ -19,7 +19,7 @@ import type { ActionCard } from "@/types/action";
  * (`CharacterSkillData`, whose `statMultiplier` is a plain string) and of
  * built cards, and neither should have to be cast to ask it.
  */
-export interface TargetableSkill {
+interface TargetableSkill {
   type: string;
   damage?: number;
   damageRanked?: number[];

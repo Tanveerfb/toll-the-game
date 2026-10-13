@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  * the border, fill or slab. Unit tiles in the team picker are drawn by
  * `UnitTileFace`, which has its own bevel for the same state.
  */
-export const selectTileVariants = cva("border-2 transition-colors", {
+const selectTileVariants = cva("border-2 transition-colors", {
   variants: {
     selected: {
       true: "border-border ink-slab-primary",

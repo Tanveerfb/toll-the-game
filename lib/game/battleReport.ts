@@ -28,7 +28,7 @@ import { ultGaugeMax } from "@/lib/game/ultGauge";
  * stream doesn't model (Open Issue #22) — but it is an appendix, not a source.
  */
 
-export interface ReportUnit {
+interface ReportUnit {
   instanceId: string;
   characterId: string;
   name: string;
@@ -49,7 +49,7 @@ export interface ReportUnit {
   passiveName?: string;
 }
 
-export interface UnitTotals {
+interface UnitTotals {
   instanceId: string;
   name: string;
   team: "player" | "enemy";
@@ -72,7 +72,7 @@ export interface UnitTotals {
   diedOnTurn?: number;
 }
 
-export interface ReportAnomaly {
+interface ReportAnomaly {
   kind:
     | "zero-damage-attack"
     | "chip-damage-attack"

@@ -4,6 +4,7 @@ import {
   DEVICE_LOCAL_FIELDS,
   cloudDocument,
   cloudPatch,
+  firestoreShapeProblems,
 } from "@/lib/game/cloudSave";
 import {
   CURRENT_PLAYER_STATE_VERSION,
@@ -52,10 +53,30 @@ const LOCAL = {
       firstClearAt: 1,
       lastClearAt: 2,
       bestTurns: 6,
-      teams: [["duke", "lyra"]],
+      teams: ["duke|lyra"],
     },
   },
 } as unknown as PlayerState;
+
+describe("what gets written is something Firestore will accept", () => {
+  // Issue #28 (2026-10-13): `epicClears[*].teams` was an array of arrays,
+  // which Firestore rejects, so every write after the first Epic clear threw
+  // silently. The fixture above has a cleared stage on purpose.
+  it("the document has no nested array and no undefined", () => {
+    expect(firestoreShapeProblems(cloudDocument(LOCAL))).toEqual([]);
+  });
+
+  it("the guard itself catches what Firestore rejects", () => {
+    // A green guard is not a working guard: prove it goes red.
+    expect(firestoreShapeProblems({ teams: [["duke", "lyra"]] })).toEqual([
+      "document.teams[0]: nested array",
+    ]);
+    expect(firestoreShapeProblems({ a: { b: undefined } })).toEqual([
+      "document.a.b: undefined",
+    ]);
+    expect(firestoreShapeProblems({ ok: [{ ids: ["a"] }], n: null })).toEqual([]);
+  });
+});
 
 describe("what gets written", () => {
   it("writes every synced field plus the version", () => {

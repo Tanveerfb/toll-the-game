@@ -3,7 +3,7 @@ import { useGameStore } from "@/store/gameStore";
 import type { BattleCharacter } from "@/types/character";
 import type { ActionCard } from "@/types/action";
 import type { SkillCard } from "@/types/skillCard";
-import leorioData from "@/data/characters/leorio.json";
+import medicData from "@/tests/fixtures/characters/fx_medic.json";
 
 /**
  * `mergeAllCards` end to end through the store.
@@ -14,7 +14,9 @@ import leorioData from "@/data/characters/leorio.json";
  * reason Merge All is a button rather than an automatic toggle, so it is worth
  * holding down rather than trusting the wrapper to stay thin.
  */
-const skill = leorioData.skills[0] as unknown as SkillCard;
+// Any card shape will do; the Medic fixture's first skill is one that
+// already loads in the unit suite.
+const skill = medicData.skills[0] as unknown as SkillCard;
 
 function makeChar(instanceId: string, ultGauge = 0): BattleCharacter {
   return {

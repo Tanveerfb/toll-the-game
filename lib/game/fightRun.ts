@@ -56,7 +56,7 @@ export interface FightOutcome {
 }
 
 /** What one won fight looked like. See `FightRunState.history`. */
-export interface FightRecord {
+interface FightRecord {
   /** Player turns this fight took. */
   turns: number;
   /** Player ultimates fired this fight. */

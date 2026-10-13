@@ -1,9 +1,7 @@
-import ban from "@/data/characters/ban.json";
 import batra from "@/data/characters/batra.json";
 import blueLyra from "@/data/characters/blue_lyra.json";
 import caila from "@/data/characters/caila.json";
 import chiara from "@/data/characters/chiara.json";
-import diane from "@/data/characters/diane.json";
 import duke from "@/data/characters/duke.json";
 import frost from "@/data/characters/frost.json";
 import gabrist from "@/data/characters/gabrist.json";
@@ -11,14 +9,10 @@ import gale from "@/data/characters/gale.json";
 import greenDuke from "@/data/characters/green_duke.json";
 import iron from "@/data/characters/iron.json";
 import isolde from "@/data/characters/isolde.json";
-import gon from "@/data/characters/gon.json";
-import killua from "@/data/characters/killua.json";
-import leorio from "@/data/characters/leorio.json";
 import lyra from "@/data/characters/lyra.json";
 import lyraNpc from "@/data/characters/lyra_npc.json";
 import masterTao from "@/data/characters/master_tao.json";
 import masterTaoNpc from "@/data/characters/master_tao_npc.json";
-import meliodas from "@/data/characters/meliodas.json";
 import molvarr from "@/data/characters/molvarr.json";
 import mustafa from "@/data/characters/mustafa.json";
 import prism from "@/data/characters/prism.json";
@@ -117,7 +111,7 @@ export interface CharacterData {
    */
   unreleased?: boolean;
   /** Evergreen-pool membership for the Permanent gacha banner. Flipped by
-   *  hand per character (docs/superpowers/specs/2026-08-01-gacha-design.md)
+   *  hand per character (docs/archive/superpowers/specs/2026-08-01-gacha-design.md)
    *  — never set automatically. Absent/false = not in the pool. */
   permanentPool?: boolean;
   /**
@@ -142,27 +136,21 @@ export interface CharacterData {
 }
 
 const rawCharacters = [
-  ban,
   batra,
   blueLyra,
   caila,
   chiara,
-  diane,
   duke,
   frost,
   gabrist,
   gale,
   greenDuke,
-  gon,
   iron,
   isolde,
-  killua,
-  leorio,
   lyra,
   lyraNpc,
   masterTao,
   masterTaoNpc,
-  meliodas,
   molvarr,
   mustafa,
   prism,
@@ -202,17 +190,15 @@ const characterMap = new Map<string, CharacterData>(
   characters.map((character) => [character.id, character]),
 );
 
-export const characterIds = characters.map((character) => character.id);
-
 /**
  * Whether unreleased kits show on screens: local development only. Next.js
  * inlines `NODE_ENV` at build time, so the deployed site never carries them,
  * and `next dev` on his PC (the server he forwards to his phone) always does.
  */
-export const SHOWS_UNRELEASED = process.env.NODE_ENV === "development";
+const SHOWS_UNRELEASED = process.env.NODE_ENV === "development";
 
 /** Whether a kit may appear on a player-facing screen in this build. */
-export function isVisible(character: { unreleased?: boolean }): boolean {
+function isVisible(character: { unreleased?: boolean }): boolean {
   return character.unreleased !== true || SHOWS_UNRELEASED;
 }
 
@@ -366,7 +352,7 @@ export function getCharacterMechanics(character: CharacterData): string[] {
 
 /**
  * Inject/replace a character at runtime without touching disk. Not part of
- * the static roster (getAllCharacters/characterIds are unchanged) — it only
+ * the static roster (getAllCharacters is unchanged) — it only
  * makes getCharacterById resolve the id for startCustomBattle. Used by the
  * player-facing Preview sandbox (lib/game/damagePreview.ts's practice
  * dummy) to register an ephemeral, never-persisted opponent.

@@ -6,7 +6,7 @@
  * the same matchup across all four formats — rather than one number.
  *
  *   npm run sim -- duke seras                     # duke vs seras, every format
- *   npm run sim -- duke,lyra,seras chiara,gon,ban # team vs team
+ *   npm run sim -- duke,lyra,seras chiara,mustafa,seras # team vs team
  *   npm run sim -- duke seras --runs 500 --seed 7
  *   npm run sim -- --roster duke                  # duke vs the whole roster, 3v3
  *
@@ -182,7 +182,7 @@ async function main(): Promise<void> {
         "",
         "  Ids are comma-separated for a team:",
         "    npm run sim -- duke seras",
-        "    npm run sim -- duke,lyra,seras chiara,gon,ban",
+        "    npm run sim -- duke,lyra,seras chiara,mustafa,seras",
         "",
         "  Limits are documented in lib/game/simulate.ts and they matter:",
         "  no card draw, AI plays both sides, base stats only.",

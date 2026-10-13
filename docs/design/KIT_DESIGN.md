@@ -3,10 +3,22 @@
 How to draft a character kit for this game. Written 2026-08-10 from Tanveer's
 own method, so a draft arrives close to his intent instead of needing rebuilding.
 
-**Ownership.** Tanveer designs the **OG roster** himself. Claude may draft
-**collab units and pop-culture-inspired units** under his direction. Either way
+**Ownership.** Tanveer designs the roster himself, and the roster is the IP's
+own: the six collab units left the game on 2026-10-13 (ruling #187) and no
+kit is drafted from another work's character again. Claude drafts **the units
+he names** under his direction. Either way
 he owns skill names, mechanical effects, damage multipliers and final kit JSON —
 `AGENTS.md` still applies: don't invent or rebalance mechanics unprompted.
+
+**Starting a kit (2026-10-13).** `npm run newkit -- <id> --name "<Name>"
+--color <element>` copies `data/kit.template.json`, stamps the id and the
+next free card number and sets `unreleased`. **Never start from another
+character's file**: his rule, after Duke's became the base for everything.
+The shape is the template, the law is `lib/game/characterSchema.ts`
+(`data/kit.schema.json` for editors), the content is his draft.
+`data/characters/README.md` has the steps that follow; in `toll-kits` the
+same template goes into `drafts/<id>/kit.json` and `npm run audit` checks it
+against the same schema.
 
 **He names the character. Every time.** Don't self-select a subject and start
 drafting, even after offering and hearing no objection (Tanveer, 2026-08-10). He
@@ -43,7 +55,8 @@ character kit we are working with"). Anchors are a flourish he applies himself
 when one happens to fit; they are never a requirement, and asking him to supply
 one is wasted turns.
 
-Where he has used them: Netero's **287 ATK** (287th Hunter Exam) and **110 DEF**
+**Illustrations only (2026-10-13).** Knuckle and Netero will not be built;
+their examples stay because the principles are his. Where he has used them: Netero's **287 ATK** (287th Hunter Exam) and **110 DEF**
 (his age); Knuckle's stats from his debut chapter/episode numbers.
 
 The role bands, **post-rebalance** (ruling #68, applied 2026-08-10 — every number
@@ -103,8 +116,9 @@ by surviving and by passive ramps. Mixing reads as two half-characters.
 - The **passive carries the character's story** and is usually a conditional
   trigger plus a stacking counter — not a flat stat bonus.
 - Named effects get **bracketed names**: [APR], [IRS], [Charged], [Suppressed],
-  [Pinnacle of Nen Mastery], [Flowing Ruin], [Collab].
-- Collab units carry a `[Collab]` synergy; `tags` drive synergy matching.
+  [Pinnacle of Nen Mastery], [Flowing Ruin].
+- `tags` drive synergy matching ([Human], [Female], [Khalsa]); a synergy's
+  tag must be one the roster carries.
 
 ## 4. New mechanics budget
 
@@ -230,4 +244,4 @@ mid-turn DEF changes.
 6. State durations, and whether each effect is cancellable.
 7. Sanity-check R1 pacing in all four formats.
 8. List every open question **before** writing JSON — Tanveer answers fast and
-   the answers change the shape (see `toll-kits`' `planned/knuckle-and-netero.md`).
+   the answers change the shape.

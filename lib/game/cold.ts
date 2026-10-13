@@ -28,7 +28,7 @@ import type { BattleCharacter } from "@/types/character";
  *    into the enemy's turn and costs them that turn.
  */
 
-export const COLD_NAME = "Cold";
+const COLD_NAME = "Cold";
 
 function coldEntryIndex(unit: BattleCharacter, sourceId: string): number {
   return unit.debuffs.findIndex(

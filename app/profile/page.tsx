@@ -16,6 +16,7 @@ import SoundSettings from "@/components/game/SoundSettings";
 import NavTile from "@/components/ui/NavTile";
 import { Screen } from "@/components/ui/Screen";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { panelVariants } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils";
 
@@ -51,7 +52,7 @@ function Resource({
 export default function ProfilePage() {
   // A guest is a player too: this page renders for them, and the Account
   // dialog carries the sign-in button (a guest was redirected away before).
-  const { user } = useAuth();
+  const { user, cloudStatus } = useAuth();
   const hasHydrated = usePlayerStore((s) => s.hasHydrated);
   const currencies = usePlayerStore((s) => s.currencies);
   const account = usePlayerStore((s) => s.account);
@@ -143,6 +144,19 @@ export default function ProfilePage() {
             </span>
           </div>
         </header>
+
+        {/* The cloud copy is behind and the player would otherwise never know:
+            before 2026-10-13 a rejected write was a console line (issue #28).
+            The note is the shared `Alert`; where it sits is his to move. */}
+        {user && cloudStatus === "unavailable" && (
+          <Alert variant="destructive" className="mt-3">
+            <AlertTitle>Cloud save is not reaching your account</AlertTitle>
+            <AlertDescription>
+              Progress is kept on this device. Check the connection and sign
+              in again to sync.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="mt-3 flex flex-wrap gap-2">
           <Resource

@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { spendStamina, STAMINA_CAP } from "@/lib/game/stamina";
 import { AUTO_CLEAR_TICKETS_PER_RANK } from "@/lib/game/autoClear";
-import { applyEpicClear, type EpicClears } from "@/lib/game/epicClears";
+import { applyEpicClear, teamIds, teamKey, type EpicClears } from "@/lib/game/epicClears";
+import { isRemovedCharacterId, REMOVED_COIN_IDS } from "@/lib/game/removedCharacters";
 import { planLevelUp, type ManualSpend } from "@/lib/game/leveling";
 import {
   ascensionBlocker,
@@ -247,7 +248,7 @@ export type PersistedPlayerData = Omit<
   | "recordEpicClear"
 >;
 
-export const DEFAULT_PITY = {
+const DEFAULT_PITY = {
   limited: { bannerId: null, bar: 0, claimedFirst: false, claimedFinal: false },
   permanent: { bar: 0, claimedFinal: false },
 } as const;
@@ -301,7 +302,9 @@ function defaultCharacterProgress(
 export const DEFAULT_PLAYER_STATE = {
   uid: null,
   roster: ["duke"], // Starter characters
-  currencies: { gems: 1000, coin: 0, permanentTicket: 0 }, // Starter currency
+  // Starter currency. 500 gems since 2026-10-13 (ruling #190), a playtest
+  // value registered in docs/demo-shortcuts.md; his launch number replaces it.
+  currencies: { gems: 500, coin: 0, permanentTicket: 0 },
   inventory: {} as Record<string, number>,
   characters: {} as Record<string, CharacterProgress>,
   presets: [] as TeamPreset[],
@@ -349,7 +352,7 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     account: { rank: 1, xp: 0, clearedWalls: [] as number[] },
     worldLevel: 1,
     stamina: { current: STAMINA_CAP, updatedAt: Date.now() },
-    currencies: { gems: 1000, coin: 0, permanentTicket: 0 },
+    currencies: { gems: 500, coin: 0, permanentTicket: 0 },
     stats: { pulls: 0, bossClears: 0 },
     claimedOrders: {} as Record<string, boolean>,
     autoClearTickets: 0,
@@ -364,7 +367,7 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     const { gems, ...materials } = oldInventory;
     state = {
       ...state,
-      currencies: { gems: gems ?? 1000, coin: 0 },
+      currencies: { gems: gems ?? 500, coin: 0 },
       inventory: materials,
       characters: {},
       stamina: { current: STAMINA_CAP, updatedAt: Date.now() },
@@ -372,7 +375,7 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
   }
 
   if (version < 3) {
-    const oldCurrencies = (state.currencies as { gems: number; coin: number } | undefined) ?? { gems: 1000, coin: 0 };
+    const oldCurrencies = (state.currencies as { gems: number; coin: number } | undefined) ?? { gems: 500, coin: 0 };
     const oldCharacters =
       (state.characters as Record<string, { level: number; ascension: number; xp: number }> | undefined) ?? {};
     const migratedCharacters: Record<string, CharacterProgress> = {};
@@ -543,10 +546,67 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     };
   }
 
+  if (version < 11) {
+    // v10 → v11: each cleared team becomes one key (`"duke|lyra"`) instead of
+    // an array of ids. Firestore rejects an array nested in an array, so the
+    // v10 shape made every cloud write throw from the first Epic Battles
+    // clear, silently (issue #28, 2026-10-13). A record that is already keyed
+    // passes through; a legacy row is rebuilt through `teamKey` so it is
+    // sorted and distinct the same way a fresh clear would be.
+    const legacy = (state.epicClears as Record<string, { teams?: unknown }> | undefined) ?? {};
+    const epicClears: EpicClears = {};
+    for (const [stage, record] of Object.entries(legacy)) {
+      const teams = Array.isArray(record.teams) ? record.teams : [];
+      const keyed = teams.map((team) =>
+        Array.isArray(team) ? teamKey(team.map(String)) : String(team),
+      );
+      epicClears[stage] = {
+        ...(record as unknown as EpicClears[string]),
+        teams: [...new Set(keyed.filter((key) => key !== ""))],
+      };
+    }
+    state = { ...state, epicClears };
+  }
+
+  if (version < 12) {
+    // v11 → v12: the six collab units left the game (2026-10-13, ruling
+    // #187). A save still naming one would crash every catalog lookup, so
+    // they are dropped from the roster, progress, presets, the last team, the
+    // coin inventory and the epic clear teams. Nothing is refunded: they were
+    // never in a banner (issue #32). `lib/game/removedCharacters.ts` is the
+    // list; a save from before the removal can still arrive from any device.
+    const keep = (id: string) => !isRemovedCharacterId(id);
+    const roster = ((state.roster as string[] | undefined) ?? []).filter(keep);
+    const characters = Object.fromEntries(
+      Object.entries(
+        (state.characters as Record<string, CharacterProgress> | undefined) ?? {},
+      ).filter(([id]) => keep(id)),
+    );
+    const presets = ((state.presets as TeamPreset[] | undefined) ?? [])
+      .map((preset) => ({ ...preset, memberIds: preset.memberIds.filter(keep) }))
+      .filter((preset) => preset.memberIds.length > 0);
+    const lastTeam = ((state.lastTeam as string[] | undefined) ?? []).filter(keep);
+    const inventory = Object.fromEntries(
+      Object.entries((state.inventory as Record<string, number> | undefined) ?? {}).filter(
+        ([id]) => !REMOVED_COIN_IDS.includes(id),
+      ),
+    );
+    const epicClears: EpicClears = {};
+    for (const [stage, record] of Object.entries(
+      (state.epicClears as EpicClears | undefined) ?? {},
+    )) {
+      const teams = [
+        ...new Set(record.teams.map((key) => teamKey(teamIds(key).filter(keep)))),
+      ].filter((key) => key !== "");
+      epicClears[stage] = { ...record, teams };
+    }
+    state = { ...state, roster, characters, presets, lastTeam, inventory, epicClears };
+  }
+
   return state as unknown as PersistedPlayerData;
 }
 
-export const CURRENT_PLAYER_STATE_VERSION = 10;
+export const CURRENT_PLAYER_STATE_VERSION = 12;
 
 export const usePlayerStore = create<PlayerState>()(
   persist(
@@ -1100,7 +1160,29 @@ export const usePlayerStore = create<PlayerState>()(
       name: 'toll-player-storage',
       version: CURRENT_PLAYER_STATE_VERSION,
       migrate: migratePlayerState,
-      onRehydrateStorage: () => (state) => {
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          // A save that will not migrate (hand-edited, or written by a build
+          // this one cannot read) used to leave `hasHydrated` false forever,
+          // and every gated screen stayed a skeleton with no message (audit
+          // 2026-10-13, "a corrupt save bricks the UI silently"). The raw
+          // item is kept under a dated key so nothing is lost, and the game
+          // comes up on defaults rather than not at all.
+          try {
+            const raw = window.localStorage.getItem("toll-player-storage");
+            if (raw) {
+              window.localStorage.setItem(
+                `toll-player-storage.unreadable.${Date.now()}`,
+                raw,
+              );
+            }
+          } catch {
+            // Storage unavailable: nothing to keep.
+          }
+          console.error("Player save could not be read; starting from defaults.", error);
+          usePlayerStore.setState({ hasHydrated: true });
+          return;
+        }
         state?.setPlayerState({ hasHydrated: true });
       },
     }

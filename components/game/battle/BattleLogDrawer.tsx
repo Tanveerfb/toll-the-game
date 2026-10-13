@@ -32,7 +32,7 @@ interface TurnGroup {
  * end of a battle log is always the end). Events inside a turn stay in
  * resolution order — reversing them would scramble cause and effect.
  */
-export function groupEventsByTurn(
+function groupEventsByTurn(
   events: SequencedBattleEvent[],
 ): TurnGroup[] {
   const byTurn = new Map<number, SequencedBattleEvent[]>();

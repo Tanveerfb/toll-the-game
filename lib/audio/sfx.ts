@@ -23,7 +23,7 @@ import { SFX, SFX_CUES, type SfxCue } from "@/lib/audio/cues";
  * passes them in.
  */
 
-export interface SfxSettings {
+interface SfxSettings {
   volume: number;
   muted: boolean;
 }
@@ -42,7 +42,7 @@ export interface SfxBus {
   dispose: () => void;
 }
 
-export interface SfxBusOptions {
+interface SfxBusOptions {
   /** Injected so tests can step time rather than wait out a throttle. */
   now?: () => number;
   /** Injected so tests never construct a real Howl. */
@@ -59,7 +59,7 @@ const defaultCreateHowl = (src: string, volume: number): Howl =>
     html5: false,
   });
 
-export function createSfxBus(options: SfxBusOptions = {}): SfxBus {
+function createSfxBus(options: SfxBusOptions = {}): SfxBus {
   const { now = () => Date.now(), createHowl = defaultCreateHowl } = options;
 
   const voices = new Map<SfxCue, Voice>();
@@ -122,9 +122,4 @@ let shared: SfxBus | null = null;
 export function getSfxBus(): SfxBus {
   if (!shared) shared = createSfxBus();
   return shared;
-}
-
-/** Test seam — replaces the singleton, so a suite never builds a real Howl. */
-export function setSfxBus(bus: SfxBus | null): void {
-  shared = bus;
 }

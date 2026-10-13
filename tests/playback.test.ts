@@ -64,8 +64,8 @@ describe("isPlaybackCaughtUp", () => {
 
 describe("waitForPlayback", () => {
   it("resolves immediately when no sequencer is mounted", async () => {
-    // Tests, the duel watcher and any other headless caller drive battles with
-    // no arena on screen. If this ever blocked, those would hang outright.
+    // Tests and any other headless caller drive battles with no arena on
+    // screen. If this ever blocked, those would hang outright.
     setPlayback(0, 5, false);
     expect(await settled(waitForPlayback())).toBe(true);
   });

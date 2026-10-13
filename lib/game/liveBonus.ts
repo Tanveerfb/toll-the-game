@@ -24,7 +24,7 @@ import type { LiveBonusMechanic, StatusEffect } from "@/types/mechanic";
 type Teams = { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] };
 
 /** The count a mechanic tracks, over the opposing side's living units. */
-export function liveCount(
+function liveCount(
   mech: LiveBonusMechanic,
   opposing: readonly BattleCharacter[],
 ): number {
@@ -45,7 +45,7 @@ export function liveCount(
 }
 
 /** The percent a mechanic currently grants: per-count value, clamped. */
-export function liveBonusPercent(
+function liveBonusPercent(
   mech: LiveBonusMechanic,
   opposing: readonly BattleCharacter[],
 ): number {

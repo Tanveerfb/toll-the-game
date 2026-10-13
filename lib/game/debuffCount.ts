@@ -23,7 +23,7 @@ import type { StatusEffect } from "@/types/mechanic";
 
 /** The unit's debuffs grouped as the player counts them: each group is the
  *  indices of the entries that make up ONE debuff. */
-export function debuffGroups(
+function debuffGroups(
   unit: Pick<BattleCharacter, "debuffs">,
 ): number[][] {
   const groups: number[][] = [];

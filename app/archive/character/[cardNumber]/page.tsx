@@ -85,7 +85,7 @@ export default async function CharacterDetailPage({
   const isMultiPhase = getCharacterPhases(character).length > 1;
 
   return (
-    // `app`, not `read`, deliberately. Plans/2026-09-17-layout-system.md files
+    // `app`, not `read`, deliberately. Plans/completed/2026-09-17-layout-system.md files
     // "kit pages" under `read` (42rem), but that was written before this screen
     // gained its 290px stat sidebar: at 42rem the main column resolves to
     // 368px, narrower than the content area of a 390px phone. `app` gives it
@@ -108,7 +108,7 @@ export default async function CharacterDetailPage({
               multiplier you're reading further down a long kit. */}
           <aside className="flex flex-col gap-2.5 lg:sticky lg:top-4 lg:self-start">
             {/* The card row (his pick B, 2026-09-27, from
-                docs/design/mockups/character-header.html): a card-shaped
+                docs/design/character-header.html): a card-shaped
                 thumbnail beside the name, the stats in one row, then Growth
                 and Preview. It was a full-width square portrait, 336px tall on
                 a phone, which put Growth at the fold (772px of 792) and the

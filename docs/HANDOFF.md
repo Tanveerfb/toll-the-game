@@ -21,10 +21,10 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 | `docs/AUDIO.md` | Music roles, the files Tanveer supplies, and how the player behaves without them |
 | `docs/ART_PIPELINE.md` | AI art generation: model, prompt template, seeds, per-character notes |
 | `docs/design/SKILL_ART_PLAN.md` | Per-skill art (48 shipped) — IP-Adapter recipe, sampler fix, prompt-budget rules |
-| `docs/PRODUCT_AUDIT.md` | What's missing to make this a live game (standing gap analysis) |
-| `docs/TECH_AUDIT.md` | 2026-07-21 engineering pass, closed out |
+| `docs/GAME_AUDIT_2026-10-13.md` | The current audit: the save, the loop, the economy, ops. The 2026-07-18 product audit it replaces is in `docs/archive/` |
+| `docs/archive/TECH_AUDIT-2026-07-21.md` | The 2026-07-21 engineering pass, closed out |
 | `docs/design/references/INDEX.md` | What each reference screenshot shows (7DSGC / Dokkan / "ref4") |
-| `docs/superpowers/specs/` | Per-feature design specs (kit lab, battle UI, world boss, gacha, patch notes) |
+| `docs/archive/superpowers/specs/` | The July–August per-feature design specs (kit lab, battle UI, world boss, gacha, patch notes), all built; kept as the record |
 | `AGENTS.md` | Condensed rules (loaded automatically by most agent harnesses) |
 
 ## Design Rulings Ledger (all from Tanveer, don't re-litigate)
@@ -68,13 +68,13 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
     **Skills and ultimates raise crit chance too, not only passives** (Tanveer, 2026-08-19): *"skills or ults can also increase crit chance, just like how chiara increases her evade chance."* This entry used to end "currently sourced by Meliodas's Deathblow", which described the roster rather than the rule — and `getCritChance` had been written to match it, summing the Deathblow passive and returning. **Any authored crit-chance buff was therefore inert**: it would sit in the data, render on the card, and never reach the roll. Now routed through `effectiveSubstat`, the same path crit damage, lifesteal and recovery rate already used, so buffs and debuffs both count, `stats` arrays are honoured and the value clamps at 0. Crit chance is inside "all stats"; evade is not (#55). Pinned by `tests/substats.test.ts`.
 17. **Counters** (Full Counter): the attacked unit still takes the damage, then counters — unless the hit killed it. Counters don't chain.
-18. **Extort**: per-stat mapping (stolen ATK→ATK, stolen DEF→DEF), self-gain lasts as long as the enemy debuff, recasting refreshes (never stacks). Ult Extort = 50% for 2 turns.
-19. **Extort Life**: full revert — taking ANY damage (incl. DoT/counters) restores enemy max HP and zeroes the stacks; no free heal on revert (current HP keeps its clamped value).
+18. **Kit retired by #187 (2026-10-13); the mechanic stays in the engine, exercised by `tests/fixtures/characters/`.** **Extort**: per-stat mapping (stolen ATK→ATK, stolen DEF→DEF), self-gain lasts as long as the enemy debuff, recasting refreshes (never stacks). Ult Extort = 50% for 2 turns.
+19. **Kit retired by #187 (2026-10-13); the mechanic stays in the engine, exercised by `tests/fixtures/characters/`.** **Extort Life**: full revert — taking ANY damage (incl. DoT/counters) restores enemy max HP and zeroes the stacks; no free heal on revert (current HP keeps its clamped value).
 20. **Stat buffs/debuffs are real**: effective ATK/DEF (`lib/game/stats.ts`) = current stat × percent entries + flat entries. `preApplied` entries are display badges for already-baked gains (synergy, ramps) and are skipped.
 21. **Literal effect durations** (2026-07-11, replaces old tick semantics): "N turns" means exactly N procs / N blocked turns. Harmful effects (debuffs, DoT, stun, seal) tick at the END of the victim's team turn — the victim always gets their own turn to cleanse before a proc lands. Beneficial effects (buffs, stances, HoT) tick at the START of the owner's team turn — a 1-turn buff protects through the whole opposing turn. His walkthrough: "t1 player (applies debuff) -> t1 enemy -> debuff procs once -> t2 player -> t2 enemy -> debuff procs and then expires -> t3 player".
 22. **Self-buff-then-hit order** (2026-07-11): a skill that raises the caster's stats and deals damage applies the buff BEFORE the damage calc — the same strike benefits (Gon's Jajanken Rock, both HxH ults).
-23. **Undurationed ult stat raises are permanent** (2026-07-11): Gon/Killua ult +30% raises last the rest of the battle and stack.
-24. **Kind Hearted Friend semantics** (2026-07-11): base +10% is decided once at battle start if Gon OR Killua is a team member (sub counts, survives their death); the extra +10% is dynamic — active only while both are alive on the field, drops when one dies. **The two halves target different stats** (2026-08-09): the base bond raises **basic stats**, the both-alive bonus raises **all stats** (substats included) — it's restrictive enough to earn it. `stats` / `bothAliveStat` on the mechanic; the passive wording states each half explicitly.
+23. **Kit retired by #187 (2026-10-13); the mechanic stays in the engine, exercised by `tests/fixtures/characters/`.** **Undurationed ult stat raises are permanent** (2026-07-11): Gon/Killua ult +30% raises last the rest of the battle and stack.
+24. **Kit retired by #187 (2026-10-13); the mechanic stays in the engine, exercised by `tests/fixtures/characters/`.** **Kind Hearted Friend semantics** (2026-07-11): base +10% is decided once at battle start if Gon OR Killua is a team member (sub counts, survives their death); the extra +10% is dynamic — active only while both are alive on the field, drops when one dies. **The two halves target different stats** (2026-08-09): the base bond raises **basic stats**, the both-alive bonus raises **all stats** (substats included) — it's restrictive enough to earn it. `stats` / `bothAliveStat` on the mechanic; the passive wording states each half explicitly.
 25. **Effect pill colors on hover keywords** (2026-07-11): red = attack-based effects, purple = debuffs (incl. attack-applied ones), green = heals + cleanses, yellow = stances, white = cancels. S1/S2 chips follow the same scheme; ULT stays yellow. Keep skill text short — mechanics stay a mystery for players to discover.
 26. **Dokkan description wording** (2026-07-11): tiered words replace numbers — "raises" (<50%), "greatly raises" (50–79%), "massively raises" (80%+), same tiers for "lowers". Hovering the word shows that skill's exact values (per-rank dynamic glossary). No "own" — a raise always means the skill user. Effects are cancellable and stackable by default; exceptions are called out in the description text. Hover tooltips show the percentage ONLY (e.g. "Increases ATK by 30%") — duration and flags belong to the text.
 27. **One pill per unique effect** (2026-07-11): a skill description gets exactly one hover pill per distinct effect/modifier — phrase-level keys ("cancels buffs and stances", "cancels stances") instead of pilling every word; generic words like "stance" are not glossary keys. **Pierce is a flat 50% DEF ignore for every card** — no per-card pierce values anymore.
@@ -85,13 +85,13 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 29. **Lethal survival catches DoT deaths; revivals cleanse everything** (2026-07-11): Nine Lives triggers on lethal DoT procs too (`trySurviveLethal` in `lib/game/lethal.ts`, shared by combat.ts and tick.ts). On ANY revival/survival trigger the unit loses ALL buffs and debuffs, uncancellable included — the rule applies to every future revival mechanic.
 30. **Uncancellable entries are "effects", not buffs/debuffs** (2026-07-11, playtest): synergy bonuses, ramp stacks, and every other uncancellable entry don't count for buff/debuff-counting mechanics (Rupture, Amplify, Weakpoint), can't be cleansed, and don't trigger AI cleanse decisions. They still modify stats. UI shows them grey (◆ counter, "Effects" section) — helpers in `lib/game/effects.ts`.
 31. **Cancelling stances breaks the target's taunts** (2026-07-11, playtest; **structural since #131 and narrowed by #132, both 2026-09-16** — the taunt lives on the taunter now, so the cross-team sweep this entry describes is gone, and **`cancelBuffs` no longer breaks a taunt at all**; only `cancelStances` does): cancelStances/cancelBuffs on a unit also removes every taunt redirect marker that unit authored (taunt debuffs on the opposing team with its sourceId). Yalina's Attention Drawer is a real stance now.
-32. **Extort is a linked pair** (2026-07-11, playtest): the thief's self-buff lives only while at least one LIVING enemy still carries a matching Extort debuff (tagged with the thief's sourceId). Death, cleanse, or expiry of the last debuff drops the buff — `syncExtortLinks`, run after every action and every debuff tick.
+32. **Kit retired by #187 (2026-10-13); the mechanic stays in the engine, exercised by `tests/fixtures/characters/`.** **Extort is a linked pair** (2026-07-11, playtest): the thief's self-buff lives only while at least one LIVING enemy still carries a matching Extort debuff (tagged with the thief's sourceId). Death, cleanse, or expiry of the last debuff drops the buff — `syncExtortLinks`, run after every action and every debuff tick.
 33. **Deck QoL** (2026-07-11, playtest): Reset Hand button rewinds the hand to the turn start — queued actions return, selection-time merges are reversed, merge-granted ult gauge is refunded (`snapshotHand`/`resetHand`, snapshot taken as PlayerAction opens). Leftover cards auto-merge whenever queuing/unqueuing makes identical neighbors adjacent (same rule as draws). Battle screen page gets a user-friendliness overhaul in a future batch, once all mechanics work as expected.
 34. **Momentum is field-only, fed by every card** (2026-07-11, playtest 2): Yalina gains a Momentum stack from EVERY card her team plays — including her own — but only while she is on the field (not benched) and alive.
 35. **Tag synergies without `flatBonus` scale per carrier** (2026-07-11, playtest 2, confirms existing data): Sara's [Female] synergy is 5% damageDealt × number of Female carriers (15% with 3 Females), applied to every carrier. Synergy entries are named `[Tag] Synergy` in the UI (typed `buff`, never `amplify`).
 36. **damageDealt / damageReduction stack multiplicatively** (2026-07-11, closes old STATUS #19): the damage engine consumes both — outgoing damage × ∏(1 + damageDealt%/100) from the attacker's entries, then × ∏(1 − damageReduction%/100) from the target's (`getDamageDealtMultiplier`/`getDamageReductionMultiplier` in `lib/game/stats.ts`, applied at the end of `calculateDamage`, counters included). Two 40% DRs = 64% total reduction, diminishing returns.
-37. **"Permanently" implies cancel-proof** (2026-07-11, closes old STATUS #17): permanent stat raises (Gon/Killua ults) stay `uncancellable` in data — buff-cancels can't strip them, and they render as grey effects per ruling #30. Text needs no extra "(cannot be cancelled)".
-38. **Extort recasts OVERWRITE, never stack** (2026-07-11, playtest 2): a new Extort strips the thief's previous Extort debuffs from every opposing unit before applying — even if the old steal was more potent. The self-buff is rebuilt from the new steal only.
+37. **Kit retired by #187 (2026-10-13); the mechanic stays in the engine, exercised by `tests/fixtures/characters/`.** **"Permanently" implies cancel-proof** (2026-07-11, closes old STATUS #17): permanent stat raises (Gon/Killua ults) stay `uncancellable` in data — buff-cancels can't strip them, and they render as grey effects per ruling #30. Text needs no extra "(cannot be cancelled)".
+38. **Kit retired by #187 (2026-10-13); the mechanic stays in the engine, exercised by `tests/fixtures/characters/`.** **Extort recasts OVERWRITE, never stack** (2026-07-11, playtest 2): a new Extort strips the thief's previous Extort debuffs from every opposing unit before applying — even if the old steal was more potent. The self-buff is rebuilt from the new steal only.
 39. **Enemy actions scale with living field members** (2026-07-11, playtest 2, amends #4): the enemy side takes 1 action per living field member, capped at 3 (`enemyActionsForTurn`). Subs grant no actions.
 40. **Identical tag synergies stack across carriers** (2026-07-11): each carrier's [Tag] synergy is its own effect — the HxH trio's three 5% [Collab] synergies give everyone tagged +15% all, on top of Leorio's bond. Intended; rewards full collab teams.
 41. **Cancel-then-hit** (2026-07-11): a cancel+damage skill strips stances/buffs BEFORE its own damage calc — cancel skills punch through defensive stances (Killua's Lightning Palm hits Yalina at full power after breaking her stance). Confirmed current behavior.
@@ -155,7 +155,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
     Hand capacity is `[0,4,5,7,8]` by living field count with uniform draws, so **a character's card frequency swings 4× between 1v1 and 4v4** — and with it the uptime of anything that charges off its own cards. Each format also tests a different axis: 1v1 isolates the raw kit, 3v1 makes AoE dead weight and boss mechanics dominant, 3v3 rewards AoE and tests the sub rule, 4v4 dilutes every individual kit the most.
 
-    A conclusion from one format is not a conclusion. Duke read as overtuned from a 1v1 duel and is mid-pack in a team — see the "1v1 distortion" section of `docs/superpowers/specs/2026-08-09-claude-duel-mode-design.md` for which archetypes each format over- and under-rates.
+    A conclusion from one format is not a conclusion. Duke read as overtuned from a 1v1 duel and is mid-pack in a team — see the "1v1 distortion" section of `docs/archive/superpowers/specs/2026-08-09-claude-duel-mode-design.md` for which archetypes each format over- and under-rates.
 58. **What is and isn't rank-scaled — read the notation, not the kit** (2026-08-09; tier-word half amended by **#109**, and the ladder carve-out below **retired by #130 (2026-09-16)**). Two rules, and they settle every case:
     1. **A tier word names a fixed value; the value never moves.** "raises" *is* 30%, "greatly raises" *is* 50% (roster-verified 2026-08-09 — every kit obeys this, no exceptions). You cannot write "lowers DEF" and have it mean 50; if you want 50 you write "greatly lowers".
 
@@ -236,7 +236,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
 77. **Buff and debuff counts, not a chip per effect** (2026-08-13). The strip under the ult gauge reads `↑4 ↓3`. A side with zero renders **nothing at all** — no zero, no dimmed arrow — so `↓2` alone is a unit carrying only debuffs. Grey uncancellable entries never appear and never count (ruling #30 says they aren't buffs or debuffs). Counts entries, not stacks, so three Corrosion stacks stay one debuff, matching the chips this replaced. Both the tile and the info panel use it: same information, same encoding. The names moved into a **modal** behind "Detail" — buff and debuff tables plus a grey-effects toggle — because the old inline disclosure expanded a list of unbounded length inside the panel's own scroll zone ("its not good UI").
 
-78. **Auto Clear instead of auto-battle** (2026-08-13). Auto-battle was proposed and rejected for a concrete reason: *"it would also mean designing a auto battle ai too and that's a big work."* A player-side AI has to handle 27 kits, ally targeting, ult timing and merges, and would be judged against how he plays. **Auto Clear** simulates nothing — it pays a fight's cost and grants its reward, for a fight already beaten. His rules: **1 ticket = 1 fight**, **full stamina per skipped run**, **full reward roll**, **manual clear required first**, **Molvarr only for now**, tickets from Bureau Orders and **5 per account rank gained**, **no cap** on banked tickets. The load-bearing property is the stamina cost: it keeps stamina the only throughput gate, so a ticket buys *time, never resources* — which is what makes full rewards safe rather than exploitable. Spec: `docs/superpowers/specs/2026-08-13-auto-clear-design.md`.
+78. **Auto Clear instead of auto-battle** (2026-08-13). Auto-battle was proposed and rejected for a concrete reason: *"it would also mean designing a auto battle ai too and that's a big work."* A player-side AI has to handle 27 kits, ally targeting, ult timing and merges, and would be judged against how he plays. **Auto Clear** simulates nothing — it pays a fight's cost and grants its reward, for a fight already beaten. His rules: **1 ticket = 1 fight**, **full stamina per skipped run**, **full reward roll**, **manual clear required first**, **Molvarr only for now**, tickets from Bureau Orders and **5 per account rank gained**, **no cap** on banked tickets. The load-bearing property is the stamina cost: it keeps stamina the only throughput gate, so a ticket buys *time, never resources* — which is what makes full rewards safe rather than exploitable. Spec: `docs/archive/superpowers/specs/2026-08-13-auto-clear-design.md`.
 
 79. **Parked by #159 (2026-09-27): Bureau Orders are closed while he overhauls them, and the steps are part of what he is redesigning.** Removing story's orders had already left eight to a step (2026-09-26). **Bureau Orders are stepped, ten to a step** (2026-08-13). *"the exisiting batch of orders are from step 1. once completed all of step 1, step 2 is unlocked and there are new missions. for each step, keep it with 10 missions... the steps can be tabs."* A step opens when every order in the previous one is **claimed**, not merely met — the same rule `requires` uses, and it stops a step unlocking while its last reward is still sitting uncollected. Progress toward a locked step's orders still accrues; only collection waits. One data file per step (`data/orders/step-N.json`), a `step` field on every order, and the ten-per-step rule asserted by test rather than thrown at load, so authoring a step doesn't break the app mid-edit.
 
@@ -267,7 +267,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
     Corollary, learned the same day: **an override that looks complete can still leak.** Four result-screen buttons and the Ascend button rendered near-white for weeks because their classNames set text and border but not background, so shadcn's `bg-primary` showed through. Nobody reported it; it was invisible in review.
 
-    Also settled: **the app has no genuine `<Select>` candidates.** The difficulty picker is a segmented control with per-tile state, the archive filters are multi-select chips plus a tri-state sort, and the team preset chips carry member portraits. Don't convert any of them — see `docs/superpowers/specs/2026-08-13-shadcn-and-ui-cleanup-design.md`.
+    Also settled: **the app has no genuine `<Select>` candidates.** The difficulty picker is a segmented control with per-tile state, the archive filters are multi-select chips plus a tri-state sort, and the team preset chips carry member portraits. Don't convert any of them — see `docs/archive/superpowers/specs/2026-08-13-shadcn-and-ui-cleanup-design.md`.
 
 85. **Ascension requires the level, not just the materials** (2026-08-13). Ascending was cost-only, so a Lv1 character with a full bag could be taken from ascension 1 to 4 without being levelled once: *"to ascend, they need to reach the min base level of that band first."* Ascension N+1 now requires level ≥ the cap of band N (Lv20 → asc 2, Lv30 → asc 3, Lv40 → asc 4); ascension 1 requires Lv1, so a fresh unit is never blocked from its first.
 
@@ -513,7 +513,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
     What it retires is #108's closing bullet, *"Battle UI's own mobile pass is a separate dedicated session, his call, and is not part of story work"*, and the matching `docs/ROADMAP.md` Phase 2 line. Everything else in #108 stands.
 
-    **The mechanical half shipped the same day** — every control in `BattleArena`, `Deck`, `UnitDetailPanel`, `BattleCoach` and `EffectsList` is at 44px, and the status strip stopped hiding its progress bar below `sm`. The **layout** half went to him as an HTML file first, per **#106**: `docs/design/mockups/battle-mobile.html`, three renderings at true 390×844 size. **He answered the same day and it is all built** — so the mockup is now a record of the decision, not an open question.
+    **The mechanical half shipped the same day** — every control in `BattleArena`, `Deck`, `UnitDetailPanel`, `BattleCoach` and `EffectsList` is at 44px, and the status strip stopped hiding its progress bar below `sm`. The **layout** half went to him as an HTML file first, per **#106**: `docs/design/battle-mobile.html`, three renderings at true 390×844 size. **He answered the same day and it is all built** — so the mockup is now a record of the decision, not an open question.
 
     **His four calls, and what each became:**
 
@@ -621,15 +621,15 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 
 **Built and working:** battle engine, 27 kits, **story mode v2** (Chapter → Stage with waves, missions and split rewards — chapter 1 authored, the rest to come one at a time), archive, auth + Firestore saves, battle cinematics, Molvarr world boss, ult levels + character coins, leveling/ascension/stamina/inventory, gacha (summon/banners/milestone pity/dupes), Bureau Orders + Auto Clear (world boss only), `/news` MDX patch notes. `npm run check` green — **1218 tests across 95 files**, clean `next build` (48 routes). *(This line read "723 tests across 62 files" and "story Parts 1–2" until 2026-08-18 — four sessions of work had landed without it being touched. Verify counts by running `npm run check` rather than quoting this line.)*
 
-**Still missing (the whole gap):** audio, mobile layout pass, FTUE/tutorial, daily loop, analytics, deployment. `docs/PRODUCT_AUDIT.md` is the standing analysis — the fight is strong, the service layer around it is thin.
+**Still missing (the whole gap):** audio, mobile layout pass, FTUE/tutorial, daily loop, analytics, deployment. `docs/archive/PRODUCT_AUDIT-2026-07-18.md` is the standing analysis — the fight is strong, the service layer around it is thin.
 
 **Last completed work — story mode v2, rebuilt from scratch (2026-08-18).** Chapter → Stage, waves with carried HP, per-stage missions, first-clear/farm reward split, no Auto Clear, `origin`-tagged filler, mobile-first at 390×844. Rulings **#107–#108**; full account in `docs/STATUS.md` (top section). Chapter 1's three fights are drafted filler awaiting his approval; the `FillerAssist` skill and `Filler/Drafts.md` are the next batch.
 
-**Previously — story presentation overhaul + music layer (2026-08-09).** Per-word text reveal with the VN tap contract, narration separated from dialogue, portraits reframed with the previous speaker retained, AUTO/HISTORY/skip-confirm, chapter title card, VS splash, chapter context in the battle strip, CHAPTER COMPLETE on first clear, and a full music system. Detail in `docs/STATUS.md`; rulings #50–51 above; spec at `docs/superpowers/specs/2026-08-09-story-presentation-and-music-design.md`.
+**Previously — story presentation overhaul + music layer (2026-08-09).** Per-word text reveal with the VN tap contract, narration separated from dialogue, portraits reframed with the previous speaker retained, AUTO/HISTORY/skip-confirm, chapter title card, VS splash, chapter context in the battle strip, CHAPTER COMPLETE on first clear, and a full music system. Detail in `docs/STATUS.md`; rulings #50–51 above; spec at `docs/archive/superpowers/specs/2026-08-09-story-presentation-and-music-design.md`.
 
 **The game is silent until Tanveer adds the OST.** `public/audio/` is empty on purpose; `docs/AUDIO.md` lists the five filenames and what each plays under. That is expected state, not a bug — a missing track resolves to silence with no console noise.
 
-**Previously — story rewards + team agency (2026-08-09).** Story chapters now pay out (first-clear bundle + range-rolled repeat drops), gate replays behind stamina while leaving uncleared attempts free, and carry a per-chapter `teamMode`. Full detail in `docs/STATUS.md`; design decisions are rulings #45–49 above; spec at `docs/superpowers/specs/2026-08-09-story-rewards-and-team-agency-design.md`.
+**Previously — story rewards + team agency (2026-08-09).** Story chapters now pay out (first-clear bundle + range-rolled repeat drops), gate replays behind stamina while leaving uncleared attempts free, and carry a per-chapter `teamMode`. Full detail in `docs/STATUS.md`; design decisions are rulings #45–49 above; spec at `docs/archive/superpowers/specs/2026-08-09-story-rewards-and-team-agency-design.md`.
 
 **All story reward numbers are placeholders awaiting Tanveer.** They live in `data/story/*.json` (`rewards.firstClear`, `rewards.repeat`, `rewards.replayStamina`) and were derived from the world-boss payout and summon costs, not chosen by him. Same for `teamMode`: Parts 1–2 ship `canon`, and opening a chapter up is a one-word edit.
 
@@ -642,7 +642,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 5. Archive pages re-rendered as documents sharing `/news` typography.
    Plus: Growth gated to owned characters + moved to a modal, practice dummy 400 → 100k HP, and Damage Preview rebuilt as **Kit Preview** (support skills, passives, and multi-phase kits were all missing or wrong).
 
-123. **Navigation moves to a bottom tab bar on a phone** (2026-09-01, sharpens #107). Shown a browser audit of the live build at 390×844 — the route strip was a **234px scroller holding 332px**, so News and Profile never rendered at rest, beside a second scroller holding the resource chips with Bureau Orders clipped — and offered two fixes in `docs/design/mockups/shell-mobile.html`: un-hide the short labels, or move navigation to a bottom tab bar. He chose the tab bar: *"Option B — bottom tabs (recommended)."* **That phrasing is an option label he selected, not prose he wrote.**
+123. **Navigation moves to a bottom tab bar on a phone** (2026-09-01, sharpens #107). Shown a browser audit of the live build at 390×844 — the route strip was a **234px scroller holding 332px**, so News and Profile never rendered at rest, beside a second scroller holding the resource chips with Bureau Orders clipped — and offered two fixes in `docs/design/shell-mobile.html`: un-hide the short labels, or move navigation to a bottom tab bar. He chose the tab bar: *"Option B — bottom tabs (recommended)."* **That phrasing is an option label he selected, not prose he wrote.**
 
     **Amended by #152 (2026-09-26): four destinations** — Story went with story mode. What fills the fifth slot, if anything, is his call.
 
@@ -964,7 +964,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 
     **This is the shape #139 asks for.** UI and UX direction are his and Claude does not originate them — but drawing candidates is not originating, it is *presenting a choice*, and measurement (what is slow, what is inconsistent, what is 190 taps) is squarely Claude's. The mockup is where those two meet: Claude measures and draws, he decides.
 
-    Mockups live in `docs/design/mockups/`, self-contained, in the game's real palette and fonts, drawn at **390px** (#107). The first one under this ruling is `growth-modal.html`.
+    Mockups live in `docs/design/mockups/` (**location amended by #188, 2026-10-13:** drafts in the gitignored `public/_mockups/`, the locked design in `docs/design/<name>.html`), self-contained, in the game's real palette and fonts, drawn at **390px** (#107). The first one under this ruling is `growth-modal.html`.
 
     **Existing work this changes:** nothing already built. It changes what happens *before* the next redesign — the layout system, the events decomposition and the Kit Numbers rework were all built directly from measurement this session, and under this ruling the visual half of each would have been drawn first.
 
@@ -1013,7 +1013,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    21 to 40 or whatever is unlocked."*
 
    Offered three positions on the mid-run screen and two on completion
-   (`docs/design/mockups/trial-run-flow.html`), he chose **C** and **E**.
+   (`docs/design/trial-run-flow.html`), he chose **C** and **E**.
    **Those letters are selections from options Claude drew, not prose he wrote**
    — the sentences describing them are Claude's. What is his is the report above
    and the direction in it.
@@ -1229,8 +1229,10 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    **Not covered, and open:** the break between two trial fights is not a
    battle, so a reload there still loses the run.
 
-154. **The game's motif is Shōnen Ink, and every control is a customised shadcn
-   component** (2026-09-26, amends #84, retires the Combat Terminal palette).
+154. **Amended by #185 (2026-10-13): the Characters page and the bottom nav
+   are kept; Home, Events, Gacha, Profile and Settings are redrawn from the
+   Characters page's language.** The game's motif is Shōnen Ink, and every control is a customised shadcn
+   component (2026-09-26, amends #84, retires the Combat Terminal palette).
    He opened the foundation work on the UI rather than on the audit's code
    findings:
 
@@ -1240,7 +1242,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    > claymorphism etc. etc. suggest me one."*
 
    **The motif was a selection.** Four were drawn on one live World Boss
-   screen in `docs/design/mockups/motif-options.html`: A Combat Terminal
+   screen in `docs/design/motif-options.html`: A Combat Terminal
    (today's look), B Shōnen Ink, C Gilded Relic, D Prism Glass. He chose
    **"B · Shōnen Ink (Recommended)"**. **That phrasing is an option label he
    selected, not prose he wrote**, and the recommendation was Claude's, made
@@ -1281,7 +1283,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    "Uncancellable" all work on a dark panel and fail as text on paper.
 
    **A selection.** Three options were drawn on Meliodas's real card text in
-   `docs/design/mockups/kit-document-on-paper.html`: A ink only, B marker,
+   `docs/design/kit-document-on-paper.html`: A ink only, B marker,
    C black ink panels. He chose **"B · Marker (Recommended)"**. **That phrasing
    is an option label he selected, not prose he wrote**, and the
    recommendation was Claude's. Its case: yellow already means "you can act on
@@ -1301,7 +1303,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 156. **The battle is a split page: the enemy's side on the dark ground, the
    player's side on paper** (2026-09-27, applies #154 to the arena). Three
    options were drawn on one live fight in
-   `docs/design/mockups/battle-ink.html`: A ground stage (paper only on the
+   `docs/design/battle-ink.html`: A ground stage (paper only on the
    tray), B panel page (every unit and card a paper panel), C split page. He
    chose **C**, and gave his reasons in his own words:
 
@@ -1338,7 +1340,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    > actually important, yes. Especially the growth one."*
 
    **The layout was a selection.** Three options were drawn beside today's
-   page in `docs/design/mockups/character-header.html`, with positions
+   page in `docs/design/character-header.html`, with positions
    measured live: A a 16:9 banner, B a card row, C actions pinned above the
    tab bar. He chose **"B · Card row"**, the option label, over the
    recommended A.
@@ -1418,8 +1420,10 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    and never generated. **The bow hand is not a fist.** His correction on
    Shatterburn: *"her left hand should be holding the center of the bow and
    not be a fist"*. The working method is to render the character holding a
-   bow, then swap the model's bow for the drawn one (`docs/ART_PIPELINE.md`,
-   "The bow hand").
+   bow, then swap the model's bow for the drawn one (rule 6 in
+   `docs/CHARACTER_ART.md`; the history is "The bow hand" in
+   `docs/archive/ART_PIPELINE-character-history.md`; the scripts are
+   `scripts/skill_art/bow_swap.py` and `grip_hand.py`).
 
 161. **A skill card's background is its skill class's colour; ultimates and
    passives are free** (2026-09-27, from 7DSGC, walked through on his
@@ -1691,7 +1695,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    - **Battle tile unchanged**: it shows the transparent portrait on its own
      dark ground.
 
-   **Mockup:** `docs/design/mockups/lyra-portrait.html` (v3, his approval:
+   **Mockup:** `docs/design/lyra-portrait.html` (v3, his approval:
    *"I think I like this one now"*). **The method** is step 6 of
    `docs/CHARACTER_ART.md` (`make_portrait_crop.py`, crop numbers in each
    profile). `tests/characterArt.test.ts` fails if a tile unit's portrait is
@@ -1710,10 +1714,11 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
      ribbon you see."* The rule that a break-out stops at a natural edge is
      in `docs/CHARACTER_ART.md` step 6.
 
-174. **The summon screen is a manga page, and it is the one screen allowed to
-   be loud all over** (2026-10-03). He found the gacha page *"still looks very
+174. **Superseded by #185 (2026-10-13): the gacha screen is redrawn; the
+   deferrals below still stand.** The summon screen is a manga page, and it is the one screen allowed to
+   be loud all over (2026-10-03). He found the gacha page *"still looks very
    generic-ish to me"* and asked for it *"properly built out with our theme"*.
-   Three options were drawn in `docs/design/mockups/gacha-overhaul.html`
+   Three options were drawn in `gacha-overhaul.html (deleted 2026-10-13, ruling #188; in git history before 09f17fd)`
    (A poster, B collection board, C manga page). He **selected C**: *"i like C
    actually. adds energy to the page"*.
    - **Draw panel anchored to the bottom**, above the tab bar, so the screen
@@ -1811,7 +1816,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 
 177. **The events board is tabs, and it says as little as it can** (2026-10-03).
    He asked for an events redesign. Three options were drawn in
-   `docs/design/mockups/events-redesign.html`, built from the live game's
+   `docs/design/events-redesign.html`, built from the live game's
    markup and styles after the first hand-drawn set was *"not website
    accurate"*:
    - **A** World Boss / Epic Battles / Trials tabs.
@@ -2007,3 +2012,146 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
      hair strand near the ear. don't want it."*), not by patching each picture.
    - **Where it lives:** `scripts/lora/characters/duke.json` (`kit_art`),
      `docs/CHARACTER_ART.md` rule 5.
+
+185. **The redesign keeps the Characters page and the bottom nav, and changes
+   Home, Events, Gacha, Profile and Settings** (2026-10-13; amends #154's
+   scope, supersedes #174's summon screen). Three theme options had been drawn
+   as whole-motif swaps (`theme-options.html (deleted 2026-10-13, ruling #188; in git history before 09f17fd)`: A Launcher,
+   B Gallery, C Ink wash) and he rejected them as generic: *"I know the mockups
+   you created are for the redesign layout, but I should tell you what's
+   currently working on the site before you propose the generic designs,
+   because those are generic, I'll be honest with you."*
+   - **What stays, his words:** *"first is the characters page you know the
+     tiles and the some characters popping out of like in a 3D version like
+     they are popping out of the border it's only Lyra and Sarah right now
+     because they are using the new pipeline with the comfy but as more
+     characters will get their redesigns and assets generated then everyone
+     else will also ... have that pop out effect and obviously all the colors
+     so basically everything on the characters page that doesn't need changing
+     at all the colors the layout the component everything that's all good"*.
+     And the nav: *"I think the navigation at the bottom is good, but obviously
+     we can use different colors."*
+   - **What changes, his words:** *"what I really don't like right now is the
+     home page ... Home page needs changing, the events screen needs changing,
+     the gacha one obviously is the most bad one right now. And obviously the
+     profile page, the settings page do need changing."*
+   - **The rule:** *"I'm not saying like we have to change everything. We are
+     changing what doesn't work. We are keeping what works and is very
+     effective and very appealing."*
+   - **Claude's reading, flagged as an inference:** the Characters page (#172's
+     tile, the element hues as identity, its layout and components) is the
+     benchmark the other screens are redrawn against, not a catalogue motif;
+     #154's motif is not retired, and what failed is its loud chrome on the
+     screens he named. The next mockup round draws Home, Events, Gacha and
+     Profile from the Characters page's language, in more than one option
+     (#144), built from the live screens rather than by hand (#177's lesson).
+   - **Superseded:** #174's manga-page summon screen. The gacha screen is
+     redrawn with the others. #174's deferrals (summon animations, new summon
+     art) still stand.
+   - **Where it lives:** `AGENTS.md` (the motif paragraph), `decisions.md`
+     2026-10-13 (a correcting entry), `docs/STATUS.md`.
+
+186. **A character's LoRA dataset must include action shots; a set of calm,
+     front-facing standing poses is what went wrong on Sara and Duke**
+     (2026-10-13). Asked whether Lyra's LoRA held action poses at 0.9 because
+     her dataset carried her C4 action pose, where Sara's and Duke's calm sets
+     did not, he settled it: *"action poses are the ones which are preferred
+     and the calm poses were bad like not just the calm poses but the front
+     facing normal standing poses were a very major issue for me when I was
+     creating Sarah and Duke's assets"* and *"yes the data set must include
+     action start"* (speech-to-text; read as *action shots*).
+   - **What changes:** `docs/CHARACTER_ART.md` step 1 and the `charlora` skill
+     now require action shots in every dataset, with the front-facing
+     standing pose named as the thing to limit, not the default to fill with.
+     The 0.65 drafting strength in step 3 is the workaround for a calm-set
+     LoRA, no longer the recipe; a LoRA trained on an action-bearing set is
+     expected to draft at 0.9 as Lyra's did. Sara's and Duke's current LoRAs
+     were trained on calm sets and keep the 0.65 route until retrained.
+     **Duke's is retrained**, his call the same day: *"we will have to
+     rebuild Duke's data set and then retrain the LoRa because obviously that
+     is no-no considering what we need for the game."* The order of work is
+     `docs/PC_SESSION.md`; the 2026-10-08 official candidates are superseded.
+   - **Claude's reading, flagged as an inference:** how many action shots and
+     which poses is not fixed by this. A working number is a third of the
+     body shots, each a different action, none repeating the kit's slot
+     poses exactly so the LoRA learns the character, not one picture. Put
+     the count to him when the next dataset is planned.
+   - **Where it lives:** `docs/CHARACTER_ART.md` (steps 1 and 3, dead ends),
+     `.claude/skills/charlora/SKILL.md`, `.claude/skills/kitart/SKILL.md`,
+     `scripts/lora/characters/lyra.json` (`lora_use`).
+
+187. **The collab units are deleted, not archived; the roster is the IP's own**
+     (2026-10-13). The six 7DS and HxH kits (Ban, Diane, Meliodas, Gon,
+     Killua, Leorio) leave the game. His words: *"remove the collab units
+     from the game roster and basically delete them not archive them delete
+     them it's because at the time when I was building the game when I you
+     know drafted their pairs I was still learning how to make the game how
+     to make the mechanics ... at the time I just took like you know
+     fictional characters inspiration and then factored them in ... it's only
+     seven deadly sins and hunter hunter ones also remove the drafts of netero
+     and knuckle too as well because I will not be implementing them either
+     but those were good concepts ... but what we will do is dragon ball z
+     characters the goku vegeta frieza ones that's fine we'll probably do them
+     later not now But as for everything else we'll have to remove it."*
+   - **Four selections from the question tool (option labels are Claude's
+     wording, his picks):** the eight engine mechanics only those kits used
+     (Extort, Lifesteal, max-HP shred, Deathblow, Detonate, Rupture, turn
+     ramp, characterSynergy) **stay**; saves that hold the units are cleaned
+     **silently** (v12 migration, no refund: they were never in a banner,
+     issue #32); the Knuckle and Netero planned file in `toll-kits` is
+     deleted **from this session** (pushed to its `main`); the Knuckle and
+     Netero examples in `KIT_DESIGN.md` **stay as prose**.
+   - **What changed:** six kit JSONs, their catalog, art and VFX
+     registrations and ~28 MB of art deleted; `lib/game/removedCharacters.ts`
+     names the ids for the migration; the mechanics are exercised by neutral
+     fixtures in `tests/fixtures/characters/` (`fx_thief`, `fx_colossus`,
+     `fx_reaver`, `fx_rookie`, `fx_prodigy`, `fx_medic`), same numbers, new
+     names; 25 test files repointed. `[Collab]` is no longer a tag the roster
+     carries. #18, #19, #23, #24, #32, #37 and #38 are marked kit-retired,
+     mechanic kept. The DBZ brainstorm in `toll-kits` stays for later.
+   - **Claude's reading, flagged as an inference:** *"everything else"* is
+     the two series he named and the two drafts; design-sheet inspirations
+     (Master Tao's Netero-inspired look) are not kits and were not touched.
+
+188. **The project adopts the fleet standard on three conventions: the STATUS
+     file, where mockups live, and no Trello board** (2026-10-13). Put the
+     two `conventions.md` conflicts and the two open questions to him; his
+     answers, one line each: STATUS format, *"Fleet rule is correct."*;
+     mockup location, *"Adopt the standard."*; Trello, *"None"*; Node,
+     *"24?"*, and the Vercel project reads `nodeVersion: 24.x`, so 24 it is.
+   - **STATUS:** `docs/STATUS.md` is the fleet's two-zone file again: a
+     snapshot rewritten in place, over a session log added at the top. The
+     2026-10 log folded back in from `docs/archive/`; the older archives stay
+     where they are as history. Reverses the 2026-09-27 split (`decisions.md`).
+   - **Mockups (amends #144, the location half; the "several options" half
+     stands):** drafts live in the gitignored `public/_mockups/`, which the
+     dev server serves, and are published as an artifact when he is on his
+     phone; the design he locks moves to `docs/design/<name>.html`, committed.
+     The twelve picked mockups moved there on 2026-10-13; the five never
+     picked were deleted (git history keeps them); the one open round
+     (`docs/design/mockups/screens-from-characters.html`) stays committed
+     until he decides, as the single exception, because a gitignored draft
+     would not reach his PC.
+   - **Trello:** none. `CLAUDE.md` says so; no board work ever.
+   - **Node:** pinned to 24 in `package.json` `engines` and `.nvmrc`. The
+     cloud container runs 22, which §RUNTIME calls a finding: it cannot be
+     changed from inside a session, and nothing shipped has differed between
+     the two so far.
+   - **Where it lives:** `AGENTS.md` (the STATUS and mockup sentences),
+     `CLAUDE.md` (Trello), `conventions.md` (both rows closed),
+     `.claude/skills/redesign/SKILL.md`, `.gitignore`.
+
+189. **Practice fields any playable character, owned or not** (2026-10-13).
+     Audit decision 7 asked whether ownership-free practice was on purpose.
+     His words: *"Should allow any playable/summonable character."* So the
+     current behaviour (`getPlayableCharacters()` in the team picker, no
+     ownership filter) is the design, not a shortcut; it does not enter
+     `docs/demo-shortcuts.md`. Unreleased kits stay dev-only there as
+     everywhere (#171).
+
+190. **Starter gems are 500, and a playtest value** (2026-10-13). Audit
+     decision 2. His words: *"I guess we can lower it to 500. Playtest
+     purposes for now yes."* `DEFAULT_PLAYER_STATE.currencies.gems` and the
+     migration baseline move from 1,000 to 500; existing saves keep what they
+     have. Registered in `docs/demo-shortcuts.md` as a playtest value that
+     gets his real number before launch.

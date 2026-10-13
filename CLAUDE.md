@@ -1,9 +1,32 @@
 @AGENTS.md
 @project-rules.md
 
-**`project-rules.md` is the fleet standard (v2.4.0), copied from
-`E:\Projects\_COMMON` on 2026-09-26.** That folder holds the master copy. Improve
-it there and re-copy; never edit this copy in place.
+**`project-rules.md` is the fleet standard, synced to v3.4.0 on 2026-10-13**
+(from v2.4.0; section references in the live docs were translated with the
+map in the fleet `CHANGELOG.md`). The master copy is
+`standards/project-rules.md` in `github.com/Tanveerfb/fleet-standards`, which
+also ships as the `fleet` Claude Code plugin. **Not yet enabled here**: the
+2026-10-13 cloud session was refused the write to `.claude/settings.json`,
+so the `extraKnownMarketplaces` / `enabledPlugins` block from the
+`sync-standards` skill is still his to add. `sync-standards` brings this copy up to date;
+`propose-standard` sends a fix back. Never edit this copy in place.
+
+## Project identity
+
+- **Name**: toll-the-game (Toll, the Element Clash card battle game)
+- **Repo**: `Tanveerfb/toll-the-game`, branch `master`
+- **Deploys**: Vercel, from `master`, **auto-deploys on every push**. Live at
+  `https://toll-the-game.vercel.app/`. Real players: none yet (he and Claude
+  play). Cloud sessions work on their harness branch (§GIT).
+- **Trello board**: none (his call, 2026-10-13, ruling #188). No Trello work.
+- **Motif**: Shōnen Ink (ruling #154, `docs/design-system.md`). **Under
+  redesign since 2026-10-13**, his call: he wants something more professional
+  and less bold. Round two is `docs/design/mockups/screens-from-characters.html`
+  (round one was deleted); he picks on the PC; nothing is locked.
+- **Area files** (§SCALE, since 2026-10-13): `lib/game/CLAUDE.md` (engine
+  rules, simulator, the save) and `scripts/skill_art/CLAUDE.md` (kit-art
+  scripts). A fact lives in one file only. **Map**: `docs/ARCHITECTURE.md`
+  (the engine, not yet the §SCALE module table).
 
 **The adoption audit is done (2026-09-27): read [`conventions.md`](conventions.md)
 before any structural change.** It sorts every gap against the rules into
@@ -17,9 +40,10 @@ granted or queued, and [`decisions.md`](decisions.md) records his four answers:
   sentence case in place of the motif's uppercase. **Neither is a fix to make
   in passing.** The `src/` move is one sweep he schedules; `types/` converts
   on touch.
-- **Done:** the document split. `docs/STATUS.md` is a short snapshot that is
-  rewritten, not appended; session logs go to `docs/archive/`; issues,
-  environment and decisions have their own files.
+- **Done:** the document split; issues, environment and decisions have their
+  own files. Since 2026-10-13 (#188) `docs/STATUS.md` is the fleet's two-zone
+  file: a snapshot rewritten in place over a session log added at the top;
+  logs older than the current month stay in `docs/archive/`.
 
 Where `AGENTS.md`, `conventions.md` and `project-rules.md` disagree, **stop and
-ask** (rules §1). Everything else converts to the standard **on touch**.
+ask** (rules §SCOPE). Everything else converts to the standard **on touch**.

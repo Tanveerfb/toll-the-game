@@ -42,7 +42,7 @@ export const SORT_LABELS: Record<Exclude<SortField, "none">, string> = {
 };
 
 /** Matches name, id or tag; blank matches everything. */
-export function matchesSearch(item: RosterFilterItem, search: string): boolean {
+function matchesSearch(item: RosterFilterItem, search: string): boolean {
   const q = search.trim().toLowerCase();
   if (q.length === 0) return true;
   return (

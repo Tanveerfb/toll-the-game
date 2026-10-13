@@ -29,7 +29,7 @@ const CORROSION_PERCENT = 10; // % remaining HP per stack per turn (tick.ts defa
  * (`Plans/2026-09-17-fight-phases.md`), this predicate's INPUT changes and its
  * meaning does not.
  */
-export function isPhased(char: { phases?: CharacterPhase[] }): boolean {
+function isPhased(char: { phases?: CharacterPhase[] }): boolean {
   return (char.phases?.length ?? 0) > 0;
 }
 
@@ -44,7 +44,7 @@ const TURN_START_MECHANICS = new Set<Mechanic["type"]>([
   "bossMaxHpDrain",
 ]);
 
-export function activePhase(char: BattleCharacter): CharacterPhase | undefined {
+function activePhase(char: BattleCharacter): CharacterPhase | undefined {
   return char.phases?.[char.phaseIndex ?? 0];
 }
 

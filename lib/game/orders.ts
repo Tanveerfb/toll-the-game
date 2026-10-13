@@ -87,7 +87,6 @@ const orderSchema = z.object({
 });
 
 export type OrderGoal = z.infer<typeof goalSchema>;
-export type OrderReward = z.infer<typeof rewardSchema>;
 export type Order = z.infer<typeof orderSchema>;
 
 /** Fail loudly at load time on malformed order JSON — same policy as kits. A

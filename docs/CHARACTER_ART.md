@@ -116,6 +116,15 @@ image (a recoloured ribbon or collar) is done in code, not by a re-roll.
    `hood_down_negative`.
 5. Run `python scripts/lora/gen_candidates.py <id>`. Aim for about 11 body
    shots and 11 close-ups, roughly 24 to 28 approved in all.
+   - **The body shots must include action shots** (ruling #186, 2026-10-13).
+     Lyra's set carried her C4 action pose and her LoRA held poses at 0.9;
+     Sara's and Duke's sets were calm, front-facing standing figures, and
+     their LoRAs pulled every draft back to standing. His words: *"the front
+     facing normal standing poses were a very major issue for me"*. Make
+     about a third of the body shots actions (a lunge, a sprint, a strike, a
+     turn, a crouch), each different, posed with the mannequin or a
+     reference skeleton like a draft, and keep the calm front-facing figure
+     to a few shots. The exact count is his call when the set is planned.
 6. **Send full sheets; he approves by number.**
    - Re-roll weak slots with `seed_offset` plus slot names.
    - Fix small defects in code: inpaint a hood corner, matte a background
@@ -190,6 +199,24 @@ not hold. Clean the dataset, he re-approves, retrain:
 
 **Action needs all three of these.** The calm LoRA alone produces
 photoshoots ("Is she doing Kung fu?").
+
+**Before any of them: the slot plan** (`kitart` step 3a, 2026-10-13). One line
+per slot, shown to him before any GPU time: what the skill does, the moment to
+draw, the pose's job, the reference, the pose control. Sara's rounds 1 to 4
+were lost for want of it, and he had to re-explain the dynamic poses each
+time. Lyra's pieces had it from the start, and that is the difference between
+her kit and those rounds, more than any setting below.
+
+**Two recipes are on record, and this one is the default.** Lyra's kit
+(2026-09-27) was drafted at LoRA **0.9** with the full weighted identity, a
+drawn archer skeleton at openpose 0.78 / end 0.85 or prompt only, and
+`(simple white background:1.4)`, and it held its poses. Her dataset included
+her C4 action pose and an A-pose; Sara's and Duke's calm sets did not, and
+**he has ruled that the dataset is the cause (#186)**: a LoRA trained on a set
+with action shots drafts at 0.9 like Lyra's; the 0.65 route below is the
+workaround for a calm-set LoRA, which Sara's and Duke's remain until they are
+retrained. Do not mix the two recipes in one batch; pick by the dataset the
+LoRA was trained on.
 
 1. **LoRA at about 0.65** while drafting. It was trained on calm images and
    pulls every pose back to standing at 0.9. Identity comes back in Step 4.
@@ -373,7 +400,8 @@ caught.
 | --- | --- | --- |
 | Pose by prompt alone | Photoshoots and kung-fu stances (Sara rounds 1 and 4) | Step 3's three-part action method |
 | Hand-drawn 2D skeletons for action | Stiff; one bad joint forced the arm-up pose on all 24 | The Blender mannequin, or reference skeletons |
-| LoRA at 0.9 while drafting action | Pulled every draft to standing | 0.65, then identity restored by the official render (step 4) |
+| LoRA at 0.9 while drafting action, on a LoRA trained on a calm set | Pulled every draft to standing (Sara, Duke) | 0.65, then identity restored by the official render (step 4); the real fix is an action-bearing dataset (#186) |
+| A dataset of calm, front-facing standing poses | The LoRA learns standing as the character; every action draft fights it. *"The front facing normal standing poses were a very major issue"* | Action shots in every set (step 1, #186) |
 | IP-Adapter on a full image | Costume and background colour bled in | A face-only crop |
 | A hood-up face reference for hood-down shots | 0 of 8 came out hood down | A face-only crop and hood-down negatives |
 | Tight crops for afterimages, then shrinking the figure | Exposed the crop edges | A full-body figure in the draft |

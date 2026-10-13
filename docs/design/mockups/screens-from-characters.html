@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Toll — Home, Events, Gacha and You, drawn from the Characters page (2026-10-13)</title>
+<!-- Art is referenced relatively from public/, so open this file from a checkout of the repo.
+     Tokens and the tile utilities are copied verbatim from styles/globals.css; the tile anatomy
+     is components/game/UnitTileFace.tsx, rendered by one function below so every tile is the
+     same component. Ruling #185: the Characters page and the nav are kept; these four change. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=M+PLUS+1p:wght@400;500;700;800&display=swap">
+<style>
+/* ── Page chrome (neutral) ───────────────────────────────────────────── */
+:root { --page-bg: #101114; --page-fg: #e9e9ec; --page-dim: #a3a5ad; --page-line: #26282e; --page-accent: #f2f2f2; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--page-bg); color: var(--page-fg); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; padding: 20px 16px 48px; }
+.page { max-width: 1040px; margin: 0 auto; display: grid; gap: 18px; }
+.page h1 { font-size: 20px; margin: 0; }
+.page p.lede { margin: 4px 0 0; color: var(--page-dim); max-width: 72ch; }
+.chooser { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-width: 700px; }
+.chooser button, .toggle button { font: inherit; font-size: 13px; font-weight: 600; min-height: 44px; padding: 6px 10px; background: #17181c; color: var(--page-dim); border: 1px solid var(--page-line); border-radius: 8px; cursor: pointer; display: grid; line-height: 1.2; text-align: left; }
+.chooser button small { font-weight: 400; font-size: 11px; opacity: .8; }
+.chooser button[aria-pressed="true"], .toggle button[aria-pressed="true"] { background: var(--page-accent); color: #111; border-color: var(--page-accent); }
+.chooser button:focus-visible, .toggle button:focus-visible { outline: 2px solid #7fb4ff; outline-offset: 2px; }
+.toggle { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.toggle .lbl { font-size: 12px; color: var(--page-dim); margin-right: 4px; }
+.stage { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; justify-content: center; }
+.notes { flex: 1 1 300px; max-width: 440px; display: grid; gap: 12px; font-size: 14px; }
+.notes h2 { font-size: 18px; margin: 0; }
+.notes dl { margin: 0; display: grid; gap: 8px; }
+.notes dt { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--page-dim); }
+.notes dd { margin: 2px 0 0; }
+.notes .measure { border-top: 1px solid var(--page-line); padding-top: 12px; font-size: 13px; color: var(--page-dim); }
+.notes .measure strong { color: var(--page-fg); }
+.notes code { font-size: 12px; background: #1b1c21; padding: 1px 5px; border-radius: 4px; }
+[hidden] { display: none !important; }
+
+/* ── The game's tokens, verbatim from styles/globals.css ─────────────── */
+.phone {
+  --background: #0d0d10; --foreground: #f7f7f2; --ground-dim: #b9b9b2; --ground-raised: #1c1c21; --ground-line: #33333a; --halftone: #25252c; --slab: #2b2b33;
+  --card: #f5f5f0; --card-foreground: #111114; --muted: #e7e7df; --muted-foreground: #5d5d63; --border: #111114;
+  --primary: #ffd400; --primary-foreground: #111114; --destructive: #ff5a4e;
+  --el-light: #e8d174; --el-red: #ff5a4e; --el-blue: #37a6ff; --el-green: #35d48b; --el-dark: #a874ff;
+  --tracking-title: 0.08em; --tracking-label: 0.14em; --tracking-eyebrow: 0.22em;
+  --font-heading: "Bangers", cursive; --font-body: "M PLUS 1p", sans-serif;
+}
+/* ── The device ───────────────────────────────────────────────────────── */
+.phone {
+  width: 390px; max-width: 100%; height: 844px; position: relative; overflow: hidden;
+  border-radius: 28px; border: 1px solid var(--page-line); box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  background-color: var(--background);
+  background-image: radial-gradient(var(--halftone) 1.1px, transparent 1.5px); background-size: 7px 7px; /* ground-halftone */
+  color: var(--foreground); font-family: var(--font-body); font-size: 15px; line-height: 1.4;
+  display: flex; flex-direction: column; isolation: isolate;
+}
+.stage[data-view="desktop"] .phone { width: 896px; height: auto; min-height: 720px; border-radius: 12px; }
+.stage[data-view="desktop"] .tabbar { position: static; order: -1; border-top: 0; border-bottom: 2px solid var(--border); }
+.stage[data-view="desktop"] .scroll { padding-bottom: 32px; }
+.stage[data-view="desktop"] .col { max-width: 56rem; }
+
+/* Motif utilities, verbatim */
+.ink-skew { transform: skewX(-8deg); }
+.ink-slab { box-shadow: 5px 5px 0 var(--slab); }
+.ink-slab-sm { box-shadow: 3px 3px 0 var(--slab); }
+.ink-slab-primary { box-shadow: 3px 3px 0 var(--primary); }
+.tile-bevel { clip-path: polygon(9% 0, 100% 0, 100% 91%, 91% 100%, 0 100%, 0 9%); }
+.tile-bevel-inner { clip-path: polygon(7% 0, 100% 0, 100% 93%, 93% 100%, 0 100%, 0 7%); }
+.tile-burst {
+  background:
+    radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--foreground) 55%, var(--el)) 0 8%, transparent 46%),
+    radial-gradient(color-mix(in srgb, var(--card-foreground) 35%, var(--el)) 1.3px, transparent 1.8px) 0 0 / 6px 6px,
+    repeating-conic-gradient(from 0deg at 50% 40%, color-mix(in srgb, var(--foreground) 18%, var(--el)) 0 5deg, var(--el) 5deg 12deg);
+}
+.tile-star { clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+.speed-lines { background-image: repeating-conic-gradient(from 0deg at 50% 45%, transparent 0 3deg, color-mix(in srgb, var(--foreground) 7%, transparent) 3deg 4deg); }
+
+/* ── Kept chrome: the nav row (TopNav.tsx) and the tab bar, same classes in prose ── */
+.top { position: sticky; top: 0; z-index: 50; border-bottom: 2px solid var(--ground-line); background: var(--background); display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 16px; }
+.wordmark { transform: skewX(-8deg); display: inline-flex; min-height: 44px; align-items: center; background: var(--card); padding: 0 8px; font-family: var(--font-heading); font-size: 20px; letter-spacing: var(--tracking-title); color: var(--card-foreground); box-shadow: 3px 3px 0 var(--primary); text-decoration: none; }
+.top .spacer { flex: 1; }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 8px; border: 2px solid var(--border); background: var(--card); color: var(--card-foreground); font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; letter-spacing: .05em; }
+.chip img { width: 16px; height: 16px; }
+.chip .cap { color: var(--muted-foreground); font-weight: 500; }
+.chip.icon { width: 44px; justify-content: center; padding: 0; font-family: var(--font-heading); font-size: 18px; }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 0 86px; }
+.col { margin: 0 auto; display: flex; flex-direction: column; gap: 12px; padding: 24px 16px; width: 100%; }
+.title { transform: skewX(-8deg); display: inline-block; align-self: flex-start; background: var(--card); padding: 4px 10px 0; font-family: var(--font-heading); font-size: 30px; line-height: 1; letter-spacing: var(--tracking-label); color: var(--card-foreground); box-shadow: 3px 3px 0 var(--primary); margin: 6px 0 4px 4px; }
+.eyebrow { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: var(--tracking-eyebrow); color: var(--primary); }
+.label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: var(--tracking-label); }
+.btn { font-family: var(--font-heading); font-size: 14px; letter-spacing: var(--tracking-label); min-height: 44px; padding: 0 16px; border: 2px solid var(--border); display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; background: var(--card); color: var(--card-foreground); }
+.btn-primary { transform: skewX(-8deg); background: var(--primary); color: var(--primary-foreground); box-shadow: 3px 3px 0 var(--slab); }
+.btn-primary > * { transform: skewX(8deg); }
+.btn-outline { background: transparent; color: currentColor; border-color: currentColor; }
+.btn-ghost { background: transparent; border-color: transparent; color: currentColor; }
+.btn:focus-visible, .ut:focus-visible, .seg button:focus-visible, .tabbar a:focus-visible, .ptile:focus-visible, .row:focus-visible, .dchip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.btn-full { width: 100%; }
+.btn-secondary { background: var(--card); color: var(--card-foreground); }
+.input { min-height: 44px; padding: 0 12px; border: 2px solid var(--border); background: var(--card); color: var(--card-foreground); font: inherit; font-size: 16px; }
+.input::placeholder { color: var(--muted-foreground); }
+
+/* ── The unit tile (UnitTileFace.tsx), one component ────────────────── */
+.ut { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; text-decoration: none; }
+.ut:active { transform: translateY(1px); }
+.face { position: relative; display: block; aspect-ratio: 1 / 1; }
+.face > span { display: block; }
+.face .frame { position: absolute; inset: 0; border: 2px solid var(--border); background: var(--el); }
+.face .frame2 { position: absolute; inset: 3px; border: 2px solid var(--border); }
+.face .win { position: absolute; inset: 6px; overflow: hidden; background: var(--card-foreground); }
+.face .win img.flat { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.face .win .burst { position: absolute; inset: 0; }
+.face .win img.cut { position: absolute; bottom: 0; left: 0; width: 100%; height: auto; }
+.face .out { position: absolute; left: 6px; right: 6px; bottom: 6px; z-index: 10; pointer-events: none; }
+.face .out img { position: absolute; bottom: 0; left: 0; width: 100%; height: auto; }
+.face .code { transform: skewX(-8deg) rotate(3deg); position: absolute; right: -8px; top: -10px; z-index: 20; border: 2px solid var(--border); background: var(--el); padding: 2px 6px 0; font-family: var(--font-heading); font-size: 14px; line-height: 1; letter-spacing: var(--tracking-title); color: var(--card-foreground); box-shadow: 3px 3px 0 var(--slab); }
+.face .plate { transform: skewX(-8deg) translateX(-50%); position: absolute; bottom: -12px; left: 50%; z-index: 20; white-space: nowrap; border: 2px solid var(--el); background: var(--card-foreground); color: var(--el); padding: 2px 8px 0; font-family: var(--font-heading); font-size: 14px; line-height: 1; letter-spacing: var(--tracking-title); }
+.face .plate.hi { background: var(--primary); color: var(--primary-foreground); border-color: var(--border); }
+.face .stars { position: absolute; right: -6px; bottom: 8px; z-index: 20; display: flex; flex-direction: column-reverse; gap: 1px; filter: drop-shadow(0 0 1px var(--card-foreground)); }
+.face .stars i { display: block; width: 14px; height: 14px; background: var(--el); }
+.face.dim .win img, .face.dim .burst { filter: grayscale(1) brightness(.5); }
+.face.dim .out img { filter: grayscale(1) brightness(.5); }
+.face .picked { position: absolute; inset: -3px; background: var(--primary); }
+.face.empty .frame, .face.empty .frame2, .face.empty .win { display: none; }
+.face.empty .plus { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--muted-foreground); color: var(--muted-foreground); font-family: var(--font-heading); font-size: 30px; }
+/* A tile window that holds a glyph, not a unit (Practice, Sign in): the burst, with an icon. */
+.face .glyph { position: absolute; inset: 0; display: grid; place-items: center; color: var(--card-foreground); }
+.face .glyph svg { width: 42%; height: 42%; stroke-width: 2.4; }
+/* Landscape variants of the same anatomy (A's wide tiles, C's posters). */
+.face.wide { aspect-ratio: 2 / 1; }
+.face.poster { aspect-ratio: 16 / 10; }
+.face.band { aspect-ratio: 358 / 120; }
+.face .win img.cover { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
+.face .win img.cover.banner { height: 138%; object-position: 50% 0; }
+.face .cap { position: absolute; left: 12px; bottom: 12px; z-index: 15; display: grid; gap: 4px; }
+.face .cap .t { transform: skewX(-8deg); display: inline-block; align-self: flex-start; background: var(--card); color: var(--card-foreground); padding: 4px 10px 0; font-family: var(--font-heading); font-size: 24px; line-height: 1; letter-spacing: var(--tracking-label); box-shadow: 3px 3px 0 var(--el); }
+.face .cap .s { display: inline-block; align-self: flex-start; margin-top: 6px; background: var(--card-foreground); color: var(--foreground); padding: 3px 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: var(--tracking-label); border: 2px solid var(--el); }
+.face .act { position: absolute; right: 12px; bottom: 12px; z-index: 15; }
+.face .shade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, rgba(17,17,20,.85) 100%); }
+
+/* Grids */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 12px; padding: 10px 4px 14px 0; }
+.g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px 10px; padding: 10px 4px 14px 0; }
+.stack { display: grid; gap: 18px; padding: 10px 4px 14px 0; }
+
+/* Segmented tabs (the events board's shadcn Tabs, skewed): kept */
+.seg { display: flex; gap: 6px; padding: 0 6px 6px 0; }
+.seg button { flex: 1; transform: skewX(-8deg); font: inherit; font-weight: 700; font-style: italic; font-size: 16px; min-height: 44px; border: 2px solid var(--ground-line); background: var(--ground-raised); color: var(--ground-dim); cursor: pointer; }
+.seg button[aria-selected="true"] { background: var(--card); color: var(--card-foreground); border-color: var(--border); box-shadow: 3px 3px 0 var(--primary); }
+
+/* B: dark board rows and panels */
+.brow { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: stretch; background: var(--ground-raised); border: 2px solid var(--ground-line); border-left: 4px solid var(--el); min-height: 96px; cursor: pointer; text-decoration: none; color: inherit; position: relative; font: inherit; text-align: left; padding: 0; }
+.brow .art { position: relative; background: var(--card-foreground); overflow: hidden; }
+.brow .art img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.brow .art .burst { position: absolute; inset: 0; }
+.brow .art img.cut { position: absolute; bottom: 0; left: 0; width: 100%; height: auto; }
+.brow .text { display: grid; align-content: center; gap: 4px; padding: 10px 12px 10px 0; }
+.brow .text b { font-family: var(--font-heading); font-size: 20px; letter-spacing: var(--tracking-title); font-weight: 400; }
+.brow .text span { font-size: 13px; color: var(--ground-dim); }
+.brow .meta { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--foreground); }
+.brow .meta img { width: 14px; height: 14px; }
+.brow .chev { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--ground-dim); }
+.brow.hero { grid-template-columns: 1fr 150px; min-height: 170px; border-left-width: 2px; border-top: 4px solid var(--el); }
+.brow.hero .text { padding: 14px 0 14px 14px; }
+.brow.hero .text b { font-size: 26px; }
+.brow.hero .art { border-left: 2px solid var(--ground-line); }
+.brow.dim .art img { filter: grayscale(1) brightness(.5); }
+.bpanel { background: var(--ground-raised); border: 2px solid var(--ground-line); padding: 12px 14px; display: grid; gap: 10px; }
+.bpanel .h { font-family: var(--font-heading); font-size: 18px; letter-spacing: var(--tracking-title); }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-size: 14px; }
+.kv dt { color: var(--ground-dim); } .kv dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; font-family: var(--font-heading); font-size: 18px; letter-spacing: var(--tracking-title); }
+
+/* Paper panel (kept: profile's reading panels) */
+.paper { background: var(--card); color: var(--card-foreground); border: 2px solid var(--border); padding: 12px 14px; display: grid; gap: 10px; }
+.paper .h { font-family: var(--font-heading); font-size: 18px; letter-spacing: var(--tracking-title); }
+.paper .kv dt { color: var(--muted-foreground); }
+.prow { display: flex; align-items: center; gap: 12px; background: var(--card); color: var(--card-foreground); border: 2px solid var(--border); min-height: 52px; padding: 8px 12px; font: inherit; text-align: left; cursor: pointer; text-decoration: none; }
+.prow b { font-family: var(--font-heading); font-size: 18px; letter-spacing: var(--tracking-title); font-weight: 400; flex: 1; }
+.prow svg { width: 18px; height: 18px; }
+.rank { height: 10px; border: 2px solid var(--border); background: var(--card); }
+.rank i { display: block; height: 100%; background: var(--primary); }
+.brank { height: 10px; border: 2px solid var(--ground-line); background: var(--card-foreground); }
+.brank i { display: block; height: 100%; background: var(--primary); }
+input[type="range"] { width: 100%; accent-color: var(--primary); min-height: 44px; }
+.dchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.dchip { font-family: var(--font-heading); font-size: 16px; letter-spacing: var(--tracking-title); min-width: 44px; min-height: 44px; padding: 0 12px; border: 2px solid var(--border); background: var(--card); color: var(--card-foreground); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.dchip[aria-pressed="true"] { transform: skewX(-8deg); background: var(--primary); box-shadow: 3px 3px 0 var(--slab); }
+.dchip[disabled] { opacity: .45; cursor: default; }
+.on-ground .dchip { background: var(--ground-raised); color: var(--foreground); border-color: var(--ground-line); }
+.on-ground .dchip[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); border-color: var(--border); }
+.gems { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
+.gems img { width: 14px; height: 14px; }
+
+/* ── The tab bar (kept), with the colour variants he allowed ─────────── */
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; border-top: 2px solid var(--border); background: var(--card); color: var(--card-foreground); padding-bottom: 12px; }
+.tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; padding-top: 6px; text-decoration: none; color: var(--muted-foreground); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: var(--tracking-label); }
+.tabbar a svg { width: 16px; height: 16px; }
+.tabbar a[aria-current="page"] { background: var(--primary); color: var(--primary-foreground); }
+.phone[data-nav="ink"] .tabbar { background: var(--card-foreground); color: var(--foreground); border-top-color: var(--ground-line); }
+.phone[data-nav="ink"] .tabbar a { color: var(--ground-dim); }
+.phone[data-nav="ink"] .tabbar a[aria-current="page"] { background: var(--card); color: var(--card-foreground); }
+.phone[data-nav="line"] .tabbar a { position: relative; }
+.phone[data-nav="line"] .tabbar a[aria-current="page"] { background: transparent; color: var(--card-foreground); }
+.phone[data-nav="line"] .tabbar a[aria-current="page"]::before { content: ""; position: absolute; top: -2px; left: 18%; right: 18%; height: 4px; background: var(--card-foreground); }
+.phone[data-nav="element"] .tabbar a[aria-current="page"] { background: var(--card-foreground); color: var(--card); }
+
+/* ── The summon screen, B/C's draw panel (kept from today where it works) ── */
+.draw { display: grid; grid-template-columns: 1fr 1.5fr; gap: 10px; align-items: end; }
+.draw .btn { flex-direction: column; gap: 0; min-height: 56px; line-height: 1.1; }
+.draw .btn small { font-family: var(--font-body); font-size: 10px; font-weight: 700; letter-spacing: var(--tracking-label); text-transform: uppercase; }
+.milestone { display: grid; gap: 6px; }
+.milestone .n { font-family: var(--font-heading); font-size: 28px; letter-spacing: var(--tracking-title); line-height: 1; }
+.milestone .n small { font-family: var(--font-body); font-size: 11px; font-weight: 700; letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ground-dim); margin-left: 4px; }
+.sheet-wrap { position: absolute; inset: 0; z-index: 60; display: grid; align-items: end; }
+.sheet-wrap .backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.5); border: 0; cursor: pointer; }
+.sheet { position: relative; background: var(--card); color: var(--card-foreground); border-top: 2px solid var(--border); padding: 12px 16px 24px; display: grid; gap: 12px; max-height: 80%; overflow: auto; }
+.sheet .grab { width: 36px; height: 4px; background: var(--muted-foreground); margin: 0 auto 4px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (max-width: 480px) { .chooser { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div>
+    <h1>Toll — Home, Events, Gacha and You, drawn from the Characters page</h1>
+    <p class="lede">Round two (ruling #185). The Characters page and the tab bar are kept as they are; the Characters screen is in every option unchanged, as the benchmark. The three options take different positions on how far its tile language reaches into the other four screens. Same ground, same fonts, same tokens, same tile component, real art. Tap tiles, tabs, chips and draw buttons: they work.</p>
+  </div>
+  <div class="chooser" role="group" aria-label="Option">
+    <button type="button" data-pick="a" aria-pressed="true">A · Tiles<small>Everything you can go to is a tile object, the same anatomy as a unit</small></button>
+    <button type="button" data-pick="b" aria-pressed="false">B · Board<small>Tiles stay for units; the screens become the dark board with an element edge, like the enemy half of the battle</small></button>
+    <button type="button" data-pick="c" aria-pressed="false">C · Posters<small>Full-width art posters with the title pinned on, one per thing to do</small></button>
+  </div>
+  <div class="toggle" role="group" aria-label="Tab bar colour">
+    <span class="lbl">Tab bar colour</span>
+    <button type="button" data-nav="yellow" aria-pressed="true">Yellow (today)</button>
+    <button type="button" data-nav="ink" aria-pressed="false">Ink bar, paper tab</button>
+    <button type="button" data-nav="line" aria-pressed="false">Paper, ink line</button>
+    <button type="button" data-nav="element" aria-pressed="false">Paper, ink tab</button>
+  </div>
+  <div class="toggle" role="group" aria-label="Viewport">
+    <button type="button" data-view="phone" aria-pressed="true">390px phone</button>
+    <button type="button" data-view="desktop" aria-pressed="false">Desktop column</button>
+  </div>
+
+  <div class="stage" data-view="phone">
+    <div class="phone" data-opt="a" data-nav="yellow">
+      <header class="top">
+        <a class="wordmark" href="#">TOLL</a>
+        <span class="spacer"></span>
+        <span class="chip"><img src="../../../public/items/stamina.webp" alt="stamina"><span id="stam">119</span><span class="cap">/120</span></span>
+        <span class="chip"><img src="../../../public/items/gems.webp" alt="gems"><span id="gemsTop">3,250</span></span>
+        <span class="chip icon" aria-label="Music">♪</span>
+      </header>
+      <div class="scroll" id="scroll"><div class="col" id="col"></div></div>
+      <div class="sheet-wrap" id="sheet" hidden>
+        <button class="backdrop" type="button" aria-label="Close" id="sheetClose"></button>
+        <div class="sheet" role="dialog" aria-label="Featured" id="sheetBody"></div>
+      </div>
+      <nav class="tabbar" aria-label="Primary">
+        <a href="#" data-tab="home" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Menu</a>
+        <a href="#" data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.5 17-.5-1-.5 1h1z"/><path d="M15 22a1 1 0 0 0 1-1v-1a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20v1a1 1 0 0 0 1 1z"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="12" r="1"/></svg>Events</a>
+        <a href="#" data-tab="gacha"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>Gacha</a>
+        <a href="#" data-tab="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>You</a>
+      </nav>
+    </div>
+    <aside class="notes" id="notes" aria-live="polite"></aside>
+  </div>
+</div>
+
+<script>
+// ── Data: real ids, hues and art paths ───────────────────────────────────
+const P = "../../../public";
+const EL = { light: "var(--el-light)", red: "var(--el-red)", blue: "var(--el-blue)", green: "var(--el-green)", dark: "var(--el-dark)" };
+const CODE = { light: "LGT", red: "RED", blue: "BLU", green: "GRN", dark: "DRK" };
+const UNITS = {
+  lyra: { name: "Lyra", el: "red", cut: `${P}/characters/red_lyra/tile.webp`, lv: 20, ult: 3 },
+  sara: { name: "Sara", el: "red", cut: `${P}/characters/red_sara/tile.webp`, lv: 8, ult: 1 },
+  duke: { name: "Duke", el: "blue", flat: `${P}/characters/blue_duke/portrait.png`, lv: 12, ult: 2 },
+  batra: { name: "Batra", el: "blue", flat: `${P}/characters/blue_batra/portrait.png`, lv: 1, ult: 0 },
+  meliodas: { name: "Meliodas", el: "red", flat: `${P}/characters/red_meliodas/portrait.png`, lv: 30, ult: 5 },
+  seras: { name: "Seras", el: "light", flat: `${P}/characters/light_seras/portrait.png`, lv: 5, ult: 0 },
+  yalina: { name: "Yalina", el: "green", flat: `${P}/characters/green_yalina/portrait.png`, lv: 15, ult: 2 },
+  gabrist: { name: "Gabrist", el: "blue", flat: `${P}/characters/blue_gabrist/portrait.png`, owned: false },
+  mustafa: { name: "Mustafa", el: "green", flat: `${P}/characters/green_mustafa/portrait.png`, owned: false },
+  siddiq: { name: "Siddiq", el: "red", flat: `${P}/characters/red_siddiq/portrait.png`, owned: false },
+};
+const BOSS = { molvarr: { name: "Molvarr", el: "dark", flat: `${P}/npc/dark_molvarr/portrait.png` }, tao: { name: "Master Tao", el: "green", flat: `${P}/characters/green_master_tao/portrait.png` }, prism: { name: "Prism", el: "light", flat: `${P}/npc/light_prism/portrait.png` } };
+const BANNER = `${P}/banners/debut-2026-08.png`;
+const ICONS = {
+  swords: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" x2="19" y1="19" y2="13"/><line x1="16" x2="20" y1="16" y2="20"/><line x1="19" x2="21" y1="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" x2="9" y1="14" y2="18"/><line x1="7" x2="4" y1="17" y2="20"/><line x1="3" x2="5" y1="19" y2="21"/></svg>`,
+  user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  bag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`,
+  sound: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`,
+  chev: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>`,
+  lock: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`,
+  repeat: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>`,
+};
+
+// ── The one tile component (UnitTileFace's anatomy) ───────────────────
+// opts: { el, code, cut|flat|glyph|cover, plate, plateHi, stars, dim, shape, cap:{t,s}, act, label, picked }
+function face(o) {
+  const el = EL[o.el];
+  const code = o.code === undefined ? CODE[o.el] : o.code;
+  let win = "";
+  if (o.cut) win = `<span class="burst tile-burst"></span><img class="cut" src="${o.cut}" alt="">`;
+  else if (o.cover) win = `<img class="cover${o.banner ? " banner" : ""}" src="${o.cover}" alt="">${o.shade ? '<span class="shade"></span>' : ""}`;
+  else if (o.flat) win = `<img class="flat" src="${o.flat}" alt="">`;
+  else if (o.glyph) win = `<span class="burst tile-burst"></span><span class="glyph">${o.glyph}</span>`;
+  const out = o.cut ? `<span class="out"><img src="${o.cut}" alt=""></span>` : "";
+  const stars = o.stars ? `<span class="stars">${"<i class=\"tile-star\"></i>".repeat(o.stars)}</span>` : "";
+  const plate = o.plate ? `<span class="plate${o.plateHi ? " hi" : ""}">${o.plate}</span>` : "";
+  const cap = o.cap ? `<span class="cap"><span class="t">${o.cap.t}</span>${o.cap.s ? `<span class="s">${o.cap.s}</span>` : ""}</span>` : "";
+  const act = o.act ? `<span class="act">${o.act}</span>` : "";
+  return `<span class="face ${o.shape || ""} ${o.dim ? "dim" : ""}" style="--el:${el}">
+    ${o.picked ? '<span class="picked tile-bevel"></span>' : ""}
+    <span class="frame tile-bevel"></span><span class="frame2 tile-bevel-inner"></span>
+    <span class="win tile-bevel-inner">${win}</span>${out}
+    ${code ? `<span class="code">${code}</span>` : ""}${plate}${stars}${cap}${act}
+  </span>`;
+}
+function unitTile(id, extra = {}) {
+  const u = UNITS[id];
+  const owned = u.owned !== false;
+  return `<button class="ut" type="button" aria-label="${u.name}${owned ? `, level ${u.lv}` : ", not yet recruited"}" data-unit="${id}">${face({ el: u.el, cut: u.cut, flat: u.flat, plate: owned ? `Lv ${u.lv}` : "Locked", stars: owned ? u.ult : 0, dim: !owned, ...extra })}</button>`;
+}
+const navTile = (o, label) => `<a class="ut" href="#" aria-label="${label}" data-go="${o.go || ""}">${face(o)}</a>`;
+
+// ── Shared screens: Characters (kept, unchanged) ─────────────────────────
+function charactersScreen() {
+  return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h1 class="title">Characters</h1><button class="btn btn-outline" type="button" style="font-family:var(--font-body);font-size:11px;font-weight:700;border-color:var(--foreground);color:var(--foreground)">NPC index</button></div>
+  <div style="display:flex;gap:8px"><input class="input" type="search" placeholder="Search" aria-label="Search characters" style="flex:1;min-width:0"><button class="btn btn-secondary" type="button" style="font-family:var(--font-body);font-size:12px;font-weight:700">Filters</button></div>
+  <div class="g3">${["batra", "duke", "lyra", "meliodas", "sara", "seras", "yalina", "gabrist", "mustafa", "siddiq"].map(id => unitTile(id)).join("")}</div>`;
+}
+
+// ── State shared by the live bits ────────────────────────────────────────
+const state = { gems: 3250, spent: 0, diff: 1, tab: "home", etab: "boss", brief: false };
+const DIFF = { 1: { lv: 1, hp: "18,400", gems: 50, t: 1 }, 2: { lv: 13, hp: "41,200", gems: 75, t: 2 }, 3: { lv: 24, hp: "72,900", gems: 100, t: 3 } };
+const fmt = n => n.toLocaleString("en-GB");
+
+// ── OPTION A · Tiles ─────────────────────────────────────────────────────
+const A = {
+  home: () => `<h1 class="title">Menu</h1>
+    <div class="g2">
+      ${navTile({ go: "events", el: "dark", code: "BOSS", flat: BOSS.molvarr.flat, plate: "Events" }, "Events: Molvarr, Exam arc, Trials")}
+      ${navTile({ go: "gacha", el: "light", code: "NEW", cover: BANNER, banner: true, plate: "Summon", plateHi: true }, "Summon: Beta roster banner")}
+      ${navTile({ go: "chars", el: "red", code: "", cut: UNITS.lyra.cut, plate: "Characters" }, "Characters")}
+      ${navTile({ go: "", el: "green", code: "", glyph: ICONS.swords, plate: "Practice" }, "Practice")}
+      ${navTile({ go: "you", el: "blue", code: "", glyph: ICONS.user, plate: "Sign in" }, "Sign in")}
+    </div>`,
+  events: () => state.brief ? briefA() : `<p class="eyebrow">Operations board</p><h1 class="title" style="margin-top:0">Events</h1>
+    ${seg()}
+    <div class="g2" data-epanel>
+      ${state.etab === "boss" ? navTile({ go: "brief", el: "dark", code: "WL 1", flat: BOSS.molvarr.flat, plate: `<img src="${P}/items/stamina.webp" alt="stamina" style="width:12px;height:12px;vertical-align:-1px"> 40` }, "Molvarr, world boss, 40 stamina") : ""}
+      ${state.etab === "epic" ? navTile({ go: "", el: "green", code: "ARC", flat: BOSS.tao.flat, plate: "2 stages" }, "Exam arc, Master Tao") : ""}
+      ${state.etab === "trials" ? navTile({ go: "", el: "light", code: "", flat: BOSS.prism.flat, plate: "Rank 20", dim: true }, "First ascension trial, reach rank 20") : ""}
+    </div>`,
+  gacha: () => `<p class="eyebrow">Permanent · gems</p><h1 class="title" style="margin-top:0;font-size:24px">Beta roster banner</h1>
+    <div class="stack" style="padding-right:0">
+      ${face({ el: "light", code: "5%", cover: BANNER, banner: true, shape: "poster", plate: "12 featured", shade: true })}
+    </div>
+    <p class="label" style="color:var(--ground-dim);margin:8px 0 0">Featured</p>
+    <div class="g3" style="padding-top:6px">${["duke", "lyra", "batra"].map(id => unitTile(id, { plate: UNITS[id].owned === false ? "Locked" : "Owned", stars: 0 })).join("")}</div>
+    <button class="btn btn-ghost" type="button" id="moreFeatured" style="justify-self:start;color:var(--ground-dim);font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:uppercase;padding:0">All 12 ›</button>
+    ${drawPanel("ground")}`,
+  you: () => `<h1 class="title">You</h1>
+    <div class="g3" style="grid-template-columns:120px 1fr;align-items:start;gap:14px 16px">
+      ${face({ el: "red", code: "R9", cut: UNITS.lyra.cut, plate: "Guest" })}
+      <div style="display:grid;gap:8px;padding-top:6px">
+        <div class="label" style="color:var(--ground-dim)">Account rank</div>
+        <div style="font-family:var(--font-heading);font-size:34px;line-height:1;letter-spacing:var(--tracking-title)">9</div>
+        <div class="brank"><i style="width:0%"></i></div>
+        <div style="font-size:12px;color:var(--ground-dim)">0 / 214 xp</div>
+      </div>
+    </div>
+    <div class="g3" style="padding-top:4px">
+      ${navTile({ go: "", el: "light", code: "", glyph: ICONS.bag, plate: "Inventory" }, "Inventory")}
+      ${navTile({ go: "", el: "blue", code: "", glyph: ICONS.user, plate: "Account" }, "Account")}
+      ${navTile({ go: "", el: "green", code: "", glyph: ICONS.sound, plate: "Sound" }, "Sound")}
+    </div>
+    <div class="paper"><div class="label" style="color:var(--muted-foreground)">World level</div><div class="kv"><dt>Capped at 1 until rank 20</dt><dd>1</dd></div></div>`,
+};
+function briefA() {
+  const d = DIFF[state.diff];
+  return `<button class="btn btn-ghost" type="button" data-go="back" style="justify-self:start;padding:0;color:var(--ground-dim);font-family:var(--font-body);font-size:13px;font-weight:700">‹ Events</button>
+    <div class="g2" style="grid-template-columns:150px 1fr;align-items:center;padding-top:16px">
+      ${face({ el: "dark", code: `WL 1`, flat: BOSS.molvarr.flat, plate: `Lv ${d.lv}` })}
+      <div style="display:grid;gap:4px"><h2 class="title" style="margin:0;font-size:24px">Molvarr</h2>
+        <dl class="kv" style="margin-top:10px"><dt>HP</dt><dd>${d.hp}</dd><dt>Stamina</dt><dd>40</dd></dl></div>
+    </div>
+    <p class="label" style="color:var(--ground-dim)">Difficulty</p>
+    <div class="dchips on-ground">${[1,2,3].map(n => `<button class="dchip" type="button" data-diff="${n}" aria-pressed="${state.diff === n}">${n}</button>`).join("")}<button class="dchip" type="button" disabled aria-label="Difficulty 4, locked until rank 40">${ICONS.lock} 4</button></div>
+    <p class="label" style="color:var(--ground-dim)">First clear</p>
+    <div class="dchips on-ground"><span class="dchip" style="cursor:default"><img src="${P}/items/gems.webp" alt="gems" width="14" height="14"> ${d.gems}</span><span class="dchip" style="cursor:default"><img src="${P}/items/auto_clear_ticket.webp" alt="auto clear tickets" width="14" height="14"> ${d.t}</span></div>
+    <button class="btn btn-primary btn-full" type="button" style="margin-top:8px"><span>Fight</span></button>`;
+}
+function seg() {
+  return `<div class="seg" role="tablist">${[["boss", "World boss"], ["epic", "Epic battles"], ["trials", "Trials"]].map(([k, l]) => `<button role="tab" aria-selected="${state.etab === k}" data-etab="${k}">${l}</button>`).join("")}</div>`;
+}
+function drawPanel(surface) {
+  const pct = Math.min(100, Math.round((state.spent % 1000) / 10));
+  const dark = surface === "ground";
+  return `<div class="${dark ? "bpanel" : "paper"}" style="margin-top:8px">
+    <div class="milestone"><div class="label" style="color:${dark ? "var(--ground-dim)" : "var(--muted-foreground)"}">Milestone</div><div class="n">${fmt(state.spent % 1000)}<small>/ 1,000 spent</small></div><div class="${dark ? "brank" : "rank"}"><i style="width:${pct}%"></i></div></div>
+    <div class="draw">
+      <button class="btn btn-secondary" type="button" data-draw="1"><span>Draw ×1</span><small>5 gems</small></button>
+      <button class="btn btn-primary" type="button" data-draw="11"><span>Draw ×11</span><small>50 gems · one free pull</small></button>
+    </div>
+    <button class="btn btn-ghost" type="button" style="justify-self:end;padding:0;font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:uppercase;text-decoration:underline;text-underline-offset:4px;color:${dark ? "var(--foreground)" : "var(--card-foreground)"}">Rates &amp; pool</button>
+  </div>`;
+}
+
+// ── OPTION B · Board ─────────────────────────────────────────────────────
+const brow = (o) => `<a class="brow ${o.hero ? "hero" : ""} ${o.dim ? "dim" : ""}" href="#" data-go="${o.go || ""}" style="--el:${EL[o.el]}" aria-label="${o.label}">
+  ${o.hero ? `<div class="text"><b>${o.t}</b><span>${o.s || ""}</span>${o.meta ? `<span class="meta">${o.meta}</span>` : ""}</div><div class="art">${o.cut ? `<span class="burst tile-burst"></span><img class="cut" src="${o.cut}" alt="">` : `<img src="${o.flat}" alt="">`}</div>`
+  : `<div class="art">${o.cut ? `<span class="burst tile-burst"></span><img class="cut" src="${o.cut}" alt="">` : o.glyph ? `<span class="burst tile-burst"></span><span class="glyph" style="position:absolute;inset:0;display:grid;place-items:center;color:var(--card-foreground)"><span style="width:40%;height:40%;display:block">${o.glyph}</span></span>` : `<img src="${o.flat}" alt="">`}</div><div class="text"><b>${o.t}</b>${o.s ? `<span>${o.s}</span>` : ""}${o.meta ? `<span class="meta">${o.meta}</span>` : ""}</div><span class="chev">${ICONS.chev}</span>`}
+</a>`;
+const B = {
+  home: () => `<h1 class="title">Menu</h1>
+    <div class="stack" style="gap:10px;padding-right:0">
+      ${brow({ hero: true, go: "gacha", el: "light", t: "Beta roster banner", s: "Summon", meta: "5% featured", cut: UNITS.lyra.cut, label: "Summon: Beta roster banner" })}
+      ${brow({ go: "events", el: "dark", t: "Events", s: "Molvarr · Exam arc · Trials", flat: BOSS.molvarr.flat, label: "Events" })}
+      ${brow({ go: "chars", el: "red", t: "Characters", cut: UNITS.sara.cut, label: "Characters" })}
+      ${brow({ go: "", el: "green", t: "Practice", s: "Pick both teams", glyph: ICONS.swords, label: "Practice" })}
+      ${brow({ go: "you", el: "blue", t: "Sign in", s: "Sync progress", glyph: ICONS.user, label: "Sign in" })}
+    </div>`,
+  events: () => state.brief ? briefB() : `<p class="eyebrow">Operations board</p><h1 class="title" style="margin-top:0">Events</h1>
+    ${seg()}
+    <div class="stack" style="gap:10px;padding-right:0">
+      ${state.etab === "boss" ? brow({ go: "brief", el: "dark", t: "Molvarr", s: "World level 1", meta: `<img src="${P}/items/stamina.webp" alt="stamina"> 40 ${ICONS.repeat}`, flat: BOSS.molvarr.flat, label: "Molvarr" }) : ""}
+      ${state.etab === "epic" ? brow({ go: "", el: "green", t: "Exam arc", s: "Master Tao · 2 stages", flat: BOSS.tao.flat, label: "Exam arc" }) : ""}
+      ${state.etab === "trials" ? brow({ go: "", el: "light", t: "First ascension trial", s: "Reach rank 20", meta: `<img src="${P}/items/stamina.webp" alt="stamina"> 30`, flat: BOSS.prism.flat, dim: true, label: "First ascension trial, locked" }) : ""}
+    </div>`,
+  gacha: () => `<p class="eyebrow">Permanent · gems</p><h1 class="title" style="margin-top:0;font-size:24px">Beta roster banner</h1>
+    <div class="bpanel" style="padding:0;overflow:hidden;border-top:4px solid var(--el-light);position:relative;aspect-ratio:358/220">
+      <img src="${BANNER}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 0;height:138%">
+      <span class="face" style="position:absolute;left:12px;bottom:12px;aspect-ratio:auto;--el:var(--el-light)"><span class="code" style="position:static;display:inline-block">5% featured</span></span>
+    </div>
+    <div class="bpanel"><div class="h">Featured</div><div class="g3" style="padding:6px 4px 10px 0">${["duke", "lyra", "batra"].map(id => unitTile(id, { plate: UNITS[id].owned === false ? "Locked" : "Owned", stars: 0 })).join("")}</div><button class="btn btn-ghost" type="button" id="moreFeatured" style="justify-self:start;padding:0;color:var(--ground-dim);font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:uppercase">All 12 ›</button></div>
+    ${drawPanel("ground")}`,
+  you: () => `<h1 class="title">You</h1>
+    <div class="bpanel" style="grid-template-columns:72px 1fr;gap:12px 14px;align-items:center;border-left:4px solid var(--el-red)">
+      <span style="display:block;width:72px">${face({ el: "red", code: "", cut: UNITS.lyra.cut, plate: "" })}</span>
+      <div style="display:grid;gap:2px"><b style="font-family:var(--font-heading);font-size:24px;letter-spacing:var(--tracking-title);font-weight:400">Guest</b><span style="font-size:12px;color:var(--ground-dim)">Sign in to sync</span></div>
+      <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><div class="label" style="color:var(--ground-dim)">Account rank</div><div style="font-family:var(--font-heading);font-size:30px;line-height:1.1;letter-spacing:var(--tracking-title)">9</div><div class="brank" style="margin-top:6px"><i style="width:0%"></i></div><div style="font-size:11px;color:var(--ground-dim);margin-top:4px">0 / 214 xp</div></div>
+        <div style="border-left:2px solid var(--ground-line);padding-left:12px"><div class="label" style="color:var(--ground-dim)">World level</div><div style="font-family:var(--font-heading);font-size:30px;line-height:1.1;letter-spacing:var(--tracking-title)">1</div><div style="font-size:11px;color:var(--ground-dim);margin-top:4px">Capped until rank 20</div></div>
+      </div>
+    </div>
+    <div class="bpanel" style="grid-template-columns:auto 1fr;align-items:center"><img src="${P}/items/coin.webp" alt="coin" width="28" height="28"><div><div class="label" style="color:var(--ground-dim)">Coin</div><div style="font-family:var(--font-heading);font-size:24px;letter-spacing:var(--tracking-title)">48,200</div></div></div>
+    <div class="stack" style="gap:8px;padding:0">
+      ${brow({ go: "", el: "light", t: "Inventory", glyph: ICONS.bag, label: "Inventory" })}
+      ${brow({ go: "", el: "blue", t: "Account", glyph: ICONS.user, label: "Account" })}
+      ${brow({ go: "", el: "green", t: "Sound", s: "Music 60", glyph: ICONS.sound, label: "Sound" })}
+    </div>`,
+};
+function briefB() {
+  const d = DIFF[state.diff];
+  return `<button class="btn btn-ghost" type="button" data-go="back" style="justify-self:start;padding:0;color:var(--ground-dim);font-family:var(--font-body);font-size:13px;font-weight:700">‹ Events</button>
+    ${brow({ hero: true, el: "dark", t: "Molvarr", s: `World level 1 · Lv ${d.lv}`, meta: `HP ${d.hp}`, flat: BOSS.molvarr.flat, label: "Molvarr" })}
+    <div class="bpanel"><div class="label" style="color:var(--ground-dim)">Difficulty</div>
+      <div class="dchips on-ground">${[1,2,3].map(n => `<button class="dchip" type="button" data-diff="${n}" aria-pressed="${state.diff === n}">${n}</button>`).join("")}<button class="dchip" type="button" disabled aria-label="Difficulty 4, locked until rank 40">${ICONS.lock} 4</button></div>
+      <div class="label" style="color:var(--ground-dim)">First clear</div>
+      <div class="dchips on-ground"><span class="dchip" style="cursor:default"><img src="${P}/items/gems.webp" alt="gems" width="14" height="14"> ${d.gems}</span><span class="dchip" style="cursor:default"><img src="${P}/items/auto_clear_ticket.webp" alt="auto clear tickets" width="14" height="14"> ${d.t}</span></div>
+      <button class="btn btn-primary btn-full" type="button"><span>Fight · <span class="gems"><img src="${P}/items/stamina.webp" alt="stamina"> 40</span></span></button>
+    </div>`;
+}
+
+// ── OPTION C · Posters ───────────────────────────────────────────────────
+const poster = (o) => `<a class="ut" href="#" data-go="${o.go || ""}" aria-label="${o.label}">${face({ ...o, shape: o.shape || "poster", shade: true, code: o.code || "" })}</a>`;
+const C = {
+  home: () => `<h1 class="title">Menu</h1>
+    <div class="stack" style="padding-right:0;gap:22px">
+      ${poster({ go: "gacha", el: "light", cover: BANNER, banner: true, cap: { t: "Beta roster banner", s: "Summon · 5% featured" }, label: "Summon" })}
+      ${poster({ go: "events", el: "dark", cover: BOSS.molvarr.flat, cap: { t: "Events", s: "Molvarr · Exam arc · Trials" }, label: "Events" })}
+      ${poster({ go: "chars", el: "red", cover: `${P}/characters/red_lyra/portrait.png`, cap: { t: "Characters" }, label: "Characters" })}
+    </div>
+    <div class="g2" style="padding-top:0">
+      ${navTile({ go: "", el: "green", code: "", glyph: ICONS.swords, shape: "wide", plate: "Practice" }, "Practice")}
+      ${navTile({ go: "you", el: "blue", code: "", glyph: ICONS.user, shape: "wide", plate: "Sign in" }, "Sign in")}
+    </div>`,
+  events: () => state.brief ? briefC() : `<p class="eyebrow">Operations board</p><h1 class="title" style="margin-top:0">Events</h1>
+    ${seg()}
+    <div class="stack" style="padding-right:0;gap:22px">
+      ${state.etab === "boss" ? poster({ go: "brief", el: "dark", cover: BOSS.molvarr.flat, code: "WL 1", cap: { t: "Molvarr", s: "World boss" }, act: `<span class="dchip" style="cursor:default"><img src="${P}/items/stamina.webp" alt="stamina" width="14" height="14"> 40 ${ICONS.repeat}</span>`, label: "Molvarr, 40 stamina" }) : ""}
+      ${state.etab === "epic" ? poster({ go: "", el: "green", cover: BOSS.tao.flat, code: "ARC", cap: { t: "Exam arc", s: "Master Tao · 2 stages" }, label: "Exam arc" }) : ""}
+      ${state.etab === "trials" ? poster({ go: "", el: "light", cover: BOSS.prism.flat, dim: true, cap: { t: "First ascension trial", s: "Reach rank 20" }, act: `<span class="dchip" style="cursor:default">${ICONS.lock}</span>`, label: "First ascension trial, locked" }) : ""}
+    </div>`,
+  gacha: () => `<p class="eyebrow">Permanent · gems</p><h1 class="title" style="margin-top:0;font-size:24px">Beta roster banner</h1>
+    <div class="stack" style="padding-right:0">${face({ el: "light", code: "5%", cover: BANNER, banner: true, shape: "poster", shade: true, cap: { s: "12 featured" }, act: `<button class="btn btn-secondary" type="button" id="moreFeatured" style="font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:uppercase;min-height:40px">Featured ›</button>` })}</div>
+    <div class="g3" style="padding-top:2px">${["duke", "lyra", "batra"].map(id => unitTile(id, { plate: UNITS[id].owned === false ? "Locked" : "Owned", stars: 0 })).join("")}</div>
+    ${drawPanel("paper")}`,
+  you: () => `<h1 class="title">You</h1>
+    <div class="stack" style="padding-right:0">${face({ el: "red", code: "R9", cover: `${P}/characters/red_lyra/portrait.png`, shape: "poster", shade: true, cap: { t: "Guest", s: "Sign in to sync" }, act: `<span class="dchip" style="cursor:default;font-family:var(--font-body);font-size:11px;letter-spacing:var(--tracking-label)">Rank 9 · 0/214 xp</span>` })}</div>
+    <div class="stack" style="gap:8px;padding:0">
+      <a class="prow" href="#"><span style="width:18px;height:18px;display:block">${ICONS.bag}</span><b>Inventory</b>${ICONS.chev}</a>
+      <a class="prow" href="#"><span style="width:18px;height:18px;display:block">${ICONS.user}</span><b>Account</b>${ICONS.chev}</a>
+      <div class="paper"><div style="display:flex;align-items:center;justify-content:space-between"><span class="h">Sound</span><button class="btn btn-outline" type="button" style="font-family:var(--font-body);font-size:11px;font-weight:700;min-height:40px">Mute</button></div><label class="label" style="color:var(--muted-foreground)">Music <span id="musV" style="float:right">60</span></label><input type="range" id="mus" min="0" max="100" value="60"></div>
+      <div class="paper"><div class="kv"><dt>World level</dt><dd>1</dd><dt>Coin</dt><dd>48,200</dd></div></div>
+    </div>`,
+};
+function briefC() {
+  const d = DIFF[state.diff];
+  return `<button class="btn btn-ghost" type="button" data-go="back" style="justify-self:start;padding:0;color:var(--ground-dim);font-family:var(--font-body);font-size:13px;font-weight:700">‹ Events</button>
+    <div class="stack" style="padding-right:0">${face({ el: "dark", code: "WL 1", cover: BOSS.molvarr.flat, shape: "poster", shade: true, cap: { t: "Molvarr", s: `Lv ${d.lv} · HP ${d.hp}` } })}</div>
+    <div class="paper"><div class="label" style="color:var(--muted-foreground)">Difficulty</div>
+      <div class="dchips">${[1,2,3].map(n => `<button class="dchip" type="button" data-diff="${n}" aria-pressed="${state.diff === n}">${n}</button>`).join("")}<button class="dchip" type="button" disabled aria-label="Difficulty 4, locked until rank 40">${ICONS.lock} 4</button></div>
+      <div class="label" style="color:var(--muted-foreground)">First clear</div>
+      <div class="dchips"><span class="dchip" style="cursor:default"><img src="${P}/items/gems.webp" alt="gems" width="14" height="14"> ${d.gems}</span><span class="dchip" style="cursor:default"><img src="${P}/items/auto_clear_ticket.webp" alt="auto clear tickets" width="14" height="14"> ${d.t}</span></div>
+      <button class="btn btn-primary btn-full" type="button"><span>Fight · <span class="gems"><img src="${P}/items/stamina.webp" alt="stamina"> 40</span></span></button>
+    </div>`;
+}
+
+// ── Notes ────────────────────────────────────────────────────────────────
+const NOTES = {
+  a: { title: "A · Tiles", position: "The Characters page is the whole game. Every destination, event and account section is the same tile object a unit is: element bevel, ink lines, a burst window, a corner code, a plate. Home becomes a 2-up grid of tiles with art in them; Events is the board's tabs over event tiles; the summon banner is a wide tile with the featured units as real roster tiles; You is the player as a tile with the sections as tiles.", changes: "Home loses its six paper text cards and the dead lower half; a closed mode (News) is not a tile. Events rows become tiles with the cost on the plate. Gacha loses the speed rays and the shout bubble; the draw panel is a dark board panel at the bottom. You loses the paper stack; the avatar is a unit the player picks.", stays: "The tile component untouched, the title treatment, the tabs, the header, the tab bar, the dark halftone ground, Bangers and M PLUS 1p, the element hues.", watch: "Squares everywhere can read as one big archive; the plate text is the only place a name lives, so it has to carry the name of the thing. Practice and Sign in have no art, so they get a glyph on a burst (drawn here) or ask for art (docs/ART_REQUESTS.md).", cost: "One new wrapper around UnitTileFace (a NavTile that takes art or a glyph), the home grid, the event tile, the banner's wide shape. The draw panel and the brief reuse Panel and the chips. The smallest build of the three." },
+  b: { title: "B · Board", position: "The tile is for units only; the screens are the dark board. Content sits on raised dark panels with a thick element edge, light text, art in a square cut on the left, and new-pipeline art breaking out of its cut. It is the enemy half of the battle screen (#156: dark tiles framed in the element hue) applied to the hub, the board, the summon and the profile.", changes: "Paper disappears from content and stays on controls and chrome: the header, the tab bar, the buttons, the title plate. Home is a hero row for the banner, then rows. Events are rows. Gacha is a dark panel with the banner art and the featured roster tiles. You is a dark account panel with the two numbers that matter and rows.", stays: "Everything A keeps, plus the paper buttons and chips exactly as today.", watch: "Dark panels with a coloured edge were Combat Terminal's shape (hairlines and cyan). The difference here is the element edge and the bevel-cut art, not a hairline; if it still reads as the retired look, the edge thickness and the raised tone are the dials. Light text on the ground is 13.6:1 (foreground) and 8.1:1 (ground-dim).", cost: "A Row component on the dark ground (today's EventCard shape, re-surfaced) plus a raised panel variant on Panel. Middle build." },
+  c: { title: "C · Posters", position: "Art first. Every thing you can do is a full-width poster: the art is the panel's background, the title is the skewed paper plate pinned on it, the action is a plate in the corner, the element colours the frame. Dokkan's event banners and Grand Cross's home carousel, in this game's frame. The small things (Practice, Sign in, rows under You) stay small.", changes: "Home is three posters and a 2-up row. Events are posters per event. Gacha is one poster with the draw panel on paper beneath it and the featured roster tiles. You is the avatar poster with the rank plate and paper rows under it.", stays: "Everything A keeps, plus the paper panels for reading (sound, world level).", watch: "A poster needs landscape-ish art with the subject off-centre; today's portraits are square or tall, so the hub posters crop (Lyra's poster shows her at the top edge). The shade under the plate keeps AA on the title, measured; it is a gradient behind text, which design-system.md excludes for reading text and allows on a hero. Three posters fill 390×844 with no room for a fourth.", cost: "A Poster shape on the tile component (landscape bevel, cover art, a caption slot) and a cover crop per piece of art (docs/ART_REQUESTS.md). The largest build, mostly art." },
+};
+const MEASURE = `<p class="measure"><strong>Measured on the live screens, 2026-10-13, 390×844.</strong> Home uses the top <strong>40%</strong> of the viewport (six paper tiles, text only, the rest empty); Events uses <strong>37%</strong> (one row). Characters fills it. The tile anatomy here is <code>UnitTileFace.tsx</code> span for span, the utilities are copied from <code>styles/globals.css</code>, and the art is the repo's. In every option every control is ≥ 44px and no text pair is under 4.5:1 (checked in Chromium). Type is as today: Bangers draws capitals, the micro-labels are uppercase; the sentence-case decision of 2026-09-27 is still queued and is a separate question from this one.</p>`;
+
+// ── Render ───────────────────────────────────────────────────────────────
+const OPTS = { a: A, b: B, c: C };
+const phone = document.querySelector(".phone"), col = document.getElementById("col"), notes = document.getElementById("notes"), stage = document.querySelector(".stage");
+function render() {
+  const o = OPTS[phone.dataset.opt];
+  const html = state.tab === "chars" ? charactersScreen() : o[state.tab]();
+  col.innerHTML = html;
+  document.querySelectorAll(".tabbar a").forEach(a => a.toggleAttribute("aria-current", a.dataset.tab === state.tab) || (a.dataset.tab === state.tab ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
+  document.getElementById("gemsTop").textContent = fmt(state.gems);
+  document.getElementById("scroll").scrollTop = 0;
+}
+function renderNotes(k) {
+  const n = NOTES[k];
+  notes.innerHTML = `<h2>${n.title}</h2><dl><dt>The position it takes</dt><dd>${n.position}</dd><dt>What changes</dt><dd>${n.changes}</dd><dt>What stays</dt><dd>${n.stays}</dd><dt>Watch out</dt><dd>${n.watch}</dd><dt>What it costs to build</dt><dd>${n.cost}</dd></dl>${MEASURE}`;
+}
+document.querySelectorAll("[data-pick]").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-pick]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  phone.dataset.opt = b.dataset.pick; state.brief = false; render(); renderNotes(b.dataset.pick);
+}));
+document.querySelectorAll("[data-nav]").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-nav]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  phone.dataset.nav = b.dataset.nav;
+}));
+document.querySelectorAll("[data-view]").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-view]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  stage.dataset.view = b.dataset.view;
+}));
+document.querySelectorAll(".tabbar a").forEach(a => a.addEventListener("click", e => { e.preventDefault(); state.tab = a.dataset.tab; state.brief = false; render(); }));
+col.addEventListener("click", e => {
+  const go = e.target.closest("[data-go]");
+  if (go) { e.preventDefault(); const g = go.dataset.go; if (g === "brief") state.brief = true; else if (g === "back") state.brief = false; else if (g) { state.tab = g; state.brief = false; } else return; render(); return; }
+  const et = e.target.closest("[data-etab]"); if (et) { state.etab = et.dataset.etab; render(); return; }
+  const dc = e.target.closest("[data-diff]:not([disabled])"); if (dc) { state.diff = Number(dc.dataset.diff); render(); return; }
+  const dr = e.target.closest("[data-draw]"); if (dr) { const cost = dr.dataset.draw === "11" ? 50 : 5; if (state.gems >= cost) { state.gems -= cost; state.spent += cost; } render(); return; }
+  const mf = e.target.closest("#moreFeatured"); if (mf) { openSheet(); return; }
+  const u = e.target.closest("[data-unit]"); if (u && state.tab === "chars") { const was = u.querySelector(".face").classList.contains("sel"); col.querySelectorAll(".face").forEach(f => { f.classList.remove("sel"); f.querySelector(".picked")?.remove(); }); if (!was) { const f = u.querySelector(".face"); f.classList.add("sel"); f.insertAdjacentHTML("afterbegin", '<span class="picked tile-bevel"></span>'); } return; }
+});
+col.addEventListener("input", e => { if (e.target.id === "mus") document.getElementById("musV").textContent = e.target.value; });
+const sheet = document.getElementById("sheet");
+function openSheet() {
+  document.getElementById("sheetBody").innerHTML = `<div class="grab"></div><div style="display:flex;justify-content:space-between;align-items:center"><span class="h" style="font-family:var(--font-heading);font-size:20px;letter-spacing:var(--tracking-title)">Featured</span><button class="btn btn-ghost" type="button" id="sheetDone" style="font-family:var(--font-body);font-size:12px;font-weight:700">Done</button></div><div class="g3">${Object.keys(UNITS).map(id => unitTile(id, { plate: UNITS[id].owned === false ? "Locked" : "Owned", stars: 0 })).join("")}</div>`;
+  sheet.hidden = false; document.getElementById("sheetDone").focus();
+  document.getElementById("sheetDone").addEventListener("click", closeSheet);
+}
+function closeSheet() { sheet.hidden = true; document.getElementById("moreFeatured")?.focus(); }
+document.getElementById("sheetClose").addEventListener("click", closeSheet);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !sheet.hidden) closeSheet(); });
+render(); renderNotes("a");
+</script>
+</body>
+</html>

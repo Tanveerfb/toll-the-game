@@ -16,7 +16,7 @@ import { colorQualifiedId } from "@/lib/game/unitKey";
  * failure mode much easier to hit — hence a single list, validated at load by
  * `storySchema.ts`.
  */
-export const MATERIAL_LABELS: Record<string, string> = {
+const MATERIAL_LABELS: Record<string, string> = {
   // Ascension — world-boss exclusive by design (story never drops these)
   sea_monster_eye: "Sea Monster's Eye",
   corroded_seaweed: "Corroded Sea Weed",
@@ -90,10 +90,6 @@ export const MATERIAL_IDS: readonly string[] = [
   ...Object.keys(MATERIAL_LABELS),
   ...Object.keys(COIN_LABELS),
 ];
-
-export function isKnownMaterial(id: string): boolean {
-  return id in MATERIAL_LABELS || id in COIN_LABELS;
-}
 
 /** Falls back to the raw id rather than throwing — an unknown id reaching a
  *  display surface is a data bug to see, not a crash to suffer. */

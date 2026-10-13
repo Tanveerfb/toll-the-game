@@ -61,7 +61,7 @@ export function entryTouchesStat(
 }
 
 /** The three stats every kit has. Ruling #55 names this set "basic stats". */
-export const BASIC_STATS = ["atk", "def", "hp"] as const;
+const BASIC_STATS = ["atk", "def", "hp"] as const;
 
 const STAT_WORD: Record<string, string> = {
   atk: "ATK",

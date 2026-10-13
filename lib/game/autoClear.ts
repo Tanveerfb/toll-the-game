@@ -15,7 +15,7 @@ import { tierKey } from "@/lib/game/worldBossRewards";
  * it cannot produce a single material the player could not have farmed by
  * sitting through the fights. That is what makes full rewards safe.
  *
- * Design: `docs/superpowers/specs/2026-08-13-auto-clear-design.md`.
+ * Design: `docs/archive/superpowers/specs/2026-08-13-auto-clear-design.md`.
  */
 
 /** Granted per account rank gained. Per RANK, not per XP grant — see

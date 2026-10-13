@@ -47,8 +47,6 @@ export const CLOUD_FIELDS = [
   "epicClears",
 ] as const;
 
-export type CloudField = (typeof CLOUD_FIELDS)[number];
-
 /**
  * Persisted fields that deliberately do NOT travel, and why each one doesn't.
  *
@@ -92,6 +90,49 @@ export function cloudPatch(
     patch[field] = migrated[field];
   }
   return patch as Partial<PlayerState>;
+}
+
+/**
+ * What Firestore refuses in a document, found by walking a value.
+ *
+ * Added 2026-10-13 (issue #28): `epicClears[*].teams` went out as an array of
+ * arrays, which Firestore rejects outright ("Nested arrays are not
+ * supported"), so from the first Epic Battles clear every `setDoc` threw and
+ * the player was never told. Nothing checked that the document was
+ * serialisable, only that the patch logic was right. `tests/cloudSave.test.ts`
+ * now walks `cloudDocument()` with this and fails on the first problem.
+ *
+ * Reported: an array directly inside an array, `undefined` anywhere (the SDK
+ * throws unless `ignoreUndefinedProperties` is set, and it is not), and a
+ * function or symbol. Returned as paths so a failing test names the field.
+ */
+export function firestoreShapeProblems(value: unknown, path = "document"): string[] {
+  const problems: string[] = [];
+  const walk = (node: unknown, at: string, insideArray: boolean) => {
+    if (node === undefined) {
+      problems.push(`${at}: undefined`);
+      return;
+    }
+    if (typeof node === "function" || typeof node === "symbol") {
+      problems.push(`${at}: ${typeof node}`);
+      return;
+    }
+    if (Array.isArray(node)) {
+      if (insideArray) {
+        problems.push(`${at}: nested array`);
+        return;
+      }
+      node.forEach((item, index) => walk(item, `${at}[${index}]`, true));
+      return;
+    }
+    if (node !== null && typeof node === "object") {
+      for (const [key, item] of Object.entries(node as Record<string, unknown>)) {
+        walk(item, `${at}.${key}`, false);
+      }
+    }
+  };
+  walk(value, path, false);
+  return problems;
 }
 
 /**

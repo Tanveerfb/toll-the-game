@@ -7,7 +7,6 @@ import { useScreenMusic } from "@/hooks/useScreenMusic";
 import { usePlayerStore } from "@/store/playerStore";
 import { getPlayableCharacters } from "@/lib/game/characterCatalog";
 import { getGemBanner } from "@/lib/gacha/banners";
-import { NEWS_OPEN } from "@/lib/news/open";
 import NavTile from "@/components/ui/NavTile";
 import { Screen } from "@/components/ui/Screen";
 
@@ -71,7 +70,7 @@ export default function HomeMenu() {
           />
           <NavTile
             title="News"
-            subtitle={NEWS_OPEN ? "Updates & notices" : "Coming soon"}
+            subtitle="Coming soon"
             href="/news"
           />
           <NavTile

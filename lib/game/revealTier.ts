@@ -12,7 +12,7 @@ import type { Color } from "@/types/color";
  * cheap" the same way the spec's basic-attack row describes.
  */
 
-export type RevealTier = "basic" | "r1" | "r2" | "r3" | "ultimate";
+type RevealTier = "basic" | "r1" | "r2" | "r3" | "ultimate";
 
 export interface RevealDescriptor {
   tier: RevealTier;

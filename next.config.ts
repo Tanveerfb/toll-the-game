@@ -1,14 +1,10 @@
 import type { NextConfig } from "next";
-import createMDX from "@next/mdx";
 
 const nextConfig: NextConfig = {
   // Opt-in build output dir. Defaults to .next; set NEXT_DIST_DIR to verify a
   // production build without trampling the .next a running `npm run dev` owns
   // (e.g. a dev server forwarded to another device).
   distDir: process.env.NEXT_DIST_DIR || ".next",
-  // Lets Next treat .md/.mdx files as importable modules (content/ dir here,
-  // not routable pages — nothing under app/ uses these extensions).
-  pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],
   experimental: {
     // components/ui/*.tsx import lucide-react barrel-style throughout;
     // this rewrites those to per-icon imports so the whole icon set doesn't
@@ -48,10 +44,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-const withMDX = createMDX({
-  options: {
-    remarkPlugins: ["remark-gfm"],
-  },
-});
-
-export default withMDX(nextConfig);
+export default nextConfig;

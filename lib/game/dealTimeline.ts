@@ -25,7 +25,7 @@ export const MERGE_BEAT_MS = 140;
  *  screen before the next frame may start. */
 export const MERGE_SETTLE_MS = 320;
 
-export type DealFrameKind = "draw" | "merge";
+type DealFrameKind = "draw" | "merge";
 
 export interface DealFrame {
   kind: DealFrameKind;

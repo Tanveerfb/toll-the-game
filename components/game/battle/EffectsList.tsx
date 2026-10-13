@@ -59,7 +59,7 @@ interface CategorizedEffect {
  * own `type` says. Keeping one rule means the colour can never disagree with
  * what a cancel would actually remove.
  */
-export function isStanceEntry(effect: StatusEffect): boolean {
+function isStanceEntry(effect: StatusEffect): boolean {
   return (
     effect.type === "stance" ||
     effect.type === "taunt" ||

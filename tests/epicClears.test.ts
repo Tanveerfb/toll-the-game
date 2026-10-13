@@ -5,6 +5,8 @@ import {
   applyEpicClear,
   EPIC_TEAMS_CAP,
   normaliseTeam,
+  teamIds,
+  teamKey,
   type EpicClears,
 } from "@/lib/game/epicClears";
 import {
@@ -24,7 +26,7 @@ describe("applyEpicClear", () => {
       firstClearAt: 1000,
       lastClearAt: 1000,
       bestTurns: 7,
-      teams: [["duke", "lyra"]],
+      teams: ["duke|lyra"],
     });
   });
 
@@ -50,17 +52,20 @@ describe("applyEpicClear", () => {
 
   it("dedupes a team however its ids were ordered or repeated", () => {
     expect(normaliseTeam(["b", "a", "b"])).toEqual(["a", "b"]);
-    let clears: EpicClears = applyEpicClear({}, KEY, ["gon", "killua"], 5, 1);
-    clears = applyEpicClear(clears, KEY, ["killua", "gon"], 5, 2);
-    clears = applyEpicClear(clears, KEY, ["killua", "gon", "gon"], 5, 3);
-    expect(clears[KEY].teams).toEqual([["gon", "killua"]]);
+    expect(teamKey(["b", "a", "b"])).toBe("a|b");
+    expect(teamIds("a|b")).toEqual(["a", "b"]);
+    expect(teamIds("")).toEqual([]);
+    let clears: EpicClears = applyEpicClear({}, KEY, ["duke", "lyra"], 5, 1);
+    clears = applyEpicClear(clears, KEY, ["lyra", "duke"], 5, 2);
+    clears = applyEpicClear(clears, KEY, ["lyra", "duke", "duke"], 5, 3);
+    expect(clears[KEY].teams).toEqual(["duke|lyra"]);
     expect(clears[KEY].clears).toBe(3);
   });
 
   it("keeps different teams as different entries", () => {
-    let clears: EpicClears = applyEpicClear({}, KEY, ["gon"], 5, 1);
-    clears = applyEpicClear(clears, KEY, ["gon", "killua"], 5, 2);
-    expect(clears[KEY].teams).toEqual([["gon"], ["gon", "killua"]]);
+    let clears: EpicClears = applyEpicClear({}, KEY, ["duke"], 5, 1);
+    clears = applyEpicClear(clears, KEY, ["duke", "lyra"], 5, 2);
+    expect(clears[KEY].teams).toEqual(["duke", "duke|lyra"]);
   });
 
   it("caps the teams, dropping the longest unused", () => {
@@ -70,8 +75,8 @@ describe("applyEpicClear", () => {
     }
     const teams = clears[KEY].teams;
     expect(teams).toHaveLength(EPIC_TEAMS_CAP);
-    expect(teams[0]).toEqual(["unit005"]);
-    expect(teams[teams.length - 1]).toEqual([`unit${String(EPIC_TEAMS_CAP + 4).padStart(3, "0")}`]);
+    expect(teams[0]).toBe("unit005");
+    expect(teams[teams.length - 1]).toBe(`unit${String(EPIC_TEAMS_CAP + 4).padStart(3, "0")}`);
     // The count is not capped - only the team list is.
     expect(clears[KEY].clears).toBe(EPIC_TEAMS_CAP + 5);
   });
@@ -82,7 +87,7 @@ describe("applyEpicClear", () => {
       clears = applyEpicClear(clears, KEY, [`other${String(i).padStart(3, "0")}`], 5, i);
       clears = applyEpicClear(clears, KEY, ["main"], 5, i);
     }
-    expect(clears[KEY].teams).toContainEqual(["main"]);
+    expect(clears[KEY].teams).toContain("main");
     expect(clears[KEY].teams).toHaveLength(EPIC_TEAMS_CAP);
   });
 
@@ -104,7 +109,7 @@ describe("the player store's record", () => {
     const record = usePlayerStore.getState().epicClears[KEY];
     expect(record.clears).toBe(2);
     expect(record.bestTurns).toBe(6);
-    expect(record.teams).toEqual([["duke", "lyra"]]);
+    expect(record.teams).toEqual(["duke|lyra"]);
     usePlayerStore.getState().resetPlayerState();
   });
 
@@ -127,6 +132,21 @@ describe("the player store's record", () => {
     expect(old.epicClears).toEqual({});
     const kept = applyEpicClear({}, KEY, ["duke"], 5, 1);
     expect(migratePlayerState({ epicClears: kept }, 9).epicClears).toEqual(kept);
+  });
+
+  it("migrates a v10 record's nested team arrays to joined keys (issue #28)", () => {
+    // Firestore rejects an array inside an array, so every write after the
+    // first Epic clear threw. A v10 save on a device still holds that shape.
+    const v10 = {
+      epicClears: {
+        [KEY]: { clears: 2, firstClearAt: 1, lastClearAt: 2, bestTurns: 6, teams: [["lyra", "duke"], ["duke"]] },
+      },
+    };
+    const migrated = migratePlayerState(v10, 10);
+    expect(migrated.epicClears[KEY].teams).toEqual(["duke|lyra", "duke"]);
+    expect(CURRENT_PLAYER_STATE_VERSION).toBeGreaterThanOrEqual(11);
+    // Already-migrated keys pass through untouched.
+    expect(migratePlayerState(migrated, 11).epicClears).toEqual(migrated.epicClears);
   });
 });
 

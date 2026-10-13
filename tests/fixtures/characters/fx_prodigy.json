@@ -1,0 +1,115 @@
+{
+  "id": "fx_prodigy",
+  "cardNumber": 999905,
+  "name": "Prodigy",
+  "heading": "Fixture: Detonate, rank-gated stun, stat shift",
+  "color": "blue",
+  "tags": [
+    "Fixture",
+    "Human",
+    "Male",
+    "Squad"
+  ],
+  "atk": 235,
+  "def": 160,
+  "hp": 3450,
+  "skills": [
+    {
+      "skillName": "Static Palm",
+      "description": "Cancels stances; does damage equal to ATK-scaled to one enemy; stuns for [stun.duration] turn(s).",
+      "characterId": "fx_prodigy",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        230,
+        280,
+        350
+      ],
+      "mechanics": [
+        {
+          "type": "cancelStances"
+        },
+        {
+          "type": "stun",
+          "durationRanked": [
+            0,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "skillName": "Arc Strike",
+      "description": "Does Detonate damage equal to ATK-scaled to one enemy.",
+      "characterId": "fx_prodigy",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        195,
+        240,
+        300
+      ],
+      "mechanics": [
+        {
+          "type": "detonate"
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Overclock",
+    "description": "Raises ATK and DEF; then does damage equal to ATK-scaled to one enemy.",
+    "characterId": "fx_prodigy",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 350,
+    "damageByUltLevel": [
+      350,
+      400,
+      450,
+      500,
+      550,
+      625
+    ],
+    "mechanics": [
+      {
+        "type": "buff",
+        "targetSelf": true,
+        "stats": [
+          "atk",
+          "def"
+        ],
+        "valuePercent": 30,
+        "uncancellable": true
+      }
+    ]
+  },
+  "passive": {
+    "name": "Glass Cannon",
+    "description": "- [Squad] allies' basic stats 5% 👆 during battle\n\n# After receiving 10 attacks during battle\n- DEF 50% 👇 (Activates only once, Uncancellable)\n- ATK 100% 👆 (Activates only once, Uncancellable)",
+    "trigger": "onAttackReceived",
+    "worksFromSub": false,
+    "mechanics": [
+      {
+        "type": "statShiftAfterAttacks",
+        "attacksRequired": 10,
+        "atkShiftPercent": 100,
+        "defShiftPercent": -50
+      },
+      {
+        "type": "synergy",
+        "conditionTags": [
+          "Squad"
+        ],
+        "valuePercent": 5,
+        "flatBonus": true,
+        "stats": [
+          "atk",
+          "def",
+          "hp"
+        ]
+      }
+    ]
+  }
+}

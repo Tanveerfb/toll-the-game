@@ -29,7 +29,7 @@ export function ownCounterStance(unit: BattleCharacter): StatusEffect | undefine
 }
 
 /** The holder's team-counter stance, if any. */
-export function teamCounterStance(unit: BattleCharacter): StatusEffect | undefined {
+function teamCounterStance(unit: BattleCharacter): StatusEffect | undefined {
   return unit.buffs.find(
     (b) => b.type === "stance" && b.counterDamagePercent && b.guardsAllies,
   );

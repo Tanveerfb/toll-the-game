@@ -31,7 +31,7 @@ the systems fit together · **Low** = a hunch worth arguing with.
 > **Replaced by Auto Clear**, his design: an uncommonly-given ticket skips a
 > fight you have already beaten, paying full rewards and **full stamina** per
 > skipped run. Spec:
-> `docs/superpowers/specs/2026-08-13-auto-clear-design.md`. Kept below for the
+> `docs/archive/superpowers/specs/2026-08-13-auto-clear-design.md`. Kept below for the
 > reasoning that led there.
 
 **Player:** A toggle that plays your turns for you using the same AI the enemy
@@ -265,7 +265,7 @@ Combat Terminal; `<Button>` usages carrying a className dropped **16 → 6**;
 tooltips converted. Two near-white-button bugs fixed on the way.
 
 **Outcome, and the two things the plan got wrong:**
-`docs/superpowers/specs/2026-08-13-shadcn-and-ui-cleanup-design.md`
+`docs/archive/superpowers/specs/2026-08-13-shadcn-and-ui-cleanup-design.md`
 § "Decisions and what shipped". Note for anyone reading N1 below: the team
 preset chooser is **not** a select candidate — its defect is the `window.prompt`
 calls, which is N1's job, not N0's.
@@ -367,5 +367,5 @@ lowest risk, each fixing something a player hits in the first session:
 was the right thing to put in front of him rather than in a build queue: he
 rejected the approach and replaced it with **Auto Clear**, which solves the same
 player problem without an AI. That spec is
-`docs/superpowers/specs/2026-08-13-auto-clear-design.md` and is the one item
+`docs/archive/superpowers/specs/2026-08-13-auto-clear-design.md` and is the one item
 from this document with a decision already on it.

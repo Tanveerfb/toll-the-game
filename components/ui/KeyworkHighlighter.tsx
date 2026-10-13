@@ -24,7 +24,7 @@ const ARROW_CATEGORIES = { ...keywordCategories, ...passiveStatVerbCategories };
 //
 // **Shōnen Ink (2026-09-26): kit text is read on paper.** He picked the
 // highlighter from three drawn options
-// (`docs/design/mockups/kit-document-on-paper.html`, option B): a tappable
+// (`docs/design/kit-document-on-paper.html`, option B): a tappable
 // keyword wears the `ink-marker`, yellow because yellow means "you can act on
 // this" and a keyword opens a hint. The marker is paper-only, so every host of
 // the default keyword class is a paper card. Numbers and limiter notes take

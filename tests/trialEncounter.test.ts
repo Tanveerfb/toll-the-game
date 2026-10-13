@@ -224,7 +224,13 @@ describe("the run rule: no heal between fights", () => {
  * side with the enemy AI, so these are floors rather than expectations.
  */
 describe("difficulty is still where it was tuned", () => {
-  const BALANCED = ["meliodas", "seras", "leorio", "mustafa"];
+  /**
+   * Burst, a healer, a tank, plus a second attacker. The collab units left on
+   * 2026-10-13 (ruling #187): batra (ATK burst, pierce) stands in for
+   * meliodas and isolde (heal + cleanse + heal over time) for leorio; seras
+   * and mustafa (the taunt-stance tank) stay.
+   */
+  const BALANCED = ["batra", "seras", "isolde", "mustafa"];
 
   /**
    * Parked 2026-09-26 and restored 2026-09-27 at **his** band, ruling #158:
@@ -237,9 +243,13 @@ describe("difficulty is still where it was tuned", () => {
    * Lv20 balanced team, 180 runs: Lv1 96.1% · Lv6 79.4% · Lv10 52.8% ·
    * Lv14 24.4% · Lv18 12.2% · Lv24 2.2%.
    *
-   * At difficulty 1, 60 runs each: **98.3% / 93.3% / 98.3%** on seeds
-   * 11 / 23 / 37, every loss in fight 3. The simulator plays the player side
-   * with the enemy AI, so a real player clears at least as often.
+   * At difficulty 1, 60 runs each, the meliodas/leorio team cleared
+   * **98.3% / 93.3% / 98.3%** on seeds 11 / 23 / 37, every loss in fight 3.
+   * Re-measured 2026-10-13 with the team above (ruling #187): **100% / 100%
+   * / 100%** on the same seeds, no wipe in any fight; at level 1, 0% with
+   * one fight cleared on average. The bounds below were not moved. The
+   * simulator plays the player side with the enemy AI, so a real player
+   * clears at least as often.
    */
   it("a level-20 balanced team clears the difficulty-1 trial", async () => {
     const result = await simulateRun(

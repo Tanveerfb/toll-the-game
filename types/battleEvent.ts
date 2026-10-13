@@ -101,7 +101,7 @@ export interface BattleActionEvent {
   effects?: BattleEventEffectChange[];
 }
 
-export interface BattleTickTarget {
+interface BattleTickTarget {
   instanceId: string;
   name: string;
   hpBefore: number;
@@ -114,7 +114,7 @@ export interface BattleTickTarget {
  * these without a lunge: just a per-target flash/floater so the bar never
  * silently snaps to a "future" value ahead of any animation.
  */
-export interface BattleTickEvent {
+interface BattleTickEvent {
   kind: "tick";
   /** Statuses that expired (or, for a boss turn-start passive, landed) on this
    *  tick. Compared at **identity** rather than full equality — a tick
@@ -130,4 +130,3 @@ export interface BattleTickEvent {
 export type AnyBattleEvent = BattleActionEvent | BattleTickEvent;
 
 export type BattleEventEmitter = (event: BattleActionEvent) => void;
-export type AnyBattleEventEmitter = (event: AnyBattleEvent) => void;

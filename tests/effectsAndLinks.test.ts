@@ -51,7 +51,7 @@ describe("ruling #30 — uncancellable entries are effects, not buffs/debuffs", 
       valuePercent: 5,
       uncancellable: true,
       preApplied: true,
-      name: "Collab synergy",
+      name: "Squad synergy",
     });
     const noBuffDamage = calculateDamage({
       baseDamage: 200,
@@ -81,7 +81,7 @@ describe("ruling #30 — uncancellable entries are effects, not buffs/debuffs", 
       stat: "hp",
       valuePercent: 8,
       uncancellable: true,
-      name: "Extort Life",
+      name: "Bleed Them Dry",
     });
     const damage = calculateDamage({
       baseDamage: 200,
@@ -140,7 +140,7 @@ describe("ruling #30 — uncancellable entries are effects, not buffs/debuffs", 
         stat: "hp",
         valuePercent: 8,
         uncancellable: true,
-        name: "Extort Life",
+        name: "Bleed Them Dry",
       },
     );
     const skill: SkillCard = {
@@ -161,14 +161,14 @@ describe("ruling #30 — uncancellable entries are effects, not buffs/debuffs", 
     );
     const cleansed = result.playerTeam.find((c) => c.instanceId === "ally")!;
     expect(cleansed.debuffs).toHaveLength(1);
-    expect(cleansed.debuffs[0].name).toBe("Extort Life");
+    expect(cleansed.debuffs[0].name).toBe("Bleed Them Dry");
   });
 });
 
 describe("ruling #31 — cancelling stances breaks the target's taunts", () => {
   it("cancelStances removes taunt redirect markers authored by the target", () => {
-    const attacker = makeChar({ instanceId: "killua", team: "player" });
-    const ally = makeChar({ instanceId: "gon", team: "player" });
+    const attacker = makeChar({ instanceId: "prodigy", team: "player" });
+    const ally = makeChar({ instanceId: "rookie", team: "player" });
     const taunter = makeChar({ instanceId: "yalina", team: "enemy" });
     taunter.buffs.push({
       type: "stance",
@@ -182,15 +182,15 @@ describe("ruling #31 — cancelling stances breaks the target's taunts", () => {
     taunter.buffs.push({ type: "taunt", buffDuration: 1 });
 
     const skill: SkillCard = {
-      skillName: "Lightning Palm",
-      characterId: "killua",
+      skillName: "Static Palm",
+      characterId: "prodigy",
       type: "attack",
       statMultiplier: "atk",
       damageRanked: [150, 180, 250],
       mechanics: [{ type: "cancelStances" }],
     } as SkillCard;
     const result = executeSkill(
-      { sourceInstanceId: "killua", skill, targetInstanceId: "yalina", rank: 1 },
+      { sourceInstanceId: "prodigy", skill, targetInstanceId: "yalina", rank: 1 },
       { playerTeam: [attacker, ally], enemyTeam: [taunter] },
       noopLog,
       0,
@@ -207,8 +207,8 @@ describe("ruling #31 — cancelling stances breaks the target's taunts", () => {
 
 describe("ruling #32 — Extort link lifecycle", () => {
   it("the thief's Extort buff drops when the extorted unit dies", () => {
-    const ban = makeChar({ instanceId: "ban", team: "enemy" });
-    ban.buffs.push(
+    const thief = makeChar({ instanceId: "thief", team: "enemy" });
+    thief.buffs.push(
       { type: "buff", stat: "atk", flatValue: 40, name: "Extort" },
       { type: "buff", stat: "def", flatValue: 40, name: "Extort" },
     );
@@ -219,30 +219,30 @@ describe("ruling #32 — Extort link lifecycle", () => {
         stat: "atk",
         valuePercent: 20,
         name: "Extort",
-        sourceId: "ban",
+        sourceId: "thief",
       },
       {
         type: "debuff",
         stat: "def",
         valuePercent: 20,
         name: "Extort",
-        sourceId: "ban",
+        sourceId: "thief",
       },
     );
 
     // Alive and linked: buff persists
-    syncExtortLinks([victim], [ban], noopLog);
-    expect(ban.buffs.filter((b) => b.name === "Extort")).toHaveLength(2);
+    syncExtortLinks([victim], [thief], noopLog);
+    expect(thief.buffs.filter((b) => b.name === "Extort")).toHaveLength(2);
 
     // Victim dies: buff fades
     victim.currentHP = 0;
-    syncExtortLinks([victim], [ban], noopLog);
-    expect(ban.buffs.filter((b) => b.name === "Extort")).toHaveLength(0);
+    syncExtortLinks([victim], [thief], noopLog);
+    expect(thief.buffs.filter((b) => b.name === "Extort")).toHaveLength(0);
   });
 
   it("the buff also drops when the last Extort debuff is cleansed away", () => {
-    const ban = makeChar({ instanceId: "ban", team: "enemy" });
-    ban.buffs.push({
+    const thief = makeChar({ instanceId: "thief", team: "enemy" });
+    thief.buffs.push({
       type: "buff",
       stat: "atk",
       flatValue: 40,
@@ -250,7 +250,7 @@ describe("ruling #32 — Extort link lifecycle", () => {
     });
     const victim = makeChar({ instanceId: "v", team: "player" });
     // no Extort debuffs (cleansed)
-    syncExtortLinks([victim], [ban], noopLog);
-    expect(ban.buffs.some((b) => b.name === "Extort")).toBe(false);
+    syncExtortLinks([victim], [thief], noopLog);
+    expect(thief.buffs.some((b) => b.name === "Extort")).toBe(false);
   });
 });

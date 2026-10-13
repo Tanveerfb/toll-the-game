@@ -5,7 +5,7 @@ the same change. **The values live in `styles/globals.css`**; this file says
 what each one is *for*, which is the part code cannot say. A token added to
 the CSS without a line here is a token nobody else knows how to use.
 
-**Read this before any UI work.** `project-rules.md` §12–§14 apply: no raw hex,
+**Read this before any UI work.** `project-rules.md` §STYLING–§SHADCN apply: no raw hex,
 font size or spacing value in a component, and every control is a customised
 shadcn primitive (ruling #154).
 
@@ -14,17 +14,17 @@ shadcn primitive (ruling #154).
 ## The motif
 
 **Shōnen Ink** (ruling #154, 2026-09-26, chosen from four drawn options in
-`docs/design/mockups/motif-options.html`). The game is a manga page: **ink
+`docs/design/motif-options.html`). The game is a manga page: **ink
 outlines, halftone screens, skewed panel cuts, offset slab shadows**, over the
 anime card art.
 
 It replaces **Combat Terminal** (2026-08-11), a tactical-HUD look of hairlines,
 chamfers and cyan. **Its tokens and classes were deleted on 2026-09-27**
-(phase 5 of `Plans/2026-09-26-shonen-ink-foundation.md`), and
+(phase 5 of `Plans/completed/2026-09-26-shonen-ink-foundation.md`), and
 `tests/uiTokens.test.ts` fails the build if any of them returns. The same file
 forbids a hand-written font size anywhere and a raw hex colour in `app/` or
 `components/`; the two exemptions (Google's logo, the install manifest) are
-listed in it with their reasons. Older mockups in `docs/design/mockups/` are
+listed in it with their reasons. The locked mockups in `docs/design/*.html` (moved there 2026-10-13, #188) are
 drawn in the retired look and say so.
 
 ### The one rule that keeps it readable
@@ -174,7 +174,7 @@ paper and on the ground alike.
 
 ## Motion
 
-`project-rules.md` §18 as written: 150–250ms, ease-out in and ease-in out,
+`project-rules.md` §MOTION as written: 150–250ms, ease-out in and ease-in out,
 transform and opacity only, removed under `prefers-reduced-motion`. **The one
 orchestrated moment is the battle's hit**: the existing `battle-shake` family
 stays as it is.
@@ -196,7 +196,7 @@ stays as it is.
 
 ## The battle: a split page (ruling #156)
 
-His pick from three drawn in `docs/design/mockups/battle-ink.html`:
+His pick from three drawn in `docs/design/battle-ink.html`:
 
 - **The enemy's half is the ground.** Dark tiles, framed in the element hue,
   with a slab and light text.

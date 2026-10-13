@@ -33,7 +33,7 @@ export interface TeamPreset {
 /** Why a preset member could not be placed. Story mode also had
  *  `"anchored"` (a unit the chapter fixed in place); it went with story mode
  *  on 2026-09-26. */
-export type PresetIssueReason = "unowned";
+type PresetIssueReason = "unowned";
 
 export interface PresetIssue {
   characterId: string;

@@ -9,12 +9,12 @@ import {
 
 // Per-character passive readout for the battle info panel. Several shapes,
 // dispatched in priority order by getPassiveReadout() below — see
-// docs/superpowers/specs/2026-07-29-passive-status-icons-design.md for the
+// docs/archive/superpowers/specs/2026-07-29-passive-status-icons-design.md for the
 // full character-by-character mapping this file implements.
 
-export type ActivationMode = "buildup" | "once";
+type ActivationMode = "buildup" | "once";
 
-export interface PassiveSubState {
+interface PassiveSubState {
   label: string;
   active: boolean;
 }

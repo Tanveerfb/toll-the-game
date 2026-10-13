@@ -1,0 +1,116 @@
+{
+  "id": "fx_thief",
+  "cardNumber": 999901,
+  "name": "Thief",
+  "heading": "Fixture: Extort, Lifesteal, max-HP shred",
+  "color": "green",
+  "tags": [
+    "Fixture",
+    "Human"
+  ],
+  "atk": 190,
+  "def": 80,
+  "hp": 3600,
+  "skills": [
+    {
+      "skillName": "Leech Sweep",
+      "description": "Does damage equal to ATK-scaled to all enemies; lifesteals [lifesteal.valuePercent]% of damage dealt.",
+      "characterId": "fx_thief",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        200,
+        250,
+        400
+      ],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "lifesteal",
+          "valuePercent": 30
+        }
+      ]
+    },
+    {
+      "skillName": "Pickpocket",
+      "description": "Applies [extort.value]% Extort effect to all enemies for [extort.duration] turns.",
+      "characterId": "fx_thief",
+      "type": "debuff",
+      "statMultiplier": "atk",
+      "damageRanked": [
+        0,
+        0,
+        0
+      ],
+      "mechanics": [
+        {
+          "type": "aoe"
+        },
+        {
+          "type": "extort",
+          "valueRanked": [
+            20,
+            30,
+            50
+          ],
+          "durationRanked": [
+            1,
+            1,
+            2
+          ]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "skillName": "Grand Larceny",
+    "description": "Does damage equal to ATK-scaled to one enemy; extorts [extort.value]% of their ATK and DEF for [extort.duration] turns.",
+    "characterId": "fx_thief",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 400,
+    "damageByUltLevel": [
+      400,
+      450,
+      500,
+      550,
+      600,
+      650
+    ],
+    "mechanics": [
+      {
+        "type": "extort",
+        "value": 50,
+        "duration": 2
+      }
+    ]
+  },
+  "passive": {
+    "name": "Bleed Them Dry",
+    "description": "- [Human] allies' basic stats 5% 👆 during battle\n\n# When finishing a turn without receiving damage\n- All enemies max HP 8% 👇 (Max 5 times) (Uncancellable)\n-- Effects reset after receiving damage",
+    "trigger": "onRoundEnd",
+    "worksFromSub": false,
+    "mechanics": [
+      {
+        "type": "maxHpShred",
+        "valuePercent": 8,
+        "maxStacks": 5
+      },
+      {
+        "type": "synergy",
+        "conditionTags": [
+          "Human"
+        ],
+        "valuePercent": 5,
+        "flatBonus": true,
+        "stats": [
+          "atk",
+          "def",
+          "hp"
+        ]
+      }
+    ]
+  }
+}

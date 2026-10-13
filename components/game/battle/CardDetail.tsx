@@ -32,7 +32,7 @@ export function skillPowerText(card: ActionCard): string {
   return `Power ${card.skill.damageRanked[card.rank - 1]}`;
 }
 
-export function skillDescription(card: ActionCard): string {
+function skillDescription(card: ActionCard): string {
   const skillData = card.skill as CharacterSkillData;
   if (!skillData.description || skillData.description.trim().length === 0) {
     return "No description available.";

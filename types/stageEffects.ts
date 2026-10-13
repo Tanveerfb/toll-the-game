@@ -27,7 +27,7 @@ interface StageEffectBase {
  * base stats at battle start rather than applied as a buff — a stage is not
  * something `cancelBuffs` may strip, nor something Rupture should count.
  */
-export interface StatBoostStageEffect extends StageEffectBase {
+interface StatBoostStageEffect extends StageEffectBase {
   type: "statBoost";
   /** "all" reaches substats too, matching synergy semantics. */
   stat: "all" | "atk" | "def" | "hp";
@@ -39,12 +39,9 @@ export interface StatBoostStageEffect extends StageEffectBase {
  * — this lifts a side that is under the cap (a lone unit at 2) rather than
  * raising the ceiling.
  */
-export interface BonusActionsStageEffect extends StageEffectBase {
+interface BonusActionsStageEffect extends StageEffectBase {
   type: "bonusActions";
   value: number;
 }
 
 export type StageEffect = StatBoostStageEffect | BonusActionsStageEffect;
-
-export const STAGE_EFFECT_TYPES = ["statBoost", "bonusActions"] as const;
-export const STAGE_EFFECT_TARGETS = ["player", "enemy", "both"] as const;

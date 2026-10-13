@@ -19,7 +19,7 @@ type TabId = "level" | "ascend" | "ultimate";
 /**
  * Growth, as three tabs.
  *
- * Rebuilt 2026-09-17 from `docs/design/mockups/growth-modal.html`, which he
+ * Rebuilt 2026-09-17 from `docs/design/growth-modal.html`, which he
  * reviewed and chose from. It was one long scroll holding three sections that
  * each solved the same problem — *spend a stack of things to raise a number* —
  * a different way, and the worst of the three was on the biggest number:

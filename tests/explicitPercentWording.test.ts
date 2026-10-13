@@ -6,6 +6,9 @@ import {
   keywordStatesItsOwnValue,
   mechanicGlossary,
 } from "@/lib/game/mechanicGlossary";
+// The 20/30/50 ranked team buff lived on a collab kit until 2026-10-13
+// (ruling #187); the mechanic stayed, on this fixture.
+import medicData from "@/tests/fixtures/characters/fx_medic.json";
 
 /**
  * Ruling #130 (Tanveer, 2026-09-16): the explicit percentage is a first-class
@@ -130,20 +133,26 @@ describe("#130 — on every shipped description", () => {
 });
 
 describe("#130 — the migrated kits, as the player reads them", () => {
-  function render(id: string, skillName: string): string[] {
-    const c = getAllCharacters().find(
-      (x) => (x as unknown as { id?: string }).id === id,
-    );
-    if (!c) throw new Error(`no character ${id}`);
-    const raw = c as unknown as Record<string, unknown>;
+  function renderFrom(
+    raw: Record<string, unknown>,
+    skillName: string,
+  ): string[] {
     const acts = [
       ...(((raw.skills as unknown[]) ?? []) as Record<string, unknown>[]),
       raw.ultimate as Record<string, unknown>,
       raw.spSkill as Record<string, unknown>,
     ].filter(Boolean);
     const a = acts.find((x) => x.skillName === skillName);
-    if (!a) throw new Error(`no skill ${id}/${skillName}`);
+    if (!a) throw new Error(`no skill ${raw.id}/${skillName}`);
     return [0, 1, 2].map((r) => buildDescriptionForRank(a as never, r));
+  }
+
+  function render(id: string, skillName: string): string[] {
+    const c = getAllCharacters().find(
+      (x) => (x as unknown as { id?: string }).id === id,
+    );
+    if (!c) throw new Error(`no character ${id}`);
+    return renderFrom(c as unknown as Record<string, unknown>, skillName);
   }
 
   it("Chiara's Marked Card spells its ladder instead of stepping words", () => {
@@ -156,8 +165,10 @@ describe("#130 — the migrated kits, as the player reads them", () => {
     ]);
   });
 
-  it("Leorio keeps one sentence shape across a 20/30/50 ladder", () => {
-    expect(render("leorio", "Member of the Zodiac")).toEqual([
+  it("the Medic fixture keeps one sentence shape across a 20/30/50 ladder", () => {
+    expect(
+      renderFrom(medicData as unknown as Record<string, unknown>, "Field Orders"),
+    ).toEqual([
       "Targets one chosen ally and raises that ally's ATK and DEF by 20% for 1 turn.",
       "Targets all allies and raises their ATK and DEF by 30% for 1 turn.",
       "Targets all allies and raises their ATK and DEF by 50% for 2 turns.",

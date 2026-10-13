@@ -119,37 +119,37 @@ interface MechanicBase {
 }
 
 // --- Targeting / damage-shape flags -------------------------------------
-export interface AoeMechanic extends MechanicBase {
+interface AoeMechanic extends MechanicBase {
   type: "aoe";
 }
-export interface AoeRankedMechanic extends MechanicBase {
+interface AoeRankedMechanic extends MechanicBase {
   type: "aoeRanked";
   /** Per-rank activation, e.g. [false, true, true]. */
   ranks: boolean[];
 }
-export interface PierceMechanic extends MechanicBase {
+interface PierceMechanic extends MechanicBase {
   type: "pierce"; // flat 50% DEF ignore (ruling #27); explicit `value` wins
 }
-export interface WeakpointMechanic extends MechanicBase {
+interface WeakpointMechanic extends MechanicBase {
   type: "weakpoint";
 }
-export interface RuptureMechanic extends MechanicBase {
+interface RuptureMechanic extends MechanicBase {
   type: "rupture";
 }
-export interface DetonateMechanic extends MechanicBase {
+interface DetonateMechanic extends MechanicBase {
   type: "detonate";
 }
-export interface ConcentrateMechanic extends MechanicBase {
+interface ConcentrateMechanic extends MechanicBase {
   type: "concentrate";
 }
-export interface SpiteMechanic extends MechanicBase {
+interface SpiteMechanic extends MechanicBase {
   type: "spite";
 }
-export interface AmplifyMechanic extends MechanicBase {
+interface AmplifyMechanic extends MechanicBase {
   type: "amplify";
   valuePercent?: number; // % damage per cancellable buff on the user
 }
-export interface CriticalMechanic extends MechanicBase {
+interface CriticalMechanic extends MechanicBase {
   type: "critical";
   ignoreDefensePercent?: number;
   damageBonusPercent?: number;
@@ -160,7 +160,7 @@ export interface CriticalMechanic extends MechanicBase {
  * `skillMechanics`. Floors the type multiplier at neutral; a real advantage
  * still applies. See lib/game/typeAdvantage.ts.
  */
-export interface EffectiveMechanic extends MechanicBase {
+interface EffectiveMechanic extends MechanicBase {
   type: "effective";
 }
 /**
@@ -172,7 +172,7 @@ export interface EffectiveMechanic extends MechanicBase {
  * per Tanveer 2026-08-20 — say so wherever UI copy explains Guard, or players
  * will read it as a bug.
  */
-export interface GuardMechanic extends MechanicBase {
+interface GuardMechanic extends MechanicBase {
   type: "guard";
 }
 /**
@@ -187,7 +187,7 @@ export interface GuardMechanic extends MechanicBase {
  * (ruling #54). A unit may carry several race tags at once (Seras is Human,
  * Fairy, Hybrid), so this matches "has this tag", never "is this race".
  */
-export interface TargetTagBonusMechanic extends MechanicBase {
+interface TargetTagBonusMechanic extends MechanicBase {
   type: "targetTagBonus";
   conditionTags?: string[];
   conditionColors?: string[];
@@ -218,7 +218,7 @@ export interface BuffMechanic extends MechanicBase {
   uncancellable?: boolean;
   maxStacks?: number; // Duke's Flowing Ruin stack counter
 }
-export interface DebuffMechanic extends MechanicBase {
+interface DebuffMechanic extends MechanicBase {
   type: "debuff";
   stat?: string;
   /** Stats this one entry covers when it modifies more than one — "raises ATK
@@ -227,7 +227,7 @@ export interface DebuffMechanic extends MechanicBase {
   valuePercent?: number;
   targetSelf?: boolean;
 }
-export interface StanceMechanic extends MechanicBase {
+interface StanceMechanic extends MechanicBase {
   type: "stance";
   stat?: string;
   /** Stats this one entry covers when it modifies more than one — "raises ATK
@@ -246,7 +246,7 @@ export interface StanceMechanic extends MechanicBase {
    */
   guardsAllies?: boolean;
 }
-export interface HealMechanic extends MechanicBase {
+interface HealMechanic extends MechanicBase {
   type: "heal";
   valuePercent?: number;
   /** Heal a % of the target's MISSING HP (maxHP - currentHP) instead of a
@@ -258,21 +258,21 @@ export interface HealMechanic extends MechanicBase {
   conditionStacks?: number;
   maxTriggers?: number;
 }
-export interface CleanseMechanic extends MechanicBase {
+interface CleanseMechanic extends MechanicBase {
   type: "cleanse";
   targetSelf?: boolean;
 }
-export interface CancelBuffsMechanic extends MechanicBase {
+interface CancelBuffsMechanic extends MechanicBase {
   type: "cancelBuffs";
 }
-export interface CancelStancesMechanic extends MechanicBase {
+interface CancelStancesMechanic extends MechanicBase {
   type: "cancelStances";
 }
 /** Cleanses cancellable debuffs and blocks all NEW debuffs (stat-downs,
  * DoTs, stun/seal/taunt — everything, not just CC) while active. Isolde's
  * "Starbound Ward". Gated by combat.ts's `targetIsDebuffImmune` check at
  * the top of the hostile-mechanics block. */
-export interface DebuffImmunityMechanic extends MechanicBase {
+interface DebuffImmunityMechanic extends MechanicBase {
   type: "debuffImmunity";
   targetSelf?: boolean;
 }
@@ -286,7 +286,7 @@ export interface DebuffImmunityMechanic extends MechanicBase {
  * one attacker halving its ATK has no counterplay otherwise
  * (Tanveer, 2026-08-09 — Duke's Flowing Ruin vs Lyra).
  */
-export interface StatDebuffImmunityMechanic extends MechanicBase {
+interface StatDebuffImmunityMechanic extends MechanicBase {
   type: "statDebuffImmunity";
   /** Stats that can't be lowered, e.g. ["atk"]. */
   stats: string[];
@@ -294,14 +294,14 @@ export interface StatDebuffImmunityMechanic extends MechanicBase {
 /** Applies a Heal-over-Time worth `valuePercent`% of THIS cast's heal
  * amount, per turn, for `duration` turns. Isolde's "Threads of Renewal"
  * rejuvenate. */
-export interface HealOverTimeMechanic extends MechanicBase {
+interface HealOverTimeMechanic extends MechanicBase {
   type: "healOverTime";
   valuePercent?: number;
   targetSelf?: boolean;
 }
 
 // --- Debuff applications ---------------------------------------------------
-export interface StunMechanic extends MechanicBase {
+interface StunMechanic extends MechanicBase {
   type: "stun";
 }
 /**
@@ -310,13 +310,13 @@ export interface StunMechanic extends MechanicBase {
  * on a frozen enemy would be called frozen"*). A stun that also strips the
  * target and keeps it stripped. Every rule lives in `lib/game/freeze.ts`.
  */
-export interface FreezeMechanic extends MechanicBase {
+interface FreezeMechanic extends MechanicBase {
   type: "freeze";
 }
-export interface TauntMechanic extends MechanicBase {
+interface TauntMechanic extends MechanicBase {
   type: "taunt";
 }
-export interface SealMechanic extends MechanicBase {
+interface SealMechanic extends MechanicBase {
   type: "seal";
   /**
    * Which skills are sealed: "attack", "debuff", "attackDebuff", or
@@ -328,33 +328,33 @@ export interface SealMechanic extends MechanicBase {
    */
   sealType?: string;
 }
-export interface ShockMechanic extends MechanicBase {
+interface ShockMechanic extends MechanicBase {
   type: "shock";
   damagePercent?: number; // % of the applying hit dealt per tick
 }
-export interface BleedMechanic extends MechanicBase {
+interface BleedMechanic extends MechanicBase {
   type: "bleed";
   damagePercent?: number;
 }
-export interface DecayMechanic extends MechanicBase {
+interface DecayMechanic extends MechanicBase {
   type: "decay";
   damagePercent?: number;
 }
-export interface CorrosionMechanic extends MechanicBase {
+interface CorrosionMechanic extends MechanicBase {
   type: "corrosion";
   /** % of the target's MAX HP dealt per stack per turn (default 10). Uncapped
    * stacking — each application is an independent debuff entry. */
   valuePercent?: number;
 }
-export interface IgniteMechanic extends MechanicBase {
+interface IgniteMechanic extends MechanicBase {
   type: "ignite";
 }
-export interface ConsumeIgniteMechanic extends MechanicBase {
+interface ConsumeIgniteMechanic extends MechanicBase {
   type: "consumeIgnite";
   effect?: string; // e.g. "buffAtk"
   valuePerStackPercent?: number;
 }
-export interface LowerUltGaugeMechanic extends MechanicBase {
+interface LowerUltGaugeMechanic extends MechanicBase {
   type: "lowerUltGauge";
 }
 /**
@@ -364,25 +364,25 @@ export interface LowerUltGaugeMechanic extends MechanicBase {
  * field ally gains it too, the caster included (Caila's Theriac; Tanveer,
  * 2026-09-29: "all allies" includes her). `lib/game/ultGauge.ts` owns both.
  */
-export interface GainUltGaugeMechanic extends MechanicBase {
+interface GainUltGaugeMechanic extends MechanicBase {
   type: "gainUltGauge";
 }
 /** Grants the caster stacks of her own `healBoostStacks` passive — Caila's
  *  Theriac restocks her [Vial]s. Capped at the passive's `maxStacks`. */
-export interface GainHealBoostStacksMechanic extends MechanicBase {
+interface GainHealBoostStacksMechanic extends MechanicBase {
   type: "gainHealBoostStacks";
 }
-export interface LifestealMechanic extends MechanicBase {
+interface LifestealMechanic extends MechanicBase {
   type: "lifesteal";
   valuePercent?: number;
 }
-export interface ExtortMechanic extends MechanicBase {
+interface ExtortMechanic extends MechanicBase {
   type: "extort";
   valuePercent?: number;
 }
 
 // --- Passive-only mechanics -------------------------------------------------
-export interface SynergyMechanic extends MechanicBase {
+interface SynergyMechanic extends MechanicBase {
   type: "synergy";
   conditionTags?: string[];
   conditionColors?: string[];
@@ -395,7 +395,7 @@ export interface SynergyMechanic extends MechanicBase {
   /** true = flat % per carrier; absent = scales with carrier count (ruling #35). */
   flatBonus?: boolean;
 }
-export interface AuraMechanic extends MechanicBase {
+interface AuraMechanic extends MechanicBase {
   type: "aura";
   stat?: string;
   /** Several stats as ONE effect, e.g. ["atk","def","hp"] for basic stats. */
@@ -418,7 +418,7 @@ export interface AuraMechanic extends MechanicBase {
    */
   conditionMinLivingAllies?: number;
 }
-export interface CharacterSynergyMechanic extends MechanicBase {
+interface CharacterSynergyMechanic extends MechanicBase {
   type: "characterSynergy";
   requiredCharacterIds: string[];
   stat?: string;
@@ -430,35 +430,35 @@ export interface CharacterSynergyMechanic extends MechanicBase {
    *  halves target differently on purpose (Tanveer, 2026-08-09). */
   bothAliveStat?: string;
 }
-export interface ChargedStacksMechanic extends MechanicBase {
+interface ChargedStacksMechanic extends MechanicBase {
   type: "chargedStacks";
   maxStacks?: number;
   atkPerStackPercent?: number;
   defPerStackPercent?: number;
   evadePerStackPercent?: number;
 }
-export interface DeathblowMechanic extends MechanicBase {
+interface DeathblowMechanic extends MechanicBase {
   type: "deathblow";
   hpStepPercent?: number;
   critPerStepPercent?: number;
   damagePerStepPercent?: number;
 }
-export interface MaxHpShredMechanic extends MechanicBase {
+interface MaxHpShredMechanic extends MechanicBase {
   type: "maxHpShred";
   valuePercent?: number;
   maxStacks?: number;
 }
-export interface TurnRampMechanic extends MechanicBase {
+interface TurnRampMechanic extends MechanicBase {
   type: "turnRamp";
   valuePercent?: number;
   maxStacks?: number;
 }
-export interface MomentumStacksMechanic extends MechanicBase {
+interface MomentumStacksMechanic extends MechanicBase {
   type: "momentumStacks";
   valuePercent: number;
   maxStacks: number;
 }
-export interface StatShiftAfterAttacksMechanic extends MechanicBase {
+interface StatShiftAfterAttacksMechanic extends MechanicBase {
   type: "statShiftAfterAttacks";
   attacksRequired?: number;
   atkShiftPercent?: number;
@@ -474,16 +474,16 @@ export interface StatShiftAfterAttacksMechanic extends MechanicBase {
    */
   maxTriggers?: number;
 }
-export interface SurviveLethalMechanic extends MechanicBase {
+interface SurviveLethalMechanic extends MechanicBase {
   type: "surviveLethal";
   hpConditionPercent?: number;
   healDamagePercent?: number;
 }
-export interface ConsumeHpPercentMechanic extends MechanicBase {
+interface ConsumeHpPercentMechanic extends MechanicBase {
   type: "consumeHpPercent";
   valuePercent: number;
 }
-export interface HealLifestealMechanic extends MechanicBase {
+interface HealLifestealMechanic extends MechanicBase {
   type: "healLifesteal";
   hpConditionPercent: number;
   lifestealPercent: number;
@@ -503,7 +503,7 @@ export interface ConditionalBuffMechanic extends MechanicBase {
  * BattleProvider.tsx (the mechanic-queue's `action` callback only sees
  * `teams`, not the hand/deck store) — see store/gameStore.ts's
  * rankUpCharacterCards. Chiara's "Cut the Deck". */
-export interface RankUpOwnDeckMechanic extends MechanicBase {
+interface RankUpOwnDeckMechanic extends MechanicBase {
   type: "rankUpOwnDeck";
   atTurn?: number;
 }
@@ -514,7 +514,7 @@ export interface RankUpOwnDeckMechanic extends MechanicBase {
  * until it triggers at the top tier or Lyra dies. The tiers that read it are
  * `coldTiers`. Engine: `lib/game/cold.ts`.
  */
-export interface ColdStacksMechanic extends MechanicBase {
+interface ColdStacksMechanic extends MechanicBase {
   type: "coldStacks";
   maxStacks?: number;
 }
@@ -523,7 +523,7 @@ export interface ColdStacksMechanic extends MechanicBase {
  * stack up: at 2 the enemy gets both the stat drop and the ultimate disable;
  * at `freezeAt` the stacks are spent and only the freeze applies.
  */
-export interface ColdTiersMechanic extends MechanicBase {
+interface ColdTiersMechanic extends MechanicBase {
   type: "coldTiers";
   /** ATK and DEF lowered from 1 stack, as one effect. */
   statDownPercent?: number;
@@ -542,7 +542,7 @@ export interface ColdTiersMechanic extends MechanicBase {
  * "every turn" per his answer, 2026-10-02). The parked Full Power Freeza kit
  * is the same shape. Uncancellable.
  */
-export interface FadingBuffMechanic extends MechanicBase {
+interface FadingBuffMechanic extends MechanicBase {
   type: "fadingBuff";
   stat: string;
   /** Starting value. */
@@ -557,7 +557,7 @@ export interface FadingBuffMechanic extends MechanicBase {
  * `fullStackBonusPercent` when every stack is spent at once (his "180%").
  * Rejuvenate ticks never spend them; only the skill does.
  */
-export interface HealBoostStacksMechanic extends MechanicBase {
+interface HealBoostStacksMechanic extends MechanicBase {
   type: "healBoostStacks";
   maxStacks: number;
   perStackPercent: number;
@@ -583,7 +583,7 @@ export interface NamedAllyBonusMechanic extends MechanicBase {
  * battle. The cap is authored as the percent he wrote ("Max 25%"), so the
  * passive text and the data state the same number.
  */
-export interface StanceUseStacksMechanic extends MechanicBase {
+interface StanceUseStacksMechanic extends MechanicBase {
   type: "stanceUseStacks";
   stats: string[];
   valuePercent: number;
@@ -594,7 +594,7 @@ export interface StanceUseStacksMechanic extends MechanicBase {
  * DISTINCT debuff on the target, counted by `countDistinctDebuffs`
  * (lib/game/debuffCount.ts). Boss Master Tao's [Co-Destruction].
  */
-export interface CoDestructionMechanic extends MechanicBase {
+interface CoDestructionMechanic extends MechanicBase {
   type: "coDestruction";
   valuePercentPerDebuff: number;
 }
@@ -623,24 +623,24 @@ export interface LiveBonusMechanic extends MechanicBase {
 }
 /** Passive: immune to seals of the named types (`attack`, `debuff`,
  *  `attackDebuff`, `ultimate`); any other seal still lands. */
-export interface SealImmunityMechanic extends MechanicBase {
+interface SealImmunityMechanic extends MechanicBase {
   type: "sealImmunity";
   sealTypes: string[];
 }
 /** Passive: damage taken from COUNTER stances is cut by `valuePercent`%. Only
  *  the counter strike (lib/game/counter.ts) — an ordinary hit is untouched. */
-export interface CounterDamageReductionMechanic extends MechanicBase {
+interface CounterDamageReductionMechanic extends MechanicBase {
   type: "counterDamageReduction";
   valuePercent: number;
 }
 /** Passive: at the start of the owner's team's turn, removes `count` random
  *  cancellable debuffs from the owner. Drawn from the battle RNG. */
-export interface TurnStartCleanseMechanic extends MechanicBase {
+interface TurnStartCleanseMechanic extends MechanicBase {
   type: "turnStartCleanse";
   count?: number;
 }
 /** One option a `randomTurnEffect` passive can roll. */
-export interface RandomEffectOption {
+interface RandomEffectOption {
   target: "enemies" | "allies" | "self";
   stat: string;
   valuePercent: number;
@@ -650,7 +650,7 @@ export interface RandomEffectOption {
 /** Each of the owner's own team-turn starts, rolls one of `options`
  * uniformly at random and applies it (1 turn is typical, but each option
  * carries its own duration). Chiara's "Cut the Deck". */
-export interface RandomTurnEffectMechanic extends MechanicBase {
+interface RandomTurnEffectMechanic extends MechanicBase {
   type: "randomTurnEffect";
   options: RandomEffectOption[];
 }
@@ -662,33 +662,33 @@ export interface RandomTurnEffectMechanic extends MechanicBase {
 // phase transition). See docs/design/BOSS_MOLVARR.md.
 
 /** Force the phase's SP Skill as the boss's final action every N phase-turns. */
-export interface BossAutoSpMechanic extends MechanicBase {
+interface BossAutoSpMechanic extends MechanicBase {
   type: "bossAutoSp";
   everyNTurns?: number; // default 3
 }
 /** From phase-turn `fromTurn`, multiply the boss's ATK/DEF/maxHP once. Current
  * HP scales by the same ratio. Uncancellable, fires a single time per phase. */
-export interface BossStatSpikeMechanic extends MechanicBase {
+interface BossStatSpikeMechanic extends MechanicBase {
   type: "bossStatSpike";
   fromTurn?: number; // default 10
   multiplier?: number; // default 2 (a "100% increase")
 }
 /** From phase-turn `fromTurn`, each on-field enemy takes damage equal to
  * `percent`% of its MAX HP at the boss's turn start (healable; cap intact). */
-export interface BossMaxHpDrainMechanic extends MechanicBase {
+interface BossMaxHpDrainMechanic extends MechanicBase {
   type: "bossMaxHpDrain";
   fromTurn?: number; // default 10
   percent?: number; // default 10
 }
 /** Recomputed each boss turn: boss ATK buff = (total debuff stacks across the
  * enemy field) x `percentPerDebuff`%. Uncancellable badge, updated in place. */
-export interface BossDebuffAtkMechanic extends MechanicBase {
+interface BossDebuffAtkMechanic extends MechanicBase {
   type: "bossDebuffAtk";
   percentPerDebuff?: number; // default 10
 }
 /** Apply `perTurn` Corrosion stack(s) (each `duration` turns) to every on-field
  * enemy at the boss's turn start. */
-export interface BossApplyCorrosionMechanic extends MechanicBase {
+interface BossApplyCorrosionMechanic extends MechanicBase {
   type: "bossApplyCorrosion";
   perTurn?: number; // default 1
   duration?: number; // default 2
@@ -699,7 +699,7 @@ export interface BossApplyCorrosionMechanic extends MechanicBase {
   everyNTurns?: number;
 }
 /** The boss deals `percent`% extra damage to targets afflicted by Corrosion. */
-export interface BossCorrosionBonusMechanic extends MechanicBase {
+interface BossCorrosionBonusMechanic extends MechanicBase {
   type: "bossCorrosionBonus";
   percent?: number; // default 30
 }

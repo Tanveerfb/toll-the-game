@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
  * paper screen by screen. A fixed colour would be right on one side of that
  * migration and unreadable on the other.
  */
-export type SectionHeaderSize = "page" | "section" | "panel" | "block";
+type SectionHeaderSize = "page" | "section" | "panel" | "block";
 
 const eyebrowClass: Record<SectionHeaderSize, string> = {
   page: "block font-body text-label font-bold uppercase tracking-eyebrow text-primary",

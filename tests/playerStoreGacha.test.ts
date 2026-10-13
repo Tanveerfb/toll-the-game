@@ -190,7 +190,10 @@ describe("claimLimitedFinal", () => {
 
   it("refuses a character not featured on the current banner", () => {
     setBar(LIMITED_MILESTONE_FINAL);
-    expect(usePlayerStore.getState().claimLimitedFinal("meliodas")).toBe(false);
+    // frost is a real catalog id that the gem banner does not feature
+    // (`data/banners/debut-2026-08.json`), so this is the "wrong id" case
+    // and not the "unknown id" one.
+    expect(usePlayerStore.getState().claimLimitedFinal("frost")).toBe(false);
   });
 
   it("grants the pick but does NOT wrap the lap while the first is unclaimed", () => {

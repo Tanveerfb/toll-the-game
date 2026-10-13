@@ -8,7 +8,7 @@ import path from "node:path";
  * (`--primary`, `--card`, `--border`…), so a motif is one token set.
  *
  * **Combat Terminal is gone, and this keeps it gone** (phase 5 of
- * `Plans/2026-09-26-shonen-ink-foundation.md`, 2026-09-27). Until then the
+ * `Plans/completed/2026-09-26-shonen-ink-foundation.md`, 2026-09-27). Until then the
  * file held the line at `components/ui/` only, with a MIGRATED / PENDING list
  * that tracked the move; the last pending primitive went with the battle
  * (#156), and the tokens themselves were deleted from `styles/globals.css`.

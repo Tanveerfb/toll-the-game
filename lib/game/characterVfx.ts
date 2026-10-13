@@ -19,7 +19,7 @@ export type VfxShape =
   | "paw"
   | "quake";
 
-export interface CharacterVfx {
+interface CharacterVfx {
   /** CSS color (any valid color string) for the burst ring / sweep streak. */
   tint: string;
   shape: VfxShape;
@@ -44,16 +44,10 @@ const CHARACTER_VFX: Record<string, CharacterVfx> = {
   gabrist: { tint: "rgba(167,139,250,0.75)", shape: "blot" }, // ink — violet, away from blue
 
   // --- Playable roster ---
-  ban: { tint: "rgba(250,204,21,0.75)", shape: "blot" }, // soul wisps — amber, away from green
   chiara: { tint: "rgba(244,114,182,0.78)", shape: "bloom" }, // away from dark
-  diane: { tint: "rgba(214,161,109,0.8)", shape: "quake" }, // earth/rock — sand, away from blue
-  gon: { tint: "rgba(250,204,21,0.78)", shape: "slash" }, // nen streaks — amber, away from green
   isolde: { tint: "rgba(56,189,248,0.78)", shape: "bloom" }, // away from light
-  killua: { tint: "rgba(224,242,254,0.9)", shape: "bolt" }, // blue-white lightning — near-white, away from blue
-  leorio: { tint: "rgba(250,204,21,0.8)", shape: "slash" }, // yellow nen fist, away from red
   master_tao: { tint: "rgba(249,115,22,0.8)", shape: "flicker" }, // fire — orange, away from green
   master_tao_npc: { tint: "rgba(249,115,22,0.8)", shape: "flicker" }, // boss copy, same fire
-  meliodas: { tint: "rgba(147,51,234,0.8)", shape: "blot" }, // demonic aura — purple, away from red
   mustafa: { tint: "rgba(180,142,96,0.82)", shape: "quake" }, // stone — earth brown, away from green
   sara: { tint: "rgba(217,180,255,0.8)", shape: "paw" }, // spectral beast glyphs — pale violet, away from red
   seras: { tint: "rgba(191,219,254,0.9)", shape: "bolt" }, // lightning — pale blue, away from her light element

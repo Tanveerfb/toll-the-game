@@ -10,7 +10,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # toll-the-game — Project Documentation
 
-Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDOFF.md` first** — context, design rulings ledger, working style. Architecture in `docs/ARCHITECTURE.md`; current state in `docs/STATUS.md` (short, rewritten each checkpoint; history in `docs/archive/`); issues in `docs/issues.md`; plan in `docs/ROADMAP.md`; character, kit and card art in `docs/CHARACTER_ART.md` (walked by the `charart` skill); other art generation in `docs/ART_PIPELINE.md`. How this repo diverges from `project-rules.md` is `conventions.md`, and why is `decisions.md`.
+Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDOFF.md` first** — context, design rulings ledger, working style. Architecture in `docs/ARCHITECTURE.md`; current state in `docs/STATUS.md` (a snapshot rewritten each checkpoint, over a session log newest first; older logs in `docs/archive/`); issues in `docs/issues.md`; plan in `docs/ROADMAP.md`; character, kit and card art in `docs/CHARACTER_ART.md` (walked by the `charart` skill); other art generation in `docs/ART_PIPELINE.md`. **Work that needs his PC is ordered in `docs/PC_SESSION.md`**: a PC session reads it after `relay`, a cloud session appends to it. How this repo diverges from `project-rules.md` is `conventions.md`, and why is `decisions.md`.
 
 **Never block on missing art.** If a feature needs an image the game doesn't have, append a request to `docs/ART_REQUESTS.md`, ship the feature with a fallback, and move on — ComfyUI runs in its own dedicated sessions, and that file is what they read.
 
@@ -25,12 +25,19 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 | `mobilecheck` | Before shipping a screen, or when reworking one built before 2026-08-18. One screen per run |
 | `ruling` | He settles a design question. Numbered entry, his words, supersede links, propagation |
 | `comfypending` | A feature needs art the game doesn't have |
-| `charart` | Making a playable character's art: design lock, LoRA, kit/card drafts, finish, composite, lock. Enforces his approval gates; the method is `docs/CHARACTER_ART.md` |
+| `charart` | Any character-art ask. Orients (ComfyUI, the profile, which step), enforces his gates, routes to the step skill below. The method is `docs/CHARACTER_ART.md` |
+| `charlora` | Steps 0–2: lock the design, the dataset he approves by number (**with action shots, never a calm front-facing set**, #186), the frozen training recipe, the checkpoint he picks. His PC only |
+| `kitart` | Steps 3–5: the **slot plan he OKs before any GPU time** (what the skill does → the moment → the pose's job → the reference), drafts, official render, finish, composite. Carries both recipes. His PC only |
+| `artinstall` | Step 6: lock, library, install into the game (skills, card + cut-out, tile and portrait from that one cut-out, registry, tests). A cloud session can do it |
 | `dokkanartresearch` | Pose research for kit art: find a Dokkan card on dokkandb.com, view it, save it to the reference library. Pose and composition only; saving asks first |
+| `redesign` | He wants a screen to look different: ask what works first, capture the live screens, draw options from the live anatomy, measure, publish an artifact when he is on his phone, record the pick (#144, #185) |
+| `savefield` | Adding, renaming or reshaping a persisted player-save field: the cloud-sync decision, the migration, the Firestore shape rules, the guard tests |
+| `importkit` | Bringing an approved kit from `toll-kits` in, game-ready but unreleased, in one fixed order |
+| `newevent` | A new boss, trial, arc or stage: his two answers (seen when, entered when, #127) and the rest of the brief first, then entry, encounter, two reward lists, guards, measurement |
 | `relay` | Starting a session: load `docs/STATUS.md`, then check it against the repo before any work |
-| `checkpoint` | Ending a session: `checkpoint` / `git checkpoint` / `git checkpoint max` (project-rules §28) |
+| `checkpoint` | Ending a session: `checkpoint` / `git checkpoint` / `git checkpoint max` (project-rules §GIT) |
 
-`relay` and `checkpoint` are **fleet skills, copied here (2026-10-03) for cloud sessions**, which can't see his PC's `~/.claude/skills/`. The master copies are the user-level ones. Improve those and re-copy; never edit these in place.
+`relay` and `checkpoint` are **fleet skills, copied here (2026-10-03) for cloud sessions**, which can't see his PC's `~/.claude/skills/`. The fleet standard now ships them in the `fleet` plugin (`Tanveerfb/fleet-standards`), which `.claude/settings.json` should enable so every session, cloud ones included, loads `fleet:checkpoint` and `fleet:relay`; the 2026-10-13 sync could not write that file (see `CLAUDE.md`). **The copies here are one version behind the plugin's** (no Trello mirror, no other-agent note) and are kept only until a cloud session confirms the plugin's pair appears; then delete `.claude/skills/checkpoint` and `.claude/skills/relay` in the same commit. Never edit them in place.
 
 `Plans/` holds specced-but-unbuilt work — dated design files a future session can pick up cold. Tanveer builds those in their own dedicated sessions; **don't start one mid-conversation**, and don't let a plan rot silently: if the code it describes changes, the plan is stale and says so or goes.
 
@@ -51,6 +58,8 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 
 **The motif is Shōnen Ink, and every control is a customised shadcn component** (ruling #154, 2026-09-26, which retired Combat Terminal). His words: *"only work with shadcn, customize them and use them for the project purposes."* A control comes from `npx shadcn@latest add <component>` and is customised once in `components/ui/`; a screen never hand-rolls a dialog, sheet, tab set or toggle, and never restates the theme at the usage (#84). Tokens, type scale and the motif's rules are in `docs/design-system.md`: **read it before any UI work**. The loud parts of the motif (the slant, the yellow) go on headers and primary actions only; reading panels stay plain.
 
+**Under redesign since 2026-10-13 (ruling #185).** He keeps the **Characters page** (the Ink burst tile, the element hues, its layout and components: *"everything on the characters page ... that's all good"*) and the **bottom nav** (colours may change), and wants **Home, Events, Gacha, Profile and Settings** changed. Catalogue motif swaps drawn without looking at that page were rejected as generic. A redesign mockup for any of those screens starts from the Characters page's language and from the live screen's markup, not from a motif catalogue; nothing is locked until he picks.
+
 **Mobile first, desktop second (Tanveer, 2026-08-18).** Most players willing to try the game arrive on a phone, so a phone is the primary target and desktop is the secondary one — not the other way round. Concretely: design canvas **390×844** (9:16 portrait); desktop renders the same column centred at a capped width, never a re-laid-out wide variant; **`dvh`, never `vh`** (Tailwind 4 compiles `screen` to `100vh`, the largest viewport); touch targets **≥44px** with primaries in the thumb-reachable lower third; no affordance that exists only on hover; one vertical scroll per screen, with wide content scrolling inside its own container. **Verify phone width before desktop** — a break at 390px is a blocker, a break at 1440px is a bug. Ruling #107 in `docs/HANDOFF.md`.
 
 Two of those rules are **enforced in code, so don't re-implement them per screen** (rulings #119–120, 2026-08-21):
@@ -60,7 +69,7 @@ Two of those rules are **enforced in code, so don't re-implement them per screen
 
 **Navigation is a bottom tab bar below `sm`** (ruling #123, 2026-09-01) — four destinations (Menu, Events, Gacha, You) in the thumb third, derived from `GAME_ROUTES`'s `tab` flag since 2026-10-03, portalled to `<body>` because the nav's `backdrop-filter` makes `fixed` resolve against the nav rather than the viewport. It stands down while `[data-battle-active]` is on screen. Heights compose through `--tabbar-h`; `.screen-below-nav` subtracts both bars. The archive's filters moved into a sheet the same day (#124).
 
-**No mobile debt is outstanding.** The 2026-08-21 sweep took every screen, battle included: its controls moved off a side rail into a sheet, merge arms from a button, and press-and-hold opens a card's or a unit's details — the gesture set is **tap = act, hold = explain** (#118). `docs/design/mockups/battle-mobile.html` records those decisions, and `battle-mobile-v2.html` the 2026-09-01 revisions.
+**No mobile debt is outstanding.** The 2026-08-21 sweep took every screen, battle included: its controls moved off a side rail into a sheet, merge arms from a button, and press-and-hold opens a card's or a unit's details — the gesture set is **tap = act, hold = explain** (#118). `docs/design/battle-mobile.html` records those decisions, and `docs/design/battle-mobile-v2.html` the 2026-09-01 revisions.
 
 Two corrections to the above, both from measuring it (2026-09-01). **Hand cards floor at 44px, not 56** — 56 was the fix for cards shrinking to 43px slivers, and it then hid two of a full hand of eight off the edge of a 370px scroller. Eight is the hard maximum (4v4) and the arithmetic is fixed: full-bleed 390px, 2px gaps, **47px a card**. And **it is browser-verified now** — geometry and behaviour are, at 390×844 against a live 4v4. Taste still is not, and never is; that pass is his.
 
@@ -72,11 +81,12 @@ Two corrections to the above, both from measuring it (2026-09-01). **Hand cards 
 app/                  Next.js App Router — /, /practice, /events (world boss + trials),
                       /gacha,
                       /archive, /archive/character/[cardNumber], /archive/npc,
-                      /news, /login, /profile,
+                      /news (a static Coming soon since 2026-10-13; the MDX
+                      stack is gone, the overhaul is on the roadmap), /login, /profile,
                       /dev/ui (development only: the Shōnen Ink kit, 404 in production)
 components/
   ui/                 shadcn primitives + KeyworkHighlighter + prose.tsx (document
-                      typography, shared with mdx-components.tsx)
+                      typography for the archive)
   game/               Deck, CharacterBrowser, KitDetails, SkillDocument, TeamSelect,
                       PlayerHud, BattleArena (arena shell only)
   game/events/        Events screens: EventsBoard, EventBrief, TrialRail,
@@ -85,8 +95,6 @@ components/
                       UnitDetailPanel, TeamDetailsList, BattleLogDrawer, EffectsList
   gacha/              BannerScreen, PullReveal, RatesModal, MilestonePicker,
                       ConfirmPullModal (summon confirm + currency-shift preview)
-  news/               NewsFeed (option B: new-since-last-visit, then archive),
-                      NewsPostLayout
 hooks/                BattleProvider (phase engine), MechanicProvider (phase queue),
                       AuthProvider, useBattleSequencer (cinematics)
 lib/
@@ -99,14 +107,14 @@ lib/
                       effectDiff.ts, epicBattles.ts (Epic Battles arcs and
                       stages, zod-parsed from data/arcs/) + epicClears.ts
                       (the clear record)
-  gacha/  news/       Banner + pull logic; MDX post loading
+  gacha/              Banner + pull logic
   nav/routes.ts       GAME_ROUTES — single source of truth for what modes exist
 store/                gameStore.ts (battle + deck + battle owner), playerStore.ts,
                       settingsStore.ts
-content/news/         MDX patch notes (updates/ + notices/). **Closed and emptied
-                      2026-10-03 (#179)**: `NEWS_OPEN` in lib/news/open.ts;
-                      /news reads "Coming soon"
-data/characters/      Character kit JSON (source of truth for kits)
+data/characters/      Character kit JSON (source of truth for kits); README.md there
+                      is the authoring guide. A new kit starts from data/kit.template.json
+                      via `npm run newkit`, never from another character's file;
+                      data/kit.schema.json is the zod schema written out for editors
 data/banners/         Gacha banners; data/orders/ Bureau Orders
 data/arcs/            Epic Battles arcs (one JSON per arc, parsed by lib/game/epicBattles.ts)
 types/                Shared TypeScript contracts
@@ -119,7 +127,7 @@ scripts/sim.ts        Headless balance simulator (npm run sim), ruling #57
 
 - `npm run dev` / `npm run build` / `npm run lint` / `npm run test` / `npm run check`
 - `npm run test:browser` — component tests in real Chromium. **Separate from `test` on purpose**: a browser launch is not what you want in a tight loop, and `check` runs the unit suite only. Run it before shipping anything whose behaviour is timing- or pointer-dependent, because that is the half a simulated DOM cannot judge.
-- `npm run sim -- <left> <right>` — headless balance simulation across all four formats (ruling #57). `npm run sim -- --roster <id>` sweeps one kit against the whole roster. **Read the limits at the top of `lib/game/simulate.ts` before quoting a number**: no card draw, AI plays both sides. **"Base stats only" stopped being true on 2026-09-16** — a unit may carry `level`/`ascension`/`ultLevel` and a bare id still means the catalog statline, so kit comparisons are unchanged while an *encounter* can be tuned against a real player band (`playerBand`). `simulateRun` fights multi-wave runs on one HP bar. The AI plays the PLAYER side too, so a clear rate is a floor, not a prediction.
+- `npm run sim -- <left> <right>` — the headless balance simulator (ruling #57). Its limits and how a number is reported are in `lib/game/CLAUDE.md`.
 
 **A green guard is not a working guard — prove a new one fails before trusting that it passes.** Reintroduce the bug it exists to catch and watch it go red. On 2026-09-16 this found that **three of the four checks in `tests/kitDescriptionRules.test.ts` had never run**, green since the day they were written: `/\braises\b/` had been authored through a heredoc that turned each `\b` into a literal `0x08` byte, and two more used `` new RegExp(`\b${word}\b`) ``, where a **template literal** turns `\b` into a backspace at runtime. Both spellings match nothing and throw nothing. Write a regex with a `\b` into a file with the Write tool, not a heredoc, and use `\\b` inside a template literal. **Heredocs are now blocked mechanically** (2026-09-26, his choice after ~10 slips in one day): `.claude/hooks/block-heredoc.mjs`, wired in `.claude/settings.json`, refuses any Bash command containing `<<`. File content goes through Write/Edit; a scripted change is a scratchpad `.py`/`.mjs` that gets run. Proved live by a probe the hook refused.
 
@@ -129,27 +137,13 @@ scripts/sim.ts        Headless balance simulator (npm run sim), ruling #57
 
 **`test:browser` is outside `check`, so a shipped number can go stale there unseen.** `hand.browser.test.tsx` asserted the retired 56px hand-card floor and was red on `master` from the commit that changed it to 44 until 2026-09-16, because the checkpoint ran `check` alone. **Run `npm run test:browser` at the point a number it pins actually moves**, not only before shipping pointer-dependent work.
 
-## Engine Rules (see docs/ARCHITECTURE.md for detail)
+## Engine Rules
 
-- `executeSkill` (lib/game/combat.ts) is pure: takes teams, returns new teams.
-- `Action.rank` (1–3) scales `damageRanked` and `*Ranked` mechanic values; flat mechanic values do not scale; ultimates have no rank.
-- Any non-heal skill with damageRanked > 0 deals damage regardless of skill type.
-- Actions per turn = living field members + 1, capped at 3 — **both sides**
-  (`lib/game/actionEconomy.ts`). A side with `tier: "elite"` present always gets
-  the full 3, so a lone boss still acts three times. Any living unit, any order.
-- Effect durations: duration N survives N−1 turn-start ticks.
-- **Every unit is built by `buildBattleUnit` (`lib/game/buildUnit.ts`) and every
-  stat goes through `battleStats`: catalog (or phase) → progression → stage
-  effects.** The battle, the simulator, a boss's phase change, the boss brief
-  and the team picker all use it. A second path is how Molvarr's second phase
-  ignored difficulty for weeks (2026-09-26); never build combat stats any other
-  way.
-- **A battle belongs to the screen that started it** (ruling #153;
-  `BattleOwner`, persisted with the battle). `BattleLock` holds the player on that screen until the
-  battle is resolved, reload included — his rule: *"they should not be allowed
-  to go anywhere else and ignore the battle."* A new screen that launches
-  fights passes `owner` to `startCustomBattle` and rebuilds its view from it.
-- Sub (bench) units (`BattleCharacter.isSub`): passive active, no cards, untargetable, can't act; promoted to field only at turn start after a teammate died (`lib/game/sub.ts`). Battle format (4v4/3v3) sets the field cap; the 4th unit in 3v3 is the sub automatically.
+**Moved to `lib/game/CLAUDE.md` on 2026-10-13** (project-rules §SCALE: a
+folder with rules of its own carries them, and a fact lives in one file).
+It loads when work touches `lib/game/`; read it before touching the engine,
+the simulator or the save from anywhere else. The map is
+`docs/ARCHITECTURE.md`.
 
 ## How work is judged, and who owns what
 
@@ -250,8 +244,10 @@ a carried prop needs a strap or a closed hand (*"Physics where mate?"*).
 and then I can tell you which of the mockups is the best one."* Options, not a
 proposal — choosing is faster for him than critiquing, and the comparison is
 what exposes the trade-off. Each option must take a **different position on the
-problem**; three variations on one idea are one option. Self-contained HTML in
-`docs/design/mockups/`, real palette and fonts, drawn at **390px** (#106, #107),
+problem**; three variations on one idea are one option. Self-contained HTML: drafts in the
+gitignored `public/_mockups/` (the dev server serves them; an artifact when he is
+on his phone), and the design he locks in `docs/design/<name>.html` (#188);
+real palette and fonts, drawn at **390px** (#106, #107),
 and **make the interaction live** — tabs switch, selections select, costs
 recompute (#146). A static picture cannot answer *how does it flow*, which is
 the question he asked first about a design whose subject was tabs.
@@ -305,7 +301,7 @@ yet (`drafts/`, `planned/`, `brainstorm/`), `practice/` and
 Changing a mirrored file here changes it there on the next session start, so
 nothing in this repo needs to know about the sync. **`author_notes.md` lives
 there now, not here.** It was copied verbatim and split by stage into
-`planned/` (Knuckle, Netero) and `brainstorm/` (the DBZ set), and this repo's
+`planned/` (Knuckle and Netero, **deleted 2026-10-13 with the collab units, ruling #187**) and `brainstorm/` (the DBZ set, kept for later), and this repo's
 copy was **retired on 2026-09-27**, his call, after every line was checked
 present in the two copies. Its processing log moved to
 `docs/archive/author_notes_report.md`. Kit ideas he has not made official go

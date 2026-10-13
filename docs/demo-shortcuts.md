@@ -1,14 +1,14 @@
 # Shortcuts register
 
 **Who updates this:** any change that adds, moves or removes a client-side
-decision about something with value. `project-rules.md` §11 requires the
+decision about something with value. `project-rules.md` §SHORTCUTS requires the
 register, and `decisions.md` (2026-09-27) is why these are allowed for now.
 
 **The exception ends before roadmap item 6 (monetisation) or any public
 launch, whichever is first.** This file is that phase's backlog: every row
 must be server-side by then.
 
-**Not marked in code yet.** §11 also wants a `// DEMO:` comment at each site,
+**Not marked in code yet.** §SHORTCUTS also wants a `// DEMO:` comment at each site,
 pointing here. That is queued in `conventions.md`; the 2026-09-27 audit
 changed no code.
 
@@ -30,6 +30,15 @@ localStorage.
 
 ## Safe to build on
 
-Nothing today is a mock behind an adapter: there is no adapter (§9, queued in
+Nothing today is a mock behind an adapter: there is no adapter (§DATA, queued in
 `conventions.md`). Seed data and the kit JSON are real content, not
 shortcuts.
+
+## Playtest values: real numbers before launch
+
+Not a client-side rule, but the same backlog: a number set for playtesting
+that gets his real figure before any public launch.
+
+| # | Value | Where | Replaced by | Risk if it ships |
+| --- | --- | --- | --- | --- |
+| P1 | **Starter gems 500** (was 1,000; his call 2026-10-13, ruling #190: *"Playtest purposes for now yes."*) | `DEFAULT_PLAYER_STATE.currencies.gems` and the migration baseline in `store/playerStore.ts` | His launch number | A new account starts with pulls the economy did not plan for |

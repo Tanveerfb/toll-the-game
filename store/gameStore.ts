@@ -89,7 +89,7 @@ interface BattleState {
    *  `lib/game/playback.ts`. */
   playedEvents: number;
   /** A sequencer is mounted and will actually animate. Without one (tests,
-   *  the duel watcher, any headless caller) the resolvers must not wait. */
+   *  any headless caller) the resolvers must not wait. */
   playbackMounted: boolean;
   /**
    * HP as currently *shown*, keyed by instanceId — the sequencer's exact

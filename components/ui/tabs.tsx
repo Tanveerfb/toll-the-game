@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
  * Two variants, one per ground:
  * - `default` sits on the dark ground. Each tab is a skewed slab; the active
  *   one turns to paper with a yellow slab behind it, which is the mockup's
- *   tab row (`docs/design/mockups/motif-options.html`).
+ *   tab row (`docs/design/motif-options.html`).
  * - `line` sits inside a paper panel. No slant, an ink underline marks the
  *   active tab, because a panel is for reading (docs/design-system.md).
  *
@@ -105,4 +105,4 @@ function TabsContent({
   )
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants }
+export { Tabs, TabsList, TabsTrigger, TabsContent }

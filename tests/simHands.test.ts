@@ -105,7 +105,7 @@ function tao10() {
 }
 
 describe("the AI's picks come from the rng it is given", () => {
-  const team = [unit("gon", "enemy"), unit("duke", "enemy", { instanceId: "d2" })];
+  const team = [unit("batra", "enemy"), unit("duke", "enemy", { instanceId: "d2" })];
   const foes = [unit("lyra", "player"), unit("siddiq", "player")];
   const hand = (): ActionCard[] => initialCardsFor(team);
 

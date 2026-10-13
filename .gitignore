@@ -18,9 +18,6 @@
 # scratch build dir used with NEXT_DIST_DIR to verify a build while a dev
 # server is holding /.next (see next.config.ts)
 /.next-verify/
-# duel mode scratch — battle state Claude reads, moves it writes, and the
-# append-only log (dev only, see app/api/dev/duel/route.ts)
-/.duel/
 /out/
 
 # production
@@ -61,3 +58,6 @@ tests/__screenshots__/
 
 # python bytecode from the art scripts (scripts/skill_art imports its siblings)
 __pycache__/
+
+# mockup drafts (project-rules §OWNER, ruling #188); the locked design moves to docs/design/<name>.html
+public/_mockups/

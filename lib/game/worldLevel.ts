@@ -66,7 +66,7 @@ export function worldLevelCapForRank(rank: number): number {
  * carry an ascension term too, not a bigger step here — deliberately not built,
  * since nothing yet asks for it.
  */
-export const ENEMY_LEVEL_PER_DIFFICULTY = 25;
+const ENEMY_LEVEL_PER_DIFFICULTY = 25;
 
 export function enemyLevelForDifficulty(difficulty: number): number {
   const clamped = clampDifficulty(difficulty);

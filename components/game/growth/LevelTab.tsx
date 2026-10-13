@@ -36,7 +36,7 @@ const TIERS: ManualTier[] = [
 ];
 
 /**
- * Levelling, as **option C** of `docs/design/mockups/growth-modal.html` —
+ * Levelling, as **option C** of `docs/design/growth-modal.html` —
  * targets on top, stacks underneath, nothing hidden.
  *
  * It replaced one manual per tap: reaching Lv 20 cost **190 presses** on basic

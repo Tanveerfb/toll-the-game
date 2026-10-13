@@ -1,91 +1,944 @@
-# Status — 2026-10-08 (his PC, ComfyUI)
+# toll-the-game — status
 
-**Who updates this:** every checkpoint, by **rewriting** it, never appending
-(`project-rules.md` §2; his call, `decisions.md` 2026-09-27). It holds the
-current position only. A session's log goes to
-`docs/archive/STATUS-YYYY-MM.md` with a line in
-[`docs/archive/README.md`](archive/README.md). Issues are in
-[`issues.md`](issues.md), phases and the not-built list in
-[`ROADMAP.md`](ROADMAP.md), and accounts in [`environment.md`](environment.md).
+**Who updates this:** every checkpoint (`project-rules.md` §DOCS, ruling #188).
+The snapshot above the session log is rewritten in place; the session log is
+added to at the top, newest first. Logs older than the current month are in
+`docs/archive/`.
+
+---
 
 ## Start here
 
-**State:** blue Duke is at `charart` **step 4**. LoRA v2 (step 1750, his pick)
-is installed. Official renders of his picks are in ComfyUI
-`output\duke_official3` and **four sheets went to him** (S2, K4, K10, U19). He
-has not picked yet. Nothing is locked or in the game. The game code is
-unchanged since `aaae4e2`. Last session's log: `docs/archive/STATUS-2026-10.md`,
-2026-10-07/08.
+**State:** the 2026-10-13 cloud session took the game from "audited" to
+"cleaned up and decided": the cloud save is fixed (v11, v12), the six collab
+units are gone (#187), the project skills exist (eleven, `AGENTS.md`), every
+open decision he was asked has an answer (#186 to #190, `decisions.md`), and
+the dead code, the duel tool, the MDX news stack and gsap are out. **Merged to
+`master` on 2026-10-13 on his `git checkpoint and merge`, which deploys to
+production**; the branch's preview build of b4035ca was READY on Vercel before
+the merge.
 
-**Next:** get his picks from the `off3_*` sheets, then finish and composite them
-(`docs/CHARACTER_ART.md` steps 4–5; the ultimate uses `compose_duke.py --bg=`
-with a snow plate). Surge's hair still leaks from its draft, so offer options.
+**Next:** on his PC, `docs/PC_SESSION.md` in order: enable the `fleet` plugin,
+Node 24, then rebuild Duke's dataset with action shots and retrain (#186),
+with the generic draft and render scripts built first. In the cloud, nothing
+is queued; the next design work is the theme round three, which starts from
+whatever he says about round two.
 
 **Blocked on him:**
-- **Duke:** picks from the official sheets, a snow plate (M2/M3/M6) and a river
-  plate (R2/R5/R6); the Slide skill name (he may rename it).
-- **Batra:** held at step 1. The `lora_batra_set_a` round is unreviewed: the
-  B36 face reference draws a bandana-like turban, and the straps draw crosses.
-  Bring him options.
-- From 2026-10-03, still open:
-  - try the Merge badge on a phone (its 44px hit area overlaps the name strip);
-  - approve or reverse Claude's calls in #180;
-  - missions for Epic Battles, the Gon/Killua/Leorio answer to Tao (#138), an
-    optional Tao rerun;
-  - the Caila and Sara design sheets, the new card texts, Lyra's C4 and passive
-    placement, Roused, the Orders tile, the app-icon recolour, the foundation
-    audit, the folder migration, summon animations (#174).
+- The theme: round two (`docs/design/mockups/screens-from-characters.html`)
+  did not click; he picks or says what missed, on the PC.
+- The art: Duke's action-shot list and count, then the LoRA v3 step; the
+  Slide name; Batra's options.
+- The sign-in conflict dialog: a mockup round (`docs/specs/save-conflict.md`).
+- From 2026-10-03, still open: the Merge badge on a phone; #180's calls; the
+  Caila and Sara sheets; the new card texts; Lyra's C4 and passive placement;
+  Roused; the Orders tile; the app-icon recolour; the foundation audit; the
+  folder migration; summon animations (#174).
 
 **Don't trust:**
-- `output\blue_duke\candidates`: Sonnet's composites, off-model and on the old
-  ultimate background. **Superseded, never lock them.**
+- Any claim that the cloud save works end to end against a real Firestore:
+  v11 (keyed teams, the shape guard) and v12 (the collab units dropped) are
+  fixed in code and **not yet seen working on his account**.
+- A roster count, a kit list or a mockup path from before 2026-10-13: the
+  collab six are gone, twelve mockups moved to `docs/design/`, five drafts
+  were deleted.
+- `output\blue_duke\candidates` on his PC: superseded by the retrain (#186).
 - Sim numbers from before 2026-10-03.
-- In the cloud container, `npm run test:browser` needs the Playwright symlink
-  workaround (`PLAYWRIGHT_BROWSERS_PATH` with the 1194 builds linked as 1234).
 
-## Where things are
+> **Things that will save a session:** in the cloud container `next build`
+> fails on Google Fonts (the sandbox, not the code) and `npm run test:browser`
+> needs a Playwright symlink workaround (the port agent's note, 2026-10-13:
+> build revision 1234's layout from the 1194 files in `/opt/pw-browsers` and
+> point `PLAYWRIGHT_BROWSERS_PATH` at it). Heredocs are blocked by a hook.
+> 55 of the source files are CRLF: patch with a script that keeps endings.
+> Node is pinned to 24; the container runs 22.
 
-| What | Where |
-| --- | --- |
-| The art method and its dead ends | `docs/CHARACTER_ART.md`, walked by the `charart` skill |
-| Duke's state, decisions and his quotes | `scripts/lora/characters/duke.json` (`lock`, `revision_2026_10_08`, `kit_art`, `lora_pick_v2`) |
-| Batra's state | `scripts/lora/characters/batra.json` (`status`) |
-| Duke's run scripts | `scripts/skill_art/duke/` (README), `scripts/skill_art/compose_duke.py` |
-| Cleaning a trait out of a dataset | `scripts/lora/duke_v2_fix/` (README) |
-| LoRA files | ComfyUI `models\loras\duke_toll.safetensors` (v2 step 1750); `duke_toll_v1_1250.safetensors` (backup); steps in `models\loras\training\` |
-| Training sets | `C:\Users\Tanve\.comfyui-mcp\training\datasets\duke_v2` (backups `duke_v2_precollar`, `duke_v2_preskin`); config `configs\duke_v2_sdxl_lora.yaml` |
-| References | ComfyUI `output\references\README.md`; the Dokkan sets via the `dokkanartresearch` skill |
-| Rulings | `docs/HANDOFF.md`; newest is #184 (an ultimate's background) |
+---
+
+## What this project is
+
+Toll, a turn-based card battler for the Element Clash IP: Next.js 16, a pure
+battle engine in `lib/game/`, Zustand saves synced to Firestore, a gacha, a
+world boss, ascension trials and Epic Battles, 29 kits of which 12 are
+playable. Tanveer owns design, mechanics, numbers and characters; Claude owns
+structure, schemas and measurement (`AGENTS.md`). Deploys to Vercel from
+`master` on every push; no real players yet.
+
+---
+
+## What shipped in this checkpoint (2026-10-13, cloud, one long session)
+
+- **The audit** (`docs/GAME_AUDIT_2026-10-13.md`) and his answers to its
+  eight decisions (`decisions.md` 2026-10-13, rulings #189, #190).
+- **The save:** `teamKey` replaces nested team arrays (v11); `cloudSync.ts`
+  decides when a write happens; `resetBattle()` on sign-out; `cloudStatus`
+  on `/profile`; an unreadable save starts on defaults. Issues #28, #30, #31.
+- **The collab six deleted** (#187): kits, art, registrations; eight
+  mechanics kept behind `tests/fixtures/characters/`; v12 migration;
+  `toll-kits` cleaned (its `main`, two commits).
+- **Skills:** `redesign`, `savefield`, `importkit`, `newevent`, and the art
+  pipeline split into `charart` → `charlora` / `kitart` / `artinstall`.
+- **Schemas and templates:** the art profile (`scripts/lora/characters/
+  profile.schema.json`, `new_profile.py`, `check_profile.py`) and the kit
+  (`data/kit.schema.json` from the zod schema, `data/kit.template.json`,
+  `npm run newkit`, `data/characters/README.md`).
+- **Conventions (#188):** this file's two zones; mockups to
+  `docs/design/<name>.html` with drafts gitignored; no Trello; Node 24.
+- **Cleanup:** `tailwind-variants`, four dead hooks, the duel tool, the MDX
+  news stack (`/news` is static), gsap (PullReveal on framer-motion, with a
+  browser test), 48 unused exports and 30 unused types, `lib/pagination.ts`;
+  `knip.json` ignores the four files knip cannot see the use of.
+- **Starter gems 500** (#190), registered in `docs/demo-shortcuts.md`.
+- **Area files** `lib/game/CLAUDE.md`, `scripts/skill_art/CLAUDE.md`.
+- **The rules** synced to v3.4.0; the plugin block is his to add.
+
+---
+
+## Open items
+
+1. **Duke's retrain on an action-bearing dataset** (#186), on the PC. Blocks
+   his kit art.
+2. **The theme, round three or a pick** (#185). Blocks the component round.
+3. **The sign-in conflict dialog** (`docs/specs/save-conflict.md`): pure half
+   built, dialog needs a mockup round.
+4. **Issue #29**: a stale device's whole snapshot still wins (`onSnapshot`
+   and a diffed write).
+5. **A PvE content phase** after the foundation: gem source, day-two hook,
+   hub lead, Second Trial, Molvarr tiers 2 to 4 (`docs/ROADMAP.md`).
+6. **The news overhaul** (`docs/ROADMAP.md`).
+7. **`lib/env.ts`** and the rest of §RUNTIME; the folder migration; sentence
+   case (`conventions.md`, all queued).
+
+---
+
+## Verified this checkpoint, by measurement
+
+- `npm run check` after the final change: **135 files, 1,622 tests**, exit 0
+  (typecheck and lint included).
+- `npx knip`: nothing reported, with `knip.json` ignoring four files whose
+  use knip cannot see (a hook, the service worker, a vitest stub, a tool).
+- The browser suite after the gsap port: 4 files, 19 tests, in Chromium with
+  the symlink workaround; the two PullReveal guards were proved red first.
+- The cloud-save shape guard was proved red on the old nested-array fixture
+  before the shape changed; the trial encounter's replacement team measured
+  100% at Lv20 on three seeds, 0% at Lv1.
+- Both mockup rounds, in Chromium at 390px: every control ≥ 44px, no broken
+  art.
+- The Vercel project reads `nodeVersion: 24.x` (read through the Vercel
+  tools, not assumed), and the preview deployment of b4035ca on the session
+  branch reports READY: the tree builds on the platform even though
+  `next build` cannot run in the container.
+
+**The mistake worth keeping.** The first theme round was drawn from a motif
+catalogue without looking at the one screen he liked; he called it generic,
+and the `redesign` skill now opens with "ask what works". Separately, the
+first knip pass was launched while the save fix was mid-flight and had to be
+rerun after a usage-limit stop; nothing was lost, but the order (finish one
+batch, then fan out) is the right one.
+
+---
+
+## Assumed, not verified
+
+- The cloud save against a real Firestore (v11 and v12 both).
+- `next build` in the container: it cannot fetch Google Fonts; the Vercel
+  preview build stands in for it.
+- That the `fleet` plugin loads in a cloud session once enabled.
+- The audit's findings other than #28, #30 and #31 were *read*, not
+  reproduced; severities are stated per finding.
+- The Node mismatch (container 22, pin 24) has changed nothing shipped so
+  far; nothing has been built on 24 from this session.
+
+---
 
 ## Confidence and gaps
 
-### Verified on 2026-10-08, by running it
+- **His words versus Claude's reading:** every ruling from #185 to #190
+  marks the inference seam; the mockup notes and the audit's severities are
+  Claude's.
+- **Outside the repo:** `toll-kits` is at f135700 (its `main`); its
+  `KIT_RULINGS` still lacks #181 to #190, and its `decisions/PENDING.md`
+  entries for #182/#183 are not yet deleted. ComfyUI output folders on his
+  PC hold every image; nothing is in git.
 
-- `npm run check`: **1,675 passed / 137 files**, exit 0 (typecheck and lint
-  included). No game code changed in this session.
-- The LoRA install: the sha256 of `duke_toll.safetensors` matches
-  `training\duke_toll_v2_000001750` (`c2557683f42c…`), and the v1 backup is a
-  separate hash (`9e07579e9ba7…`).
-- Every sheet sent was looked at by Claude first. No text on clothes, no arm-up
-  pose.
+---
 
-### Not verified
+## Session log
 
-- The new ultimate layers on an **on-model** render. They were tested only on
-  Sonnet's off-model render.
-- Whether the v2 LoRA's short grey wisp on front-facing close-ups bothers him.
-- The promoted scripts in `scripts/skill_art/duke/` and `scripts/lora/duke_v2_fix/`
-  parse, but were not re-run from their new folders.
+*Newest first, added at the top (project-rules §DOCS, his call 2026-10-13,
+ruling #188). Logs older than this month are in `docs/archive/`.*
 
-### Recorded as Claude's reading, not his words
+## Session log — 2026-10-13 (cloud): the senior-dev audit, three theme options, and the rules synced to v3.4.0
 
-- The A/B rule, the "check the head against the dataset" step, and the dead
-  ends added to `docs/CHARACTER_ART.md` are Claude's method notes from this
-  session's failures.
+His ask, after a break: an audit as a senior game developer, a replacement
+for Shōnen Ink (*"it does not look good to me… something a bit more
+professional. Not too bold"*), and the fleet-standard sync.
 
-## Outside the repo
+**Audit:** `docs/GAME_AUDIT_2026-10-13.md`. Three agents read the engine and
+state, the player-facing flows and economy, and security and ops; the
+critical claims were re-read by hand. Headline: the cloud save is the weakest
+system (one confirmed breaking defect, issue #28, plus four silent-loss paths,
+#29–#31), and the beta has about two hours of content with no day-two hook
+and six characters nobody can obtain (#32). Eight decisions for him are
+listed at the end of the audit. Nothing was changed in `app/`, `components/`,
+`lib/` or `data/`.
 
-- **`toll-kits`:** #181–#184 are **not yet** in its `KIT_RULINGS`, and its
-  `decisions/PENDING.md` entries for #182/#183 are not yet deleted. Next session
-  with git access there.
-- **ComfyUI output folders** hold all the images; nothing is in git.
+**Theme:** `theme-options.html (deleted 2026-10-13, ruling #188; in git history before 09f17fd)`, three positions (A
+Launcher, B Gallery, C Ink wash) on the same four screens at 390×844, live.
+Measured in Chromium: every control ≥ 44px in all three, text contrast ≥ 4.5:1
+on every pair. He has not picked.
+
+**Sync:** `project-rules.md` v2.4.0 → v3.4.0; 55 section references
+translated; `CLAUDE.md` gained the v3 identity block; `conventions.md` gained
+a first look at the v3-only sections; `decisions.md` has the entry. The
+`.claude/settings.json` plugin block could not be written (permission
+refused) and is his to add.
+
+**Verified:** `npm run check` 1,675 passed / 137 files, exit 0, before and
+after the doc changes (no source changed). **Not verified:** `next build`
+(Google Fonts unreachable from the container); any game screen in a browser.
+
+**Later the same session: round two (ruling #185).** He rejected the three
+options as generic and said what to keep: the Characters page (tiles, the
+break-out art, the colours, the layout, the components) and the bottom nav;
+what to change: Home, Events, Gacha (*"the most bad one right now"*), Profile
+and Settings. The live screens were captured at 390×844 from a scratch
+`next dev` with a seeded roster, the tile anatomy was taken from
+`UnitTileFace.tsx` span for span, and
+`docs/design/mockups/screens-from-characters.html` was drawn: A Tiles,
+B Board, C Posters, the Characters screen unchanged in each, a tab-bar colour
+toggle, real art. #174's manga-page summon screen is superseded; #154 is
+amended, not retired. `decisions.md` has the correcting entry. Pushed through
+the GitHub API where the git CLI was refused, then by git once it was allowed
+again; the pushed files were diffed against the tree.
+
+**Later still: cleanup and project skills.** Round two did not click for him
+either; he will come back on his PC. Meanwhile, his two asks. **Cleanup**,
+with knip as the evidence: `tailwind-variants` removed, four dead files
+deleted (`useDescriptionTranslator`, `useEscapeKey`, `useSfx`, `lib/a11y`),
+the 2026-07 audits and the superpowers specs archived, two finished plans
+moved to `Plans/completed/`, 17 files repointed; the larger removals
+(`public/unreleased/`, `lib/duel`, gsap, the MDX stack, the design
+references, the unused exports) are questions for him. **Skills**: he asked
+for project skills so a session knows *"what to do exactly rather than me
+explaining everything from scratch"*, above all for the ComfyUI pipeline,
+where Lyra's assets were good and Sara's were not *"because I had to explain
+again the dynamic poses and everything"*. The gap, read from the logs: Lyra's
+pieces each had a concept, a pose with a job and a reference before anything
+rendered; Sara's rounds 1 to 4 did not, and he supplied the poses himself.
+So `charart` became a router and three step skills were written with the
+rules inside them: `charlora` (0–2), `kitart` (3–5, with the slot plan as a
+gate before GPU time, the quality-bar reading of Lyra's and Sara's locked
+pieces, and both drafting recipes side by side), `artinstall` (6). READMEs
+for `scripts/skill_art` and `scripts/pose` (the pose JSON schema), a
+reconstructed `lora_use` / `kit_art` in `lyra.json`, the stale #160 pointer
+and `compose_sara.py` card note fixed. `redesign`, `savefield` and
+`importkit` were written the same day. `check` green: 1,675 tests. He then
+answered the dataset question from his phone: action shots are required,
+and the calm front-facing standing sets are what went wrong on Sara and
+Duke (ruling #186); the doc, `charlora`, `kitart` and `lyra.json` were
+updated to match. His next message took the suggestions one by one: Duke's
+dataset is rebuilt and his LoRA retrained rather than finished on the 0.65
+route; `newevent` yes, `simcheck` no, generic draft and render scripts yes,
+area `CLAUDE.md` files yes, the `fleet` plugin his to enable on the PC, the
+save fix confirmed as needed; and a new `docs/PC_SESSION.md` holds the
+PC-only work in priority order, because he asked for a file that tells the
+next PC session what to do first. `newevent` was written from
+`lib/game/events.ts`, the reward and encounter files and rulings #127, #80,
+#86, #78, #136–#138 and #177. His next message gave the go for the cloud
+work and placed the schema line: the save fix (#28 keyed teams and v11, the
+shape guard proved red first; #30 and #31 as `lib/game/cloudSync.ts` with
+six fake-timer tests; `resetBattle` on sign-out; a `cloudStatus` note on
+`/profile`; an unreadable save no longer leaves the UI on skeletons), the
+two area `CLAUDE.md` files with the engine rules moved out of `AGENTS.md`,
+and the character profile schema with `new_profile.py` and
+`check_profile.py`. `check` green. Nothing verified against a real
+Firestore.
+
+**Then the collab removal (ruling #187).** He asked to delete, not archive,
+the six 7DS and HxH units and the Knuckle and Netero drafts; the blast
+radius was measured first (no event, arc, banner or order used them; eight
+engine mechanics did; 25 test files did; ~28 MB of art) and four choices
+went to him through the question tool: keep the mechanics, drop the units
+from saves silently, delete the drafts in `toll-kits` from this session,
+keep the KIT_DESIGN examples as prose. Then: six kits, their art and
+registrations deleted; `removedCharacters.ts` and the v12 migration; six
+neutral fixtures in `tests/fixtures/characters/` carrying the kept
+mechanics; the tests repointed by four agents in parallel; `toll-kits`
+cleaned and pushed to its `main`; the ledger, ARCHITECTURE, KIT_DESIGN,
+GACHA_DESIGN, SKILL_ART_PLAN and issue #32 updated.
+
+**Then the kit schema and template**, his second reading of the schema line:
+`.describe()` on every field of `lib/game/characterSchema.ts`, a JSON Schema
+generated from it (`npm run kit:schema`, drift-guarded by
+`tests/kitSchema.test.ts`), `data/kit.template.json` with the rules as
+`$comment`s, `npm run newkit` built on pure `lib/game/kitTemplate.ts`, and a
+README in `data/characters/` that the toll-kits sync carries over.
+
+**Then his answers, in one pass.** Every open decision got a line: the theme
+stays open on the roadmap; starter gems to 500 (#190); the PvE items to a
+content phase after the foundation; sign-in over a guest save asks with the
+differences shown (spec and pure logic built); practice stays ownership-free
+(#189); the fleet conventions adopted on STATUS, mockups and Trello (#188);
+Node 24 read from the Vercel project. The cleanup he chose ran as four agents:
+the duel tool, the MDX news stack, gsap (PullReveal on framer-motion, with a
+browser test and two guards proved red first) and knip's 48 exports and 30
+types; a usage-limit stop killed the first fan-out and it was rerun. Twelve
+locked mockups moved to `docs/design/`, five drafts deleted, this file took
+the fleet shape with the month's log folded back in.
+
+## Session log — 2026-10-07/08 (his PC, ComfyUI): blue Duke's design, LoRA v1 and v2, and his kit art to the official render
+
+One long session on his PC, partly from his phone. Rulings #181–#184. Nothing in
+`app/`, `components/`, `lib/` or `data/` changed; this is art pipeline work. The
+second half (2026-10-08) was Opus taking over after a Sonnet stretch he called
+inefficient (*"i tried sonnett to do one session with comfyui pipeline. Didn't
+work efficiently."*).
+
+**What he asked:** continue `charart` with **Duke** (blue Duke), then Batra, in
+order: lock the design, more images, train a LoRA, only then kit art.
+
+**2026-10-07: design, dataset, LoRA v1.**
+- **Design lock (#181, #182):** face from D22, black hair with ash-grey
+  highlights (no blue streak, his change), black tee, charcoal trousers with no
+  stripe, black laced ankle boots, blue wristbands. **Build revised** to an adult
+  frame, *"a bit less muscular version of Garou from OPM"*. Recorded in
+  `scripts/lora/characters/duke.json` (`lock`, `build_revision`).
+- **Tooling:** `scripts/pose/mannequin.py` gained `height` and `thickness`
+  (the default slim figure made Duke read as a teenager). `common.queue()`
+  honours `COMFY_FRONT`; `base_graph` gained `hand_extra` and `hand_denoise`;
+  `gen_candidates.py` skips the hand pass on close-ups unless `face_hand_fix`.
+- **Dataset:** 21 images he approved by number after several rounds (sets A–F).
+  Fixes on the way: the hand pass painted pale hands on his skin (off for Duke);
+  `(mature face:1.1)` and the long weighted prompt blurred close-ups;
+  `gathered at the ankle` drew a cord between the boots.
+- **LoRA v1:** trained on his "train"; he picked **step 1250** (*"1500 had some
+  anatomy issues"*). The run's final save had no step number, and a wait for a
+  `...000002000` file cost 25 minutes.
+- **Batra (#183):** design picks B5/B11/B22/B28/B36, face from B36. A dataset
+  round was rendered (`output\lora_batra_set_a`, 63 images) and **not reviewed**:
+  the B36 reference draws a bandana-like turban and the strap wording draws
+  crosses. **Held**; `batra.json` says so.
+- **Dokkan research:** the `dokkanartresearch` skill was written (his ask), and
+  references were saved to the library, including LR PHY UI Goku 1032921 for
+  Surge and Garou refs for the ultimate.
+- **Kit drafts:** three rounds. The first was upright and small, and he said
+  *"Did you even look at how sara and lyra assets are?"*. He picked **S2**,
+  **L12** and **U19**, with the rest saved to `output\duke_library`. He objected
+  that L12 is not a drop kick.
+
+**2026-10-08 (Sonnet, then Opus).**
+- **Sonnet** made official renders (img2img from his draft at 0.72) and
+  composites (`compose_duke.py`), and staged them in
+  `output\blue_duke\candidates`. **They were off-model:** Surge and the
+  ultimate had long spiky hair carried over from the drafts. A camera-edit
+  command shaped `python - </dev/null; ...` hung all night, so the drop-kick
+  poses never rendered.
+- **He picked, through the question tool** (the option labels are Claude's):
+  - clean the dataset and retrain to remove the ear strand;
+  - Slide as a drop kick, **soles toward the lens**;
+  - the card setting **by a river**.
+- **Ultimate direction, his words (#184):** *"Normally i would put toll power
+  elements scattered in the background and a scenic background. for duke,
+  small droplets of varying size, a snow mountain like background? with his
+  thin aura only on hands (light blue/water)"*. `compose_duke.py` now takes a
+  scenic plate (`--bg=`), scatters teardrop droplets, and draws a thin aura on
+  the hands only. The violet field and ray burst are removed.
+- **The ear strand:** shown A (a grey lock in front of the ear) against B (the
+  nape curls), he picked **only A**. A first batch that also removed the curls
+  was discarded. 16 images were repainted with hand-placed masks and
+  base-model inpainting, and D07 was dropped (every seed left a blob).
+  - **The collar:** he asked if the white collar trim would affect training.
+    Yes, so it was painted black.
+  - **The skin:** *"keep skin even"*. The whole set was paler than the D22
+    lock; shown A (the set's average) against B (D22 brown), he picked **A**.
+  - **The first v2 run was stopped** at about step 750 when the skin changed,
+    then restarted.
+- **LoRA v2:** he picked **step 1750** (*"1500 has that extra hand artifact"*;
+  Claude had recommended 1500). It is installed as `duke_toll.safetensors`,
+  hash checked; v1 is kept as `duke_toll_v1_1250.safetensors`.
+- **Drop kick:** 24 drafts. He: *"k13-24 aren't dropkicks, they are only him
+  falling down. K4 and 10 have promise"*. K4 and K10 are camera `duke_drop_e`.
+- **Official renders with v2** (`output\duke_official3`, four sheets sent):
+  - **Slide:** on-model at 0.82.
+  - **Surge:** the hair still leaks from the draft.
+  - **Ultimate:** the trousers come out grey-purple.
+
+  **He has not picked from them.**
+- **Backdrops:** snow plates for the ultimate (M2, M3, M6 usable) and river
+  plates for the card (R2, R5, R6), in `output\duke_backdrop`. **He has not
+  picked from them.**
+- **Docs:** `docs/CHARACTER_ART.md` gained the trait-cleaning method (step 1),
+  step 4 rewritten as the official render, mannequin size and framing (step 3),
+  plates and droplets (step 5), the environment traps, and 11 dead ends. The
+  `charart` skill gained the on-model check, the A/B rule and a traps section.
+  The promoted scripts are `scripts/lora/duke_v2_fix/` and
+  `scripts/skill_art/duke/`, each with a README.
+
+**Verified:** `npm run check` passed, 1,675 tests in 137 files (no game code
+changed). The v2 LoRA install was hash-checked. Every image claim above was
+looked at by Claude on a sheet; taste is his.
+
+## Session log — 2026-10-03 (cloud, part 4): the four-values audit, done end to end
+
+Continues the entry below (committed at `818ac72`). Rulings #179–#180.
+
+**What he asked:** *"let's do a site wide audit with those 4 holy rules now"*,
+then each group in order, then: *"once all groups are done then visually
+verify the changes and make sure nothing breaks. report to me, and if
+nothing is needed from my side then go for git checkpoint max at the end."*
+
+**The audit:**
+- **How it ran:** five Sonnet agents each audited one area (shell, the
+  archive, battle, events and summon, shared code), four of them on screen at
+  390×844. Opus merged their findings into 43 numbered items in four groups
+  and spot-checked them.
+- **The record:** `docs/archive/FOUR_VALUES_AUDIT-2026-10-03.md`, now marked
+  resolved.
+- **Who built it:** Sonnet agents, one group at a time. Groups 2–4 changed
+  the same files, so they could not run in parallel.
+
+**Group 1, the defects:**
+- **The tutorial's merge step** said "Drag". It now says "Tap Merge on a
+  card…" (`lib/tutorial/steps.ts`).
+- **Inventory's empty line** still mentioned story clears; the story mention
+  is gone.
+- **The coach** now stands down while any dialog or sheet is open
+  (`hooks/useOverlayOpen.ts`).
+- **Tap opening the explain panel was a real bug.** `Hand.tsx` used
+  `onMouseEnter`, and a touch tap emulates `mouseenter` without a matching
+  leave, so the panel opened and stayed. It now uses pointer events, mouse
+  only.
+- **Touch targets:** a new `hit-44` utility (`styles/globals.css`) gives the
+  Merge badge and the keyword hints a 44px hit area. **Side effect:** the
+  invisible box overlaps the card's name strip, so a tap just above or below
+  the badge now merges. This is flagged to him to try on a phone.
+- **Kit Numbers** names wrap to two lines instead of being cut off.
+- **The profile page** renders for guests.
+- **Archive Preview** asks "Start a test fight?" first (his pick, #179).
+- **News is closed** (#179): `lib/news/open.ts` sets `NEWS_OPEN = false`,
+  and `/news` reads "Coming soon". At his *"delete the posts."* the 9 update
+  MDX files were deleted. They can be restored from `818ac72`. A
+  `_placeholder.mdx` per folder keeps Turbopack's dynamic import building.
+  The return is on `ROADMAP.md`.
+  - **An agent's `rm` was blocked** by the auto-mode classifier as
+    irreversible. Opus ran it on his explicit instruction.
+
+**Group 2, less is more:**
+- **His picks:**
+  - world level on Profile only;
+  - Home alerts deleted;
+  - board rows show the cost plus a repeat icon;
+  - empty tabs hidden.
+- **Removed:**
+  - counts (units, locked, roster, steps, team picker, summon owned);
+  - helper sentences;
+  - the Molvarr brief's three paragraphs and its level chip;
+  - the Epic "free / no rewards" lines;
+  - the duplicate names on briefs;
+  - the pull-reveal tally;
+  - the summon "to go" lines;
+  - the battle Controls readouts and the result tally;
+  - the closed Orders tile;
+  - the currency chips in battle.
+- **Passive and aura toasts** now go to the battle log only, filtered by log
+  prefix in `BattleEffectsOverlay.tsx`.
+- **An agent removed the Login guest-progress warning.** Opus restored it:
+  losing a guest save is information, not obvious copy.
+
+**Group 3, one implementation per job:**
+- **His picks:**
+  - the collection is **"Characters"** (routes stay `/archive`; the nav icon
+    is `BookOpen`);
+  - back links read **"‹ + destination"**;
+  - the words are **Enemy / Retry / Change team / Leave / Fight**;
+  - **Growth is a bottom sheet**.
+- **New shared parts:**
+  - in `components/ui/`: `BackLink`, `SelectTile`, `EmptyState`, `NavTile`,
+    `DisclosureRow`, `PanelSheet` (moved from gacha), and `Badge` with a
+    `tight` size and `reward` and `fill` variants;
+  - in `components/game/`: `SkillTypeBadge`, `RankBar`;
+  - `lib/game/rewardParts.ts`, `lib/game/accountSummary.ts`,
+    `hooks/useNow.ts`;
+  - the tab bar is now derived from `GAME_ROUTES` (the `tab` flag).
+- **Tokens:** `--container-unit` and `--container-drawer`.
+- **The components** are listed in `docs/design-system.md`. The repo has no
+  `components.md`.
+- **Guards:** `tests/sharedComponents.test.ts` scans for the old hand-rolled
+  patterns.
+
+**Group 4, QOL:**
+- **The team picker** has search, sort and filters through the shared
+  `lib/game/rosterFilter.ts`, `hooks/useRosterFilters.ts` and
+  `components/game/RosterToolbar.tsx`.
+- **The archive** has a Level sort, and its search placeholder is "Search".
+- **The enemy hand readout** is removed.
+- **The summon confirm** has no X (a `MountedDialog` `showClose` prop).
+- **The two `ShiftRow` copies** are merged into `components/ui/ShiftRow.tsx`.
+- **His pick, skeletons:** `components/ui/skeleton.tsx` replaces the
+  loading "—" in TopNav, Profile and the summon screens. The convention is in
+  `conventions.md`.
+
+**Final verification (Opus):**
+- `npm run check`: 1,675 passed / 137 files, typecheck and lint clean.
+- `npm run test:browser`: 17 passed / 3 files, run with the scratch
+  `PLAYWRIGHT_BROWSERS_PATH` symlink workaround.
+- `next build`: clean.
+- **A sweep of 16 screens on the production build at 390×844**, with an owned
+  roster seeded:
+  - zero horizontal overflow;
+  - zero interactive elements under 44px in both dimensions;
+  - the only errors are the 404s for `/_vercel/insights` and
+    `/_vercel/speed-insights`, which exist only when deployed on Vercel.
+- **Looked at by eye:** Home, Profile, Characters, Duke with the Growth
+  sheet, the Exam Arc stage brief, the Molvarr brief, Gacha and Practice.
+
+**Not verified:**
+- A battle fought to a win on the production build, and the result screen
+  copy. The group 3 agent saw a forced Defeat dialog reading
+  Retry / Change team / Leave.
+- The passive-toast filter firing in a live fight.
+- The skeletons on a slow connection. An agent saw them before hydration.
+- The Merge hit-area overlap, which needs his phone.
+
+## Session log — 2026-10-03 (cloud, part 3): Epic Battles, boss Tao, a simulator that plays whole kits, and a tabbed events board
+
+Continues the entry below (committed at `8c6a3f7`). Rulings #175–#178.
+
+**Epic Battles (#175):**
+- **His ask:** bring the removed story's fights back as events with stages.
+- **His rules:** every stage is always open, repeatable, costs zero stamina
+  and pays nothing on a clear. Missions come later, and may be conditional
+  ("clear stage 1 with a human-only team"). Players bring their own team.
+  It is endgame content.
+- **Rejected along the way:**
+  - A sequential unlock and a stamina cost. Claude proposed them; he
+    overruled both.
+  - "One-time clear". He first picked it from a question, then corrected it:
+    stages repeat without limit.
+- **Built:**
+  - `lib/game/epicBattles.ts`: zod arcs and stages, parsed from
+    `data/arcs/exam-arc.json`.
+  - `lib/game/epicClears.ts` and `playerStore.epicClears`: a cloud-synced
+    clear record (count, first and last clear, best turns, distinct teams,
+    capped at 30) that missions can read later.
+  - `BattleOwner` kind `epic`, with resume on reload.
+  - `components/game/events/Epic*` and `EnemyPanel`.
+- **Arc 1, Exam Arc:** Master Tao (`master_tao_npc`), then Lyra (`lyra_npc`),
+  both at Lv 20 (provisional).
+
+**Boss Tao (#176):** `data/characters/master_tao_npc.json` is his spec, tuned
+in rounds against simulator stats.
+
+- **The tuning rounds:**
+  1. HP 8250 → 10,500.
+  2. ATK 150 → 210 → 270.
+  3. He added a kill heal at 100%. Measured as far too strong, it became
+     ATK 220 with a 35% heal (option B).
+  4. The 5-hit ramp lost its HP ("atk and def only").
+  5. The Ignite ramp stays uncapped.
+- **Names:** Claude named the skill and passive on his request, from his
+  lore: "Examiner's Judgement" and "Trial by Fire". The renamed skill
+  borrows the Inferno Consumption art (`SKILL_ART_ALIAS`).
+- **New generic mechanics:**
+  - `coDestruction`.
+  - `liveBonus`, which recounts enemy debuffs, enemy Ignite stacks or a named
+    enemy after every action.
+  - `sealImmunity`.
+  - `counterDamageReduction`.
+  - `turnStartCleanse`.
+  - A repeating `statShiftAfterAttacks`.
+  - A new passive trigger, `onKill` (`lib/game/onKill.ts`). Kill credit is a
+    direct hit or a counter, never damage over time. Ignite deals no damage
+    at all, his point.
+  - `lib/game/debuffCount.ts`.
+
+**The simulator, fixed to measure him:**
+- **Before:** it gave units no hand, so every AI unit played its first skill
+  only, and no ultimate gauge ever filled. That was the sim only; live
+  enemies already draw a hand.
+- **Shared with the live battle now:**
+  - The gauge rule is one function, `ultGaugeAfterAction` in
+    `lib/game/ultGauge.ts`, used by `BattleProvider` and the sim.
+  - `dealTeamHand` and `settlePlayedCard` in `lib/game/deck.ts`.
+  - Opus checked the `BattleProvider` diff line by line: same behaviour.
+- **Seeded:** the AI's picks and Chiara's roll take the sim's seeded RNG.
+- **New output:** opt-in per-fight stats (`simulate(..., { collectStats:
+  true })`, `lib/game/simStats.ts`).
+- **Every win rate quoted before today was measured without ultimates or
+  second skills.** That includes the numbers in `trialEncounters.ts`'s
+  comments.
+- **The measurement scripts** (`taostats.ts`, `taosweep.ts`) live in the
+  session scratchpad, not the repo. `npm run sim` cannot express levelled
+  units, so there is no `--stats` flag.
+- **Where Tao landed:** at ATK 220 with the 35% heal (measured before the
+  ramp lost HP), his five teams with Isolde as sub average about 80%, and the
+  comparison teams sit at or under 33%. Fights run 8–18 turns, not his 5–6.
+  Gon, Killua and Leorio win about 100% at any setting: no counter (#138).
+
+**The events board (#177, #178):**
+- **The first mockups:** a Sonnet agent drew them by hand. He said they were
+  "not website accurate", so Opus redrew them.
+- **The redraw:** built from the live game's compiled CSS and captured
+  markup, with the real nav, tab bar, rows, tabs and briefs.
+  `docs/design/events-redesign.html` holds Today, A, B and C.
+- **His pick: A**, then stripped back: no counts on the tabs, and no clear
+  count, best turns or progress anywhere. "Rewards: None" also came off the
+  stage result.
+- **Built:**
+  - `EventsBoard` uses the shared `Tabs` primitive.
+  - `lib/game/eventTabs.ts` splits the events by `kind`.
+  - The open tab is remembered in `settingsStore.eventsTab` (device-local).
+- **A bug found on screen and fixed in `components/ui/tabs.tsx`:** the hover
+  colour turned the ACTIVE tab's label white on white (a phone keeps hover
+  after a tap). Every tab set in the game had it. Pinned by
+  `tests/tabsHover.test.ts`.
+
+**#178, his new game-wide value:** "less is more / don't state or show the
+obvious" joins consistency, modularization and QOL in `AGENTS.md`. Audits
+check all four.
+
+**Verification:**
+- `npm run check`: 1,635 passed / 134 files, typecheck and lint clean.
+- **Looked at in Chromium at 390×844:**
+  - the Epic section and stage brief before the redesign;
+  - all three tabs, their 44px height, no sideways scroll, the tab
+    remembered across a reload, and the return from an arc landing on the
+    Epic tab;
+  - the arc page.
+
+**Not verified:**
+- A stage fought to a win on screen, and the result screen without
+  "Rewards".
+- Tao's passive readout in the unit panel.
+- `test:browser`, which needs the Chromium symlink workaround and was not
+  run.
+
+## Session log — 2026-10-03 (cloud, part 2): the element pill, Lyra's ponytail, and the summon screen as a manga page
+
+Continues the entry below (committed at `35a03c2`).
+
+**Small fixes from his review of part 1:**
+- **Detail page:** the element pill came off the portrait (*"The background
+  does the job"*). Claude raised that it was the only place the element was
+  named in words, so it moved to the first tag, beside the unit's tags. This
+  added `EL_NAME` and `elementName` in `lib/game/elementStyle.ts`.
+- **Lyra's archive tile:** her ponytail ran into the tile above. Her
+  `tile.webp` was cropped 12px above her red ribbon: 480×817 became 480×588,
+  and `TILE_ART` went from 1.702 to 1.225. `ART_VERSION` 20 → 21. The rule
+  that a break-out stops at a natural edge is in `docs/CHARACTER_ART.md`
+  step 6, and the crop is in `lyra.json` `tile`.
+
+**The summon screen (ruling #174):**
+- **The brief:** he found it *"still looks very generic-ish"*. Summon
+  animations and new art are deferred until every kit has its art; the
+  ComfyUI backlog is already long. A brainstorm for that later work is
+  recorded in #174, not as a decision.
+- **The options:** `gacha-overhaul.html (deleted 2026-10-13, ruling #188; in git history before 09f17fd)`, three of them:
+  A poster, B collection board, C manga page. He picked **C**, *"adds energy
+  to the page"*.
+- **Claude's fix, accepted:** the draw panel is anchored at the bottom,
+  above the tab bar. As drawn, C put the buttons mid-screen, against #107.
+- **Built by a Sonnet agent, then reviewed and verified by Opus:**
+  - `BannerScreen` is a manga page: the banner splash panel grows, the
+    Featured and Milestone panels open sheets, and the draw panel has speed
+    rays and is `sticky bottom-[var(--tabbar-h)]`. The banner's painted
+    title band is now kept out of view by sizing, not by a scrim.
+  - New `PanelSheet`, `FeaturedSheet` (all featured units as archive tiles)
+    and `MilestoneSheet` (the existing track and `ClaimSection`).
+    `FeaturedModal` is deleted.
+  - `PullReveal`: units first as tiles with a "New!" or "+1 coin" plate, then
+    materials grouped into one list. A short pop-in replaces the GSAP flip.
+  - `lib/gacha/resultSummary.ts` with `tests/gachaResultSummary.test.ts`.
+  - `UnitTileFace` gained `plateTone="highlight"`.
+  - The `panel-cut-*`, `ink-burst` and `speed-rays` utilities.
+  - `PullReveal`'s private element hue table was folded into
+    `elementStyle.ts`.
+  - The design system names the summon screen as its one loud exception.
+
+**Verification:**
+- `npm run check`: 1,527 passed / 126 files, typecheck and lint clean.
+- `test:browser`: 17 passed, by the agent, with the Chromium symlink
+  workaround.
+- **At 390×844, 390×667 and 1440×900:** no page scroll, and Draw ×11 sits in
+  the bottom sixth on both phones.
+  - Driven: the featured sheet, the milestone sheet, and a real 11-pull that
+    landed two new units.
+  - The detail page's element tag and Lyra's tile were seen at 390 and 1440.
+
+**Not verified:** claiming a milestone reward (that code is unchanged); a
+duplicate's "+1 coin" plate (only new units landed).
+
+## Session log — 2026-10-03 (cloud): one image per unit, and the tile in the team picker
+
+**Asked for (cloud session, no ComfyUI):**
+- `relay`; then copy the user-level `checkpoint` and `relay` skills into the
+  repo so cloud sessions have them.
+- Fix Lyra's art mismatch: her archive tile was her C4 card pose, her
+  portrait an older, different picture. *"i like the tile version better so
+  just make sure her official art is also the same as the tile one."*
+- Then, from the mockup: the same for Sara, the element burst behind the
+  detail-page portrait, and the archive tile in the team picker.
+- A checkpoint without a push.
+
+**How it was decided (ruling #173):**
+- `docs/design/lyra-portrait.html`, three versions on one artifact
+  link. v1: crops A and B of C4 against the current portrait. He picked
+  **B**. v2: the burst detail page and the tile picker. v3: Sara added.
+- He chose a **transparent background for now**, with a background to be
+  worked on at his PC.
+- His fallback, if the crop quality had been too low: swap the tile to match
+  the old portrait instead. Not needed; the crop held up.
+- Sara: the repo had no full transparent figure, only her tile. A crop from
+  the tile worked but was tight. He then supplied her transparent card B
+  figure (1248×1824), which allowed framing that matches Lyra's. It is **not
+  sharper** than the tile at the same zoom.
+- Picker scope, by selection: both the four slots and the roster dialog;
+  name and ATK / DEF / HP under each tile in the dialog.
+
+**Built:**
+- Portraits: `public/characters/red_lyra/portrait.png` (crop of
+  `cards/pose-c4.png`, 150/150/460) and `red_sara/portrait.png` (crop of the
+  new `cards/card-b-cutout.webp`, 400/295/520). 1024² RGBA, plain Lanczos.
+  `ART_VERSION` 19 → 20. The old portraits are in git history only.
+- `scripts/skill_art/make_portrait_crop.py`, the crop tool.
+- `components/game/UnitTileFace.tsx`: the tile's face, shared by
+  `RosterTile` (a link) and `TeamPicker` (buttons). New props: plate text,
+  dimmed, picked (a yellow bevel; an outline would be cut by the clip-path),
+  pick number, empty slot.
+- `lib/game/elementStyle.ts`: the element hue and code tables, which were
+  copied in `CharacterBrowser`, `FeaturedModal` and the detail page. All
+  three copies removed.
+- Team picker: slots and roster dialog are tiles. The plate shows `Lv N`
+  for the player side with saved progress, and "Sub" on the bench slot.
+- Detail page: `tile-burst` in the element hue behind every portrait.
+- Test: `tests/characterArt.test.ts` fails if a unit with tile art has an
+  opaque portrait. It was proved red against Gon's opaque portrait.
+- Docs: `docs/CHARACTER_ART.md` step 6, the `charart` skill (sources and an
+  install check), ledger #173 (amends #172), both character profiles, and
+  `docs/ART_REQUESTS.md` D6 (the 4x redo).
+
+**Worked as:** Opus planned and installed the art. A Sonnet agent built the
+components and the test, and Opus reviewed its diff and verified.
+
+**Verification:**
+- `npm run check`: 1,524 passed / 125 files, typecheck and lint clean.
+- `npm run test:browser`: 17 passed / 3 files, **only with a workaround**.
+  The installed Playwright wants Chromium headless_shell 1234, but the cloud
+  container ships 1194 at `/opt/pw-browsers`. The agent symlinked it in its
+  scratchpad for that one run. A plain run fails in this container.
+- **Looked at, at 390×844, on a scratch dev server:** both detail pages, the
+  picker slots, the roster dialog, and a 3v3 battle with Lyra, Sara and
+  Meliodas. No sideways scroll anywhere.
+  - Red Lyra breaks out of her tile.
+  - In battle the player side sits on paper, so both transparent portraits
+    read well. Sara's dark hood would be faint only on the dark enemy side.
+
+**Not verified:** desktop widths; Sara or Lyra on the enemy side; the
+archive grid after the face refactor (it was not pixel-diffed, though the
+geometry is unchanged).
+
+## Session log — 2026-10-02/03: Sara's art pipeline end to end, and the archive's frame-break tile
+
+**Asked for (by phone, then at home):**
+- Open ComfyUI and work the pending art.
+- Lock Sara's design and train her LoRA. Step 0 became a design round for any
+  character without a LoRA.
+- Her kit and card art: draft-then-finish, resumed for the whole cast.
+- *"Record what works, scrap what didn't"* for the pipeline docs, plus a
+  skill to enforce it.
+- Rename Sara's kit (names only).
+- Dokkan-style archive tiles.
+- `git checkpoint max`.
+
+**Sara: design and LoRA.**
+- **v1:** design rounds A to C, then his story-session lock. 22 images, run
+  `sara_toll_v1`, step 1500.
+- **His verdict on v1:** *"cat hands and other deformities. also
+  inconsistency with shoes."*
+- **v2:**
+  - The hand pass was added to candidate generation.
+  - Grey-white high-tops.
+  - **No cat ears on the hoodie**, and **hood up as her default**.
+  - Text on clothing is auto-rejected.
+  - 28 images he picked by hand, run `sara_v2`, step 1500.
+- `models\loras\sara_toll.safetensors` is v2. v1 is kept in
+  `models\loras\training\`, checked byte-identical before the overwrite.
+- Profiles: `scripts/lora/characters/sara.json` (v1) and `sara_v2.json` (the
+  lock, every approved file, `lora_use`, `art_direction`, his picks and
+  locks).
+
+**Sara: kit and card art.**
+- **Rounds 1 to 4 failed his bar:**
+  - *"awkward poses, bad anatomy, or uncharacteristic"*.
+  - *"Is she doing Kung fu? ... candid shots or photoshoot"*.
+  - The cause: a LoRA trained on calm images at 0.9, static hand-drawn
+    skeletons, and model-sheet wording.
+  - Round 3's skeleton forced an **arm-up pose on all 24 drafts**. He banned
+    it: *"Auto flag all arm up shots"*.
+- **Round 5 worked:** LoRA at 0.65, action wording, simple background, and
+  optionally a DWPose skeleton from his references.
+- **He picked:** skill 1 = 831018 (drafted as a dash), skill 2 = 850000,
+  ultimate = 851001, card = 820002, passive = 824003. He also chose library
+  extras.
+- **Finish pass:** it had a bug, one shared input file, so 8 of 9 queued
+  finishes read the wrong source. Fixed with a per-run input; all redone.
+- **Composites** (`scripts/skill_art/compose_sara.py`):
+  - attack skills on the red class background;
+  - the ultimate on a violet night;
+  - a hot-pink aura (his colour);
+  - streaks and afterimages.
+- **The check pass fixed:** a sticker-like aura rim, and shrinking a cropped
+  figure (which exposed its cut edges).
+- **His rule:** *"only skill arts only needed with red bg (attack skills)
+  Passive and ultimate not."* He then rejected the red card: *"I don't like the
+  red bg on her art"*.
+- **Card background:** 8 park and garden environments were rendered without
+  her; he picked **7, park at sunset** (runner-up: 2).
+- **His catch:** *"The ankle area is transparent"*. Her black cuffs had been
+  dropped by the matte on a black draft ground. Fixed with a short vertical
+  closing inside the ankle band only.
+- **Locked:** ultimate A, skill 2 A, skill 1, card B. Staged in ComfyUI
+  `output\red_sara\locked\`; the rest is in `output\sara_library\` with a
+  README.
+
+**Sara kit rename (names only, his):**
+
+| Slot | New name |
+| --- | --- |
+| Heading | Beloved of Cats |
+| Strike | Adaptation |
+| Hit-all | Swarm |
+| Ultimate | Apex |
+| Passive | Protection of the Felines |
+
+- **Updated:** `data/characters/sara.json`, art keys, code comments, test
+  fixtures.
+- **Installed:** `skills/adaptation.png`, `swarm.png`, `apex.png`,
+  `cards/card-b.png` (park), and `portrait.png` (chest-up crop of the park
+  card, anime 4x upscale to 1024).
+- `ART_VERSION` 18 → 19. The three old skill files were deleted.
+
+**Pose tool (Blender 5.0.1, `D:\Blender`):**
+- `scripts/pose/mannequin.py` reads a JSON of bone directions plus a camera
+  and renders a depth map and joints headless. `draw_pose.py` turns those into
+  an OpenPose image.
+- They feed the union ControlNet (depth plus openpose).
+- **Results:** the sprint pose held in 6 of 6 drafts. The lunge pose file was
+  bad (it raised a hand) and was not fixed or reused.
+- **Researched, not tried:** Illustrious XL with a dynamic-pose LoRA (it
+  would need a LoRA retrain), and Fisher Pose / Qwen-Image (photoreal-only,
+  about 20 GB).
+
+**References:**
+- All moved to one library, ComfyUI `output\references\`, with a
+  `README.md` index.
+- The 7DSGC assets moved there from `Downloads` (cards, kit, skeletons, plus
+  12 refs given 2026-10-03), and 3 Dokkan roster screenshots were added.
+- His rule: *"keep all the refs at one place and use them for research"*.
+  Pose and composition only.
+
+**Docs and skill:**
+- **New `docs/CHARACTER_ART.md`:** the current method only. It covers rules,
+  environment, steps 0 to 6, prompting facts and a *Dead ends* table.
+- **`docs/ART_PIPELINE.md`:** cut to non-character art. 956 lines moved
+  verbatim to `docs/archive/ART_PIPELINE-character-history.md`; checked line
+  by line that only the title changed.
+- **New `charart` skill:** the step order, his gates and mandatory checks.
+- **Updated:** AGENTS.md (skills table), `scripts/lora/README.md`, and
+  `ART_REQUESTS.md` Category E (pointer). That file had wrongly said "old
+  method by default".
+
+**Archive tile (ruling #172):**
+- **Mockups, three rounds:**
+  - `archive-tile.html`: *"more creative ... nameplate options are out"*.
+  - `-v2`: the direction was frame break.
+  - `-v3`: he picked option 1, *"Ooo i love the ink burst design"*.
+- His rule: only new-pipeline art (Lyra, Sara) breaks out of the frame.
+- Stars = ult level (his selection); 3 columns on a phone.
+- **Built:**
+  - `components/game/RosterTile.tsx`, replacing the old tile in
+    `CharacterBrowser`. The StatBar, statMax and the stat-bars import went.
+  - The `tile-*` utilities in `styles/globals.css`.
+  - The `getTileArt` registry and `TILE_ART` in `characterArt.ts`, with a
+    file-exists test.
+  - `scripts/skill_art/make_tile_cutout.py`, which made
+    `red_sara/tile.webp` and `red_lyra/tile.webp`.
+- **Verified at 390px on the scratch dev server:**
+  - Both units break out of the frame.
+  - Plates and stars are correct (Meliodas shows 6).
+  - No sideways scroll.
+  - The player storage used was the browser's own, edited for the test.
+
+**Lessons now in docs or memory:**
+- Start ComfyUI and the trainer detached (`Start-Process`). A Bash
+  background task killed the server mid-batch.
+- `python -` hangs on this PC; it bit three times this session.
+- The browser pane cannot open a large data-URI HTML file (1.4 MB failed;
+  WebP brought it to 300 KB).
+- The pane's first screenshot after navigating can be pre-paint. Re-measure
+  in the page.
+
+**Verification at the checkpoint:**
+- `npm run check`: 1,523 passed / 125 files, typecheck and lint clean.
+- Scratch production build passed; `.next-verify` removed, `tsconfig.json`
+  restored.
+- **`npm run test:browser` could not run:** Playwright's Chromium is not
+  installed on this PC (`npx playwright install chromium` fixes it, a
+  download he has not approved).
+
+## Session log — 2026-10-02: the exam-arc kits, game-ready but not live
+
+**Asked for:** relay (he was working by phone), then *"Get to implement the
+new characters. But don't make them live in the game yet. Just make them game
+ready with their kits and mechanics. We don't have their artworks"*, asking
+questions through the question tool. Later: fix the calls he corrected, *"Do
+the sync"* (toll-kits), and `git checkpoint`.
+
+**Where the kits came from:** `toll-kits` branch
+`claude/pensive-brahmagupta-8yv4rd` (25 commits, unmerged, last 2026-10-01):
+drafts `blue_lyra`, `caila`, `green_duke`, all "READY FOR HIS REVIEW", plus
+five pending rulings. The story repo (`element-clash-toll`) also has an
+unmerged branch of chapter rewrites; it was read, not touched.
+
+**Built:**
+- **Kits:** `data/characters/blue_lyra.json` (#100032), `caila.json`
+  (#100033), `green_duke.json` (#100034), all `"unreleased": true`. VFX
+  entries; ult art borrowed from red Lyra and blue Duke (`SKILL_ART_ALIAS`).
+- **Release gate (#171):** `isVisible` / `getPlayableCharacters` hide
+  unreleased kits on the deployed site and show them under `next dev`; the
+  archive URL 404s for them; the engine, sim and tests see all kits.
+- **Freeze (#164)** `lib/game/freeze.ts`; **[Cold] (#165)**
+  `lib/game/cold.ts` plus `registerFadingBuff`; **ultimate seal (#166)**
+  `lib/game/seal.ts`; **team counter (#167)** `lib/game/counter.ts`; [Vial]
+  (`healBoostStacks`), team gauge from an ult (`ultGaugeAfterUltimate`),
+  `namedAllyBonus`, `stanceUseStacks`, and `minRank` on any mechanic.
+- **Naming exception (#171, amends #162):** `colorQualifiedId` in
+  `lib/game/unitKey.ts` — `blue_lyra/`, `blue_lyra_coin`; coin → owner is a
+  lookup now (the regex misread `blue_lyra_coin` as red Lyra).
+- **Fixed in passing:** the AI and the hand honoured attack seals only;
+  `ALLY_TARGET_PATTERN` never matched "ally"; counter-stance log lines read
+  "gained stance to stats by  for 1 turn".
+- **His answers, all recorded in #164–#171:** dev only; skip the doubled
+  colour; ATK decay every turn end; immunity blocks Cold's tiers; immune at 3
+  stacks spends them, no freeze; Cold on a real hit only; no team counter if
+  the attacked ally dies; evades still counted; tags (Caila and blue Lyra
+  Human + Female, then red Lyra Female too); no lore yet. Then: Lyra's passive
+  is field only; a tanked hit not breaking Freeze is correct; Theriac UL6
+  "gains 3 [Vial]" OK.
+
+**Tried / dropped:** applying Frostline's buff to a benched Lyra (his
+correction: field only). Green Duke's Confluence bonuses still apply from the
+bench at battle start — he corrected Lyra's only.
+
+**Measured (sim, 1v1, AI both sides, no ultimates — see below):** blue Lyra
+beats red Lyra 100% (frozen every other turn; counters exist: Debuff
+Immunity, cleanse); green Duke loses 100% to blue Duke (the sim AI casts
+Undertow at R1 every turn); Caila vs Isolde all draws. **The simulator keeps
+no ultimate gauge, so it never casts an ultimate** — flagged as a separate
+task.
+
+**Verified:** `npm run check` 1,522 passed / 125 files, typecheck and lint
+clean; scratch `next build` passed; three new guards proved red by breaking
+them (release gate, frozen post-pass, bench rule). **Not verified:** any
+screen — no browser this session.

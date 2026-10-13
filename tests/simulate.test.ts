@@ -27,7 +27,7 @@ describe("the balance simulator", () => {
     // Guards the opposite failure: a "deterministic" simulator that ignores
     // its RNG entirely would pass the test above and be worthless.
     const results = [1, 2, 3, 4, 5].map((seed) =>
-      simulate(["duke", "lyra", "seras"], ["chiara", "gon", "ban"], {
+      simulate(["duke", "lyra", "seras"], ["chiara", "batra", "siddiq"], {
         runs: 6,
         seed,
         fieldCap: 3,
@@ -58,7 +58,7 @@ describe("the balance simulator", () => {
    */
   it("gives a different answer per format, which is the point", async () => {
     const team = ["duke", "lyra", "seras"];
-    const foes = ["chiara", "gon", "ban"];
+    const foes = ["chiara", "batra", "siddiq"];
     const duel = await simulate(team.slice(0, 1), foes.slice(0, 1), {
       runs: 20,
       seed: 11,

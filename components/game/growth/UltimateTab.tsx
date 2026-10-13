@@ -24,7 +24,7 @@ import type { CharacterData } from "@/lib/game/characterCatalog";
  * says what you are buying — so the ladder became the control and the other two
  * went. Tapping a step sets the target; the button pays for it.
  *
- * Approved from `docs/design/mockups/growth-modal.html`: *"the slider is gone,
+ * Approved from `docs/design/growth-modal.html`: *"the slider is gone,
  * which is very good… it also shows you where the multiplier goes, for example
  * 385% to 475%, which I like."*
  */

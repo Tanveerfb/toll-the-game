@@ -40,14 +40,14 @@ import type { BattleCharacter } from "@/types/character";
  * changes are not either. Healing here is what heal *skills* restored.
  */
 
-export interface Spread {
+interface Spread {
   mean: number;
   min: number;
   max: number;
 }
 
 /** One unit, one fight. */
-export interface UnitFight {
+interface UnitFight {
   characterId: string;
   name: string;
   team: "player" | "enemy";
@@ -77,7 +77,7 @@ interface SeriesFight {
   active: number;
 }
 
-export interface TelemetryFight {
+interface TelemetryFight {
   series: Record<string, SeriesFight>;
   /** Repeating attacks-received shifts reached. */
   rampTriggers: number;
@@ -315,7 +315,7 @@ function spread(values: number[]): Spread {
   };
 }
 
-export interface UnitStats {
+interface UnitStats {
   instanceId: string;
   characterId: string;
   name: string;
@@ -335,7 +335,7 @@ export interface UnitStats {
   bySkill: Record<string, number>;
 }
 
-export interface SeriesStats {
+interface SeriesStats {
   /** Mean of each fight's peak. */
   peakMean: number;
   /** Highest value any fight reached. */
@@ -346,7 +346,7 @@ export interface SeriesStats {
   activeShare: number;
 }
 
-export interface TelemetryStats {
+interface TelemetryStats {
   series: Record<string, SeriesStats>;
   rampTriggers: Spread;
   debuffsCleansed: Spread;
