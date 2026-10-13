@@ -177,6 +177,7 @@ describe("the store", () => {
   });
 
   it("is on the current persisted version", () => {
-    expect(CURRENT_PLAYER_STATE_VERSION).toBe(10);
+    // 11 since 2026-10-13: epic clear teams became keyed strings (issue #28).
+    expect(CURRENT_PLAYER_STATE_VERSION).toBe(11);
   });
 });

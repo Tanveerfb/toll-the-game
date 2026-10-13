@@ -128,7 +128,7 @@ scripts/sim.ts        Headless balance simulator (npm run sim), ruling #57
 
 - `npm run dev` / `npm run build` / `npm run lint` / `npm run test` / `npm run check`
 - `npm run test:browser` — component tests in real Chromium. **Separate from `test` on purpose**: a browser launch is not what you want in a tight loop, and `check` runs the unit suite only. Run it before shipping anything whose behaviour is timing- or pointer-dependent, because that is the half a simulated DOM cannot judge.
-- `npm run sim -- <left> <right>` — headless balance simulation across all four formats (ruling #57). `npm run sim -- --roster <id>` sweeps one kit against the whole roster. **Read the limits at the top of `lib/game/simulate.ts` before quoting a number**: no card draw, AI plays both sides. **"Base stats only" stopped being true on 2026-09-16** — a unit may carry `level`/`ascension`/`ultLevel` and a bare id still means the catalog statline, so kit comparisons are unchanged while an *encounter* can be tuned against a real player band (`playerBand`). `simulateRun` fights multi-wave runs on one HP bar. The AI plays the PLAYER side too, so a clear rate is a floor, not a prediction.
+- `npm run sim -- <left> <right>` — the headless balance simulator (ruling #57). Its limits and how a number is reported are in `lib/game/CLAUDE.md`.
 
 **A green guard is not a working guard — prove a new one fails before trusting that it passes.** Reintroduce the bug it exists to catch and watch it go red. On 2026-09-16 this found that **three of the four checks in `tests/kitDescriptionRules.test.ts` had never run**, green since the day they were written: `/\braises\b/` had been authored through a heredoc that turned each `\b` into a literal `0x08` byte, and two more used `` new RegExp(`\b${word}\b`) ``, where a **template literal** turns `\b` into a backspace at runtime. Both spellings match nothing and throw nothing. Write a regex with a `\b` into a file with the Write tool, not a heredoc, and use `\\b` inside a template literal. **Heredocs are now blocked mechanically** (2026-09-26, his choice after ~10 slips in one day): `.claude/hooks/block-heredoc.mjs`, wired in `.claude/settings.json`, refuses any Bash command containing `<<`. File content goes through Write/Edit; a scripted change is a scratchpad `.py`/`.mjs` that gets run. Proved live by a probe the hook refused.
 
@@ -138,27 +138,13 @@ scripts/sim.ts        Headless balance simulator (npm run sim), ruling #57
 
 **`test:browser` is outside `check`, so a shipped number can go stale there unseen.** `hand.browser.test.tsx` asserted the retired 56px hand-card floor and was red on `master` from the commit that changed it to 44 until 2026-09-16, because the checkpoint ran `check` alone. **Run `npm run test:browser` at the point a number it pins actually moves**, not only before shipping pointer-dependent work.
 
-## Engine Rules (see docs/ARCHITECTURE.md for detail)
+## Engine Rules
 
-- `executeSkill` (lib/game/combat.ts) is pure: takes teams, returns new teams.
-- `Action.rank` (1–3) scales `damageRanked` and `*Ranked` mechanic values; flat mechanic values do not scale; ultimates have no rank.
-- Any non-heal skill with damageRanked > 0 deals damage regardless of skill type.
-- Actions per turn = living field members + 1, capped at 3 — **both sides**
-  (`lib/game/actionEconomy.ts`). A side with `tier: "elite"` present always gets
-  the full 3, so a lone boss still acts three times. Any living unit, any order.
-- Effect durations: duration N survives N−1 turn-start ticks.
-- **Every unit is built by `buildBattleUnit` (`lib/game/buildUnit.ts`) and every
-  stat goes through `battleStats`: catalog (or phase) → progression → stage
-  effects.** The battle, the simulator, a boss's phase change, the boss brief
-  and the team picker all use it. A second path is how Molvarr's second phase
-  ignored difficulty for weeks (2026-09-26); never build combat stats any other
-  way.
-- **A battle belongs to the screen that started it** (ruling #153;
-  `BattleOwner`, persisted with the battle). `BattleLock` holds the player on that screen until the
-  battle is resolved, reload included — his rule: *"they should not be allowed
-  to go anywhere else and ignore the battle."* A new screen that launches
-  fights passes `owner` to `startCustomBattle` and rebuilds its view from it.
-- Sub (bench) units (`BattleCharacter.isSub`): passive active, no cards, untargetable, can't act; promoted to field only at turn start after a teammate died (`lib/game/sub.ts`). Battle format (4v4/3v3) sets the field cap; the 4th unit in 3v3 is the sub automatically.
+**Moved to `lib/game/CLAUDE.md` on 2026-10-13** (project-rules §SCALE: a
+folder with rules of its own carries them, and a fact lives in one file).
+It loads when work touches `lib/game/`; read it before touching the engine,
+the simulator or the save from anywhere else. The map is
+`docs/ARCHITECTURE.md`.
 
 ## How work is judged, and who owns what
 

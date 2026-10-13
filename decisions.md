@@ -231,3 +231,47 @@ needed, not started. And a new document: `docs/PC_SESSION.md`, the ordered
 list of work that needs his PC, written because he asked for *"a file
 specifically targeting PC session ... so that it is a priority."* It deletes
 itself when empty.
+
+## 2026-10-13 — The save fix: when a write happens is a pure module
+
+His go: *"what you can do in cloud session you can do it yeah you have my
+yes and go ahead for those so save fix and the area claude files."* Issues
+#28, #30 and #31 from the audit. The shape fix (#28) stores one key per
+cleared team instead of an array of arrays, with a v11 migration, and the
+guard walks the outgoing document in the tests rather than trusting the
+patch logic. The timing fixes (#30, #31) were three rules tangled inside the
+auth callback: nothing before the first read succeeds, one write per burst,
+flush instead of drop. They now live in `lib/game/cloudSync.ts` as a
+scheduler with fake-timer tests, and `AuthProvider` only wires it to
+Firebase (§MODULES: business logic out of the component). A rejected write
+was a console line; it is now a `cloudStatus` the profile page shows with
+the shared `Alert`. **Where that note sits is his to move**; it is placed
+under the account header because that is the screen the account lives on.
+#29 (a stale device's whole snapshot wins) is deliberately left: it changes
+what is written, not when, and wants `onSnapshot`. Not verified against a
+real Firestore from the container.
+
+## 2026-10-13 — A new character's art profile comes from a schema, not from Duke's file
+
+His words: *"we have to make sure, like, we have a schema that Claude or
+myself can use when drafting a new character. And so it doesn't have to be
+using duke kit as base."* `scripts/lora/characters/profile.schema.json`
+describes every key a profile carries and which script reads it;
+`new_profile.py` writes a fresh one with the TODO fields the lock fills in
+and a body-shot list that already carries the action shots #186 requires;
+`check_profile.py` validates (no dependencies: `jsonschema` is not on his
+PC) and warns when a set has too few actions, which every existing profile
+now does on purpose. The existing profiles were not rewritten to the schema;
+it is written loosely enough that they pass, and the checker's warnings say
+where they fall short. If he also meant a schema for the kit JSON or a
+template in `toll-kits`, that is a second job.
+
+## 2026-10-13 — Area CLAUDE.md files, and the engine rules leave AGENTS.md
+
+His yes to the suggestion. `lib/game/CLAUDE.md` holds the engine rules, the
+simulator's limits and the save's three rules; `scripts/skill_art/CLAUDE.md`
+holds that folder's traps and its registry rule. Each fact moved rather than
+copied (§SCALE), and the root `AGENTS.md` keeps a pointer. The root file is
+still long; the next candidates to move are the mobile rules (to
+`components/CLAUDE.md`) and the kit-import block (to `data/characters/`),
+not done because neither folder had a session touching it.

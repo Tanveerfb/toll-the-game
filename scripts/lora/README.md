@@ -5,6 +5,13 @@ The approved recipe (originally docs/ART_PIPELINE.md, "Character LoRA recipe", n
 docs/archive/ART_PIPELINE-character-history.md; frozen
 2026-09-27) as runnable steps. One profile per character in `characters/`;
 everything else is shared, so a new character is a new profile, not new code.
+**A new profile starts from the schema, never from another character's file**
+(his rule, 2026-10-13): `python scripts/lora/new_profile.py <id> --trigger
+<id>toll [--subject 1boy]` writes it with every field documented in
+`characters/profile.schema.json` and a body-shot list that already carries
+the action shots ruling #186 requires; `python scripts/lora/check_profile.py
+<id>` validates it (types, required keys, a TODO left unfilled, too few
+action shots) before `gen_candidates.py`.
 Run with system `python` and `</dev/null`; ComfyUI must be up on :8188. (The
 embedded Python's `._pth` leaves this folder off the path, so `import common`
 fails there; `stage_dataset.py` needs Pillow, which system Python must have.)

@@ -24,8 +24,10 @@ so the `extraKnownMarketplaces` / `enabledPlugins` block from the
   redesign since 2026-10-13**, his call: he wants something more professional
   and less bold. Options are drawn in `docs/design/mockups/theme-options.html`
   and nothing is locked.
-- **Area files**: none. **Map**: `docs/ARCHITECTURE.md` (the engine, not yet
-  the §SCALE module table).
+- **Area files** (§SCALE, since 2026-10-13): `lib/game/CLAUDE.md` (engine
+  rules, simulator, the save) and `scripts/skill_art/CLAUDE.md` (kit-art
+  scripts). A fact lives in one file only. **Map**: `docs/ARCHITECTURE.md`
+  (the engine, not yet the §SCALE module table).
 
 **The adoption audit is done (2026-09-27): read [`conventions.md`](conventions.md)
 before any structural change.** It sorts every gap against the rules into

@@ -43,7 +43,14 @@ to `docs/archive/STATUS-YYYY-MM.md` with a line in
    the 0.65 route. Both are candidates for a retrain on an action-bearing
    set when he next has GPU time.
    `scripts/skill_art/README.md` and `scripts/pose/README.md` are new;
-   `lyra.json` gained a reconstructed `lora_use` / `kit_art`. Still to ask
+   `lyra.json` gained a reconstructed `lora_use` / `kit_art`. Later the
+   same day, on his go: **the save fix** (`lib/game/cloudSync.ts` decides
+   when a write happens; `teamKey` replaces the nested team arrays; v11;
+   `cloudStatus` on `/profile`), **area `CLAUDE.md` files** for `lib/game`
+   and `scripts/skill_art` (the engine rules moved out of `AGENTS.md`), and
+   **the character profile schema** (`profile.schema.json`,
+   `new_profile.py`, `check_profile.py`) so a new character's art profile
+   never starts from Duke's file. Still to ask
    him: `public/unreleased/` (7.3 MB), `lib/duel`, gsap, the MDX stack for
    the closed news, `docs/design/characters` (11 MB), 49 unused exports.
 
@@ -54,9 +61,12 @@ sheets with him (S2, K4, K10, U19), not picked. Batra held at step 1.
 **Next:** on the PC, `docs/PC_SESSION.md` in its order: enable the `fleet`
 plugin, then **rebuild Duke's dataset with action shots and retrain** (his
 call, 2026-10-13; the 2026-10-08 official candidates are superseded), with
-the generic draft and render scripts built first. In the cloud: the save fix
-(#28, #30, #31, no design content, confirmed as needed, not started) and the
-area `CLAUDE.md` files. His: the theme, the audit decisions.
+the generic draft and render scripts built first. **The save fix (#28, #30,
+#31) and the area `CLAUDE.md` files landed in the cloud on his go**, same
+day; the first signed-in session verifies the save against a real Firestore
+(clear an Epic stage, reload, the record survives, `/profile` shows no
+cloud note). Still open in the save: #29 (a stale device's whole snapshot
+wins). His: the theme, the audit decisions.
 
 **Blocked on him:**
 - Round two: A Tiles, B Board or C Posters, or parts of each; and the tab
@@ -79,7 +89,8 @@ area `CLAUDE.md` files. His: the theme, the audit decisions.
 
 **Don't trust:**
 - Any claim that the cloud save works end to end for a signed-in player who
-  has cleared an Epic stage (#28).
+  has cleared an Epic stage: #28 is fixed in code (v11, keyed teams, the
+  shape guard) and **not yet seen working against a real Firestore**.
 - `output\blue_duke\candidates` on his PC: superseded, never lock them.
 - Sim numbers from before 2026-10-03.
 - In the cloud container: `next build` fails on Google Fonts (the sandbox,

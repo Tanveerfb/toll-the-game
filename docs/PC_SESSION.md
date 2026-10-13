@@ -37,7 +37,15 @@ Run `charart`, which routes to `charlora`:
 
 - Step 1 again with action shots: about a third of the body shots as
   actions, each different, posed with the mannequin or a reference skeleton.
-  Put the shot list and the count to him before generating. Keep what the
+  Put the shot list and the count to him before generating.
+  `new_profile.py`'s default body-shot list has five action slots; copy
+  those into `duke.json`'s `body_shots` (keep his approved calm slots that
+  the v2 set fixed), then `check_profile.py duke` stops warning.
+  `gen_candidates.py` has no mannequin input yet: the action clauses carry
+  the motion in words, and a slot that comes back standing is re-rolled
+  or, better, given a `pose` key that `gen_candidates.py` learns to read
+  (depth + openpose from `scripts/pose/`, the same `union()` the drafts
+  use). That addition is small and worth doing before the batch. Keep what the
   v2 set fixed (the ear strand is gone; `scripts/lora/duke_v2_fix/`), the
   boots lock and the skin tone. He approves by number, then the captions.
 - Step 2: a new `dataset_name`, the frozen recipe, `duke_toll_v3`; back up
@@ -72,17 +80,17 @@ action-bearing set only matters when he asks for a Sara piece to be redone.
 
 ## Not PC-only, listed so the order is complete
 
-- **The save fix** (issues #28, #30, #31; `docs/GAME_AUDIT_2026-10-13.md`
-  Part 1). No design content, one session, cloud-capable. He confirmed it
-  needs doing (2026-10-13); it has not been started. `savefield` carries
-  the Firestore shape rules it will need.
-- **Area `CLAUDE.md` files** for `lib/game/` and `scripts/skill_art/`
-  (§SCALE): he said yes on 2026-10-13. Claude's job, cloud-capable; each
-  fact moves out of the root file rather than being copied.
+- ~~**The save fix** (issues #28, #30, #31)~~ **Done in the cloud,
+  2026-10-13**, on his go. Not verified against a real Firestore: the first
+  PC or phone session that signs in should clear an Epic stage, reload,
+  and check the record survived (`docs/STATUS.md`, "Not verified").
+- ~~**Area `CLAUDE.md` files**~~ **Done 2026-10-13**: `lib/game/CLAUDE.md`
+  and `scripts/skill_art/CLAUDE.md`; the engine rules left `AGENTS.md`.
+- ~~The schema question~~ **Answered 2026-10-13**: a schema for drafting a
+  new character's art profile so it does not start from Duke's file.
+  `scripts/lora/characters/profile.schema.json`, `new_profile.py`,
+  `check_profile.py`. If he meant something else as well (a kit JSON schema
+  in this repo, a template in `toll-kits`), he says so.
 - **Still his:** the theme pick (round two did not click; he will look on
   the PC), the eight audit decisions (Part 5), the two rules conflicts in
-  `conventions.md`, and one open question from 2026-10-13 that the cloud
-  session could not place: *"when we're designing a new character kit ...
-  the schema needed"*: a module or schema for authoring a new kit. Whether
-  that means a zod schema for `data/characters/*.json` in this repo, a
-  template in `toll-kits`, or something else is his to say.
+  `conventions.md`.

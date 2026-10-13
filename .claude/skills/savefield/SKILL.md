@@ -30,7 +30,9 @@ a first-clear bundle twice (AGENTS.md).
 
 1. **Name it by what the player understands** (§NAMING) and decide its
    **shape with Firestore's limits in mind**: no nested arrays (`string[][]`
-   is rejected: issue #28), no `undefined` (drop the key or use `null`), no
+   was rejected: issue #28, fixed by storing one key per team and guarded
+   since 2026-10-13 by `firestoreShapeProblems` over `cloudDocument()` in
+   `tests/cloudSave.test.ts`), no `undefined` (drop the key or use `null`), no
    `Date` (epoch ms), no unbounded growth (cap lists; `epicClears` caps distinct
    teams at 30). A map keyed by id beats an array you search.
 2. **Default it** in `DEFAULT_PLAYER_STATE` and add it to `partialize` if the

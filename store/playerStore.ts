@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { spendStamina, STAMINA_CAP } from "@/lib/game/stamina";
 import { AUTO_CLEAR_TICKETS_PER_RANK } from "@/lib/game/autoClear";
-import { applyEpicClear, type EpicClears } from "@/lib/game/epicClears";
+import { applyEpicClear, teamKey, type EpicClears } from "@/lib/game/epicClears";
 import { planLevelUp, type ManualSpend } from "@/lib/game/leveling";
 import {
   ascensionBlocker,
@@ -543,10 +543,32 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     };
   }
 
+  if (version < 11) {
+    // v10 → v11: each cleared team becomes one key (`"duke|lyra"`) instead of
+    // an array of ids. Firestore rejects an array nested in an array, so the
+    // v10 shape made every cloud write throw from the first Epic Battles
+    // clear, silently (issue #28, 2026-10-13). A record that is already keyed
+    // passes through; a legacy row is rebuilt through `teamKey` so it is
+    // sorted and distinct the same way a fresh clear would be.
+    const legacy = (state.epicClears as Record<string, { teams?: unknown }> | undefined) ?? {};
+    const epicClears: EpicClears = {};
+    for (const [stage, record] of Object.entries(legacy)) {
+      const teams = Array.isArray(record.teams) ? record.teams : [];
+      const keyed = teams.map((team) =>
+        Array.isArray(team) ? teamKey(team.map(String)) : String(team),
+      );
+      epicClears[stage] = {
+        ...(record as unknown as EpicClears[string]),
+        teams: [...new Set(keyed.filter((key) => key !== ""))],
+      };
+    }
+    state = { ...state, epicClears };
+  }
+
   return state as unknown as PersistedPlayerData;
 }
 
-export const CURRENT_PLAYER_STATE_VERSION = 10;
+export const CURRENT_PLAYER_STATE_VERSION = 11;
 
 export const usePlayerStore = create<PlayerState>()(
   persist(
@@ -1100,7 +1122,29 @@ export const usePlayerStore = create<PlayerState>()(
       name: 'toll-player-storage',
       version: CURRENT_PLAYER_STATE_VERSION,
       migrate: migratePlayerState,
-      onRehydrateStorage: () => (state) => {
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          // A save that will not migrate (hand-edited, or written by a build
+          // this one cannot read) used to leave `hasHydrated` false forever,
+          // and every gated screen stayed a skeleton with no message (audit
+          // 2026-10-13, "a corrupt save bricks the UI silently"). The raw
+          // item is kept under a dated key so nothing is lost, and the game
+          // comes up on defaults rather than not at all.
+          try {
+            const raw = window.localStorage.getItem("toll-player-storage");
+            if (raw) {
+              window.localStorage.setItem(
+                `toll-player-storage.unreadable.${Date.now()}`,
+                raw,
+              );
+            }
+          } catch {
+            // Storage unavailable: nothing to keep.
+          }
+          console.error("Player save could not be read; starting from defaults.", error);
+          usePlayerStore.setState({ hasHydrated: true });
+          return;
+        }
         state?.setPlayerState({ hasHydrated: true });
       },
     }

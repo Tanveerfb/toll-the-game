@@ -13,9 +13,11 @@ environment traps first.
 
 1. The design sheet: `toll-kits/designs/characters/<id>.md` (the look is his).
 2. The profile `scripts/lora/characters/<id>.json`. If it does not exist,
-   copy the field set of `duke.json`: `identity`, `identity_upper`,
-   `negative_extra`, `style`, `face_ref`, `hand_fix`, `batch`, `body_shots`,
-   `face_shots`, `design_note`, `lock`, `approved`, `lora_use`.
+   **create it from the schema, never from another character's file**:
+   `python scripts/lora/new_profile.py <id> --trigger <id>toll [--subject
+   1boy]`, then fill the TODO fields from the lock. Every key is described in
+   `characters/profile.schema.json`; `python scripts/lora/check_profile.py
+   <id>` validates it and warns when the body shots carry too few actions.
 3. `docs/CHARACTER_ART.md` steps 0–2 and the Environment table.
 4. `scripts/lora/README.md` for the script arguments.
 5. Two finished profiles (`duke.json`, `sara_v2.json`) for what a complete
