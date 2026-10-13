@@ -207,3 +207,27 @@ the screens it looks bad on. The lesson for the next redesign request:
 **ask which screens work before drawing**, and draw the failing screens from
 the language of the working ones. `theme-options.html` stays in the mockups
 folder as the record of the options he rejected, per #144's convention.
+
+## 2026-10-13 — Duke's LoRA is rebuilt on an action-bearing dataset, not finished on the 0.65 route
+
+Ruling #186 settled that a dataset must carry action shots. Duke's v2 LoRA was
+trained on a calm set and his kit sat at step 4 with official candidates
+rendered through the 0.65 workaround. Offered the two routes, he chose the
+rebuild: *"we will have to rebuild Duke's data set and then retrain the LoRa
+because obviously that is no-no considering what we need for the game."* The
+2026-10-08 candidates are superseded; the order of work is `docs/PC_SESSION.md`.
+
+## 2026-10-13 — Which workflow suggestions he took
+
+From the cleanup-and-skills session's list: **`newevent`, yes** (*"that is
+something that I was already thinking in the back of my mind. So, yep, add
+that in."*). **A `simcheck` skill, no**: *"when I say X currently has no
+counter, it means that right now ... we will handle that in the future ...
+it doesn't need to be in a workflow"*; #138 stays a ledger rule, not a skill.
+**Generic draft and render scripts, yes** (read from speech-to-text; to be
+confirmed in one line on the PC). **Area `CLAUDE.md` files, yes.** **The
+`fleet` plugin**, he enables on the PC. **The save fix**, confirmed as
+needed, not started. And a new document: `docs/PC_SESSION.md`, the ordered
+list of work that needs his PC, written because he asked for *"a file
+specifically targeting PC session ... so that it is a priority."* It deletes
+itself when empty.

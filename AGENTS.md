@@ -10,7 +10,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # toll-the-game — Project Documentation
 
-Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDOFF.md` first** — context, design rulings ledger, working style. Architecture in `docs/ARCHITECTURE.md`; current state in `docs/STATUS.md` (short, rewritten each checkpoint; history in `docs/archive/`); issues in `docs/issues.md`; plan in `docs/ROADMAP.md`; character, kit and card art in `docs/CHARACTER_ART.md` (walked by the `charart` skill); other art generation in `docs/ART_PIPELINE.md`. How this repo diverges from `project-rules.md` is `conventions.md`, and why is `decisions.md`.
+Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDOFF.md` first** — context, design rulings ledger, working style. Architecture in `docs/ARCHITECTURE.md`; current state in `docs/STATUS.md` (short, rewritten each checkpoint; history in `docs/archive/`); issues in `docs/issues.md`; plan in `docs/ROADMAP.md`; character, kit and card art in `docs/CHARACTER_ART.md` (walked by the `charart` skill); other art generation in `docs/ART_PIPELINE.md`. **Work that needs his PC is ordered in `docs/PC_SESSION.md`**: a PC session reads it after `relay`, a cloud session appends to it. How this repo diverges from `project-rules.md` is `conventions.md`, and why is `decisions.md`.
 
 **Never block on missing art.** If a feature needs an image the game doesn't have, append a request to `docs/ART_REQUESTS.md`, ship the feature with a fallback, and move on — ComfyUI runs in its own dedicated sessions, and that file is what they read.
 
@@ -33,6 +33,7 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 | `redesign` | He wants a screen to look different: ask what works first, capture the live screens, draw options from the live anatomy, measure, publish an artifact when he is on his phone, record the pick (#144, #185) |
 | `savefield` | Adding, renaming or reshaping a persisted player-save field: the cloud-sync decision, the migration, the Firestore shape rules, the guard tests |
 | `importkit` | Bringing an approved kit from `toll-kits` in, game-ready but unreleased, in one fixed order |
+| `newevent` | A new boss, trial, arc or stage: his two answers (seen when, entered when, #127) and the rest of the brief first, then entry, encounter, two reward lists, guards, measurement |
 | `relay` | Starting a session: load `docs/STATUS.md`, then check it against the repo before any work |
 | `checkpoint` | Ending a session: `checkpoint` / `git checkpoint` / `git checkpoint max` (project-rules §GIT) |
 

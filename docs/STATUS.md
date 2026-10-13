@@ -33,7 +33,8 @@ to `docs/archive/STATUS-YYYY-MM.md` with a line in
 4. **Cleanup and skills**, while he thinks about the theme. Removed what
    knip proved unused (`tailwind-variants`, four dead hook/lib files);
    closed audits and finished plans archived; `Plans/README.md` rewritten.
-   Seven project skills added: `redesign`, `savefield`, `importkit`, and the
+   Eight project skills added: `redesign`, `savefield`, `importkit`,
+   `newevent` (his yes to the suggestion; `simcheck` he declined), and the
    art pipeline split into `charart` (routes) → `charlora` / `kitart` /
    `artinstall`, with `kitart` carrying the **slot plan he OKs before any
    GPU time** and both drafting recipes (Lyra's at 0.9, the doc's at 0.65).
@@ -50,9 +51,12 @@ to `docs/archive/STATUS-YYYY-MM.md` with a line in
 2026-10-08 status left it: `charart` step 4, LoRA v2 installed, four official
 sheets with him (S2, K4, K10, U19), not picked. Batra held at step 1.
 
-**Next:** his picks, in this order if he has one session: the save fix
-(#28, #30, #31, one session, no design content), then the theme, then the
-loop decisions. Then blue Duke's picks when he is back on his PC.
+**Next:** on the PC, `docs/PC_SESSION.md` in its order: enable the `fleet`
+plugin, then **rebuild Duke's dataset with action shots and retrain** (his
+call, 2026-10-13; the 2026-10-08 official candidates are superseded), with
+the generic draft and render scripts built first. In the cloud: the save fix
+(#28, #30, #31, no design content, confirmed as needed, not started) and the
+area `CLAUDE.md` files. His: the theme, the audit decisions.
 
 **Blocked on him:**
 - Round two: A Tiles, B Board or C Posters, or parts of each; and the tab
@@ -61,8 +65,12 @@ loop decisions. Then blue Duke's picks when he is back on his PC.
 - Two rules conflicts (`conventions.md`, "v3 sections"): the `STATUS.md`
   format and where mockups live. Also: a Trello board or none; which Node the
   Vercel project runs.
-- Duke: picks from the official sheets, snow and river plates, the Slide
-  name. Batra: the `lora_batra_set_a` options.
+- Duke: the action-shot list and count for the rebuilt dataset, then the
+  LoRA v3 step, then new drafts at 0.9; the Slide name still open. Batra:
+  the `lora_batra_set_a` options, now with action shots (#186).
+- One line of his the session could not place: *"when we're designing a
+  new character kit ... the schema needed"*. A zod schema for the kit JSON
+  here, a template in `toll-kits`, or something else: his to say.
 - From 2026-10-03, still open: the Merge badge on a phone; #180's calls;
   missions for Epic Battles; the Gon/Killua/Leorio answer to Tao (#138); the
   Caila and Sara sheets; the new card texts; Lyra's C4 and passive placement;

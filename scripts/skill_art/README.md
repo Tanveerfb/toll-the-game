@@ -25,7 +25,8 @@ repo root; the scripts import `scripts/lora/common.py` (`base_graph`, `queue`,
 
 ## Queued
 
-- **A generic `kit_drafts.py` and `official_render.py`** that take `<id>`,
+- **A generic `kit_drafts.py` and `official_render.py`** (his yes,
+  2026-10-13; `docs/PC_SESSION.md` item 3, built before Duke's redraft) that take `<id>`,
   `<slot>`, `--pose` and read `lora_use` and `art_direction` from the profile,
   with `union()` moved into `scripts/lora/common.py`. Until then, Duke's
   files are copied per character, which is how the recipe drifts.

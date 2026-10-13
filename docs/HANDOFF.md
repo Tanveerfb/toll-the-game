@@ -2067,6 +2067,10 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
      LoRA, no longer the recipe; a LoRA trained on an action-bearing set is
      expected to draft at 0.9 as Lyra's did. Sara's and Duke's current LoRAs
      were trained on calm sets and keep the 0.65 route until retrained.
+     **Duke's is retrained**, his call the same day: *"we will have to
+     rebuild Duke's data set and then retrain the LoRa because obviously that
+     is no-no considering what we need for the game."* The order of work is
+     `docs/PC_SESSION.md`; the 2026-10-08 official candidates are superseded.
    - **Claude's reading, flagged as an inference:** how many action shots and
      which poses is not fixed by this. A working number is a third of the
      body shots, each a different action, none repeating the kit's slot
