@@ -326,7 +326,7 @@ describe("Thief fixture — Lifesteal, Extort, Bleed Them Dry", () => {
     );
   });
 
-  it("Grand Larceny extorts per-stat and refreshes instead of stacking", () => {
+  it("Pickpocket extorts per-stat and refreshes instead of stacking", () => {
     const thief = fromData(thiefData, "player");
     const e1 = makeChar({
       instanceId: "e1",

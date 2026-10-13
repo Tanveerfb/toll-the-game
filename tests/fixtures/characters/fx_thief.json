@@ -34,7 +34,7 @@
       ]
     },
     {
-      "skillName": "Grand Larceny",
+      "skillName": "Pickpocket",
       "description": "Applies [extort.value]% Extort effect to all enemies for [extort.duration] turns.",
       "characterId": "fx_thief",
       "type": "debuff",
@@ -65,7 +65,7 @@
     }
   ],
   "ultimate": {
-    "skillName": "Pickpocket",
+    "skillName": "Grand Larceny",
     "description": "Does damage equal to ATK-scaled to one enemy; extorts [extort.value]% of their ATK and DEF for [extort.duration] turns.",
     "characterId": "fx_thief",
     "type": "ultimate",
