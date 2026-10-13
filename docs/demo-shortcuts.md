@@ -1,14 +1,14 @@
 # Shortcuts register
 
 **Who updates this:** any change that adds, moves or removes a client-side
-decision about something with value. `project-rules.md` §11 requires the
+decision about something with value. `project-rules.md` §SHORTCUTS requires the
 register, and `decisions.md` (2026-09-27) is why these are allowed for now.
 
 **The exception ends before roadmap item 6 (monetisation) or any public
 launch, whichever is first.** This file is that phase's backlog: every row
 must be server-side by then.
 
-**Not marked in code yet.** §11 also wants a `// DEMO:` comment at each site,
+**Not marked in code yet.** §SHORTCUTS also wants a `// DEMO:` comment at each site,
 pointing here. That is queued in `conventions.md`; the 2026-09-27 audit
 changed no code.
 
@@ -30,6 +30,6 @@ localStorage.
 
 ## Safe to build on
 
-Nothing today is a mock behind an adapter: there is no adapter (§9, queued in
+Nothing today is a mock behind an adapter: there is no adapter (§DATA, queued in
 `conventions.md`). Seed data and the kit JSON are real content, not
 shortcuts.

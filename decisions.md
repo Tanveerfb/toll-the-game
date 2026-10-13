@@ -133,3 +133,59 @@ phase's backlog.
 
 **Not covered:** secrets. §22's rules on credentials apply in full; there are
 none in the client, and the Firebase web config is public by design.
+
+---
+
+## 2026-10-13 — The rules are synced to v3.4.0; the audit is not redone
+
+**His ask, in a cloud session:** *"do the sync with the latest version of the
+fleet standards."* The fleet standard now lives in `Tanveerfb/fleet-standards`
+and ships as the `fleet` plugin; its `sync-standards` skill was followed.
+
+Done: `project-rules.md` copied from the master at its latest commit
+(`3022711`, v3.4.0); 55 numbered section references translated to v3 names
+in `CLAUDE.md`, `AGENTS.md`, `conventions.md`, `docs/STATUS.md`,
+`docs/issues.md`, `docs/environment.md`, `docs/demo-shortcuts.md` and
+`docs/design-system.md`, with the map in the fleet `CHANGELOG.md`. **This
+file's older entries keep their v2 numbers**: it is append-only, and the map
+reads them. `conventions.md` keeps its "Audited against v2.4.0" line, because
+copying is not auditing; it gains a first look at the v3-only sections.
+
+Not done, and why:
+- **`.claude/settings.json` was not written.** The session's permission
+  classifier refused the edit as self-modification. The block the skill asks
+  for (`extraKnownMarketplaces` for `tanveerfb`, `enabledPlugins`
+  `fleet@tanveerfb`) is his to add; until then the local skill copies in
+  `.claude/skills/` stay.
+- **The v3 re-audit** is offered as separate work (`adopting-the-standard.md`
+  section 1). Two real conflicts surfaced on the way and are questions, not
+  changes: the `docs/STATUS.md` format (his 2026-09-27 split against §DOCS's
+  two-zone file) and where mockups live (§OWNER against #144).
+
+---
+
+## 2026-10-13 — Shōnen Ink is up for replacement; three options are drawn
+
+**His words:** *"I did choose Shonen Inc a while back for the home page but
+it does not look good to me, I'll be honest here, I thought it would grow on
+me but it did not. So we need something else, something else that looks a
+bit more professional. Not too bold, but something that does the job. And we
+may even change some of the layout if you need to."*
+
+This is a redesign under §DESIGN, so it starts as mockups, not a build
+(#144, §OWNER). Three options taking different positions are in
+`docs/design/mockups/theme-options.html`, each on the same four screens at
+390×844, with live tabs, selection, filters and a cost that recomputes:
+
+- **A · Launcher** — Clean SaaS, dark product. The chrome disappears; the
+  art is the colour.
+- **B · Gallery** — Minimalist, soft minimal, light. Paper, white cards, a
+  serif, a bento hub.
+- **C · Ink wash** — Japandi, zen garden, built from the existing tokens:
+  keeps the body face, the element hues and the dark ground; drops Bangers,
+  the skew, the slab, the halftone and the yellow.
+
+All three render sentence case (his 2026-09-27 call), keep the four tabs and
+the 44px floor, and keep the five element hues for units only. Nothing is
+locked; ruling #154 stands until he picks. The component round (§SHADCN)
+follows the pick.

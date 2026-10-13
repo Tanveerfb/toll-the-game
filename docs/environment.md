@@ -2,7 +2,7 @@
 
 **Who updates this:** whoever adds an environment variable, an external
 account or a local tool the build depends on, in the same change
-(`project-rules.md` §2, §26). **Names, purposes and owners only, never
+(`project-rules.md` §DOCS, §FIREBASE). **Names, purposes and owners only, never
 values.** Started 2026-09-27 from the Environment section of `docs/STATUS.md`,
 moved verbatim below the table.
 

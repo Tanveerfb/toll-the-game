@@ -1,9 +1,31 @@
 @AGENTS.md
 @project-rules.md
 
-**`project-rules.md` is the fleet standard (v2.4.0), copied from
-`E:\Projects\_COMMON` on 2026-09-26.** That folder holds the master copy. Improve
-it there and re-copy; never edit this copy in place.
+**`project-rules.md` is the fleet standard, synced to v3.4.0 on 2026-10-13**
+(from v2.4.0; section references in the live docs were translated with the
+map in the fleet `CHANGELOG.md`). The master copy is
+`standards/project-rules.md` in `github.com/Tanveerfb/fleet-standards`, which
+also ships as the `fleet` Claude Code plugin. **Not yet enabled here**: the
+2026-10-13 cloud session was refused the write to `.claude/settings.json`,
+so the `extraKnownMarketplaces` / `enabledPlugins` block from the
+`sync-standards` skill is still his to add. `sync-standards` brings this copy up to date;
+`propose-standard` sends a fix back. Never edit this copy in place.
+
+## Project identity
+
+- **Name**: toll-the-game (Toll, the Element Clash card battle game)
+- **Repo**: `Tanveerfb/toll-the-game`, branch `master`
+- **Deploys**: Vercel, from `master`, **auto-deploys on every push**. Live at
+  `https://toll-the-game.vercel.app/`. Real players: none yet (he and Claude
+  play). Cloud sessions work on their harness branch (§GIT).
+- **Trello board**: not set. He has not said whether this project has one
+  (§TRELLO): until he does, no Trello work.
+- **Motif**: Shōnen Ink (ruling #154, `docs/design-system.md`). **Under
+  redesign since 2026-10-13**, his call: he wants something more professional
+  and less bold. Options are drawn in `docs/design/mockups/theme-options.html`
+  and nothing is locked.
+- **Area files**: none. **Map**: `docs/ARCHITECTURE.md` (the engine, not yet
+  the §SCALE module table).
 
 **The adoption audit is done (2026-09-27): read [`conventions.md`](conventions.md)
 before any structural change.** It sorts every gap against the rules into
@@ -22,4 +44,4 @@ granted or queued, and [`decisions.md`](decisions.md) records his four answers:
   environment and decisions have their own files.
 
 Where `AGENTS.md`, `conventions.md` and `project-rules.md` disagree, **stop and
-ask** (rules §1). Everything else converts to the standard **on touch**.
+ask** (rules §SCOPE). Everything else converts to the standard **on touch**.
