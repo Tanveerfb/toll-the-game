@@ -28,9 +28,9 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 | `charart` | Making a playable character's art: design lock, LoRA, kit/card drafts, finish, composite, lock. Enforces his approval gates; the method is `docs/CHARACTER_ART.md` |
 | `dokkanartresearch` | Pose research for kit art: find a Dokkan card on dokkandb.com, view it, save it to the reference library. Pose and composition only; saving asks first |
 | `relay` | Starting a session: load `docs/STATUS.md`, then check it against the repo before any work |
-| `checkpoint` | Ending a session: `checkpoint` / `git checkpoint` / `git checkpoint max` (project-rules §28) |
+| `checkpoint` | Ending a session: `checkpoint` / `git checkpoint` / `git checkpoint max` (project-rules §GIT) |
 
-`relay` and `checkpoint` are **fleet skills, copied here (2026-10-03) for cloud sessions**, which can't see his PC's `~/.claude/skills/`. The master copies are the user-level ones. Improve those and re-copy; never edit these in place.
+`relay` and `checkpoint` are **fleet skills, copied here (2026-10-03) for cloud sessions**, which can't see his PC's `~/.claude/skills/`. The fleet standard now ships them in the `fleet` plugin (`Tanveerfb/fleet-standards`), which `.claude/settings.json` should enable so every session, cloud ones included, loads `fleet:checkpoint` and `fleet:relay`; the 2026-10-13 sync could not write that file (see `CLAUDE.md`). **The copies here are one version behind the plugin's** (no Trello mirror, no other-agent note) and are kept only until a cloud session confirms the plugin's pair appears; then delete `.claude/skills/checkpoint` and `.claude/skills/relay` in the same commit. Never edit them in place.
 
 `Plans/` holds specced-but-unbuilt work — dated design files a future session can pick up cold. Tanveer builds those in their own dedicated sessions; **don't start one mid-conversation**, and don't let a plan rot silently: if the code it describes changes, the plan is stale and says so or goes.
 
