@@ -115,7 +115,10 @@ store/                gameStore.ts (battle + deck + battle owner), playerStore.t
 content/news/         MDX patch notes (updates/ + notices/). **Closed and emptied
                       2026-10-03 (#179)**: `NEWS_OPEN` in lib/news/open.ts;
                       /news reads "Coming soon"
-data/characters/      Character kit JSON (source of truth for kits)
+data/characters/      Character kit JSON (source of truth for kits); README.md there
+                      is the authoring guide. A new kit starts from data/kit.template.json
+                      via `npm run newkit`, never from another character's file;
+                      data/kit.schema.json is the zod schema written out for editors
 data/banners/         Gacha banners; data/orders/ Bureau Orders
 data/arcs/            Epic Battles arcs (one JSON per arc, parsed by lib/game/epicBattles.ts)
 types/                Shared TypeScript contracts

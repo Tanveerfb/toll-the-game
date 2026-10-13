@@ -10,6 +10,16 @@ he names** under his direction. Either way
 he owns skill names, mechanical effects, damage multipliers and final kit JSON —
 `AGENTS.md` still applies: don't invent or rebalance mechanics unprompted.
 
+**Starting a kit (2026-10-13).** `npm run newkit -- <id> --name "<Name>"
+--color <element>` copies `data/kit.template.json`, stamps the id and the
+next free card number and sets `unreleased`. **Never start from another
+character's file**: his rule, after Duke's became the base for everything.
+The shape is the template, the law is `lib/game/characterSchema.ts`
+(`data/kit.schema.json` for editors), the content is his draft.
+`data/characters/README.md` has the steps that follow; in `toll-kits` the
+same template goes into `drafts/<id>/kit.json` and `npm run audit` checks it
+against the same schema.
+
 **He names the character. Every time.** Don't self-select a subject and start
 drafting, even after offering and hearing no objection (Tanveer, 2026-08-10). He
 works from a roster plan and stays inside the reference anime he actually knows

@@ -1,0 +1,81 @@
+{
+  "$schema": "./kit.schema.json",
+  "$comment": "The starting point for every new kit: `npm run newkit -- <id> --name <Name> --color <element>` copies it, drops every $comment, stamps the id, the next free card number and `unreleased: true`. Never start from another character's file (his rule, 2026-10-13). Every value here is a placeholder for his draft; he owns every name, number and mechanic. The schema is lib/game/characterSchema.ts (data/kit.schema.json for editors); the design rules and stat bands are docs/design/KIT_DESIGN.md; wording is the kitwords skill, the audit is kitcheck.",
+  "id": "new_character",
+  "cardNumber": 100000,
+  "name": "New Character",
+  "heading": "A Title Above The Name",
+  "color": "blue",
+  "tags": ["Human"],
+  "lore": "One or two sentences for the archive.",
+  "atk": 230,
+  "def": 140,
+  "hp": 3200,
+  "unreleased": true,
+  "skills": [
+    {
+      "$comment": "Skill 1. `type` fixes the card colour (attack red, attackDebuff purple, buff blue, debuff purple, heal green, stance yellow). `damageRanked` is [R1, R2, R3] % of `statMultiplier`; a non-damage skill carries [0, 0, 0]. One mechanic entry per effect, in the order they apply; a self-buff before the hit boosts the hit (ruling #22).",
+      "skillName": "Opening Strike",
+      "description": "Raises ATK for 1 turn; then does damage equal to ATK-scaled to one enemy.",
+      "characterId": "new_character",
+      "type": "attack",
+      "statMultiplier": "atk",
+      "damageRanked": [195, 240, 300],
+      "mechanics": [
+        {
+          "$comment": "Flat magnitude, flat duration: his draft wrote them unbracketed. `targetSelf` is the legacy spelling of applyTo: self.",
+          "type": "buff",
+          "targetSelf": true,
+          "stat": "atk",
+          "valuePercent": 30,
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "$comment": "Skill 2. A rank-scaled magnitude is `valueRanked` and a rank-scaled duration is `durationRanked`, each [R1, R2, R3]; `applyToRanked` widens the audience by rank. `aoe` means every enemy on the field.",
+      "skillName": "Sweeping Blow",
+      "description": "Does damage equal to ATK-scaled to all enemies and lowers their DEF for [debuff.duration] turns.",
+      "characterId": "new_character",
+      "type": "attackDebuff",
+      "statMultiplier": "atk",
+      "damageRanked": [150, 190, 250],
+      "mechanics": [
+        { "type": "aoe" },
+        {
+          "type": "debuff",
+          "stat": "def",
+          "valueRanked": [20, 30, 50],
+          "durationRanked": [1, 1, 2]
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "$comment": "No ranks. `damage` is the flat % and `damageByUltLevel` the six-step ladder for ult levels 1 to 6 (ruling #92); an NPC or boss carries `damage` alone.",
+    "skillName": "Decisive Blow",
+    "description": "Does damage equal to ATK-scaled to one enemy.",
+    "characterId": "new_character",
+    "type": "ultimate",
+    "statMultiplier": "atk",
+    "damage": 350,
+    "damageByUltLevel": [350, 385, 430, 475, 520, 575],
+    "mechanics": []
+  },
+  "passive": {
+    "$comment": "Single-block shorthand: one `trigger` and its `mechanics`. Several condition headings use `blocks` instead (each with its own trigger, heading and mechanics). `description` is markdown in the game's voice: `# When ...` headings, `- ` bullets, 👆 / 👇, (Max N), (Uncancellable). `worksFromSub` defaults to false.",
+    "name": "Steady Hands",
+    "description": "- [Human] allies' basic stats 5% 👆 during battle",
+    "trigger": "onBattleStart",
+    "worksFromSub": false,
+    "mechanics": [
+      {
+        "type": "synergy",
+        "conditionTags": ["Human"],
+        "valuePercent": 5,
+        "flatBonus": true,
+        "stats": ["atk", "def", "hp"]
+      }
+    ]
+  }
+}

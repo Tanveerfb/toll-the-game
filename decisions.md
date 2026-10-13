@@ -292,3 +292,18 @@ placeholder range, never in the catalog. `lib/game/removedCharacters.ts` is
 append-only, because a pre-removal save can arrive from any device at any
 time. Not asked and not done: the `Demon` and `Giant` tags remain valid tag
 strings (tags are free text), and the DBZ brainstorm stays for later.
+
+## 2026-10-13 — A kit starts from a template and a schema, not from another kit
+
+His second reading of the schema line: *"I also meant the schema for the kit
+JSON itself too, or a template."* The zod schema in `lib/game/characterSchema.ts`
+was already the law; what was missing was a documented starting point, so
+every new kit was a copy of the nearest shipped one. Three choices: the field
+descriptions live in the zod schema (`.describe()`) and nowhere else, and the
+JSON Schema file is generated from it with a drift test, because a hand-written
+schema would have been a second source of truth; the template carries its
+prose as `$comment` keys that `newkit` strips, so a kit never ships with
+commentary; and `nextFreeCardNumber` never refills a gap, because a deleted
+card number stays retired (#187). `newkit` writes `unreleased: true` and prints
+the registration steps rather than editing `characterCatalog.ts` itself; the
+registration test is the guard that catches a forgotten step.

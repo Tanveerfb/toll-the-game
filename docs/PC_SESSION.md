@@ -92,8 +92,11 @@ action-bearing set only matters when he asks for a Sara piece to be redone.
 - ~~The schema question~~ **Answered 2026-10-13**: a schema for drafting a
   new character's art profile so it does not start from Duke's file.
   `scripts/lora/characters/profile.schema.json`, `new_profile.py`,
-  `check_profile.py`. If he meant something else as well (a kit JSON schema
-  in this repo, a template in `toll-kits`), he says so.
+  `check_profile.py`. He then said the kit JSON too: `data/kit.schema.json`,
+  `data/kit.template.json`, `npm run newkit`, `data/characters/README.md`
+  (synced into `toll-kits/kits/`). One line in `toll-kits/CLAUDE.md` still
+  says *"Copy the shape of the closest shipped kit"*; it should point at the
+  template. That file is toll-kits-owned and a push there needs his word.
 - **Still his:** the theme pick (round two did not click; he will look on
   the PC), the eight audit decisions (Part 5), the two rules conflicts in
   `conventions.md`.

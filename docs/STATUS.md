@@ -53,7 +53,9 @@ carried stay, and a v12 migration cleans any save that still names one.
    and `scripts/skill_art` (the engine rules moved out of `AGENTS.md`), and
    **the character profile schema** (`profile.schema.json`,
    `new_profile.py`, `check_profile.py`) so a new character's art profile
-   never starts from Duke's file. Still to ask
+   never starts from Duke's file, and **the kit schema and template**
+   (`data/kit.schema.json` generated from the zod schema, `data/kit.template.json`,
+   `npm run newkit`, `data/characters/README.md`) so a kit never does either. Still to ask
    him: `public/unreleased/` (7.3 MB), `lib/duel`, gsap, the MDX stack for
    the closed news, `docs/design/characters` (11 MB), 49 unused exports.
 

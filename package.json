@@ -10,6 +10,8 @@
     "test": "vitest run --project unit",
     "check": "tsc --noEmit && eslint && vitest run --project unit",
     "sim": "tsx scripts/sim.ts",
+    "newkit": "tsx scripts/newkit.ts",
+    "kit:schema": "tsx scripts/kit-schema.ts",
     "test:browser": "vitest run --project browser"
   },
   "dependencies": {
