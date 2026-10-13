@@ -69,7 +69,8 @@ describe("a save that still holds a removed unit is cleaned (v12)", () => {
     // "duke|gon|lyra" and "duke|lyra" collapse to one team; "gon|killua" is gone.
     expect(migrated.epicClears["exam-arc/master-tao"].teams).toEqual(["duke|lyra"]);
     expect(migrated.epicClears["exam-arc/master-tao"].clears).toBe(3);
-    expect(migrated.currencies.gems).toBe(1000);
+    // The baseline for a save with no currencies: 500 since ruling #190.
+    expect(migrated.currencies.gems).toBe(500);
   });
 
   it("leaves a clean save alone", () => {

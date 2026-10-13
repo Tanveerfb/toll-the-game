@@ -513,7 +513,7 @@ Turn-based card battle webapp (Element Clash IP), heavily inspired by **Seven De
 
     What it retires is #108's closing bullet, *"Battle UI's own mobile pass is a separate dedicated session, his call, and is not part of story work"*, and the matching `docs/ROADMAP.md` Phase 2 line. Everything else in #108 stands.
 
-    **The mechanical half shipped the same day** — every control in `BattleArena`, `Deck`, `UnitDetailPanel`, `BattleCoach` and `EffectsList` is at 44px, and the status strip stopped hiding its progress bar below `sm`. The **layout** half went to him as an HTML file first, per **#106**: `docs/design/mockups/battle-mobile.html`, three renderings at true 390×844 size. **He answered the same day and it is all built** — so the mockup is now a record of the decision, not an open question.
+    **The mechanical half shipped the same day** — every control in `BattleArena`, `Deck`, `UnitDetailPanel`, `BattleCoach` and `EffectsList` is at 44px, and the status strip stopped hiding its progress bar below `sm`. The **layout** half went to him as an HTML file first, per **#106**: `docs/design/battle-mobile.html`, three renderings at true 390×844 size. **He answered the same day and it is all built** — so the mockup is now a record of the decision, not an open question.
 
     **His four calls, and what each became:**
 
@@ -642,7 +642,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 5. Archive pages re-rendered as documents sharing `/news` typography.
    Plus: Growth gated to owned characters + moved to a modal, practice dummy 400 → 100k HP, and Damage Preview rebuilt as **Kit Preview** (support skills, passives, and multi-phase kits were all missing or wrong).
 
-123. **Navigation moves to a bottom tab bar on a phone** (2026-09-01, sharpens #107). Shown a browser audit of the live build at 390×844 — the route strip was a **234px scroller holding 332px**, so News and Profile never rendered at rest, beside a second scroller holding the resource chips with Bureau Orders clipped — and offered two fixes in `docs/design/mockups/shell-mobile.html`: un-hide the short labels, or move navigation to a bottom tab bar. He chose the tab bar: *"Option B — bottom tabs (recommended)."* **That phrasing is an option label he selected, not prose he wrote.**
+123. **Navigation moves to a bottom tab bar on a phone** (2026-09-01, sharpens #107). Shown a browser audit of the live build at 390×844 — the route strip was a **234px scroller holding 332px**, so News and Profile never rendered at rest, beside a second scroller holding the resource chips with Bureau Orders clipped — and offered two fixes in `docs/design/shell-mobile.html`: un-hide the short labels, or move navigation to a bottom tab bar. He chose the tab bar: *"Option B — bottom tabs (recommended)."* **That phrasing is an option label he selected, not prose he wrote.**
 
     **Amended by #152 (2026-09-26): four destinations** — Story went with story mode. What fills the fifth slot, if anything, is his call.
 
@@ -964,7 +964,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 
     **This is the shape #139 asks for.** UI and UX direction are his and Claude does not originate them — but drawing candidates is not originating, it is *presenting a choice*, and measurement (what is slow, what is inconsistent, what is 190 taps) is squarely Claude's. The mockup is where those two meet: Claude measures and draws, he decides.
 
-    Mockups live in `docs/design/mockups/`, self-contained, in the game's real palette and fonts, drawn at **390px** (#107). The first one under this ruling is `growth-modal.html`.
+    Mockups live in `docs/design/mockups/` (**location amended by #188, 2026-10-13:** drafts in the gitignored `public/_mockups/`, the locked design in `docs/design/<name>.html`), self-contained, in the game's real palette and fonts, drawn at **390px** (#107). The first one under this ruling is `growth-modal.html`.
 
     **Existing work this changes:** nothing already built. It changes what happens *before* the next redesign — the layout system, the events decomposition and the Kit Numbers rework were all built directly from measurement this session, and under this ruling the visual half of each would have been drawn first.
 
@@ -1013,7 +1013,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    21 to 40 or whatever is unlocked."*
 
    Offered three positions on the mid-run screen and two on completion
-   (`docs/design/mockups/trial-run-flow.html`), he chose **C** and **E**.
+   (`docs/design/trial-run-flow.html`), he chose **C** and **E**.
    **Those letters are selections from options Claude drew, not prose he wrote**
    — the sentences describing them are Claude's. What is his is the report above
    and the direction in it.
@@ -1242,7 +1242,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    > claymorphism etc. etc. suggest me one."*
 
    **The motif was a selection.** Four were drawn on one live World Boss
-   screen in `docs/design/mockups/motif-options.html`: A Combat Terminal
+   screen in `docs/design/motif-options.html`: A Combat Terminal
    (today's look), B Shōnen Ink, C Gilded Relic, D Prism Glass. He chose
    **"B · Shōnen Ink (Recommended)"**. **That phrasing is an option label he
    selected, not prose he wrote**, and the recommendation was Claude's, made
@@ -1283,7 +1283,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    "Uncancellable" all work on a dark panel and fail as text on paper.
 
    **A selection.** Three options were drawn on Meliodas's real card text in
-   `docs/design/mockups/kit-document-on-paper.html`: A ink only, B marker,
+   `docs/design/kit-document-on-paper.html`: A ink only, B marker,
    C black ink panels. He chose **"B · Marker (Recommended)"**. **That phrasing
    is an option label he selected, not prose he wrote**, and the
    recommendation was Claude's. Its case: yellow already means "you can act on
@@ -1303,7 +1303,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 156. **The battle is a split page: the enemy's side on the dark ground, the
    player's side on paper** (2026-09-27, applies #154 to the arena). Three
    options were drawn on one live fight in
-   `docs/design/mockups/battle-ink.html`: A ground stage (paper only on the
+   `docs/design/battle-ink.html`: A ground stage (paper only on the
    tray), B panel page (every unit and card a paper panel), C split page. He
    chose **C**, and gave his reasons in his own words:
 
@@ -1340,7 +1340,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    > actually important, yes. Especially the growth one."*
 
    **The layout was a selection.** Three options were drawn beside today's
-   page in `docs/design/mockups/character-header.html`, with positions
+   page in `docs/design/character-header.html`, with positions
    measured live: A a 16:9 banner, B a card row, C actions pinned above the
    tab bar. He chose **"B · Card row"**, the option label, over the
    recommended A.
@@ -1695,7 +1695,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    - **Battle tile unchanged**: it shows the transparent portrait on its own
      dark ground.
 
-   **Mockup:** `docs/design/mockups/lyra-portrait.html` (v3, his approval:
+   **Mockup:** `docs/design/lyra-portrait.html` (v3, his approval:
    *"I think I like this one now"*). **The method** is step 6 of
    `docs/CHARACTER_ART.md` (`make_portrait_crop.py`, crop numbers in each
    profile). `tests/characterArt.test.ts` fails if a tile unit's portrait is
@@ -1718,7 +1718,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    deferrals below still stand.** The summon screen is a manga page, and it is the one screen allowed to
    be loud all over (2026-10-03). He found the gacha page *"still looks very
    generic-ish to me"* and asked for it *"properly built out with our theme"*.
-   Three options were drawn in `docs/design/mockups/gacha-overhaul.html`
+   Three options were drawn in `gacha-overhaul.html (deleted 2026-10-13, ruling #188; in git history before 09f17fd)`
    (A poster, B collection board, C manga page). He **selected C**: *"i like C
    actually. adds energy to the page"*.
    - **Draw panel anchored to the bottom**, above the tab bar, so the screen
@@ -1816,7 +1816,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 
 177. **The events board is tabs, and it says as little as it can** (2026-10-03).
    He asked for an events redesign. Three options were drawn in
-   `docs/design/mockups/events-redesign.html`, built from the live game's
+   `docs/design/events-redesign.html`, built from the live game's
    markup and styles after the first hand-drawn set was *"not website
    accurate"*:
    - **A** World Boss / Epic Battles / Trials tabs.
@@ -2016,7 +2016,7 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
 185. **The redesign keeps the Characters page and the bottom nav, and changes
    Home, Events, Gacha, Profile and Settings** (2026-10-13; amends #154's
    scope, supersedes #174's summon screen). Three theme options had been drawn
-   as whole-motif swaps (`docs/design/mockups/theme-options.html`: A Launcher,
+   as whole-motif swaps (`theme-options.html (deleted 2026-10-13, ruling #188; in git history before 09f17fd)`: A Launcher,
    B Gallery, C Ink wash) and he rejected them as generic: *"I know the mockups
    you created are for the redesign layout, but I should tell you what's
    currently working on the site before you propose the generic designs,
@@ -2112,3 +2112,46 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    - **Claude's reading, flagged as an inference:** *"everything else"* is
      the two series he named and the two drafts; design-sheet inspirations
      (Master Tao's Netero-inspired look) are not kits and were not touched.
+
+188. **The project adopts the fleet standard on three conventions: the STATUS
+     file, where mockups live, and no Trello board** (2026-10-13). Put the
+     two `conventions.md` conflicts and the two open questions to him; his
+     answers, one line each: STATUS format, *"Fleet rule is correct."*;
+     mockup location, *"Adopt the standard."*; Trello, *"None"*; Node,
+     *"24?"*, and the Vercel project reads `nodeVersion: 24.x`, so 24 it is.
+   - **STATUS:** `docs/STATUS.md` is the fleet's two-zone file again: a
+     snapshot rewritten in place, over a session log added at the top. The
+     2026-10 log folded back in from `docs/archive/`; the older archives stay
+     where they are as history. Reverses the 2026-09-27 split (`decisions.md`).
+   - **Mockups (amends #144, the location half; the "several options" half
+     stands):** drafts live in the gitignored `public/_mockups/`, which the
+     dev server serves, and are published as an artifact when he is on his
+     phone; the design he locks moves to `docs/design/<name>.html`, committed.
+     The twelve picked mockups moved there on 2026-10-13; the five never
+     picked were deleted (git history keeps them); the one open round
+     (`docs/design/mockups/screens-from-characters.html`) stays committed
+     until he decides, as the single exception, because a gitignored draft
+     would not reach his PC.
+   - **Trello:** none. `CLAUDE.md` says so; no board work ever.
+   - **Node:** pinned to 24 in `package.json` `engines` and `.nvmrc`. The
+     cloud container runs 22, which §RUNTIME calls a finding: it cannot be
+     changed from inside a session, and nothing shipped has differed between
+     the two so far.
+   - **Where it lives:** `AGENTS.md` (the STATUS and mockup sentences),
+     `CLAUDE.md` (Trello), `conventions.md` (both rows closed),
+     `.claude/skills/redesign/SKILL.md`, `.gitignore`.
+
+189. **Practice fields any playable character, owned or not** (2026-10-13).
+     Audit decision 7 asked whether ownership-free practice was on purpose.
+     His words: *"Should allow any playable/summonable character."* So the
+     current behaviour (`getPlayableCharacters()` in the team picker, no
+     ownership filter) is the design, not a shortcut; it does not enter
+     `docs/demo-shortcuts.md`. Unreleased kits stay dev-only there as
+     everywhere (#171).
+
+190. **Starter gems are 500, and a playtest value** (2026-10-13). Audit
+     decision 2. His words: *"I guess we can lower it to 500. Playtest
+     purposes for now yes."* `DEFAULT_PLAYER_STATE.currencies.gems` and the
+     migration baseline move from 1,000 to 500; existing saves keep what they
+     have. Registered in `docs/demo-shortcuts.md` as a playtest value that
+     gets his real number before launch.

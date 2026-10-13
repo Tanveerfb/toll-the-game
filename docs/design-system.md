@@ -14,7 +14,7 @@ shadcn primitive (ruling #154).
 ## The motif
 
 **Shōnen Ink** (ruling #154, 2026-09-26, chosen from four drawn options in
-`docs/design/mockups/motif-options.html`). The game is a manga page: **ink
+`docs/design/motif-options.html`). The game is a manga page: **ink
 outlines, halftone screens, skewed panel cuts, offset slab shadows**, over the
 anime card art.
 
@@ -24,7 +24,7 @@ chamfers and cyan. **Its tokens and classes were deleted on 2026-09-27**
 `tests/uiTokens.test.ts` fails the build if any of them returns. The same file
 forbids a hand-written font size anywhere and a raw hex colour in `app/` or
 `components/`; the two exemptions (Google's logo, the install manifest) are
-listed in it with their reasons. Older mockups in `docs/design/mockups/` are
+listed in it with their reasons. The locked mockups in `docs/design/*.html` (moved there 2026-10-13, #188) are
 drawn in the retired look and say so.
 
 ### The one rule that keeps it readable
@@ -196,7 +196,7 @@ stays as it is.
 
 ## The battle: a split page (ruling #156)
 
-His pick from three drawn in `docs/design/mockups/battle-ink.html`:
+His pick from three drawn in `docs/design/battle-ink.html`:
 
 - **The enemy's half is the ground.** Dark tiles, framed in the element hue,
   with a slab and light text.

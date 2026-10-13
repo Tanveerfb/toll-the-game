@@ -44,7 +44,7 @@ const FEATURED_FACES = 6;
 
 /**
  * The summon screen is a manga page (Tanveer's pick, 2026-10-03: Option C of
- * docs/design/mockups/gacha-overhaul.html): slanted panels with ink gutters, the
+ * gacha-overhaul.html (deleted 2026-10-13, ruling #188; in git history before 09f17fd)): slanted panels with ink gutters, the
  * banner as the splash, featured and milestone as two small panels, and the
  * draw as the action panel at the foot.
  *

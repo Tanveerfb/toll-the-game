@@ -47,8 +47,6 @@ export const CLOUD_FIELDS = [
   "epicClears",
 ] as const;
 
-export type CloudField = (typeof CLOUD_FIELDS)[number];
-
 /**
  * Persisted fields that deliberately do NOT travel, and why each one doesn't.
  *

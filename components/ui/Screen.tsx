@@ -69,7 +69,7 @@ const widthClass = {
   none: null,
 } as const;
 
-export type ScreenWidth = keyof typeof widthClass;
+type ScreenWidth = keyof typeof widthClass;
 
 export interface ScreenProps
   extends React.ComponentProps<"main">,
@@ -124,5 +124,3 @@ export function Screen({
     </main>
   );
 }
-
-export { screenVariants };

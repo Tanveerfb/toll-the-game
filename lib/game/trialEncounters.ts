@@ -122,7 +122,7 @@ export const FIRST_ASCENSION_TRIAL: RunnableEncounter = {
 
 /** Encounters by event id. A trial with no entry here has none authored yet,
  *  which `eventLockReason` already reports honestly. */
-export const TRIAL_ENCOUNTERS: Record<string, RunnableEncounter> = {
+const TRIAL_ENCOUNTERS: Record<string, RunnableEncounter> = {
   [FIRST_ASCENSION_TRIAL.id]: FIRST_ASCENSION_TRIAL,
 };
 

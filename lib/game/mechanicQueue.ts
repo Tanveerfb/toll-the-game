@@ -17,12 +17,12 @@ import type { BattlePhase } from "@/types/mechanic";
  * implementation, two callers, and no chance of the simulated fight and the
  * real one drifting apart.
  *
- * `QueueItem` and `QueueAction` moved here with it. They were imported *from a
- * hook* by `lib/game/passive.ts`, which had the dependency arrow pointing the
- * wrong way — engine code should not reach into the React layer.
+ * `QueueItem` moved here with it. It was imported *from a hook* by
+ * `lib/game/passive.ts`, which had the dependency arrow pointing the wrong
+ * way — engine code should not reach into the React layer.
  */
 
-export type QueueAction = (
+type QueueAction = (
   source: BattleCharacter,
   teams: { playerTeam: BattleCharacter[]; enemyTeam: BattleCharacter[] },
   log: (entry: string) => void,

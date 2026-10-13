@@ -6,7 +6,6 @@ import { BattleCharacter } from "@/types/character";
 import {
   createMechanicQueue,
   type MechanicQueue,
-  type QueueAction,
   type QueueItem,
 } from "@/lib/game/mechanicQueue";
 
@@ -19,11 +18,11 @@ import {
  * screen a context to reach it through, plus the animation pause the screen
  * wants and a simulator must not have.
  *
- * `QueueItem` and `QueueAction` are re-exported because `lib/game/passive.ts`
- * and a handful of components import them from here. Their real home is the lib
- * module now; this keeps the existing import sites working.
+ * `QueueItem` is re-exported because `lib/game/passive.ts` and a handful of
+ * components import it from here. Its real home is the lib module now; this
+ * keeps the existing import sites working.
  */
-export type { QueueAction, QueueItem };
+export type { QueueItem };
 
 /** How long the battle screen dwells between passives, so each one's animation
  *  has a moment to land. The simulator passes nothing and gets zero. */

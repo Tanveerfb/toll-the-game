@@ -20,7 +20,7 @@ import type { GameEvent } from "@/lib/game/events";
 
 /**
  * The operations board: up to three tabs - World Boss, Epic Battles, Trials
- * (option A of `docs/design/mockups/events-redesign.html`, Tanveer's pick).
+ * (option A of `docs/design/events-redesign.html`, Tanveer's pick).
  *
  * The tab labels carry no counts and no sub-labels, and no row shows progress:
  * *"less is more for the players. let them explore on their own."* A tab with

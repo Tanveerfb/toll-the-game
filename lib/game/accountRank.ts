@@ -25,7 +25,7 @@ export const BASE_RANK_XP = 100;
 
 /** Each rank's bar is this much longer than the one before (Tanveer,
  *  2026-08-11: "the level bar would increase by 10% for each level"). */
-export const RANK_XP_GROWTH = 1.1;
+const RANK_XP_GROWTH = 1.1;
 
 /**
  * XP to go from `rank` to `rank + 1` — 100 for the first, compounding 10% a

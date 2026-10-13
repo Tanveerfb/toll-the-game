@@ -30,7 +30,7 @@
  * newest slot, so a player's habitual team is never the one dropped.
  */
 
-export interface EpicClearRecord {
+interface EpicClearRecord {
   /** Total clears, unbounded. */
   clears: number;
   /** Epoch ms of the first clear. */

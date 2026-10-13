@@ -12,7 +12,7 @@ import { materialLabel } from "@/lib/game/materials";
  */
 
 /** What a part is, so a list can group them without re-deriving it. */
-export type RewardPartKind = "character" | "currency" | "material" | "xp";
+type RewardPartKind = "character" | "currency" | "material" | "xp";
 
 export interface RewardPart {
   kind: RewardPartKind;

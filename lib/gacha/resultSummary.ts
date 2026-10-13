@@ -4,8 +4,8 @@
  * The reveal used to print one tile per pull, so an 11-pull showed Coin x6,000
  * three separate times and a player counted cards to learn their totals. The
  * results screen shows characters as tiles and everything else as ONE list with
- * the quantities summed (Tanveer's pick, 2026-10-03, docs/design/mockups/
- * gacha-overhaul.html). That grouping is this file, so it can be tested without
+ * the quantities summed (Tanveer's pick, 2026-10-03, the gacha overhaul mockup,
+ * gacha-overhaul.html, deleted 2026-10-13, ruling #188). That grouping is this file, so it can be tested without
  * rendering anything.
  *
  * Structural input types, not the store's `ResolvedPullOutcome`: pure logic
@@ -22,12 +22,12 @@ export type PullResult =
   | { kind: "coin"; amount: number }
   | { kind: "material"; materialId: string; amount: number };
 
-export interface CharacterResult {
+interface CharacterResult {
   characterId: string;
   isNew: boolean;
 }
 
-export interface ItemResult {
+interface ItemResult {
   /** A material id, or `COIN_ITEM_ID`. */
   id: string;
   /** Summed over every pull that paid it. */

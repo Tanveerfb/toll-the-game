@@ -30,10 +30,3 @@ export function isImmuneToSeal(unit: BattleCharacter, sealType: string): boolean
     (m) => m.type === "sealImmunity" && m.sealTypes.includes(sealType),
   );
 }
-
-/** The stats a unit can never have lowered — for display and logging. */
-export function immuneStats(unit: BattleCharacter): string[] {
-  return activeBossMechanics(unit).flatMap((m) =>
-    m.type === "statDebuffImmunity" ? (m.stats ?? []) : [],
-  );
-}

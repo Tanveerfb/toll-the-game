@@ -26,6 +26,14 @@ Add the `extraKnownMarketplaces` / `enabledPlugins` block the fleet
 "Not yet enabled here" paragraph in `CLAUDE.md` and the `decisions.md`
 2026-10-13 entry.
 
+## 1b. Node 24 on the PC
+
+Node is pinned to 24.x (`package.json` `engines`, `.nvmrc`), the Vercel
+project's runtime (his "24?", confirmed from the project settings, #188).
+If the PC runs another major, switch with the version manager before
+building; §RUNTIME says a mismatch is a finding, not a warning. The cloud
+container runs 22 and cannot be changed from a session.
+
 ## 2. Duke: rebuild the dataset with action shots, retrain, then redraft
 
 His decision, 2026-10-13: *"we will have to rebuild Duke's data set and then

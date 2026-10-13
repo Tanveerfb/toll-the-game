@@ -13,7 +13,7 @@ const COIN_BUNDLES = [1000, 2000, 5000, 10000];
  *
  * They used to be a uniform third each, which made the miss table the largest
  * XP faucet in the game and the only source of Premium Manuals — a pull was
- * worth a mean 500 XP, so the 220 pulls a starter's 1,000 gems buy paid ~34,800
+ * worth a mean 500 XP, so the 220 pulls a starter's then 1,000 gems (500 since #190) bought paid ~34,800
  * XP, more than every one-time source in the game combined. The weights drop
  * that to a mean 280 XP per manual roll (~19,500 XP from the same 220 pulls)
  * and make the high tiers feel like the rarity they are priced at.

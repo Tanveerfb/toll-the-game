@@ -17,7 +17,7 @@ import { getTrialEncounter } from "@/lib/game/trialEncounters";
  * its stamina cost, so the board can show a locked trial and say what lifts it.
  */
 
-export type EventKind = "boss" | "trial";
+type EventKind = "boss" | "trial";
 
 export interface GameEvent {
   id: string;
@@ -68,7 +68,7 @@ export interface GameEvent {
  * these rules are authored data, they get read by whoever adds the next event,
  * and a rule you can read is a rule that gets copied correctly.
  */
-export interface EventVisibility {
+interface EventVisibility {
   /** Minimum account rank before the row appears. */
   minRank?: number;
   /** Every one of these walls must already be cleared. */

@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 
 /** Re-reading every 30s keeps a regenerating bar honest without a per-second
  *  timer nobody is watching. */
-export const NOW_TICK_MS = 30_000;
+const NOW_TICK_MS = 30_000;
 
 function subscribe(onStoreChange: () => void): () => void {
   const id = setInterval(onStoreChange, NOW_TICK_MS);

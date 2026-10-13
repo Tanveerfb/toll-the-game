@@ -5,7 +5,7 @@ import { getCharacterArt, getTileArt } from "@/lib/game/characterArt";
 
 /**
  * The "Ink burst" tile's face (ruling #172, his pick 2026-10-03,
- * docs/design/mockups/archive-tile-v3.html, after Dokkan's roster) - the frame,
+ * docs/design/archive-tile-v3.html, after Dokkan's roster) - the frame,
  * window, burst, break-out cut-out, element code, plate and stars - with no
  * behaviour of its own. The archive wraps it in a `Link` (`RosterTile`) and the
  * team picker wraps it in a `button`, so a unit looks the same wherever it is

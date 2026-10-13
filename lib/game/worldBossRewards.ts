@@ -38,7 +38,7 @@ export interface WorldBossRewards {
 }
 
 /** A `[min, max]` inclusive roll, or a flat amount plus a chance of one more. */
-export interface FarmableTable {
+interface FarmableTable {
   /** `[base, bonusChance]` — base guaranteed, +1 at that probability. */
   sea_monster_eye: [number, number];
   corroded_seaweed: [number, number];
@@ -62,7 +62,7 @@ export interface BossTier {
 }
 
 /** Chance of +1 on the two ascension materials, at tier 1. */
-export const BONUS_CHANCE = 0.1;
+const BONUS_CHANCE = 0.1;
 export const BASE_SEA_MONSTER_EYE = 1;
 /** Doubled from 2 on 2026-08-13. Ascension wants seaweed at 3.3× / 2.5× / 2.5×
  *  the eye count (lib/game/ascension.ts) but both dropped at a flat 1:2, so
@@ -87,8 +87,8 @@ export const BASE_CORRODED_SEAWEED = 4;
  */
 export const TRAINING_MANUAL_MIN = 4;
 export const TRAINING_MANUAL_MAX = 8;
-export const COIN_MIN = 2000;
-export const COIN_MAX = 10000;
+const COIN_MIN = 2000;
+const COIN_MAX = 10000;
 
 /**
  * Account XP per farmed clear, tier 1.
@@ -99,7 +99,7 @@ export const COIN_MAX = 10000;
  * months, and rank 60 in roughly a year. At 50 the same climb takes over two
  * years, which is not a ladder, it's a wall.
  */
-export const WORLD_BOSS_ACCOUNT_XP = 100;
+const WORLD_BOSS_ACCOUNT_XP = 100;
 
 export function emptyRewards(): WorldBossRewards {
   return {

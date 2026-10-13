@@ -2,8 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import React from "react";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
+import { animate, stagger, useReducedMotion } from "framer-motion";
+import type { AnimationPlaybackControlsWithThen, AnimationSequence } from "framer-motion";
 import { Coins, ScrollText } from "lucide-react";
 import type { ResolvedPullOutcome } from "@/store/playerStore";
 import { getCharacterById } from "@/lib/game/characterCatalog";
@@ -19,21 +19,21 @@ import {
 } from "@/components/ui/dialog";
 import { useFocusBackToOpener } from "@/hooks/useReturnFocus";
 
-gsap.registerPlugin(useGSAP);
-
 /**
  * Pull results.
  *
- * This screen used to dismiss itself: the GSAP timeline's `onComplete` was
+ * This screen used to dismiss itself: the reveal sequence's completion was
  * wired straight to the caller's close handler, so an 11-pull flipped past and
  * vanished with no skip and no way back (Tanveer, 2026-08-11). It now plays in
- * and **stays** — the timeline only clears the "still animating" flag.
+ * and **stays** — the sequence only clears the "still animating" flag. The
+ * sequence is framer-motion's imperative `animate()`, the one animation
+ * library the game uses (GSAP left on 2026-10-13).
  *
  * It also says what you got. Characters are the archive's tiles, a plate saying
  * "New!" or "+1 coin" and a line under each; everything else is ONE paper list
  * with the quantities summed, because an 11-pull used to print Coin ×6,000 as
  * three separate cards and a player counted cards to learn their totals
- * (Tanveer's pick, 2026-10-03, docs/design/mockups/gacha-overhaul.html). The
+ * (Tanveer's pick, 2026-10-03, the gacha overhaul mockup, deleted 2026-10-13, ruling #188). The
  * grouping is `lib/gacha/resultSummary.ts`.
  *
  * **The shadcn `Dialog` since 2026-09-26** (ruling #154), in place of a
@@ -62,52 +62,66 @@ export default function PullReveal({
   onDrawAgain: () => void;
   onClose: () => void;
 }): React.JSX.Element | null {
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const timelineRef = React.useRef<gsap.core.Timeline | null>(null);
-  const [revealing, setRevealing] = React.useState(true);
+  // State, not a ref: the Dialog portals its content one commit after the
+  // first render, so a ref is still null when the mount effect runs and the
+  // sequence would never start. A callback ref re-runs the effect on mount.
+  const [container, setContainer] = React.useState<HTMLDivElement | null>(
+    null,
+  );
+  const sequenceRef = React.useRef<AnimationPlaybackControlsWithThen | null>(
+    null,
+  );
+  // The batch whose play-in has finished (or been skipped). `revealing` is
+  // derived from it rather than set, so a new batch closes the gate again by
+  // identity alone, and nothing writes state from inside the effect.
+  const [revealedBatch, setRevealedBatch] = React.useState<
+    ResolvedPullOutcome[] | null
+  >(null);
+  // Nothing to wait for when the player asked for no motion: the results are
+  // simply there, and Draw again is live at once.
+  const reduceMotion = useReducedMotion() ?? false;
+  const revealing =
+    !reduceMotion && results.length > 0 && revealedBatch !== results;
   const onCloseAutoFocus = useFocusBackToOpener();
 
   const summary = summarisePull(results);
 
-  useGSAP(
-    () => {
-      // Nothing to wait for when the player asked for no motion: the results
-      // are simply there, and Draw again is live at once.
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        setRevealing(false);
-        return;
-      }
-      const tl = gsap.timeline({ onComplete: () => setRevealing(false) });
-      timelineRef.current = tl;
-      tl.fromTo(
-        "[data-reveal='unit']",
-        { opacity: 0, y: 18, scale: 0.9 },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.28,
-          ease: "power2.out",
-          stagger: 0.09,
-        },
-      );
-      tl.fromTo(
-        "[data-reveal='rest']",
-        { opacity: 0 },
-        { opacity: 1, duration: 0.2, ease: "power2.out" },
-      );
-      return () => {
-        tl.kill();
-        timelineRef.current = null;
-      };
-    },
-    { dependencies: [results], scope: containerRef },
-  );
+  React.useEffect(() => {
+    if (reduceMotion || !container) return;
+
+    // Each step is added only when its target exists: `animate()` throws on
+    // an empty selection, and a single pull can be all coin or all tiles.
+    const units = container.querySelectorAll<HTMLElement>("[data-reveal='unit']");
+    const rest = container.querySelector<HTMLElement>("[data-reveal='rest']");
+    const sequence: AnimationSequence = [];
+    if (units.length > 0) {
+      sequence.push([
+        units,
+        { opacity: [0, 1], y: [18, 0], scale: [0.9, 1] },
+        { duration: 0.28, ease: "easeOut", delay: stagger(0.09) },
+      ]);
+    }
+    if (rest) {
+      sequence.push([rest, { opacity: [0, 1] }, { duration: 0.2, ease: "easeOut" }]);
+    }
+    if (sequence.length === 0) return;
+
+    const controls = animate(sequence);
+    sequenceRef.current = controls;
+    // Settles when the sequence ends or Skip calls `complete()`. The `stop()`
+    // below leaves it unsettled, so a batch replaced mid-reveal never marks
+    // its successor as revealed.
+    controls.then(() => setRevealedBatch(results));
+    return () => {
+      controls.stop();
+      sequenceRef.current = null;
+    };
+  }, [container, results, reduceMotion]);
 
   /** Skip is a button now, not a hope. */
   const skip = () => {
-    timelineRef.current?.progress(1);
-    setRevealing(false);
+    sequenceRef.current?.complete();
+    setRevealedBatch(results);
   };
 
   return (
@@ -130,7 +144,7 @@ export default function PullReveal({
         // screen on a phone; the usual centred panel from `sm`.
         className="ground-halftone flex h-dvh max-h-dvh w-full max-w-full flex-col gap-0 overflow-hidden border-ground-line bg-background p-0 text-foreground sm:h-auto sm:max-h-[92dvh] sm:max-w-panel"
       >
-        <div ref={containerRef} className="flex min-h-0 flex-1 flex-col">
+        <div ref={setContainer} className="flex min-h-0 flex-1 flex-col">
           <div className="flex shrink-0 items-baseline justify-between gap-3 border-b-2 border-ground-line px-3 pb-2 pt-3">
             <DialogTitle className="text-3xl">
               {results.length} pull{results.length === 1 ? "" : "s"}

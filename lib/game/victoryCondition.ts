@@ -84,11 +84,6 @@ export function evaluateBattleOutcome({
   return null;
 }
 
-/** Brief copy — the player has to know the rule before they play by it. */
-export function retreatBriefLine(percent: number): string {
-  return `This fight ends when the enemy drops to ${percent}% health — you aren't expected to finish it.`;
-}
-
 /** Narrowing helper for the real `BattleCharacter`, which carries far more. */
 export function toVictoryTeam(team: BattleCharacter[]): VictoryCheckTeam[] {
   return team.map((unit) => ({

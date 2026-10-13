@@ -10,7 +10,7 @@
  * Set `NEXT_PUBLIC_SENTRY_DSN` in the Vercel project to turn it on.
  */
 
-export const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN ?? "";
+const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN ?? "";
 
 /** Whether to initialise at all. */
 export const sentryEnabled = SENTRY_DSN.length > 0;

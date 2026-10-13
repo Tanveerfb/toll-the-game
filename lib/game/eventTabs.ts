@@ -2,7 +2,7 @@ import type { GameEvent } from "@/lib/game/events";
 
 /**
  * The tabs of the events board (Tanveer picked option A of
- * `docs/design/mockups/events-redesign.html`, 2026-10-03): World Boss, Epic
+ * `docs/design/events-redesign.html`, 2026-10-03): World Boss, Epic
  * Battles, Trials. The labels carry no counts - his words, *"less is more for
  * the players. let them explore on their own."*
  */

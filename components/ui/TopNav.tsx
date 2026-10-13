@@ -51,7 +51,7 @@ const ROUTE_ICON: Record<string, React.ElementType> = {
 };
 
 /** The wordmark: a skewed paper label with a yellow slab, the mockup's
- *  (`docs/design/mockups/motif-options.html`). */
+ *  (`docs/design/motif-options.html`). */
 const WORDMARK =
   "ink-skew inline-flex min-h-11 shrink-0 items-center bg-card px-2 font-heading text-xl tracking-title text-card-foreground ink-slab-primary";
 

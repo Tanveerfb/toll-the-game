@@ -7,7 +7,7 @@
 > | 1 | Tokens, type scale, fonts, primitives, `/dev/ui` gallery | **done 2026-09-26**, browser-checked at 390px |
 > | 2 | The shell: nav, tab bar, `Screen`, `SectionHeader` | **done 2026-09-26**, browser-checked at 390 and 1280px. `Panel` and the home hub moved to phase 3: both hold screen content |
 > | 3 | Screens, one per pass | **done 2026-09-26.** Home hub, archive, events, team select, profile & login, gacha, news, in his order, each browser-checked except the signed-in profile page. Old-theme uses: 1,294 in 76 files at the start, **~345 in 17 files** after (battle, plus `DetailOverlay`, `card`, `Panel`'s legacy surfaces) |
-> | 4 | Battle: mockups first, then the arena | **done 2026-09-27.** He picked **C · split page** from `docs/design/mockups/battle-ink.html` (ruling #156). Built and browser-checked in a live 4v4 at 390x844. See "Phase 4 as built" |
+> | 4 | Battle: mockups first, then the arena | **done 2026-09-27.** He picked **C · split page** from `docs/design/battle-ink.html` (ruling #156). Built and browser-checked in a live 4v4 at 390x844. See "Phase 4 as built" |
 > | 5 | Retire Combat Terminal, and the guards that keep it retired | **done 2026-09-27**, his go-ahead the same day. See "Phase 5 as built" |
 
 **Asked for 2026-09-26.** Tanveer: *"we are working on keeping the css and
@@ -193,7 +193,7 @@ He picked it first, over the suggested Events.
 ### Archive (done 2026-09-26)
 
 **Decided first, by mockup:** how kit text highlights on paper. Three options
-were drawn (`docs/design/mockups/kit-document-on-paper.html`); he picked the
+were drawn (`docs/design/kit-document-on-paper.html`); he picked the
 **marker**, recorded as ruling #155. Values and the full treatment table are
 in `docs/design-system.md` → Kit text.
 
@@ -522,7 +522,7 @@ restyled in code but were not seen on screen.
 ## Phase 5: retire Combat Terminal
 
 - Delete the legacy tokens, `.terminal-grid`, `.chamfer` and `.chamfer-lg`.
-- Update `docs/design/mockups/` notes that describe the old look.
+- Update the locked mockups' notes (`docs/design/*.html` since #188) that describe the old look.
 - Guards, each proven red first:
   - No Combat Terminal token anywhere.
   - No `text-[Npx]` in a component.

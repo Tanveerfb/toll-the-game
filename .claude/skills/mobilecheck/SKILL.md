@@ -32,7 +32,7 @@ usually the wrong fix.
 - `tests/touchTargets.test.ts`, `tests/viewportUnits.test.ts` — what is pinned.
   Read these before reporting: a rule with a test behind it produces a *test
   failure*, not an audit finding, and reporting it as a finding wastes his time.
-- `docs/design/mockups/battle-mobile.html` — the open layout questions in battle.
+- `docs/design/battle-mobile.html` — the open layout questions in battle.
 
 **On the calibration set.** (Story mode was removed on 2026-09-26; its
 screens are gone, and so is the calibration set this paragraph names. The
@@ -313,7 +313,7 @@ three took one page load.
   that is a design proposal and goes to him as an HTML mockup (ruling #106), not
   as an edit. Battle is the live example: its target sizes were fixed outright,
   its rail, hand width, merge gesture and tile density went to
-  `docs/design/mockups/battle-mobile.html` and are still unbuilt (#118).
+  `docs/design/battle-mobile.html` and are still unbuilt (#118).
 
 ## Finish
 

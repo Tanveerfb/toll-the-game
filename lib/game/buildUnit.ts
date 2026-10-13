@@ -6,7 +6,7 @@ import type { StageEffect } from "@/types/stageEffects";
 import type { TeamPick } from "@/types/teamPick";
 
 /** A player's saved progress for one character, as `playerStore` holds it. */
-export interface SavedProgress {
+interface SavedProgress {
   level: number;
   ascension: number;
   ultLevel: number;

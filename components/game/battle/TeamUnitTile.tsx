@@ -62,7 +62,7 @@ function StatusChips({
  *   reads as text on paper), no slab: the tile lies on the sheet rather than
  *   being lifted off it.
  */
-export type TileSurface = "ground" | "paper";
+type TileSurface = "ground" | "paper";
 
 const SURFACE: Record<
   TileSurface,

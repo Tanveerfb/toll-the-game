@@ -276,7 +276,7 @@ function meetsUltLevelGate(mechanic: Mechanic, ultLevel: number): boolean {
 }
 
 /** The skill-rank twin of the gate above (`MechanicBase.minRank`). */
-export function meetsRankGate(mechanic: Mechanic, rankIndex: number): boolean {
+function meetsRankGate(mechanic: Mechanic, rankIndex: number): boolean {
   return mechanic.minRank == null || rankIndex + 1 >= mechanic.minRank;
 }
 

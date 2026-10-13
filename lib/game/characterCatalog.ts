@@ -190,17 +190,15 @@ const characterMap = new Map<string, CharacterData>(
   characters.map((character) => [character.id, character]),
 );
 
-export const characterIds = characters.map((character) => character.id);
-
 /**
  * Whether unreleased kits show on screens: local development only. Next.js
  * inlines `NODE_ENV` at build time, so the deployed site never carries them,
  * and `next dev` on his PC (the server he forwards to his phone) always does.
  */
-export const SHOWS_UNRELEASED = process.env.NODE_ENV === "development";
+const SHOWS_UNRELEASED = process.env.NODE_ENV === "development";
 
 /** Whether a kit may appear on a player-facing screen in this build. */
-export function isVisible(character: { unreleased?: boolean }): boolean {
+function isVisible(character: { unreleased?: boolean }): boolean {
   return character.unreleased !== true || SHOWS_UNRELEASED;
 }
 
@@ -354,7 +352,7 @@ export function getCharacterMechanics(character: CharacterData): string[] {
 
 /**
  * Inject/replace a character at runtime without touching disk. Not part of
- * the static roster (getAllCharacters/characterIds are unchanged) — it only
+ * the static roster (getAllCharacters is unchanged) — it only
  * makes getCharacterById resolve the id for startCustomBattle. Used by the
  * player-facing Preview sandbox (lib/game/damagePreview.ts's practice
  * dummy) to register an ephemeral, never-persisted opponent.

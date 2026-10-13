@@ -59,7 +59,7 @@ granted above or listed here.*
 | --- | --- | --- |
 | §TS, §STRUCTURE, §HOOKS, §FIREBASE | **Folder layout.** No `src/` (`@/*` maps to `./*`); a global `types/` (13 files, several mirroring zod schemas by hand); `store/` not `stores/`; providers (`AuthProvider`, `BattleProvider`, `MechanicProvider`) in `hooks/`; schemas in `lib/game/` not `schemas/`; `lib/firebase.ts` not `lib/firebase/client.ts` | **His call 2026-09-27: queued migration** (`decisions.md`). The `src/` and alias move is one sweep scheduled with him; `types/` → `z.infer` on touch |
 | §DESIGN | **Rendered uppercase.** Headings render in Bangers, a capitals face, and micro-labels are uppercased by CSS. Source copy is sentence case | **His call 2026-09-27: follow the standard, queued.** Needs mockups (#144) and a decision on the heading face |
-| §DOCS | **`components.md` does not exist.** The folder map in `AGENTS.md` names the main components, not all of them | Queued. Write it when a component is next added; §COMPONENTS then applies |
+| §DOCS | `docs/STATUS.md` is a snapshot **over a session log** added at the top | **Adopted 2026-10-13** (#188): *"Fleet rule is correct."* The 2026-10 log folded back into the file | Closed |
 | §PACKAGES | **Two animation libraries**: `framer-motion` (4 importers) and `gsap` + `@gsap/react` (`components/gacha/PullReveal.tsx` only). §MOTION says one or the other | Queued. Move `PullReveal` to framer-motion when it is next touched, then drop `gsap` |
 | §MODULES | **Six files over 1,000 lines**: `lib/game/combat.ts` 1,793, `components/game/BattleArena.tsx` 1,528, `lib/game/damagePreview.ts` 1,195, `store/playerStore.ts` 1,076, `store/gameStore.ts` 1,050, `hooks/BattleProvider.tsx` 1,018. Also `lib/utils.ts`, a `utils` name (§MODULES), which is shadcn's `cn` at the path its CLI expects | Queued (foundation audit M2). Split on touch, by responsibility, not by size. `lib/utils.ts` is likely an exception to raise when touched |
 | §STRUCTURE | **Three relative `../` imports**, all in `lib/game/damage.ts` | Queued, on touch |
@@ -113,7 +113,7 @@ granted above or listed here.*
 | `components.md` | none yet (queued above) |
 | `data-model.md` | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), with its Design Glossary (§NAMING) |
 | `environment.md` | [`docs/environment.md`](docs/environment.md): names, purposes and owners, never values |
-| `status.md` | [`docs/STATUS.md`](docs/STATUS.md): `Start here` and "Confidence and gaps" only. Session logs go to `docs/archive/` |
+| `status.md` | [`docs/STATUS.md`](docs/STATUS.md): the fleet's two-zone file since 2026-10-13 (#188), a snapshot over a session log; logs older than the current month in `docs/archive/` |
 | `issues.md` | [`docs/issues.md`](docs/issues.md) |
 | `roadmap.md` | [`docs/ROADMAP.md`](docs/ROADMAP.md) |
 | `demo-shortcuts.md` (§SHORTCUTS) | [`docs/demo-shortcuts.md`](docs/demo-shortcuts.md) |
@@ -147,15 +147,15 @@ day. **Each row is either queued or a question for him; none is decided.**
 | Rule | What it asks | Here | State |
 | --- | --- | --- | --- |
 | §DOCS | `docs/STATUS.md` is a snapshot **over a session log** added at the top | His 2026-09-27 call: the log goes to `docs/archive/`, the snapshot stands alone | **Conflict between this file and the standard: stop and ask** (§SCOPE). Either the fleet rule gains the archive variant (`propose-standard`) or this repo returns to the two-zone file |
-| §OWNER | Mockup drafts in a gitignored `public/_mockups/`; the locked one moves to `docs/design/<name>.html` | Every mockup, picked or not, is committed in `docs/design/mockups/` (#144) | Question for him: keep the committed-options convention (it is the record of what he chose against), or adopt the fleet split |
+| §OWNER | Mockup drafts in a gitignored `public/_mockups/`; the locked one moves to `docs/design/<name>.html` | **Adopted 2026-10-13** (#188): *"Adopt the standard."* Twelve locked mockups moved, five drafts deleted, the open round kept as the one exception | Closed |
 | §TOOLS | `CLAUDE.md` is the one hand-written file; `AGENTS.md` is a pointer | `AGENTS.md` holds the content and `CLAUDE.md` imports it, because Next.js generates a block in `AGENTS.md` | Question for him; moving ~400 lines is a sweep, not an on-touch fix |
 | §NAMING | kebab-case files for new projects; **existing projects keep their convention, recorded here** | `PascalCase.tsx` for components, `camelCase.ts` for lib and store, shadcn's own lowercase in `components/ui/` | **Recorded: kept.** Never mass-rename (the rule says so). `git mv` for any case-only rename |
-| §RUNTIME | Node pinned in `engines` and `.nvmrc`; env validated at startup by a zod `lib/env.ts` | Neither exists; `@types/node` is 24, the cloud container is 22 | Queued. Ask which Node the Vercel project runs before pinning |
+| §RUNTIME | Node pinned in `engines` and `.nvmrc`; env validated at startup by a zod `lib/env.ts` | **Pinned 2026-10-13** to 24.x, the Vercel project's `nodeVersion`; the cloud container runs 22 (a §RUNTIME finding, not fixable from a session). `lib/env.ts` still queued | Half done |
 | §SPECS | Plans in `docs/specs/<feature>.md`, with a status line | `Plans/` with the same job and a README | Queued, on touch: the next plan is written to `docs/specs/`; `Plans/` moves when it is next emptied |
 | §SCALE | `docs/architecture.md` as a module map; area `CLAUDE.md` files | `docs/ARCHITECTURE.md` is the engine's design, not a module table; no area files | Queued. The module table is a checkpoint's work once the `src/` move lands |
 | §SHADCN (rewritten) | Components custom by design; a **component round** after a motif is locked | The retheme he asked for on 2026-10-13 is exactly this | Lands with the theme: pick a motif, then the component round |
 | §MOTION (rewritten) | Nothing banned on style; `prefers-reduced-motion`, speed, tokens for durations; library is `motion` (`motion/react`) | `framer-motion` 12 (the same library under its old name) plus `gsap` | The gsap row above stands; the rename to `motion` is on touch |
-| §TRELLO | A board only if `CLAUDE.md` names one | `CLAUDE.md` says "not set" | Question for him |
+| §TRELLO | A board only if `CLAUDE.md` names one | **None** (his call 2026-10-13, #188) | Closed |
 | §AI | The AI tooling is his choice when AI first enters | No AI feature exists | Nothing to do |
 | §TESTING | Vitest for pure logic; interface checked in a real browser by the agent | Already the practice (`test:browser`, the browser-pane notes in `AGENTS.md`) | Satisfied |
 | §GIT (cloud rule) | A cloud session's harness branch is its authorisation to commit and push there | This is how cloud sessions already land | Satisfied; `AGENTS.md`'s "git only on his trigger" now reads with that exception |

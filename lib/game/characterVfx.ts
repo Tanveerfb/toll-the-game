@@ -19,7 +19,7 @@ export type VfxShape =
   | "paw"
   | "quake";
 
-export interface CharacterVfx {
+interface CharacterVfx {
   /** CSS color (any valid color string) for the burst ring / sweep streak. */
   tint: string;
   shape: VfxShape;

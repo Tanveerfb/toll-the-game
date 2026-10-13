@@ -33,7 +33,7 @@ export function elementHue(color: string): string {
   return isElement(color) ? EL_HUE[color] : EL_HUE.light;
 }
 
-export const EL_NAME: Record<ElementColor, string> = {
+const EL_NAME: Record<ElementColor, string> = {
   light: "Light",
   red: "Red",
   blue: "Blue",

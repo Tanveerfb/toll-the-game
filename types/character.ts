@@ -22,7 +22,7 @@ export interface CharacterPhase {
   passives?: Passive[];
 }
 
-export interface Character {
+interface Character {
   id: string;
   name: string;
   color: Color;

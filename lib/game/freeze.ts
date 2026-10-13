@@ -5,8 +5,8 @@ import type { StatusEffect } from "@/types/mechanic";
 /**
  * [Freeze] and the [Frozen] debuff it leaves (Tanveer, 2026-09-27, defined in
  * one sitting while drafting blue Lyra; recorded as a ruling in
- * docs/HANDOFF.md). Every rule lives here so the engine, the AI, the hand and
- * the duel parser cannot disagree about what a frozen unit may do.
+ * docs/HANDOFF.md). Every rule lives here so the engine, the AI and the hand
+ * cannot disagree about what a frozen unit may do.
  *
  * His definition, against stun:
  *  - Incapacitates like stun: the unit cannot use skills. It still gains
@@ -26,7 +26,7 @@ import type { StatusEffect } from "@/types/mechanic";
  * team turn (ruling #21), so "frozen for 1 turn" costs exactly one turn.
  */
 
-export const FROZEN_NAME = "Frozen";
+const FROZEN_NAME = "Frozen";
 
 // Read defensively: the queue's post-pass sees every unit the queue does,
 // including the bare fixtures its own tests build without status arrays.

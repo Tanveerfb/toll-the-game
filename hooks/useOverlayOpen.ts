@@ -5,7 +5,7 @@ import React from "react";
 /** Any radix dialog, sheet or popover that is currently open. The selector
  *  matches on `data-state`, which the coach card (a plain `role="dialog"`)
  *  does not carry, so it can never count itself. */
-export const OPEN_OVERLAY_SELECTOR = '[role="dialog"][data-state="open"]';
+const OPEN_OVERLAY_SELECTOR = '[role="dialog"][data-state="open"]';
 
 function subscribe(onChange: () => void): () => void {
   const observer = new MutationObserver(onChange);

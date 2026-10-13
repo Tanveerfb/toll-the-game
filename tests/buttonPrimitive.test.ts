@@ -75,7 +75,7 @@ const ALLOWED = new Set<string>([
  * ``className={`${CHIP} ${on ? A : B}`}`` - shows the scanner a className with
  * no literal classes in it, so the button is invisible however it is styled.
  *
- * `components/news/NewsFeed.tsx` does exactly that for its filter and
+ * The news feed (removed 2026-10-13) did exactly that for its filter and
  * pagination chips, which is why it is absent from the list above despite
  * hand-rolling five buttons. Catching that needs the constants resolved, not a
  * wider regex, so it is recorded here rather than bodged.

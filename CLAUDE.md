@@ -18,12 +18,11 @@ so the `extraKnownMarketplaces` / `enabledPlugins` block from the
 - **Deploys**: Vercel, from `master`, **auto-deploys on every push**. Live at
   `https://toll-the-game.vercel.app/`. Real players: none yet (he and Claude
   play). Cloud sessions work on their harness branch (§GIT).
-- **Trello board**: not set. He has not said whether this project has one
-  (§TRELLO): until he does, no Trello work.
+- **Trello board**: none (his call, 2026-10-13, ruling #188). No Trello work.
 - **Motif**: Shōnen Ink (ruling #154, `docs/design-system.md`). **Under
   redesign since 2026-10-13**, his call: he wants something more professional
-  and less bold. Options are drawn in `docs/design/mockups/theme-options.html`
-  and nothing is locked.
+  and less bold. Round two is `docs/design/mockups/screens-from-characters.html`
+  (round one was deleted); he picks on the PC; nothing is locked.
 - **Area files** (§SCALE, since 2026-10-13): `lib/game/CLAUDE.md` (engine
   rules, simulator, the save) and `scripts/skill_art/CLAUDE.md` (kit-art
   scripts). A fact lives in one file only. **Map**: `docs/ARCHITECTURE.md`
@@ -41,9 +40,10 @@ granted or queued, and [`decisions.md`](decisions.md) records his four answers:
   sentence case in place of the motif's uppercase. **Neither is a fix to make
   in passing.** The `src/` move is one sweep he schedules; `types/` converts
   on touch.
-- **Done:** the document split. `docs/STATUS.md` is a short snapshot that is
-  rewritten, not appended; session logs go to `docs/archive/`; issues,
-  environment and decisions have their own files.
+- **Done:** the document split; issues, environment and decisions have their
+  own files. Since 2026-10-13 (#188) `docs/STATUS.md` is the fleet's two-zone
+  file: a snapshot rewritten in place over a session log added at the top;
+  logs older than the current month stay in `docs/archive/`.
 
 Where `AGENTS.md`, `conventions.md` and `project-rules.md` disagree, **stop and
 ask** (rules §SCOPE). Everything else converts to the standard **on touch**.

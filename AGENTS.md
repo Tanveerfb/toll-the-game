@@ -10,7 +10,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # toll-the-game — Project Documentation
 
-Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDOFF.md` first** — context, design rulings ledger, working style. Architecture in `docs/ARCHITECTURE.md`; current state in `docs/STATUS.md` (short, rewritten each checkpoint; history in `docs/archive/`); issues in `docs/issues.md`; plan in `docs/ROADMAP.md`; character, kit and card art in `docs/CHARACTER_ART.md` (walked by the `charart` skill); other art generation in `docs/ART_PIPELINE.md`. **Work that needs his PC is ordered in `docs/PC_SESSION.md`**: a PC session reads it after `relay`, a cloud session appends to it. How this repo diverges from `project-rules.md` is `conventions.md`, and why is `decisions.md`.
+Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDOFF.md` first** — context, design rulings ledger, working style. Architecture in `docs/ARCHITECTURE.md`; current state in `docs/STATUS.md` (a snapshot rewritten each checkpoint, over a session log newest first; older logs in `docs/archive/`); issues in `docs/issues.md`; plan in `docs/ROADMAP.md`; character, kit and card art in `docs/CHARACTER_ART.md` (walked by the `charart` skill); other art generation in `docs/ART_PIPELINE.md`. **Work that needs his PC is ordered in `docs/PC_SESSION.md`**: a PC session reads it after `relay`, a cloud session appends to it. How this repo diverges from `project-rules.md` is `conventions.md`, and why is `decisions.md`.
 
 **Never block on missing art.** If a feature needs an image the game doesn't have, append a request to `docs/ART_REQUESTS.md`, ship the feature with a fallback, and move on — ComfyUI runs in its own dedicated sessions, and that file is what they read.
 
@@ -69,7 +69,7 @@ Two of those rules are **enforced in code, so don't re-implement them per screen
 
 **Navigation is a bottom tab bar below `sm`** (ruling #123, 2026-09-01) — four destinations (Menu, Events, Gacha, You) in the thumb third, derived from `GAME_ROUTES`'s `tab` flag since 2026-10-03, portalled to `<body>` because the nav's `backdrop-filter` makes `fixed` resolve against the nav rather than the viewport. It stands down while `[data-battle-active]` is on screen. Heights compose through `--tabbar-h`; `.screen-below-nav` subtracts both bars. The archive's filters moved into a sheet the same day (#124).
 
-**No mobile debt is outstanding.** The 2026-08-21 sweep took every screen, battle included: its controls moved off a side rail into a sheet, merge arms from a button, and press-and-hold opens a card's or a unit's details — the gesture set is **tap = act, hold = explain** (#118). `docs/design/mockups/battle-mobile.html` records those decisions, and `battle-mobile-v2.html` the 2026-09-01 revisions.
+**No mobile debt is outstanding.** The 2026-08-21 sweep took every screen, battle included: its controls moved off a side rail into a sheet, merge arms from a button, and press-and-hold opens a card's or a unit's details — the gesture set is **tap = act, hold = explain** (#118). `docs/design/battle-mobile.html` records those decisions, and `docs/design/battle-mobile-v2.html` the 2026-09-01 revisions.
 
 Two corrections to the above, both from measuring it (2026-09-01). **Hand cards floor at 44px, not 56** — 56 was the fix for cards shrinking to 43px slivers, and it then hid two of a full hand of eight off the edge of a 370px scroller. Eight is the hard maximum (4v4) and the arithmetic is fixed: full-bleed 390px, 2px gaps, **47px a card**. And **it is browser-verified now** — geometry and behaviour are, at 390×844 against a live 4v4. Taste still is not, and never is; that pass is his.
 
@@ -81,11 +81,12 @@ Two corrections to the above, both from measuring it (2026-09-01). **Hand cards 
 app/                  Next.js App Router — /, /practice, /events (world boss + trials),
                       /gacha,
                       /archive, /archive/character/[cardNumber], /archive/npc,
-                      /news, /login, /profile,
+                      /news (a static Coming soon since 2026-10-13; the MDX
+                      stack is gone, the overhaul is on the roadmap), /login, /profile,
                       /dev/ui (development only: the Shōnen Ink kit, 404 in production)
 components/
   ui/                 shadcn primitives + KeyworkHighlighter + prose.tsx (document
-                      typography, shared with mdx-components.tsx)
+                      typography for the archive)
   game/               Deck, CharacterBrowser, KitDetails, SkillDocument, TeamSelect,
                       PlayerHud, BattleArena (arena shell only)
   game/events/        Events screens: EventsBoard, EventBrief, TrialRail,
@@ -94,8 +95,6 @@ components/
                       UnitDetailPanel, TeamDetailsList, BattleLogDrawer, EffectsList
   gacha/              BannerScreen, PullReveal, RatesModal, MilestonePicker,
                       ConfirmPullModal (summon confirm + currency-shift preview)
-  news/               NewsFeed (option B: new-since-last-visit, then archive),
-                      NewsPostLayout
 hooks/                BattleProvider (phase engine), MechanicProvider (phase queue),
                       AuthProvider, useBattleSequencer (cinematics)
 lib/
@@ -108,13 +107,10 @@ lib/
                       effectDiff.ts, epicBattles.ts (Epic Battles arcs and
                       stages, zod-parsed from data/arcs/) + epicClears.ts
                       (the clear record)
-  gacha/  news/       Banner + pull logic; MDX post loading
+  gacha/              Banner + pull logic
   nav/routes.ts       GAME_ROUTES — single source of truth for what modes exist
 store/                gameStore.ts (battle + deck + battle owner), playerStore.ts,
                       settingsStore.ts
-content/news/         MDX patch notes (updates/ + notices/). **Closed and emptied
-                      2026-10-03 (#179)**: `NEWS_OPEN` in lib/news/open.ts;
-                      /news reads "Coming soon"
 data/characters/      Character kit JSON (source of truth for kits); README.md there
                       is the authoring guide. A new kit starts from data/kit.template.json
                       via `npm run newkit`, never from another character's file;
@@ -248,8 +244,10 @@ a carried prop needs a strap or a closed hand (*"Physics where mate?"*).
 and then I can tell you which of the mockups is the best one."* Options, not a
 proposal — choosing is faster for him than critiquing, and the comparison is
 what exposes the trade-off. Each option must take a **different position on the
-problem**; three variations on one idea are one option. Self-contained HTML in
-`docs/design/mockups/`, real palette and fonts, drawn at **390px** (#106, #107),
+problem**; three variations on one idea are one option. Self-contained HTML: drafts in the
+gitignored `public/_mockups/` (the dev server serves them; an artifact when he is
+on his phone), and the design he locks in `docs/design/<name>.html` (#188);
+real palette and fonts, drawn at **390px** (#106, #107),
 and **make the interaction live** — tabs switch, selections select, costs
 recompute (#146). A static picture cannot answer *how does it flow*, which is
 the question he asked first about a design whose subject was tabs.

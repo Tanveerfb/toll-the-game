@@ -248,8 +248,3 @@ export function getMusicController(): MusicController | null {
   }
   return controller;
 }
-
-/** Test seam — drops the singleton so a suite can build its own. */
-export function resetMusicControllerForTests(): void {
-  controller = null;
-}

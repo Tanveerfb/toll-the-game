@@ -34,7 +34,7 @@ import type { RunnableEncounter } from "@/lib/game/fightRun";
  */
 
 /** The collection every arc belongs to. Declared once; the schema pins it. */
-export const EPIC_BATTLES_COLLECTION = "Epic Battles";
+const EPIC_BATTLES_COLLECTION = "Epic Battles";
 
 const teamPickSchema = z.object({
   id: z.string().min(1),
@@ -94,7 +94,7 @@ export function stageKey(arcId: string, stageId: string): string {
   return `${arcId}/${stageId}`;
 }
 
-export const stageSchema = z.object({
+const stageSchema = z.object({
   id: idSchema,
   order: z.number().int().min(1),
   name: z.string().min(1),

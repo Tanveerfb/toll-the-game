@@ -18,7 +18,7 @@
  * KeyworkHighlighter for number/arrow/keyword rendering.
  */
 
-export interface PassiveMarkupBullet {
+interface PassiveMarkupBullet {
   text: string;
   comments: string[];
 }

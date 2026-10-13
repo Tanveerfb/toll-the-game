@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
  * Document typography, shared by the MDX news posts and the archive character
  * pages.
  *
- * These styles used to live only in `mdx-components.tsx`. The archive page
+ * These styles used to live only in the news page's MDX components (removed 2026-10-13). The archive page
  * rendered the same kind of information — headings, tables, bullet lists —
  * through nested bordered `<Card>`s instead, so `/news` read like a document
  * and `/archive/[id]` read like a stack of boxes. Both now consume this, which

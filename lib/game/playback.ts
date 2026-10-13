@@ -25,7 +25,7 @@ import { useGameStore } from "@/store/gameStore";
 /** Ceiling on any single wait. A sequencer bug, a mid-animation unmount or a
  *  dropped event must never freeze a battle permanently — past this the
  *  resolver simply carries on and the fight stays playable. */
-export const PLAYBACK_TIMEOUT_MS = 12_000;
+const PLAYBACK_TIMEOUT_MS = 12_000;
 
 /** Set by `skipPlayback` until the next `resetPlayback`. While true every
  *  wait resolves immediately, which is what makes Skip collapse the *rest*
@@ -58,7 +58,7 @@ export function isPlaybackCaughtUp(state: {
  * Resolve once the sequencer has finished animating everything emitted so far.
  *
  * Resolves immediately when playback was skipped, when no sequencer is mounted
- * (tests, the duel watcher, any headless caller — those must never hang), or
+ * (tests, any headless caller — those must never hang), or
  * when there is nothing left to play.
  */
 export function waitForPlayback(): Promise<void> {

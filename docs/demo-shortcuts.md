@@ -33,3 +33,12 @@ localStorage.
 Nothing today is a mock behind an adapter: there is no adapter (§DATA, queued in
 `conventions.md`). Seed data and the kit JSON are real content, not
 shortcuts.
+
+## Playtest values: real numbers before launch
+
+Not a client-side rule, but the same backlog: a number set for playtesting
+that gets his real figure before any public launch.
+
+| # | Value | Where | Replaced by | Risk if it ships |
+| --- | --- | --- | --- | --- |
+| P1 | **Starter gems 500** (was 1,000; his call 2026-10-13, ruling #190: *"Playtest purposes for now yes."*) | `DEFAULT_PLAYER_STATE.currencies.gems` and the migration baseline in `store/playerStore.ts` | His launch number | A new account starts with pulls the economy did not plan for |

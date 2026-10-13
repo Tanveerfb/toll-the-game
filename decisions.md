@@ -174,7 +174,7 @@ may even change some of the layout if you need to."*
 
 This is a redesign under §DESIGN, so it starts as mockups, not a build
 (#144, §OWNER). Three options taking different positions are in
-`docs/design/mockups/theme-options.html`, each on the same four screens at
+`theme-options.html (deleted 2026-10-13, ruling #188; in git history before 09f17fd)`, each on the same four screens at
 390×844, with live tabs, selection, filters and a cost that recomputes:
 
 - **A · Launcher** — Clean SaaS, dark product. The chrome disappears; the
@@ -307,3 +307,28 @@ commentary; and `nextFreeCardNumber` never refills a gap, because a deleted
 card number stays retired (#187). `newkit` writes `unreleased: true` and prints
 the registration steps rather than editing `characterCatalog.ts` itself; the
 registration test is the guard that catches a forgotten step.
+
+## 2026-10-13 — His answers on the open decisions, in one pass
+
+Asked for context on every open item, then answered them in a list. The
+audit's Part 5: the theme stays open until he is on the PC (*"We'll see"*;
+listed on the roadmap so it is not lost); starter gems to 500 as a playtest
+value (#190); the repeatable gem source and the day-two hook, what leads the
+hub while Orders is closed, and the Second Trial with Molvarr tiers 2 to 4 all
+go to a **PvE content phase after the foundation** (*"Will plan PVE content
+once we have the foundation and core stuff ready."*); sign-in over a guest
+save asks **with the differences shown** (`docs/specs/save-conflict.md`, the
+pure half built); practice stays ownership-free by design (#189).
+
+The rules: STATUS format, mockup location and Trello as #188 records; Node 24,
+read from the Vercel project rather than guessed.
+
+The cleanup: `public/unreleased/` **kept** (*"Intentionally kept"*); the dev
+duel tool **removed**; gsap **replaced** by the motion library the repo already
+uses; the MDX news stack **removed**, the news page left as a static Coming
+soon and its overhaul on the roadmap; `docs/design/characters/refs`
+**kept** (*"Useful"*); knip's unused exports **removed**. Not removed from
+knip's "unused files": `.claude/hooks/block-heredoc.mjs` (a hook, wired in
+settings), `public/sw.js` (registered by a string, not an import),
+`tests/stubs/next-image.tsx` (a vitest alias) and `scripts/capture-screens.mjs`
+(a tool); knip cannot see any of those four uses.

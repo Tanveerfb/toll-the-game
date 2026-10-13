@@ -172,7 +172,7 @@ export const registeredSkillArt: readonly string[] = [...SKILLS_WITH_ART];
 /** Deterministic slug for a skill name (kebab-case, punctuation stripped).
  *  "Jajanken: Rock" -> "jajanken-rock" · "Fist of Flowing Ruin : Slide" ->
  *  "fist-of-flowing-ruin-slide". */
-export function skillArtSlug(skillName: string): string {
+function skillArtSlug(skillName: string): string {
   return skillName
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")

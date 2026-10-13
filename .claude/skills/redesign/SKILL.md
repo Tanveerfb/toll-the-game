@@ -18,9 +18,10 @@ what is already on screen (#177, #185), chosen through a picture he can tap.
 - `docs/design-system.md` — the tokens, the type scale, the components table.
 - `components/ui/` — the primitives; `components/game/UnitTileFace.tsx` — the
   tile anatomy he loves (#172). A mockup renders the same anatomy span for span.
-- `docs/design/mockups/` — every round so far, picked or not. The latest two
-  rounds are `theme-options.html` (rejected, generic) and
-  `screens-from-characters.html` (round two). Read the newest before drawing:
+- `docs/design/<name>.html` — the designs he locked, one file each (#188); a
+  draft never lands there. `docs/design/mockups/screens-from-characters.html`
+  is the one open round (round two of the theme), kept committed until he
+  decides. Read the newest before drawing:
   what he rejected is as binding as what he picked.
 - `scripts/capture-screens.mjs` — captures the live screens at phone size with a
   seeded roster.
@@ -63,7 +64,9 @@ Afterwards: kill the server by PID, `rm -rf .next-verify`,
 
 ## Step 2 — Draw two or three options that take different positions
 
-- **One file** in `docs/design/mockups/<subject>.html`, a `.phone` frame at
+- **One file** in `public/_mockups/<subject>.html` (gitignored; the dev server
+  serves it at `/_mockups/<subject>.html`, so art is referenced as `/characters/...`),
+  a `.phone` frame at
   390×844, an option chooser, and a notes panel per option: the position it
   takes, what changes, what stays, watch-outs, what it costs to build.
 - **Different positions, not variations.** Three looks on one idea are one
@@ -96,8 +99,11 @@ Fix what fails, re-run, then look at the screenshots yourself.
 
 ## Step 4 — Show it where he is
 
-- Commit the HTML to `docs/design/mockups/` (his convention, #144; the fleet
-  rule's `public/_mockups/` is a recorded conflict in `conventions.md`).
+- Drafts are not committed (#188, the fleet rule): `public/_mockups/` is
+  gitignored. **A cloud session's draft dies with the container**, so from the
+  cloud always publish the artifact below as well, and say the file is not in
+  the repo. When he locks one, `git mv` it to `docs/design/<name>.html`, fix
+  its art paths to `../../public/...`, and record the pick (step 5).
 - **If he is on his phone, publish an artifact as well** (his ask, 2026-10-13:
   *"I'm on the phone and I can't see the mockups any other way"*): copy the
   HTML with art paths rewritten to `public/...`, publish with `files` mapping

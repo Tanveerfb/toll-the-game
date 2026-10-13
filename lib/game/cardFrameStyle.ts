@@ -15,7 +15,7 @@
  * bar. Border widths are unchanged, so the 47px card's geometry is too.
  */
 
-export type CardFrameTier = "r1" | "r2" | "r3" | "ultimate";
+type CardFrameTier = "r1" | "r2" | "r3" | "ultimate";
 
 export interface CardFrameStyle {
   tier: CardFrameTier;

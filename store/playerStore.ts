@@ -248,7 +248,7 @@ export type PersistedPlayerData = Omit<
   | "recordEpicClear"
 >;
 
-export const DEFAULT_PITY = {
+const DEFAULT_PITY = {
   limited: { bannerId: null, bar: 0, claimedFirst: false, claimedFinal: false },
   permanent: { bar: 0, claimedFinal: false },
 } as const;
@@ -302,7 +302,9 @@ function defaultCharacterProgress(
 export const DEFAULT_PLAYER_STATE = {
   uid: null,
   roster: ["duke"], // Starter characters
-  currencies: { gems: 1000, coin: 0, permanentTicket: 0 }, // Starter currency
+  // Starter currency. 500 gems since 2026-10-13 (ruling #190), a playtest
+  // value registered in docs/demo-shortcuts.md; his launch number replaces it.
+  currencies: { gems: 500, coin: 0, permanentTicket: 0 },
   inventory: {} as Record<string, number>,
   characters: {} as Record<string, CharacterProgress>,
   presets: [] as TeamPreset[],
@@ -350,7 +352,7 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     account: { rank: 1, xp: 0, clearedWalls: [] as number[] },
     worldLevel: 1,
     stamina: { current: STAMINA_CAP, updatedAt: Date.now() },
-    currencies: { gems: 1000, coin: 0, permanentTicket: 0 },
+    currencies: { gems: 500, coin: 0, permanentTicket: 0 },
     stats: { pulls: 0, bossClears: 0 },
     claimedOrders: {} as Record<string, boolean>,
     autoClearTickets: 0,
@@ -365,7 +367,7 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
     const { gems, ...materials } = oldInventory;
     state = {
       ...state,
-      currencies: { gems: gems ?? 1000, coin: 0 },
+      currencies: { gems: gems ?? 500, coin: 0 },
       inventory: materials,
       characters: {},
       stamina: { current: STAMINA_CAP, updatedAt: Date.now() },
@@ -373,7 +375,7 @@ export function migratePlayerState(persistedState: unknown, version: number): Pe
   }
 
   if (version < 3) {
-    const oldCurrencies = (state.currencies as { gems: number; coin: number } | undefined) ?? { gems: 1000, coin: 0 };
+    const oldCurrencies = (state.currencies as { gems: number; coin: number } | undefined) ?? { gems: 500, coin: 0 };
     const oldCharacters =
       (state.characters as Record<string, { level: number; ascension: number; xp: number }> | undefined) ?? {};
     const migratedCharacters: Record<string, CharacterProgress> = {};

@@ -3,7 +3,7 @@ import type { StageEffect, StageEffectTarget } from "@/types/stageEffects";
 type Side = "player" | "enemy";
 
 /** True when `effect` applies to `side` ("both" applies to either). */
-export function appliesTo(effect: StageEffect, side: Side): boolean {
+function appliesTo(effect: StageEffect, side: Side): boolean {
   return effect.target === side || effect.target === "both";
 }
 

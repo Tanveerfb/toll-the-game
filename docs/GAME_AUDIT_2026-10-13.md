@@ -8,7 +8,7 @@ it (`docs/archive/FOUR_VALUES_AUDIT-2026-10-03.md`,
 
 **What he asked for:** *"act as a senior game developer… see what the issues
 are… do audit and then come back to me."* Plus two jobs that are reported
-separately: the theme redesign (`docs/design/mockups/theme-options.html`)
+separately: the theme redesign (`theme-options.html (deleted 2026-10-13, ruling #188; in git history before 09f17fd)`)
 and the fleet-standard sync (`conventions.md`, `decisions.md`).
 
 **How it was made.** One cloud session, read-only against commit `09bf9a3`.
@@ -371,7 +371,7 @@ verb and write only under gitignored paths.
 5. What leads the hub while Orders is closed? (11)
 6. Author the Second Trial and Molvarr tiers 2–4 now, or withhold them?
 7. Practice: ownership-free on purpose? (Part 2, lower)
-8. The theme: A, B or C in `docs/design/mockups/theme-options.html`, or
+8. The theme: A, B or C in `theme-options.html (deleted 2026-10-13, ruling #188; in git history before 09f17fd)`, or
    parts of each. Then the component round (§SHADCN).
 
 ## Part 6 — A suggested order

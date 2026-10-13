@@ -78,10 +78,6 @@ export const TUTORIAL_STEPS: readonly StepDefinition[] = [
   },
 ];
 
-export function getTutorialStep(id: string): TutorialStep | undefined {
-  return TUTORIAL_STEPS.find((step) => step.id === id);
-}
-
 /**
  * Whether a step's situation still holds.
  *
