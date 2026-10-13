@@ -5,7 +5,7 @@ the same change. **The values live in `styles/globals.css`**; this file says
 what each one is *for*, which is the part code cannot say. A token added to
 the CSS without a line here is a token nobody else knows how to use.
 
-**Read this before any UI work.** `project-rules.md` §12–§14 apply: no raw hex,
+**Read this before any UI work.** `project-rules.md` §STYLING–§SHADCN apply: no raw hex,
 font size or spacing value in a component, and every control is a customised
 shadcn primitive (ruling #154).
 
@@ -174,7 +174,7 @@ paper and on the ground alike.
 
 ## Motion
 
-`project-rules.md` §18 as written: 150–250ms, ease-out in and ease-in out,
+`project-rules.md` §MOTION as written: 150–250ms, ease-out in and ease-in out,
 transform and opacity only, removed under `prefers-reduced-motion`. **The one
 orchestrated moment is the battle's hit**: the existing `battle-shake` family
 stays as it is.

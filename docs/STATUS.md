@@ -1,91 +1,102 @@
-# Status — 2026-10-08 (his PC, ComfyUI)
+# Status — 2026-10-13 (cloud)
 
 **Who updates this:** every checkpoint, by **rewriting** it, never appending
-(`project-rules.md` §2; his call, `decisions.md` 2026-09-27). It holds the
-current position only. A session's log goes to
-`docs/archive/STATUS-YYYY-MM.md` with a line in
+(his call, `decisions.md` 2026-09-27; `project-rules.md` §DOCS wants a
+session log under it, and that conflict is logged in `conventions.md` as a
+question for him). It holds the current position only. A session's log goes
+to `docs/archive/STATUS-YYYY-MM.md` with a line in
 [`docs/archive/README.md`](archive/README.md). Issues are in
 [`issues.md`](issues.md), phases and the not-built list in
 [`ROADMAP.md`](ROADMAP.md), and accounts in [`environment.md`](environment.md).
 
 ## Start here
 
-**State:** blue Duke is at `charart` **step 4**. LoRA v2 (step 1750, his pick)
-is installed. Official renders of his picks are in ComfyUI
-`output\duke_official3` and **four sheets went to him** (S2, K4, K10, U19). He
-has not picked yet. Nothing is locked or in the game. The game code is
-unchanged since `aaae4e2`. Last session's log: `docs/archive/STATUS-2026-10.md`,
-2026-10-07/08.
+**State:** three things landed on 2026-10-13 and all three wait on him.
 
-**Next:** get his picks from the `off3_*` sheets, then finish and composite them
-(`docs/CHARACTER_ART.md` steps 4–5; the ultimate uses `compose_duke.py --bg=`
-with a snow plate). Surge's hair still leaks from its draft, so offer options.
+1. **The audit** is `docs/GAME_AUDIT_2026-10-13.md`. Its headline: the cloud
+   save has one confirmed breaking defect (issue #28, nested arrays in
+   `epicClears`) and four silent-loss paths (#29–#31); the beta has about two
+   hours of content, no day-two hook, and six characters with no way to
+   obtain them (#32). Eight decisions for him are at its end.
+2. **The theme.** He said Shōnen Ink did not grow on him and wants something
+   more professional. Three options are live in
+   `docs/design/mockups/theme-options.html` (A Launcher, B Gallery, C Ink
+   wash). **Nothing is locked; #154 stands until he picks.** The component
+   round (§SHADCN) follows the pick.
+3. **The rules** are v3.4.0 (`decisions.md` 2026-10-13). One step is his:
+   the `fleet` plugin block in `.claude/settings.json`, which the session
+   could not write.
+
+**Game code is unchanged since `aaae4e2`.** Blue Duke's art is where the
+2026-10-08 status left it: `charart` step 4, LoRA v2 installed, four official
+sheets with him (S2, K4, K10, U19), not picked. Batra held at step 1.
+
+**Next:** his picks, in this order if he has one session: the save fix
+(#28, #30, #31, one session, no design content), then the theme, then the
+loop decisions. Then blue Duke's picks when he is back on his PC.
 
 **Blocked on him:**
-- **Duke:** picks from the official sheets, a snow plate (M2/M3/M6) and a river
-  plate (R2/R5/R6); the Slide skill name (he may rename it).
-- **Batra:** held at step 1. The `lora_batra_set_a` round is unreviewed: the
-  B36 face reference draws a bandana-like turban, and the straps draw crosses.
-  Bring him options.
-- From 2026-10-03, still open:
-  - try the Merge badge on a phone (its 44px hit area overlaps the name strip);
-  - approve or reverse Claude's calls in #180;
-  - missions for Epic Battles, the Gon/Killua/Leorio answer to Tao (#138), an
-    optional Tao rerun;
-  - the Caila and Sara design sheets, the new card texts, Lyra's C4 and passive
-    placement, Roused, the Orders tile, the app-icon recolour, the foundation
-    audit, the folder migration, summon animations (#174).
+- The theme: A, B or C, or parts of each.
+- The eight audit decisions (`docs/GAME_AUDIT_2026-10-13.md`, Part 5).
+- Two rules conflicts (`conventions.md`, "v3 sections"): the `STATUS.md`
+  format and where mockups live. Also: a Trello board or none; which Node the
+  Vercel project runs.
+- Duke: picks from the official sheets, snow and river plates, the Slide
+  name. Batra: the `lora_batra_set_a` options.
+- From 2026-10-03, still open: the Merge badge on a phone; #180's calls;
+  missions for Epic Battles; the Gon/Killua/Leorio answer to Tao (#138); the
+  Caila and Sara sheets; the new card texts; Lyra's C4 and passive placement;
+  Roused; the Orders tile; the app-icon recolour; the foundation audit; the
+  folder migration; summon animations (#174).
 
 **Don't trust:**
-- `output\blue_duke\candidates`: Sonnet's composites, off-model and on the old
-  ultimate background. **Superseded, never lock them.**
+- Any claim that the cloud save works end to end for a signed-in player who
+  has cleared an Epic stage (#28).
+- `output\blue_duke\candidates` on his PC: superseded, never lock them.
 - Sim numbers from before 2026-10-03.
-- In the cloud container, `npm run test:browser` needs the Playwright symlink
-  workaround (`PLAYWRIGHT_BROWSERS_PATH` with the 1194 builds linked as 1234).
+- In the cloud container: `next build` fails on Google Fonts (the sandbox,
+  not the code); `npm run test:browser` needs the Playwright symlink
+  workaround.
 
 ## Where things are
 
 | What | Where |
 | --- | --- |
+| The audit, and the decisions it asks for | `docs/GAME_AUDIT_2026-10-13.md` |
+| The theme options | `docs/design/mockups/theme-options.html` |
+| The rules, and what the sync left open | `project-rules.md` (v3.4.0), `conventions.md` ("Synced" note and "v3 sections"), `decisions.md` 2026-10-13 |
 | The art method and its dead ends | `docs/CHARACTER_ART.md`, walked by the `charart` skill |
-| Duke's state, decisions and his quotes | `scripts/lora/characters/duke.json` (`lock`, `revision_2026_10_08`, `kit_art`, `lora_pick_v2`) |
-| Batra's state | `scripts/lora/characters/batra.json` (`status`) |
-| Duke's run scripts | `scripts/skill_art/duke/` (README), `scripts/skill_art/compose_duke.py` |
-| Cleaning a trait out of a dataset | `scripts/lora/duke_v2_fix/` (README) |
-| LoRA files | ComfyUI `models\loras\duke_toll.safetensors` (v2 step 1750); `duke_toll_v1_1250.safetensors` (backup); steps in `models\loras\training\` |
-| Training sets | `C:\Users\Tanve\.comfyui-mcp\training\datasets\duke_v2` (backups `duke_v2_precollar`, `duke_v2_preskin`); config `configs\duke_v2_sdxl_lora.yaml` |
-| References | ComfyUI `output\references\README.md`; the Dokkan sets via the `dokkanartresearch` skill |
-| Rulings | `docs/HANDOFF.md`; newest is #184 (an ultimate's background) |
+| Duke's and Batra's state | `scripts/lora/characters/duke.json`, `batra.json` |
+| Rulings | `docs/HANDOFF.md`; newest is #184 |
 
 ## Confidence and gaps
 
-### Verified on 2026-10-08, by running it
+### Verified on 2026-10-13, by running it
 
 - `npm run check`: **1,675 passed / 137 files**, exit 0 (typecheck and lint
-  included). No game code changed in this session.
-- The LoRA install: the sha256 of `duke_toll.safetensors` matches
-  `training\duke_toll_v2_000001750` (`c2557683f42c…`), and the v1 backup is a
-  separate hash (`9e07579e9ba7…`).
-- Every sheet sent was looked at by Claude first. No text on clothes, no arm-up
-  pose.
+  included). No source file changed this session.
+- The mockup, in Chromium at 390px: every interactive box ≥ 44px in all three
+  options; text contrast on every token pair ≥ 4.5:1 (body ≥ 12:1).
+- `grep -rn "§[0-9]"` finds no numbered rules reference left in the live docs
+  (archive, `Plans/completed`, `decisions.md` and other documents' own
+  sections keep theirs by design).
 
 ### Not verified
 
-- The new ultimate layers on an **on-model** render. They were tested only on
-  Sonnet's off-model render.
-- Whether the v2 LoRA's short grey wisp on front-facing close-ups bothers him.
-- The promoted scripts in `scripts/skill_art/duke/` and `scripts/lora/duke_v2_fix/`
-  parse, but were not re-run from their new folders.
+- `next build`: Google Fonts is unreachable from the container.
+- Audit issue #28 against a real Firestore; the shape is confirmed in code,
+  the rejection is documented Firestore behaviour.
+- Every other audit finding is *read*, not *reproduced*; the levels are
+  stated per finding.
+- Whether the `fleet` plugin loads in a cloud session once enabled.
 
 ### Recorded as Claude's reading, not his words
 
-- The A/B rule, the "check the head against the dataset" step, and the dead
-  ends added to `docs/CHARACTER_ART.md` are Claude's method notes from this
-  session's failures.
+- The three theme options and everything in their notes panels.
+- The audit's severities and its suggested order of work.
 
 ## Outside the repo
 
-- **`toll-kits`:** #181–#184 are **not yet** in its `KIT_RULINGS`, and its
-  `decisions/PENDING.md` entries for #182/#183 are not yet deleted. Next session
-  with git access there.
-- **ComfyUI output folders** hold all the images; nothing is in git.
+- **`toll-kits`:** #181–#184 are still not in its `KIT_RULINGS`, and its
+  `decisions/PENDING.md` entries for #182/#183 are not yet deleted.
+- **ComfyUI output folders** on his PC hold all the images; nothing is in git.

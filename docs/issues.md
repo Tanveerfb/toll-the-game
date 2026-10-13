@@ -1,7 +1,7 @@
 # Issues
 
 **Who updates this:** any session that finds, fixes or closes an issue, in the
-same change (`project-rules.md` §2). Open and closed issues only; where the
+same change (`project-rules.md` §DOCS). Open and closed issues only; where the
 work stands is `docs/STATUS.md`, and phases are `docs/ROADMAP.md`. Moved here
 verbatim from `docs/STATUS.md` on 2026-09-27; the numbering is unchanged.
 
@@ -20,6 +20,10 @@ verbatim from `docs/STATUS.md` on 2026-09-27; the numbering is unchanged.
 | 25 | ~~A nulled hit must read "Tanked"~~ **BUILT 2026-08-13 (rulings #71, #75)** — gate is clause position relative to the damage step. Scoped to DoTs + `lowerUltGauge`; **stun/freeze deferred by Tanveer** and pinned by a test | `lib/game/combat.ts`, `types/battleEvent.ts` | Done (partial scope, by instruction) |
 | 26 | ~~`gained 5% undefined`~~ **FIXED 2026-08-13 — and it was not cosmetic.** The synergy buff never carried `mech.stats`, so six kits' tribe synergies granted **nothing**. This table previously said "the buff itself works"; it did not. Balance knock-on awaiting Tanveer. **CLOSED 2026-09-27 by him:** synergies and every other kit question are his, worked in `toll-kits` (*"i am working on the kit synergies and uh, uh all the kit related stuff in the other repo so you don't have to worry about that"*) | `lib/game/passive.ts`, `lib/game/stats.ts` | Closed |
 | 27 | ~~Hand animations want a performance pass~~ **FIXED 2026-08-13** — it was a correctness bug, not cost: hit-testing ran against the live DOM the drag preview was reordering, so the row fed its own input. Frozen boxes now. **Feel is unjudged** — needs a playtest | `components/game/battle/Hand.tsx` | Fixed, feel unverified |
+| 28 | **Cloud save breaks permanently after the first Epic Battles clear.** `epicClears[*].teams` is `string[][]` and in `CLOUD_FIELDS`; Firestore rejects nested arrays, so every `setDoc` after that throws and is only logged. Not reproduced against Firestore; the shape is confirmed in code. Audit 2026-10-13 finding 1 | `lib/game/epicClears.ts:39`, `lib/game/cloudSave.ts:47`, `hooks/AuthProvider.tsx:145` | **Critical** |
+| 29 | **A stale tab or device overwrites the cloud with its whole snapshot** (full-document `merge` write, one read per auth change, no `onSnapshot`, no cross-tab listener). Audit finding 2 | `hooks/AuthProvider.tsx:140-144` | High |
+| 30 | **A failed first cloud read seeds the cloud with starter defaults** on the next store change, because the auto-sync subscriber is live before the read succeeded. Audit finding 3 | `hooks/AuthProvider.tsx:67-110, 158-177` | High |
+| 31 | **The last 1.5 s of progress is dropped on sign-out and tab close**, and sign-out leaves the persisted battle for the next account to claim. Audit findings 5 and the sign-out reset | `hooks/AuthProvider.tsx:117, 169-203` | Medium |
+| 32 | **Six released characters have no acquisition path** (the collab six are in no banner, no pool, no order), and Permanent Tickets have no sink. His call which path. Audit finding 8 | `data/banners/debut-2026-08.json`, `lib/gacha/banners.ts:278` | High (design) |
 
 Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier stats wired, ruling #36), #16 (zero clauses hidden, ruling #44), #15 (firestore.rules deployed live via Firebase MCP 2026-07-11 — cloud saves work for signed-in users; minimal `firebase.json` added), #7 (Mechanic discriminated union — see Working).
-
