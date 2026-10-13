@@ -48,10 +48,15 @@ environment traps first.
    needs `(adult man:1.1), (broad shoulders:1.1)` and `slim, skinny, boyish`
    in the negative, or the figure reads as a teenager.
 4. `python scripts/lora/gen_candidates.py <id> [slug ...]`. Aim for ~11 body
-   shots and ~11 close-ups, 24–28 approved in all. **Lyra's set included her
-   C4 action card pose and an A-pose**; Sara's and Duke's were calm. Whether
-   an action pose in the set is why Lyra's LoRA held poses at 0.9 is an open
-   question for him, not a rule: put it to him when a new set is planned.
+   shots and ~11 close-ups, 24–28 approved in all. **The body shots must
+   include action shots** (ruling #186): Lyra's set had her C4 action pose
+   and her LoRA drafted at 0.9; Sara's and Duke's were calm, front-facing
+   standing figures and their LoRAs pull every draft to standing. His words:
+   *"the front facing normal standing poses were a very major issue for
+   me"*. Plan about a third of the body shots as actions, each different
+   (lunge, sprint, strike, turn, crouch), posed with the mannequin or a
+   reference skeleton; keep the calm front-facing figure to a few. Put the
+   count to him with the shot list.
 5. **Scan the approved set for a detail that repeats** and is not in the lock
    (a strand, a collar trim, a waistband, a skin tone drifting between
    close-ups and full bodies). A LoRA folds whatever recurs into the trigger

@@ -90,9 +90,12 @@ recorded so a session knows it exists and can ask.
 | Pose control | union ControlNet from the mannequin: depth **0.55**, openpose **0.6**, `end_percent` 0.7; or a DWPose reference skeleton at 0.45 | a drawn archer skeleton, openpose 0.78 / end 0.85, or prompt only |
 | Sampler | 832×1216, `common.base_graph`, hand pass per profile | 12 steps dpmpp_2m karras, one image per seed |
 
-Lyra's held at 0.9 because every pose had a job and a skeleton. Which recipe
-a new character takes is his call if the doc's fails him; do not mix them in
-one batch. The worked script is `scripts/skill_art/duke/kit_drafts.py`
+**Which recipe is decided by the dataset the LoRA was trained on** (ruling
+#186): a LoRA from a set with action shots drafts at 0.9 as Lyra's did; a
+calm-set LoRA (Sara's and Duke's current ones) takes the 0.65 route, which is
+a workaround, not the preferred path. Do not mix them in one batch. If a
+calm-set LoRA keeps failing, the fix is `charlora` (action shots, retrain),
+not a third recipe. The worked script is `scripts/skill_art/duke/kit_drafts.py`
 (Duke-specific; copy it per character until a generic one exists, see the
 README). Body size for the mannequin: `height` and `thickness` in the pose
 JSON (Duke 1.1 / 1.35; the default figure is a slim 5'3" woman).

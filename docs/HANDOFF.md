@@ -2050,3 +2050,28 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
      art) still stand.
    - **Where it lives:** `AGENTS.md` (the motif paragraph), `decisions.md`
      2026-10-13 (a correcting entry), `docs/STATUS.md`.
+
+186. **A character's LoRA dataset must include action shots; a set of calm,
+     front-facing standing poses is what went wrong on Sara and Duke**
+     (2026-10-13). Asked whether Lyra's LoRA held action poses at 0.9 because
+     her dataset carried her C4 action pose, where Sara's and Duke's calm sets
+     did not, he settled it: *"action poses are the ones which are preferred
+     and the calm poses were bad like not just the calm poses but the front
+     facing normal standing poses were a very major issue for me when I was
+     creating Sarah and Duke's assets"* and *"yes the data set must include
+     action start"* (speech-to-text; read as *action shots*).
+   - **What changes:** `docs/CHARACTER_ART.md` step 1 and the `charlora` skill
+     now require action shots in every dataset, with the front-facing
+     standing pose named as the thing to limit, not the default to fill with.
+     The 0.65 drafting strength in step 3 is the workaround for a calm-set
+     LoRA, no longer the recipe; a LoRA trained on an action-bearing set is
+     expected to draft at 0.9 as Lyra's did. Sara's and Duke's current LoRAs
+     were trained on calm sets and keep the 0.65 route until retrained.
+   - **Claude's reading, flagged as an inference:** how many action shots and
+     which poses is not fixed by this. A working number is a third of the
+     body shots, each a different action, none repeating the kit's slot
+     poses exactly so the LoRA learns the character, not one picture. Put
+     the count to him when the next dataset is planned.
+   - **Where it lives:** `docs/CHARACTER_ART.md` (steps 1 and 3, dead ends),
+     `.claude/skills/charlora/SKILL.md`, `.claude/skills/kitart/SKILL.md`,
+     `scripts/lora/characters/lyra.json` (`lora_use`).

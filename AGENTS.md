@@ -26,7 +26,7 @@ Turn-based card battle game for the Element Clash IP. **Agents: read `docs/HANDO
 | `ruling` | He settles a design question. Numbered entry, his words, supersede links, propagation |
 | `comfypending` | A feature needs art the game doesn't have |
 | `charart` | Any character-art ask. Orients (ComfyUI, the profile, which step), enforces his gates, routes to the step skill below. The method is `docs/CHARACTER_ART.md` |
-| `charlora` | Steps 0–2: lock the design, the dataset he approves by number, the frozen training recipe, the checkpoint he picks. His PC only |
+| `charlora` | Steps 0–2: lock the design, the dataset he approves by number (**with action shots, never a calm front-facing set**, #186), the frozen training recipe, the checkpoint he picks. His PC only |
 | `kitart` | Steps 3–5: the **slot plan he OKs before any GPU time** (what the skill does → the moment → the pose's job → the reference), drafts, official render, finish, composite. Carries both recipes. His PC only |
 | `artinstall` | Step 6: lock, library, install into the game (skills, card + cut-out, tile and portrait from that one cut-out, registry, tests). A cloud session can do it |
 | `dokkanartresearch` | Pose research for kit art: find a Dokkan card on dokkandb.com, view it, save it to the reference library. Pose and composition only; saving asks first |

@@ -37,6 +37,10 @@ to `docs/archive/STATUS-YYYY-MM.md` with a line in
    art pipeline split into `charart` (routes) → `charlora` / `kitart` /
    `artinstall`, with `kitart` carrying the **slot plan he OKs before any
    GPU time** and both drafting recipes (Lyra's at 0.9, the doc's at 0.65).
+   **Ruling #186** settled the question between them: a dataset must carry
+   action shots; calm front-facing sets are why Sara's and Duke's LoRAs need
+   the 0.65 route. Both are candidates for a retrain on an action-bearing
+   set when he next has GPU time.
    `scripts/skill_art/README.md` and `scripts/pose/README.md` are new;
    `lyra.json` gained a reconstructed `lora_use` / `kit_art`. Still to ask
    him: `public/unreleased/` (7.3 MB), `lib/duel`, gsap, the MDX stack for
