@@ -13,8 +13,10 @@ added to at the top, newest first. Logs older than the current month are in
 "cleaned up and decided": the cloud save is fixed (v11, v12), the six collab
 units are gone (#187), the project skills exist (eleven, `AGENTS.md`), every
 open decision he was asked has an answer (#186 to #190, `decisions.md`), and
-the dead code, the duel tool, the MDX news stack and gsap are out. Nothing has
-deployed: all of it sits on the harness branch, `master` is untouched.
+the dead code, the duel tool, the MDX news stack and gsap are out. **Merged to
+`master` on 2026-10-13 on his `git checkpoint and merge`, which deploys to
+production**; the branch's preview build of b4035ca was READY on Vercel before
+the merge.
 
 **Next:** on his PC, `docs/PC_SESSION.md` in order: enable the `fleet` plugin,
 Node 24, then rebuild Duke's dataset with action shots and retrain (#186),
@@ -123,7 +125,9 @@ structure, schemas and measurement (`AGENTS.md`). Deploys to Vercel from
 - Both mockup rounds, in Chromium at 390px: every control ≥ 44px, no broken
   art.
 - The Vercel project reads `nodeVersion: 24.x` (read through the Vercel
-  tools, not assumed).
+  tools, not assumed), and the preview deployment of b4035ca on the session
+  branch reports READY: the tree builds on the platform even though
+  `next build` cannot run in the container.
 
 **The mistake worth keeping.** The first theme round was drawn from a motif
 catalogue without looking at the one screen he liked; he called it generic,
@@ -137,7 +141,8 @@ batch, then fan out) is the right one.
 ## Assumed, not verified
 
 - The cloud save against a real Firestore (v11 and v12 both).
-- `next build` on this tree: the container cannot fetch Google Fonts.
+- `next build` in the container: it cannot fetch Google Fonts; the Vercel
+  preview build stands in for it.
 - That the `fleet` plugin loads in a cloud session once enabled.
 - The audit's findings other than #28, #30 and #31 were *read*, not
   reproduced; severities are stated per finding.
