@@ -18,11 +18,15 @@ to `docs/archive/STATUS-YYYY-MM.md` with a line in
    `epicClears`) and four silent-loss paths (#29–#31); the beta has about two
    hours of content, no day-two hook, and six characters with no way to
    obtain them (#32). Eight decisions for him are at its end.
-2. **The theme.** He said Shōnen Ink did not grow on him and wants something
-   more professional. Three options are live in
-   `docs/design/mockups/theme-options.html` (A Launcher, B Gallery, C Ink
-   wash). **Nothing is locked; #154 stands until he picks.** The component
-   round (§SHADCN) follows the pick.
+2. **The redesign, round two (ruling #185).** The first round
+   (`theme-options.html`, three motif swaps) he called generic. His
+   direction: keep the Characters page and the bottom nav; change Home,
+   Events, Gacha, Profile and Settings. Round two is
+   `docs/design/mockups/screens-from-characters.html`: A Tiles, B Board,
+   C Posters, each drawn from the Characters page's tile component, real art
+   and real tokens, with the Characters screen unchanged as the benchmark and
+   a tab-bar colour toggle. **Nothing is locked until he picks.** The
+   component round (§SHADCN) follows the pick.
 3. **The rules** are v3.4.0 (`decisions.md` 2026-10-13). One step is his:
    the `fleet` plugin block in `.claude/settings.json`, which the session
    could not write.
@@ -36,7 +40,8 @@ sheets with him (S2, K4, K10, U19), not picked. Batra held at step 1.
 loop decisions. Then blue Duke's picks when he is back on his PC.
 
 **Blocked on him:**
-- The theme: A, B or C, or parts of each.
+- Round two: A Tiles, B Board or C Posters, or parts of each; and the tab
+  bar colour (yellow as today, ink bar, paper with an ink line, or ink tab).
 - The eight audit decisions (`docs/GAME_AUDIT_2026-10-13.md`, Part 5).
 - Two rules conflicts (`conventions.md`, "v3 sections"): the `STATUS.md`
   format and where mockups live. Also: a Trello board or none; which Node the
@@ -63,7 +68,8 @@ loop decisions. Then blue Duke's picks when he is back on his PC.
 | What | Where |
 | --- | --- |
 | The audit, and the decisions it asks for | `docs/GAME_AUDIT_2026-10-13.md` |
-| The theme options | `docs/design/mockups/theme-options.html` |
+| The redesign options, round two | `docs/design/mockups/screens-from-characters.html` (round one, rejected: `theme-options.html`) |
+| What stays and what changes, his words | `docs/HANDOFF.md` #185 |
 | The rules, and what the sync left open | `project-rules.md` (v3.4.0), `conventions.md` ("Synced" note and "v3 sections"), `decisions.md` 2026-10-13 |
 | The art method and its dead ends | `docs/CHARACTER_ART.md`, walked by the `charart` skill |
 | Duke's and Batra's state | `scripts/lora/characters/duke.json`, `batra.json` |
@@ -75,8 +81,13 @@ loop decisions. Then blue Duke's picks when he is back on his PC.
 
 - `npm run check`: **1,675 passed / 137 files**, exit 0 (typecheck and lint
   included). No source file changed this session.
-- The mockup, in Chromium at 390px: every interactive box ≥ 44px in all three
-  options; text contrast on every token pair ≥ 4.5:1 (body ≥ 12:1).
+- Both mockups, in Chromium at 390px: every interactive box ≥ 44px in every
+  option; no broken art; round one's text contrast on every token pair
+  ≥ 4.5:1. Round two uses the game's own tokens, so its contrast is the
+  game's.
+- The live screens were captured from a scratch `next dev` on 3210 with a
+  seeded roster (`/`, `/archive`, `/events`, `/gacha`, `/profile`): Home uses
+  the top 40% of the viewport, Events 37%, Characters fills it.
 - `grep -rn "§[0-9]"` finds no numbered rules reference left in the live docs
   (archive, `Plans/completed`, `decisions.md` and other documents' own
   sections keep theirs by design).
@@ -92,7 +103,8 @@ loop decisions. Then blue Duke's picks when he is back on his PC.
 
 ### Recorded as Claude's reading, not his words
 
-- The three theme options and everything in their notes panels.
+- Both rounds of options and everything in their notes panels; #185's
+  inference that the Characters page is the benchmark is flagged as such.
 - The audit's severities and its suggested order of work.
 
 ## Outside the repo

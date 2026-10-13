@@ -1229,8 +1229,10 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
    **Not covered, and open:** the break between two trial fights is not a
    battle, so a reload there still loses the run.
 
-154. **The game's motif is Shōnen Ink, and every control is a customised shadcn
-   component** (2026-09-26, amends #84, retires the Combat Terminal palette).
+154. **Amended by #185 (2026-10-13): the Characters page and the bottom nav
+   are kept; Home, Events, Gacha, Profile and Settings are redrawn from the
+   Characters page's language.** The game's motif is Shōnen Ink, and every control is a customised shadcn
+   component (2026-09-26, amends #84, retires the Combat Terminal palette).
    He opened the foundation work on the UI rather than on the audit's code
    findings:
 
@@ -1710,8 +1712,9 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
      ribbon you see."* The rule that a break-out stops at a natural edge is
      in `docs/CHARACTER_ART.md` step 6.
 
-174. **The summon screen is a manga page, and it is the one screen allowed to
-   be loud all over** (2026-10-03). He found the gacha page *"still looks very
+174. **Superseded by #185 (2026-10-13): the gacha screen is redrawn; the
+   deferrals below still stand.** The summon screen is a manga page, and it is the one screen allowed to
+   be loud all over (2026-10-03). He found the gacha page *"still looks very
    generic-ish to me"* and asked for it *"properly built out with our theme"*.
    Three options were drawn in `docs/design/mockups/gacha-overhaul.html`
    (A poster, B collection board, C manga page). He **selected C**: *"i like C
@@ -2007,3 +2010,41 @@ See `docs/ROADMAP.md` (the "Forward Product Roadmap" section supersedes the old 
      hair strand near the ear. don't want it."*), not by patching each picture.
    - **Where it lives:** `scripts/lora/characters/duke.json` (`kit_art`),
      `docs/CHARACTER_ART.md` rule 5.
+
+185. **The redesign keeps the Characters page and the bottom nav, and changes
+   Home, Events, Gacha, Profile and Settings** (2026-10-13; amends #154's
+   scope, supersedes #174's summon screen). Three theme options had been drawn
+   as whole-motif swaps (`docs/design/mockups/theme-options.html`: A Launcher,
+   B Gallery, C Ink wash) and he rejected them as generic: *"I know the mockups
+   you created are for the redesign layout, but I should tell you what's
+   currently working on the site before you propose the generic designs,
+   because those are generic, I'll be honest with you."*
+   - **What stays, his words:** *"first is the characters page you know the
+     tiles and the some characters popping out of like in a 3D version like
+     they are popping out of the border it's only Lyra and Sarah right now
+     because they are using the new pipeline with the comfy but as more
+     characters will get their redesigns and assets generated then everyone
+     else will also ... have that pop out effect and obviously all the colors
+     so basically everything on the characters page that doesn't need changing
+     at all the colors the layout the component everything that's all good"*.
+     And the nav: *"I think the navigation at the bottom is good, but obviously
+     we can use different colors."*
+   - **What changes, his words:** *"what I really don't like right now is the
+     home page ... Home page needs changing, the events screen needs changing,
+     the gacha one obviously is the most bad one right now. And obviously the
+     profile page, the settings page do need changing."*
+   - **The rule:** *"I'm not saying like we have to change everything. We are
+     changing what doesn't work. We are keeping what works and is very
+     effective and very appealing."*
+   - **Claude's reading, flagged as an inference:** the Characters page (#172's
+     tile, the element hues as identity, its layout and components) is the
+     benchmark the other screens are redrawn against, not a catalogue motif;
+     #154's motif is not retired, and what failed is its loud chrome on the
+     screens he named. The next mockup round draws Home, Events, Gacha and
+     Profile from the Characters page's language, in more than one option
+     (#144), built from the live screens rather than by hand (#177's lesson).
+   - **Superseded:** #174's manga-page summon screen. The gacha screen is
+     redrawn with the others. #174's deferrals (summon animations, new summon
+     art) still stand.
+   - **Where it lives:** `AGENTS.md` (the motif paragraph), `decisions.md`
+     2026-10-13 (a correcting entry), `docs/STATUS.md`.

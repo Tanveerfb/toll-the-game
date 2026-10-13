@@ -122,3 +122,4 @@ on 2026-08-20. Each line below is one section in that file.
 - Session log — 2026-08-20: skills, an engine bug family, and six Dokkan kits
 - Session log — 2026-08-21: the road checkpoint, and 37 art assets
 - Session log — 2026-08-21/22: mobile-first everywhere, six tools, and an app icon (folded 2026-09-16)
+

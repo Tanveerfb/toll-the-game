@@ -27,3 +27,4 @@ verbatim from `docs/STATUS.md` on 2026-09-27; the numbering is unchanged.
 | 32 | **Six released characters have no acquisition path** (the collab six are in no banner, no pool, no order), and Permanent Tickets have no sink. His call which path. Audit finding 8 | `data/banners/debut-2026-08.json`, `lib/gacha/banners.ts:278` | High (design) |
 
 Closed: #17 ("Permanently" = cancel-proof, ruling #37), #19 (damage-modifier stats wired, ruling #36), #16 (zero clauses hidden, ruling #44), #15 (firestore.rules deployed live via Firebase MCP 2026-07-11 — cloud saves work for signed-in users; minimal `firebase.json` added), #7 (Mechanic discriminated union — see Working).
+

@@ -189,3 +189,21 @@ All three render sentence case (his 2026-09-27 call), keep the four tabs and
 the 44px floor, and keep the five element hues for units only. Nothing is
 locked; ruling #154 stands until he picks. The component round (§SHADCN)
 follows the pick.
+
+---
+
+## 2026-10-13 — The three theme options were generic; the redesign is scoped to screens, not to a motif
+
+**Reverses the framing of the entry above, same day.** He looked at the three
+options and said what was wrong with the approach, not with a detail:
+*"those are generic, I'll be honest with you."* The Characters page and the
+bottom nav stay; Home, Events, Gacha, Profile and Settings change. Ruling
+#185 carries his words.
+
+What was wrong, in the working sense: the `design-motif` skill's Step 1 says
+a project with a clear visual identity keeps it, and the motif was treated as
+rejected wholesale because he said Shōnen Ink "did not grow on me". He meant
+the screens it looks bad on. The lesson for the next redesign request:
+**ask which screens work before drawing**, and draw the failing screens from
+the language of the working ones. `theme-options.html` stays in the mockups
+folder as the record of the options he rejected, per #144's convention.
