@@ -78,16 +78,15 @@ wins). His: the theme, the audit decisions.
 **Blocked on him:**
 - Round two: A Tiles, B Board or C Posters, or parts of each; and the tab
   bar colour (yellow as today, ink bar, paper with an ink line, or ink tab).
-- The eight audit decisions (`docs/GAME_AUDIT_2026-10-13.md`, Part 5).
+- Seven of the eight audit decisions (`docs/GAME_AUDIT_2026-10-13.md`, Part 5);
+  decision 1 (the collab six) was settled by #187, and decision 8 is the
+  theme pick above.
 - Two rules conflicts (`conventions.md`, "v3 sections"): the `STATUS.md`
   format and where mockups live. Also: a Trello board or none; which Node the
   Vercel project runs.
 - Duke: the action-shot list and count for the rebuilt dataset, then the
   LoRA v3 step, then new drafts at 0.9; the Slide name still open. Batra:
   the `lora_batra_set_a` options, now with action shots (#186).
-- One line of his the session could not place: *"when we're designing a
-  new character kit ... the schema needed"*. A zod schema for the kit JSON
-  here, a template in `toll-kits`, or something else: his to say.
 - From 2026-10-03, still open: the Merge badge on a phone; #180's calls;
   missions for Epic Battles; the Gon/Killua/Leorio answer to Tao (#138); the
   Caila and Sara sheets; the new card texts; Lyra's C4 and passive placement;
