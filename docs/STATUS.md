@@ -9,29 +9,26 @@ added to at the top, newest first. Logs older than the current month are in
 
 ## Start here
 
-**State:** **the web game is discontinued** (2026-10-14, his call): he is
-moving to a Godot adaptation, planned in other sessions (`decisions.md`,
-2026-10-14). This is the repo's final game-side checkpoint; no game code
-changed in it. What is still live here is the **art pipeline**: Duke's LoRA v3
-dataset is one gate from training.
+**State:** the web game is discontinued (2026-10-14) for a Godot adaptation.
+This repo is the record plus the **art pipeline on FLUX.2 klein 4B**. Three
+characters have klein LoRAs: **Lyra** (step 1500), **Sara** (step 2000) and
+**Duke** (step 1750), all his picks. Briefs for the rest of the arc 1 cast are
+in each profile's `design_klein`; the cast plan is `docs/PC_SESSION.md` item 0.
 
-**Next:** on his PC, `docs/PC_SESSION.md` item 1: his picks from Duke's 13
-round-2 action shots (`output\duke_v3_action\sheet_v3_action_round2.png`),
-then captions, staging and training `duke_toll_v3`.
+**Next:** on his PC, **Batra's design drafts on klein** (item 0; he will send
+pictures of a checkered patka). Then the **Bureau uniform** round (female and
+male), then Chiara.
 
-**Blocked on him:** those picks; the model cleanup (*"models can be deleted
-later"*); emptying the Recycle Bin (about 16 GB of recycled outputs and the
-ACE-Step model).
+**Blocked on him:** Batra's references and every design gate; the Bureau
+uniform lock; the model cleanup; emptying the Recycle Bin.
 
 **Don't trust:**
-- The generic `kit_drafts.py` / `official_render.py` / `qwen_edit.py` /
-  `ref_pose_maps.py` against a real ComfyUI run beyond what this file says ran
-  ("Verified this checkpoint").
+- `docs/CHARACTER_ART.md` steps 0 to 2: still the Animagine recipe (a banner
+  says so). The klein route is `PC_SESSION.md` items 1, 1a and 1b.
+- Steps 3 to 6 (kit drafts, official render, composite) on klein: never tried.
+- The "~50 passes" step rule (`PC_SESSION.md` 1a): three data points.
 - Illustrious-XL v2.0 on this PC: every render is green, cause unknown.
-- `npm run check` as written fails on his PC until `.next/dev/types` is
-  regenerated (see "Verified").
-- Anything in the session log below about the web game's next steps: those
-  plans ended with the discontinuation.
+- `npm run check` fails on his PC until `.next/dev/types` is regenerated.
 
 > **Things that will save a session:** heredocs are blocked by a hook; never
 > type `python -` on his PC (it hangs; it was typed by reflex twice on
@@ -59,95 +56,77 @@ art pipeline.
 
 ---
 
-## What this checkpoint holds (2026-10-14, his PC)
+## What this checkpoint holds (2026-10-15, his PC; his "git checkpoint")
 
-All art pipeline and documentation; nothing in `app/`, `components/`, `lib/`,
-`data/`, `store/` or `hooks/` changed.
+Sara and Duke on klein, the arc 1 cast plan, and the 2026-10-14 Lyra work that
+was checkpointed without git. Nothing game-side changed.
 
-- **Generic kit-art scripts:** `scripts/skill_art/kit_drafts.py` and
-  `official_render.py` read a new `kit_prompt` block in the character profile
-  (schema in `scripts/lora/characters/profile.schema.json`, Duke's filled in);
-  `scripts/lora/common.py` gained `union`, `apply_pose`, `pose_files`,
-  `missing_inputs`. Duke's copies in `scripts/skill_art/duke/` are marked
-  superseded.
-- **New tools:** `scripts/skill_art/qwen_edit.py` (instruction edits with
-  Qwen-Image-Edit 2511), `scripts/skill_art/ref_pose_maps.py` (pose and depth
-  maps from his references), `scripts/lora/tag_candidates.py` (WD14 QC pass,
-  `qc_tags` in the profile). `gen_candidates.py` accepts a `pose:<name>` flag.
-- **Duke's v3 dataset round:** round 1 (mannequin poses) rejected by him;
-  round 2 (his references) made, 13 finals waiting on his picks. Duke's run is
-  `scripts/skill_art/duke/v3_*.py`; the six round-1 mannequin poses are
-  `scripts/pose/poses/duke_ds_*.json`.
-- **Models (his PC, outside git):** downloaded the WD14 tagger, Depth Anything
-  V2 Small and Illustrious-XL v2.0; ACE-Step sent to the Recycle Bin. Flux runs
-  (the `ART_PIPELINE.md` claim that it could not was corrected).
-- **ComfyUI cleaned (outside git):** output 3.3 GB to 763 MB, input 353 MB to
-  233 MB, 2,118 items to the Recycle Bin (`duke.json` `output_cleanup_note`).
-- **Docs and skills:** `docs/CHARACTER_ART.md` (Environment rows for the new
-  tools and licences, the action-shot method, seven new dead ends),
-  `docs/ART_PIPELINE.md` (Flux), `docs/PC_SESSION.md` (rewritten for the art
-  work only), `charlora`, `charart` and `kitart` skills, the script READMEs,
-  `CLAUDE.md` and `AGENTS.md` (the fleet plugin stays at user level; the
-  discontinuation), `decisions.md` (both).
+- **Repo:** `scripts/lora/stage_dataset.py` (`--sentences`, `--name`) and its
+  README row. Profiles: `lyra.json` (klein re-lock, dataset, LoRA, use),
+  `sara_v2.json` (`design_v2` re-lock, `dataset_klein`, `lora_klein`,
+  `lora_klein_use`, `candid_klein`), `duke.json` (`design_klein`,
+  `dataset_klein`, `lora_klein`, `lora_klein_use`), `batra.json`
+  (`design_klein` brief), and new profiles from the schema with briefs:
+  `master_tao.json`, `yalina.json`, `seras.json`, `chiara.json`,
+  `isolde.json`. `docs/PC_SESSION.md` (item 0 cast plan and Bureau uniform,
+  1 Sara done, 1a Duke done with lessons, step rule, RAM), `docs/CHARACTER_ART.md`
+  (klein banner, two dead ends), `.claude/skills/charlora/SKILL.md` (klein
+  banner), this file.
+- **Outside git, his PC:** ComfyUI `models\loras\` `lyra_klein`,
+  `sara_klein`, `duke_klein` (sha256 in the profiles; the Animagine LoRAs
+  untouched); outputs `design_sara_v2/`, `sara_dataset_klein/`,
+  `sara_klein_v1_test/`, `sara_candid/`, `design_duke_klein/`,
+  `duke_dataset_klein/`, `duke_klein_v1_test/`, locked designs in `red_sara/`
+  and `blue_duke/`; trainer `datasets\sara_klein_v1`, `datasets\duke_klein_v1`,
+  `runs\sara_klein_v1`, `runs\duke_klein_v1`; scripts in
+  `C:\Users\Tanve\.comfyui-mcp\training\lyra_klein_work\`; his picks in
+  `D:\Toll-Images\<Character>\` (Lyra 8, Sara locks + 39 dataset + 13
+  candids, Duke lock + 31 dataset).
 
 ---
 
 ## Open items
 
-1. **Duke v3: his picks, captions, train** (`docs/PC_SESSION.md` item 1).
-2. **Model cleanup**, his call when (`docs/PC_SESSION.md` item 2).
-3. **`.next/dev/types` on his PC** still names routes deleted on 2026-10-13
-   (`app/news/notices/[slug]`, `app/news/updates/[slug]`, `app/api/dev/duel`),
-   so `tsc` and `next build` fail locally. Restarting his dev server
-   regenerates it, or delete `.next/dev`; it is his dev server's folder, so it
-   was left alone.
-
-**Retired with the web game (2026-10-14):** the theme round three (#185), the
-sign-in conflict dialog (`docs/specs/save-conflict.md`), issue #29, the PvE
-content phase, the news overhaul, `lib/env.ts`, the folder migration, the
-Firestore save check on his account, the eight audit decisions, the two rules
-conflicts in `conventions.md`, and the `toll-kits` template line. They stay
-in the session log as history.
+1. **Batra on klein** (`PC_SESSION.md` item 0), next; his patka pictures.
+2. **Bureau uniform** (female from Chiara's and Isolde's portraits, male to
+   design; Tao wears it later), after Batra's drafts, before Chiara.
+3. **Briefs still to take:** Mustafa, Siddiq, Gabrist (and more detail for
+   Chiara and Isolde).
+4. **`docs/CHARACTER_ART.md` for klein:** three characters have proven the
+   route; rewrite steps 0 to 2 and make the `lyra_klein_work` scripts generic.
+5. **Model cleanup**, his call when; Animagine and its LoRAs stay until he says.
+6. **Promo picks 1 (fountain) and 11 (tavern)** from Lyra's candids: not saved,
+   pending his word.
 
 ---
 
 ## Verified this checkpoint, by running it
 
-- `npx vitest run --project unit`: **1,622 passed, 135 files**.
-- `npx eslint`: clean, exit 0.
-- `npx tsc --noEmit`: **3 errors, all in the generated
-  `.next/dev/types/validator.ts`** (the deleted routes above); **0 in the
-  source**. So `npm run check` exits non-zero on his PC for that reason only.
-- `next build` on a scratch dist dir (`NEXT_DIST_DIR=.next-verify`) with
-  `.next/dev/types` left out of `tsconfig.json` for that one build: compiled,
-  41 static pages, exit 0. `tsconfig.json` restored with `git checkout`,
-  `.next-verify` removed. A fresh clone (Vercel) has no `.next/dev`.
-- Python: every changed script compiles (`py_compile`; the tagger under
-  ComfyUI's embedded Python); `check_profile.py` passes all five profiles (Sara
-  and Batra warn about calm shot lists, as expected under #186).
-- `kit_drafts.py` and `official_render.py` reproduced Duke's 2026-10-08 graphs
-  exactly (72 drafts, 24 renders), checked before `duke_drop_f` was removed
-  from his `kit_prompt`; the test was red first on one negative word.
-- `qwen_edit.py`, `ref_pose_maps.py`, `tag_candidates.py` and the v3 scripts
-  ran against ComfyUI and produced the images described in the session log.
+- Sara: `sara_klein_v1` trained 2000 steps (18:42-20:47 on 2026-10-14); the
+  installed `sara_klein.safetensors` sha256 matches the run's final save.
+- Duke: `duke_klein_v1` trained 2000 steps (08:49-11:07 on 2026-10-15); the
+  installed `duke_klein.safetensors` sha256 matches step 1750; a four-seed test
+  at 1500/1750/2000 with real prompt wording: 0 of 12 chest logos, stubble 0-1
+  of 4 at 1750.
+- Every copy to `D:\Toll-Images\` was sha256-checked.
+- Every edited profile parses as JSON with its line endings kept.
+- No game code changed, so the unit suite, lint and build were not re-run.
 
 ---
 
 ## Confidence and gaps
 
-- **His words versus Claude's reading:** the discontinuation and the model
-  choices quote him (`decisions.md`); "what carries over to Godot" and the
-  choice of Illustrious over NoobAI are Claude's.
-- **Not run against ComfyUI:** `kit_drafts.py`, `official_render.py` (graphs
-  checked only), and `gen_candidates.py`'s `pose:` flag beyond the 2026-10-14
-  mannequin round.
-- **Taste is his:** every image claim in the log was looked at by Claude; none
-  is his approval until he picks.
-- **Outside the repo:** ComfyUI's folders and models on his PC, the training
-  datasets in `C:\Users\Tanve\.comfyui-mcp\training\datasets\`, and the
-  Recycle Bin hold state no commit records.
-- **Not folded:** this file is past the skill's ~800-line fold line, but
-  ruling #188 keeps the current month's logs here, so October stays.
+- **His words versus Claude's reading:** every lock, dataset image, caption,
+  step pick and cast brief is his (many through the question tool; option
+  labels Claude's, marked in the profiles). Claude's readings are marked:
+  Seris's "one look, two outfits" dropping her transformation (he then
+  confirmed hair and eyes), the ~50-passes step rule, the RAM estimate for
+  smaller PCs.
+- **Untried on klein:** kit drafts, official renders, composites; a
+  non-human character.
+- **Outside the repo:** most of the art state is on his PC and in no commit.
+- **Not folded:** past the ~800-line fold line; ruling #188 keeps the
+  current month here.
 
 ---
 
@@ -155,6 +134,92 @@ in the session log as history.
 
 *Newest first, added at the top (project-rules §DOCS, his call 2026-10-13,
 ruling #188). Logs older than this month are in `docs/archive/`.*
+
+## Session log — 2026-10-14 night to 2026-10-15 (his PC, ComfyUI): Sara and Duke on klein, the arc 1 cast plan
+
+**Sara.** He asked to re-lock her for consistency. Rounds on klein with her
+card as reference, then single words-only Qwen edits. His calls: cat ears back
+on the hood (hidden when it is down), white running high-tops, cute the way a
+grown woman who loves cats is (his example: Keqing), blank or content faces,
+pocket kept, and with the hood up all her hair stays inside (none from behind
+or the side). Locked 20 + 23. Dataset 42 candidates, his audit and fixes, then
+an emotion round after *"we need more emotion"*: 39 images. Trained, he picked
+**step 2000**. Thirteen candid slice-of-life shots kept.
+
+**Duke.** Design checked on klein from his cleaned dataset; a quiff/Wriothesley
+restyle was rejected (*"the old one is better"*); tweaks on the old hair
+(silver through the top, no ear curl). Locked D2. His style notes: defence
+first (*"Fist of flowing water crushed rock"*), clothes from Silver Fang and
+Garou, hair and face from himself with a little Wriothesley. Text-prompted
+action shots read as dance (*"that's still generous"*); klein img2img from his
+v3 reference-posed shots kept real fighting poses. Body B1 for four shirtless
+shots; the hair canon is the dataset images. 31 images, trained, he took
+1750, then flagged a logo, stubble and hands; the audit found stubble in 4
+close-ups and no logo in the set; a four-seed test showed 1750 clean with the
+real wording; his call: **keep 1750, done**.
+
+**Process changes he asked for.** Every klein pick goes to
+`D:\Toll-Images\<Character>\`. Numbers burned onto every image he reviews,
+and caption sheets as images (he reviews on his phone).
+
+**Cast plan.** Arc 1 is 12 characters (Isolde confirmed). Briefs recorded for
+Batra (Sikh, calm, can go berserk, 29, 6'2" ~105 kg, kurta and pyjama, checkered
+patka, two kara, saffron at least as accent; no Nihang or gatka look), Master
+Tao (three forms plus formal), Yalina (small: dies around chapter 5-6),
+Seris (main arc 1 villain; Cressida Bright and Ronova; one look, everyday and
+battle outfits; weapon gone), Chiara and Isolde (polish the game portraits;
+Bureau). A Bureau uniform is to be locked once and put on every Bureau
+character.
+
+**Not done:** Batra's drafts (waiting on the GPU and his pictures); the
+Bureau uniform; briefs for Mustafa, Siddiq and Gabrist.
+
+## Session log — 2026-10-14 (his PC, ComfyUI, evening): FLUX.2 klein 4B, Lyra re-locked and trained, promo shots
+
+**Why the move.** He wanted a base for the Godot game that draws a wide cast
+(Jujutsu Kaisen range: built and skinny men, heavier women, old men,
+monsters), anime and never comic book. His reading: Animagine skews to cute
+girls, which is why Lyra and Sara came out well and Duke struggled. A licence
+pass ruled out NoobAI, Anima, FLUX.2 dev and klein 9B, Qwen-Image-2.1 and the
+DigiFlux2 LoRA (no selling the output); klein 4B is Apache 2.0.
+
+**What happened, in order.**
+1. Lyra bake-off (`output/bakeoff_lyra/`): Animagine + her LoRA vs klein
+   text-only vs klein with her art as reference. klein followed prompts far
+   better at a third of the time; it drifted on garments. Sent first as 300 px
+   sheets, which hid the quality: he found the full renders in ComfyUI himself
+   (memory `send-full-size-renders`).
+2. **He re-locked her design** from klein renders: socks above slouched boots,
+   black waistband and hem, the collar with the black V, small identical gold
+   bracers, frilled armholes, violet eyes. Locked image
+   `output/red_lyra/design_v2_locked.png`. His personality note went into her
+   profile: serious, never cutesy, closed-mouth smile.
+3. The first training run (`lyra_klein_v1`, old 24-image set) was stopped
+   before any step: it showed the old look. Stopping it took killing the
+   Python processes directly; they sit outside the `bash` tree.
+4. Dataset v2: 42 klein renders from the lock as reference; he rejected 10,
+   dropped 3 more (a near-duplicate, a bare-thumb fix, a cutesy one), and 4
+   garment fixes went through `qwen_edit.py`. With the lock as `--ref`, Qwen
+   pasted extra arms in (dead end added); words only worked. 29 images.
+5. Training `lyra_klein_v2`: about 2 hours (3.4 s a step; 7DS running slowed
+   it to 4.3). Previews at 500/1000/1500/2000; he picked **step 1500** from the
+   full test (fast and base models, five moments, a crowd-bleed test).
+   Installed as `lyra_klein.safetensors`.
+6. Candid round, his ask: 12 story moments (`output/lyra_candid/`). *"Almost
+   pulled right out of anime or game, like AAA game even."* He kept six as
+   future promo art (`output/red_lyra/promo/`). Faults he found: an extra arm
+   and floating bow, a broken arrow, a tavern of her clones, trousers and a
+   heavier figure when seated. The bridge shot was fixed both ways he asked
+   (bow removed, bow held).
+
+**Also this session.** His C drive fell to 18 GB free: a 13 Oct `ffmpeg.exe`
+had grown the page file to 55 GB; his restart brought it back to 63 GB. GPU use
+needs no asking unless he says he is on the PC (memory `warn-before-gpu-jobs`).
+The Godot game answers: 2D stills like the web game, 1080p tentative, passed
+M0 (memory `web-game-discontinued`).
+
+**Not done:** Duke and Sara on klein; the method doc for klein; nothing
+committed (his call: checkpoint without git).
 
 ## Session log — 2026-10-14 (his PC, ComfyUI, overnight): the generic art scripts, Duke's v3 action shots, new models, the cleanup, and the end of the web game
 

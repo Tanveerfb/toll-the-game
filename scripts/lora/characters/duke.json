@@ -367,5 +367,97 @@
   "out_dir_v3_note": "2026-10-14: the v3 dataset round (ruling #186) renders to output/lora_duke_v3; his pick: keep the 11 calm body shots and add six action shots (lunge, sprint, strike, turn, crouch, roundhouse kick), each held by a mannequin pose scripts/pose/poses/duke_ds_*.json (previews in output/duke_pose_ds). Not generated yet: no ComfyUI this session. The v2 set's fixes (ear lock, collar, skin) and the boots lock carry over.",
   "v3_prompt_note": "2026-10-14, from the v3 smoke test (action_kick, action_crouch at seed_offset 800): action wording rolled the trousers to capri length and turned them teal, put grey trim on the sleeves, and the grey lock in front of the ear returned on one close crop. Added to negative_extra: the ear lock, sideburns, rolled/capri/cropped trousers, shorts, bare shins, sleeve trim, raglan, two-tone shirt, teal/blue/green trousers; 'full length' added to the trouser clause in identity. Second test: trousers read mid-grey (trouser weight 1.3 -> 1.4, 'mid grey trousers' negative); one crouch drew a maroon shirt and one a mesh one (negatives added). Lunge and turn poses redone: the lunge is seen from the side, the turn is a spin with a knee raised.",
   "dataset_v3_note": "2026-10-14 (his PC, overnight). Ruling #186 dataset rebuild. The v3 set = the 20 approved, cleaned v2 images (training/datasets/duke_v2) + new action shots; calm and face shots are not re-rendered. Round 1, gen_candidates.py with mannequin poses (output/lora_duke_v3, sheet_v3_action.png): REJECTED by him, his words: 'they are not good ... not consistent and also they don't have good poses ... more like dance poses rather than anything else. They don't look like actual poses.' He liked a prompt-only Animagine drop kick (output/base_ab/dropkick_anim_501) and asked for the 7DS and Dokkan references to be used. Round 2: 19 references -> scripts/skill_art/ref_pose_maps.py -> 76 prompt-only drafts (output/duke_refpose, no LoRA, no face ref; _neon* subfolders are the failed weighted-negative runs) -> 20 picked by Claude -> identity pass, LoRA 0.9 img2img at 0.82 with the draft's DWPose (output/duke_identity) -> qwen_edit.py fixes -> sheet for him. The body_shots action rows with pose:duke_ds_* flags are round 1's and are superseded by round 2.",
-  "output_cleanup_note": "2026-10-14, his ask (\"cleanup the comfy folder. And delete all rejected images or assets\"; models later). Sent to the Recycle Bin, not deleted: ComfyUI output 3.3 GB -> 763 MB, input 353 -> ~227 MB. Gone: tests and diagnostics, rounds he rejected, Sonnet's off-model Duke renders (duke_official/2, headfix, composite, final, finish, blue_duke/candidates), duke_official3 and duke_pose (superseded by the v3 retrain), the six collab units (#187), _unsorted, unpicked kit drafts and Lyra's work/ iterations, unapproved dataset candidates, input staging copies. Kept: references, refpose maps, every locked/final/library folder, every profile-approved original, his picks, Sara's finish+matte pairs for the locked pieces and the passive, Duke's S2/K4/K10/U19 concept drafts, the snow and river plates, Batra (held), story backgrounds, last night's v3 candidates, and the face references."
+  "output_cleanup_note": "2026-10-14, his ask (\"cleanup the comfy folder. And delete all rejected images or assets\"; models later). Sent to the Recycle Bin, not deleted: ComfyUI output 3.3 GB -> 763 MB, input 353 -> ~227 MB. Gone: tests and diagnostics, rounds he rejected, Sonnet's off-model Duke renders (duke_official/2, headfix, composite, final, finish, blue_duke/candidates), duke_official3 and duke_pose (superseded by the v3 retrain), the six collab units (#187), _unsorted, unpicked kit drafts and Lyra's work/ iterations, unapproved dataset candidates, input staging copies. Kept: references, refpose maps, every locked/final/library folder, every profile-approved original, his picks, Sara's finish+matte pairs for the locked pieces and the passive, Duke's S2/K4/K10/U19 concept drafts, the snow and river plates, Batra (held), story backgrounds, last night's v3 candidates, and the face references.",
+  "design_klein": {
+    "status": "LOCKED 2026-10-14, his answer in the question tool: \"D2 only.\" Locked image: output/blue_duke/duke_design_klein_locked.png (= design_duke_klein/r4/09_nocurl_00001, three-quarter, arms crossed, grin); copy in D:\\Toll-Images\\Duke\\. Overrides the Animagine dataset and identity text where they differ; duke_v2 is not reused for klein.",
+    "refs": "datasets\\duke_v2\\duke_01.png (full body) and duke_19.png (face); not the game portrait (old gi design)",
+    "round1": "ComfyUI output/design_duke_klein/ (duke_design_klein.py), numbered as sent in name order: 1-2 back, 3-4 front, 5-6 guard, 7-8 punch, 9-10 three_quarter, 11-12 upper",
+    "claude_qc": {
+      "boots": "every render drew mid-calf combat boots; the lock is black laced ankle boots",
+      "hair": "the ash grey sits mostly as a grey band on the side fade behind the ear (2, 4, 6, 8, 10, 12) rather than streaks through the top; a dark curl hangs in front of the ear in 3, 11, 12 (near the strand he removed on 2026-10-08)",
+      "5": "looks like an extra forearm under the raised arm",
+      "8": "odd thumb on the punching fist; no wristband on that wrist",
+      "11": "an ear stud (not in the lock)",
+      "trousers": "mid grey, lighter than the lock's dark charcoal (the dataset drifts the same way)"
+    },
+    "his_calls": {
+      "outfit": "his words: \"the tee and trousers are fine, black and charcoal respectively ... blue wrist bands yes, and black ankle combat boots yes too\"",
+      "hair": "his words: \"a black hair with a bit silver highlights yes too, but the hair needs to be cleaned up\" and \"the hair is meant to be a mix of textured quiff with tapered sides + wriothesley's hair from genshin impact. medium to long length.\" Described to the model in words, never by that character's name.",
+      "hair_final": "his words on H1-H10: \"ah don't like the new hair designs. the old one is better. we can do a bit of tweaking with the old one\". Tweaks (question tool, option labels mine): silver streaks on top (off the shaved side), no curl by the ear, no ear stud. Nape curls unchanged (not picked)."
+    },
+    "boots_fix": "output/design_duke_klein/r2/03_boots_00001 and 09_boots_00001: Qwen turned round 1's mid-calf boots into ankle combat boots (09_boots_00002 stayed tall)",
+    "round2": "r2/*_hairedit (Qwen restyle on the boots-fixed 03, 09 and round-1 12): long and wild, sides hidden, no silver. r2/fresh_* (klein with the boots-fixed 03 as reference): kept the old short hair, because the reference image wins over the text",
+    "round3": "sent as H1-H10 (labelled_hair/): H1-H4 = r3/03,09_hairedit (moderated restyle, medium-long with silver; H1 shows the taper best); H5-H8 = r3/noref_* (no reference, shorter and neater, face and build more generic; 7-8 drew blue bands on the sleeves); H9-H10 = r2/03,09_hairedit_00001 (longest, no silver)",
+    "round4": "output/design_duke_klein/r4/ on the boots-fixed round-1 03 and 09: '*_silver' (a plain Qwen instruction) restyled the hair long, unusable; '*_recolor' ('Recolour only, do not change any shapes') kept the shape, seed 2 used; '*_nocurl' removed the ear curl, seed 1 used. No stud was present.",
+    "summary": "adult man, 26, athletic muscular build (a bit less than Garou); black hair swept back and up with a textured wavy top, a few silver-grey streaks through the top, short black tapered sides, short curls at the nape, nothing in front of the ears, no earring; dark brown eyes, lightly tanned skin; fitted plain black crew-neck tee, blue sweatband on each wrist, loose charcoal trousers gathered over black laced combat boots. Protagonist energy: confident grin or resolute stare.",
+    "inspiration": "his words, 2026-10-14: \"Its meant to be a defensive arts first. But if you use it, it can be used for offense too. Heavily inspried from 'Fist of flowing water crushed rock' from SilverFang / Garou from One Punch Man. Also duke clothes are inspired from those two, save for the boots and hairstyle. Hairstyle and face are inspired from yours truly (me) with a little inspiration from wrio (genshin impact)\". So action shots lean defensive: redirecting, parrying, catching, deflecting, then the counter.",
+    "body": {
+      "ask": "his words: \"should we also maybe try and get his shirtless shorts as well with the body? We'll have to see what kind of body he would have though\"",
+      "round": "output/design_duke_klein/body/ (Qwen 'remove his T-shirt' on the front lock render r4/03_nocurl_00001), sent as A1-A2 lean and wiry, B1-B2 athletic, C1-C2 heavier. He picked B1.",
+      "plan": "if he picks one: 3-5 shirtless images captioned 'shirtless' join the dataset (about 30 total) so the black tee stays the default; posed by img2img from his v3 shots like the other actions",
+      "pick": "B1 athletic (design_duke_klein/body/B_athletic_00001): a defined six-pack, a solid chest and broad shoulders, like a fit fighter",
+      "shirtless_round": "output/duke_dataset_klein/shirtless/ (duke_shirtless.py): Qwen 'remove his T-shirt' on his approved 01, 04, 19, P4, P9a; his picks \"Keep 1, 3 , 5 , 9\" in the order sent = S01a, S04a, S19a, SP9a-a (shirtless/01, 04, 19, P9a_00001)."
+    },
+    "hair_canon": "his words, 2026-10-15: \"I like B1 but his hairstyle is a bit different ... look how he has like almost like a wild hairstyle and if you go and above look at 01 from the caption sheet that hairstyle is different so we are going with the caption sheet hairstyle\". The hair canon is the dataset_klein images (e.g. 01): neater, swept back, silver through the top, nape curls; not the wilder hair of the front render r4/03_nocurl (D1, B1)."
+  },
+  "dataset_klein": {
+    "status": "APPROVED, STAGED AND TRAINED (2026-10-15): 31 images, datasets\\duke_klein_v1.",
+    "candidates": "ComfyUI output/duke_dataset_klein/NN_slug_601 (duke_dataset_klein.py; numbered copies in labelled/): 1-20 full body (1-6 calm, 7-20 action from his flowing-fist style), 21-34 close-ups at 1024x1024 with varied expressions; one seed per pose; the locked image as reference (close-ups: its top 55%)",
+    "claude_qc": {
+      "silver": "the silver streaks are faint or missing in most close-ups (21-32) and in 11; strong in the full bodies",
+      "7": "the left arm has no wristband",
+      "11": "hair all black, no silver",
+      "12": "reads as sitting in the air more than a drop kick",
+      "14, 16": "hops rather than a leap strike or a kneeling landing",
+      "17": "reads as running, not a slide kick",
+      "23": "a one-eyed wink rather than a laugh with both eyes closed",
+      "31": "a blue band on the upper arm at the sleeve (not in the lock)"
+    },
+    "his_audit": {
+      "liked": "1, 2, 4, 5, 6, 7, 10, 14, 15, 19, 21-27, 29-34 (23)",
+      "disliked": "3, 8, 9, 11, 12, 13, 16, 17, 18, 20, 28",
+      "his_words": "\"Do the cleanup / fixes where needed.\""
+    },
+    "fixes": "fix/07_band (add the missing wristband), fix/31_noband (remove the upper-arm band; silver follows), fix/NN_silver for close-ups 21-27, 29, 30, 32-34 ('Recolour only' silver streaks). 23's wink kept as is (he liked it).",
+    "round2": "35-43, two seeds (601/602): catch_blow, redirect, parry_counter, flowing_hands, palm_strike, rooted_stance, sidestep_counter, leg_sweep, back_guard; defensive first after his notes, because the drops left 5 actions of 23",
+    "action_lesson": "His verdict on the text-prompted klein action shots: \"action shots? morel iike dance shots\" and \"those were not action ones, those were dance moves and that's still generous\". The same failure as the mannequin round. The queued text round 35-43 was cancelled unrendered. Two-reference pose transfer (lock + pose image) failed: klein copied the lock's pose (pose/ probe). What works: img2img from a v3 action shot (his 7DS/Dokkan poses by skeleton) with the lock as reference and the full identity text, 8 steps with 3 skipped (duke_pose_img2img.py, --skip=3); skipping 2 lost the pose.",
+    "v3_picks": "his picks from the old v3 action shots (question tool confirmed which batch): A07 guard stance, A08 leap, A09 lunge fist, A12 slide kick b",
+    "pose_round": "pose_i2i/<pose>_s3_81[1-3] sent as P1-P12 (P1-3 A07, P4-6 A08, P7-9 A09, P10-12 A12). Claude QC: P5 a second head behind him; P8 an extra arm; P7 a blue fabric patch between the legs; P9 hair looks tied back; P4 and P3 lose most of the silver",
+    "fixes_done": "Checked 2026-10-14 and sent as fix/labelled_final/NN for his OK: 07 = fix/07_band_00001; 21-27, 29, 30, 32, 34 = fix/NN_silver_00001; 31 = fix/31_silver_00001 (on 31_noband_00001); 33 = fix/33_silver_b_00002. Seed 2 of every first silver edit turned the tee navy, and 33's seed 1 went dark-skinned with brown hair; the re-run adds 'do not change the shirt colour or the skin colour'.",
+    "pose_picks": {
+      "his_words": "\"P1/2/4/9 (clean up hair around forehead and right foot fix), 11\"",
+      "kept_as_is": {
+        "P1": "pose_i2i/A07_guard_stance_s3_811",
+        "P2": "pose_i2i/A07_guard_stance_s3_812",
+        "P4": "pose_i2i/A08_leap_s3_811",
+        "P11": "pose_i2i/A12_slide_kick_b_s3_812"
+      },
+      "P9": "the fixes were P9's (a forehead band and top bun; the tucked right foot a floating boot). Two Qwen hair edits removed the band but left long hair hanging by the face (off the lock), so the pose was re-rendered: P9a = A09_lunge_fist_s3_814, P9b = A09_lunge_fist_s3_817, both on-lock; sent for his pick. 815 and 816 had extra arms."
+    },
+    "final_picks": "his words: \"P9a, drop 31 and resr are fine\"",
+    "final_set": "01, 02, 04, 05, 06, 07 (fix), 10, 14, 15, 19, 21-27 (fix), 29, 30, 32, 33, 34 (fix), P1, P2, P4, P9a, P11 (27: 10 full-body actions = 07, 10, 14, 15, 19, P1, P2, P4, P9a, P11); plus shirtless S01, S04, S19, SP9 (captioned 'shirtless') = 31; plus shirtless S01, S04, S19, SP9 (captioned 'shirtless') = 31; plus shirtless S01, S04, S19, SP9 (captioned 'shirtless') = 31",
+    "manifest": "C:\\Users\\Tanve\\.comfyui-mcp\\training\\lyra_klein_work\\duke_klein_v1_manifest.tsv (duke_ds_manifest.py)",
+    "toll_images": "D:\\Toll-Images\\Duke\\dataset\\duke_ds_NN_<his number>.png (31, sha256 checked)"
+  },
+  "lora_klein": {
+    "status": "DONE 2026-10-15: models\\loras\\duke_klein.safetensors = step 1750 of duke_klein_v1 (sha256 in 'sha256'). His call after the multi-seed test: \"Keep 1750, done\" (question tool, option label mine); no retrain. Stubble is caught at QC. duke_toll.safetensors (Animagine) untouched.",
+    "claude_qc": {
+      "250-750": "photoreal portrait at 250 and 750; not usable",
+      "front": "a chest badge on the tee at every step (a crest at 1250-1500, a small mark at 1750-2000); not in the set",
+      "stubble": "light chin stubble in the portraits from 1250 on; the lock is clean-shaven",
+      "city_fast": "the busy-street prompt came out photoreal on the fast model at every step (Sara's held anime); on the base model it stays anime and on-model but copies him into the crowd from 1500. Fix in use: start every prompt with the style line 'An anime illustration ...' as the candid scripts do",
+      "base_2000": "the lunge drew shorts instead of trousers",
+      "shirtless": "B1 body learned from 500 on"
+    },
+    "file": "duke_klein.safetensors",
+    "sha256": "6588ea881896fd979f6d83d840e624192e657a0c5bdc1429c54f6b5857adab84",
+    "audit": {
+      "stubble": "IN THE DATASET: faint chin stubble on 4 of 31 staged images, all close-ups: duke_11 (his 21, grin), duke_14 (24, shout), duke_16 (26, surprised), duke_20 (32, worried). Missed at QC (chins were not zoomed). The LoRA learned it from them.",
+      "logo": "NOT in the dataset: no staged tee has a mark. klein's own habit of putting a crest on a plain T-shirt, which the LoRA did not override.",
+      "steps": "the checkpoint test renders ONE seed per step, so differences between steps in hands and fingers are largely seed luck, not training; a fair comparison needs several seeds per step"
+    },
+    "multiseed": "His pick: \"Test more seeds first\" (question tool). duke_multiseed_test.py: steps 1500/1750/2000 x front/portrait/guard x 4 seeds, every prompt with the anime style line, the front with 'plain black T-shirt'. Result: chest logo 0 of 12 fronts (one small hem label at 1500 guard); chin stubble 1500 2 of 4, 1750 0-1 of 4 (one faint jaw hatch), 2000 about 1 of 4 faint; guard hands five fingers on nearly all. With real-prompt wording 1750 is the cleanest. Sheets in duke_klein_v1_test/labelled/multiseed_*.png."
+  },
+  "lora_klein_checkpoint": 1750,
+  "lora_klein_use": "Step 1750 of duke_klein_v1 (31 images). Fast model flux-2-klein-4b, 4 steps, cfg 1, LoraLoaderModelOnly 1.0. Start every prompt with 'An anime illustration with clean lineart and cel shading.' (without it a busy scene goes photoreal); say 'plain black T-shirt' (without it klein adds a chest crest). Do not write 'clean-shaven' or 'no stubble': naming it draws it. Zoom the chin and hands on every pick; faint stubble comes from 4 dataset close-ups (21, 24, 26, 32) and goes away for good only by cleaning them and retraining."
 }

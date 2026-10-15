@@ -109,5 +109,18 @@
     "how": "From design round 1 he liked B5, B11 (without the tree), B22, B28, B36; chose via the question tool (option labels are Claude's wording): black sash, ivory cross-strap kept, forearm sleeves, brown boots. Then: 'for face refs' B36.",
     "face_source": "output/lora_batra_design/cand_face_focus_00003_.png (B36, seed 922003); face-only crop (turban, face, beard; background and most collar whitened) saved as ComfyUI input/batra_face_ref_b36.png"
   },
-  "status": "HELD 2026-10-07: step 1 (dataset). Round rendered to output/lora_batra_set_a and NOT reviewed or sent. Known problems: the B36 face reference draws a bandana-like turban, and the strap wording draws crosses. Needs options for him before any further batch. Nothing approved, no LoRA."
+  "status": "HELD 2026-10-07: step 1 (dataset). Round rendered to output/lora_batra_set_a and NOT reviewed or sent. Known problems: the B36 face reference draws a bandana-like turban, and the strap wording draws crosses. Needs options for him before any further batch. Nothing approved, no LoRA.",
+  "design_klein": {
+    "status": "BRIEF IN PROGRESS (2026-10-15, his answers while Duke trained). He will send pictures (his own checkered patka, online references). Nothing rendered, nothing locked. Supersedes the 2026-10-07 Animagine lock where they differ (his words: \"we could change the Batra design a bit more, like uh, even the locked stuff\").",
+    "why": "his words: \"I don't like the orange slash kesari um, going too much on his um, character\" and the clothes should change so \"he would still be sick, but uh, he won't clash with r- real life uh, versions of how people see sick\"",
+    "identity": "Sikh participant, full and slightly long beard",
+    "personality": "normally calm; strong but does not show off; not a protective big brother, not a hot-headed brawler; if he fights too much because of his power he can go berserk and lose (his words: \"if he fights too much because of his power, he would lose. He can go berserk\")",
+    "build": "6'2\", about 100-110 kg, wrestler-type bulk but does not fight like a wrestler; between lean and broad, not too broad; age 29 (old lock: 26, 6'1\")",
+    "kara": "two kadas: one gold, one steel; no other articles of faith shown (no kirpan)",
+    "outfit": "kurta and pyjama; a checkered patka (the small turban), he wears one himself and will send a picture or pull some online; definitely not Nihang or Gatka inspired",
+    "colours": "saffron/kesari at least as an accent, maybe primary; not locked",
+    "lion": "open: a lion on the back or front of the kurta, or lion-based attacks only",
+    "old_drafts": "Animagine rounds output/lora_batra_design (36), lora_batra_design_r2 (5), lora_batra_set_a (63, never reviewed): kesari everywhere, purple/black sash, ivory cross-strap, brown boots; he asked Claude to look",
+    "kept_rules": "from design_note: the turban/patka always neatly worn, never a hat or cap, never knocked off, burning or mocked; his real-life photos stay out of the repos and out of training (pose and pattern reference in chat only)"
+  }
 }

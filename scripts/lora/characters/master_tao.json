@@ -1,0 +1,121 @@
+{
+  "id": "master_tao",
+  "trigger": "taotoll",
+  "face_ref": "master_tao_head_ref.png",
+  "identity": "masterpiece, best quality, absurdres, 1boy, solo, TODO age and build, TODO hair, TODO eyes, TODO every garment with its colour, weighted on the defining words",
+  "identity_upper": "masterpiece, best quality, absurdres, 1boy, solo, TODO the same without the lower-body garments",
+  "negative_extra": "child, loli, teenager, TODO the looks this character must not drift to",
+  "style": "cel shading, thick clean lineart, anime screencap, even lighting, white background, simple background",
+  "out_dir": "lora_master_tao",
+  "dataset_name": "master_tao_v1",
+  "batch": 4,
+  "seed_offset": 0,
+  "hand_fix": false,
+  "body_shots": [
+    [
+      "front_calm",
+      "full body, standing, front view, arms at sides, hands visible, calm expression, looking at viewer"
+    ],
+    [
+      "three_quarter_l",
+      "full body, standing, three-quarter view, body turned left, arms at sides, hands visible, slight smile, looking at viewer"
+    ],
+    [
+      "three_quarter_r",
+      "cowboy shot, standing, three-quarter view, body turned right, hand on hip, confident expression, looking at viewer"
+    ],
+    [
+      "profile_walk",
+      "full body, side view, walking, mid-stride, arms swinging, looking ahead"
+    ],
+    [
+      "back_view",
+      "full body, from behind, looking back over shoulder, hair and back of the outfit visible",
+      "back"
+    ],
+    [
+      "action_lunge",
+      "full body, lunging forward, mid-motion, low stance, near arm reaching toward viewer, foreshortening, hair flowing, clothes fluttering, intense expression, looking at viewer"
+    ],
+    [
+      "action_sprint",
+      "full body, sprinting toward viewer, mid-stride, leaning in, speed lines, hair flowing, determined expression, looking at viewer"
+    ],
+    [
+      "action_strike",
+      "full body, striking with the near arm, mid-motion, body twisted, dynamic angle, motion lines, fierce expression, looking at viewer"
+    ],
+    [
+      "action_turn",
+      "full body, turning sharply, mid-motion, hair whipping, clothes fluttering, three-quarter view, alert expression, looking at viewer"
+    ],
+    [
+      "action_crouch",
+      "full body, crouching low, one hand on the ground, ready to spring, low angle, looking up at viewer"
+    ],
+    [
+      "upper_crossed",
+      "upper body, arms crossed, confident smirk, looking at viewer"
+    ]
+  ],
+  "face_shots": [
+    [
+      "face_front",
+      "facing viewer, looking at viewer, neutral expression, closed mouth"
+    ],
+    [
+      "face_smile",
+      "facing viewer, looking at viewer, gentle smile"
+    ],
+    [
+      "face_34l",
+      "three-quarter view, head turned left, looking at viewer, serious expression"
+    ],
+    [
+      "face_34r",
+      "three-quarter view, head turned right, looking to the side, determined expression"
+    ],
+    [
+      "face_profile",
+      "profile, side view, looking to the side, calm expression"
+    ],
+    [
+      "face_up",
+      "looking up, slightly from below, confident expression"
+    ],
+    [
+      "face_down",
+      "looking down, from above, pensive expression"
+    ],
+    [
+      "face_shout",
+      "facing viewer, shouting, open mouth, angry, intense eyes"
+    ]
+  ],
+  "design_note": "TODO at the design lock: every garment and colour, hood state, age, build, what is banned",
+  "lock": null,
+  "approved": {},
+  "lora_use": null,
+  "art_direction": null,
+  "kit_prompt": null,
+  "status": "Created by new_profile.py; step 0 (design lock) not started. Fill the TODO fields from toll-kits/designs/characters/master_tao.md, then check_profile.py.",
+  "design_klein": {
+    "status": "BRIEF (2026-10-15, his message while Duke trained). Next after Batra. Nothing rendered, nothing locked.",
+    "order": "his words: \"next up would be, uh, after Patra, we will go with Tau\"",
+    "design_sheet": "characters_design_sheets/Tao_Character_Design_Sheet.md (Netero x Roshi, two modes; his message confirms it)",
+    "sources": "his words: \"originally a mix of uh, Master Roshi from Dragon Ball Z and ne- Netro from uh, Hunter x Hunter\"",
+    "personality": "serious in a fight: very powerful, something to be feared; off duty at home: easygoing, sometimes a goofy old man, never in a formal setting. The story so far shows only the normal easygoing side outside battle, not the goofy one.",
+    "age_and_experience": "much older and more experienced than Batra; similar to Batra in some ways (his words: \"he might be actually similar to Patra\")",
+    "body": "his words: \"it isn't obvious when you look at him from a bit far that he would have a very bulky body, but uh, he does have a bulky body. Or maybe he buffs himself up when he's in the fighting mode ... just like how uh, Roshi does, like you know, normal power and then full power mode where he bulks up his muscles\". Two body states to explore: normal and full power. SUPERSEDED by forms (three body states plus the formal outfit).",
+    "element": "fire-based toll/powers",
+    "keep_from_game_art": "his words: \"the old man with white hair, white fa- facial hair, and white uh ... top. Yeah, that is a very good design. If we can lean into that more.\" Game portrait public/characters/green_master_tao/portrait.png: white hair tied back in a small top knot with a red tie, full white beard and moustache, white tank top, dark shorts with a white side stripe, very muscular (full power), fire on the fists.",
+    "profile_note": "profile created 2026-10-15 from the schema (new_profile.py master_tao --trigger taotoll --subject 1boy); the kit id is master_tao",
+    "forms": {
+      "his_words": "\"we would have to also factor his normal formal mode when he's, you know, in the bureau settings ... He does fight Duke and Lyra early in the story, and that's when he has that bulky look a bit ... like 50% of his bulk look ... So we'll have three forms of him\"",
+      "normal": "not visibly bulky; about Batra's size",
+      "50%": "noticeably bulkier; wears the tank top (no other shirt). This is the look when he fights Duke and Lyra early in the story",
+      "100%": "full power, the bulkiest; no tank top (shirtless)",
+      "formal": "his formal mode in bureau settings must also be designed; the sheet gives a structured robe or kimono with a visible mark of rank"
+    }
+  }
+}

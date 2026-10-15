@@ -185,5 +185,107 @@
       "card_background": "park at sunset (his pick #7, seed 870020; runner-up #2 garden path 870011 in sara_library). Red gradient retired for the card (his: \"I don't like the red bg on her art\"). Portrait re-cropped from the park card.",
       "portrait_recut": "2026-10-03, his call: tile and portrait are one image, transparent. portrait.png = make_portrait_crop.py cards/card-b-cutout.webp x0 400 y0 295 side 520 (1.97x Lanczos; the park background is dropped, the detail page shows the element burst behind her). card-b-cutout.webp is the 1248x1824 transparent card B figure he supplied. Supersedes the park crop above. ART_VERSION 20. Open: a 4x-upscaled recrop from the full-size locked cut-out (ART_REQUESTS D6)."
     }
+  },
+  "design_v2": {
+    "status": "LOCKED 2026-10-14, his word in the question tool ('Lock 20 + 23'). Hood up: output/red_sara/sara_design_v2_locked_hood_up.png (= design_sara_v2/r3_shoes_runner_00002, image 20). Hood down: output/red_sara/sara_design_v2_locked_hood_down.png (= design_sara_v2/r3_hooddown_noears_clean_00001, image 23). Copies in D:\\Toll-Images\\Sara\\. These override card B, the identity text and design_note where they differ; the sara_v1 and sara_v2 datasets show the old look and are not reused for klein.",
+    "round1": "ComfyUI output/design_sara_v2/ (sara_design_klein.py in lyra_klein_work): card B cut-out and portrait as klein references, open details left unstated; 12 sent full size, numbered 1-2 front, 3-4 three_quarter, 5-6 upper (came out full body), 7-8 hood_down, 9-10 back, 11-12 action",
+    "pocket": "KEEP the front pocket (his words: \"I guess we can keep the pocket. Its not.a no no detail for me\"); supersedes his round-1 'no pocket' pick, which klein ignored in every wording tried",
+    "drawstrings": "black drawstrings (question tool, option label mine)",
+    "hem": "ribbed knit band at the hoodie hem, matching the cuffs (question tool, option label mine)",
+    "drift_to_fix": "twintails came out collarbone length (lock: chest length); hood interior read light grey (profile: plain black interior); trouser stripe missing on one leg in 2, 5, 6",
+    "cat_ears": "BACK ON THE HOOD, two small black cat ears (his words: \"originally her hoodie also had cat ears ... I had them removed because it was not consistent with the old training. But if it's possible this time, you can add it back in\"). Supersedes the 2026-10-03 'no cat ears' call in design_note. Her design sheet already has 'a hood with small cat-ear points'. Ears on the hood only; she is fully human.",
+    "cute": "his words: \"Not like a little girl level of cute, but she's just like, you know, a big girl who, who's into cats. And she enjoys life.\" His example: Keqing (Genshin), who \"technically does not try to be cute, but she reads as cute\". Prompted as: reads as cute without trying, a grown woman who loves cats and enjoys life, never childlike.",
+    "expressions": "blank: lost in her own thoughts, not present in the moment (his words: \"when someone's like lost in her, her own thoughts ... she's not present in the moment\"); or quietly enjoying herself",
+    "design_sheet": "characters_design_sheets/Sara_Character_Design_Sheet.md (copies: docs/design/characters/sara.md, toll-kits designs/characters/sara.md). Differs from the lock on: ribbon vs small hair ties, fitted vs oversized hoodie, paw/whisker stitching (removed at the v1 lock), average height vs petite 5'3\"",
+    "round2": "output/design_sara_v2/r2_* (8 of 12; he stopped it for the new direction): 'no pocket' drew a pocket anyway; the 1024x1024 waist-up broke (a doll-sized figure in front of a giant hoodie: the trousers and shoes in the text forced a full figure into the square). Not sent.",
+    "round3": "output/design_sara_v2/r3_* (sara_design_klein_r3.py): probe front x4, card refs vs text only: ears held in all 4; text only went generic anime and added a trouser logo, so refs. Full round 12 sent, numbered 1-2 front, 3-4 three_quarter, 5-6 upper (text without trousers and shoes: true waist-up now), 7-8 hood_down (hood stayed up: the card reference wins), 9-10 back, 11-12 action",
+    "hair_ties": "small black hair ties, not the sheet's ribbon (question tool, option label mine)",
+    "fit": "oversized hoodie, not the sheet's fitted top (question tool, option label mine)",
+    "shoes": "WHITE, replacing the grey high-tops (his words: \"We'll need to change her shoes too. They are meant to be white running sneakers. Something like high tops too\"). His pick: running high-tops as in 20 (question tool, option label mine): padded ankle collar, sporty overlay panels with grey side accents, a thick cushioned white sole, white laces, no logos.",
+    "edits": "Qwen words-only edits of render 2 (r3_front_refs_98): 13-14 hood lowered (r3_hooddown_edit 1/2), for a hood-down reference; 15-16 white high-top, 17-18 white mid-top (all four read as canvas high-tops), 19-20 white high-top running sneakers (r3_shoes_runner; 19 has a swoosh-like mark on one shoe, unusable as is)",
+    "hood_down_ears": "HIDDEN when the hood is down: it lies flat behind her neck and no ears show from the front (question tool, option label mine; he asked \"Hood down wouldn't show the cat ears yeah?\" on seeing 22)",
+    "summary": "platinum-white low twintails with small black hair ties, blunt bangs, dark brown near-black eyes; thin black choker; oversized black hoodie with two small cat ears on the hood (hidden when the hood is down), black interior, black drawstrings, front pocket, ribbed cuffs and hem band, no prints or text; black joggers with one thin white stripe down each outer side, gathered at the ankle; white high-top running sneakers with a padded collar, grey side accents, thick cushioned white sole, white laces, no logos. Hood default up. Cute without trying, a grown woman, never childlike; blank lost-in-thought or quietly content expressions.",
+    "hood_up_hair": "HOOD UP = ALL HAIR INSIDE THE HOOD, visible only from the front (his words, 2026-10-14: \"Her hair must not be visible from back when hood is up. All of her hair is meant to be inside her hoodie cap. Only visible from front. None from back or even from side\"). A back or side view with the hood up shows no twintails and no strands."
+  },
+  "dataset_klein": {
+    "status": "APPROVED AND STAGED (2026-10-14): 39 images, captions his (\"Captions ok. Go train\"), datasets\\sara_klein_v1.",
+    "candidates": "ComfyUI output/sara_dataset_klein/NN_slug_seed (sara_dataset_klein.py; numbered copies in labelled/). 16 body shots x seeds 201/202 = 1-32 (6 calm, 10 action), 10 close-ups seed 201 at 1024x1024 = 33-42. Reference = the locked image for the hood state (close-ups: its top 55%).",
+    "shot_list": "his OK in the question tool: 'Show me all first. I'll audit carefully. Just in case. Make sure to number the images'",
+    "claude_qc": {
+      "06": "hair fades white to black under the hood; no twintails from behind",
+      "09": "swoosh-like grey mark on both shoes (brand-like); a wink instead of half-lidded",
+      "10, 26": "grey shoe accent borderline brand-like (a Puma-stripe-like curve)",
+      "14": "a walk, not a sprint",
+      "15, 16, 21, 22": "read as dance leaps more than a pounce or a sidestep",
+      "16": "a third sneaker floating below her",
+      "17, 18": "a thin blade or rod in her hand (no weapon in her kit)",
+      "23": "an extra leg-shaped shape between her legs",
+      "24": "a crouch-hop, not landing on one knee",
+      "25": "hand on top of her head (arm bent up; not straight up, so not removed)",
+      "29, 30": "long loose hair streaming behind as well as the twintails; 30 a black hair clip",
+      "35": "a wink instead of a smug half-lidded look",
+      "37": "reads blank rather than battle-serious"
+    },
+    "his_audit": {
+      "kept": "1, 3, 8, 9, 10, 11, 12, 13, 14, 15, 19, 22, 28, 29, 30, 31, 32, 33-42 (27; 10 actions)",
+      "dropped": {
+        "2, 4": "near copies of 1 and 3 (question tool: keep 1 only, keep 3 only)",
+        "5, 6": "\"hair is messing with hoodie\"",
+        "7": "\"cursed. Her feet are moving opposite side\"",
+        "16-18": "\"have issues\"",
+        "20, 21, 23-27": "bad (\"Good - 19 and 22 only ; Bad - rest\")"
+      },
+      "fix": {
+        "31": "\"foot placement issues. Could be salvagable\"",
+        "32": "\"hair and hoodie mix issues. Again salvagable\"",
+        "30": "the black hair clip (Claude's check against the lock; he called 28-30 good)",
+        "08, 09, 10, 22, 29": "swoosh-like shoe marks cleaned to a straight grey band (question tool, option label mine)"
+      },
+      "9": "keep the wink (question tool, option label mine)",
+      "11": "he asked whether the hip hand reads for training; Claude's zoom: four fingers correct, thumb tucked; kept"
+    },
+    "fix_picks": {
+      "08": "fix/08_shoes_00002 (8b)",
+      "10": "fix/10_shoes_00002 (10b)",
+      "22": "fix/22_shoes_00001 (22a)",
+      "29": "fix/29_shoes_00001 (29a)",
+      "30": "fix/30_noclip_00001 (30a)",
+      "31": "fix/31a_nohair_00002 (31ay) and fix/31b_nohair_00001 (31bx)",
+      "09": "BOTH fix/09_smirk_00001 and _00002 (09c and 09d, his: \"Lock both of 9\")",
+      "32": "fix/32_nohair_00001 (32x)",
+      "15": "fix/15_nostrand_00001 (15x)"
+    },
+    "hair_rule_fixes": "31a, 31b, 32 (twintails from behind) and 15 (his: \"visible hair behind her back that is not connected to anything\"). 34, 41 and 28 are fine as they are (his: \"34 is okay. Front view. Her head is covered. Only the end of her twin tails are on her shoulders. 41 and 28 also okay\"); the 41 edit (fix/41_nohair) is not used",
+    "claude_picked": "15x, 31ay, 31bx, 32x: he liked all of the hair-fix batch and said \"You choose the best ones from similar/same looking ones\"; Claude chose by cleaner twintail tips (15), even hood ears (31a), clean hood edge (31b), no hood fold (32)",
+    "final_set": "01, 03, 64, 09c, 09d, 10b, 11, 12, 13, 65, 15x, 19, 69, 71, 29a, 30a, 31ay, 31bx, 32x, 33-42, 43, 46, 47, 49, 51, 53, 55, 57, 59, 61 (39: 19 full body, 20 close-ups)",
+    "manifest": "C:\\Users\\Tanve\\.comfyui-mcp\\training\\lyra_klein_work\\sara_klein_v1_manifest.tsv (sara_ds_manifest.py)",
+    "toll_images": "D:\\Toll-Images\\Sara\\dataset\\sara_ds_NN_<his number>.png, 39 files, sha256 checked; the earlier 29-file copy went to the Recycle Bin when the numbering shifted",
+    "emotion_round": {
+      "close_ups": "43-62, output/sara_dataset_klein/emo/NN_slug_30x (sara_dataset_emotions.py), two seeds each: 43-44 big grin, 45-46 cat-like tease, 47-48 delighted grin, 49-50 embarrassed, 51-52 pout, 53-54 protective glare, 55-56 sleepy yawn, 57-58 shout, 59-60 excited, 61-62 worried",
+      "face_edits": "63-74, emo/edit_<his number>_<slug>_0000N (Qwen, face only, two seeds): 63-64 08b humming, 65-66 14 laughing grin, 67-68 15x fierce grin, 69-70 22a startled, 71-72 28 laughing, 73-74 29a determined",
+      "claude_qc": "51-52 a mild frown, not a puffed-cheek pout; 61-62 a faint worry; 45-46 a soft smile more than a cat-like tease; 67 stray lines beside her head",
+      "his_audit": "\"I don't like 67, 68, 73 and 74. Rest I like.\" Question tool (option labels mine): one per pair, and the face edits replace the calm originals. Claude's picks: close-ups 43, 46, 47, 49, 51, 53, 55, 57, 59, 61; edits 64 (for 08b), 65 (for 14), 69 (for 22a), 71 (for 28)"
+    }
+  },
+  "lora_klein": {
+    "status": "INSTALLED 2026-10-14 as models\\loras\\sara_klein.safetensors, his pick: step 2000 (\"Yeah 2k model is clear victor\"). Trained 18:42-20:47; sara_toll.safetensors (Animagine) untouched.",
+    "config": "C:\\Users\\Tanve\\.comfyui-mcp\\training\\configs\\sara_klein_v1.yaml (sara_klein_setup.py: lyra_klein_v2.yaml with only the name, trigger, dataset folder and sample prompts changed)",
+    "dataset": "C:\\Users\\Tanve\\.comfyui-mcp\\training\\datasets\\sara_klein_v1 (39 images, sentence captions)",
+    "log": "C:\\Users\\Tanve\\.comfyui-mcp\\training\\runs\\sara_klein_v1.log",
+    "test": "lyra_klein_work\\sara_klein_ckpt_test.py -> ComfyUI output/sara_klein_v1_test/",
+    "install": "sara_klein.safetensors beside the Animagine sara_toll.safetensors, never over it, after he picks the step",
+    "file": "sara_klein.safetensors",
+    "sha256": "4e3004e722e9e580756dfd32d9a26fb861f8b2ada6c88199a6cc9ee86871f3f6"
+  },
+  "lora_klein_checkpoint": 2000,
+  "lora_klein_use": "Step 2000 of sara_klein_v1 (39 images, sentence captions, ai-toolkit flux2_klein_4b on FLUX.2-klein-base-4B, rank 32, lr 1e-4, 2000 steps, 768). Render on the fast model flux-2-klein-4b (4 steps, euler, cfg 1, LoraLoaderModelOnly at 1.0). Prompt: 'saratoll, a woman, <framing, pose, expression>, hood up|hood down' with no description needed; always state the hood. Steps 1250-1750 turned a busy street photoreal with a brown-haired stranger; 2000 keeps her anime. Hood down holds in full-body shots but a hood-down close-up stays mostly up: give it the locked hood-down image (red_sara/sara_design_v2_locked_hood_down.png) as a reference. In scenes, name the crowd's clothes (one black hoodie still crept in). Watch the shoes for a swoosh-like grey mark. Test: ComfyUI output/sara_klein_v1_test/.",
+  "candid_klein": {
+    "ask": "his words: \"Some nice looking candid shots of sara. Different than lyra\"",
+    "round": "ComfyUI output/sara_candid/ (sara_candid.py): 12 modern slice-of-life moments x seeds 501/502 on sara_klein.safetensors alone, numbered 1-24 as sent",
+    "his_picks": "2, 5, 7, 8, 10, 12, 15, 17, 18, 22, 23; and 19/20 (\"has missing left/right foot, salvagable\")",
+    "copies": "D:\\Toll-Images\\Sara\\candid\\sara_candid_NN_<slug>.png (11 picks, sha256 checked)",
+    "foot_fixes": "his picks 19a = sara_candid/fix/19_leg_00001 and 20b = fix/20_leg_00002 (copied as sara_candid_19/20_laundromat.png); 20a not kept; 19_leg_00002 failed (a foot still missing)",
+    "total": "13 candids kept",
+    "lora_lessons": "hood up was asked in 8, 13, 14, 21, 22 and came out down; extras took her look (3-4 cafe worker's white hair and ears, 15-16 the child as a mini Sara) despite named clothes; 11 drew a chest emblem; 19-20 lost a foot to the washer"
   }
 }

@@ -2,10 +2,36 @@
   "id": "lyra",
   "trigger": "lyratoll",
   "face_ref": "lyra_head_ref.png",
+  "design_v2": {
+    "status": "LOCKED 2026-10-14, his word in the question tool ('Lock render 2'). The locked image is output/red_lyra/design_v2_locked.png (= design_lyra_v2/front_82). It overrides card C4 and the identity text where they differ; the old lyra_v1 dataset is not reused.",
+    "source": "Picked from FLUX.2 klein 4B bake-off renders given her portrait and card C4 as references (output/bakeoff_lyra, column C). Render numbers are the order sent: 3/4 bow_action_C 71/72, 7/8 bow_stand_C 71/72, 11/12 portrait_C 71/72.",
+    "boots_socks": "crimson slouched mid-calf boots with black socks showing above them (his picks 3, 4, 8, 12; matches card C4); both boots the same design (render 9 failed on it)",
+    "skirt_waistband": "black waistband; short white pleated skirt with a black hem (his picks 3, 4, 7, 8, 11, 12; matches card C4)",
+    "collar": "crimson ruffled neck collar with a black V at the front (his picks 3, 4, 8, 11, 12; not 7)",
+    "wrists": "small gold bracers like render 2 (he was fine with 2 or 5, 'pick one'; 2 chosen), identical on both wrists, always at the wrist, never on the upper arm",
+    "shoulders": "the small frilled ruffle at the armholes as drawn in render 2 ('she actually has it ... I'm okay with this')",
+    "eyes": "violet (question tool, option label mine; card C4 and the old dataset are red-pink)",
+    "supersedes": "the identity text's crimson ankle boots and its lack of waistband/hem/socks; the 24-image lyra_v1 dataset shows the old look and is not reused for klein",
+    "renders": "ComfyUI output/design_lyra_v2/, numbered as sent: 1-2 front 81/82, 3-4 three_quarter, 5-6 upper, 7-8 back, 9-10 action",
+    "ratings": {
+      "1": "9.5 - bracers more detailed than imagined (fine), but left and right differ; must be identical",
+      "2": "10 - small, consistent bracers; the shoulder ruffle is there and fine",
+      "3": "10",
+      "4": "9.5 - fingers on the skirt did not render properly",
+      "5": "10",
+      "6": "9.5 - bracers too big",
+      "7": "5, fail - the back of the top is open; it must be fully covered. Pose and expression good",
+      "8": "9 - bracer inconsistent; pose good, usable with tweaking",
+      "9": "8 - wristband moved up to the upper arm and differs from the other arm; boots differ. Pose good",
+      "10": "3, fail - three hands and a faded leg"
+    },
+    "top_back": "the top is fully covered at the back; no cut-out (render 7 failed on it)"
+  },
   "identity": "masterpiece, best quality, absurdres, 1girl, solo, mature adult woman, late 20s, slender athletic build, (dark blue hair, very long high ponytail:1.3), (violet red eyes:1.2), (crimson red sleeveless top with a (crimson red frilled collar:1.2) and frilled shoulders:1.1), bare arms, gold bracers, dark red fingerless gloves, (short white pleated skirt:1.4), (crimson ankle boots:1.2)",
   "identity_upper": "masterpiece, best quality, absurdres, 1girl, solo, mature adult woman, late 20s, (dark blue hair, very long high ponytail:1.3), (violet red eyes:1.2), (crimson red sleeveless top with a (crimson red frilled collar:1.2):1.1), bare shoulders",
   "negative_extra": "child, loli, teenager, (long skirt:1.2), (red skirt:1.3), (blue skirt:1.2), white shirt, (white collar:1.2), thigh-high boots, thighhighs",
   "approved_refs": [
+    "output/red_lyra/design_v2_locked.png",
     "output/lyra_card_c4_collar_00001_.png",
     "input/lyra_v7_pick.png"
   ],
@@ -14,5 +40,70 @@
   "lora_use": "Reconstructed 2026-10-13 from scripts/skill_art/lyra_bow_skill_drafts.py and the archive, not written at the time. Her LoRA held action poses at strength 0.9 with the full weighted identity prompt; her dataset included her C4 action card pose and an A-pose, which Sara's and Duke's calm sets did not; he ruled on 2026-10-13 that this is the cause and every dataset must include action shots (#186). Drafts were 12 steps dpmpp_2m karras cfg 6, (simple white background:1.4), one image per seed. Always state the ponytail and the frilled collar; keep thighhighs and thigh-high boots in the negative.",
   "kit_art": "Reconstructed 2026-10-13. Each piece had a concept clause from what the skill does, a pose with a job and a reference (7DSGC / Dokkan, pose only). Pose control was a drawn archer skeleton at openpose 0.78, end 0.85, for the bow pieces, prompt only for the rest; no Blender mannequin (it did not exist). The bow is a drawn asset swapped in over a real held bow (#160, bow_swap.py, grip_hand.py), with a strap when slung (#163). Finish: finish_pass.py at 0.35. Locked pieces are public/characters/red_lyra/ and ComfyUI output/red_lyra/. This record is the quality bar kitart reads before drawing.",
   "portrait": "2026-10-03, his call: tile and portrait are one image, transparent (the old portrait was a different picture from her C4 tile). portrait.png = make_portrait_crop.py public/characters/red_lyra/cards/pose-c4.png x0 150 y0 150 side 460 (his pick 'B' of two crops, 2.23x Lanczos). ART_VERSION 20. Open: a 4x-upscaled recrop (ART_REQUESTS D6).",
-  "tile": "2026-10-03, his call: the break-out ponytail was too long and ran into the tile above. tile.webp cropped at y=229 of the old 480x817 cut-out, 12px above the red ribbon, so the ponytail ends at the ribbon. Now 480x588, TILE_ART ratio 1.225 (was 1.702). ART_VERSION 21. A redo of the tile from a sharper source keeps the ribbon as its top edge."
+  "tile": "2026-10-03, his call: the break-out ponytail was too long and ran into the tile above. tile.webp cropped at y=229 of the old 480x817 cut-out, 12px above the red ribbon, so the ponytail ends at the ribbon. Now 480x588, TILE_ART ratio 1.225 (was 1.702). ART_VERSION 21. A redo of the tile from a sharper source keeps the ribbon as its top edge.",
+  "personality": "His words, 2026-10-14: 'I don't read Lyra like a cute girl. She's more like a serious, no-nonsense kind of girl. Like, she can definitely be taken at surprise, and she may show some ... surprise moments, and happy moments, but she usually does not just kid around ... she's definitely not a cutesy.' She smiles with her mouth closed as a rule ('she might just only smile without her mouth open'). Prompts and picks follow this; a cutesy read is a fault.",
+  "dataset_v2": {
+    "candidates": "ComfyUI output/lyra_dataset_v2/ (42, klein 4B + locked image as reference, 2026-10-14)",
+    "rejected": {
+      "5": "arms problem",
+      "9": "head turned weirdly",
+      "10": "an eye replaced by a scar",
+      "15": "foot issues",
+      "19": "three legs",
+      "20": "he doesn't like it",
+      "22": "faded leg",
+      "26": "hair too big",
+      "27": "not landing on the knee; boots inconsistent",
+      "28": "creepy (a loose third hand)",
+      "4": "the glove fix left the thumb bare; the thumb is covered",
+      "14": "not good at full size (cutesy)",
+      "2": "near-copy of 1; dropped on his call so the front pose is not taught twice"
+    },
+    "fixed_by_qwen_edit": {
+      "3": "fix2/03_gloves_00001_.png",
+      "6": "fix2/06_gloves_00001_.png",
+      "24": "fix2/24_foot_00001_.png",
+      "42": "fix2/42_gloves_00001_.png"
+    },
+    "notes": {
+      "25": "kept; she needn't look at the camera while dodging",
+      "33": "kept; she normally smiles with her mouth closed",
+      "fixes": "3, 6, 24, 42 approved as fixed (his word, 2026-10-14)"
+    },
+    "approved": [
+      1,
+      3,
+      6,
+      7,
+      8,
+      11,
+      12,
+      13,
+      16,
+      17,
+      18,
+      21,
+      23,
+      24,
+      25,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42
+    ],
+    "staged_as": "datasets/lyra_klein_v2 (stage_dataset.py --sentences)"
+  },
+  "lora_klein": "lyra_klein.safetensors",
+  "lora_klein_checkpoint": 1500,
+  "lora_klein_use": "His pick 2026-10-14 (question tool, option label mine): step 1500 of lyra_klein_v2 (29 images, sentence captions, ai-toolkit flux2_klein_4b on FLUX.2-klein-base-4B, rank 32, lr 1e-4, 2000 steps, 768). Render on the fast model flux-2-klein-4b (4 steps, euler, cfg 1, LoraLoaderModelOnly at 1.0): it carries the LoRA as well as the base model and about 7x faster; the base model cloned her into the crowd. Prompt: 'lyratoll, a woman, <framing, pose, expression>' with no description needed. Strength below 1.0 drifts her outfit (0.85 grey leggings, 0.7 trousers and sleeves). In scenes the LoRA dresses extras in her outfit: name the crowd's clothes in the prompt (most of it goes; a few bracers and red boots remain). Candid round (output/lyra_candid/, 2026-10-14, his review): scenes and lighting read AAA, but crowds still clone her (tavern: every patron), seated poses can turn her legs into trousers and her figure heavier (campfire), and loose props break (a floating bow, a broken arrow); removing a prop with qwen_edit left a gold upper-arm band, cleared by a second pass. Steps 1750 and 2000 brought back an upper-arm band and a stiff front-facing bow pose. Test: ComfyUI output/lyra_klein_v2_test/."
 }

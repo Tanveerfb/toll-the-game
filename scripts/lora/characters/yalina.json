@@ -1,0 +1,112 @@
+{
+  "id": "yalina",
+  "trigger": "yalinatoll",
+  "face_ref": "yalina_head_ref.png",
+  "identity": "masterpiece, best quality, absurdres, 1girl, solo, TODO age and build, TODO hair, TODO eyes, TODO every garment with its colour, weighted on the defining words",
+  "identity_upper": "masterpiece, best quality, absurdres, 1girl, solo, TODO the same without the lower-body garments",
+  "negative_extra": "child, loli, teenager, TODO the looks this character must not drift to",
+  "style": "cel shading, thick clean lineart, anime screencap, even lighting, white background, simple background",
+  "out_dir": "lora_yalina",
+  "dataset_name": "yalina_v1",
+  "batch": 4,
+  "seed_offset": 0,
+  "hand_fix": false,
+  "body_shots": [
+    [
+      "front_calm",
+      "full body, standing, front view, arms at sides, hands visible, calm expression, looking at viewer"
+    ],
+    [
+      "three_quarter_l",
+      "full body, standing, three-quarter view, body turned left, arms at sides, hands visible, slight smile, looking at viewer"
+    ],
+    [
+      "three_quarter_r",
+      "cowboy shot, standing, three-quarter view, body turned right, hand on hip, confident expression, looking at viewer"
+    ],
+    [
+      "profile_walk",
+      "full body, side view, walking, mid-stride, arms swinging, looking ahead"
+    ],
+    [
+      "back_view",
+      "full body, from behind, looking back over shoulder, hair and back of the outfit visible",
+      "back"
+    ],
+    [
+      "action_lunge",
+      "full body, lunging forward, mid-motion, low stance, near arm reaching toward viewer, foreshortening, hair flowing, clothes fluttering, intense expression, looking at viewer"
+    ],
+    [
+      "action_sprint",
+      "full body, sprinting toward viewer, mid-stride, leaning in, speed lines, hair flowing, determined expression, looking at viewer"
+    ],
+    [
+      "action_strike",
+      "full body, striking with the near arm, mid-motion, body twisted, dynamic angle, motion lines, fierce expression, looking at viewer"
+    ],
+    [
+      "action_turn",
+      "full body, turning sharply, mid-motion, hair whipping, clothes fluttering, three-quarter view, alert expression, looking at viewer"
+    ],
+    [
+      "action_crouch",
+      "full body, crouching low, one hand on the ground, ready to spring, low angle, looking up at viewer"
+    ],
+    [
+      "upper_crossed",
+      "upper body, arms crossed, confident smirk, looking at viewer"
+    ]
+  ],
+  "face_shots": [
+    [
+      "face_front",
+      "facing viewer, looking at viewer, neutral expression, closed mouth"
+    ],
+    [
+      "face_smile",
+      "facing viewer, looking at viewer, gentle smile"
+    ],
+    [
+      "face_34l",
+      "three-quarter view, head turned left, looking at viewer, serious expression"
+    ],
+    [
+      "face_34r",
+      "three-quarter view, head turned right, looking to the side, determined expression"
+    ],
+    [
+      "face_profile",
+      "profile, side view, looking to the side, calm expression"
+    ],
+    [
+      "face_up",
+      "looking up, slightly from below, confident expression"
+    ],
+    [
+      "face_down",
+      "looking down, from above, pensive expression"
+    ],
+    [
+      "face_shout",
+      "facing viewer, shouting, open mouth, angry, intense eyes"
+    ]
+  ],
+  "design_note": "TODO at the design lock: every garment and colour, hood state, age, build, what is banned",
+  "lock": null,
+  "approved": {},
+  "lora_use": null,
+  "art_direction": null,
+  "kit_prompt": null,
+  "status": "Created by new_profile.py; step 0 (design lock) not started. Fill the TODO fields from toll-kits/designs/characters/yalina.md, then check_profile.py.",
+  "design_klein": {
+    "status": "BRIEF (2026-10-15, his message while Duke trained). Redesign from scratch. Nothing rendered, nothing locked.",
+    "his_words": "\"Next is Yalina. her ref was Yalina from DHurandar 1/2. the game art was never on point. we will need to reiterate from scratch.\"",
+    "reference": "the character Yalina from the film Dhurandhar (parts 1 and 2), as his design sheet already says (his words: \"she's just the inspiration, the actor\")",
+    "design_sheet": "toll-kits designs/characters/yalina.md (copies: docs/design/characters/yalina.md, characters_design_sheets/). Long dark-brown curly hair in a loose side braid with a fine gold hair chain, curly fringe; dark brown eyes; warm brown skin; average height, youthful build; deep pink/magenta shalwar kameez with heavy gold embroidery, sheer dupatta with gold speckle, delicate gold jewellery; softer everyday wear for unguarded moments; no hijab. Personality: heart-led, stubborn, bright, fiercely loyal, resilient, sharp.",
+    "ref_image": "toll-kits designs/characters/refs/yalina-ref.png is a photo of the actress in costume. Use it for hair, costume and mood cues only: the anime design gets an original face, never a likeness of the real actress, and the photo never enters a sampler (as with all reference-library images).",
+    "game_art": "public/characters/green_yalina/ (portrait and three skills): his verdict \"the game art was never on point\"; not a starting point",
+    "open": "everything is open for the design round: how close to the sheet's card look to stay, the everyday outfit, palette, build",
+    "scope": "SMALL. She dies in arc 1, around chapter 5 or 6; one or two appearances in the present timeline, maybe more in flashbacks later. His words: \"we don't have to go too hard with her. Maybe see if we can get away with uh, not 33 or 40 images, but something like 20 or 25\". Dataset target 20-25 images; train about 1250-1500 steps by the ~50-passes rule (PC_SESSION 1a)."
+  }
+}

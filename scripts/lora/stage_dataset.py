@@ -3,20 +3,32 @@
 Manifest: one line per image, `<path>\t<variable caption>` (framing, pose,
 expression only; hair, eyes and outfit are left out so the trigger absorbs
 them). Images are flattened onto white.
-Usage: stage_dataset.py <id> <manifest.tsv>
+Usage: stage_dataset.py <id> <manifest.tsv> [--sentences] [--name <dataset>]
+
+Captions are SDXL tags by default: `<trigger>, 1girl, solo, <variable>, white background`.
+`--sentences` writes them for FLUX.2 klein, whose text encoder reads prose:
+`<trigger>, a woman, <variable>, on a plain white background.` (2026-10-14).
+`--name` overrides the profile's `dataset_name`.
 """
 import os
 import sys
 from PIL import Image
 from common import TRAINING, profile
 
-p = profile(sys.argv[1])
-subject = "1boy" if "1boy" in p["identity"] else "1girl"
-dst = os.path.join(TRAINING, "datasets", p.get("dataset_name", f"{p['id']}_v1"))
+args = [a for a in sys.argv[1:] if a != "--sentences"]
+sentences = "--sentences" in sys.argv
+name = None
+if "--name" in args:
+    i = args.index("--name")
+    name = args[i + 1]
+    args = args[:i] + args[i + 2:]
+p = profile(args[0])
+male = "1boy" in p["identity"]
+dst = os.path.join(TRAINING, "datasets", name or p.get("dataset_name", f"{p['id']}_v1"))
 os.makedirs(dst, exist_ok=True)
 assert not os.listdir(dst), f"{dst} is not empty"
 n = 0
-for line in open(sys.argv[2], encoding="utf-8"):
+for line in open(args[1], encoding="utf-8"):
     if not line.strip():
         continue
     path, caption = line.rstrip("\n").split("\t")
@@ -26,6 +38,10 @@ for line in open(sys.argv[2], encoding="utf-8"):
     n += 1
     stem = f"{p['id']}_{n:02d}"
     base.convert("RGB").save(os.path.join(dst, stem + ".png"))
+    if sentences:
+        text = f"{p['trigger']}, {'a man' if male else 'a woman'}, {caption}, on a plain white background."
+    else:
+        text = f"{p['trigger']}, {'1boy' if male else '1girl'}, solo, {caption}, white background"
     with open(os.path.join(dst, stem + ".txt"), "w", encoding="utf-8") as c:
-        c.write(f"{p['trigger']}, {subject}, solo, {caption}, white background")
+        c.write(text)
 print("staged", n, "into", dst)

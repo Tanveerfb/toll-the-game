@@ -1,0 +1,117 @@
+{
+  "id": "seras",
+  "trigger": "seristoll",
+  "face_ref": "seras_head_ref.png",
+  "identity": "masterpiece, best quality, absurdres, 1girl, solo, TODO age and build, TODO hair, TODO eyes, TODO every garment with its colour, weighted on the defining words",
+  "identity_upper": "masterpiece, best quality, absurdres, 1girl, solo, TODO the same without the lower-body garments",
+  "negative_extra": "child, loli, teenager, TODO the looks this character must not drift to",
+  "style": "cel shading, thick clean lineart, anime screencap, even lighting, white background, simple background",
+  "out_dir": "lora_seras",
+  "dataset_name": "seras_v1",
+  "batch": 4,
+  "seed_offset": 0,
+  "hand_fix": false,
+  "body_shots": [
+    [
+      "front_calm",
+      "full body, standing, front view, arms at sides, hands visible, calm expression, looking at viewer"
+    ],
+    [
+      "three_quarter_l",
+      "full body, standing, three-quarter view, body turned left, arms at sides, hands visible, slight smile, looking at viewer"
+    ],
+    [
+      "three_quarter_r",
+      "cowboy shot, standing, three-quarter view, body turned right, hand on hip, confident expression, looking at viewer"
+    ],
+    [
+      "profile_walk",
+      "full body, side view, walking, mid-stride, arms swinging, looking ahead"
+    ],
+    [
+      "back_view",
+      "full body, from behind, looking back over shoulder, hair and back of the outfit visible",
+      "back"
+    ],
+    [
+      "action_lunge",
+      "full body, lunging forward, mid-motion, low stance, near arm reaching toward viewer, foreshortening, hair flowing, clothes fluttering, intense expression, looking at viewer"
+    ],
+    [
+      "action_sprint",
+      "full body, sprinting toward viewer, mid-stride, leaning in, speed lines, hair flowing, determined expression, looking at viewer"
+    ],
+    [
+      "action_strike",
+      "full body, striking with the near arm, mid-motion, body twisted, dynamic angle, motion lines, fierce expression, looking at viewer"
+    ],
+    [
+      "action_turn",
+      "full body, turning sharply, mid-motion, hair whipping, clothes fluttering, three-quarter view, alert expression, looking at viewer"
+    ],
+    [
+      "action_crouch",
+      "full body, crouching low, one hand on the ground, ready to spring, low angle, looking up at viewer"
+    ],
+    [
+      "upper_crossed",
+      "upper body, arms crossed, confident smirk, looking at viewer"
+    ]
+  ],
+  "face_shots": [
+    [
+      "face_front",
+      "facing viewer, looking at viewer, neutral expression, closed mouth"
+    ],
+    [
+      "face_smile",
+      "facing viewer, looking at viewer, gentle smile"
+    ],
+    [
+      "face_34l",
+      "three-quarter view, head turned left, looking at viewer, serious expression"
+    ],
+    [
+      "face_34r",
+      "three-quarter view, head turned right, looking to the side, determined expression"
+    ],
+    [
+      "face_profile",
+      "profile, side view, looking to the side, calm expression"
+    ],
+    [
+      "face_up",
+      "looking up, slightly from below, confident expression"
+    ],
+    [
+      "face_down",
+      "looking down, from above, pensive expression"
+    ],
+    [
+      "face_shout",
+      "facing viewer, shouting, open mouth, angry, intense eyes"
+    ]
+  ],
+  "design_note": "TODO at the design lock: every garment and colour, hood state, age, build, what is banned",
+  "lock": null,
+  "approved": {},
+  "lora_use": null,
+  "art_direction": null,
+  "kit_prompt": null,
+  "status": "Created by new_profile.py; step 0 (design lock) not started. Fill the TODO fields from toll-kits/designs/characters/seras.md, then check_profile.py.",
+  "design_klein": {
+    "status": "BRIEF (2026-10-15, his message while Duke trained). Overhaul. Nothing rendered, nothing locked.",
+    "name": "Seris in the story (renamed 2026-09-26); the kit id and profile id stay 'seras'",
+    "role": "MAJOR: the main antagonist of arc 1, and appears past arc 1. Full-size dataset (about 30-40), not the small Yalina set.",
+    "his_words": "\"Her base reference is Cressida Bright from Fire light 007 but she's more on the bad side of things. for her full battle form, i was thinking of going with raiden shogun inspired look but that can be dropped. we will overhaul her design to be consistent with a clothing change only. so basically one casual/ everyday look and other one, her outfit when she is in battle.\"",
+    "base_reference": "Cressida Bright (007 First Light), the villainous version. Refs toll-kits designs/characters/refs/seras-cressida-1..3.png (pose, costume and mood only; her face is original, never a likeness, and the refs never enter a sampler)",
+    "the_change": "ONE consistent character, TWO outfits (everyday and battle); only the clothing changes. CONFIRMED by him: same hair and eye colour in both (copper/strawberry-blonde, pale blue-grey eyes); \"hairstyle may differ a bit\". The sheet's transformation (platinum hair, pointed ears, red eyes, horns) is dropped.",
+    "battle_outfit": "Raiden Shogun-inspired, optional (his words: \"that can be dropped\")",
+    "design_sheet": "toll-kits designs/characters/seras.md (locked 2026-08-02): copper/strawberry-blonde wavy bob, soft face, light freckles, red lipstick, white power blazer and white mini skirt with black sheer tights, lightning polearm with a hidden blade; calculating, patient, cold authority. The civilian-form details carry over unless he changes them; the true-form section is superseded by the one-character rule.",
+    "game_art": "public/characters/light_seras/",
+    "open": "the battle outfit (Raiden Shogun-inspired, optional); more outfit ideas he may bring",
+    "appeal": "his words: \"she's meant to be that hot beautiful lady who's the villain in the story kind of person. 'Ronova' from Genshin Impact is another inspiration for such design\"",
+    "everyday_outfit": "the sheet's white power blazer, white mini skirt, black sheer tights, red lipstick (his words: \"hm we can go with that sure. i may see if i can pull some more outfit ideas later\")",
+    "weapon": "the lightning polearm and hidden blade are GONE (his word: \"gone\")"
+  }
+}

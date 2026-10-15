@@ -6,6 +6,16 @@ each). Its long story goes to `docs/archive/ART_PIPELINE-character-history.md`,
 not here. This file is the current method only. The `charart` skill
 (`.claude/skills/charart/SKILL.md`) walks it step by step.
 
+> **The base model changed on 2026-10-14: FLUX.2 klein 4B replaces Animagine
+> XL 4.0** (his call; Animagine skews to cute girls). Steps 0 to 2 below still
+> describe the Animagine recipe. **For a new LoRA, follow the klein route in
+> `docs/PC_SESSION.md` items 1 and 1b** (Lyra, proven end to end: design check
+> on klein, a dataset rendered from the lock as reference, sentence captions,
+> ai-toolkit `flux2_klein_4b`, his step pick), and `lora_klein_use` in
+> `scripts/lora/characters/lyra.json`. This file is rewritten for klein once a
+> second character has proven the route. Steps 3 to 6 are not yet tried on
+> klein.
+
 **Proven end to end on Sara, 2026-10-02/03:** a design lock, a LoRA (v2), kit
 drafts, his picks, the finish pass, composites, and his lock. Lyra's run
 (2026-09-27/28) set the LoRA recipe. **Duke, 2026-10-07/08,** added the
@@ -457,7 +467,9 @@ caught.
 | Weighted colour words in a negative, anywhere (`(pink skin:1.4)`, `(blonde hair:1.4)`) | Every draft neon: green and yellow skin, glowing outlines. Re-made 2026-10-14 in a txt2img draft after it was already listed here for inpainting | Unweighted negatives, no colour words |
 | Depth Anything map used as is | The model shades the empty background as a grey glow; the ControlNet drew it as halos round the figure | Mask the depth to the figure (`ref_pose_maps.py`) |
 | Mannequin poses for dataset action shots (Duke v3) | He read them as *"dance poses"*, not real moves | Poses from his 7DS and Dokkan references (Step 1, action shots) |
+| klein action shots from text alone (Duke, 2026-10-14) | *"those were dance moves and that's still generous"*; a two-reference pose transfer (lock + pose image) copied the lock's pose instead | klein img2img from a reference-posed render, lock as reference, 8 steps with 3 skipped (`lyra_klein_work\duke_pose_img2img.py`) |
 | Qwen-Image-Edit identity transfer from reference images ("redraw the man in image 1 as the man in image 2") | It copied image 2's standing pose, or merged the two figures | LoRA img2img at 0.82 on the draft (Step 1, action shots) |
 | Several fixes in one Qwen-Image-Edit instruction | Short sleeves turned long; every grey highlight went with the ear lock | One fix per pass, chained, naming what stays |
 | Re-rendering a whole dataset to add action shots (Duke v3) | The calm shots came back bulkier, harem-cut and with back views facing front; and they were already approved in v2 | Render only the new slots; the new set is the approved old set plus them |
 | A mannequin lunge or turn seen front-on | Both read as standing | A lunge from the side; a turn as a spin with one knee raised |
+| The locked image as `--ref` in a Qwen-Image-Edit garment fix (Lyra's fingerless gloves, 2026-10-14) | It merged the reference's arms in: three hands, four arms, on 4 of 5 images | The change named in words only, no reference image |

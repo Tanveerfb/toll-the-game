@@ -9,6 +9,27 @@ Steps 0 to 2 of [`docs/CHARACTER_ART.md`](../../../docs/CHARACTER_ART.md),
 with the rules in the skill. `charart` routes here; read its gates and
 environment traps first.
 
+> **Since 2026-10-14 a new LoRA is trained on FLUX.2 klein 4B, not Animagine**
+> (his call). The recipe below is still the Animagine one. Follow the klein
+> route in `docs/PC_SESSION.md` items 1, 1a and 1b (proven on Lyra, Sara and
+> Duke) and each profile's `lora_klein_use`; the gates in this skill (he
+> locks, he approves every image and caption, he picks the step) are
+> unchanged. Rewrite this skill when `docs/CHARACTER_ART.md` is rewritten.
+>
+> **Klein lessons that cost a round each (2026-10-15):**
+> - **He reviews on his phone:** burn the number onto every image
+>   (`label_images.py`) and send caption sheets as images, never a table.
+> - **Action shots from text read as dance** (*"that's still generous"*).
+>   Pose them by klein img2img from a reference-posed render with the lock as
+>   reference, 8 steps with 3 skipped (`duke_pose_img2img.py`).
+> - **Zoom chins, chests and hands at dataset QC.** Four faint-stubble
+>   close-ups slipped through on Duke and the LoRA learned the stubble.
+> - **Test 3-4 seeds per step with the real prompt wording** (style line,
+>   "plain black T-shirt"); one seed per step made luck look like training.
+> - **Naming a thing to exclude it draws it** ("no pocket", "no stubble").
+> - **Steps ≈ images × 50**, rounded to a save (three data points).
+> - Every pick he keeps goes to `D:\Toll-Images\<Character>\` the same turn.
+
 ## Read first, in this order
 
 1. The design sheet: `toll-kits/designs/characters/<id>.md` (the look is his).
